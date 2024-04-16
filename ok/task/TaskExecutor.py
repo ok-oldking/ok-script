@@ -57,6 +57,9 @@ class TaskExecutor:
     def method(self):
         return self.device_manager.capture_method
 
+    def nullable_frame(self):
+        return self._frame
+
     def next_frame(self):
         self.reset_scene()
         start = time.time()
@@ -68,7 +71,6 @@ class TaskExecutor:
                     if height <= 0 or width <= 0:
                         logger.warning(f"captured wrong size frame: {width}x{height}")
                         self._frame = None
-                    communicate.frame.emit(self._frame)
                     return self._frame
             self.sleep(0.001)
             if time.time() - start > self.wait_scene_timeout:
@@ -152,7 +154,7 @@ class TaskExecutor:
 
     def reset_scene(self):
         self._frame = None
-        self.last_scene = self.current_scene
+        self.last_scene = self.current_scene or self.last_scene
         self.current_scene = None
 
     def execute(self):
@@ -177,7 +179,6 @@ class TaskExecutor:
                         traceback.print_exc()
                         stack_trace_str = traceback.format_exc()
                         logger.error(f"{task.name} exception: {e}, traceback: {stack_trace_str}")
-                        task.error_count += 1
                     self.current_task = None
                     task.running = False
                     processing_time = time.time() - start

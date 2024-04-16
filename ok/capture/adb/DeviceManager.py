@@ -1,11 +1,9 @@
 import threading
 
 import adbutils
-import cv2
-import numpy as np
 
 from ok.capture.HwndWindow import HwndWindow
-from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod
+from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod, do_screencap
 from ok.capture.adb.vbox import installed_emulator
 from ok.capture.windows.WindowsGraphicsCaptureMethod import WindowsGraphicsCaptureMethod
 from ok.config.Config import Config
@@ -29,7 +27,6 @@ class DeviceManager:
         if hwnd_title is not None:
             self.hwnd = HwndWindow(hwnd_title, exit_event)
         self.config = Config({"devices": {}}, config_folder, "DeviceManager")
-        self._size = (0, 0)
         self.thread = None
         self.capture_method = None
         self.refresh()
@@ -68,8 +65,7 @@ class DeviceManager:
 
         device_list = sorted(device_list, key=lambda x: x.serial)
 
-        for device in self.device_dict.values():
-            device['connected'] = False
+        adb_connected = []
 
         for device in device_list:
             imei = device.shell("settings get secure android_id") or device.shell(
@@ -91,6 +87,10 @@ class DeviceManager:
                     self.device_dict[imei] = adb_device
             else:
                 self.device_dict[imei] = adb_device
+            adb_connected.append(imei)
+        for imei in self.device_dict:
+            if imei not in adb_connected:
+                self.device_dict[imei]['connected'] = False
         if self.hwnd_title:
             nick = self.hwnd_title
             width = 0
@@ -115,8 +115,9 @@ class DeviceManager:
         if preferred is None and len(self.device_dict) > 0:
             preferred = next(iter(self.device_dict.values()))
             imei = preferred['imei']
-        self.config["preferred"] = imei
-        self.config.save_file()
+        if self.config.get("preferred") != imei:
+            self.config["preferred"] = imei
+            self.config.save_file()
         logger.debug(f'preferred device: {preferred}')
 
     def get_preferred_device(self):
@@ -154,7 +155,8 @@ class DeviceManager:
             elif not isinstance(self.capture_method, ADBCaptureMethod):
                 if self.capture_method is not None:
                     self.capture_method.close()
-                self.capture_method = ADBCaptureMethod(self)
+                self.capture_method = ADBCaptureMethod(self._device, self.exit_event, width=preferred.get('width', 0),
+                                                       height=preferred.get('height', 0))
             self.interaction = ADBBaseInteraction(self, self.capture_method)
         if isinstance(self.capture_method, ADBCaptureMethod):
             if self.debug:
@@ -173,15 +175,15 @@ class DeviceManager:
 
     @property
     def width(self):
-        if self._size[0] == 0:
-            self.screencap()
-        return self._size[0]
+        if self.capture_method is not None:
+            return self.capture_method.width
+        return 0
 
     @property
     def height(self):
-        if self._size[1] == 0:
-            self.screencap()
-        return self._size[1]
+        if self.capture_method is not None:
+            return self.capture_method.height
+        return 0
 
     def update_device_list(self):
         pass
@@ -193,25 +195,3 @@ class DeviceManager:
                 return device.shell(*args, **kwargs)
             except Exception as e:
                 logger.error(f"shell_wrapper error occurred: {e}")
-
-    def screencap(self):
-        if self.exit_event.is_set():
-            return None
-        self._size = (0, 0)
-        frame = do_screencap(self.device)
-        if frame is not None:
-            height, width, _ = frame.shape
-            self._size = (width, height)
-        return frame
-
-
-def do_screencap(device) -> np.ndarray | None:
-    if device is not None:
-        png_bytes = device.shell("screencap -p", encoding=None)
-        if png_bytes is not None and len(png_bytes) > 0:
-            image_data = np.frombuffer(png_bytes, dtype=np.uint8)
-            image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
-            if image is not None:
-                return image
-            else:
-                logger.error(f"Screencap image decode error, probably disconnected")

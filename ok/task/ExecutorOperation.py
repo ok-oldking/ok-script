@@ -23,8 +23,12 @@ class ExecutorOperation:
         return isinstance(self.executor.current_scene, the_scene)
 
     def click(self, x, y):
-        self.executor.reset_scene()
+        frame = self.executor.nullable_frame()
+        communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green", frame)
         self.executor.interaction.click(x, y)
+
+    def screenshot(self, name=None):
+        communicate.screenshot.emit(self.frame, name)
 
     def click_box_if_name_match(self, boxes, names, relative_x=0.5, relative_y=0.5):
         """
@@ -60,8 +64,7 @@ class ExecutorOperation:
                    name=name)
 
     def click_relative(self, x, y):
-        self.executor.reset_scene()
-        self.executor.interaction.click_relative(x, y)
+        self.click(int(self.width * x), int(self.height * y))
 
     @property
     def height(self):
@@ -72,22 +75,21 @@ class ExecutorOperation:
         return self.executor.method.width
 
     def move_relative(self, x, y):
-        self.executor.reset_scene()
         self.executor.interaction.move_relative(x, y)
 
-    def click_box(self, box, relative_x=0.5, relative_y=0.5, raise_if_not_found=True):
-        self.executor.reset_scene()
-        if isinstance(box, list):
-            if len(box) > 0:
-                box = box[0]
-            else:
-                self.logger.error(f"No box")
+    def click_box(self, box: Box = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=True):
         if box is None:
             self.logger.error(f"click_box box is None")
             if raise_if_not_found:
                 raise Exception(f"click_box box is None")
             return
-        self.executor.interaction.click_box(box, relative_x, relative_y)
+        if isinstance(box, list):
+            if len(box) > 0:
+                box = box[0]
+            else:
+                self.logger.error(f"No box")
+        x, y = box.relative_with_variance(relative_x, relative_y)
+        self.click(x, y)
 
     def wait_scene(self, scene_type=None, time_out=0, pre_action=None, post_action=None):
         return self.executor.wait_scene(scene_type, time_out, pre_action, post_action)
@@ -103,7 +105,7 @@ class ExecutorOperation:
 
     def wait_click_box(self, condition, time_out=0, pre_action=None, post_action=None, raise_if_not_found=True):
         target = self.wait_until(condition, time_out, pre_action, post_action)
-        self.click_box(target, raise_if_not_found=raise_if_not_found)
+        self.click_box(box=target, raise_if_not_found=raise_if_not_found)
 
     def next_frame(self):
         return self.executor.next_frame()
@@ -118,4 +120,4 @@ class ExecutorOperation:
 
     @staticmethod
     def draw_boxes(feature_name=None, boxes=None, color="red"):
-        communicate.draw_box.emit(feature_name, boxes, color)
+        communicate.emit_draw_box(feature_name, boxes, color)

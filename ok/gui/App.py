@@ -18,20 +18,21 @@ logger = get_logger(__name__)
 
 
 class App:
-    def __init__(self, icon=None, overlay=False, title="AutoUI", tasks=None, about=None,
+    def __init__(self, config,
                  exit_event=None):
         super().__init__()
+        self.config = config
         self.app = QApplication(sys.argv)
         self.app.setStyle(QStyleFactory.create("Fusion"))
-        self.tasks = tasks
-        self.about = about
-        self.title = title
-        self.overlay = overlay
+        self.tasks = self.config['tasks']
+        self.about = self.config.get('about')
+        self.title = self.config.get('gui_title')
+        self.overlay = self.config.get('debug')
         self.loading_window = None
         self.overlay_window = None
         self.main_window = None
         self.exit_event = exit_event
-        self.icon = QIcon(icon or ":/icon/icon.ico")
+        self.icon = QIcon(self.config.get('gui_icon') or ":/icon/icon.ico")
         self.tray = QSystemTrayIcon(self.icon)
 
         locale = QLocale.system().name()

@@ -51,7 +51,6 @@ def config_logger(config):
         logger_file = get_path_relative_to_exe(config.get('log_file'))
         ensure_dir_for_file(logger_file)
 
-        os.makedirs("logs", exist_ok=True)
         # File handler with rotation
         file_handler = TimedRotatingFileHandler(logger_file, when="midnight", interval=1,
                                                 backupCount=7, encoding='utf-8')

@@ -47,6 +47,7 @@ class LoggerWidget(QWidget):
         # Log display
         self.log_display = QTextEdit()
         self.log_display.setReadOnly(True)
+        self.log_display.setStyleSheet("line-height:120%;")
 
         # Add widgets to layout
         self.layout.addLayout(controls_layout)

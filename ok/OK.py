@@ -9,6 +9,7 @@ import ok
 from ok.feature.FeatureSet import FeatureSet
 from ok.gui.App import App
 from ok.gui.Communicate import communicate
+from ok.gui.debug.Screenshot import Screenshot
 from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.gui.util.InitWorker import InitWorker
 from ok.logging.Logger import get_logger, config_logger
@@ -27,16 +28,18 @@ class OK:
     ocr = None
     overlay_window = None
     app = None
+    screenshot = None
 
     def __init__(self, config: Dict[str, Any]):
         print(f"AutoHelper init, config: {config}")
+        ok.gui.ok = self
         self.debug = config.get("debug", False)
         self.exit_event = threading.Event()
         self.config = config
         self.init_device_manager()
+        self.screenshot = Screenshot()
         if config.get("use_gui"):
-            self.app = App(self.config.get('gui_icon'), self.debug, self.config.get('gui_title'),
-                           self.config['tasks'], self.config.get('about'), self.exit_event)
+            self.app = App(config, self.exit_event)
             ok.gui.app = self.app
         else:
             self.device_manager.set_preferred_device()

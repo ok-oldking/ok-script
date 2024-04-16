@@ -1,6 +1,5 @@
 from abc import abstractmethod
 
-from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 from ok.task.ExecutorOperation import ExecutorOperation
 
@@ -15,7 +14,3 @@ class Scene(ExecutorOperation):
     @abstractmethod
     def detect(self, frame):
         return False
-
-    @staticmethod
-    def draw_boxes(feature_name, boxes, color="red"):
-        communicate.draw_box.emit(feature_name, boxes, color)

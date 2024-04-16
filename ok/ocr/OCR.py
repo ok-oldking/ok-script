@@ -39,8 +39,8 @@ class OCR:
                         detected_boxes.append(detected_box)
                 if match is not None:
                     detected_boxes = find_boxes_by_name(detected_boxes, match)
-            communicate.draw_box.emit("ocr", detected_boxes, "red")
-            communicate.draw_box.emit("ocr_zone", box, "blue")
+            communicate.emit_draw_box("ocr", detected_boxes, "red")
+            communicate.emit_draw_box("ocr_zone", box, "blue")
             logger.debug(f"ocr_zone {box} found result: {len(detected_boxes)}) time: {time.time() - start}")
             return sort_boxes(detected_boxes)
 
