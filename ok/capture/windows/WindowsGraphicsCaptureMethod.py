@@ -162,8 +162,10 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
             self.session.Close()  # E_UNEXPECTED ???
             self.session = None
         self.item = None
-        self.rtdevice.Release()
-        self.dxdevice.Release()
+        if self.rtdevice:
+            self.rtdevice.Release()
+        if self.dxdevice:
+            self.dxdevice.Release()
         if self.cputex:
             self.cputex.Release()
 

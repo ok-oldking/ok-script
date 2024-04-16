@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox, QHBoxLayout, QL
 
 import ok
 from ok.gui.Communicate import communicate
+from ok.gui.loading.SelectHwndWindow import SelectHwndWindow
 from ok.gui.util.Alert import show_alert
 from ok.gui.widget.RoundCornerContainer import RoundCornerContainer
 from ok.interaction.Win32Interaction import is_admin
@@ -18,6 +19,7 @@ class LoadingWindow(QWidget):
         self.exit_event = exit_event
         self.dot_count = 0
         self.initUI()
+        self.select_hwnd_window = None
         layout = QVBoxLayout()
         top_layout = QHBoxLayout()
         layout.addLayout(top_layout)
@@ -31,14 +33,15 @@ class LoadingWindow(QWidget):
         self.refresh_button.clicked.connect(self.refresh_clicked)
         capture_container.add_top_widget(self.refresh_button)
         communicate.adb_devices.connect(self.update_capture)
-
-        # self.interaction_list = QListWidget()
-        # self.interaction_list.addItem(self.tr("ADB (Supports Background, Recommended for Android)"))
-        # self.interaction_list.addItem(self.tr("Windows Direct (Does Not Support Background)"))
-        # interaction_container = RoundCornerContainer(self.tr("Keyboard/Mouse Interaction"), self.interaction_list)
-        # top_layout.addWidget(interaction_container)
-
         top_layout.addWidget(capture_container)
+
+        self.window_list = QListWidget()
+        self.window_list.addItem(self.tr("Windows (Supports Background, Low Compatibility, Low Latency)"))
+        self.window_list.addItem(self.tr("ADB (Supports Background, High Compatibility, High Latency)"))
+        self.window_list.itemSelectionChanged.connect(self.window_index_changed)
+        interaction_container = RoundCornerContainer(self.tr("Capture Method"), self.window_list)
+        top_layout.addWidget(interaction_container)
+
         # self.start_button = StartButton()
         self.closed_by_finish_loading = False
         self.message = "Loading"
@@ -67,6 +70,14 @@ class LoadingWindow(QWidget):
             return
         ok.gui.device_manager.start()
         self.app.show_main_window()
+
+    def window_index_changed(self):  # i is an index
+        i = self.window_list.currentRow()
+        if i == 1:
+            ok.gui.device_manager.set_hwnd_name(None)
+        elif i == 0:
+            self.select_hwnd_window = SelectHwndWindow()
+            self.select_hwnd_window.show()
 
     def capture_index_changed(self):  # i is an index
         i = self.capture_list.currentRow()

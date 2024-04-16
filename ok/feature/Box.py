@@ -6,10 +6,10 @@ import re
 class Box:
     def __init__(self, x: int, y: int, width: int, height: int, confidence: float = 1, name=None) -> None:
         self.name = name
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+        self.x = int(x)
+        self.y = int(y)
+        self.width = int(width)
+        self.height = int(height)
         self.confidence = confidence
 
     def __eq__(self, other):

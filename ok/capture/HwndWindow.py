@@ -127,8 +127,11 @@ def find_hwnds_by_title(title):
     hwnds = []
 
     def enum_windows_proc(hwnd, lParam):
-        if win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd):
-            if re.search(title, win32gui.GetWindowText(hwnd)):
+        text = win32gui.GetWindowText(hwnd)
+        if text and win32gui.IsWindowVisible(hwnd):
+            if isinstance(title, str) and title == text:
+                hwnds.append(hwnd)
+            elif re.search(title, text):
                 hwnds.append(hwnd)
 
     win32gui.EnumWindows(enum_windows_proc, None)

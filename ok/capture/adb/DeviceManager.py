@@ -114,39 +114,56 @@ class DeviceManager:
         preferred = self.device_dict.get(imei)
         if preferred is None and len(self.device_dict) > 0:
             preferred = next(iter(self.device_dict.values()))
-        if preferred is not None:
             imei = preferred['imei']
-            preferred['preferred'] = True
-            if preferred['method'] == 'windows':
-                if not isinstance(self.capture_method, WindowsGraphicsCaptureMethod):
-                    if self.capture_method is not None:
-                        self.capture_method.close()
-                    self.capture_method = WindowsGraphicsCaptureMethod(self.hwnd)
-                    self.interaction = Win32Interaction(self.capture_method)
-                self.capture_method.hwnd_window = self.hwnd
-            else:
-                for adb_device in self.adb.device_list():
-                    if adb_device.serial == preferred.get('address'):
-                        self._device = adb_device
-                if not isinstance(self.capture_method, ADBCaptureMethod):
-                    if self.capture_method is not None:
-                        self.capture_method.close()
-                    self.capture_method = ADBCaptureMethod(self)
-                    self.interaction = ADBBaseInteraction(self, self.capture_method)
         self.config["preferred"] = imei
         self.config.save_file()
         logger.debug(f'preferred device: {preferred}')
 
+    def get_preferred_device(self):
+        imei = self.config.get("preferred")
+        preferred = self.device_dict.get(imei)
+        if preferred is None:
+            raise ValueError(f"preferred device {imei} is none")
+        return preferred
+
+    def set_hwnd_name(self, hwnd_name):
+        preferred = self.get_preferred_device()
+        preferred['hwnd'] = hwnd_name
+        self.config.save_file()
+
     def start(self):
+        preferred = self.get_preferred_device()
+        if preferred['method'] == 'windows':
+            if not isinstance(self.capture_method, WindowsGraphicsCaptureMethod):
+                if self.capture_method is not None:
+                    self.capture_method.close()
+                self.capture_method = WindowsGraphicsCaptureMethod(self.hwnd)
+                self.interaction = Win32Interaction(self.capture_method)
+            self.capture_method.hwnd_window = self.hwnd
+        else:
+            for adb_device in self.adb.device_list():
+                if adb_device.serial == preferred.get('address'):
+                    self._device = adb_device
+            if hwnd := preferred.get('hwnd'):
+                if not isinstance(self.capture_method, WindowsGraphicsCaptureMethod):
+                    if self.capture_method is not None:
+                        self.capture_method.close()
+                    self.capture_method = WindowsGraphicsCaptureMethod(self.hwnd)
+                self.hwnd.title = hwnd
+                self.capture_method.hwnd_window = self.hwnd
+            elif not isinstance(self.capture_method, ADBCaptureMethod):
+                if self.capture_method is not None:
+                    self.capture_method.close()
+                self.capture_method = ADBCaptureMethod(self)
+            self.interaction = ADBBaseInteraction(self, self.capture_method)
         if isinstance(self.capture_method, ADBCaptureMethod):
             if self.debug:
-                if self.hwnd is not None:
-                    self.hwnd.update_title_re("ok_debug")
-                    self.hwnd.update_frame_size(self.capture_method.width, self.capture_method.height)
-                else:
+                if self.hwnd is None:
                     self.hwnd = HwndWindow("ok_debug", self.exit_event, self.capture_method.width,
                                            self.capture_method.height)
-            else:
+                self.hwnd.title = "ok_debug"
+                self.hwnd.update_frame_size(self.capture_method.width, self.capture_method.height)
+            elif self.hwnd is not None:
                 self.hwnd.stop()
                 self.hwnd = None
 

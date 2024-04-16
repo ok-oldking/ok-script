@@ -6,6 +6,8 @@ class ExecutorOperation:
     executor = None
 
     def box_in_horizontal_center(self, box, off_percent=0.02):
+        if box is None:
+            return False
         center = self.executor.method.width / 2
         left = center - box.x
         right = box.x + box.width - center
@@ -115,5 +117,5 @@ class ExecutorOperation:
         return self.executor.frame
 
     @staticmethod
-    def draw_boxes(feature_name, boxes, color="red"):
+    def draw_boxes(feature_name=None, boxes=None, color="red"):
         communicate.draw_box.emit(feature_name, boxes, color)

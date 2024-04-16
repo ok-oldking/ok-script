@@ -33,13 +33,15 @@ class FrameWidget(QWidget):
             if current_time - self.uiDict[key][1] > self.time_to_expire:
                 del self.uiDict[key]
 
-    def draw_box(self, key: str, boxes, color=None):
+    def draw_box(self, key: str = None, boxes=None, color=None):
         if boxes is None:
             return
         if isinstance(boxes, Box):
             boxes = [boxes]
         if len(boxes) == 0:
             return
+        if key is None:
+            key = boxes[0].name
         timestamp = time.time()
         brush = self.color_map.get(color, self.color_map.get("red"))
         if key:
@@ -76,10 +78,6 @@ class FrameWidget(QWidget):
             qt_image = QImage(frame.data, frame.shape[1], frame.shape[0],
                               frame.strides[0],
                               QImage.Format_BGR888)
-            # qt_image = QImage(frame.data, frame.shape[1], frame.shape[0],
-            #                   frame.strides[0],
-            #                   QImage.Format_RGBA8888)
-
             # Scaling the image to fit the aspect ratio of the widget
             qt_image = qt_image.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
