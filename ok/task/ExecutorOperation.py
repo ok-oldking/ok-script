@@ -100,8 +100,8 @@ class ExecutorOperation:
     def send_key(self, key, down_time=0.02):
         self.executor.interaction.send_key(key, down_time)
 
-    def wait_until(self, condition, time_out=0, pre_action=None, post_action=None):
-        return self.executor.wait_condition(condition, time_out, pre_action, post_action)
+    def wait_until(self, condition, time_out=0, pre_action=None, post_action=None, wait_until_before_delay=0):
+        return self.executor.wait_condition(condition, time_out, pre_action, post_action, wait_until_before_delay)
 
     def wait_click_box(self, condition, time_out=0, pre_action=None, post_action=None, raise_if_not_found=True):
         target = self.wait_until(condition, time_out, pre_action, post_action)

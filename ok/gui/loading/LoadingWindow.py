@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox, QHBoxLayout, QL
 
 import ok
 from ok.gui.Communicate import communicate
+from ok.gui.loading.SelectCaptureListView import SelectCaptureListView
 from ok.gui.loading.SelectHwndWindow import SelectHwndWindow
 from ok.gui.util.Alert import show_alert
 from ok.gui.widget.RoundCornerContainer import RoundCornerContainer
@@ -35,14 +36,14 @@ class LoadingWindow(QWidget):
         communicate.adb_devices.connect(self.update_capture)
         top_layout.addWidget(capture_container)
 
-        self.window_list = QListWidget()
-        self.window_list.addItem(self.tr("Windows (Supports Background, Low Compatibility, Low Latency)"))
-        self.window_list.addItem(self.tr("ADB (Supports Background, High Compatibility, High Latency)"))
-        self.window_list.itemSelectionChanged.connect(self.window_index_changed)
+        self.choose_window_button = QPushButton(self.tr("Choose Window"))
+        self.choose_window_button.clicked.connect(self.choose_window_clicked)
+
+        self.window_list = SelectCaptureListView(self.window_index_changed)
         interaction_container = RoundCornerContainer(self.tr("Capture Method"), self.window_list)
+        interaction_container.add_top_widget(self.choose_window_button)
         top_layout.addWidget(interaction_container)
 
-        # self.start_button = StartButton()
         self.closed_by_finish_loading = False
         self.message = "Loading"
 
@@ -51,6 +52,12 @@ class LoadingWindow(QWidget):
         self.start_button.clicked.connect(self.on_start_clicked)
         layout.addWidget(self.start_button, alignment=Qt.AlignCenter)
         self.update_capture()
+
+    def update_window_list(self):
+        if self.capture_list.currentRow() == -1:
+            return
+        data = self.capture_list_data[self.capture_list.currentRow()]
+        self.window_list.update_for_device(data.get("device"), data.get("hwnd"))
 
     def refresh_clicked(self):
         ok.gui.device_manager.refresh()
@@ -63,7 +70,7 @@ class LoadingWindow(QWidget):
         if not connected:
             show_alert(self.tr("Error"), self.tr("Game Window is not detected, Please open game and refresh!"))
             return
-        method = self.capture_list_data[i]["method"]
+        method = self.capture_list_data[i]["device"]
         if method == "windows" and not is_admin():
             show_alert(self.tr("Error"),
                        self.tr(f"PC version requires admin privileges, Please restart this app with admin privileges!"))
@@ -71,18 +78,27 @@ class LoadingWindow(QWidget):
         ok.gui.device_manager.start()
         self.app.show_main_window()
 
+    def choose_window_clicked(self):
+        self.select_hwnd_window = SelectHwndWindow(self.update_window_list)
+        self.select_hwnd_window.show()
+
     def window_index_changed(self):  # i is an index
         i = self.window_list.currentRow()
         if i == 1:
-            ok.gui.device_manager.set_hwnd_name(None)
+            self.choose_window_button.hide()
+            ok.gui.device_manager.set_capture("adb")
         elif i == 0:
-            self.select_hwnd_window = SelectHwndWindow()
-            self.select_hwnd_window.show()
+            self.choose_window_button.show()
+            if not ok.gui.device_manager.get_hwnd_name():
+                self.choose_window_clicked()
 
     def capture_index_changed(self):  # i is an index
         i = self.capture_list.currentRow()
+        if i == -1:
+            return
         imei = self.capture_list_data[i]["imei"]
         ok.gui.device_manager.set_preferred_device(imei)
+        self.update_window_list()
 
     def update_capture(self):
         devices = ok.gui.device_manager.get_devices()
@@ -93,7 +109,7 @@ class LoadingWindow(QWidget):
             for row, device in enumerate(devices):
                 if device["imei"] == ok.gui.device_manager.config.get("preferred"):
                     selected = row
-                method = self.tr("PC") if device['method'] == "windows" else self.tr("Android")
+                method = self.tr("PC") if device['device'] == "windows" else self.tr("Android")
                 connected = self.tr("Connected") if device['connected'] else self.tr("Disconnected")
                 self.capture_list.addItem(
                     f"{method} {connected}: {device['nick']} {device['address']} {device.get('resolution') or ''}")

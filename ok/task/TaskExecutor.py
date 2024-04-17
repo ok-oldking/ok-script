@@ -126,13 +126,15 @@ class TaskExecutor:
     def wait_scene(self, scene_type, time_out, pre_action, post_action):
         return self.wait_condition(lambda: self.detect_scene(scene_type), time_out, pre_action, post_action)
 
-    def wait_condition(self, condition, time_out, pre_action, post_action):
-        self.sleep(self.wait_until_before_delay)
+    def wait_condition(self, condition, time_out=0, pre_action=None, post_action=None, wait_until_before_delay=0):
+        if wait_until_before_delay == 0:
+            wait_until_before_delay = self.wait_until_before_delay
+        self.reset_scene()
+        self.sleep(wait_until_before_delay)
         start = time.time()
         if time_out == 0:
             time_out = self.wait_scene_timeout
         while not self.exit_event.is_set():
-            self.reset_scene()
             if pre_action is not None:
                 pre_action()
             self._frame = self.next_frame()

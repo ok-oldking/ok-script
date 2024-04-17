@@ -21,12 +21,14 @@ def enum_windows():
 
 
 class SelectHwndWindow(QDialog):
-    def __init__(self):
+    def __init__(self, callback):
         super().__init__()
         self.setWindowTitle(self.tr("Select Window"))
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
         self.setModal(True)
+        self.callback = callback
+        self.setWindowIcon(ok.gui.app.icon)
 
         self.filter_edit = QLineEdit()
         self.filter_edit.setPlaceholderText("Filter by name")
@@ -58,4 +60,5 @@ class SelectHwndWindow(QDialog):
         if i >= 0:
             title = self.hwnds[i][1]
             ok.gui.device_manager.set_hwnd_name(title)
+            self.callback()
             self.close()

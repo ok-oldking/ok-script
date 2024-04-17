@@ -65,7 +65,7 @@ class App:
 
     def show_loading(self):
         self.loading_window = LoadingWindow(self, self.exit_event)
-        size = self.size_relative_to_screen(width=0.4, height=0.4)
+        size = self.size_relative_to_screen(width=0.6, height=0.4)
         self.loading_window.resize(size)
         self.loading_window.setMinimumSize(size)
         self.center_window(self.loading_window)

@@ -10,6 +10,7 @@ class RoundCornerContainer(QFrame):
         self.top_layout = QHBoxLayout()
         layout = QVBoxLayout(self)
         self.title_label = QLabel(title)
+        self.title_label.setStyleSheet("font-size: 16px; margin:2px;")
         self.title_label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.top_layout.addWidget(self.title_label)
         self.top_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
