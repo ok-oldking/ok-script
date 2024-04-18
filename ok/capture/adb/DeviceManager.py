@@ -29,7 +29,6 @@ class DeviceManager:
         self.config = Config({"devices": {}}, config_folder, "DeviceManager")
         self.thread = None
         self.capture_method = None
-        self.refresh()
 
     def refresh(self):
         if self.thread is None or not self.thread.is_alive():

@@ -25,12 +25,12 @@ class LoadingWindow(QWidget):
         top_layout = QHBoxLayout()
         layout.addLayout(top_layout)
         self.setLayout(layout)
-        self.capture_list = QListWidget()
-        self.capture_list.itemSelectionChanged.connect(self.device_index_changed)
+        self.device_list = QListWidget()
+        self.device_list.itemSelectionChanged.connect(self.device_index_changed)
         self.capture_list_data = []
-        capture_container = RoundCornerContainer(self.tr("Choose Window"), self.capture_list)
+        capture_container = RoundCornerContainer(self.tr("Choose Window"), self.device_list)
 
-        self.refresh_button = QPushButton(self.tr("Refresh"))
+        self.refresh_button = QPushButton(self.tr("Refreshing"))
         self.refresh_button.clicked.connect(self.refresh_clicked)
         capture_container.add_top_widget(self.refresh_button)
         communicate.adb_devices.connect(self.update_capture)
@@ -52,11 +52,16 @@ class LoadingWindow(QWidget):
         self.start_button.clicked.connect(self.on_start_clicked)
         layout.addWidget(self.start_button, alignment=Qt.AlignCenter)
         self.update_capture()
+        self.refresh_clicked()
 
     def update_window_list(self):
-        if self.capture_list.currentRow() == -1:
+        if self.device_list.currentRow() == -1:
             return
-        data = self.capture_list_data[self.capture_list.currentRow()]
+        data = self.capture_list_data[self.device_list.currentRow()]
+        if data.get("device") == "windows":
+            self.choose_window_button.hide()
+        else:
+            self.choose_window_button.show()
         self.window_list.update_for_device(data.get("device"), data.get("hwnd"))
 
     def refresh_clicked(self):
@@ -65,7 +70,7 @@ class LoadingWindow(QWidget):
         self.refresh_button.setText(self.tr("Refreshing"))
 
     def on_start_clicked(self):
-        i = self.capture_list.currentRow()
+        i = self.device_list.currentRow()
         connected = self.capture_list_data[i]["connected"]
         if not connected:
             show_alert(self.tr("Error"), self.tr("Game Window is not detected, Please open game and refresh!"))
@@ -93,14 +98,14 @@ class LoadingWindow(QWidget):
             ok.gui.device_manager.set_capture("adb")
         elif i == 0:
             ok.gui.device_manager.set_capture("windows")
-            device = self.capture_list_data[self.capture_list.currentRow()]["device"]
+            device = self.capture_list_data[self.device_list.currentRow()]["device"]
             if device == "adb":
                 self.choose_window_button.show()
                 if not ok.gui.device_manager.get_hwnd_name():
                     self.choose_window_clicked()
 
     def device_index_changed(self):  # i is an index
-        i = self.capture_list.currentRow()
+        i = self.device_list.currentRow()
         if i == -1:
             return
         imei = self.capture_list_data[i]["imei"]
@@ -110,8 +115,8 @@ class LoadingWindow(QWidget):
 
     def update_capture(self):
         devices = ok.gui.device_manager.get_devices()
-        selected = self.capture_list.currentRow()
-        self.capture_list.clear()
+        selected = self.device_list.currentRow()
+        self.device_list.clear()
         self.capture_list_data.clear()
         if len(devices) > 0:
             for row, device in enumerate(devices):
@@ -119,15 +124,15 @@ class LoadingWindow(QWidget):
                     selected = row
                 method = self.tr("PC") if device['device'] == "windows" else self.tr("Android")
                 connected = self.tr("Connected") if device['connected'] else self.tr("Disconnected")
-                self.capture_list.addItem(
+                self.device_list.addItem(
                     f"{method} {connected}: {device['nick']} {device['address']} {device.get('resolution') or ''}")
-                item = self.capture_list.item(row)
+                item = self.device_list.item(row)
                 if not device['connected']:
                     item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
                 self.capture_list_data.append(device)
-            if selected == -1:
+            if selected == -1 and self.device_list.count() > 0:
                 selected = 0
-            self.capture_list.setCurrentRow(selected)
+            self.device_list.setCurrentRow(selected)
         self.refresh_button.setDisabled(False)
         self.refresh_button.setText(self.tr("Refresh"))
 

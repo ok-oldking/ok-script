@@ -4,6 +4,9 @@ import sys
 
 
 def get_path_relative_to_exe(*files):
+    for file in files:
+        if file is None:
+            return
     if getattr(sys, 'frozen', False):
         # The application is running as a bundled executable
         application_path = os.path.abspath(sys.executable)

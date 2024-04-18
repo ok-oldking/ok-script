@@ -6,20 +6,14 @@ from typing import Dict, Any
 from PySide6.QtWidgets import QApplication
 
 import ok
-from ok.feature.FeatureSet import FeatureSet
-from ok.gui.App import App
-from ok.gui.Communicate import communicate
-from ok.gui.debug.Screenshot import Screenshot
-from ok.gui.overlay.OverlayWindow import OverlayWindow
-from ok.gui.util.InitWorker import InitWorker
 from ok.logging.Logger import get_logger, config_logger
-from ok.task.TaskExecutor import TaskExecutor
+
 
 logger = get_logger(__name__)
 
 
 class OK:
-    executor: TaskExecutor
+    executor = None
     adb = None
     adb_device = None
     feature_set = None
@@ -37,8 +31,10 @@ class OK:
         self.exit_event = threading.Event()
         self.config = config
         self.init_device_manager()
+        from ok.gui.debug.Screenshot import Screenshot
         self.screenshot = Screenshot()
         if config.get("use_gui"):
+            from ok.gui.App import App
             self.app = App(config, self.exit_event)
             ok.gui.app = self.app
         else:
@@ -49,6 +45,7 @@ class OK:
     def start(self):
         if self.config.get("use_gui"):
             self.app.show_loading()
+            from ok.gui.util.InitWorker import InitWorker
             self.worker = InitWorker(self.do_init)
             self.worker.start()
             self.app.exec()
@@ -56,6 +53,7 @@ class OK:
             self.task_executor.start()
             if self.config.get("debug"):
                 self.app = QApplication(sys.argv)
+                from ok.gui.overlay.OverlayWindow import OverlayWindow
                 self.overlay_window = OverlayWindow(ok.gui.device_manager.hwnd)
                 self.app.exec()
             else:
@@ -77,7 +75,7 @@ class OK:
                     logger.info("Script has terminated.")
 
     def init_message(self, message: str, done=False):
-        communicate.init.emit(done, message)
+        ok.gui.Communicate.communicate.init.emit(done, message)
         if self.exit_event.is_set():
             self.worker.quit()
 
@@ -94,6 +92,7 @@ class OK:
         if self.config.get('coco_feature_folder') is not None:
             self.init_message("FeatureSet init Start")
             coco_feature_folder = self.config.get('coco_feature_folder')
+            from ok.feature.FeatureSet import FeatureSet
             self.feature_set = FeatureSet(coco_feature_folder,
                                           default_horizontal_variance=self.config.get('default_horizontal_variance', 0),
                                           default_vertical_variance=self.config.get('default_vertical_variance', 0),
@@ -101,6 +100,7 @@ class OK:
             self.init_message("FeatureSet init Complete")
 
         self.init_message("TaskExecutor init Start")
+        from ok.task.TaskExecutor import TaskExecutor
         self.task_executor = TaskExecutor(self.device_manager, exit_event=self.exit_event,
                                           tasks=self.config['tasks'], scenes=self.config['scenes'],
                                           feature_set=self.feature_set,

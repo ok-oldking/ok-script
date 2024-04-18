@@ -1,9 +1,9 @@
 import logging
 import os
 import traceback
+import ok
 from logging.handlers import TimedRotatingFileHandler
 
-from ok.gui.Communicate import communicate
 from ok.util.path import get_path_relative_to_exe, ensure_dir_for_file
 
 
@@ -13,7 +13,7 @@ class CommunicateHandler(logging.Handler):
 
     def emit(self, record):
         log_message = self.format(record)
-        communicate.log.emit(record.levelno, log_message)
+        ok.gui.Communicate.communicate.log.emit(record.levelno, log_message)
 
 
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(threadName)s %(message)s')

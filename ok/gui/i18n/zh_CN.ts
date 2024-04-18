@@ -15,15 +15,15 @@
     </message>
     <message>
         <source>ADB (Supports Background, Recommended for Android)</source>
-        <translation type="vanished">ADB（支持后台，推荐用于Android）</translation>
+        <translation>ADB（支持后台，推荐用于Android）</translation>
     </message>
     <message>
         <source>Windows Direct (Does Not Support Background)</source>
-        <translation type="vanished">Windows直接（不支持后台）</translation>
+        <translation>Windows直接（不支持后台）</translation>
     </message>
     <message>
         <source>Keyboard/Mouse Interaction</source>
-        <translation type="vanished">键盘/鼠标交互</translation>
+        <translation>键盘/鼠标交互</translation>
     </message>
     <message>
         <location filename="../loading/LoadingWindow.py" line="31"/>
@@ -229,23 +229,23 @@
     </message>
     <message>
         <source>Disabled</source>
-        <translation type="vanished">已禁用</translation>
+        <translation>已禁用</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation type="vanished">完成</translation>
+        <translation>完成</translation>
     </message>
     <message>
         <source>In Queue</source>
-        <translation type="vanished">队列中</translation>
+        <translation>队列中</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="vanished">运行中</translation>
+        <translation>运行中</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="vanished">已暂停</translation>
+        <translation>已暂停</translation>
     </message>
 </context>
 </TS>
