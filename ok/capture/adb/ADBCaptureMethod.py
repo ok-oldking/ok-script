@@ -38,7 +38,6 @@ class ADBCaptureMethod(BaseCaptureMethod):
     def screencap(self):
         if self.exit_event.is_set():
             return None
-        self._size = (0, 0)
         frame = do_screencap(self.device)
         if frame is not None:
             height, width, _ = frame.shape

@@ -15,6 +15,10 @@ class TaskDisabledException(Exception):
     pass
 
 
+class ExitException(Exception):
+    pass
+
+
 class TaskExecutor:
     current_scene: Scene | None = None
     last_scene: Scene | None = None
@@ -94,7 +98,7 @@ class TaskExecutor:
         while True:
             if self.exit_event.is_set():
                 logger.info("Exit event set. Exiting early.")
-                return
+                raise ExitException()
             if self.current_task and not self.current_task.enabled:
                 raise TaskDisabledException()
             if not (self.paused or not self.interaction.should_capture()):
@@ -177,6 +181,9 @@ class TaskExecutor:
                         task.run_frame()
                     except TaskDisabledException:
                         logger.info(f"{task.name} is disabled, breaking")
+                    except ExitException:
+                        logger.info(f"ExitException, breaking")
+                        return
                     except Exception as e:
                         traceback.print_exc()
                         stack_trace_str = traceback.format_exc()
@@ -185,7 +192,7 @@ class TaskExecutor:
                     task.running = False
                     processing_time = time.time() - start
                     task_executed += 1
-                    if processing_time > 0.5:
+                    if processing_time > 1:
                         logger.debug(
                             f"{task.__class__.__name__} taking too long get new frame {processing_time} {task_executed} {len(self.tasks)}")
                         self.next_frame()

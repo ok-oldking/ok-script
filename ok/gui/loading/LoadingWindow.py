@@ -26,7 +26,7 @@ class LoadingWindow(QWidget):
         layout.addLayout(top_layout)
         self.setLayout(layout)
         self.capture_list = QListWidget()
-        self.capture_list.itemSelectionChanged.connect(self.capture_index_changed)
+        self.capture_list.itemSelectionChanged.connect(self.device_index_changed)
         self.capture_list_data = []
         capture_container = RoundCornerContainer(self.tr("Choose Window"), self.capture_list)
 
@@ -39,7 +39,7 @@ class LoadingWindow(QWidget):
         self.choose_window_button = QPushButton(self.tr("Choose Window"))
         self.choose_window_button.clicked.connect(self.choose_window_clicked)
 
-        self.window_list = SelectCaptureListView(self.window_index_changed)
+        self.window_list = SelectCaptureListView(self.capture_index_changed)
         interaction_container = RoundCornerContainer(self.tr("Capture Method"), self.window_list)
         interaction_container.add_top_widget(self.choose_window_button)
         top_layout.addWidget(interaction_container)
@@ -75,6 +75,10 @@ class LoadingWindow(QWidget):
             show_alert(self.tr("Error"),
                        self.tr(f"PC version requires admin privileges, Please restart this app with admin privileges!"))
             return
+        capture = self.capture_list_data[i].get("capture")
+        if capture == "windows" and not self.capture_list_data[i].get("hwnd"):
+            self.choose_window_clicked()
+            return
         ok.gui.device_manager.start()
         self.app.show_main_window()
 
@@ -82,23 +86,27 @@ class LoadingWindow(QWidget):
         self.select_hwnd_window = SelectHwndWindow(self.update_window_list)
         self.select_hwnd_window.show()
 
-    def window_index_changed(self):  # i is an index
+    def capture_index_changed(self):  # i is an index
         i = self.window_list.currentRow()
         if i == 1:
             self.choose_window_button.hide()
             ok.gui.device_manager.set_capture("adb")
         elif i == 0:
-            self.choose_window_button.show()
-            if not ok.gui.device_manager.get_hwnd_name():
-                self.choose_window_clicked()
+            ok.gui.device_manager.set_capture("windows")
+            device = self.capture_list_data[self.capture_list.currentRow()]["device"]
+            if device == "adb":
+                self.choose_window_button.show()
+                if not ok.gui.device_manager.get_hwnd_name():
+                    self.choose_window_clicked()
 
-    def capture_index_changed(self):  # i is an index
+    def device_index_changed(self):  # i is an index
         i = self.capture_list.currentRow()
         if i == -1:
             return
         imei = self.capture_list_data[i]["imei"]
         ok.gui.device_manager.set_preferred_device(imei)
         self.update_window_list()
+        self.capture_index_changed()
 
     def update_capture(self):
         devices = ok.gui.device_manager.get_devices()

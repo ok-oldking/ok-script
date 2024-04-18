@@ -37,9 +37,11 @@ class SelectHwndWindow(QDialog):
 
         self.list_widget = QListWidget()
         self.layout.addWidget(self.list_widget)
+        self.list_widget.currentRowChanged.connect(self.row_selected)  # Connect the signal to the slot
 
         self.confirm_button = QPushButton("Confirm")
         self.confirm_button.clicked.connect(self.confirm)
+        self.confirm_button.setEnabled(False)  # Disable the button initially
         self.layout.addWidget(self.confirm_button)
 
         self.cancel_button = QPushButton("Cancel")
@@ -62,3 +64,7 @@ class SelectHwndWindow(QDialog):
             ok.gui.device_manager.set_hwnd_name(title)
             self.callback()
             self.close()
+
+    def row_selected(self, row):
+        # Enable the button if a row is selected, disable it otherwise
+        self.confirm_button.setEnabled(row != -1)

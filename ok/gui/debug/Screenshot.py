@@ -114,6 +114,9 @@ class Screenshot(QObject):
             for box in boxes:
                 width = int(box.width * frame_ratio)
                 height = int(box.height * frame_ratio)
+                if width <= 0 or height <= 0:
+                    logger.error(f"box height and width <=0 {box}")
+                    continue
                 x = int(box.x * frame_ratio)
                 y = int(box.y * frame_ratio)
                 # Draw a rectangle. Arguments are (x, y, width, height).

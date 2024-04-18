@@ -54,6 +54,7 @@ class HwndWindow:
         self.title = re.compile(title)
 
     def update_frame_size(self, width, height):
+        logger.debug(f"update_frame_size:{self.frame_width}x{self.frame_height} to {width}x{height}")
         if width != self.frame_width or height != self.frame_height:
             self.frame_width = width
             self.frame_height = height

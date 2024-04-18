@@ -36,8 +36,10 @@ class BaseTask(ExecutorOperation):
 
     def log_error(self, message, exception=None, notify=False):
         self.logger.error(message, exception)
-        if exception is not None:
+        if exception is not None and len(exception.args) > 0:
             message += exception.args[0]
+        else:
+            message += str(exception)
         self.info_set("Error", message)
         if notify:
             self.notification(message)

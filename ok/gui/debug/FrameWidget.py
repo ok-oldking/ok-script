@@ -19,6 +19,8 @@ class FrameWidget(QWidget):
         communicate.update_overlay.connect(self.update)
 
     def frame_ratio(self):
+        if ok.gui.device_manager.width == 0:
+            return 1
         return self.width() / ok.gui.device_manager.width
 
     def paintEvent(self, event):

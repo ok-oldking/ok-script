@@ -7,14 +7,13 @@ class SelectCaptureListView(QListWidget):
     def __init__(self, index_change_callback):
         super().__init__()
 
-        # Create a custom widget
-        item = QListWidgetItem(self.tr(f"Game Window(Supports Background, Low Compatibility, Low Latency)"))
         self.itemSelectionChanged.connect(index_change_callback)
+
+    def update_for_device(self, device, hwnd):
+        item = QListWidgetItem(self.tr(f"Game Window(Supports Background, Low Compatibility, Low Latency)"))
 
         # Add the QListWidgetItem to the QListWidget
         self.addItem(item)
-
-    def update_for_device(self, device, hwnd):
         tips = self.tr("Supports Background, Low Compatibility, Low Latency")
         if device == "windows":
             title = self.tr("Game Window")
