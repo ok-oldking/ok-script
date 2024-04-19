@@ -1,12 +1,13 @@
-from PySide6.QtWidgets import QListWidgetItem, QListWidget
+from PySide6.QtWidgets import QListWidgetItem
+from qfluentwidgets import ListWidget
 
 
-class SelectCaptureListView(QListWidget):
+class SelectCaptureListView(ListWidget):
     def __init__(self, index_change_callback):
         super().__init__()
         self.itemSelectionChanged.connect(index_change_callback)
 
-    def update_for_device(self, device, hwnd):
+    def update_for_device(self, device, hwnd, capture):
         if self.count() == 0:
             item = QListWidgetItem(self.tr(f"Game Window(Supports Background, Low Compatibility, Low Latency)"))
 
@@ -23,5 +24,5 @@ class SelectCaptureListView(QListWidget):
                 item = QListWidgetItem(self.tr("ADB (Supports Background, High Compatibility, High Latency)"))
                 self.addItem(item)
         self.item(0).setText(f"{title}({tips})")
-        if self.currentRow() == -1:
-            self.setCurrentRow(self.count() - 1)
+        selected = 0 if capture == "windows" else 1
+        self.setCurrentRow(selected)

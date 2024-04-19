@@ -2,14 +2,15 @@ from typing import List
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget, QHBoxLayout
+from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout
 
 from ok.gui.Communicate import communicate
 from ok.gui.tasks.ConfigItemFactory import config_widget_item
 from ok.gui.tasks.StartButton import StartButton
 from ok.gui.tasks.TaskOpButton import TaskOpButton
 from ok.gui.tasks.TooltipTableWidget import TooltipTableWidget
-from ok.gui.widget.RoundCornerContainer import RoundCornerContainer
+from ok.gui.widget.Card import Card
+from ok.gui.widget.Tab import Tab
 from ok.gui.widget.UpdateConfigWidgetItem import value_to_string
 from ok.logging.Logger import get_logger
 from ok.task.BaseTask import BaseTask
@@ -17,7 +18,7 @@ from ok.task.BaseTask import BaseTask
 logger = get_logger(__name__)
 
 
-class TaskTab(QWidget):
+class TaskTab(Tab):
     def __init__(self, tasks: List[BaseTask]):
         super().__init__()
 
@@ -27,7 +28,7 @@ class TaskTab(QWidget):
         # Top row setup with horizontal splitter
         self.top_layout = QHBoxLayout()
         self.task_table = TooltipTableWidget([0.7, 0.15, 0.15])
-        self.task_container = RoundCornerContainer(self.tr('Tasks'), self.task_table)
+        self.task_container = Card(self.tr('Tasks'), self.task_table)
         self.start_button = StartButton()
         self.task_container.add_top_widget(self.start_button)
 
@@ -37,7 +38,7 @@ class TaskTab(QWidget):
         self.mainLayout.addLayout(self.top_layout)
 
         self.task_config_table = TooltipTableWidget([0.3, 0.7])
-        self.task_config_container = RoundCornerContainer(self.tr('Tasks Config'), self.task_config_table)
+        self.task_config_container = Card(self.tr('Tasks Config'), self.task_config_table)
         self.task_config_labels = [self.tr('Config'), self.tr('Value')]
         self.task_config_table.setColumnCount(len(self.task_config_labels))  # Name and Value
         self.task_config_table.setHorizontalHeaderLabels(self.task_config_labels)
@@ -45,7 +46,7 @@ class TaskTab(QWidget):
         self.mainLayout.addWidget(self.task_config_container)
 
         self.task_info_table = TooltipTableWidget([0.3, 0.7])
-        self.task_info_container = RoundCornerContainer(self.tr('Tasks Info'), self.task_info_table)
+        self.task_info_container = Card(self.tr('Tasks Info'), self.task_info_table)
         self.top_layout.addWidget(self.task_info_container)
         self.task_info_labels = [self.tr('Info'), self.tr('Value')]
         self.task_info_table.setColumnCount(len(self.task_info_labels))  # Name and Value
@@ -62,7 +63,7 @@ class TaskTab(QWidget):
     def update_config_table(self):
         task = self.tasks[self.task_table.selectedIndexes()[0].row()]
         config = task.config
-        self.task_config_container.title_label.setText(f"{self.tr('Config')}: {task.name}")
+        self.task_config_container.titleLabel.setText(f"{self.tr('Config')}: {task.name}")
         self.task_config_table.setRowCount(len(config))
         for row, (key, value) in enumerate(config.items()):
             if not self.task_config_table.item(row, 0):
@@ -74,7 +75,7 @@ class TaskTab(QWidget):
     def update_info_table(self):
         task = self.tasks[self.task_table.selectedIndexes()[0].row()]
         info = task.info
-        self.task_info_container.title_label.setText(f"{self.tr('Info')}: {task.name}")
+        self.task_info_container.titleLabel.setText(f"{self.tr('Info')}: {task.name}")
         self.task_info_table.setRowCount(len(info))
         for row, (key, value) in enumerate(info.items()):
             if not self.task_info_table.item(row, 0):

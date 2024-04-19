@@ -19,14 +19,15 @@ class DeviceManager:
 
     def __init__(self, config_folder, hwnd_title=None, debug=False, exit_event=None):
         self._device = None
-        self.adb = None
+        self.adb = self.adb = adbutils.AdbClient(host="127.0.0.1")
+        logger.debug(f'connect adb')
         self.hwnd_title = hwnd_title
         self.debug = debug
         self.interaction = None
         self.exit_event = exit_event
         if hwnd_title is not None:
             self.hwnd = HwndWindow(hwnd_title, exit_event)
-        self.config = Config({"devices": {}}, config_folder, "DeviceManager")
+        self.config = Config({"devices": {}, "preferred": "none"}, config_folder, "DeviceManager")
         self.thread = None
         self.capture_method = None
 
@@ -45,12 +46,9 @@ class DeviceManager:
         logger.debug(f'connect_all {self.adb.device_list()}')
 
     def get_devices(self):
-        return self.device_dict.values()
+        return list(self.device_dict.values())
 
     def do_refresh(self):
-        if self.adb is None:
-            self.adb = adbutils.AdbClient(host="127.0.0.1")
-            logger.debug(f'connect adb')
         self.connect_all()
         installed_emulators = installed_emulator()
         for device in self.adb.list():
@@ -75,7 +73,7 @@ class DeviceManager:
                 height, width, _ = frame.shape
             adb_device = {"address": device.serial, "imei": imei, "device": "adb", "capture": "adb", "width": width,
                           "height": height,
-                          "model": device.prop.model, "nick": device.prop.model, "connected": True, "preferred": False,
+                          "model": device.prop.model, "nick": device.prop.model, "connected": True,
                           "resolution": f"{width}x{height}"}
             found = False
             for emulator in installed_emulators:
@@ -127,6 +125,7 @@ class DeviceManager:
             self.config["preferred"] = imei
             self.config.save_file()
         logger.debug(f'preferred device: {preferred}')
+        self.start()
 
     def get_preferred_device(self):
         imei = self.config.get("preferred")
@@ -143,8 +142,10 @@ class DeviceManager:
 
     def set_capture(self, capture):
         preferred = self.get_preferred_device()
-        preferred['capture'] = capture
-        self.config.save_file()
+        if preferred.get("capture") != capture:
+            preferred['capture'] = capture
+            self.config.save_file()
+        self.start()
 
     def get_hwnd_name(self):
         preferred = self.get_preferred_device()
@@ -152,6 +153,8 @@ class DeviceManager:
 
     def start(self):
         preferred = self.get_preferred_device()
+        if preferred is None:
+            return
         if preferred['device'] == 'windows':
             if not isinstance(self.capture_method, WindowsGraphicsCaptureMethod):
                 if self.capture_method is not None:
@@ -183,16 +186,15 @@ class DeviceManager:
                 self.capture_method = ADBCaptureMethod(self._device, self.exit_event, width=width,
                                                        height=height)
             self.interaction = ADBBaseInteraction(self, self.capture_method)
-            if self.debug:
-                if self.hwnd is None and hwnd_name:
+            if self.debug and hwnd_name:
+                if self.hwnd is None:
                     if self.hwnd is None:
                         self.hwnd = HwndWindow(hwnd_name, self.exit_event, width, height)
                 self.hwnd.title = hwnd_name
+                self.hwnd.update_frame_size(width, height)
             elif self.hwnd is not None:
                 self.hwnd.stop()
                 self.hwnd = None
-            if self.hwnd:
-                self.hwnd.update_frame_size(width, height)
 
     @property
     def device(self):

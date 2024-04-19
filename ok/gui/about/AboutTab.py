@@ -1,7 +1,9 @@
-from PySide6.QtWidgets import QWidget, QTextEdit, QVBoxLayout
+from PySide6.QtWidgets import QTextEdit, QVBoxLayout
+
+from ok.gui.widget.Tab import Tab
 
 
-class AboutTab(QWidget):
+class AboutTab(Tab):
     def __init__(self, text=""):
         super().__init__()
         layout = QVBoxLayout()

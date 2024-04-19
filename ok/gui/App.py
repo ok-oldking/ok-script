@@ -1,9 +1,10 @@
 import os
 import sys
 
-from PySide6.QtCore import QSize, QCoreApplication, QLocale, QTranslator
+from PySide6.QtCore import QSize, QCoreApplication, QLocale, QTranslator, Qt
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication, QStyleFactory, QMenu, QSystemTrayIcon
+from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+from qfluentwidgets import FluentTranslator, qconfig, Theme
 
 import ok
 import ok.gui.resources
@@ -22,8 +23,19 @@ class App:
                  exit_event=None):
         super().__init__()
         self.config = config
+
+        QApplication.setHighDpiScaleFactorRoundingPolicy(
+            Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+
         self.app = QApplication(sys.argv)
-        self.app.setStyle(QStyleFactory.create("Fusion"))
+        self.app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
+        locale = QLocale()
+        qconfig.theme = Theme.AUTO
+        translator = FluentTranslator(locale)
+        self.app.installTranslator(translator)
+
         self.tasks = self.config['tasks']
         self.about = self.config.get('about')
         self.title = self.config.get('gui_title')
@@ -35,10 +47,9 @@ class App:
         self.icon = QIcon(self.config.get('gui_icon') or ":/icon/icon.ico")
         self.tray = QSystemTrayIcon(self.icon)
 
-        locale = QLocale.system().name()
         translator = QTranslator(self.app)
         full_path = os.path.join(i18n_path, f"{QLocale().name()}")
-        if translator.load(QLocale().name(), ":/i18n"):
+        if translator.load(locale.name(), ":/i18n"):
             translator.setParent(self.app)
             self.app.installTranslator(translator)
             QCoreApplication.installTranslator(translator)
@@ -55,7 +66,6 @@ class App:
         self.tray.setContextMenu(menu)
         self.tray.show()
 
-        communicate.init.connect(self.on_init)
         communicate.notification.connect(self.show_notification)
 
     def show_notification(self, title, message):
@@ -63,7 +73,7 @@ class App:
             title = self.title
         self.tray.showMessage(title, message)
 
-    def show_loading(self):
+    def show(self):
         self.loading_window = LoadingWindow(self, self.exit_event)
         size = self.size_relative_to_screen(width=0.6, height=0.4)
         self.loading_window.resize(size)
@@ -80,14 +90,7 @@ class App:
 
         window.move(half_screen_width / 2, half_screen_height / 2)
 
-    def on_init(self, done, message):
-        if done:
-            self.loading_window.loading_done()
-        else:
-            self.loading_window.update_progress(message)
-
     def show_main_window(self):
-        self.loading_window.close()
         self.main_window = MainWindow(self.tasks, self.overlay, self.about, exit_event=self.exit_event)
         self.main_window.setWindowTitle(self.title)  # Set the window title here
         self.main_window.setWindowIcon(self.icon)

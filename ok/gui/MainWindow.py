@@ -1,8 +1,10 @@
 from PySide6.QtCore import QObject, Signal, Slot
-from PySide6.QtWidgets import QMessageBox, QTabWidget
+from PySide6.QtWidgets import QMessageBox
+from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow
 
 from ok.gui.about.AboutTab import AboutTab
 from ok.gui.debug.DebugTab import DebugTab
+from ok.gui.loading.LoadingWindow import LoadingWindow
 from ok.gui.tasks.TaskTab import TaskTab
 from ok.logging.Logger import get_logger
 
@@ -13,43 +15,24 @@ class Communicate(QObject):
     speak = Signal(str)
 
 
-class MainWindow(QTabWidget):
+class MainWindow(MSFluentWindow):
     def __init__(self, tasks, debug=False, about=None, exit_event=None):
         super().__init__()
         self.exit_event = exit_event
+        start_tab = LoadingWindow()
+        self.addSubInterface(start_tab, FluentIcon.PLAY, self.tr('Start'))
         task_tab = TaskTab(tasks)
-        self.addTab(task_tab, self.tr("Task"))
+        self.addSubInterface(task_tab, FluentIcon.BOOK_SHELF, self.tr('Task'))
         if debug:
             debug_tab = DebugTab()
-            self.addTab(debug_tab, self.tr("Debug"))
+            self.addSubInterface(debug_tab, FluentIcon.COMMAND_PROMPT, self.tr('Debug'))
         # ... Add other tabs similarly
         if about:
             about_tab = AboutTab(about)
-            self.addTab(about_tab, self.tr("About"))
-
+            self.addSubInterface(about_tab, FluentIcon.QUESTION, self.tr('About'),
+                                 position=NavigationItemPosition.BOTTOM)
         # Styling the tabs and content if needed, for example:
-        self.setStyleSheet("""
-                            QTabWidget::tab-bar {
-                                alignment: center;
-                            }
-                            QTabBar::tab {
-                                background: #333;
-                                color: white;
-                                border-radius: 5px;
-                                padding: 10px;
-                            }
-                            QTabBar::tab:selected {
-                                background: #555;
-                                font-weight: bold;
-                            }
-                            QWidget {
-                                background-color: #222;
-                                color: #ddd;
-                            }
-                        """)
         self.setWindowTitle("Close Event Example")
-        self.setTabPosition(QTabWidget.West)
-        # self.setTabBar(QTabBar())
         self.comm = Communicate()
         self.comm.speak.connect(self.say_hello)
 

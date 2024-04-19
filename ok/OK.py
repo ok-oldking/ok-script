@@ -8,7 +8,6 @@ from PySide6.QtWidgets import QApplication
 import ok
 from ok.logging.Logger import get_logger, config_logger
 
-
 logger = get_logger(__name__)
 
 
@@ -44,10 +43,8 @@ class OK:
 
     def start(self):
         if self.config.get("use_gui"):
-            self.app.show_loading()
-            from ok.gui.util.InitWorker import InitWorker
-            self.worker = InitWorker(self.do_init)
-            self.worker.start()
+            self.do_init()
+            self.app.show_main_window()
             self.app.exec()
         else:
             self.task_executor.start()

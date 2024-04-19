@@ -1,10 +1,11 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QSizePolicy
+from PySide6.QtWidgets import QHBoxLayout, QSizePolicy
 
 from ok.gui.debug.InfoWidget import InfoWidget
 from ok.gui.debug.LoggerWidget import LoggerWidget
+from ok.gui.widget.Tab import Tab
 
 
-class DebugTab(QWidget):
+class DebugTab(Tab):
     def __init__(self):
         super().__init__()
 
