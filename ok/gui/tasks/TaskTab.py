@@ -1,12 +1,11 @@
 from typing import List
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout
+from PySide6.QtWidgets import QTableWidget, QTableWidgetItem
 
-from ok.gui.Communicate import communicate
 from ok.gui.tasks.ConfigItemFactory import config_widget_item
-from ok.gui.tasks.StartButton import StartButton
+from ok.gui.tasks.TaskCard import TaskCard
 from ok.gui.tasks.TaskOpButton import TaskOpButton
 from ok.gui.tasks.TooltipTableWidget import TooltipTableWidget
 from ok.gui.widget.Card import Card
@@ -21,44 +20,26 @@ logger = get_logger(__name__)
 class TaskTab(Tab):
     def __init__(self, tasks: List[BaseTask]):
         super().__init__()
-
-        self.mainLayout = QVBoxLayout(self)
-        self.setLayout(self.mainLayout)
         self.tasks = tasks
-        # Top row setup with horizontal splitter
-        self.top_layout = QHBoxLayout()
-        self.task_table = TooltipTableWidget([0.7, 0.15, 0.15])
-        self.task_container = Card(self.tr('Tasks'), self.task_table)
-        self.start_button = StartButton()
-        self.task_container.add_top_widget(self.start_button)
 
-        self.top_layout.addWidget(self.task_container)
-        self.task_labels = [self.tr('Name'), self.tr('Status'), self.tr('Operation')]
-        self.create_table()
-        self.mainLayout.addLayout(self.top_layout)
-
-        self.task_config_table = TooltipTableWidget([0.3, 0.7])
-        self.task_config_container = Card(self.tr('Tasks Config'), self.task_config_table)
-        self.task_config_labels = [self.tr('Config'), self.tr('Value')]
-        self.task_config_table.setColumnCount(len(self.task_config_labels))  # Name and Value
-        self.task_config_table.setHorizontalHeaderLabels(self.task_config_labels)
-        self.update_config_table()
-        self.mainLayout.addWidget(self.task_config_container)
+        for task in tasks:
+            task_card = TaskCard(task)
+            self.addWidget(task_card)
 
         self.task_info_table = TooltipTableWidget([0.3, 0.7])
         self.task_info_container = Card(self.tr('Tasks Info'), self.task_info_table)
-        self.top_layout.addWidget(self.task_info_container)
+        self.addWidget(self.task_info_container)
         self.task_info_labels = [self.tr('Info'), self.tr('Value')]
         self.task_info_table.setColumnCount(len(self.task_info_labels))  # Name and Value
-        self.task_info_table.setHorizontalHeaderLabels(self.task_config_labels)
-        self.update_info_table()
+        # self.task_info_table.setHorizontalHeaderLabels(self.task_config_labels)
+        # self.update_info_table()
 
-        communicate.tasks.connect(self.update_table)
-        communicate.task_info.connect(self.update_info_table)
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_info_table)
-        self.timer.timeout.connect(self.update_table)
-        self.timer.start(1000)
+        # communicate.tasks.connect(self.update_table)
+        # communicate.task_info.connect(self.update_info_table)
+        # self.timer = QTimer()
+        # self.timer.timeout.connect(self.update_info_table)
+        # self.timer.timeout.connect(self.update_table)
+        # self.timer.start(1000)
 
     def update_config_table(self):
         task = self.tasks[self.task_table.selectedIndexes()[0].row()]

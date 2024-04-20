@@ -11,7 +11,7 @@ import ok.gui.resources
 from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.gui.i18n.path import i18n_path
-from ok.gui.loading.LoadingWindow import LoadingWindow
+from ok.gui.start.StartTab import StartTab
 from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.logging.Logger import get_logger
 
@@ -74,7 +74,7 @@ class App:
         self.tray.showMessage(title, message)
 
     def show(self):
-        self.loading_window = LoadingWindow(self, self.exit_event)
+        self.loading_window = StartTab(self, self.exit_event)
         size = self.size_relative_to_screen(width=0.6, height=0.4)
         self.loading_window.resize(size)
         self.loading_window.setMinimumSize(size)

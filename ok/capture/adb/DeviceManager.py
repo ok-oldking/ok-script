@@ -165,13 +165,15 @@ class DeviceManager:
         else:
             for adb_device in self.adb.device_list():
                 if adb_device.serial == preferred.get('address'):
+                    logger.debug(f"set device {adb_device}")
                     self._device = adb_device
             hwnd_name = preferred.get('hwnd')
             width = preferred.get('width', 0)
             height = preferred.get('height', 0)
             if preferred.get('capture') == "windows":
                 if not hwnd_name:
-                    raise ValueError(f"adb device preferred hwnd is none, capture is windows {preferred}")
+                    logger.warning(f"adb device preferred hwnd is none, capture is windows {preferred}")
+                    return
                 if self.hwnd is None:
                     self.hwnd = HwndWindow(hwnd_name, self.exit_event, width, height)
                 if not isinstance(self.capture_method, WindowsGraphicsCaptureMethod):

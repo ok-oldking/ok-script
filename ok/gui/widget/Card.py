@@ -2,6 +2,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QVBoxLayout, QSizePolicy, QWidget, QHBoxLayout, QSpacerItem, QFrame
 from qfluentwidgets import StrongBodyLabel
 
+from ok.gui.common.style_sheet import StyleSheet
+
 
 class Card(QWidget):
     """ Example card """
@@ -47,6 +49,7 @@ class Card(QWidget):
 
         self.widget.setParent(self.card)
         self.topLayout.addWidget(self.widget)
+        StyleSheet.CARD.apply(self)
         # if self.stretch == 0:
         #     self.topLayout.addStretch(1)
 

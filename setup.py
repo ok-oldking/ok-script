@@ -25,7 +25,8 @@ setuptools.setup(
         'PyDirectInput~=1.0.4',
         'pywin32==306',
         'typing-extensions~=4.10.0',
-        'PySide6~=6.6.2'
+        'PySide6~=6.6.2',
+        'PySide6-Fluent-Widgets~=1.5.5'
     ],
     python_requires='>=3.4',
 )

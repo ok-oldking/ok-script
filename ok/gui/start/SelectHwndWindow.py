@@ -1,5 +1,5 @@
 import win32gui
-from PySide6.QtWidgets import QVBoxLayout, QPushButton, QListWidget, QLineEdit, QDialog
+from qfluentwidgets import MessageBoxBase, ListWidget, LineEdit, SubtitleLabel
 
 import ok
 
@@ -20,33 +20,27 @@ def enum_windows():
     return windows
 
 
-class SelectHwndWindow(QDialog):
-    def __init__(self, callback):
-        super().__init__()
-        self.setWindowTitle(self.tr("Select Window"))
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
-        self.setModal(True)
+class SelectHwndWindow(MessageBoxBase):
+    def __init__(self, callback, parent):
+        super().__init__(parent)
+        self.titleLabel = SubtitleLabel(self.tr("Select Window"), self)
         self.callback = callback
-        self.setWindowIcon(ok.gui.app.icon)
+        self.viewLayout.addWidget(self.titleLabel)
 
-        self.filter_edit = QLineEdit()
+        self.filter_edit = LineEdit()
         self.filter_edit.setPlaceholderText("Filter by name")
+        self.filter_edit.setClearButtonEnabled(True)
         self.filter_edit.textChanged.connect(self.update_list)
-        self.layout.addWidget(self.filter_edit)
+        self.viewLayout.addWidget(self.filter_edit)
 
-        self.list_widget = QListWidget()
-        self.layout.addWidget(self.list_widget)
+        self.list_widget = ListWidget()
+        self.viewLayout.addWidget(self.list_widget)
         self.list_widget.currentRowChanged.connect(self.row_selected)  # Connect the signal to the slot
 
-        self.confirm_button = QPushButton("Confirm")
-        self.confirm_button.clicked.connect(self.confirm)
-        self.confirm_button.setEnabled(False)  # Disable the button initially
-        self.layout.addWidget(self.confirm_button)
+        self.yesButton.setText(self.tr('Confirm'))
+        self.yesButton.setEnabled(False)
+        self.cancelButton.setText(self.tr('Cancel'))
 
-        self.cancel_button = QPushButton("Cancel")
-        self.cancel_button.clicked.connect(self.close)
-        self.layout.addWidget(self.cancel_button)
         self.hwnds = enum_windows()
         self.update_list()
 
@@ -67,4 +61,4 @@ class SelectHwndWindow(QDialog):
 
     def row_selected(self, row):
         # Enable the button if a row is selected, disable it otherwise
-        self.confirm_button.setEnabled(row != -1)
+        self.yesButton.setEnabled(row != -1)

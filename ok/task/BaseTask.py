@@ -15,6 +15,7 @@ class BaseTask(ExecutorOperation):
     def __init__(self):
         self.logger = get_logger(self.__class__.__name__)
         self.name = self.__class__.__name__
+        self.description = ""
         self.enabled = True
         self.running = False
         self.config = None

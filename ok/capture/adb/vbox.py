@@ -85,15 +85,16 @@ def installed_emulator():
 
     logger.debug(f'running VirtualBox servers: {running_servers}')
     results = []
-    for server in running_servers:
-        logger.debug(f'checking {server}')
-        hproc = OpenProcess(PROCESS_QUERY_INFORMATION, False, server.pid)
-        if not hproc:
-            logger.debug(f'try OpenProcess failed for PID {server.pid}')
-            continue
-        CloseHandle(hproc)
-        logger.debug(f'checking hproc end {server}')
-        try:
+    try:
+        for server in running_servers:
+            logger.debug(f'checking {server}')
+            hproc = OpenProcess(PROCESS_QUERY_INFORMATION, False, server.pid)
+            if not hproc:
+                logger.debug(f'try OpenProcess failed for PID {server.pid}')
+                continue
+            CloseHandle(hproc)
+            logger.debug(f'checking hproc end {server}')
+
             client = win32com.client.Dispatch(server.clsid)
             for machine in client.Machines:
                 machine_name = machine.Name
@@ -118,8 +119,8 @@ def installed_emulator():
                                                         address, 2, 1, override_identifier=identifier,
                                                         preload_device_info={'emulator_hypervisor': 'vbox'}))
             logger.debug(f'try checking {server}')
-        except Exception as e:
-            logger.error(f'failed to check server :{server} {e}', e)
+    except Exception as e:
+        logger.error(f'failed to check server :{server} {e}', e)
     return results
 
 

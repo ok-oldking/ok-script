@@ -4,7 +4,7 @@ from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow
 
 from ok.gui.about.AboutTab import AboutTab
 from ok.gui.debug.DebugTab import DebugTab
-from ok.gui.loading.LoadingWindow import LoadingWindow
+from ok.gui.start.StartTab import StartTab
 from ok.gui.tasks.TaskTab import TaskTab
 from ok.logging.Logger import get_logger
 
@@ -19,7 +19,7 @@ class MainWindow(MSFluentWindow):
     def __init__(self, tasks, debug=False, about=None, exit_event=None):
         super().__init__()
         self.exit_event = exit_event
-        start_tab = LoadingWindow()
+        start_tab = StartTab()
         self.addSubInterface(start_tab, FluentIcon.PLAY, self.tr('Start'))
         task_tab = TaskTab(tasks)
         self.addSubInterface(task_tab, FluentIcon.BOOK_SHELF, self.tr('Task'))

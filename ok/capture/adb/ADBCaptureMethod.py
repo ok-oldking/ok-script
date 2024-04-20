@@ -1,6 +1,7 @@
 # original https://github.com/Toufool/AutoSplit/blob/master/src/capture_method/WindowsGraphicsCaptureMethod.py
 import cv2
 import numpy as np
+from adbutils import AdbError
 from typing_extensions import override
 
 from ok.capture.BaseCaptureMethod import BaseCaptureMethod
@@ -47,11 +48,14 @@ class ADBCaptureMethod(BaseCaptureMethod):
 
 def do_screencap(device) -> np.ndarray | None:
     if device is not None:
-        png_bytes = device.shell("screencap -p", encoding=None)
-        if png_bytes is not None and len(png_bytes) > 0:
-            image_data = np.frombuffer(png_bytes, dtype=np.uint8)
-            image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
-            if image is not None:
-                return image
-            else:
-                logger.error(f"Screencap image decode error, probably disconnected")
+        try:
+            png_bytes = device.shell("screencap -p", encoding=None)
+            if png_bytes is not None and len(png_bytes) > 0:
+                image_data = np.frombuffer(png_bytes, dtype=np.uint8)
+                image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
+                if image is not None:
+                    return image
+                else:
+                    logger.error(f"Screencap image decode error, probably disconnected")
+        except AdbError as e:
+            logger.error(f"Device {device} error", e)

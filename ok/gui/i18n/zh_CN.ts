@@ -8,8 +8,8 @@
         <translation>截图</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="33"/>
-        <location filename="../loading/LoadingWindow.py" line="132"/>
+        <location filename="../start/LoadingWindow.py" line="33"/>
+        <location filename="../start/LoadingWindow.py" line="132"/>
         <source>Refresh</source>
         <translation>刷新</translation>
     </message>
@@ -26,70 +26,70 @@
         <translation>键盘/鼠标交互</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="31"/>
-        <location filename="../loading/LoadingWindow.py" line="39"/>
+        <location filename="../start/LoadingWindow.py" line="31"/>
+        <location filename="../start/LoadingWindow.py" line="39"/>
         <source>Choose Window</source>
         <translation>选择窗口</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="43"/>
+        <location filename="../start/LoadingWindow.py" line="43"/>
         <source>Capture Method</source>
         <translation>截图方式</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="50"/>
-        <location filename="../loading/LoadingWindow.py" line="152"/>
+        <location filename="../start/LoadingWindow.py" line="50"/>
+        <location filename="../start/LoadingWindow.py" line="152"/>
         <source>Start</source>
         <translation>开始</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="65"/>
+        <location filename="../start/LoadingWindow.py" line="65"/>
         <source>Refreshing</source>
         <translation>正在刷新</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="71"/>
-        <location filename="../loading/LoadingWindow.py" line="75"/>
+        <location filename="../start/LoadingWindow.py" line="71"/>
+        <location filename="../start/LoadingWindow.py" line="75"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="71"/>
+        <location filename="../start/LoadingWindow.py" line="71"/>
         <source>Game Window is not detected, Please open game and refresh!</source>
         <translation>未检测到游戏窗口, 请打开游戏后点击刷新</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="76"/>
+        <location filename="../start/LoadingWindow.py" line="76"/>
         <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
         <translation>PC版需要管理员权限运行, 请关闭此程序并重新以管理员权限运行</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="120"/>
+        <location filename="../start/LoadingWindow.py" line="120"/>
         <source>PC</source>
         <translation>PC版</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="121"/>
+        <location filename="../start/LoadingWindow.py" line="121"/>
         <source>Connected</source>
         <translation>已连接</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="121"/>
+        <location filename="../start/LoadingWindow.py" line="121"/>
         <source>Android</source>
         <translation>安卓版</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="122"/>
+        <location filename="../start/LoadingWindow.py" line="122"/>
         <source>Disconnected</source>
         <translation>已断开</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="168"/>
+        <location filename="../start/LoadingWindow.py" line="168"/>
         <source>Exit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../loading/LoadingWindow.py" line="168"/>
+        <location filename="../start/LoadingWindow.py" line="168"/>
         <source>Are you sure you want to exit the app?</source>
         <translation>确定退出吗?</translation>
     </message>
@@ -115,27 +115,27 @@
 <context>
     <name>SelectCaptureListView</name>
     <message>
-        <location filename="../loading/SelectCaptureListView.py" line="13"/>
+        <location filename="../start/SelectCaptureListView.py" line="13"/>
         <source>Game Window(Supports Background, Low Compatibility, Low Latency)</source>
         <translation>游戏窗口(支持后台截图,低延迟,兼容性差)</translation>
     </message>
     <message>
-        <location filename="../loading/SelectCaptureListView.py" line="18"/>
+        <location filename="../start/SelectCaptureListView.py" line="18"/>
         <source>Supports Background, Low Compatibility, Low Latency</source>
         <translation>支持后台截图,低延迟,兼容性差</translation>
     </message>
     <message>
-        <location filename="../loading/SelectCaptureListView.py" line="20"/>
+        <location filename="../start/SelectCaptureListView.py" line="20"/>
         <source>Game Window</source>
         <translation>游戏窗口</translation>
     </message>
     <message>
-        <location filename="../loading/SelectCaptureListView.py" line="24"/>
+        <location filename="../start/SelectCaptureListView.py" line="24"/>
         <source>Emulator Window</source>
         <translation>模拟器窗口</translation>
     </message>
     <message>
-        <location filename="../loading/SelectCaptureListView.py" line="25"/>
+        <location filename="../start/SelectCaptureListView.py" line="25"/>
         <source>ADB (Supports Background, High Compatibility, High Latency)</source>
         <translation>ADB截图(支持后台截图,高延迟,兼容性好)</translation>
     </message>
@@ -143,7 +143,7 @@
 <context>
     <name>SelectHwndWindow</name>
     <message>
-        <location filename="../loading/SelectHwndWindow.py" line="26"/>
+        <location filename="../start/SelectHwndWindow.py" line="26"/>
         <source>Select Window</source>
         <translation>选择窗口</translation>
     </message>

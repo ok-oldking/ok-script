@@ -4,9 +4,9 @@ from qfluentwidgets import ListWidget, PushButton
 
 import ok
 from ok.gui.Communicate import communicate
-from ok.gui.loading.SelectCaptureListView import SelectCaptureListView
-from ok.gui.loading.SelectHwndWindow import SelectHwndWindow
-from ok.gui.loading.StartCard import StartCard
+from ok.gui.start.SelectCaptureListView import SelectCaptureListView
+from ok.gui.start.SelectHwndWindow import SelectHwndWindow
+from ok.gui.start.StartCard import StartCard
 from ok.gui.util.Alert import show_alert
 from ok.gui.widget.Tab import Tab
 from ok.interaction.Win32Interaction import is_admin
@@ -15,7 +15,7 @@ from ok.logging.Logger import get_logger
 logger = get_logger(__name__)
 
 
-class LoadingWindow(Tab):
+class StartTab(Tab):
     def __init__(self):
         super().__init__()
         self.select_hwnd_window = None
@@ -82,7 +82,7 @@ class LoadingWindow(Tab):
         ok.gui.device_manager.start()
 
     def choose_window_clicked(self):
-        self.select_hwnd_window = SelectHwndWindow(self.update_window_list)
+        self.select_hwnd_window = SelectHwndWindow(self.update_window_list, self.window())
         self.select_hwnd_window.show()
 
     def capture_index_changed(self):  # i is an index
