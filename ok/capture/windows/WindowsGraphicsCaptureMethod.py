@@ -37,6 +37,8 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
     item = None
     session = None
     cputex = None
+    rtdevice = None
+    dxdevice = None
 
     def __init__(self, hwnd_window: HwndWindow):
         super().__init__()

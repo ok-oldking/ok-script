@@ -2,6 +2,8 @@
     <qresource prefix="/">
         <file>i18n/zh_CN.qm</file>
         <file>icon/icon.ico</file>
+        
+        <file>qss/dark/status_bar.qss</file>
         <file>qss/dark/tab.qss</file>
         <file>qss/dark/home_interface.qss</file>
         <file>qss/dark/icon_interface.qss</file>
@@ -11,6 +13,7 @@
         <file>qss/dark/view_interface.qss</file>
         <file>qss/dark/navigation_view_interface.qss</file>
 
+        <file>qss/light/status_bar.qss</file>
         <file>qss/light/tab.qss</file>
         <file>qss/light/home_interface.qss</file>
         <file>qss/light/icon_interface.qss</file>

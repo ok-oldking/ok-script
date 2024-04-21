@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QMessageBox, QPushButton
-from qfluentwidgets import ListWidget, PushButton
+from qfluentwidgets import ListWidget, PushButton, FluentIcon
 
 import ok
 from ok.gui.Communicate import communicate
@@ -27,12 +27,12 @@ class StartTab(Tab):
         self.device_container = self.addCard(self.tr("Choose Window"), self.device_list)
         self.device_list.itemSelectionChanged.connect(self.device_index_changed)
 
-        self.refresh_button = PushButton(self.tr("Refreshing"))
+        self.refresh_button = PushButton(FluentIcon.SYNC, self.tr("Refreshing"))
         self.refresh_button.clicked.connect(self.refresh_clicked)
         self.device_container.add_top_widget(self.refresh_button)
         communicate.adb_devices.connect(self.update_capture)
 
-        self.choose_window_button = PushButton(self.tr("Choose Window"))
+        self.choose_window_button = PushButton(FluentIcon.ZOOM, self.tr("Choose Window"))
         self.choose_window_button.clicked.connect(self.choose_window_clicked)
 
         self.window_list = SelectCaptureListView(self.capture_index_changed)
@@ -54,9 +54,9 @@ class StartTab(Tab):
             return
         data = ok.gui.device_manager.get_devices()[self.device_list.currentRow()]
         if data.get("device") == "windows":
-            self.choose_window_button.hide()
+            self.choose_window_button.setDisabled(True)
         else:
-            self.choose_window_button.show()
+            self.choose_window_button.setDisabled(False)
         self.window_list.update_for_device(data.get("device"), data.get("hwnd"), data.get("capture"))
 
     def refresh_clicked(self):
@@ -79,7 +79,7 @@ class StartTab(Tab):
         if capture == "windows" and not ok.gui.device_manager.get_devices()[i].get("hwnd"):
             self.choose_window_clicked()
             return
-        ok.gui.device_manager.start()
+        ok.gui.executor.start()
 
     def choose_window_clicked(self):
         self.select_hwnd_window = SelectHwndWindow(self.update_window_list, self.window())
@@ -88,7 +88,7 @@ class StartTab(Tab):
     def capture_index_changed(self):  # i is an index
         i = self.window_list.currentRow()
         if i == 1:
-            self.choose_window_button.hide()
+            self.choose_window_button.setDisabled(True)
             ok.gui.device_manager.set_capture("adb")
         elif i == 0:
             ok.gui.device_manager.set_capture("windows")
@@ -141,11 +141,6 @@ class StartTab(Tab):
 
     def update_progress(self, message):
         self.message = message
-
-    def loading_done(self):
-        self.start_button.setEnabled(True)
-        self.timer.stop()
-        self.start_button.setText(self.tr("Start"))
 
     def update_loading_animation(self):
         self.dot_count = (self.dot_count % 3) + 1  # Cycle through 1, 2, 3

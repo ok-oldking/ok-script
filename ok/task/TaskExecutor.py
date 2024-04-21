@@ -7,6 +7,7 @@ from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 from ok.scene.Scene import Scene
 from ok.stats.StreamStats import StreamStats
+from ok.task.OneTimeTask import OneTimeTask
 
 logger = get_logger(__name__)
 
@@ -27,7 +28,9 @@ class TaskExecutor:
 
     def __init__(self, device_manager: DeviceManager,
                  wait_until_timeout=10, wait_until_before_delay=1, wait_until_check_delay=1,
-                 exit_event=threading.Event(), tasks=[], scenes=[], feature_set=None, ocr=None, config_folder=None):
+                 exit_event=threading.Event(), trigger_tasks=[], onetime_tasks=[], scenes=[], feature_set=None,
+                 ocr=None,
+                 config_folder=None):
         self.device_manager = device_manager
         self.feature_set = feature_set
         self.wait_until_check_delay = wait_until_check_delay
@@ -36,16 +39,18 @@ class TaskExecutor:
         self.exit_event = exit_event
         self.ocr = ocr
         self.current_task = None
-        self.tasks = tasks
+        self.trigger_tasks = trigger_tasks
+        self.onetime_tasks = onetime_tasks
         self.scenes = scenes
         self.config_folder = config_folder or "config"
+        self.trigger_task_index = 0
         for scene in self.scenes:
             scene.executor = self
             scene.feature_set = self.feature_set
-        for task in self.tasks:
-            task.executor = self
-            task.feature_set = self.feature_set
-            task.load_config(self.config_folder)
+        for task in self.trigger_tasks:
+            task.set_executor(self)
+        for task in self.onetime_tasks:
+            task.set_executor(self)
         self.thread = threading.Thread(target=self.execute, name="TaskExecutor")
         self.thread.start()
 
@@ -62,7 +67,6 @@ class TaskExecutor:
 
     def next_frame(self):
         self.reset_scene()
-        start = time.time()
         while not self.exit_event.is_set():
             if self.method and self.interaction.should_capture():
                 self._frame = self.method.get_frame()
@@ -73,8 +77,6 @@ class TaskExecutor:
                         self._frame = None
                     return self._frame
             self.sleep(0.001)
-            if time.time() - start > self.wait_scene_timeout:
-                return None
 
     @property
     def frame(self):
@@ -107,20 +109,11 @@ class TaskExecutor:
         self.paused = True
         self.pause_start = time.time()
         communicate.executor_paused.emit(self.paused)
-        communicate.tasks.emit()
 
     def start(self):
-        can_run = False
-        for task in self.tasks:
-            if task.can_run():
-                can_run = True
-                break
-        if not can_run:
-            return False
         self.pause_end_time += self.pause_start - time.time()
         self.paused = False
         communicate.executor_paused.emit(self.paused)
-        communicate.tasks.emit()
         return True
 
     def wait_scene(self, scene_type, time_out, pre_action, post_action):
@@ -159,42 +152,56 @@ class TaskExecutor:
         self.last_scene = self.current_scene or self.last_scene
         self.current_scene = None
 
+    def next_task(self):
+        cycled = False
+        for onetime_task in self.onetime_tasks:
+            if onetime_task.enabled:
+                return onetime_task, False
+        if len(self.trigger_tasks) > 0:
+            if self.trigger_task_index >= len(self.trigger_tasks):
+                self.trigger_task_index = 0
+                cycled = True
+            return self.trigger_tasks[self.trigger_task_index], cycled
+        return None, False
+
+    def active_trigger_task_count(self):
+        return len([x for x in self.trigger_tasks if x.enabled])
+
     def execute(self):
         logger.info(f"start execute")
+        processing_time = 0
         while not self.exit_event.is_set():
-            self._frame = self.next_frame()
-            start = time.time()
-            if self._frame is not None:
-                self.detect_scene()
-                task_executed = 0
-                for index, task in enumerate(self.tasks):
-                    if task.done or not task.enabled:
-                        continue
+            try:
+                task, cycled = self.next_task()
+                if not task:
+                    self.sleep(1)
+                    continue
+                task.running = True
+                if isinstance(task, OneTimeTask):
                     self.current_task = task
-                    task.running = True
-                    task.last_execute_time = start
-                    try:
-                        task.run_frame()
-                    except TaskDisabledException:
-                        logger.info(f"{task.name} is disabled, breaking")
-                    except Exception as e:
-                        traceback.print_exc()
-                        stack_trace_str = traceback.format_exc()
-                        logger.error(f"{task.name} exception: {e}, traceback: {stack_trace_str}")
+                    communicate.task.emit(task)
+                else:
                     self.current_task = None
-                    task.running = False
-                    processing_time = time.time() - start
-                    task_executed += 1
-                    if processing_time > 1:
-                        logger.debug(
-                            f"{task.__class__.__name__} taking too long get new frame {processing_time} {task_executed} {len(self.tasks)}")
-                        self.next_frame()
-                        start = time.time()
-
-                # if task_executed == 0:
-                #     self.pause()
-                self.add_frame_stats()
-                self.sleep(0.001)
+                if cycled or self._frame is None:
+                    self.next_frame()
+                    processing_time = 0
+                if processing_time > 1:
+                    logger.debug(
+                        f"{processing_time} taking too long get new frame {processing_time}")
+                    self.next_frame()
+                self.detect_scene()
+                start = time.time()
+                task.run()
+            except TaskDisabledException:
+                logger.info(f"{task.name} is disabled, breaking")
+            except Exception as e:
+                traceback.print_exc()
+                stack_trace_str = traceback.format_exc()
+                logger.error(f"{task.name} exception: {e}, traceback: {stack_trace_str}")
+            processing_time += time.time() - start
+            self.current_task = None
+            task.running = False
+            self.sleep(0.001)
 
     def add_frame_stats(self):
         self.frame_stats.add_frame()

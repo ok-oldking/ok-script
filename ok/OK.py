@@ -99,7 +99,9 @@ class OK:
         self.init_message("TaskExecutor init Start")
         from ok.task.TaskExecutor import TaskExecutor
         self.task_executor = TaskExecutor(self.device_manager, exit_event=self.exit_event,
-                                          tasks=self.config['tasks'], scenes=self.config['scenes'],
+                                          onetime_tasks=self.config.get('onetime_tasks', []),
+                                          trigger_tasks=self.config.get('trigger_tasks', []),
+                                          scenes=self.config['scenes'],
                                           feature_set=self.feature_set,
                                           ocr=self.ocr, config_folder=self.config.get("config_folder") or "config")
         self.init_message("TaskExecutor init Done")

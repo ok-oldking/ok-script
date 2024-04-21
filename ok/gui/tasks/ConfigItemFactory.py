@@ -20,12 +20,12 @@ def config_widget_item(table, row, col, config, key, value):
 
 def config_widget(config, key, value):
     if isinstance(value, bool):
-        return LabelAndSwitchButton(key, value, config)
+        return LabelAndSwitchButton(config, key)
     elif isinstance(value, list):
-        return ModifyListItem(key, value, config)
+        return ModifyListItem(config, key)
     elif isinstance(value, int):
-        return LabelAndSpinBox(key, value, config)
+        return LabelAndSpinBox(config, key)
     elif isinstance(value, float):
-        return LabelAndDoubleSpinBox(key, value, config)
+        return LabelAndDoubleSpinBox(config, key)
     else:
         raise ValueError(f"invalid type {type(value)}")

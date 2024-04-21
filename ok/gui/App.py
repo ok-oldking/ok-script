@@ -11,8 +11,8 @@ import ok.gui.resources
 from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.gui.i18n.path import i18n_path
-from ok.gui.start.StartTab import StartTab
 from ok.gui.overlay.OverlayWindow import OverlayWindow
+from ok.gui.start.StartTab import StartTab
 from ok.logging.Logger import get_logger
 
 logger = get_logger(__name__)
@@ -36,7 +36,6 @@ class App:
         translator = FluentTranslator(locale)
         self.app.installTranslator(translator)
 
-        self.tasks = self.config['tasks']
         self.about = self.config.get('about')
         self.title = self.config.get('gui_title')
         self.overlay = self.config.get('debug')
@@ -91,7 +90,7 @@ class App:
         window.move(half_screen_width / 2, half_screen_height / 2)
 
     def show_main_window(self):
-        self.main_window = MainWindow(self.tasks, self.overlay, self.about, exit_event=self.exit_event)
+        self.main_window = MainWindow(self.overlay, self.about, exit_event=self.exit_event)
         self.main_window.setWindowTitle(self.title)  # Set the window title here
         self.main_window.setWindowIcon(self.icon)
         if self.overlay and ok.gui.device_manager.hwnd is not None:

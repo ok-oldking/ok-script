@@ -1,7 +1,8 @@
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox
 from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow
 
+from ok.gui.Communicate import communicate
 from ok.gui.about.AboutTab import AboutTab
 from ok.gui.debug.DebugTab import DebugTab
 from ok.gui.start.StartTab import StartTab
@@ -16,12 +17,13 @@ class Communicate(QObject):
 
 
 class MainWindow(MSFluentWindow):
-    def __init__(self, tasks, debug=False, about=None, exit_event=None):
+    def __init__(self, debug=False, about=None, exit_event=None):
         super().__init__()
         self.exit_event = exit_event
         start_tab = StartTab()
         self.addSubInterface(start_tab, FluentIcon.PLAY, self.tr('Start'))
-        task_tab = TaskTab(tasks)
+        task_tab = TaskTab()
+        self.second_tab = task_tab
         self.addSubInterface(task_tab, FluentIcon.BOOK_SHELF, self.tr('Task'))
         if debug:
             debug_tab = DebugTab()
@@ -33,12 +35,12 @@ class MainWindow(MSFluentWindow):
                                  position=NavigationItemPosition.BOTTOM)
         # Styling the tabs and content if needed, for example:
         self.setWindowTitle("Close Event Example")
-        self.comm = Communicate()
-        self.comm.speak.connect(self.say_hello)
 
-    @Slot(str)
-    def say_hello(self, message):
-        print(message)
+        communicate.executor_paused.connect(self.executor_paused)
+
+    def executor_paused(self, paused):
+        if not paused:
+            self.switchTo(self.second_tab)
 
     def btn_clicked(self):
         self.comm.speak.emit("Hello, PySide6 with parameters!")

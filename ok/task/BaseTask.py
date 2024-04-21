@@ -1,5 +1,3 @@
-import time
-
 from ok.config.Config import Config
 from ok.config.InfoDict import InfoDict
 from ok.gui.Communicate import communicate
@@ -10,18 +8,17 @@ logger = get_logger(__name__)
 
 
 class BaseTask(ExecutorOperation):
-    _done = False
 
     def __init__(self):
+        super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.name = self.__class__.__name__
         self.description = ""
-        self.enabled = True
-        self.running = False
+        self.feature_set = None
+        self._enabled = False
         self.config = None
         self.info = InfoDict()
         self.default_config = {}
-        self.last_execute_time = 0
 
     def log_info(self, message, notify=False):
         self.logger.info(message)
@@ -50,6 +47,10 @@ class BaseTask(ExecutorOperation):
     def notification(message, title=None):
         communicate.notification.emit(title, message)
 
+    @property
+    def enabled(self):
+        return self._enabled
+
     def info_clear(self):
         self.info.clear()
 
@@ -72,44 +73,25 @@ class BaseTask(ExecutorOperation):
     def info_set(self, key, value):
         self.info[key] = value
 
-    def can_run(self):
-        return self.enabled and not self._done
-
     def load_config(self, folder):
         self.config = Config(self.default_config, folder, self.__class__.__name__)
 
     def enable(self):
-        self.enabled = True
+        self._enabled = True
         self.info_clear()
-        self.set_done(False)
-        communicate.tasks.emit()
+        communicate.task.emit(self)
 
     def disable(self):
-        self.enabled = False
-        communicate.tasks.emit()
+        self._enabled = False
+        communicate.task.emit(self)
 
     def get_status(self):
-        if not self.enabled:
-            return "Disabled"
-        elif self.done:
-            return "Done"
-        elif self.enabled and self.executor.paused:
-            return "Paused"
-        elif self.running or self.enabled and time.time() - self.last_execute_time < 3:
-            return "Running"
-        else:
-            return "In Queue"
-
-    def run_frame(self):
         pass
 
-    def reset(self):
-        self._done = False
+    def run(self):
         pass
 
-    @property
-    def done(self):
-        return self._done
-
-    def set_done(self, done=True):
-        self._done = done
+    def set_executor(self, executor):
+        self.executor = executor
+        self.feature_set = executor.feature_set
+        self.load_config(executor.config_folder)

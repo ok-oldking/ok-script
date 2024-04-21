@@ -9,6 +9,7 @@ class StyleSheet(StyleSheetBase, Enum):
 
     LINK_CARD = "link_card"
     CARD = "card"
+    STATUS_BAR = "status_bar"
     HOME_INTERFACE = "home_interface"
     ICON_INTERFACE = "icon_interface"
     VIEW_INTERFACE = "view_interface"

@@ -78,7 +78,7 @@ class HwndWindow:
     def do_update_window_size(self):
         visible, x, y, border, title_height, width, height, scaling = self.visible, self.x, self.y, self.border, self.title_height, self.width, self.height, self.scaling
         if self.hwnd is None:
-            self.hwnd = find_hwnds_by_title(self.title)
+            self.hwnd = find_hwnd_by_title(self.title)
         if self.hwnd is not None:
             self.exists = win32gui.IsWindow(self.hwnd)
             if self.exists:
@@ -124,7 +124,7 @@ class HwndWindow:
         return ""
 
 
-def find_hwnds_by_title(title):
+def find_hwnd_by_title(title):
     hwnds = []
 
     def enum_windows_proc(hwnd, lParam):

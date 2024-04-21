@@ -10,9 +10,12 @@ class LabelAndDoubleSpinBox(LabelAndWidget):
         self.key = key
         self.config = config
         self.spin_box = DoubleSpinBox()
-        self.spin_box.setValue(value)
+        self.update_value()
         self.spin_box.valueChanged.connect(self.value_changed)
         self.add_widget(self.spin_box)
+
+    def update_value(self):
+        self.spin_box.setValue(self.config.get(self.key))
 
     def value_changed(self, value):
         self.config[self.key] = value

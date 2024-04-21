@@ -39,6 +39,7 @@ class SelectHwndWindow(MessageBoxBase):
 
         self.yesButton.setText(self.tr('Confirm'))
         self.yesButton.setEnabled(False)
+        self.accepted.connect(self.confirm)
         self.cancelButton.setText(self.tr('Cancel'))
 
         self.hwnds = enum_windows()
@@ -57,7 +58,6 @@ class SelectHwndWindow(MessageBoxBase):
             title = self.hwnds[i][1]
             ok.gui.device_manager.set_hwnd_name(title)
             self.callback()
-            self.close()
 
     def row_selected(self, row):
         # Enable the button if a row is selected, disable it otherwise

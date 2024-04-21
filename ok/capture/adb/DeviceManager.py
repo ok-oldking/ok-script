@@ -1,8 +1,9 @@
 import threading
 
 import adbutils
+import win32gui
 
-from ok.capture.HwndWindow import HwndWindow
+from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title
 from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod, do_screencap
 from ok.capture.adb.vbox import installed_emulator
 from ok.capture.windows.WindowsGraphicsCaptureMethod import WindowsGraphicsCaptureMethod
@@ -99,15 +100,14 @@ class DeviceManager:
             nick = ""
             width = 0
             height = 0
-            if self.hwnd:
-                nick = self.hwnd.title_text()
-                width = self.hwnd.width
-                height = self.hwnd.height
+            hwnd = find_hwnd_by_title(self.hwnd_title)
+            if hwnd is not None:
+                nick = win32gui.GetWindowText(hwnd)
             self.device_dict[self.hwnd_title] = {"address": "", "imei": self.hwnd_title, "device": "windows",
-                                                 "model": "", "nick": nick or self.hwnd_title, "width": width,
+                                                 "model": "", "nick": nick, "width": width,
                                                  "height": height,
                                                  "hwnd": nick, "capture": "windows",
-                                                 "connected": self.hwnd is not None and self.hwnd.exists,
+                                                 "connected": hwnd is not None,
                                                  "resolution": f"{width}x{height}"}
         communicate.adb_devices.emit()
         self.config.save_file()
