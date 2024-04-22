@@ -26,7 +26,7 @@ class ADBBaseInteraction(BaseInteraction):
         super().send_key(key, down_time)
         self.device_manager.device.shell(f"input keyevent {key}")
 
-    def click(self, x=-1, y=-1):
+    def click(self, x=-1, y=-1, move_back=False):
         super().click(x, y)
         x = int(x * self.width / self.capture.width)
         y = int(y * self.height / self.capture.height)

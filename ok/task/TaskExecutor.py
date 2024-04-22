@@ -43,7 +43,7 @@ class TaskExecutor:
         self.onetime_tasks = onetime_tasks
         self.scenes = scenes
         self.config_folder = config_folder or "config"
-        self.trigger_task_index = 0
+        self.trigger_task_index = -1
         for scene in self.scenes:
             scene.executor = self
             scene.feature_set = self.feature_set
@@ -158,9 +158,10 @@ class TaskExecutor:
             if onetime_task.enabled:
                 return onetime_task, False
         if len(self.trigger_tasks) > 0:
-            if self.trigger_task_index >= len(self.trigger_tasks):
-                self.trigger_task_index = 0
+            if self.trigger_task_index >= len(self.trigger_tasks) - 1:
+                self.trigger_task_index = -1
                 cycled = True
+            self.trigger_task_index += 1
             return self.trigger_tasks[self.trigger_task_index], cycled
         return None, False
 
@@ -176,9 +177,9 @@ class TaskExecutor:
                 if not task:
                     self.sleep(1)
                     continue
-                task.running = True
                 if isinstance(task, OneTimeTask):
                     self.current_task = task
+                    task.running = True
                     communicate.task.emit(task)
                 else:
                     self.current_task = None
@@ -200,7 +201,9 @@ class TaskExecutor:
                 logger.error(f"{task.name} exception: {e}, traceback: {stack_trace_str}")
             processing_time += time.time() - start
             self.current_task = None
-            task.running = False
+            if isinstance(task, OneTimeTask):
+                task.running = False
+                communicate.task.emit(task)
             self.sleep(0.001)
 
     def add_frame_stats(self):

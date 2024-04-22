@@ -95,3 +95,7 @@ class BaseTask(ExecutorOperation):
         self.executor = executor
         self.feature_set = executor.feature_set
         self.load_config(executor.config_folder)
+        self.after_init()
+
+    def after_init(self):
+        pass

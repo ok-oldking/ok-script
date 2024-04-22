@@ -3,7 +3,7 @@ import threading
 import adbutils
 import win32gui
 
-from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title
+from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title_and_exe
 from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod, do_screencap
 from ok.capture.adb.vbox import installed_emulator
 from ok.capture.windows.WindowsGraphicsCaptureMethod import WindowsGraphicsCaptureMethod
@@ -18,16 +18,17 @@ logger = get_logger(__name__)
 
 class DeviceManager:
 
-    def __init__(self, config_folder, hwnd_title=None, debug=False, exit_event=None):
+    def __init__(self, config_folder, hwnd_title=None, exe_name=None, debug=False, exit_event=None):
         self._device = None
         self.adb = self.adb = adbutils.AdbClient(host="127.0.0.1")
         logger.debug(f'connect adb')
         self.hwnd_title = hwnd_title
+        self.exe_name = exe_name
         self.debug = debug
         self.interaction = None
         self.exit_event = exit_event
         if hwnd_title is not None:
-            self.hwnd = HwndWindow(hwnd_title, exit_event)
+            self.hwnd = HwndWindow(hwnd_title, exe_name, exit_event)
         self.config = Config({"devices": {}, "preferred": "none"}, config_folder, "DeviceManager")
         self.thread = None
         self.capture_method = None
@@ -100,9 +101,11 @@ class DeviceManager:
             nick = ""
             width = 0
             height = 0
-            hwnd = find_hwnd_by_title(self.hwnd_title)
+            hwnd = find_hwnd_by_title_and_exe(self.hwnd_title, self.exe_name)
             if hwnd is not None:
                 nick = win32gui.GetWindowText(hwnd)
+            if not nick:
+                nick = self.exe_name
             self.device_dict[self.hwnd_title] = {"address": "", "imei": self.hwnd_title, "device": "windows",
                                                  "model": "", "nick": nick, "width": width,
                                                  "height": height,

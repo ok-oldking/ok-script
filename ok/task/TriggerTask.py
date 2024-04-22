@@ -9,7 +9,10 @@ class TriggerTask(BaseTask):
     def __init__(self):
         super().__init__()
         self.default_enable = True
+
+    def after_init(self):
         self._enabled = self.config.get('_enabled', self.default_enable)
+
 
     def get_status(self):
         if self.enabled:

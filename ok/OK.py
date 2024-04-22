@@ -117,6 +117,8 @@ class OK:
         if self.device_manager is None:
             from ok.capture.adb.DeviceManager import DeviceManager
             self.device_manager = DeviceManager(self.config.get("config_folder") or "config",
-                                                self.config.get('capture_window_title'), self.config.get("debug"),
+                                                self.config.get('capture_window_title'),
+                                                self.config.get('capture_window_exe_name'),
+                                                self.config.get("debug"),
                                                 self.exit_event)
             ok.gui.device_manager = self.device_manager

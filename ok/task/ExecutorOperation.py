@@ -22,10 +22,10 @@ class ExecutorOperation:
     def is_scene(self, the_scene):
         return isinstance(self.executor.current_scene, the_scene)
 
-    def click(self, x, y):
+    def click(self, x, y, move_back=False):
         frame = self.executor.nullable_frame()
         communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green", frame)
-        self.executor.interaction.click(x, y)
+        self.executor.interaction.click(x, y, move_back)
 
     def screenshot(self, name=None):
         communicate.screenshot.emit(self.frame, name)
@@ -63,8 +63,8 @@ class ExecutorOperation:
                    int(width * self.executor.method.width), int(height * self.executor.method.height),
                    name=name)
 
-    def click_relative(self, x, y):
-        self.click(int(self.width * x), int(self.height * y))
+    def click_relative(self, x, y, move_back=False):
+        self.click(int(self.width * x), int(self.height * y), move_back)
 
     @property
     def height(self):

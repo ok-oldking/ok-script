@@ -1,7 +1,9 @@
 # original https://github.com/dantmnf & https://github.com/hakaboom/winAuto
+import ctypes
 import re
 import threading
 
+import win32process
 from typing_extensions import override
 from win32 import win32gui
 
@@ -32,9 +34,10 @@ class HwndWindow:
     frame_height = 0
     exists = False
 
-    def __init__(self, title="", exit_event=threading.Event(), frame_width=0, frame_height=0):
+    def __init__(self, title="", exe_name=None, exit_event=threading.Event(), frame_width=0, frame_height=0):
         super().__init__()
         self.app_exit_event = exit_event
+        self.exe_name = exe_name
         self.stop_event = threading.Event()
         self.update_title_re(title)
         self.visible = False
@@ -78,7 +81,7 @@ class HwndWindow:
     def do_update_window_size(self):
         visible, x, y, border, title_height, width, height, scaling = self.visible, self.x, self.y, self.border, self.title_height, self.width, self.height, self.scaling
         if self.hwnd is None:
-            self.hwnd = find_hwnd_by_title(self.title)
+            self.hwnd = find_hwnd_by_title_and_exe(self.title, self.exe_name)
         if self.hwnd is not None:
             self.exists = win32gui.IsWindow(self.hwnd)
             if self.exists:
@@ -124,7 +127,18 @@ class HwndWindow:
         return ""
 
 
-def find_hwnd_by_title(title):
+def find_hwnd_by_title_and_exe(title, exe):
+    hwnds = find_hwnds_by_title(title)
+    if exe is not None:
+        for hwnd in hwnds:
+            exe_2 = get_exe_name_by_hwnd(hwnd)
+            if exe_2 == exe:
+                return hwnd
+    if len(hwnds) > 0:
+        return hwnds[0]
+
+
+def find_hwnds_by_title(title):
     hwnds = []
 
     def enum_windows_proc(hwnd, lParam):
@@ -139,4 +153,30 @@ def find_hwnd_by_title(title):
     if len(hwnds) > 0:
         if len(hwnds) > 1:
             logger.warning(f"Found multiple hwnds {len(hwnds)}")
-        return hwnds[0]
+    return hwnds
+
+
+OpenProcess = ctypes.windll.kernel32.OpenProcess
+CloseHandle = ctypes.windll.kernel32.CloseHandle
+GetModuleFileNameExW = ctypes.windll.psapi.GetModuleFileNameExW
+
+PROCESS_QUERY_INFORMATION = 0x0400
+PROCESS_VM_READ = 0x0010
+
+
+def get_exe_name_by_hwnd(hwnd):
+    # Get the process ID of the window
+    _, pid = win32process.GetWindowThreadProcessId(hwnd)
+
+    # Open the process
+    h_process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, False, pid)
+    if h_process:
+        # Get the executable name
+        exe_name = ctypes.create_unicode_buffer(1024)
+        GetModuleFileNameExW(h_process, None, exe_name, 1024)
+
+        # Close the process handle
+        CloseHandle(h_process)
+
+        return exe_name.value
+
