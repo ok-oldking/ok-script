@@ -8,6 +8,7 @@ class OneTimeTask(BaseTask):
 
     def __init__(self):
         super().__init__()
+        self._done = False
         self.running = False
 
     def get_status(self):
@@ -20,3 +21,11 @@ class OneTimeTask(BaseTask):
                 return "In Queue"
         else:
             return "Not Started"
+
+    @property
+    def done(self):
+        return self._done
+
+    def set_done(self):
+        self.disable()
+        self._done = True

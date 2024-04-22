@@ -18,6 +18,7 @@ class ADBCaptureMethod(BaseCaptureMethod):
         super().__init__()
         self.exit_event = exit_event
         self._size = (width, height)
+        self._connected = (width != 0 and height != 0)
         self.device = device
 
     @property
@@ -42,8 +43,14 @@ class ADBCaptureMethod(BaseCaptureMethod):
         frame = do_screencap(self.device)
         if frame is not None:
             height, width, _ = frame.shape
+            self._connected = True
             self._size = (width, height)
+        else:
+            self._connected = False
         return frame
+
+    def connected(self):
+        return self._connected and self.device is not None
 
 
 def do_screencap(device) -> np.ndarray | None:

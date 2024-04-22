@@ -8,6 +8,7 @@ from ok.logging.Logger import get_logger
 from ok.scene.Scene import Scene
 from ok.stats.StreamStats import StreamStats
 from ok.task.OneTimeTask import OneTimeTask
+from ok.task.TriggerTask import TriggerTask
 
 logger = get_logger(__name__)
 
@@ -77,6 +78,9 @@ class TaskExecutor:
                         self._frame = None
                     return self._frame
             self.sleep(0.001)
+
+    def connected(self):
+        return self.method is not None and self.method.connected()
 
     @property
     def frame(self):
@@ -192,7 +196,10 @@ class TaskExecutor:
                     self.next_frame()
                 self.detect_scene()
                 start = time.time()
-                task.run()
+                result = task.run()
+                if result and isinstance(task, TriggerTask):
+                    result.trigger_count += 1
+                    communicate.task.emit(task)
             except TaskDisabledException:
                 logger.info(f"{task.name} is disabled, breaking")
             except Exception as e:

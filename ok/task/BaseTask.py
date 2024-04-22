@@ -34,10 +34,11 @@ class BaseTask(ExecutorOperation):
 
     def log_error(self, message, exception=None, notify=False):
         self.logger.error(message, exception)
-        if exception is not None and len(exception.args) > 0:
-            message += exception.args[0]
-        else:
-            message += str(exception)
+        if exception is not None:
+            if len(exception.args) > 0:
+                message += exception.args[0]
+            else:
+                message += str(exception)
         self.info_set("Error", message)
         if notify:
             self.notification(message)
@@ -77,8 +78,9 @@ class BaseTask(ExecutorOperation):
         self.config = Config(self.default_config, folder, self.__class__.__name__)
 
     def enable(self):
-        self._enabled = True
-        self.info_clear()
+        if not self._enabled:
+            self._enabled = True
+            self.info_clear()
         communicate.task.emit(self)
 
     def disable(self):

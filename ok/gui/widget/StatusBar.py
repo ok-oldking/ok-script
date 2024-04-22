@@ -1,4 +1,4 @@
-from PySide6.QtCore import QTimer, QPropertyAnimation, Qt, QPoint, QRectF
+from PySide6.QtCore import QTimer, QPropertyAnimation, Qt, QPoint, QRectF, Signal
 from PySide6.QtGui import QPainter
 from PySide6.QtWidgets import QWidget, QLabel, QGraphicsOpacityEffect
 from qfluentwidgets import Theme, isDarkTheme, FluentIcon, StateToolTip
@@ -24,7 +24,7 @@ class StatusBar(QWidget):
         """
         super().__init__(parent)
         self.title = title
-
+        self.clicked = Signal()
         self.titleLabel = QLabel(self.title, self)
         self.rotateTimer = QTimer(self)
 
@@ -52,6 +52,11 @@ class StatusBar(QWidget):
         self.__initLayout()
 
         self.rotateTimer.start()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            # Emit the 'clicked' signal
+            self.clicked.emit()
 
     def __initLayout(self):
         """ initialize layout """

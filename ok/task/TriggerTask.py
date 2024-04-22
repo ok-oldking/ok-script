@@ -9,10 +9,10 @@ class TriggerTask(BaseTask):
     def __init__(self):
         super().__init__()
         self.default_enable = True
+        self.trigger_count = 0
 
     def after_init(self):
         self._enabled = self.config.get('_enabled', self.default_enable)
-
 
     def get_status(self):
         if self.enabled:
@@ -25,5 +25,5 @@ class TriggerTask(BaseTask):
         self.config['_enabled'] = True
 
     def disable(self):
-        super().enable()
+        super().disable()
         self.config['_enabled'] = False

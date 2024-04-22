@@ -28,3 +28,6 @@ class BaseCaptureMethod:
 
     def clickable(self):
         pass
+
+    def connected(self):
+        pass

@@ -1,6 +1,7 @@
 import logging
 
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QLineEdit, QTextEdit)
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QSizePolicy)
+from qfluentwidgets import LineEdit, TextEdit, ComboBox
 
 from ok.gui.Communicate import communicate
 
@@ -33,11 +34,11 @@ class LoggerWidget(QWidget):
 
         # Filter controls
         controls_layout = QHBoxLayout()
-        self.level_filter = QComboBox()
+        self.level_filter = ComboBox()
         self.level_filter.addItems(level_map.keys())
         self.level_filter.currentTextChanged.connect(self.update_display)
 
-        self.text_filter = QLineEdit()
+        self.text_filter = LineEdit()
         self.text_filter.setPlaceholderText("Filter logs by text...")
         self.text_filter.textChanged.connect(self.update_display)
 
@@ -45,10 +46,10 @@ class LoggerWidget(QWidget):
         controls_layout.addWidget(self.text_filter)
 
         # Log display
-        self.log_display = QTextEdit()
+        self.log_display = TextEdit()
+        self.log_display.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         self.log_display.setReadOnly(True)
-        self.log_display.setStyleSheet("line-height:120%;")
-
+        self.log_display.setLineWrapMode(QTextEdit.NoWrap)
         # Add widgets to layout
         self.layout.addLayout(controls_layout)
         self.layout.addWidget(self.log_display)
@@ -68,6 +69,7 @@ class LoggerWidget(QWidget):
         for level, message in filtered_logs:
             colored_message = get_colored_message(level, message)
             self.log_display.append(colored_message)
+        self.log_display.horizontalScrollBar().setValue(0)
 
     def filter_logs(self):
         level = level_map[self.level_filter.currentText()]

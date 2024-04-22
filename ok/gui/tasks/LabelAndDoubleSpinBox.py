@@ -5,7 +5,7 @@ from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
 class LabelAndDoubleSpinBox(LabelAndWidget):
 
-    def __init__(self, key: str, value, config):
+    def __init__(self, config, key: str):
         super().__init__(key)
         self.key = key
         self.config = config

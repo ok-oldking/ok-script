@@ -114,6 +114,7 @@ class DeviceManager:
                                                  "resolution": f"{width}x{height}"}
         communicate.adb_devices.emit()
         self.config.save_file()
+        self.start()
         logger.debug(f'refresh {self.device_dict}')
 
     def set_preferred_device(self, imei=None):
@@ -133,8 +134,6 @@ class DeviceManager:
     def get_preferred_device(self):
         imei = self.config.get("preferred")
         preferred = self.device_dict.get(imei)
-        if preferred is None:
-            raise ValueError(f"preferred device {imei} is none")
         return preferred
 
     def set_hwnd_name(self, hwnd_name):

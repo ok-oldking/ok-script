@@ -1,9 +1,12 @@
 from PySide6.QtCore import Qt
-from qfluentwidgets import FluentIcon, PushButton, ExpandSettingCard
+from qfluentwidgets import FluentIcon, PushButton, ExpandSettingCard, InfoBar, InfoBarPosition
 
+import ok.gui
 from ok.gui.Communicate import communicate
+from ok.gui.common.OKIcon import OKIcon
 from ok.gui.tasks.ConfigItemFactory import config_widget
 from ok.task.BaseTask import BaseTask
+from ok.task.OneTimeTask import OneTimeTask
 
 
 class TaskCard(ExpandSettingCard):
@@ -27,6 +30,8 @@ class TaskCard(ExpandSettingCard):
         self.viewLayout.setSpacing(0)
         self.viewLayout.setAlignment(Qt.AlignTop)
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
+        if not self.task.default_config:
+            self.card.expandButton.hide()
         for key, value in self.task.config.items():
             self.__addConfig(key, value)
 
@@ -48,15 +53,37 @@ class TaskCard(ExpandSettingCard):
         if task != self.task:
             return
         if self.task.enabled:
-            self.button.setText(self.tr("Stop"))
-            self.button.setIcon(FluentIcon.CANCEL)
+            if isinstance(self.task, OneTimeTask):
+                self.button.setText(self.tr("Stop"))
+            else:
+                self.button.setText(self.tr("Disable"))
+            self.button.setIcon(OKIcon.STOP)
         else:
-            self.button.setText(self.tr("Start"))
+            if isinstance(self.task, OneTimeTask):
+                self.button.setText(self.tr("Start"))
+            else:
+                self.button.setText(self.tr("Enable"))
             self.button.setIcon(FluentIcon.PLAY)
 
     def start_clicked(self):
         if self.task.enabled:
             self.task.disable()
         else:
+            if ok.gui.executor.paused:
+                if not ok.gui.executor.connected():
+                    InfoBar.error(
+                        title=self.tr('Error'),
+                        content=self.tr(
+                            "Game window is not connected, please select the game window and capture method."),
+                        orient=Qt.Horizontal,
+                        isClosable=True,
+                        position=InfoBarPosition.TOP,
+                        duration=5000,  # won't disappear automatically
+                        parent=self
+                    )
+                    communicate.tab.emit(0)
+                    return
+                else:
+                    ok.gui.executor.start()
             self.task.enable()
         self.update_start_text(self.task)

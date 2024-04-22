@@ -107,6 +107,9 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
                 return self.get_frame()
         self.last_frame = img
 
+    def connected(self):
+        return self.hwnd_window is not None and self.hwnd_window.exists
+
     def start_or_stop(self, capture_cursor=False):
         if self.hwnd_window.exists and self.frame_pool is None:
             logger.info('init windows capture')
