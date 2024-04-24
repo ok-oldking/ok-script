@@ -54,7 +54,7 @@ class TaskCard(ExpandSettingCard):
             return
         if self.task.enabled:
             if isinstance(self.task, OneTimeTask):
-                if ok.gui.executor.paused:
+                if self.task.paused:
                     self.button.setText(self.tr("Resume"))
                 else:
                     self.button.setText(self.tr("Stop"))
@@ -70,7 +70,10 @@ class TaskCard(ExpandSettingCard):
 
     def start_clicked(self):
         if self.task.enabled:
-            self.task.disable()
+            if self.task.paused:
+                self.task.unpause()
+            else:
+                self.task.disable()
         else:
             if ok.gui.executor.paused:
                 if not ok.gui.executor.connected():

@@ -16,9 +16,6 @@ class ExecutorOperation:
         else:
             return False
 
-    def pause(self):
-        self.executor.pause()
-
     def is_scene(self, the_scene):
         return isinstance(self.executor.current_scene, the_scene)
 

@@ -103,7 +103,8 @@ class TaskExecutor:
                 return
             if self.current_task and not self.current_task.enabled:
                 raise TaskDisabledException()
-            if not (self.paused or self.interaction is None or not self.interaction.should_capture()):
+            if not (self.paused or (
+                    self.current_task is not None and self.current_task.paused) or self.interaction is None or not self.interaction.should_capture()):
                 to_sleep = self.pause_end_time - time.time()
                 if to_sleep <= 0:
                     return

@@ -5,7 +5,6 @@ from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow, I
 import ok.gui
 from ok.gui.Communicate import communicate
 from ok.gui.about.AboutTab import AboutTab
-from ok.gui.debug.DebugTab import DebugTab
 from ok.gui.start.StartTab import StartTab
 from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
 from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
@@ -36,9 +35,9 @@ class MainWindow(MSFluentWindow):
             if self.second_tab is None:
                 self.second_tab = self.trigger_tab
             self.addSubInterface(self.trigger_tab, FluentIcon.ROBOT, self.tr('TriggerTask'))
-        if debug:
-            debug_tab = DebugTab()
-            self.addSubInterface(debug_tab, FluentIcon.COMMAND_PROMPT, self.tr('Debug'))
+        # if debug:
+        #     debug_tab = DebugTab()
+        #     self.addSubInterface(debug_tab, FluentIcon.COMMAND_PROMPT, self.tr('Debug'))
         # ... Add other tabs similarly
         if about:
             about_tab = AboutTab(about)

@@ -15,7 +15,7 @@ class OneTimeTask(BaseTask):
         if self.running:
             return "Running"
         elif self.enabled:
-            if self.executor.paused:
+            if self.paused:
                 return "Paused"
             else:
                 return "In Queue"

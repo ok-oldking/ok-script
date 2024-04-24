@@ -19,6 +19,19 @@ class BaseTask(ExecutorOperation):
         self.config = None
         self.info = InfoDict()
         self.default_config = {}
+        self._paused = False
+
+    def pause(self):
+        self._paused = True
+        communicate.task.emit(self)
+
+    def unpause(self):
+        self._paused = False
+        communicate.task.emit(self)
+
+    @property
+    def paused(self):
+        return self._paused
 
     def log_info(self, message, notify=False):
         self.logger.info(message)
