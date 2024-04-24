@@ -17,8 +17,8 @@ class Communicate(QObject):
     executor_paused: Signal = Signal(bool)
     screenshot = Signal(np.ndarray, str)
     update_overlay = Signal()
-    adb_devices: Signal = Signal()
-    tab = Signal(int)
+    adb_devices: Signal = Signal(bool)
+    tab = Signal(str)
 
     def emit_draw_box(self, key: str = None, boxes=None, color=None, frame=None):
         self.draw_box.emit(key, boxes, color, frame)

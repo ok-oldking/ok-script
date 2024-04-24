@@ -1,12 +1,15 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from qfluentwidgets import FluentIcon, SettingCard, PushButton, InfoBar, InfoBarPosition
 
 import ok
 from ok.gui.Communicate import communicate
 from ok.gui.widget.StatusBar import StatusBar
+from ok.interaction.Win32Interaction import is_admin
 
 
 class StartCard(SettingCard):
+    show_choose_hwnd = Signal()
+
     def __init__(self):
         super().__init__(FluentIcon.PLAY, f'{self.tr("Start")} {ok.gui.app.title}', ok.gui.app.title)
         self.hBoxLayout.setAlignment(Qt.AlignVCenter)
@@ -24,14 +27,12 @@ class StartCard(SettingCard):
 
     def status_clicked(self):
         if not ok.gui.executor.paused:
-            if task := ok.gui.executor.current_task:
-                communicate.tab.emit(1)
-            elif active_trigger_task_count := ok.gui.executor.active_trigger_task_count():
-                self.status_bar.setTitle(f'{self.tr("Running")} {active_trigger_task_count} {self.tr("trigger tasks")}')
-                self.status_bar.setState(False)
+            if ok.gui.executor.current_task:
+                communicate.tab.emit("onetime")
+            elif ok.gui.executor.active_trigger_task_count():
+                communicate.tab.emit("trigger")
             else:
-                self.status_bar.setTitle(f'{self.tr("Waiting for task to be enabled")}')
-                self.status_bar.setState(False)
+                communicate.tab.emit("second")
             self.status_bar.show()
 
     def clicked(self):
@@ -42,7 +43,21 @@ class StartCard(SettingCard):
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
-                duration=-1,  # won't disappear automatically
+                duration=5000,
+                parent=self
+            )
+            self.show_choose_hwnd.emit()
+            return
+        device = ok.gui.device_manager.get_preferred_device()['device']
+        if device == "windows" and not is_admin():
+            InfoBar.error(
+                title=self.tr('Error:'),
+                content=self.tr(
+                    f"PC version requires admin privileges, Please restart this app with admin privileges!"),
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=5000,
                 parent=self
             )
             return

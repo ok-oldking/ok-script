@@ -1,6 +1,4 @@
 import asyncio
-import ctypes
-import ctypes.wintypes
 import os
 import sys
 from collections.abc import Callable, Iterable
@@ -81,23 +79,6 @@ def try_delete_dc(dc: "PyCDC"):
         dc.DeleteDC()
     except win32ui.error:
         pass
-
-
-def get_window_bounds(hwnd: int) -> tuple[int, int, int, int]:
-    extended_frame_bounds = ctypes.wintypes.RECT()
-    ctypes.windll.dwmapi.DwmGetWindowAttribute(
-        hwnd,
-        DWMWA_EXTENDED_FRAME_BOUNDS,
-        ctypes.byref(extended_frame_bounds),
-        ctypes.sizeof(extended_frame_bounds),
-    )
-
-    window_rect = win32gui.GetWindowRect(hwnd)
-    window_left_bounds = extended_frame_bounds.left - window_rect[0]
-    window_top_bounds = extended_frame_bounds.top - window_rect[1]
-    window_width = extended_frame_bounds.right - extended_frame_bounds.left
-    window_height = extended_frame_bounds.bottom - extended_frame_bounds.top
-    return window_left_bounds, window_top_bounds, window_width, window_height
 
 
 def open_file(file_path: str | bytes | os.PathLike[str] | os.PathLike[bytes]):

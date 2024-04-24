@@ -7,7 +7,7 @@ from ok.gui.Communicate import communicate
 from ok.gui.about.AboutTab import AboutTab
 from ok.gui.debug.DebugTab import DebugTab
 from ok.gui.start.StartTab import StartTab
-from ok.gui.tasks.TaskTab import TaskTab
+from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
 from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
 from ok.logging.Logger import get_logger
 
@@ -24,16 +24,18 @@ class MainWindow(MSFluentWindow):
         self.exit_event = exit_event
         self.start_tab = StartTab()
         self.second_tab = None
+        self.onetime_tab = None
+        self.trigger_tab = None
         self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Start'))
         if len(ok.gui.executor.onetime_tasks) > 0:
-            task_tab = TaskTab()
-            self.second_tab = task_tab
-            self.addSubInterface(task_tab, FluentIcon.BOOK_SHELF, self.tr('OneTimeTask'))
+            self.onetime_tab = OneTimeTaskTab()
+            self.second_tab = self.onetime_tab
+            self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('OneTimeTask'))
         if len(ok.gui.executor.trigger_tasks) > 0:
-            trigger_task_tab = TriggerTaskTab()
+            self.trigger_tab = TriggerTaskTab()
             if self.second_tab is None:
-                self.second_tab = trigger_task_tab
-            self.addSubInterface(trigger_task_tab, FluentIcon.ROBOT, self.tr('TriggerTask'))
+                self.second_tab = self.trigger_tab
+            self.addSubInterface(self.trigger_tab, FluentIcon.ROBOT, self.tr('TriggerTask'))
         if debug:
             debug_tab = DebugTab()
             self.addSubInterface(debug_tab, FluentIcon.COMMAND_PROMPT, self.tr('Debug'))
@@ -49,10 +51,14 @@ class MainWindow(MSFluentWindow):
         communicate.tab.connect(self.navigate_tab)
 
     def navigate_tab(self, index):
-        if index == 0:
+        if index == "start":
             self.switchTo(self.start_tab)
-        elif index == 1:
+        elif index == "second":
             self.switchTo(self.second_tab)
+        elif index == "onetime" and self.onetime_tab is not None:
+            self.switchTo(self.onetime_tab)
+        elif index == "trigger" and self.trigger_tab is not None:
+            self.switchTo(self.trigger_tab)
 
     def executor_paused(self, paused):
         if not paused:

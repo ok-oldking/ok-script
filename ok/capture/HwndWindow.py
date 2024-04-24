@@ -4,7 +4,6 @@ import re
 import threading
 
 import win32process
-from typing_extensions import override
 from win32 import win32gui
 
 from ok.capture.windows.window import is_foreground_window, get_window_bounds
@@ -33,6 +32,7 @@ class HwndWindow:
     frame_width = 0
     frame_height = 0
     exists = False
+    title = None
 
     def __init__(self, title="", exe_name=None, exit_event=threading.Event(), frame_width=0, frame_height=0):
         super().__init__()
@@ -46,15 +46,24 @@ class HwndWindow:
         self.thread = threading.Thread(target=self.update_window_size)
         self.thread.start()
 
-    @override
-    def close(self):
-        self.app_exit_event.set()
+    def update_title_and_exe(self, title, exe):
+        self.update_title_re(title)
+        self.exe_name = exe
+        self.hwnd = None
+        self.visible = False
+        self.exists = False
+        self.width = 0
+        self.height = 0
+        self.do_update_window_size()
 
     def stop(self):
         self.stop_event.set()
 
     def update_title_re(self, title):
-        self.title = re.compile(title)
+        if not title:
+            self.title = None
+        else:
+            self.title = re.compile(title)
 
     def update_frame_size(self, width, height):
         logger.debug(f"update_frame_size:{self.frame_width}x{self.frame_height} to {width}x{height}")
@@ -79,41 +88,45 @@ class HwndWindow:
             self.title_height * self.scaling)
 
     def do_update_window_size(self):
-        visible, x, y, border, title_height, width, height, scaling = self.visible, self.x, self.y, self.border, self.title_height, self.width, self.height, self.scaling
-        if self.hwnd is None:
-            self.hwnd = find_hwnd_by_title_and_exe(self.title, self.exe_name)
-        if self.hwnd is not None:
-            self.exists = win32gui.IsWindow(self.hwnd)
-            if self.exists:
-                visible = is_foreground_window(self.hwnd)
-                x, y, border, title_height, width, height, scaling = get_window_bounds(
-                    self.hwnd)
-                if self.frame_aspect_ratio != 0:
-                    window_ratio = width / height
-                    if window_ratio < self.frame_aspect_ratio:
-                        cropped_window_height = int(width / self.frame_aspect_ratio)
-                        title_height += height - cropped_window_height
-                        height = cropped_window_height
-                height = height
-                width = width
-                title_height = title_height
-            else:
-                self.hwnd = None
-            changed = False
-            if visible != self.visible or self.scaling != scaling:
-                self.visible = visible
-                self.scaling = scaling
-                changed = True
-            if (
-                    x != self.x or y != self.y or border != self.border or title_height != self.title_height or width != self.width or height != self.height or scaling != self.scaling) and (
-                    (x >= 0 and y >= 0) or self.visible):
-                self.x, self.y, self.border, self.title_height, self.width, self.height = x, y, border, title_height, width, height
-                changed = True
-            if changed:
-                logger.debug(
-                    f"do_update_window_size changed: {self.visible} {self.x} {self.y} {self.border} {self.width} {self.height} {self.scaling}")
-                communicate.window.emit(self.visible, self.x, self.y, self.border, self.title_height, self.width,
-                                        self.height, self.scaling)
+        try:
+            visible, x, y, border, title_height, width, height, scaling = self.visible, self.x, self.y, self.border, self.title_height, self.width, self.height, self.scaling
+            if self.hwnd is None:
+                self.hwnd = find_hwnd_by_title_and_exe(self.title, self.exe_name)
+                self.exists = self.hwnd is not None
+            if self.hwnd is not None:
+                self.exists = win32gui.IsWindow(self.hwnd)
+                if self.exists:
+                    visible = is_foreground_window(self.hwnd)
+                    x, y, border, title_height, width, height, scaling = get_window_bounds(
+                        self.hwnd)
+                    if self.frame_aspect_ratio != 0:
+                        window_ratio = width / height
+                        if window_ratio < self.frame_aspect_ratio:
+                            cropped_window_height = int(width / self.frame_aspect_ratio)
+                            title_height += height - cropped_window_height
+                            height = cropped_window_height
+                    height = height
+                    width = width
+                    title_height = title_height
+                else:
+                    self.hwnd = None
+                changed = False
+                if visible != self.visible or self.scaling != scaling:
+                    self.visible = visible
+                    self.scaling = scaling
+                    changed = True
+                if (
+                        x != self.x or y != self.y or border != self.border or title_height != self.title_height or width != self.width or height != self.height or scaling != self.scaling) and (
+                        (x >= 0 and y >= 0) or self.visible):
+                    self.x, self.y, self.border, self.title_height, self.width, self.height = x, y, border, title_height, width, height
+                    changed = True
+                if changed:
+                    logger.debug(
+                        f"do_update_window_size changed: {self.visible} {self.x} {self.y} {self.border} {self.width} {self.height} {self.scaling}")
+                    communicate.window.emit(self.visible, self.x, self.y, self.border, self.title_height, self.width,
+                                            self.height, self.scaling)
+        except Exception as e:
+            logger.error(f"do_update_window_size exception", e)
 
     def frame_ratio(self, size):
         if self.frame_width > 0 and self.width > 0:
@@ -128,6 +141,8 @@ class HwndWindow:
 
 
 def find_hwnd_by_title_and_exe(title, exe):
+    if not title and not exe:
+        return None
     hwnds = find_hwnds_by_title(title)
     if exe is not None:
         for hwnd in hwnds:
@@ -140,6 +155,8 @@ def find_hwnd_by_title_and_exe(title, exe):
 
 def find_hwnds_by_title(title):
     hwnds = []
+    if not title:
+        return hwnds
 
     def enum_windows_proc(hwnd, lParam):
         text = win32gui.GetWindowText(hwnd)
@@ -179,4 +196,3 @@ def get_exe_name_by_hwnd(hwnd):
         CloseHandle(h_process)
 
         return exe_name.value
-

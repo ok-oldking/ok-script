@@ -210,7 +210,7 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
         return self.hwnd_window.get_abs_cords(x, y)
 
     def clickable(self):
-        return self.hwnd_window.visible
+        return self.hwnd_window is not None and self.hwnd_window.visible
 
 
 def crop_image(image, border, title_height):

@@ -7,6 +7,7 @@ from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title_and_exe
 from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod, do_screencap
 from ok.capture.adb.vbox import installed_emulator
 from ok.capture.windows.WindowsGraphicsCaptureMethod import WindowsGraphicsCaptureMethod
+from ok.capture.windows.window import get_window_bounds
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
 from ok.interaction.ADBInteraction import ADBBaseInteraction
@@ -20,6 +21,7 @@ class DeviceManager:
 
     def __init__(self, config_folder, hwnd_title=None, exe_name=None, debug=False, exit_event=None):
         self._device = None
+        self._connect_all = False
         self.adb = self.adb = adbutils.AdbClient(host="127.0.0.1")
         logger.debug(f'connect adb')
         self.hwnd_title = hwnd_title
@@ -32,6 +34,7 @@ class DeviceManager:
         self.config = Config({"devices": {}, "preferred": "none"}, config_folder, "DeviceManager")
         self.thread = None
         self.capture_method = None
+        self.start()
 
     def refresh(self):
         if self.thread is None or not self.thread.is_alive():
@@ -43,15 +46,40 @@ class DeviceManager:
         return self.config.get("devices")
 
     def connect_all(self):
-        for device in self.device_dict.values():
-            self.adb.connect(device['address'])
-        logger.debug(f'connect_all {self.adb.device_list()}')
+        if not self._connect_all:
+            for device in self.device_dict.values():
+                if device["device"] == "adb":
+                    self.adb.connect(device['address'])
+            self._connect_all = True
+            logger.debug(f'connect_all {self.adb.device_list()}')
 
     def get_devices(self):
         return list(self.device_dict.values())
 
     def do_refresh(self):
         self.connect_all()
+
+        if self.hwnd_title:
+            nick = ""
+            width = 0
+            height = 0
+            hwnd = find_hwnd_by_title_and_exe(self.hwnd_title, self.exe_name)
+            if hwnd is not None:
+                nick = win32gui.GetWindowText(hwnd)
+                _, _, _, _, width, height, _ = get_window_bounds(
+                    hwnd)
+            if not nick:
+                nick = self.exe_name
+            self.device_dict[self.hwnd_title] = {"address": "", "imei": self.hwnd_title, "device": "windows",
+                                                 "model": "", "nick": nick, "width": width,
+                                                 "height": height,
+                                                 "hwnd": nick, "capture": "windows",
+                                                 "connected": hwnd is not None
+                                                 }
+            if width != 0:
+                self.device_dict[self.hwnd_title]["resolution"] = f"{width}x{height}"
+            communicate.adb_devices.emit(False)
+
         installed_emulators = installed_emulator()
         for device in self.adb.list():
             logger.debug(f'adb.list() {device}')
@@ -97,22 +125,8 @@ class DeviceManager:
         for imei in self.device_dict:
             if imei not in adb_connected:
                 self.device_dict[imei]['connected'] = False
-        if self.hwnd_title:
-            nick = ""
-            width = 0
-            height = 0
-            hwnd = find_hwnd_by_title_and_exe(self.hwnd_title, self.exe_name)
-            if hwnd is not None:
-                nick = win32gui.GetWindowText(hwnd)
-            if not nick:
-                nick = self.exe_name
-            self.device_dict[self.hwnd_title] = {"address": "", "imei": self.hwnd_title, "device": "windows",
-                                                 "model": "", "nick": nick, "width": width,
-                                                 "height": height,
-                                                 "hwnd": nick, "capture": "windows",
-                                                 "connected": hwnd is not None,
-                                                 "resolution": f"{width}x{height}"}
-        communicate.adb_devices.emit()
+
+        communicate.adb_devices.emit(True)
         self.config.save_file()
         self.start()
         logger.debug(f'refresh {self.device_dict}')
@@ -141,6 +155,7 @@ class DeviceManager:
         if preferred.get("hwnd") != hwnd_name:
             preferred['hwnd'] = hwnd_name
             self.config.save_file()
+            self.start()
 
     def set_capture(self, capture):
         preferred = self.get_preferred_device()
@@ -153,11 +168,19 @@ class DeviceManager:
         preferred = self.get_preferred_device()
         return preferred.get('hwnd')
 
+    def ensure_hwnd(self, title, exe, frame_width=0, frame_height=0):
+        if self.hwnd is None:
+            self.hwnd = HwndWindow(title, exe, self.exit_event, frame_width, frame_height)
+        else:
+            self.hwnd.update_frame_size(frame_width, frame_height)
+            self.hwnd.update_title_and_exe(title, exe)
+
     def start(self):
         preferred = self.get_preferred_device()
         if preferred is None:
             return
         if preferred['device'] == 'windows':
+            self.ensure_hwnd(self.hwnd_title, self.exe_name)
             if not isinstance(self.capture_method, WindowsGraphicsCaptureMethod):
                 if self.capture_method is not None:
                     self.capture_method.close()
@@ -165,6 +188,7 @@ class DeviceManager:
                 self.interaction = Win32Interaction(self.capture_method)
             self.capture_method.hwnd_window = self.hwnd
         else:
+            self.connect_all()
             for adb_device in self.adb.device_list():
                 if adb_device.serial == preferred.get('address'):
                     logger.debug(f"set device {adb_device}")
@@ -173,29 +197,20 @@ class DeviceManager:
             width = preferred.get('width', 0)
             height = preferred.get('height', 0)
             if preferred.get('capture') == "windows":
-                if not hwnd_name:
-                    logger.warning(f"adb device preferred hwnd is none, capture is windows {preferred}")
-                    return
-                if self.hwnd is None:
-                    self.hwnd = HwndWindow(hwnd_name, self.exit_event, width, height)
+                self.ensure_hwnd(hwnd_name, None, width, height)
                 if not isinstance(self.capture_method, WindowsGraphicsCaptureMethod):
                     if self.capture_method is not None:
                         self.capture_method.close()
                     self.capture_method = WindowsGraphicsCaptureMethod(self.hwnd)
-                self.hwnd.title = hwnd_name
                 self.capture_method.hwnd_window = self.hwnd
             elif not isinstance(self.capture_method, ADBCaptureMethod):
                 if self.capture_method is not None:
                     self.capture_method.close()
                 self.capture_method = ADBCaptureMethod(self._device, self.exit_event, width=width,
                                                        height=height)
-            self.interaction = ADBBaseInteraction(self, self.capture_method)
+            self.interaction = ADBBaseInteraction(self, self.capture_method, width, height)
             if self.debug and hwnd_name:
-                if self.hwnd is None:
-                    if self.hwnd is None:
-                        self.hwnd = HwndWindow(hwnd_name, self.exit_event, width, height)
-                self.hwnd.title = hwnd_name
-                self.hwnd.update_frame_size(width, height)
+                self.ensure_hwnd(hwnd_name, None, width, height)
             elif self.hwnd is not None:
                 self.hwnd.stop()
                 self.hwnd = None

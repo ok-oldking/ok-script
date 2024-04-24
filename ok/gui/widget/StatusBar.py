@@ -8,6 +8,7 @@ from ok.gui.common.style_sheet import StyleSheet
 
 class StatusBar(QWidget):
     """ State tooltip """
+    clicked = Signal()
 
     def __init__(self, title, running_icon=FluentIcon.SYNC, done_icon=FluentIcon.COMPLETED, done=True, parent=None):
         """
@@ -24,7 +25,6 @@ class StatusBar(QWidget):
         """
         super().__init__(parent)
         self.title = title
-        self.clicked = Signal()
         self.titleLabel = QLabel(self.title, self)
         self.rotateTimer = QTimer(self)
 

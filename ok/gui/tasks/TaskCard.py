@@ -54,7 +54,10 @@ class TaskCard(ExpandSettingCard):
             return
         if self.task.enabled:
             if isinstance(self.task, OneTimeTask):
-                self.button.setText(self.tr("Stop"))
+                if ok.gui.executor.paused:
+                    self.button.setText(self.tr("Resume"))
+                else:
+                    self.button.setText(self.tr("Stop"))
             else:
                 self.button.setText(self.tr("Disable"))
             self.button.setIcon(OKIcon.STOP)
@@ -81,7 +84,7 @@ class TaskCard(ExpandSettingCard):
                         duration=5000,  # won't disappear automatically
                         parent=self
                     )
-                    communicate.tab.emit(0)
+                    communicate.tab.emit("start")
                     return
                 else:
                     ok.gui.executor.start()

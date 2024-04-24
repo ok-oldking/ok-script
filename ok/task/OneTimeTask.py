@@ -22,10 +22,14 @@ class OneTimeTask(BaseTask):
         else:
             return "Not Started"
 
+    def enable(self):
+        self._done = False
+        super().enable()
+
     @property
     def done(self):
         return self._done
 
     def set_done(self):
-        self.disable()
         self._done = True
+        self.disable()

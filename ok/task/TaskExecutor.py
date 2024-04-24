@@ -197,16 +197,18 @@ class TaskExecutor:
                 self.detect_scene()
                 start = time.time()
                 result = task.run()
+                processing_time += time.time() - start
                 if result and isinstance(task, TriggerTask):
-                    result.trigger_count += 1
+                    task.trigger_count += 1
                     communicate.task.emit(task)
+                elif isinstance(task, OneTimeTask):
+                    task.set_done()
             except TaskDisabledException:
                 logger.info(f"{task.name} is disabled, breaking")
             except Exception as e:
                 traceback.print_exc()
                 stack_trace_str = traceback.format_exc()
                 logger.error(f"{task.name} exception: {e}, traceback: {stack_trace_str}")
-            processing_time += time.time() - start
             self.current_task = None
             if isinstance(task, OneTimeTask):
                 task.running = False

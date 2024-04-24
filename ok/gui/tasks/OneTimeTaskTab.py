@@ -14,11 +14,11 @@ from ok.logging.Logger import get_logger
 logger = get_logger(__name__)
 
 
-class TaskTab(Tab):
+class OneTimeTaskTab(Tab):
     def __init__(self):
         super().__init__()
 
-        self.task_info_table = TooltipTableWidget([0.3, 0.7])
+        self.task_info_table = TooltipTableWidget()
         self.task_info_container = self.addCard(self.tr("Choose Window"), self.task_info_table)
         self.addWidget(self.task_info_container)
 
@@ -31,12 +31,12 @@ class TaskTab(Tab):
         self.task_info_table.setHorizontalHeaderLabels(self.task_info_labels)
         self.update_info_table()
 
-        # communicate.tasks.connect(self.update_table)
+        communicate.task.connect(self.task_update)
         communicate.task_info.connect(self.update_info_table)
-        # self.timer = QTimer()
-        # self.timer.timeout.connect(self.update_info_table)
-        # self.timer.timeout.connect(self.update_table)
-        # self.timer.start(1000)
+
+    def task_update(self, task):
+        if task == ok.gui.executor.current_task:
+            self.update_info_table()
 
     def update_info_table(self):
         task = ok.gui.executor.current_task

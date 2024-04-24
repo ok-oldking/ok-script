@@ -43,19 +43,22 @@ class SelectHwndWindow(MessageBoxBase):
         self.cancelButton.setText(self.tr('Cancel'))
 
         self.hwnds = enum_windows()
+        self.filtered_hwnds = []  # Add this line
         self.update_list()
 
     def update_list(self):
         self.list_widget.clear()
+        self.filtered_hwnds = []  # Clear the filtered list
         filter_text = self.filter_edit.text().lower()
         for hwnd, title, width, height in self.hwnds:
             if filter_text in title.lower():
                 self.list_widget.addItem(f"{title} ({width}x{height})")
+                self.filtered_hwnds.append((hwnd, title, width, height))  # Add to the filtered list
 
     def confirm(self):
         i = self.list_widget.currentRow()
         if i >= 0:
-            title = self.hwnds[i][1]
+            title = self.filtered_hwnds[i][1]  # Use the filtered list
             ok.gui.device_manager.set_hwnd_name(title)
             self.callback()
 

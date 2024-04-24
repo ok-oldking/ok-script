@@ -1,6 +1,8 @@
 import math
 import random
 import re
+from functools import cmp_to_key
+from typing import List
 
 
 class Box:
@@ -33,7 +35,7 @@ class Box:
         return in_boundary_boxes
 
     def __repr__(self):
-        return self.name
+        return str(self.name)
 
     def __str__(self) -> str:
         if self.name is not None:
@@ -127,8 +129,27 @@ class Box:
         return None
 
 
-def sort_boxes(boxes):
-    return sorted(boxes, key=lambda box: (box.y, box.x if abs(box.y - boxes[0].y) < 6 else 0))
+def sort_boxes(boxes: List[Box]) -> List[Box]:
+    def box_intersect(box1, box2):
+        return not (box1.y > box2.y + box2.height or box1.y + box1.height < box2.y)
+
+    def compare_boxes(box1, box2):
+        if box_intersect(box1, box2):
+            cmp = box1.x - box2.x
+            if cmp == 0:
+                cmp = box1.y - box2.y
+        else:
+            cmp = box1.y - box2.y
+            if cmp == 0:
+                cmp = box1.x - box2.y
+        if cmp == 0:
+            cmp = box1.confidence - box2.confidence
+        if cmp == 0:
+            cmp = box1.name - box2.name
+
+        return cmp
+
+    return sorted(boxes, key=cmp_to_key(compare_boxes))
 
 
 def find_box_by_name(boxes, names) -> Box:
@@ -175,6 +196,11 @@ def find_boxes_within_boundary(boxes, boundary_box):
     return within_boundary
 
 
+def average_width(boxes: List[Box]) -> int:
+    total_width = sum(box.width for box in boxes)
+    return int(total_width / len(boxes)) if boxes else 0
+
+
 def crop_image(image, box=None):
     if box is not None:
         if (box.x >= 0 and box.y >= 0 and
@@ -205,8 +231,9 @@ def find_boxes_by_name(boxes, names) -> list[Box]:
         for name in names:
             if matched:
                 break  # Stop checking names if we've already matched this box
-            if (isinstance(name, str) and name == box.name) or (
-                    isinstance(name, re.Pattern) and re.search(name, box.name)):
+            if (isinstance(name, str) and name == box.name) or (isinstance(box.name, str) and
+                                                                isinstance(name, re.Pattern) and re.search(name,
+                                                                                                           box.name)):
                 matched = True
         if matched:
             result.append(box)
