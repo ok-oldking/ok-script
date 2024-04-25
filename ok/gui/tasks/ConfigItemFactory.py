@@ -1,4 +1,5 @@
 from ok.gui.tasks.LabelAndDoubleSpinBox import LabelAndDoubleSpinBox
+from ok.gui.tasks.LabelAndLineEdit import LabelAndLineEdit
 from ok.gui.tasks.LabelAndSpinBox import LabelAndSpinBox
 from ok.gui.tasks.LabelAndSwitchButton import LabelAndSwitchButton
 from ok.gui.tasks.ModifyListItem import ModifyListItem
@@ -27,5 +28,7 @@ def config_widget(config, key, value):
         return LabelAndSpinBox(config, key)
     elif isinstance(value, float):
         return LabelAndDoubleSpinBox(config, key)
+    elif isinstance(value, str):
+        return LabelAndLineEdit(config, key)
     else:
-        raise ValueError(f"invalid type {type(value)}")
+        raise ValueError(f"invalid type {type(value)}, value {value}")

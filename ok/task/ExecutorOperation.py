@@ -22,7 +22,22 @@ class ExecutorOperation:
     def click(self, x, y, move_back=False):
         frame = self.executor.nullable_frame()
         communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green", frame)
+        self.executor.reset_scene()
         self.executor.interaction.click(x, y, move_back)
+
+    def swipe_relative(self, from_x, from_y, to_x, to_y, duration=0.5):
+        self.swipe(int(self.width * from_x), int(self.height * from_y), int(self.width * to_x),
+                   int(self.height * to_y), duration)
+
+    def swipe(self, from_x, from_y, to_x, to_y, duration=0.5):
+        frame = self.executor.nullable_frame()
+        communicate.emit_draw_box("click", [
+            Box(min(from_x, to_x), min(from_y, to_y), min(abs(from_x - from_x), 10), min(abs(from_y - to_y), 10),
+                name="click")], "green", frame)
+        ms = int(duration * 1000)
+        self.executor.reset_scene()
+        self.executor.interaction.swipe(from_x, from_y, to_x, to_y, ms)
+        self.sleep(duration)
 
     def screenshot(self, name=None):
         communicate.screenshot.emit(self.frame, name)
@@ -103,6 +118,7 @@ class ExecutorOperation:
     def wait_click_box(self, condition, time_out=0, pre_action=None, post_action=None, raise_if_not_found=True):
         target = self.wait_until(condition, time_out, pre_action, post_action)
         self.click_box(box=target, raise_if_not_found=raise_if_not_found)
+        return target
 
     def next_frame(self):
         return self.executor.next_frame()

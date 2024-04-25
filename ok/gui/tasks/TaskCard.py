@@ -56,11 +56,13 @@ class TaskCard(ExpandSettingCard):
             if isinstance(self.task, OneTimeTask):
                 if self.task.paused:
                     self.button.setText(self.tr("Resume"))
+                    self.button.setIcon(FluentIcon.PLAY)
                 else:
                     self.button.setText(self.tr("Stop"))
+                    self.button.setIcon(OKIcon.STOP)
             else:
                 self.button.setText(self.tr("Disable"))
-            self.button.setIcon(OKIcon.STOP)
+                self.button.setIcon(OKIcon.STOP)
         else:
             if isinstance(self.task, OneTimeTask):
                 self.button.setText(self.tr("Start"))

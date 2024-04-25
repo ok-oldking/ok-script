@@ -204,6 +204,7 @@ class TaskExecutor:
                     communicate.task.emit(task)
                 elif isinstance(task, OneTimeTask):
                     task.set_done()
+                    communicate.task.emit(task)
             except TaskDisabledException:
                 logger.info(f"{task.name} is disabled, breaking")
             except Exception as e:

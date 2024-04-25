@@ -13,7 +13,7 @@ import ok.gui
 from ok.feature.Box import Box
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
-from ok.util.path import get_path_relative_to_exe, find_first_existing_file, clear_folder, ensure_dir
+from ok.util.path import get_path_relative_to_exe, find_first_existing_file, clear_folder
 
 logger = get_logger(__name__)
 
@@ -49,7 +49,7 @@ class Screenshot(QObject):
                 logger.debug("load default font")
                 self.pil_font = ImageFont.load_default(20)
             clear_folder(self.click_screenshot_folder)
-            ensure_dir(self.screenshot_folder)
+            clear_folder(self.screenshot_folder)
         else:
             self.task_queue = None
 

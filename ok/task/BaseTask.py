@@ -23,6 +23,7 @@ class BaseTask(ExecutorOperation):
 
     def pause(self):
         self._paused = True
+        self.executor.reset_scene()
         communicate.task.emit(self)
 
     def unpause(self):

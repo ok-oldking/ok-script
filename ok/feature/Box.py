@@ -239,3 +239,13 @@ def find_boxes_by_name(boxes, names) -> list[Box]:
             result.append(box)
 
     return result
+
+
+def boxes_to_map_by_list_of_names(boxes: list[Box], name_list: list[str]) -> dict[str, Box]:
+    box_dict = {}
+    if boxes:
+        for box in boxes:
+            if box.name in name_list:
+                box_dict[box.name] = box
+        if len(box_dict) == len(name_list):
+            return box_dict

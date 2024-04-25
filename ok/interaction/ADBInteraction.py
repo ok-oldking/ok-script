@@ -20,6 +20,9 @@ class ADBBaseInteraction(BaseInteraction):
         super().send_key(key, down_time)
         self.device_manager.device.shell(f"input keyevent {key}")
 
+    def swipe(self, from_x, from_y, to_x, to_y, duration):
+        self.device_manager.device.shell(f"input swipe {from_x} {from_y} {to_x} {to_y} {duration}")
+
     def click(self, x=-1, y=-1, move_back=False):
         super().click(x, y)
         x = int(x * self.width / self.capture.width)

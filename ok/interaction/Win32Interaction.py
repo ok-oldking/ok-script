@@ -31,6 +31,14 @@ class Win32Interaction(BaseInteraction):
         x, y = self.capture.get_abs_cords(x, y)
         pydirectinput.moveTo(x, y)
 
+    def swipe(self, x1, y1, x2, y2, duration=1):
+        # Move the mouse to the start point (x1, y1)
+        pydirectinput.moveTo(x1, y1)
+        time.sleep(0.1)  # Pause for a moment
+
+        # Drag the mouse to the end point (x2, y2) over the specified duration
+        pydirectinput.dragTo(x2, y2, duration)
+
     def click(self, x=-1, y=-1, move_back=False):
         super().click(x, y)
         if not self.capture.clickable():
@@ -38,7 +46,7 @@ class Win32Interaction(BaseInteraction):
             return
         # Convert the x, y position to lParam
         # lParam = win32api.MAKELONG(x, y)
-        current_x, current_y = -1,-1
+        current_x, current_y = -1, -1
         if move_back:
             current_x, current_y = pydirectinput.position()
         if x != -1 and y != -1:

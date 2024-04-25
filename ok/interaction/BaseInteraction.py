@@ -17,6 +17,9 @@ class BaseInteraction:
     def move(self, x, y):
         pass
 
+    def swipe(self, from_x, from_y, to_x, to_y, duration):
+        pass
+
     def move_relative(self, x, y):
         self.move(int(self.capture.width * x), int(self.capture.height * y))
 
