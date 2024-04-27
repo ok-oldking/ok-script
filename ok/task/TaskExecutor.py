@@ -110,15 +110,24 @@ class TaskExecutor:
                     return
             time.sleep(0.001)
 
-    def pause(self):
-        self.paused = True
+    def pause(self, task=None):
+        if task is not None:
+            if self.current_task != task:
+                raise Exception(f"Can only pause current task {self.current_task}")
+        else:
+            self.paused = True
+            communicate.executor_paused.emit(self.paused)
+        self.reset_scene()
         self.pause_start = time.time()
-        communicate.executor_paused.emit(self.paused)
 
-    def start(self):
+    def start(self, task=None):
+        if task is not None:
+            if self.current_task != task:
+                raise Exception(f"Can only pause current task {self.current_task}")
+        else:
+            self.paused = False
+            communicate.executor_paused.emit(self.paused)
         self.pause_end_time += self.pause_start - time.time()
-        self.paused = False
-        communicate.executor_paused.emit(self.paused)
         return True
 
     def wait_scene(self, scene_type, time_out, pre_action, post_action):

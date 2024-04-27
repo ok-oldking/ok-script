@@ -107,6 +107,7 @@ class ExecutorOperation:
         return self.executor.wait_scene(scene_type, time_out, pre_action, post_action)
 
     def sleep(self, timeout):
+        self.executor.reset_scene()
         self.executor.sleep(timeout)
 
     def send_key(self, key, down_time=0.02):

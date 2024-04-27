@@ -22,11 +22,12 @@ class BaseTask(ExecutorOperation):
         self._paused = False
 
     def pause(self):
+        self.executor.pause(self)
         self._paused = True
-        self.executor.reset_scene()
         communicate.task.emit(self)
 
     def unpause(self):
+        self.executor.start(self)
         self._paused = False
         communicate.task.emit(self)
 
