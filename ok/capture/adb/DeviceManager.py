@@ -123,7 +123,7 @@ class DeviceManager:
                 self.device_dict[imei] = adb_device
             adb_connected.append(imei)
         for imei in self.device_dict:
-            if imei not in adb_connected:
+            if imei not in adb_connected and self.device_dict[imei]['device'] == 'adb':
                 self.device_dict[imei]['connected'] = False
 
         communicate.adb_devices.emit(True)

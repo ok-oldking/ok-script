@@ -31,13 +31,36 @@ class Win32Interaction(BaseInteraction):
         x, y = self.capture.get_abs_cords(x, y)
         pydirectinput.moveTo(x, y)
 
-    def swipe(self, x1, y1, x2, y2, duration=1):
+    def swipe(self, x1, y1, x2, y2, duration):
+        # Convert coordinates to integers
+        x1, y1 = self.capture.get_abs_cords(x1, y1)
+        x2, y2 = self.capture.get_abs_cords(x2, y2)
+
         # Move the mouse to the start point (x1, y1)
         pydirectinput.moveTo(x1, y1)
         time.sleep(0.1)  # Pause for a moment
 
-        # Drag the mouse to the end point (x2, y2) over the specified duration
-        pydirectinput.dragTo(x2, y2, duration)
+        # Press the left mouse button down
+        pydirectinput.mouseDown()
+
+        # Calculate the relative movement (dx, dy)
+        dx = x2 - x1
+        dy = y2 - y1
+
+        # Calculate the number of steps
+        steps = int(duration / 100)  # 100 steps per second
+
+        # Calculate the step size
+        step_dx = dx / steps
+        step_dy = dy / steps
+
+        # Move the mouse to the end point (x2, y2) in small steps
+        for i in range(steps):
+            pydirectinput.moveTo(x1 + int(i * step_dx), y1 + int(i * step_dy))
+            time.sleep(0.1)  # Sleep for 10ms
+
+        # Release the left mouse button
+        pydirectinput.mouseUp()
 
     def click(self, x=-1, y=-1, move_back=False):
         super().click(x, y)
