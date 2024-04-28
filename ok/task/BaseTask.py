@@ -19,6 +19,7 @@ class BaseTask(ExecutorOperation):
         self.config = None
         self.info = InfoDict()
         self.default_config = {}
+        self.config_description = {}
         self._paused = False
 
     def pause(self):

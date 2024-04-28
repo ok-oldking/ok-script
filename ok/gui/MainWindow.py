@@ -29,12 +29,12 @@ class MainWindow(MSFluentWindow):
         if len(ok.gui.executor.onetime_tasks) > 0:
             self.onetime_tab = OneTimeTaskTab()
             self.second_tab = self.onetime_tab
-            self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('OneTimeTask'))
+            self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('Tasks'))
         if len(ok.gui.executor.trigger_tasks) > 0:
             self.trigger_tab = TriggerTaskTab()
             if self.second_tab is None:
                 self.second_tab = self.trigger_tab
-            self.addSubInterface(self.trigger_tab, FluentIcon.ROBOT, self.tr('TriggerTask'))
+            self.addSubInterface(self.trigger_tab, FluentIcon.ROBOT, self.tr('Triggers'))
         # if debug:
         #     debug_tab = DebugTab()
         #     self.addSubInterface(debug_tab, FluentIcon.COMMAND_PROMPT, self.tr('Debug'))

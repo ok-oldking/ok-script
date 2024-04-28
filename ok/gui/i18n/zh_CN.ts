@@ -10,13 +10,13 @@
     </message>
     <message>
         <location filename="../MainWindow.py" line="32"/>
-        <source>OneTimeTask</source>
-        <translation>一次性任务</translation>
+        <source>Tasks</source>
+        <translation>任务</translation>
     </message>
     <message>
         <location filename="../MainWindow.py" line="37"/>
-        <source>TriggerTask</source>
-        <translation>触发任务</translation>
+        <source>Triggers</source>
+        <translation>触发器</translation>
     </message>
     <message>
         <location filename="../MainWindow.py" line="44"/>
@@ -275,6 +275,10 @@
         <location filename="../start/StartCard.py" line="81"/>
         <source>Game Window Disconnected</source>
         <translation>游戏窗口已断开</translation>
+    </message>
+    <message>
+        <source>Running</source>
+        <translation>运行中</translation>
     </message>
 </context>
 <context>

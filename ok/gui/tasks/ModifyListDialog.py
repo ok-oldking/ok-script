@@ -1,6 +1,5 @@
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QInputDialog
-from qfluentwidgets import MessageBoxBase, SubtitleLabel, ListWidget, PushButton, FluentIcon
+from qfluentwidgets import MessageBoxBase, SubtitleLabel, ListWidget, PushButton, FluentIcon, LineEdit
 
 
 class ModifyListDialog(MessageBoxBase):
@@ -53,9 +52,9 @@ class ModifyListDialog(MessageBoxBase):
             self.list_widget.setCurrentRow(current_row + 1)
 
     def add_item(self):
-        text, ok = QInputDialog.getText(self, "Add Item", "Enter item text:")
-        if ok and text:
-            self.list_widget.addItem(text)
+        w = AddTextMessageBox(self.window())
+        if w.exec():
+            print(w.add_text_edit.text())
 
     def remove_item(self):
         current_row = self.list_widget.currentRow()
@@ -70,3 +69,29 @@ class ModifyListDialog(MessageBoxBase):
     def cancel(self):
         self.list_modified.emit(self.original_items)
         self.close()
+
+
+class AddTextMessageBox(MessageBoxBase):
+    """ Custom message box """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.titleLabel = SubtitleLabel(self.tr('Add'), self)
+        self.add_text_edit = LineEdit(self)
+
+        self.add_text_edit.setClearButtonEnabled(True)
+
+        # add widget to view layout
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addWidget(self.add_text_edit)
+
+        # change the text of button
+        self.yesButton.setText(self.tr('Open'))
+        self.cancelButton.setText(self.tr('Cancel'))
+
+        self.widget.setMinimumWidth(360)
+        self.yesButton.setDisabled(True)
+        self.add_text_edit.textChanged.connect(self._validate_text)
+
+    def _validate_text(self, text):
+        self.yesButton.setEnabled(True if text is not None and text.strip() else False)
