@@ -54,7 +54,7 @@ class ModifyListDialog(MessageBoxBase):
     def add_item(self):
         w = AddTextMessageBox(self.window())
         if w.exec():
-            print(w.add_text_edit.text())
+            self.list_widget.addItem(w.add_text_edit.text())
 
     def remove_item(self):
         current_row = self.list_widget.currentRow()

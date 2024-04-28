@@ -2,67 +2,95 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN" sourcelanguage="en_US">
 <context>
+    <name>AddTextMessageBox</name>
+    <message>
+        <location filename="../tasks/ModifyListDialog.py" line="79"/>
+        <source>Add</source>
+        <translation>添加</translation>
+    </message>
+    <message>
+        <location filename="../tasks/ModifyListDialog.py" line="89"/>
+        <source>Open</source>
+        <translation>打开</translation>
+    </message>
+    <message>
+        <location filename="../tasks/ModifyListDialog.py" line="90"/>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
-        <location filename="../MainWindow.py" line="28"/>
+        <location filename="../MainWindow.py" line="27"/>
         <source>Start</source>
         <translation>开始</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="32"/>
+        <location filename="../MainWindow.py" line="31"/>
         <source>Tasks</source>
         <translation>任务</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="37"/>
+        <location filename="../MainWindow.py" line="36"/>
         <source>Triggers</source>
         <translation>触发器</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="44"/>
+        <location filename="../MainWindow.py" line="43"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="67"/>
+        <location filename="../MainWindow.py" line="66"/>
         <source>Start Success.</source>
         <translation>启动成功。</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.py" line="80"/>
+        <source>Exit</source>
+        <translation>退出</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.py" line="82"/>
+        <source>Are you sure you want to exit the app?</source>
+        <translation>确定要退出应用吗？</translation>
     </message>
 </context>
 <context>
     <name>ModifyListDialog</name>
     <message>
-        <location filename="../tasks/ModifyListDialog.py" line="11"/>
+        <location filename="../tasks/ModifyListDialog.py" line="10"/>
         <source>Modify</source>
         <translation>修改</translation>
     </message>
     <message>
-        <location filename="../tasks/ModifyListDialog.py" line="17"/>
+        <location filename="../tasks/ModifyListDialog.py" line="16"/>
         <source>Move Up</source>
         <translation>上移</translation>
     </message>
     <message>
-        <location filename="../tasks/ModifyListDialog.py" line="20"/>
+        <location filename="../tasks/ModifyListDialog.py" line="19"/>
         <source>Move Down</source>
         <translation>下移</translation>
     </message>
     <message>
-        <location filename="../tasks/ModifyListDialog.py" line="23"/>
+        <location filename="../tasks/ModifyListDialog.py" line="22"/>
         <source>Add</source>
         <translation>添加</translation>
     </message>
     <message>
-        <location filename="../tasks/ModifyListDialog.py" line="26"/>
+        <location filename="../tasks/ModifyListDialog.py" line="25"/>
         <source>Remove</source>
         <translation>移除</translation>
     </message>
     <message>
-        <location filename="../tasks/ModifyListDialog.py" line="38"/>
+        <location filename="../tasks/ModifyListDialog.py" line="37"/>
         <source>Confirm</source>
         <translation>确认</translation>
     </message>
     <message>
-        <location filename="../tasks/ModifyListDialog.py" line="39"/>
+        <location filename="../tasks/ModifyListDialog.py" line="38"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -278,7 +306,7 @@
     </message>
     <message>
         <source>Running</source>
-        <translation>运行中</translation>
+        <translation type="vanished">运行中</translation>
     </message>
 </context>
 <context>
@@ -326,14 +354,12 @@
         <translation>刷新</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="152"/>
         <source>Exit</source>
-        <translation>退出</translation>
+        <translation type="vanished">退出</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="152"/>
         <source>Are you sure you want to exit the app?</source>
-        <translation>确定要退出应用吗？</translation>
+        <translation type="vanished">确定要退出应用吗？</translation>
     </message>
 </context>
 <context>

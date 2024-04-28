@@ -1,15 +1,15 @@
 from PySide6.QtWidgets import QLabel
 from qfluentwidgets import PushButton
 
-from ok.gui.tasks.LabelAndWidget import LabelAndWidget
+from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 from ok.gui.tasks.ModifyListDialog import ModifyListDialog
 from ok.gui.widget.UpdateConfigWidgetItem import value_to_string
 
 
-class ModifyListItem(LabelAndWidget):
+class ModifyListItem(ConfigLabelAndWidget):
 
-    def __init__(self, config, key: str):
-        super().__init__(key)
+    def __init__(self, config, config_desc, key: str):
+        super().__init__(config_desc, key)
         self.key = key
         self.config = config
         self.switch_button = PushButton(self.tr('Modify'))

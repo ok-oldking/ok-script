@@ -8,7 +8,7 @@ directory = ".."
 extension = ".py"
 
 # Command to run
-command = "pyside6-lupdate {files} -target-language zh_CN -no-obsolete -source-language en_US -ts zh_CN.ts"
+command = "pyside6-lupdate {files} -target-language zh_CN -source-language en_US -ts zh_CN.ts"
 
 # Find all files with the given extension in the directory and its subdirectories
 files = []

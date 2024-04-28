@@ -1,6 +1,5 @@
 from PySide6.QtCore import QObject, Signal, Qt
-from PySide6.QtWidgets import QMessageBox
-from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow, InfoBar, InfoBarPosition
+from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow, InfoBar, InfoBarPosition, MessageBox
 
 import ok.gui
 from ok.gui.Communicate import communicate
@@ -77,12 +76,14 @@ class MainWindow(MSFluentWindow):
 
     def closeEvent(self, event):
         # Create a message box that asks the user if they really want to close the window
-        reply = QMessageBox.question(self, 'Window Close', 'Are you sure you want to close the window?',
-                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-        if reply == QMessageBox.Yes:
+        title = self.tr('Exit')
+        content = self.tr(
+            "Are you sure you want to exit the app?")
+        w = MessageBox(title, content, self.window())
+        w.setContentCopyable(True)
+        if w.exec():
             self.exit_event.set()
             event.accept()
-            logger.info("Window closed")  # Place your code here
+            logger.info("Window closed")
         else:
             event.ignore()

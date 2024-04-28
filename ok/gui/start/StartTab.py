@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QMessageBox, QAbstractItemView
+from PySide6.QtWidgets import QAbstractItemView
 from qfluentwidgets import ListWidget, PushButton, FluentIcon
 
 import ok
@@ -138,24 +138,3 @@ class StartTab(Tab):
 
     def update_progress(self, message):
         self.message = message
-
-    def close(self):
-        self.closed_by_finish_loading = True
-        super().close()
-
-    def closeEvent(self, event):
-        self.timer.stop()
-        if self.closed_by_finish_loading:
-            super().closeEvent(event)
-        else:
-            # Create a message box that asks the user if they really want to close the window
-            reply = QMessageBox.question(self, self.tr('Exit'), self.tr('Are you sure you want to exit the app?'),
-                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-            if reply == QMessageBox.Yes:
-                self.exit_event.set()
-                event.accept()
-                self.app.quit()
-                logger.info("Window closed")  # Place your code here
-            else:
-                event.ignore()

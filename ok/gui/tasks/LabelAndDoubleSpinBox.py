@@ -1,12 +1,12 @@
 from qfluentwidgets import DoubleSpinBox
 
-from ok.gui.tasks.LabelAndWidget import LabelAndWidget
+from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 
-class LabelAndDoubleSpinBox(LabelAndWidget):
+class LabelAndDoubleSpinBox(ConfigLabelAndWidget):
 
-    def __init__(self, config, key: str):
-        super().__init__(key)
+    def __init__(self, config, config_desc, key: str):
+        super().__init__(config_desc, key)
         self.key = key
         self.config = config
         self.spin_box = DoubleSpinBox()
