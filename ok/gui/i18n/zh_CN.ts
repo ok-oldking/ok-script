@@ -120,6 +120,11 @@
         <source>Value</source>
         <translation>值</translation>
     </message>
+    <message>
+        <location filename="../tasks/OneTimeTaskTab.py" line="48"/>
+        <source>Running</source>
+        <translation>运行中</translation>
+    </message>
 </context>
 <context>
     <name>SelectCaptureListView</name>
@@ -305,8 +310,20 @@
         <translation>游戏窗口已断开</translation>
     </message>
     <message>
+        <location filename="../start/StartCard.py" line="84"/>
+        <location filename="../start/StartCard.py" line="88"/>
         <source>Running</source>
-        <translation type="vanished">运行中</translation>
+        <translation>运行中</translation>
+    </message>
+    <message>
+        <location filename="../start/StartCard.py" line="88"/>
+        <source>triggers</source>
+        <translation>个触发器</translation>
+    </message>
+    <message>
+        <location filename="../start/StartCard.py" line="91"/>
+        <source>Waiting for task to be enabled</source>
+        <translation>等待选择任务开始</translation>
     </message>
 </context>
 <context>

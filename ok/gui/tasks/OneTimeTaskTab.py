@@ -45,7 +45,7 @@ class OneTimeTaskTab(Tab):
         else:
             self.task_info_container.show()
             info = task.info
-            self.task_info_container.titleLabel.setText(f"{self.tr('Running')}: {task.name}")
+            self.task_info_container.titleLabel.setText(self.tr('Running') + f": {task.name}")
             self.task_info_table.setRowCount(len(info))
             for row, (key, value) in enumerate(info.items()):
                 if not self.task_info_table.item(row, 0):

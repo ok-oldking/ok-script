@@ -12,11 +12,15 @@ class OCR:
     default_threshold = 0.6
 
     def ocr(self, box: Box = None, match=None, threshold=0):
+        if self.paused:
+            self.sleep(1)
         if threshold == 0:
             threshold = self.default_threshold
         start = time.time()
         image = self.frame
-        if image is not None:
+        if image is None:
+            raise Exception("ocr no frame")
+        else:
             if box is not None:
                 x, y, w, h = box.x, box.y, box.width, box.height
                 image = image[y:y + h, x:x + w]
