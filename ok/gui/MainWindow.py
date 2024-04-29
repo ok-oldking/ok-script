@@ -82,8 +82,8 @@ class MainWindow(MSFluentWindow):
         w = MessageBox(title, content, self.window())
         w.setContentCopyable(True)
         if w.exec():
-            self.exit_event.set()
-            event.accept()
             logger.info("Window closed")
+            ok.gui.ok.quit()
+            event.accept()
         else:
             event.ignore()

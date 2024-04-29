@@ -34,7 +34,7 @@ class HwndWindow:
     exists = False
     title = None
 
-    def __init__(self, title="", exe_name=None, exit_event=threading.Event(), frame_width=0, frame_height=0):
+    def __init__(self, exit_event, title="", exe_name=None, frame_width=0, frame_height=0):
         super().__init__()
         self.app_exit_event = exit_event
         self.exe_name = exe_name

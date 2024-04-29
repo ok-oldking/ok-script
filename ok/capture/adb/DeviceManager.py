@@ -30,7 +30,7 @@ class DeviceManager:
         self.interaction = None
         self.exit_event = exit_event
         if hwnd_title is not None:
-            self.hwnd = HwndWindow(hwnd_title, exe_name, exit_event)
+            self.hwnd = HwndWindow(exit_event, hwnd_title, exe_name)
         self.config = Config({"devices": {}, "preferred": "none"}, config_folder, "DeviceManager")
         self.thread = None
         self.capture_method = None
@@ -170,7 +170,7 @@ class DeviceManager:
 
     def ensure_hwnd(self, title, exe, frame_width=0, frame_height=0):
         if self.hwnd is None:
-            self.hwnd = HwndWindow(title, exe, self.exit_event, frame_width, frame_height)
+            self.hwnd = HwndWindow(self.exit_event, title, exe, frame_width, frame_height)
         else:
             self.hwnd.update_frame_size(frame_width, frame_height)
             self.hwnd.update_title_and_exe(title, exe)

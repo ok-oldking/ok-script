@@ -57,7 +57,7 @@ class OK:
                 try:
                     # Starting the task in a separate thread (optional)
                     # This allows the main thread to remain responsive to keyboard interrupts
-                    task_thread = threading.Thread(target=self.wait_task())
+                    task_thread = threading.Thread(target=self.wait_task)
                     task_thread.start()
 
                     # Wait for the task thread to end (which it won't, in this case, without an interrupt)
@@ -112,6 +112,10 @@ class OK:
     def wait_task(self):
         while not self.exit_event.is_set():
             time.sleep(1)
+
+    def quit(self):
+        self.screenshot.stop()
+        self.exit_event.set()
 
     def init_device_manager(self):
         if self.device_manager is None:

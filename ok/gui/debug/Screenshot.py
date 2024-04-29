@@ -37,7 +37,7 @@ class Screenshot(QObject):
         self.screenshot_folder = get_path_relative_to_exe(ok.gui.ok.config.get("screenshots_folder"))
         if self.click_screenshot_folder is not None or self.screenshot_folder is not None:
             self.task_queue = queue.Queue()
-            self.thread = threading.Thread(target=self._worker)
+            self.thread = threading.Thread(target=self._worker, name="screenshot")
             self.thread.start()
             fonts_dir = os.path.join(os.environ['WINDIR'], 'Fonts')
             font = find_first_existing_file(
@@ -54,7 +54,7 @@ class Screenshot(QObject):
             self.task_queue = None
 
     def screenshot(self, frame, name):
-        if self.screenshot_folder is not None:
+        if self.screenshot_folder is not None and frame is not None:
             self.add_task(frame, self.screenshot_folder, name)
 
     def draw_box(self, key: str = None, boxes=None, color="red", frame=None):
@@ -93,6 +93,7 @@ class Screenshot(QObject):
         while True and not self.exit_event.is_set():
             task = self.task_queue.get()
             if task is None:
+                logger.debug("Task queue get is None quit")
                 break
             # Execute the task
             self.generate_screen_shot(task[0], task[1], task[2], task[3])
@@ -134,7 +135,10 @@ class Screenshot(QObject):
         file = os.path.join(folder, f"{time_string}.png")
         pil_image.save(file)
 
+    def stop(self):
+        self.task_queue.put(None)
+
     def to_pil_image(self, frame):
-        if not self.click_screenshot_folder or frame is None:
+        if frame is None:
             return None
         return Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))

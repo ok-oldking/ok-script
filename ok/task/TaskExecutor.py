@@ -167,6 +167,9 @@ class TaskExecutor:
         self.current_scene = None
 
     def next_task(self):
+        if self.exit_event.is_set():
+            logger.error(f"next_task exit_event.is_set exit")
+            return None, False
         cycled = False
         for onetime_task in self.onetime_tasks:
             if onetime_task.enabled:

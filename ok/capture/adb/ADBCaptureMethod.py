@@ -50,6 +50,8 @@ class ADBCaptureMethod(BaseCaptureMethod):
         return frame
 
     def connected(self):
+        if not self._connected and self.device is not None:
+            self.screencap()
         return self._connected and self.device is not None
 
 
