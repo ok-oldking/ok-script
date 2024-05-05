@@ -86,7 +86,7 @@ class AddTextMessageBox(MessageBoxBase):
         self.viewLayout.addWidget(self.add_text_edit)
 
         # change the text of button
-        self.yesButton.setText(self.tr('Open'))
+        self.yesButton.setText(self.tr('Confirm'))
         self.cancelButton.setText(self.tr('Cancel'))
 
         self.widget.setMinimumWidth(360)

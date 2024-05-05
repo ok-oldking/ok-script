@@ -10,6 +10,8 @@ class LabelAndSwitchButton(ConfigLabelAndWidget):
         self.key = key
         self.config = config
         self.switch_button = SwitchButton()
+        self.switch_button.setOnText(self.tr('Yes'))
+        self.switch_button.setOffText(self.tr('No'))
         self.update_value()
         self.switch_button.checkedChanged.connect(self.check_changed)
         self.add_widget(self.switch_button)

@@ -26,11 +26,12 @@ class BaseTask(ExecutorOperation):
         self.executor.pause(self)
         self._paused = True
         communicate.task.emit(self)
-        self.sleep(1)
+        if self.executor.is_executor_thread():
+            self.sleep(1)
 
     def unpause(self):
-        self.executor.start(self)
         self._paused = False
+        self.executor.start()
         communicate.task.emit(self)
 
     @property

@@ -12,7 +12,6 @@ class Communicate(QObject):
     task_info = Signal()
     window = Signal(bool, int, int, int, int, int, int, float)
     loading_progress = Signal(str)
-    init = Signal(bool, str)
     notification = Signal(str, str)
     executor_paused: Signal = Signal(bool)
     screenshot = Signal(np.ndarray, str)

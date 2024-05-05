@@ -17,6 +17,10 @@ class TaskDisabledException(Exception):
     pass
 
 
+class FinishedException(Exception):
+    pass
+
+
 class TaskExecutor:
     current_scene: Scene | None = None
     last_scene: Scene | None = None
@@ -78,6 +82,10 @@ class TaskExecutor:
                         self._frame = None
                     return self._frame
             self.sleep(0.001)
+        raise FinishedException()
+
+    def is_executor_thread(self):
+        return self.thread == threading.current_thread()
 
     def connected(self):
         return self.method is not None and self.method.connected()
@@ -120,15 +128,11 @@ class TaskExecutor:
         self.reset_scene()
         self.pause_start = time.time()
 
-    def start(self, task=None):
-        if task is not None:
-            if self.current_task != task:
-                raise Exception(f"Can only pause current task {self.current_task}")
-        else:
+    def start(self):
+        if self.paused:
             self.paused = False
             communicate.executor_paused.emit(self.paused)
-        self.pause_end_time += self.pause_start - time.time()
-        return True
+            self.pause_end_time += self.pause_start - time.time()
 
     def wait_scene(self, scene_type, time_out, pre_action, post_action):
         return self.wait_condition(lambda: self.detect_scene(scene_type), time_out, pre_action, post_action)

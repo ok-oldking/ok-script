@@ -10,8 +10,8 @@
     </message>
     <message>
         <location filename="../tasks/ModifyListDialog.py" line="89"/>
-        <source>Open</source>
-        <translation>打开</translation>
+        <source>Confirm</source>
+        <translation>确认</translation>
     </message>
     <message>
         <location filename="../tasks/ModifyListDialog.py" line="90"/>
