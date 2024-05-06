@@ -136,7 +136,8 @@ class Screenshot(QObject):
         pil_image.save(file)
 
     def stop(self):
-        self.task_queue.put(None)
+        if self.task_queue is not None:
+            self.task_queue.put(None)
 
     def to_pil_image(self, frame):
         if frame is None:

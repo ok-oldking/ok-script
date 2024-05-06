@@ -22,13 +22,14 @@ class TaskCard(ExpandSettingCard):
         if isinstance(task, OneTimeTask):
             self.task_buttons = TaskButtons(self.task)
             self.addWidget(self.task_buttons)
-
-            self.update_buttons(self.task)
         else:
             self.enable_button = SwitchButton()
             self.enable_button.setOnText(self.tr('Enabled'))
             self.enable_button.setOffText(self.tr('Disabled'))
+            self.enable_button.checkedChanged.connect(self.check_changed)
             self.addWidget(self.enable_button)
+
+        self.update_buttons(self.task)
 
         communicate.task.connect(self.update_buttons)
 
@@ -43,14 +44,21 @@ class TaskCard(ExpandSettingCard):
         if not self.task.default_config:
             self.card.expandButton.hide()
         for key, value in self.task.config.items():
-            self.__addConfig(key, value)
+            if not key.startswith('_'):
+                self.__addConfig(key, value)
 
     def update_buttons(self, task):
         if task == self.task:
             if isinstance(task, OneTimeTask):
                 self.task_buttons.update_buttons()
             else:
-                self.enable_button.setEnabled(task.enabled)
+                self.enable_button.setChecked(task.enabled)
+
+    def check_changed(self, checked):
+        if checked:
+            self.task.enable()
+        else:
+            self.task.disable()
 
     def __addConfig(self, key: str, value):
         widget = config_widget(self.task.config, self.task.config_description, key, value)

@@ -126,9 +126,9 @@ class DeviceManager:
             if imei not in adb_connected and self.device_dict[imei]['device'] == 'adb':
                 self.device_dict[imei]['connected'] = False
 
-        communicate.adb_devices.emit(True)
         self.config.save_file()
         self.start()
+        communicate.adb_devices.emit(True)
         logger.debug(f'refresh {self.device_dict}')
 
     def set_preferred_device(self, imei=None):
@@ -144,6 +144,7 @@ class DeviceManager:
             self.config.save_file()
         logger.debug(f'preferred device: {preferred}')
         self.start()
+        return preferred
 
     def get_preferred_device(self):
         imei = self.config.get("preferred")
@@ -178,7 +179,10 @@ class DeviceManager:
     def start(self):
         preferred = self.get_preferred_device()
         if preferred is None:
+            if self.device_dict:
+                self.set_preferred_device()
             return
+
         if preferred['device'] == 'windows':
             self.ensure_hwnd(self.hwnd_title, self.exe_name)
             if not isinstance(self.capture_method, WindowsGraphicsCaptureMethod):

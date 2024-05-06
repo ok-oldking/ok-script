@@ -20,6 +20,19 @@
     </message>
 </context>
 <context>
+    <name>LabelAndSwitchButton</name>
+    <message>
+        <location filename="../tasks/LabelAndSwitchButton.py" line="13"/>
+        <source>Yes</source>
+        <translation>是</translation>
+    </message>
+    <message>
+        <location filename="../tasks/LabelAndSwitchButton.py" line="14"/>
+        <source>No</source>
+        <translation>否</translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <location filename="../MainWindow.py" line="27"/>
@@ -380,47 +393,83 @@
     </message>
 </context>
 <context>
-    <name>TaskCard</name>
+    <name>TaskButtons</name>
     <message>
-        <location filename="../tasks/TaskCard.py" line="17"/>
-        <source>Reset Config</source>
-        <translation>重置配置</translation>
-    </message>
-    <message>
-        <location filename="../tasks/TaskCard.py" line="20"/>
-        <location filename="../tasks/TaskCard.py" line="68"/>
+        <location filename="../tasks/TaskCard.py" line="80"/>
+        <location filename="../tasks/TaskCard.py" line="121"/>
         <source>Start</source>
         <translation>开始</translation>
     </message>
     <message>
-        <location filename="../tasks/TaskCard.py" line="58"/>
-        <source>Resume</source>
-        <translation>继续</translation>
-    </message>
-    <message>
-        <location filename="../tasks/TaskCard.py" line="61"/>
+        <location filename="../tasks/TaskCard.py" line="83"/>
         <source>Stop</source>
         <translation>停止</translation>
     </message>
     <message>
-        <location filename="../tasks/TaskCard.py" line="64"/>
-        <source>Disable</source>
-        <translation>禁用</translation>
+        <location filename="../tasks/TaskCard.py" line="86"/>
+        <source>Pause</source>
+        <translation>暂停</translation>
     </message>
     <message>
-        <location filename="../tasks/TaskCard.py" line="70"/>
-        <source>Enable</source>
-        <translation>启用</translation>
+        <location filename="../tasks/TaskCard.py" line="108"/>
+        <source>Resume</source>
+        <translation>继续</translation>
     </message>
     <message>
-        <location filename="../tasks/TaskCard.py" line="83"/>
+        <location filename="../tasks/TaskCard.py" line="130"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../tasks/TaskCard.py" line="85"/>
+        <location filename="../tasks/TaskCard.py" line="132"/>
         <source>Game window is not connected, please select the game window and capture method.</source>
         <translation>游戏窗口未连接，请选择游戏窗口和截图方式。</translation>
+    </message>
+</context>
+<context>
+    <name>TaskCard</name>
+    <message>
+        <location filename="../tasks/TaskCard.py" line="18"/>
+        <source>Reset Config</source>
+        <translation>重置配置</translation>
+    </message>
+    <message>
+        <location filename="../tasks/TaskCard.py" line="29"/>
+        <source>Enabled</source>
+        <translation>已启用</translation>
+    </message>
+    <message>
+        <location filename="../tasks/TaskCard.py" line="30"/>
+        <source>Disabled</source>
+        <translation>未启用</translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation>开始</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation type="vanished">继续</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation type="vanished">停止</translation>
+    </message>
+    <message>
+        <source>Disable</source>
+        <translation type="vanished">禁用</translation>
+    </message>
+    <message>
+        <source>Enable</source>
+        <translation type="vanished">启用</translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation type="vanished">错误</translation>
+    </message>
+    <message>
+        <source>Game window is not connected, please select the game window and capture method.</source>
+        <translation type="vanished">游戏窗口未连接，请选择游戏窗口和截图方式。</translation>
     </message>
 </context>
 <context>
