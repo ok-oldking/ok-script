@@ -91,14 +91,14 @@ class Box:
         return self.x + self.width / 2, self.y + self.height / 2
 
     def find_closest_box(self, direction: str, boxes: list, condition=None):
-        orig_center_x, orig_center_y = self.center()
+        orig_x, orig_y, orig_w, orig_h = self.x, self.y, self.width, self.height
 
         def distance_criteria(box):
-            # Calculate center points for comparison
-            box_center_x, box_center_y = box.center()
+            box_x, box_y, box_w, box_h = box.x, box.y, box.width, box.height
 
-            dx = box_center_x - orig_center_x
-            dy = box_center_y - orig_center_y
+            dx = max(orig_x - (box_x + box_w), box_x - (orig_x + orig_w), 0)
+            dy = max(orig_y - (box_y + box_h), box_y - (orig_y + orig_h), 0)
+
             distance = math.sqrt(dx ** 2 + dy ** 2)
             if box == self:
                 distance = float('inf')
@@ -121,7 +121,6 @@ class Box:
                 return float('inf')
 
         filtered_boxes = sorted(boxes, key=distance_criteria)
-        # Removed debug print statement for cleanliness
 
         for box in filtered_boxes:
             if distance_criteria(box) != float('inf'):

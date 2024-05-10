@@ -116,7 +116,7 @@ class TaskButtons(QWidget):
                 self.start_button.setText(self.tr("Resume"))
                 self.start_button.show()
                 self.pause_button.hide()
-                self.stop_button.hide()
+                self.stop_button.show()
             elif self.task.running:
                 self.start_button.hide()
                 self.stop_button.show()
