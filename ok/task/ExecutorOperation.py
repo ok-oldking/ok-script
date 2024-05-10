@@ -5,6 +5,9 @@ from ok.gui.Communicate import communicate
 class ExecutorOperation:
     executor = None
 
+    def exit_is_set(self):
+        return self.executor.exit_event.is_set()
+
     def box_in_horizontal_center(self, box, off_percent=0.02):
         if box is None:
             return False

@@ -13,7 +13,7 @@ import ok.gui
 from ok.feature.Box import Box
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
-from ok.util.path import get_path_relative_to_exe, find_first_existing_file, clear_folder
+from ok.util.path import get_path_relative_to_exe, find_first_existing_file, clear_folder, sanitize_filename
 
 logger = get_logger(__name__)
 
@@ -131,6 +131,7 @@ class Screenshot(QObject):
         # Convert to string with milliseconds
         time_string = now.strftime("%H_%M_%S_%f")
         if name:
+            name = sanitize_filename(name)
             time_string += f"_{name}"
         file = os.path.join(folder, f"{time_string}.png")
         pil_image.save(file)
