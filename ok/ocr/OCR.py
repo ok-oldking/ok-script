@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 
 class OCR:
     executor = None
-    ocr_default_threshold = 0.6
+    ocr_default_threshold = 0.5
     ocr_target_height = 0
 
     def ocr(self, box: Box = None, match=None, threshold=0, frame=None, target_height=0):

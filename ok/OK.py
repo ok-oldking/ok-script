@@ -78,11 +78,13 @@ class OK:
         except Exception as e:
             logger.error("start error", e)
             self.exit_event.set()
+            if self.app:
+                self.app.quit()
 
     def do_init(self):
         logger.info(f"initializing {self.__class__.__name__}, config: {self.config}")
         if self.config.get('ocr'):
-            from rapidocr_onnxruntime import RapidOCR
+            from rapidocr_openvino import RapidOCR
             self.ocr = RapidOCR()
 
         config_logger(self.config)

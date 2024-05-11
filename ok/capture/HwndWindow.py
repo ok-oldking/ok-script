@@ -2,6 +2,7 @@
 import ctypes
 import re
 import threading
+import time
 
 import win32process
 from win32 import win32gui
@@ -43,7 +44,7 @@ class HwndWindow:
         self.visible = False
         self.update_frame_size(frame_width, frame_height)
         self.do_update_window_size()
-        self.thread = threading.Thread(target=self.update_window_size)
+        self.thread = threading.Thread(target=self.update_window_size, name="update_window_size")
         self.thread.start()
 
     def update_title_and_exe(self, title, exe):
@@ -77,7 +78,7 @@ class HwndWindow:
     def update_window_size(self):
         while not self.app_exit_event.is_set() and not self.stop_event.is_set():
             self.do_update_window_size()
-            self.app_exit_event.wait(0.1)
+            time.sleep(0.2)
 
     def get_abs_cords(self, x, y):
         return int(self.x * self.scaling + (self.border * self.scaling + x)), int(

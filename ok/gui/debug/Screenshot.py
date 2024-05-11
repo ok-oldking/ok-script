@@ -130,11 +130,15 @@ class Screenshot(QObject):
 
         # Convert to string with milliseconds
         time_string = now.strftime("%H_%M_%S_%f")
+        file_name = time_string
         if name:
             name = sanitize_filename(name)
-            time_string += f"_{name}"
-        file = os.path.join(folder, f"{time_string}.png")
-        pil_image.save(file)
+            file_name = f"{time_string}_{name}"
+        file = os.path.join(folder, f"{file_name}.png")
+        try:
+            pil_image.save(file)
+        except OSError:
+            pil_image.save(os.path.join(folder, f"{time_string}.png"))
 
     def stop(self):
         if self.task_queue is not None:

@@ -110,6 +110,8 @@ class Box:
                 pass
             elif direction == 'right' and box.x - (self.x + self.width / 2) >= 0:
                 pass
+            elif direction == 'all':
+                pass
             else:
                 distance = float('inf')
             return check_condition(box, distance)
