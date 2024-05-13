@@ -1,5 +1,4 @@
-from PySide6.QtCore import QEvent
-from PySide6.QtWidgets import QToolTip, QHeaderView
+from PySide6.QtWidgets import QHeaderView
 from qfluentwidgets import TableWidget
 
 
@@ -26,15 +25,3 @@ class TooltipTableWidget(TableWidget):
             width = self.width() - self.verticalScrollBar().width()
             for i, percentage in enumerate(self.width_percentages):
                 self.setColumnWidth(i, int(width * percentage))
-
-    def viewportEvent(self, event):
-        if event.type() == QEvent.ToolTip:
-            pos = event.pos()
-            item = self.itemAt(pos)
-            if item:
-                if self.visualItemRect(item).width() < self.fontMetrics().horizontalAdvance(item.text()):
-                    QToolTip.showText(event.globalPos(), item.text(), self)
-                else:
-                    QToolTip.hideText()
-                return True
-        return super().viewportEvent(event)

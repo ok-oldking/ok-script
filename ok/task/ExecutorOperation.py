@@ -1,3 +1,5 @@
+import queue
+
 from ok.feature.Box import Box, find_box_by_name
 from ok.gui.Communicate import communicate
 
@@ -18,6 +20,11 @@ class ExecutorOperation:
             return True
         else:
             return False
+
+    def new_queue(self):
+        q = queue.Queue()
+        self.executor.exit_event.bind_queue(q)
+        return q
 
     def is_scene(self, the_scene):
         return isinstance(self.executor.current_scene, the_scene)

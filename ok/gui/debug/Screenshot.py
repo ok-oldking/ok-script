@@ -37,6 +37,7 @@ class Screenshot(QObject):
         self.screenshot_folder = get_path_relative_to_exe(ok.gui.ok.config.get("screenshots_folder"))
         if self.click_screenshot_folder is not None or self.screenshot_folder is not None:
             self.task_queue = queue.Queue()
+            self.exit_event.bind_queue(self.task_queue)
             self.thread = threading.Thread(target=self._worker, name="screenshot")
             self.thread.start()
             fonts_dir = os.path.join(os.environ['WINDIR'], 'Fonts')

@@ -58,7 +58,7 @@ class App:
 
         # Create a context menu for the tray
         menu = QMenu()
-        exit_action = menu.addAction("Exit")
+        exit_action = menu.addAction(self.app.tr("Exit"))
         exit_action.triggered.connect(self.quit)
 
         # Set the context menu and show the tray icon
@@ -120,5 +120,5 @@ class App:
         sys.exit(self.app.exec())
 
     def quit(self):
-        self.exit_event.set()
+        ok.gui.ok.quit()
         self.app.quit()

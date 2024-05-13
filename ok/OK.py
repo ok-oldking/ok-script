@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QApplication
 
 import ok
 from ok.logging.Logger import get_logger, config_logger
+from ok.util.exit_event import ExitEvent
 
 logger = get_logger(__name__)
 
@@ -22,12 +23,12 @@ class OK:
     overlay_window = None
     app = None
     screenshot = None
+    exit_event = ExitEvent()
 
     def __init__(self, config: Dict[str, Any]):
         print(f"AutoHelper init, config: {config}")
         ok.gui.ok = self
         self.debug = config.get("debug", False)
-        self.exit_event = threading.Event()
         try:
             self.config = config
             self.init_device_manager()
@@ -42,7 +43,7 @@ class OK:
                 self.device_manager.start()
                 self.do_init()
         except Exception as e:
-            self.exit_event.set()
+            self.quit()
             raise e
 
     def start(self):
@@ -113,8 +114,9 @@ class OK:
             time.sleep(1)
 
     def quit(self):
-        self.screenshot.stop()
         self.exit_event.set()
+        if self.screenshot is not None:
+            self.screenshot.stop()
 
     def init_device_manager(self):
         if self.device_manager is None:

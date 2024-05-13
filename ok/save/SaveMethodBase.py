@@ -5,6 +5,7 @@ import cv2
 
 from ok.capture.windows.WindowsGraphicsCaptureMethod import BaseCaptureMethod
 from ok.save.PostProcessor import PostProcessor
+from ok.util.exit_event import ExitEvent
 
 
 class SaveMethodBase:
@@ -19,7 +20,7 @@ class SaveMethodBase:
         if not os.path.exists(self.dir):
             os.makedirs(self.dir)
         self.thread.start()
-        self.exit_event = threading.Event()
+        self.exit_event = ExitEvent()
 
     def save(self):
         frame = self.method.get_frame()

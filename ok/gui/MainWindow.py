@@ -76,6 +76,9 @@ class MainWindow(MSFluentWindow):
 
     def closeEvent(self, event):
         # Create a message box that asks the user if they really want to close the window
+        if ok.gui.ok.exit_event.is_set():
+            event.accept()
+            return
         title = self.tr('Exit')
         content = self.tr(
             "Are you sure you want to exit the app?")

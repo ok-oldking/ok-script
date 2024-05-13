@@ -49,7 +49,10 @@ class DeviceManager:
         if not self._connect_all:
             for device in self.device_dict.values():
                 if device["device"] == "adb":
-                    self.adb.connect(device['address'])
+                    try:
+                        self.adb.connect(device['address'])
+                    except Exception as e:
+                        logger.error("adb connect error", e)
             self._connect_all = True
             logger.debug(f'connect_all {self.adb.device_list()}')
 
@@ -127,6 +130,9 @@ class DeviceManager:
                 self.device_dict[imei]['connected'] = False
 
         self.config.save_file()
+
+        if self.exit_event.is_set():
+            return
         self.start()
         communicate.adb_devices.emit(True)
         logger.debug(f'refresh {self.device_dict}')
