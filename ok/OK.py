@@ -114,9 +114,9 @@ class OK:
             time.sleep(1)
 
     def quit(self):
+        logger.debug('quit app')
         self.exit_event.set()
-        if self.screenshot is not None:
-            self.screenshot.stop()
+        self.device_manager.stop()
 
     def init_device_manager(self):
         if self.device_manager is None:

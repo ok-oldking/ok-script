@@ -10,6 +10,7 @@ class LabelAndSpinBox(ConfigLabelAndWidget):
         self.key = key
         self.config = config
         self.spin_box = SpinBox()
+        self.spin_box.setFixedWidth(130)
         self.update_value()
         self.spin_box.valueChanged.connect(self.value_changed)
         self.add_widget(self.spin_box)
