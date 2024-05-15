@@ -110,14 +110,15 @@ class TaskExecutor:
             if self.exit_event.is_set():
                 logger.info("Exit event set. Exiting early.")
                 return
-            if self.current_task and not self.current_task.enabled:
+            if (self.current_task and not self.current_task.enabled) or self.current_task is None:
                 raise TaskDisabledException()
             if not (self.paused or (
                     self.current_task is not None and self.current_task.paused) or self.interaction is None or not self.interaction.should_capture()):
                 to_sleep = self.pause_end_time - time.time()
                 if to_sleep <= 0:
                     return
-            time.sleep(0.001)
+                time.sleep(to_sleep)
+            time.sleep(0.1)
 
     def pause(self, task=None):
         if task is not None:
@@ -197,14 +198,12 @@ class TaskExecutor:
             try:
                 task, cycled = self.next_task()
                 if not task:
-                    self.sleep(1)
+                    time.sleep(1)
                     continue
+                self.current_task = task
                 if isinstance(task, OneTimeTask):
-                    self.current_task = task
                     task.running = True
                     communicate.task.emit(task)
-                else:
-                    self.current_task = None
                 if cycled or self._frame is None:
                     self.next_frame()
                     processing_time = 0
@@ -222,6 +221,7 @@ class TaskExecutor:
                 elif isinstance(task, OneTimeTask):
                     task.set_done()
                     communicate.task.emit(task)
+                self.current_task = None
             except TaskDisabledException:
                 logger.info(f"{task.name} is disabled, breaking")
             except Exception as e:
@@ -232,7 +232,11 @@ class TaskExecutor:
             if isinstance(task, OneTimeTask):
                 task.running = False
                 communicate.task.emit(task)
-            self.sleep(0.001)
+        logger.debug(f'exit_event is set, destroy all tasks')
+        for task in self.onetime_tasks:
+            task.on_destroy()
+        for task in self.trigger_tasks:
+            task.on_destroy()
 
     def add_frame_stats(self):
         self.frame_stats.add_frame()

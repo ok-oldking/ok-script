@@ -103,6 +103,7 @@ class BaseTask(ExecutorOperation):
 
     def disable(self):
         self._enabled = False
+        self.executor.current_task = None
         communicate.task.emit(self)
 
     def get_status(self):
@@ -111,11 +112,14 @@ class BaseTask(ExecutorOperation):
     def run(self):
         pass
 
+    def on_destroy(self):
+        pass
+
     def set_executor(self, executor):
         self.executor = executor
         self.feature_set = executor.feature_set
         self.load_config(executor.config_folder)
-        self.after_init()
-
-    def after_init(self):
-        pass
+        from ok.task.TriggerTask import TriggerTask
+        if isinstance(self, TriggerTask):
+            self._enabled = self.config.get('_enabled', self.default_enable)
+        self.on_create()

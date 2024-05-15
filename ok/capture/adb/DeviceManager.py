@@ -28,7 +28,7 @@ def fix_adbutils_safe_connect(self):
         return self._create_socket()
 
 
-adbutils._adb._safe_connect = fix_adbutils_safe_connect
+adbutils._adb.AdbConnection._safe_connect = fix_adbutils_safe_connect
 
 
 class DeviceManager:
