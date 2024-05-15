@@ -223,7 +223,10 @@ class TaskExecutor:
                     communicate.task.emit(task)
                 self.current_task = None
             except TaskDisabledException:
-                logger.info(f"{task.name} is disabled, breaking")
+                logger.info(f"task is disabled, go to next task")
+            except FinishedException:
+                logger.info(f"FinishedException, breaking")
+                break
             except Exception as e:
                 traceback.print_exc()
                 stack_trace_str = traceback.format_exc()
