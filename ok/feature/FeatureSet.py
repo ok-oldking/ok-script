@@ -11,6 +11,7 @@ from ok.feature.Box import Box, sort_boxes
 from ok.feature.Feature import Feature
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
+from ok.util.path import resource_path
 
 logger = get_logger(__name__)
 
@@ -29,7 +30,9 @@ class FeatureSet:
             width (int): Scale images to this width.
             height (int): Scale images to this height.
         """
-        self.coco_folder = coco_folder
+        self.coco_folder = resource_path(coco_folder)
+
+        logger.debug(f'Loading features from {self.coco_folder}')
 
         # Process images and annotations
         self.width = 0
@@ -57,7 +60,7 @@ class FeatureSet:
             height (int): Target height for scaling images.
         """
         self.featureDict.clear()
-        json_path = f'{self.coco_folder}/_annotations.coco.json'
+        json_path = os.path.join(self.coco_folder, '_annotations.coco.json')
         with open(json_path, 'r') as file:
             data = json.load(file)
 

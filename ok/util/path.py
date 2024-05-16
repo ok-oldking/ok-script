@@ -24,6 +24,15 @@ def get_path_relative_to_exe(*files):
     return normalized_path
 
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(base_dir)
+    base_dir = os.path.dirname(base_dir)
+    base_path = getattr(sys, '_MEIPASS', base_dir)
+    return os.path.join(base_path, relative_path)
+
+
 def ensure_dir_for_file(file_path):
     # Extract the directory from the file path
     directory = os.path.dirname(file_path)
