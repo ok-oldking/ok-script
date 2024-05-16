@@ -85,6 +85,20 @@ class ExecutorOperation:
                    int(width * self.executor.method.width), int(height * self.executor.method.height),
                    name=name)
 
+    def height_of_screen(self, percent):
+        return int(percent * self.executor.method.height)
+
+    @property
+    def screen_width(self):
+        return self.executor.method.width
+
+    @property
+    def screen_height(self):
+        return self.executor.method.height
+
+    def width_of_screen(self, percent):
+        return int(percent * self.executor.method.width)
+
     def click_relative(self, x, y, move_back=False):
         self.click(int(self.width * x), int(self.height * y), move_back)
 

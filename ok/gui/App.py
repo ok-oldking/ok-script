@@ -38,6 +38,7 @@ class App:
 
         self.about = self.config.get('about')
         self.title = self.config.get('gui_title')
+        self.version = self.config.get('version')
         self.overlay = self.config.get('debug')
         self.loading_window = None
         self.overlay_window = None
@@ -91,7 +92,7 @@ class App:
 
     def show_main_window(self):
         self.main_window = MainWindow(self.overlay, self.about, exit_event=self.exit_event)
-        self.main_window.setWindowTitle(self.title)  # Set the window title here
+        self.main_window.setWindowTitle(f'{self.title} {self.version}')  # Set the window title here
         self.main_window.setWindowIcon(self.icon)
         if self.overlay and ok.gui.device_manager.hwnd is not None:
             self.overlay_window = OverlayWindow(ok.gui.device_manager.hwnd)

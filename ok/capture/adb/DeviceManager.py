@@ -209,6 +209,7 @@ class DeviceManager:
                 if self.capture_method is not None:
                     self.capture_method.close()
                 self.capture_method = WindowsGraphicsCaptureMethod(self.hwnd)
+            if not isinstance(self.interaction, Win32Interaction):
                 self.interaction = Win32Interaction(self.capture_method)
             self.capture_method.hwnd_window = self.hwnd
         else:

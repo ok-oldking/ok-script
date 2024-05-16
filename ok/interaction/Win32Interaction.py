@@ -9,6 +9,8 @@ from ok.logging.Logger import get_logger
 
 logger = get_logger(__name__)
 
+pydirectinput.FAILSAFE = False
+
 
 class Win32Interaction(BaseInteraction):
 

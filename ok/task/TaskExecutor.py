@@ -143,13 +143,13 @@ class TaskExecutor:
         if wait_until_before_delay == 0:
             wait_until_before_delay = self.wait_until_before_delay
         self.reset_scene()
-        self.sleep(wait_until_before_delay)
         start = time.time()
         if time_out == 0:
             time_out = self.wait_scene_timeout
         while not self.exit_event.is_set():
             if pre_action is not None:
                 pre_action()
+            self.sleep(wait_until_before_delay)
             self._frame = self.next_frame()
             if self._frame is not None:
                 result = condition()
@@ -179,7 +179,7 @@ class TaskExecutor:
         cycled = False
         for onetime_task in self.onetime_tasks:
             if onetime_task.enabled:
-                return onetime_task, False
+                return onetime_task, True
         if len(self.trigger_tasks) > 0:
             if self.trigger_task_index >= len(self.trigger_tasks) - 1:
                 self.trigger_task_index = -1

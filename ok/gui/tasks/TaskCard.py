@@ -61,7 +61,7 @@ class TaskCard(ExpandSettingCard):
             self.task.disable()
 
     def __addConfig(self, key: str, value):
-        widget = config_widget(self.task.config, self.task.config_description, key, value)
+        widget = config_widget(self.task.config, self.task.config_description, self.task.config_type, key, value)
         self.config_widgets.append(widget)
         self.viewLayout.addWidget(widget)
         self._adjustViewSize()

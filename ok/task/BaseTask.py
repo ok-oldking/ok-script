@@ -20,6 +20,7 @@ class BaseTask(ExecutorOperation):
         self.info = InfoDict()
         self.default_config = {}
         self.config_description = {}
+        self.config_type = {}
         self._paused = False
 
     def pause(self):
