@@ -1,3 +1,4 @@
+import os
 import subprocess
 import threading
 
@@ -24,7 +25,9 @@ def fix_adbutils_safe_connect(self):
     try:
         return self._create_socket()
     except (AdbConnectionError, AdbTimeout):
-        subprocess.run([adb_path(), "start-server"], timeout=20.0)  # 20s should enough for adb start
+        flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+        subprocess.run([adb_path(), "start-server"], timeout=20.0,
+                       creationflags=flags)  # 20s should enough for adb start
         return self._create_socket()
 
 
