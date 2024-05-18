@@ -31,15 +31,15 @@ class App:
 
         self.app = QApplication(sys.argv)
         self.app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
-        locale = QLocale()
         qconfig.theme = Theme.AUTO
-        translator = FluentTranslator(locale)
-        self.app.installTranslator(translator)
 
         self.about = self.config.get('about')
         self.title = self.config.get('gui_title')
         self.version = self.config.get('version')
         self.overlay = self.config.get('debug')
+        self.locale = QLocale(self.config.get('locale')) if self.config.get('locale') else QLocale()
+        translator = FluentTranslator(self.locale)
+        self.app.installTranslator(translator)
         self.loading_window = None
         self.overlay_window = None
         self.main_window = None
@@ -48,14 +48,14 @@ class App:
         self.tray = QSystemTrayIcon(self.icon)
 
         translator = QTranslator(self.app)
-        full_path = os.path.join(i18n_path, f"{QLocale().name()}")
-        if translator.load(locale.name(), ":/i18n"):
+        full_path = os.path.join(i18n_path, f"{self.locale.name()}")
+        if translator.load(self.locale.name(), ":/i18n"):
             translator.setParent(self.app)
             self.app.installTranslator(translator)
             QCoreApplication.installTranslator(translator)
             logger.debug(f"translator install success {QCoreApplication.translate('MainWindow', 'Debug')}")
         else:
-            logger.debug(f"No translation available for {locale}, falling back to English/default. {full_path}")
+            logger.debug(f"No translation available for {self.locale}, falling back to English/default. {full_path}")
 
         # Create a context menu for the tray
         menu = QMenu()
