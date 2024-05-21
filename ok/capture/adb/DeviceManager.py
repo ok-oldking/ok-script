@@ -1,11 +1,7 @@
-import os
-import subprocess
 import threading
 
 import adbutils
 import win32gui
-from adbutils import adb_path
-from adbutils.errors import AdbConnectionError, AdbTimeout
 
 from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title_and_exe
 from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod, do_screencap
@@ -19,19 +15,6 @@ from ok.interaction.Win32Interaction import Win32Interaction
 from ok.logging.Logger import get_logger
 
 logger = get_logger(__name__)
-
-
-def fix_adbutils_safe_connect(self):
-    try:
-        return self._create_socket()
-    except (AdbConnectionError, AdbTimeout):
-        flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-        subprocess.run([adb_path(), "start-server"], timeout=20.0,
-                       creationflags=flags)  # 20s should enough for adb start
-        return self._create_socket()
-
-
-adbutils._adb.AdbConnection._safe_connect = fix_adbutils_safe_connect
 
 
 class DeviceManager:

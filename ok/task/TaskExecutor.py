@@ -196,14 +196,13 @@ class TaskExecutor:
         processing_time = 0
         while not self.exit_event.is_set():
             try:
-                task, cycled = self.next_task()
-                if not task:
+                self.current_task, cycled = self.next_task()
+                if not self.current_task:
                     time.sleep(1)
                     continue
-                self.current_task = task
-                if isinstance(task, OneTimeTask):
-                    task.running = True
-                    communicate.task.emit(task)
+                if isinstance(self.current_task, OneTimeTask):
+                    self.current_task.running = True
+                    communicate.task.emit(self.current_task)
                 if cycled or self._frame is None:
                     self.next_frame()
                     processing_time = 0
@@ -213,14 +212,14 @@ class TaskExecutor:
                     self.next_frame()
                 self.detect_scene()
                 start = time.time()
-                result = task.run()
+                result = self.current_task.run()
                 processing_time += time.time() - start
-                if result and isinstance(task, TriggerTask):
-                    task.trigger_count += 1
-                    communicate.task.emit(task)
-                elif isinstance(task, OneTimeTask):
-                    task.set_done()
-                    communicate.task.emit(task)
+                if result and isinstance(self.current_task, TriggerTask):
+                    self.current_task.trigger_count += 1
+                    communicate.task.emit(self.current_task)
+                elif isinstance(self.current_task, OneTimeTask):
+                    self.current_task.set_done()
+                    communicate.task.emit(self.current_task)
                 self.current_task = None
             except TaskDisabledException:
                 logger.info(f"task is disabled, go to next task")
@@ -228,13 +227,15 @@ class TaskExecutor:
                 logger.info(f"FinishedException, breaking")
                 break
             except Exception as e:
+                if self.current_task is not None:
+                    self.current_task.disable()
                 traceback.print_exc()
                 stack_trace_str = traceback.format_exc()
-                logger.error(f"{task.name} exception: {e}, traceback: {stack_trace_str}")
+                logger.error(f"{self.current_task.name} exception: {e}, traceback: {stack_trace_str}")
             self.current_task = None
-            if isinstance(task, OneTimeTask):
-                task.running = False
-                communicate.task.emit(task)
+            if isinstance(self.current_task, OneTimeTask):
+                self.current_task.running = False
+                communicate.task.emit(self.current_task)
         logger.debug(f'exit_event is set, destroy all tasks')
         for task in self.onetime_tasks:
             task.on_destroy()

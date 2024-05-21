@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="ok-script",
-    version="0.0.32",
+    version="0.0.33",
     author="ok-oldking",
     author_email="firedcto@gmail.com",
     description="Automation with Computer Vision for Python",
@@ -20,14 +20,14 @@ setuptools.setup(
         "Operating System :: Microsoft :: Windows",
     ],
     install_requires=[
-        'adbutils~=2.6.2',
-        'numpy~=1.26.4',
-        'PyDirectInput~=1.0.4',
+        'adbutils==2.7.1',
+        'numpy==1.26.4',
+        'PyDirectInput==1.0.4',
         'pywin32==306',
-        'typing-extensions~=4.11.0',
-        'PySide6~=6.7.0',
-        'PySide6-Fluent-Widgets~=1.5.6',
-        'opencv-python~=4.9.0.80'
+        'typing-extensions==4.11.0',
+        'PySide6==6.7.0',
+        'PySide6-Fluent-Widgets==1.5.6',
+        'opencv-python==4.9.0.80'
     ],
     python_requires='>=3.6',
 )
