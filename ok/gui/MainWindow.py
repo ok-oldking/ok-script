@@ -1,7 +1,9 @@
 from PySide6.QtCore import QObject, Signal, Qt
+from PySide6.QtGui import QKeySequence, QShortcut
 from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow, InfoBar, InfoBarPosition, MessageBox
 
 import ok.gui
+from ok.capture.windows.dump import dump_threads
 from ok.gui.Communicate import communicate
 from ok.gui.about.AboutTab import AboutTab
 from ok.gui.start.StartTab import StartTab
@@ -47,6 +49,9 @@ class MainWindow(MSFluentWindow):
 
         communicate.executor_paused.connect(self.executor_paused)
         communicate.tab.connect(self.navigate_tab)
+
+        self.shortcut = QShortcut(QKeySequence("Ctrl+Alt+D"), self)
+        self.shortcut.activated.connect(dump_threads)
 
     def navigate_tab(self, index):
         if index == "start":

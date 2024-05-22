@@ -227,11 +227,13 @@ class TaskExecutor:
                 logger.info(f"FinishedException, breaking")
                 break
             except Exception as e:
+                name = ""
                 if self.current_task is not None:
                     self.current_task.disable()
+                    name = self.current_task.name
                 traceback.print_exc()
                 stack_trace_str = traceback.format_exc()
-                logger.error(f"{self.current_task.name} exception: {e}, traceback: {stack_trace_str}")
+                logger.error(f"{name} exception: {e}, traceback: {stack_trace_str}")
             self.current_task = None
             if isinstance(self.current_task, OneTimeTask):
                 self.current_task.running = False

@@ -1,6 +1,7 @@
 from PySide6.QtCore import Slot, QPropertyAnimation
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QPushButton
+from qfluentwidgets import PushButton
 
 import ok
 from ok.gui.Communicate import communicate
@@ -10,7 +11,7 @@ from ok.logging.Logger import get_logger
 logger = get_logger(__name__)
 
 
-class StartButton(QPushButton):
+class StartButton(PushButton):
     def __init__(self):
         super().__init__("Start")
         self.setCheckable(True)
