@@ -11,37 +11,14 @@
 5. 支持Python3.7以上版本
 6. 学习成本低, 自定义函数少, 也可以直接使用opencv, RapidOCR等api
 
-## Example Usage
 
-Basically you only need to write the Tasks and Scenes, the autoui framework will do all the heavy lifting.
-[genshin/main.py](genshin/main.py)
+## 目前有两个已完成项目：
+基于OCR，白荆回廊自动凹技能，可以连续跑几个小时的自动脚本[https://github.com/ok-oldking/ok-baijing](https://github.com/ok-oldking/ok-baijing)
 
-```python
-# Defining game scenes to handle different in-game situations through automated tasks
-task_executor.scenes.extend([
-    WorldScene(interaction, feature_set),
-    StartScene(interaction, feature_set),
-    MonthlyCardScene(interaction, feature_set),
-    DialogCloseButtonScene(interaction, feature_set),
-    DialogChoicesScene(interaction, feature_set),
-    DialogPlayingScene(interaction, feature_set),
-    BlackDialogScene(interaction, feature_set),
-])
+触发式任务，原神自动拾取， 跳过剧情等[https://github.com/ok-oldking/ok-genshin](https://github.com/ok-oldking/ok-genshin)
 
-# Adding automated tasks for gameplay, such as dialog navigation and item collection
-task_executor.tasks.extend([
-    AutoPlayDialogTask(interaction, feature_set),  # speeding up the dialogs
-    AutoChooseDialogTask(interaction, feature_set),  # choose dialog options
-    AutoPickTask(interaction, feature_set),  # pickup items in world scene
-    AutoLoginTask(interaction, feature_set),  # auto login and claim rewards
-])
-```
 
 ## Scenes
 
 ## Tasks
 
-## Project Structure
-
-- `autoui`: Framework code.
-- `genshin`: Example Genshin Impact automation project
