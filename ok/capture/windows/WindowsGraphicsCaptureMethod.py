@@ -174,7 +174,7 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
         if self.cputex:
             self.cputex.Release()
 
-    def get_frame(self):
+    def do_get_frame(self):
         if self.start_or_stop():
             frame = self.last_frame
             self.last_frame = None

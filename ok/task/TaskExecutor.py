@@ -2,6 +2,7 @@ import threading
 import time
 import traceback
 
+from ok.capture.BaseCaptureMethod import CaptureException
 from ok.capture.adb.DeviceManager import DeviceManager
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
@@ -227,10 +228,12 @@ class TaskExecutor:
                 logger.info(f"FinishedException, breaking")
                 break
             except Exception as e:
+                if isinstance(e, CaptureException):
+                    communicate.capture_error.emit()
                 name = ""
                 if self.current_task is not None:
-                    self.current_task.disable()
                     name = self.current_task.name
+                    self.current_task.disable()
                 traceback.print_exc()
                 stack_trace_str = traceback.format_exc()
                 logger.error(f"{name} exception: {e}, traceback: {stack_trace_str}")

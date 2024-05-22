@@ -35,8 +35,7 @@ class OneTimeTaskTab(Tab):
         communicate.task_info.connect(self.update_info_table)
 
     def task_update(self, task):
-        if task == ok.gui.executor.current_task:
-            self.update_info_table()
+        self.update_info_table()
 
     def update_info_table(self):
         task = ok.gui.executor.current_task

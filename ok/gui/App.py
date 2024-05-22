@@ -3,16 +3,14 @@ import sys
 
 from PySide6.QtCore import QSize, QCoreApplication, QLocale, QTranslator, Qt
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentTranslator, qconfig, Theme
 
 import ok
 import ok.gui.resources
-from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.gui.i18n.path import i18n_path
 from ok.gui.overlay.OverlayWindow import OverlayWindow
-from ok.gui.start.StartTab import StartTab
 from ok.logging.Logger import get_logger
 
 logger = get_logger(__name__)
@@ -45,7 +43,6 @@ class App:
         self.main_window = None
         self.exit_event = exit_event
         self.icon = QIcon(self.config.get('gui_icon') or ":/icon/icon.ico")
-        self.tray = QSystemTrayIcon(self.icon)
 
         translator = QTranslator(self.app)
         full_path = os.path.join(i18n_path, f"{self.locale.name()}")
@@ -57,30 +54,6 @@ class App:
         else:
             logger.debug(f"No translation available for {self.locale}, falling back to English/default. {full_path}")
 
-        # Create a context menu for the tray
-        menu = QMenu()
-        exit_action = menu.addAction(self.app.tr("Exit"))
-        exit_action.triggered.connect(self.quit)
-
-        # Set the context menu and show the tray icon
-        self.tray.setContextMenu(menu)
-        self.tray.show()
-
-        communicate.notification.connect(self.show_notification)
-
-    def show_notification(self, title, message):
-        if title is None:
-            title = self.title
-        self.tray.showMessage(title, message)
-
-    def show(self):
-        self.loading_window = StartTab(self, self.exit_event)
-        size = self.size_relative_to_screen(width=0.6, height=0.4)
-        self.loading_window.resize(size)
-        self.loading_window.setMinimumSize(size)
-        self.center_window(self.loading_window)
-        self.loading_window.show()
-
     def center_window(self, window):
         screen = self.app.primaryScreen()
         size = screen.size()
@@ -91,7 +64,7 @@ class App:
         window.move(half_screen_width / 2, half_screen_height / 2)
 
     def show_main_window(self):
-        self.main_window = MainWindow(self.overlay, self.about, exit_event=self.exit_event)
+        self.main_window = MainWindow(self.icon, self.overlay, self.about, exit_event=self.exit_event)
         self.main_window.setWindowTitle(f'{self.title} {self.version}')  # Set the window title here
         self.main_window.setWindowIcon(self.icon)
         if self.overlay and ok.gui.device_manager.hwnd is not None:
@@ -119,7 +92,3 @@ class App:
 
     def exec(self):
         sys.exit(self.app.exec())
-
-    def quit(self):
-        ok.gui.ok.quit()
-        self.app.quit()

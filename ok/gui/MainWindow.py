@@ -1,5 +1,6 @@
 from PySide6.QtCore import QObject, Signal, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow, InfoBar, InfoBarPosition, MessageBox
 
 import ok.gui
@@ -19,7 +20,7 @@ class Communicate(QObject):
 
 
 class MainWindow(MSFluentWindow):
-    def __init__(self, debug=False, about=None, exit_event=None):
+    def __init__(self, icon, debug=False, about=None, exit_event=None):
         super().__init__()
         self.exit_event = exit_event
         self.start_tab = StartTab()
@@ -52,6 +53,41 @@ class MainWindow(MSFluentWindow):
 
         self.shortcut = QShortcut(QKeySequence("Ctrl+Alt+D"), self)
         self.shortcut.activated.connect(dump_threads)
+
+        # Create a context menu for the tray
+        menu = QMenu()
+        exit_action = menu.addAction(self.tr("Exit"))
+        exit_action.triggered.connect(ok.gui.ok.quit)
+
+        self.tray = QSystemTrayIcon(icon)
+
+        # Set the context menu and show the tray icon
+        self.tray.setContextMenu(menu)
+        self.tray.show()
+
+        communicate.capture_error.connect(self.capture_error)
+        communicate.notification.connect(self.show_notification)
+
+    def show_notification(self, message, title=None, error=None):
+        bar = InfoBar.error if error else InfoBar.info
+        if title is None:
+            title = f"{self.tr('Error') if error else 'Info'}:"
+        bar(
+            title=title,
+            content=message,
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=5000,  # won't disappear automatically
+            parent=self.window()
+        )
+        if title is None:
+            title = self.title
+        self.tray.showMessage(title, message)
+
+    def capture_error(self):
+        self.show_notification(self.tr('Please check whether the game window is selected correctly!'),
+                               self.tr('Capture Error'), error=True)
 
     def navigate_tab(self, index):
         if index == "start":

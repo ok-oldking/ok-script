@@ -12,12 +12,13 @@ class Communicate(QObject):
     task_info = Signal()
     window = Signal(bool, int, int, int, int, int, int, float)
     loading_progress = Signal(str)
-    notification = Signal(str, str)
+    notification = Signal(str, str, bool)
     executor_paused: Signal = Signal(bool)
     screenshot = Signal(np.ndarray, str)
     update_overlay = Signal()
     adb_devices: Signal = Signal(bool)
     tab = Signal(str)
+    capture_error = Signal()
 
     def emit_draw_box(self, key: str = None, boxes=None, color=None, frame=None):
         self.draw_box.emit(key, boxes, color, frame)

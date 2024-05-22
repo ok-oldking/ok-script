@@ -34,7 +34,7 @@ class ADBCaptureMethod(BaseCaptureMethod):
         return self._size[1]
 
     @override
-    def get_frame(self) -> np.ndarray | None:
+    def do_get_frame(self) -> np.ndarray | None:
         return self.screencap()
 
     def screencap(self):

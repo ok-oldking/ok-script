@@ -1,9 +1,10 @@
 import logging
 import os
+import sys
 import traceback
-import ok
 from logging.handlers import TimedRotatingFileHandler
 
+import ok
 from ok.util.path import get_path_relative_to_exe, ensure_dir_for_file
 
 
@@ -32,6 +33,13 @@ def get_substring_from_last_dot_exclusive(s):
 
 
 auto_helper_logger = logging.getLogger("ok")
+
+
+def log_exception_handler(exctype, value, traceback):
+    if auto_helper_logger is not None:
+        auto_helper_logger.error(f"Uncaught exception: {exctype}, traceback: {traceback}")
+        # Call the default excepthook to print the traceback
+        sys.__excepthook__(exctype, value, traceback)
 
 
 def config_logger(config):
@@ -69,6 +77,8 @@ def config_logger(config):
         file_handler.setFormatter(formatter)
         file_handler.setLevel(logging.ERROR)  # File handler level
         auto_helper_logger.addHandler(file_handler)
+
+    sys.excepthook = log_exception_handler
 
 
 class Logger:
