@@ -80,12 +80,12 @@ class StartCard(SettingCard):
             if not ok.gui.executor.connected():
                 self.status_bar.setTitle(self.tr("Game Window Disconnected"))
                 self.status_bar.setState(True)
-            elif task := ok.gui.executor.current_task:
-                self.status_bar.setTitle(self.tr("Running") + ": " + task.name)
-                self.status_bar.setState(False)
             elif active_trigger_task_count := ok.gui.executor.active_trigger_task_count():
                 self.status_bar.setTitle(
-                    self.tr("Running") + ": " + str(active_trigger_task_count) + self.tr("triggers"))
+                    self.tr("Running") + ": " + str(active_trigger_task_count) + ' ' + self.tr("Trigger Tasks"))
+                self.status_bar.setState(False)
+            elif task := ok.gui.executor.current_task:
+                self.status_bar.setTitle(self.tr("Running") + ": " + task.name)
                 self.status_bar.setState(False)
             else:
                 self.status_bar.setTitle(self.tr("Waiting for task to be enabled"))

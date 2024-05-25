@@ -93,6 +93,9 @@ class BaseTask(ExecutorOperation):
     def info_set(self, key, value):
         self.info[key] = value
 
+    def info_add(self, key, count=1):
+        self.info[key] = self.info.get(key, 0) + count
+
     def load_config(self, folder):
         self.config = Config(self.default_config, folder, self.__class__.__name__)
 

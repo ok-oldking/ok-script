@@ -1,5 +1,6 @@
 # original https://github.com/dantmnf & https://github.com/hakaboom/winAuto
 import ctypes
+import os
 import re
 import threading
 import time
@@ -194,7 +195,10 @@ def get_exe_name_by_hwnd(hwnd):
         exe_name = ctypes.create_unicode_buffer(1024)
         GetModuleFileNameExW(h_process, None, exe_name, 1024)
 
+        # Extract the executable name from the full path
+        exe_only_name = os.path.basename(exe_name.value)
+
         # Close the process handle
         CloseHandle(h_process)
 
-        return exe_name.value
+        return exe_only_name

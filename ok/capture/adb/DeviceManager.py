@@ -54,7 +54,7 @@ class DeviceManager:
                     except Exception as e:
                         logger.error("adb connect error", e)
             self._connect_all = True
-            logger.debug(f'connect_all {self.adb.device_list()}')
+            logger.debug(f'connect_all')
 
     def get_devices(self):
         return list(self.device_dict.values())
