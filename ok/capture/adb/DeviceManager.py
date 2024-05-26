@@ -2,6 +2,7 @@ import threading
 
 import adbutils
 import win32gui
+from adbutils import AdbError
 
 from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title_and_exe
 from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod, do_screencap
@@ -217,7 +218,7 @@ class DeviceManager:
             elif not isinstance(self.capture_method, ADBCaptureMethod):
                 if self.capture_method is not None:
                     self.capture_method.close()
-                self.capture_method = ADBCaptureMethod(self._device, self.exit_event, width=width,
+                self.capture_method = ADBCaptureMethod(self, self.exit_event, width=width,
                                                        height=height)
             self.interaction = ADBBaseInteraction(self, self.capture_method, width, height)
             if self.debug and hwnd_name:
@@ -255,5 +256,10 @@ class DeviceManager:
         if device is not None:
             try:
                 return device.shell(*args, **kwargs)
-            except Exception as e:
-                logger.error(f"shell_wrapper error occurred: {e}")
+            except AdbError as e:
+                addr = self.get_preferred_device()['address']
+                self.adb.connect(addr)
+                logger.error(f"shell_wrapper error occurred: {e} ,try reconnect {addr}")
+                return device.shell(*args, **kwargs)
+        else:
+            raise Exception('Device is none')

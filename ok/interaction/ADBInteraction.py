@@ -27,4 +27,4 @@ class ADBBaseInteraction(BaseInteraction):
         super().click(x, y)
         x = int(x * self.width / self.capture.width)
         y = int(y * self.height / self.capture.height)
-        self.device_manager.device.shell(f"input tap {x} {y}")
+        self.device_manager.shell(f"input tap {x} {y}")
