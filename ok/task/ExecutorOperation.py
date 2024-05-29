@@ -13,10 +13,13 @@ class ExecutorOperation:
     def box_in_horizontal_center(self, box, off_percent=0.02):
         if box is None:
             return False
+
         center = self.executor.method.width / 2
-        left = center - box.x
-        right = box.x + box.width - center
-        if left > 0 and right > 0 and abs(left - right) / box.width < off_percent:
+        box_center = box.x + box.width / 2
+
+        offset = abs(box_center - center)
+
+        if offset / self.executor.method.width < off_percent:
             return True
         else:
             return False

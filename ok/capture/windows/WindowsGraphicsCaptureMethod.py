@@ -118,37 +118,40 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
         self.start_or_stop()
 
     def connected(self):
-        return self.hwnd_window is not None and self.hwnd_window.exists
+        return self.hwnd_window is not None and self.hwnd_window.exists and self.frame_pool is not None
 
     def start_or_stop(self, capture_cursor=False):
-        if self.hwnd_window.exists and self.frame_pool is None:
-            logger.info('init windows capture')
-            self.rtdevice = IDirect3DDevice()
-            self.dxdevice = d3d11.ID3D11Device()
-            self.immediatedc = d3d11.ID3D11DeviceContext()
-            self.create_device()
-            interop = GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(
-                IGraphicsCaptureItemInterop)
-            item = interop.CreateForWindow(self.hwnd_window.hwnd, IGraphicsCaptureItem.GUID)
-            self.item = item
-            self.last_size = item.Size
-            delegate = TypedEventHandler(GraphicsCaptureItem, IInspectable).delegate(
-                self.close)
-            self.evtoken = item.add_Closed(delegate)
-            self.frame_pool = Direct3D11CaptureFramePool.CreateFreeThreaded(self.rtdevice,
-                                                                            DirectXPixelFormat.B8G8R8A8UIntNormalized,
-                                                                            1, item.Size)
-            self.session = self.frame_pool.CreateCaptureSession(item)
-            pool = self.frame_pool
-            pool.add_FrameArrived(
-                TypedEventHandler(Direct3D11CaptureFramePool, IInspectable).delegate(
-                    self.frame_arrived_callback))
-            self.session.IsCursorCaptureEnabled = capture_cursor
-            if WINDOWS_BUILD_NUMBER >= WGC_NO_BORDER_MIN_BUILD:
-                self.session.IsBorderRequired = False
-            self.session.StartCapture()
-        elif not self.hwnd_window.exists and self.frame_pool is not None:
-            self.close()
+        try:
+            if self.hwnd_window.exists and self.frame_pool is None:
+                logger.info('init windows capture')
+                self.rtdevice = IDirect3DDevice()
+                self.dxdevice = d3d11.ID3D11Device()
+                self.immediatedc = d3d11.ID3D11DeviceContext()
+                self.create_device()
+                interop = GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(
+                    IGraphicsCaptureItemInterop)
+                item = interop.CreateForWindow(self.hwnd_window.hwnd, IGraphicsCaptureItem.GUID)
+                self.item = item
+                self.last_size = item.Size
+                delegate = TypedEventHandler(GraphicsCaptureItem, IInspectable).delegate(
+                    self.close)
+                self.evtoken = item.add_Closed(delegate)
+                self.frame_pool = Direct3D11CaptureFramePool.CreateFreeThreaded(self.rtdevice,
+                                                                                DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                                                                                1, item.Size)
+                self.session = self.frame_pool.CreateCaptureSession(item)
+                pool = self.frame_pool
+                pool.add_FrameArrived(
+                    TypedEventHandler(Direct3D11CaptureFramePool, IInspectable).delegate(
+                        self.frame_arrived_callback))
+                self.session.IsCursorCaptureEnabled = capture_cursor
+                if WINDOWS_BUILD_NUMBER >= WGC_NO_BORDER_MIN_BUILD:
+                    self.session.IsBorderRequired = False
+                self.session.StartCapture()
+            elif not self.hwnd_window.exists and self.frame_pool is not None:
+                self.close()
+        except Exception as e:
+            logger.error('start_or_stop failed:', exception=e)
         return self.hwnd_window.exists
 
     def create_device(self):

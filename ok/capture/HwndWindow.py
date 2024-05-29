@@ -101,7 +101,7 @@ class HwndWindow:
                     visible = is_foreground_window(self.hwnd)
                     x, y, border, title_height, width, height, scaling = get_window_bounds(
                         self.hwnd)
-                    if self.frame_aspect_ratio != 0:
+                    if self.frame_aspect_ratio != 0 and height != 0:
                         window_ratio = width / height
                         if window_ratio < self.frame_aspect_ratio:
                             cropped_window_height = int(width / self.frame_aspect_ratio)
@@ -124,7 +124,7 @@ class HwndWindow:
                     changed = True
                 if changed:
                     logger.debug(
-                        f"do_update_window_size changed: {self.visible} {self.x} {self.y} {self.border} {self.width} {self.height} {self.scaling}")
+                        f"do_update_window_size changed,visible:{self.visible} x:{self.x} y:{self.y} border:{self.border} width:{self.width} height:{self.height} self.title_height:{self.title_height} scaling:{self.scaling}")
                     communicate.window.emit(self.visible, self.x, self.y, self.border, self.title_height, self.width,
                                             self.height, self.scaling)
         except Exception as e:
@@ -142,37 +142,29 @@ class HwndWindow:
         return ""
 
 
-def find_hwnd_by_title_and_exe(title, exe):
-    if not title and not exe:
-        return None
-    hwnds = find_hwnds_by_title(title)
-    if exe is not None:
-        for hwnd in hwnds:
-            exe_2 = get_exe_name_by_hwnd(hwnd)
-            if exe_2 == exe:
-                return hwnd
-    if len(hwnds) > 0:
-        return hwnds[0]
+def find_hwnd_by_title_and_exe(title, exe_name):
+    result = []
 
+    def callback(hwnd, lParam):
+        if len(result) == 0 and win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
+            if title:
+                text = win32gui.GetWindowText(hwnd)
+                if isinstance(title, str):
+                    if title != text:
+                        return True
+                elif not re.search(title, text):
+                    return True
+            if exe_name:
+                name = get_exe_name_by_hwnd(hwnd)
+                if name == exe_name:
+                    result.append(hwnd)
+                    return True  # Stop enumeration as we found the first match
+            else:
+                result.append(hwnd)
+        return True
 
-def find_hwnds_by_title(title):
-    hwnds = []
-    if not title:
-        return hwnds
-
-    def enum_windows_proc(hwnd, lParam):
-        text = win32gui.GetWindowText(hwnd)
-        if text and win32gui.IsWindowVisible(hwnd):
-            if isinstance(title, str) and title == text:
-                hwnds.append(hwnd)
-            elif re.search(title, text):
-                hwnds.append(hwnd)
-
-    win32gui.EnumWindows(enum_windows_proc, None)
-    if len(hwnds) > 0:
-        if len(hwnds) > 1:
-            logger.warning(f"Found multiple hwnds {len(hwnds)}")
-    return hwnds
+    win32gui.EnumWindows(callback, None)
+    return result[0] if result else None
 
 
 OpenProcess = ctypes.windll.kernel32.OpenProcess

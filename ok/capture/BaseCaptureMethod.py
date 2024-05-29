@@ -8,13 +8,6 @@ class CaptureException(Exception):
 class BaseCaptureMethod:
     name = "None"
     description = ""
-    last_captured_frame: np.ndarray
-    top_cut = 0
-    bottom_cut = 0
-    left_cut = 0
-    right_cut = 0
-    width = 0
-    height = 0
     _size = (0, 0)
 
     def __init__(self):

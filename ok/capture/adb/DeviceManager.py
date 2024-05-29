@@ -26,6 +26,7 @@ class DeviceManager:
         self.adb = self.adb = adbutils.AdbClient(host="127.0.0.1")
         logger.debug(f'connect adb')
         self.hwnd_title = hwnd_title
+        self.pc_device = None
         self.exe_name = exe_name
         self.debug = debug
         self.interaction = None
@@ -44,7 +45,13 @@ class DeviceManager:
 
     @property
     def device_dict(self):
-        return self.config.get("devices")
+        device_dict = self.config.get("devices")
+        if self.pc_device is not None:
+            full = {'pc': self.pc_device}
+            full.update(device_dict)
+            return full
+        else:
+            return device_dict
 
     def connect_all(self):
         if not self._connect_all:
@@ -61,7 +68,6 @@ class DeviceManager:
         return list(self.device_dict.values())
 
     def do_refresh(self):
-        self.connect_all()
 
         if self.hwnd_title:
             nick = ""
@@ -74,15 +80,17 @@ class DeviceManager:
                     hwnd)
             if not nick:
                 nick = self.exe_name
-            self.device_dict[self.hwnd_title] = {"address": "", "imei": self.hwnd_title, "device": "windows",
-                                                 "model": "", "nick": nick, "width": width,
-                                                 "height": height,
-                                                 "hwnd": nick, "capture": "windows",
-                                                 "connected": hwnd is not None
-                                                 }
+            self.pc_device = {"address": "", "imei": 'pc', "device": "windows",
+                              "model": "", "nick": nick, "width": width,
+                              "height": height,
+                              "hwnd": nick, "capture": "windows",
+                              "connected": hwnd is not None
+                              }
             if width != 0:
-                self.device_dict[self.hwnd_title]["resolution"] = f"{width}x{height}"
+                self.pc_device["resolution"] = f"{width}x{height}"
             communicate.adb_devices.emit(False)
+
+        self.connect_all()
 
         installed_emulators = installed_emulator()
         for device in self.adb.list():
