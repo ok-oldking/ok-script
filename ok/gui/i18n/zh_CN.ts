@@ -529,7 +529,7 @@
     </message>
 </context>
 <context>
-    <name>self.app</name>
+    <name>app</name>
     <message>
         <location filename="../App.py" line="72"/>
         <source>Error</source>
@@ -537,13 +537,8 @@
     </message>
     <message>
         <location filename="../App.py" line="73"/>
-        <source>Install dir </source>
-        <translation>安装目录</translation>
-    </message>
-    <message>
-        <location filename="../App.py" line="74"/>
-        <source> must be an English path, move to another path.</source>
-        <translation>必须是英文目录，请移动到英文目录。</translation>
+        <source>Install dir {path} must be an English path, move to another path.</source>
+        <translation>安装目录{path}必须是英文目录，请移动到英文目录。</translation>
     </message>
 </context>
 </TS>

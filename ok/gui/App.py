@@ -68,9 +68,10 @@ class App:
         message_window.show()
 
     def show_path_ascii_error(self, path):
-        title = self.app.tr('Error')
-        content = self.app.tr(
-            "Install dir ") + path + self.app.tr(" must be an English path, move to another path.")
+        title = QCoreApplication.translate("app", 'Error')
+        content = QCoreApplication.translate("app",
+                                             "Install dir {path} must be an English path, move to another path.").format(
+            path=path)
         self.show_message_window(title, content)
 
     def show_main_window(self):
