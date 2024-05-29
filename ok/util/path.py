@@ -24,6 +24,14 @@ def get_path_relative_to_exe(*files):
     return normalized_path
 
 
+def install_path_isascii():
+    path = get_path_relative_to_exe('')
+
+    isascii = path.isascii()
+
+    return isascii, path
+
+
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     base_dir = os.path.dirname(os.path.abspath(__file__))

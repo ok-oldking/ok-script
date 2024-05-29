@@ -23,6 +23,7 @@ class StartCard(SettingCard):
         self.update_status()
         self.start_button.clicked.connect(self.clicked)
         communicate.executor_paused.connect(self.update_status)
+        communicate.window.connect(self.update_status)
         communicate.task.connect(self.update_task)
 
     def status_clicked(self):
@@ -36,6 +37,8 @@ class StartCard(SettingCard):
             self.status_bar.show()
 
     def clicked(self):
+        supported_ratio = ok.gui.app.config.get(
+            'supported_screen_ratio')
         if not ok.gui.executor.connected():
             InfoBar.error(
                 title=self.tr('Error:'),
@@ -47,6 +50,20 @@ class StartCard(SettingCard):
                 parent=self
             )
             self.show_choose_hwnd.emit()
+            return
+        supported, resolution = ok.gui.executor.supports_screen_ratio(supported_ratio)
+        if not supported:
+            InfoBar.error(
+                title=self.tr('Error:'),
+                content=self.tr(
+                    "Window resolution {resolution} is not supported, the supported ratio is {supported_ratio}",
+                ).format(resolution=resolution, supported_ratio=supported_ratio),
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=5000,
+                parent=self
+            )
             return
         device = ok.gui.device_manager.get_preferred_device()['device']
         if device == "windows" and not is_admin():
@@ -79,6 +96,9 @@ class StartCard(SettingCard):
             self.start_button.setIcon(FluentIcon.PAUSE)
             if not ok.gui.executor.connected():
                 self.status_bar.setTitle(self.tr("Game Window Disconnected"))
+                self.status_bar.setState(True)
+            elif not ok.gui.executor.can_capture():
+                self.status_bar.setTitle(self.tr('Paused: PC Game Window Must Be in Front!'))
                 self.status_bar.setState(True)
             elif active_trigger_task_count := ok.gui.executor.active_trigger_task_count():
                 self.status_bar.setTitle(

@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QApplication
 import ok
 from ok.logging.Logger import get_logger, config_logger
 from ok.util.exit_event import ExitEvent
+from ok.util.path import install_path_isascii
 
 logger = get_logger(__name__)
 
@@ -49,8 +50,8 @@ class OK:
     def start(self):
         try:
             if self.config.get("use_gui"):
-                self.do_init()
-                self.app.show_main_window()
+                if self.do_init():
+                    self.app.show_main_window()
                 self.app.exec()
             else:
                 self.task_executor.start()
@@ -80,11 +81,15 @@ class OK:
             logger.error("start error", e)
             self.exit_event.set()
             if self.app:
-                self.app.quit()
+                self.quit()
 
     def do_init(self):
         logger.info(f"initializing {self.__class__.__name__}, config: {self.config}")
         if self.config.get('ocr'):
+            isascii, path = install_path_isascii()
+            if not isascii:
+                self.app.show_path_ascii_error(path)
+                return False
             from rapidocr_openvino import RapidOCR
             self.ocr = RapidOCR()
 
@@ -109,6 +114,8 @@ class OK:
         if self.app:
             ok.gui.executor = self.task_executor
 
+        return True
+
     def wait_task(self):
         while not self.exit_event.is_set():
             time.sleep(1)
@@ -117,6 +124,8 @@ class OK:
         logger.debug('quit app')
         self.exit_event.set()
         self.device_manager.stop()
+        if self.app:
+            self.app.quit()
 
     def init_device_manager(self):
         if self.device_manager is None:

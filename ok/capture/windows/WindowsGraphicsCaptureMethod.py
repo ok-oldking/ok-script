@@ -43,6 +43,7 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
     def __init__(self, hwnd_window: HwndWindow):
         super().__init__()
         self.hwnd_window = hwnd_window
+        self.start_or_stop()
 
     def frame_arrived_callback(self, x, y):
         try:
@@ -180,9 +181,7 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
             self.last_frame = None
             latency = time.time() - self.last_frame_time
             self.last_frame_time = time.time()
-            if latency > 1:
-                logger.warning(f"latency too large return None frame: {latency}")
-                return None
+
             if frame is not None:
                 x, y = self.hwnd_window.get_top_left_frame_offset()
                 if x > 0 or y > 0:
@@ -194,11 +193,26 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
                     logger.warning(f"get_frame size <=0 {new_width}x{new_height}")
                     frame = None
                 else:
-                    self.width = new_width
-                    self.height = new_height
+                    self._size = (new_width, new_height)
                     if frame.shape[2] == 4:
                         frame = frame[:, :, :3]
-            return frame
+            if latency > 1:
+                logger.warning(f"latency too large return None frame: {latency}")
+                return None
+            else:
+                return frame
+
+    @property
+    def width(self):
+        if self._size[0] == 0:
+            self.do_get_frame()
+        return self._size[0]
+
+    @property
+    def height(self):
+        if self._size[1] == 0:
+            self.do_get_frame()
+        return self._size[1]
 
     def reset_framepool(self, size, reset_device=False):
         if reset_device:

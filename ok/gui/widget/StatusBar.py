@@ -10,7 +10,7 @@ class StatusBar(QWidget):
     """ State tooltip """
     clicked = Signal()
 
-    def __init__(self, title, running_icon=FluentIcon.SYNC, done_icon=FluentIcon.COMPLETED, done=True, parent=None):
+    def __init__(self, title, running_icon=FluentIcon.SYNC, done_icon=FluentIcon.PAUSE, done=True, parent=None):
         """
         Parameters
         ----------

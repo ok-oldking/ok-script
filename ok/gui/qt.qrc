@@ -7,10 +7,12 @@
         <file>qss/dark/status_bar.qss</file>
         <file>qss/dark/tab.qss</file>
         <file>qss/dark/card.qss</file>
+        <file>qss/dark/message_window.qss</file>
 
         <file>qss/light/stop.svg</file>
         <file>qss/light/status_bar.qss</file>
         <file>qss/light/tab.qss</file>
         <file>qss/light/card.qss</file>
+        <file>qss/light/message_window.qss</file>
     </qresource>
 </RCC>

@@ -72,10 +72,33 @@ class TaskExecutor:
     def nullable_frame(self):
         return self._frame
 
+    def supports_screen_ratio(self, supported_ratio):
+        if supported_ratio is None:
+            return True
+        width = self.method.width
+        height = self.method.height
+        if height == 0:
+            actual_ratio = 0
+        else:
+            actual_ratio = width / height
+
+        # Parse the supported ratio string
+        supported_ratio = [int(i) for i in supported_ratio.split(':')]
+        supported_ratio = supported_ratio[0] / supported_ratio[1]
+
+        # Calculate the difference between the actual and supported ratios
+        difference = abs(actual_ratio - supported_ratio)
+
+        # Check if the difference is within 1%
+        return difference <= 0.01 * supported_ratio, f"{width}x{height}"
+
+    def can_capture(self):
+        return self.method is not None and self.interaction is not None and self.interaction.should_capture()
+
     def next_frame(self):
         self.reset_scene()
         while not self.exit_event.is_set():
-            if self.method and self.interaction.should_capture():
+            if self.can_capture():
                 self._frame = self.method.get_frame()
                 if self._frame is not None:
                     height, width = self._frame.shape[:2]

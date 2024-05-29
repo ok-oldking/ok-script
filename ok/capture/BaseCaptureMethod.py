@@ -1,7 +1,9 @@
 import numpy as np
 
+
 class CaptureException(Exception):
     pass
+
 
 class BaseCaptureMethod:
     name = "None"
@@ -13,6 +15,7 @@ class BaseCaptureMethod:
     right_cut = 0
     width = 0
     height = 0
+    _size = (0, 0)
 
     def __init__(self):
         # Some capture methods don't need an initialization process

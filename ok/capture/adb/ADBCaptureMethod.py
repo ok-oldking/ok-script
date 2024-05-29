@@ -16,7 +16,6 @@ class ADBCaptureMethod(BaseCaptureMethod):
     def __init__(self, device_manager, exit_event, width=0, height=0):
         super().__init__()
         self.exit_event = exit_event
-        self._size = (width, height)
         self._connected = (width != 0 and height != 0)
         self.device_manager = device_manager
 

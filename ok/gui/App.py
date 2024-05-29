@@ -9,6 +9,7 @@ from qfluentwidgets import FluentTranslator, qconfig, Theme
 import ok
 import ok.gui.resources
 from ok.gui.MainWindow import MainWindow
+from ok.gui.MessageWindow import MessageWindow
 from ok.gui.i18n.path import i18n_path
 from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.logging.Logger import get_logger
@@ -60,8 +61,17 @@ class App:
         # Calculate half the screen size
         half_screen_width = size.width() / 2
         half_screen_height = size.height() / 2
-
         window.move(half_screen_width / 2, half_screen_height / 2)
+
+    def show_message_window(self, title, message):
+        message_window = MessageWindow(self.icon, title, message, exit_event=self.exit_event)
+        message_window.show()
+
+    def show_path_ascii_error(self, path):
+        title = self.app.tr('Error')
+        content = self.app.tr(
+            "Install dir ") + path + self.app.tr(" must be an English path, move to another path.")
+        self.show_message_window(title, content)
 
     def show_main_window(self):
         self.main_window = MainWindow(self.icon, self.overlay, self.about, exit_event=self.exit_event)
@@ -92,3 +102,6 @@ class App:
 
     def exec(self):
         sys.exit(self.app.exec())
+
+    def quit(self):
+        self.app.quit()
