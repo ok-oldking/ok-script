@@ -17,6 +17,7 @@ class Communicate(QObject):
     screenshot = Signal(np.ndarray, str)
     update_overlay = Signal()
     adb_devices: Signal = Signal(bool)
+    config_validation: Signal = Signal(str)
     tab = Signal(str)
     capture_error = Signal()
 

@@ -11,7 +11,6 @@ from win32 import win32gui
 from ok.capture.windows.window import is_foreground_window, get_window_bounds
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
-from ok.util.exit_event import ExitEvent
 
 logger = get_logger(__name__)
 
@@ -41,7 +40,7 @@ class HwndWindow:
         super().__init__()
         self.app_exit_event = exit_event
         self.exe_name = exe_name
-        self.stop_event = ExitEvent()
+        self.stop_event = threading.Event()
         self.update_title_re(title)
         self.visible = False
         self.update_frame_size(frame_width, frame_height)

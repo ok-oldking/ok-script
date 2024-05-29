@@ -5,10 +5,9 @@ from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 class LabelAndDropDown(ConfigLabelAndWidget):
 
-    def __init__(self, config, config_desc, options, key: str):
-        super().__init__(config_desc, key)
+    def __init__(self, task, options, key: str):
+        super().__init__(task, key)
         self.key = key
-        self.config = config
         self.combo_box = ComboBox()
         self.combo_box.addItems(options)
         self.combo_box.setCurrentIndex(find_string_index(options, self.config.get(self.key)))
@@ -17,7 +16,7 @@ class LabelAndDropDown(ConfigLabelAndWidget):
         self.add_widget(self.combo_box)
 
     def text_changed(self, text):
-        self.config[self.key] = text
+        self.update_config(text)
 
 
 def find_string_index(my_list, target_string):

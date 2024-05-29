@@ -32,7 +32,7 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
     description = "fast, most compatible, capped at 60fps"
     last_frame = None
     last_frame_time = 0
-    hwnd_window: HwndWindow = None
+    _hwnd_window: HwndWindow = None
     frame_pool = None
     item = None
     session = None
@@ -42,7 +42,7 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
 
     def __init__(self, hwnd_window: HwndWindow):
         super().__init__()
-        self.hwnd_window = hwnd_window
+        self._hwnd_window = hwnd_window
         self.start_or_stop()
 
     def frame_arrived_callback(self, x, y):
@@ -107,6 +107,15 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
                 self.reset_framepool(frame.ContentSize, need_reset_device)
                 return self.get_frame()
         self.last_frame = img
+
+    @property
+    def hwnd_window(self):
+        return self._hwnd_window
+
+    @hwnd_window.setter
+    def hwnd_window(self, hwnd_window):
+        self._hwnd_window = hwnd_window
+        self.start_or_stop()
 
     def connected(self):
         return self.hwnd_window is not None and self.hwnd_window.exists

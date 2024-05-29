@@ -305,6 +305,7 @@ class TaskExecutor:
         return self.current_scene
 
     def stop(self):
+        logger.info('stop')
         self.exit_event.set()
 
     def wait_until_done(self):

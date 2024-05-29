@@ -3,8 +3,14 @@ from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
 class ConfigLabelAndWidget(LabelAndWidget):
 
-    def __init__(self, config_desc, key: str):
+    def __init__(self, task, key: str):
         desc = None
-        if config_desc is not None:
-            desc = config_desc.get(key)
+        self.key = key
+        self.task = task
+        self.config = task.config
+        if task.config_description is not None:
+            desc = task.config_description.get(key)
         super().__init__(key, desc)
+
+    def update_config(self, value):
+        self.config[self.key] = value

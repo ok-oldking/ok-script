@@ -97,7 +97,17 @@ class BaseTask(ExecutorOperation):
         self.info[key] = self.info.get(key, 0) + count
 
     def load_config(self, folder):
-        self.config = Config(self.default_config, folder, self.__class__.__name__)
+        self.config = Config(self.default_config, folder, self.__class__.__name__, self.validate)
+
+    def validate(self, key, value):
+        message = self.validate_config(key, value)
+        if message:
+            return False, message
+        else:
+            return True, None
+
+    def validate_config(self, key, value):
+        pass
 
     def enable(self):
         if not self._enabled:

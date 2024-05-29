@@ -20,10 +20,9 @@ logger = get_logger(__name__)
 
 class Screenshot(QObject):
 
-    def __init__(self):
+    def __init__(self, exit_event):
         super().__init__()
         self.queue = []
-        self.exit_event = ok.gui.ok.exit_event
         self.time_to_expire = 3
         self.ui_dict = {}
         self.color_map = {
@@ -31,10 +30,13 @@ class Screenshot(QObject):
             "green": QColor(0, 255, 0),  # RGB for green
             "blue": QColor(0, 0, 255)  # RGB for blue
         }
+        self.exit_event = exit_event
         communicate.draw_box.connect(self.draw_box)
         communicate.screenshot.connect(self.screenshot)
         self.click_screenshot_folder = get_path_relative_to_exe(ok.gui.ok.config.get("click_screenshots_folder"))
         self.screenshot_folder = get_path_relative_to_exe(ok.gui.ok.config.get("screenshots_folder"))
+        logger.debug(f"init Screenshot {self.screenshot_folder} {self.click_screenshot_folder}")
+        print(f"init Screenshot {self.screenshot_folder} {self.screenshot_folder}")
         if self.click_screenshot_folder is not None or self.screenshot_folder is not None:
             self.task_queue = queue.Queue()
             self.exit_event.bind_queue(self.task_queue)
@@ -106,6 +108,7 @@ class Screenshot(QObject):
         pil_image = self.to_pil_image(frame)
         if pil_image is None:
             return
+        self.save_pil_image(name + '_original', folder, pil_image)
         # Ensure no fill
         draw = ImageDraw.Draw(pil_image)
 
@@ -127,6 +130,11 @@ class Screenshot(QObject):
                 # Put text
                 draw.text((x, y + height + 8), f"{box.name or key}_{round(box.confidence * 100)}", fill=color,
                           font=self.pil_font)
+        self.save_pil_image(name + '_boxed', folder, pil_image)
+
+    def save_pil_image(self, name, folder, pil_image):
+
+        logger.debug(f'save_pil_image {name}, {folder}')
         now = datetime.now()
 
         # Convert to string with milliseconds
@@ -142,6 +150,7 @@ class Screenshot(QObject):
             pil_image.save(os.path.join(folder, f"{time_string}.png"))
 
     def stop(self):
+        logger.debug(f'stop screenshot')
         if self.task_queue is not None:
             self.task_queue.put(None)
 

@@ -41,6 +41,7 @@ class SaveMethodBase:
         print("Thread exiting")
 
     def stop(self):
+        print("SaveMethodBase stop")
         self.exit_event.set()
 
     def wait_until_done(self):

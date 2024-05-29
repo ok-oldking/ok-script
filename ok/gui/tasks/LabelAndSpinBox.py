@@ -5,10 +5,9 @@ from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 class LabelAndSpinBox(ConfigLabelAndWidget):
 
-    def __init__(self, config, config_desc, key: str):
-        super().__init__(config_desc, key)
+    def __init__(self, task, key: str):
+        super().__init__(task, key)
         self.key = key
-        self.config = config
         self.spin_box = SpinBox()
         self.spin_box.setFixedWidth(130)
         self.update_value()
@@ -19,4 +18,4 @@ class LabelAndSpinBox(ConfigLabelAndWidget):
         self.spin_box.setValue(self.config.get(self.key))
 
     def value_changed(self, value):
-        self.config[self.key] = value
+        self.update_config(value)

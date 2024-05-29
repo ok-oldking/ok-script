@@ -8,10 +8,8 @@ from ok.gui.widget.UpdateConfigWidgetItem import value_to_string
 
 class ModifyListItem(ConfigLabelAndWidget):
 
-    def __init__(self, config, config_desc, key: str):
-        super().__init__(config_desc, key)
-        self.key = key
-        self.config = config
+    def __init__(self, task, key: str):
+        super().__init__(task, key)
         self.switch_button = PushButton(self.tr('Modify'))
         self.switch_button.clicked.connect(self.clicked)
         self.list_text = QLabel("")
@@ -20,7 +18,15 @@ class ModifyListItem(ConfigLabelAndWidget):
         self.add_widget(self.switch_button)
 
     def update_value(self):
-        self.list_text.setText(value_to_string(self.config.get(self.key)))
+        items = self.config.get(self.key)
+        total_length = sum(len(item) for item in items)
+
+        if total_length > 30:
+            display_text = "\n".join(items)
+        else:
+            display_text = value_to_string(items)
+
+        self.list_text.setText(display_text)
 
     def clicked(self):
         dialog = ModifyListDialog(self.config.get(self.key), self.window())
@@ -28,5 +34,5 @@ class ModifyListItem(ConfigLabelAndWidget):
         dialog.exec()
 
     def list_modified(self, the_list):
-        self.config[self.key] = the_list
+        self.update_config(the_list)
         self.update_value()

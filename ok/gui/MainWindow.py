@@ -67,6 +67,20 @@ class MainWindow(MSFluentWindow):
 
         communicate.capture_error.connect(self.capture_error)
         communicate.notification.connect(self.show_notification)
+        communicate.config_validation.connect(self.config_validation)
+
+    def config_validation(self, message):
+        title = self.tr('Error')
+        InfoBar.error(
+            title=title,
+            content=message,
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=5000,  # won't disappear automatically
+            parent=self.window()
+        )
+        self.tray.showMessage(title, message)
 
     def show_notification(self, message, title=None, error=None):
         bar = InfoBar.error if error else InfoBar.info

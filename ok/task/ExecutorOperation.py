@@ -78,7 +78,12 @@ class ExecutorOperation:
             self.click_box(to_click, relative_x, relative_y)
             return to_click
 
-    def box_of_screen(self, x, y, width, height, name=None):
+    def box_of_screen(self, x, y, width=0, height=0, to_x=1, to_y=1, name=None):
+        if width == 0:
+            width = to_x - x
+        if height == 0:
+            height = to_y - y
+
         if name is None:
             name = f"{x} {y} {width} {height}"
         return Box(int(x * self.executor.method.width), int(y * self.executor.method.height),

@@ -1,5 +1,9 @@
 import threading
 
+from ok.logging.Logger import get_logger
+
+logger = get_logger(__name__)
+
 
 class ExitEvent(threading.Event):
     queues = set()
@@ -9,5 +13,6 @@ class ExitEvent(threading.Event):
 
     def set(self):
         super(ExitEvent, self).set()
+        logger.debug(f"ExitEvent set event empty queues")
         for queue in self.queues:
             queue.put(None)

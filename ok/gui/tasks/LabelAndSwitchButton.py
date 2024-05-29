@@ -5,10 +5,9 @@ from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 class LabelAndSwitchButton(ConfigLabelAndWidget):
 
-    def __init__(self, config, config_desc, key: str):
-        super().__init__(config_desc, key)
+    def __init__(self, task, key: str):
+        super().__init__(task, key)
         self.key = key
-        self.config = config
         self.switch_button = SwitchButton()
         self.switch_button.setOnText(self.tr('Yes'))
         self.switch_button.setOffText(self.tr('No'))
@@ -20,4 +19,4 @@ class LabelAndSwitchButton(ConfigLabelAndWidget):
         self.switch_button.setChecked(self.config.get(self.key))
 
     def check_changed(self, checked):
-        self.config[self.key] = checked
+        self.update_config(checked)

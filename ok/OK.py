@@ -34,7 +34,7 @@ class OK:
             self.config = config
             self.init_device_manager()
             from ok.gui.debug.Screenshot import Screenshot
-            self.screenshot = Screenshot()
+            self.screenshot = Screenshot(self.exit_event)
             if config.get("use_gui"):
                 from ok.gui.App import App
                 self.app = App(config, self.exit_event)
@@ -123,7 +123,8 @@ class OK:
     def quit(self):
         logger.debug('quit app')
         self.exit_event.set()
-        self.device_manager.stop()
+        if self.device_manager is not None:
+            self.device_manager.stop()
         if self.app:
             self.app.quit()
 
