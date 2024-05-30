@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="ok-script",
-    version="0.0.42",
+    version="0.0.43",
     author="ok-oldking",
     author_email="firedcto@gmail.com",
     description="Automation with Computer Vision for Python",
@@ -20,7 +20,7 @@ setuptools.setup(
         "Operating System :: Microsoft :: Windows",
     ],
     install_requires=[
-        'adbutils==2.7.1',
+        'adbutils==2.7.2',
         'numpy==1.26.4',
         'PyDirectInput==1.0.4',
         'pywin32==306',

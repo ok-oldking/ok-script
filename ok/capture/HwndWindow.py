@@ -141,9 +141,14 @@ class HwndWindow:
             return win32gui.GetWindowText(self.hwnd)
         return ""
 
+    def __str__(self) -> str:
+        return f"title:{self.title},exe:{self.exe_name},width:{self.width},height:{self.height},exists:{self.exists},visible:{self.visible}"
+
 
 def find_hwnd_by_title_and_exe(title, exe_name):
     result = []
+    if title is None and exe_name is None:
+        return None
 
     def callback(hwnd, lParam):
         if len(result) == 0 and win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):

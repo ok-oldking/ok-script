@@ -46,6 +46,8 @@ class DeviceManager:
     @property
     def device_dict(self):
         device_dict = self.config.get("devices")
+        if device_dict is None:
+            device_dict = {}
         if self.pc_device is not None:
             full = {'pc': self.pc_device}
             full.update(device_dict)
@@ -128,15 +130,15 @@ class DeviceManager:
                     old_hwnd = self.device_dict[imei].get("hwnd")
                     self.device_dict[imei] = adb_device
                     if old_capture is not None:
-                        self.device_dict[imei]['capture'] = old_capture
+                        self.update_device_value(imei, 'capture', old_capture)
                     if old_hwnd is not None:
-                        self.device_dict[imei]['hwnd'] = old_hwnd
+                        self.update_device_value(imei, 'hwnd', old_hwnd)
             else:
-                self.device_dict[imei] = adb_device
+                self.update_device(imei, adb_device)
             adb_connected.append(imei)
         for imei in self.device_dict:
             if imei not in adb_connected and self.device_dict[imei]['device'] == 'adb':
-                self.device_dict[imei]['connected'] = False
+                self.update_device_value(imei, 'connected', False)
 
         self.config.save_file()
 
@@ -145,6 +147,17 @@ class DeviceManager:
         self.start()
         communicate.adb_devices.emit(True)
         logger.debug(f'refresh {self.device_dict}')
+
+    def update_device(self, imei, device=None):
+        devices = self.config.get("devices", {})
+        devices[imei] = device
+        self.config["devices"] = devices
+
+    def update_device_value(self, imei, key, value):
+        devices = self.config.get("devices", {})
+        if imei in devices:
+            devices[imei][key] = value
+        self.config["devices"] = devices
 
     def set_preferred_device(self, imei=None):
         logger.debug(f"set_preferred_device {imei}")

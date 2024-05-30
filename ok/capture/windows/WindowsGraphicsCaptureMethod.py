@@ -121,8 +121,9 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
         return self.hwnd_window is not None and self.hwnd_window.exists and self.frame_pool is not None
 
     def start_or_stop(self, capture_cursor=False):
-        try:
-            if self.hwnd_window.exists and self.frame_pool is None:
+
+        if self.hwnd_window.exists and self.frame_pool is None:
+            try:
                 logger.info('init windows capture')
                 self.rtdevice = IDirect3DDevice()
                 self.dxdevice = d3d11.ID3D11Device()
@@ -148,10 +149,11 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
                 if WINDOWS_BUILD_NUMBER >= WGC_NO_BORDER_MIN_BUILD:
                     self.session.IsBorderRequired = False
                 self.session.StartCapture()
-            elif not self.hwnd_window.exists and self.frame_pool is not None:
-                self.close()
-        except Exception as e:
-            logger.error('start_or_stop failed:', exception=e)
+            except Exception as e:
+                logger.error(f'start_or_stop failed: {self.hwnd_window}', exception=e)
+        elif not self.hwnd_window.exists and self.frame_pool is not None:
+            self.close()
+
         return self.hwnd_window.exists
 
     def create_device(self):
