@@ -91,7 +91,8 @@ class OK:
                 self.app.show_path_ascii_error(path)
                 return False
             from rapidocr_openvino import RapidOCR
-            self.ocr = RapidOCR()
+            inference_num_threads = self.config.get('ocr').get('inference_num_threads', -1)
+            self.ocr = RapidOCR(inference_num_threads=inference_num_threads)
 
         config_logger(self.config)
 

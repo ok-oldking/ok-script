@@ -35,8 +35,12 @@ class OCR:
                 image = image[y:y + h, x:x + w]
 
             image, scale_factor = resize_image(image, original_height, target_height)
-
-            result, _ = self.executor.ocr(image, use_det=True, use_cls=False, use_rec=True)
+            try:
+                result, _ = self.executor.ocr(image, use_det=True, use_cls=False, use_rec=True)
+            except Exception as e:
+                logger.error('ocr_error sleep and retry once', e)
+                self.sleep(3)
+                result, _ = self.executor.ocr(image, use_det=True, use_cls=False, use_rec=True)
             detected_boxes = []
             # Process the results and create Box objects
             if result is not None:

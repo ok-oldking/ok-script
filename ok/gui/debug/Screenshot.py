@@ -134,7 +134,6 @@ class Screenshot(QObject):
 
     def save_pil_image(self, name, folder, pil_image):
 
-        logger.debug(f'save_pil_image {name}, {folder}')
         now = datetime.now()
 
         # Convert to string with milliseconds
