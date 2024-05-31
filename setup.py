@@ -20,16 +20,16 @@ setuptools.setup(
         "Operating System :: Microsoft :: Windows",
     ],
     install_requires=[
-        'adbutils==2.7.2',
-        'numpy==1.26.4',
-        'PyDirectInput==1.0.4',
-        'pywin32==306',
-        'typing-extensions==4.11.0',
-        'PySide6==6.7.0',
-        'PySide6-Fluent-Widgets==1.5.6',
-        'psutil==5.9.8',
-        'opencv-python==4.9.0.80',
-        'https://github.com/ranchen421/D3DShot.git#egg=D3DShot'
+        'adbutils>=2.7.2',
+        'numpy>=1.26.4',
+        'PyDirectInput>=1.0.4',
+        'pywin32>=306',
+        'typing-extensions>=4.11.0',
+        'PySide6>=6.7.0',
+        'PySide6-Fluent-Widgets>=1.5.6',
+        'psutil>=5.9.8',
+        'opencv-python>=4.9.0.80',
+        'ok-d3dshot>=0.1.5'
     ],
     python_requires='>=3.6',
 )
