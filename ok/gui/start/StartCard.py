@@ -42,6 +42,9 @@ class StartCard(SettingCard):
             self.status_bar.show()
 
     def clicked(self):
+        if not ok.gui.executor.paused:
+            ok.gui.executor.pause()
+            return
         supported_ratio = ok.gui.app.config.get(
             'supported_screen_ratio')
         device = ok.gui.device_manager.get_preferred_device()
@@ -120,10 +123,7 @@ class StartCard(SettingCard):
                 parent=self
             )
             return
-        if ok.gui.executor.paused:
-            ok.gui.executor.start()
-        else:
-            ok.gui.executor.pause()
+        ok.gui.executor.start()
 
     def update_task(self, task):
         self.update_status()
