@@ -18,9 +18,26 @@ class BaseCaptureMethod:
         # Some capture methods don't need an initialization process
         pass
 
+    @property
+    def width(self):
+        if self._size[0] == 0:
+            self.get_frame()
+        return self._size[0]
+
+    @property
+    def height(self):
+        if self._size[1] == 0:
+            self.get_frame()
+        return self._size[1]
+
     def get_frame(self) -> np.ndarray | None:
         try:
-            return self.do_get_frame()
+            frame = self.do_get_frame()
+            if frame is not None:
+                self._size = (frame.shape[1], frame.shape[0])
+            if frame.shape[2] == 4:
+                frame = frame[:, :, :3]
+            return frame
         except Exception as e:
             raise CaptureException() from e
 

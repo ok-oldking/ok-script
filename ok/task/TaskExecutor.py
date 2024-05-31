@@ -74,7 +74,7 @@ class TaskExecutor:
 
     def supports_screen_ratio(self, supported_ratio):
         if supported_ratio is None:
-            return True
+            return True, None
         width = self.method.width
         height = self.method.height
         if height == 0:

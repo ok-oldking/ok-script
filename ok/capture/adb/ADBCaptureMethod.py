@@ -19,18 +19,6 @@ class ADBCaptureMethod(BaseCaptureMethod):
         self._connected = (width != 0 and height != 0)
         self.device_manager = device_manager
 
-    @property
-    def width(self):
-        if self._size[0] == 0:
-            self.screencap()
-        return self._size[0]
-
-    @property
-    def height(self):
-        if self._size[1] == 0:
-            self.screencap()
-        return self._size[1]
-
     @override
     def do_get_frame(self) -> np.ndarray | None:
         return self.screencap()
@@ -38,11 +26,9 @@ class ADBCaptureMethod(BaseCaptureMethod):
     def screencap(self):
         if self.exit_event.is_set():
             return None
-        frame = do_screencap(self.device_manager)
+        frame = do_screencap(self.device_manager.device)
         if frame is not None:
-            height, width, _ = frame.shape
             self._connected = True
-            self._size = (width, height)
         else:
             self._connected = False
         return frame
@@ -53,8 +39,10 @@ class ADBCaptureMethod(BaseCaptureMethod):
         return self._connected and self.device_manager.device is not None
 
 
-def do_screencap(device_manager) -> np.ndarray | None:
-    png_bytes = device_manager.shell("screencap -p", encoding=None)
+def do_screencap(device) -> np.ndarray | None:
+    if device is None:
+        return None
+    png_bytes = device.shell("screencap -p", encoding=None)
     if png_bytes is not None and len(png_bytes) > 0:
         image_data = np.frombuffer(png_bytes, dtype=np.uint8)
         image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)

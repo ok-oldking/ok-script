@@ -81,6 +81,7 @@ class StartTab(Tab):
             device = ok.gui.device_manager.get_devices()[self.device_list_row]["device"]
             if device == "adb":
                 self.choose_window_button.setEnabled(True)
+        self.start_card.update_status()
 
     def device_index_changed(self):  # i is an index
         i = self.device_list.currentRow()
@@ -94,6 +95,7 @@ class StartTab(Tab):
             ok.gui.device_manager.set_preferred_device(imei)
             self.update_window_list()
             self.capture_index_changed()
+        self.start_card.update_status()
 
     def update_capture(self, finished):
         devices = ok.gui.device_manager.get_devices()

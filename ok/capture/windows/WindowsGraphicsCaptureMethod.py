@@ -1,25 +1,18 @@
 # original https://github.com/dantmnf & https://github.com/hakaboom/winAuto
 import ctypes
 import ctypes.wintypes
+import platform
+import sys
 import time
 
 import numpy as np
 from typing_extensions import override
 
-from ok.capture.BaseCaptureMethod import BaseCaptureMethod
 from ok.capture.HwndWindow import HwndWindow
 from ok.capture.windows import d3d11
+from ok.capture.windows.BaseWindowsCaptureMethod import BaseWindowsCaptureMethod
 from ok.capture.windows.utils import WINDOWS_BUILD_NUMBER
 from ok.logging.Logger import get_logger
-from ok.rotypes import IInspectable
-from ok.rotypes.Windows.Foundation import TypedEventHandler
-from ok.rotypes.Windows.Graphics.Capture import Direct3D11CaptureFramePool, IGraphicsCaptureItemInterop, \
-    IGraphicsCaptureItem, GraphicsCaptureItem
-from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
-from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDevice, \
-    CreateDirect3D11DeviceFromDXGIDevice, \
-    IDirect3DDxgiInterfaceAccess
-from ok.rotypes.roapi import GetActivationFactory
 
 PBYTE = ctypes.POINTER(ctypes.c_ubyte)
 WGC_NO_BORDER_MIN_BUILD = 20348
@@ -27,12 +20,11 @@ WGC_NO_BORDER_MIN_BUILD = 20348
 logger = get_logger(__name__)
 
 
-class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
+class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     name = "Windows Graphics Capture"
     description = "fast, most compatible, capped at 60fps"
     last_frame = None
     last_frame_time = 0
-    _hwnd_window: HwndWindow = None
     frame_pool = None
     item = None
     session = None
@@ -41,8 +33,7 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
     dxdevice = None
 
     def __init__(self, hwnd_window: HwndWindow):
-        super().__init__()
-        self._hwnd_window = hwnd_window
+        super().__init__(hwnd_window)
         self.start_or_stop()
 
     def frame_arrived_callback(self, x, y):
@@ -60,7 +51,6 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
             need_reset_framepool = False
             need_reset_device = False
             if frame.ContentSize.Width != self.last_size.Width or frame.ContentSize.Height != self.last_size.Height:
-                # print('size changed')
                 need_reset_framepool = True
                 self.last_size = frame.ContentSize
 
@@ -71,6 +61,8 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
 
             cputex = None
             try:
+                from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDxgiInterfaceAccess
+                from ok.rotypes.roapi import GetActivationFactory
                 tex = frame.Surface.astype(IDirect3DDxgiInterfaceAccess).GetInterface(
                     d3d11.ID3D11Texture2D.GUID).astype(d3d11.ID3D11Texture2D)
                 desc = tex.GetDesc()
@@ -121,9 +113,17 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
         return self.hwnd_window is not None and self.hwnd_window.exists and self.frame_pool is not None
 
     def start_or_stop(self, capture_cursor=False):
-
         if self.hwnd_window.exists and self.frame_pool is None:
             try:
+                from ok.rotypes import IInspectable
+                from ok.rotypes.Windows.Foundation import TypedEventHandler
+                from ok.rotypes.Windows.Graphics.Capture import Direct3D11CaptureFramePool, IGraphicsCaptureItemInterop, \
+                    IGraphicsCaptureItem, GraphicsCaptureItem
+                from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
+                from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDevice, \
+                    CreateDirect3D11DeviceFromDXGIDevice, \
+                    IDirect3DDxgiInterfaceAccess
+                from ok.rotypes.roapi import GetActivationFactory
                 logger.info('init windows capture')
                 self.rtdevice = IDirect3DDevice()
                 self.dxdevice = d3d11.ID3D11Device()
@@ -157,6 +157,7 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
         return self.hwnd_window.exists
 
     def create_device(self):
+        from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import CreateDirect3D11DeviceFromDXGIDevice
         d3d11.D3D11CreateDevice(
             None,
             d3d11.D3D_DRIVER_TYPE_HARDWARE,
@@ -189,6 +190,7 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
         if self.cputex:
             self.cputex.Release()
 
+    @override
     def do_get_frame(self):
         if self.start_or_stop():
             frame = self.last_frame
@@ -196,49 +198,32 @@ class WindowsGraphicsCaptureMethod(BaseCaptureMethod):
             latency = time.time() - self.last_frame_time
             self.last_frame_time = time.time()
 
-            if frame is not None:
-                x, y = self.hwnd_window.get_top_left_frame_offset()
-                if x > 0 or y > 0:
-                    frame = crop_image(frame, x, y)
+            frame = self.crop_image(frame)
 
             if frame is not None:
                 new_height, new_width = frame.shape[:2]
                 if new_width <= 0 or new_width <= 0:
                     logger.warning(f"get_frame size <=0 {new_width}x{new_height}")
                     frame = None
-                else:
-                    self._size = (new_width, new_height)
-                    if frame.shape[2] == 4:
-                        frame = frame[:, :, :3]
             if latency > 1:
                 logger.warning(f"latency too large return None frame: {latency}")
                 return None
             else:
                 return frame
 
-    @property
-    def width(self):
-        if self._size[0] == 0:
-            self.do_get_frame()
-        return self._size[0]
-
-    @property
-    def height(self):
-        if self._size[1] == 0:
-            self.do_get_frame()
-        return self._size[1]
-
     def reset_framepool(self, size, reset_device=False):
+        from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
         if reset_device:
             self.create_device()
         self.frame_pool.Recreate(self.rtdevice,
                                  DirectXPixelFormat.B8G8R8A8UIntNormalized, 1, size)
 
-    def get_abs_cords(self, x, y):
-        return self.hwnd_window.get_abs_cords(x, y)
-
-    def clickable(self):
-        return self.hwnd_window is not None and self.hwnd_window.visible
+    def crop_image(self, frame):
+        if frame is not None:
+            x, y = self.hwnd_window.get_top_left_frame_offset()
+            if x > 0 or y > 0:
+                frame = crop_image(frame, x, y)
+        return frame
 
 
 def crop_image(image, border, title_height):
@@ -261,3 +246,22 @@ def crop_image(image, border, title_height):
     # cv2.waitKey(0)
 
     return cropped_image
+
+
+WINDOWS_BUILD_NUMBER = int(platform.version().split(".")[-1]) if sys.platform == "win32" else -1
+WGC_MIN_BUILD = 17134
+
+
+def windows_graphics_available():
+    logger.debug(
+        f"check available WINDOWS_BUILD_NUMBER:{WINDOWS_BUILD_NUMBER} >= {WGC_MIN_BUILD} {WINDOWS_BUILD_NUMBER >= WGC_MIN_BUILD}")
+    if WINDOWS_BUILD_NUMBER >= WGC_MIN_BUILD:
+        try:
+            from ok.rotypes.roapi import GetActivationFactory
+            from ok.rotypes.Windows.Graphics.Capture import IGraphicsCaptureItemInterop
+            GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(
+                IGraphicsCaptureItemInterop)
+            return True
+        except Exception as e:
+            logger.error(f'check available failed: {e}', exception=e)
+            return False

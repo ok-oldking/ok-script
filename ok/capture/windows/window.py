@@ -22,14 +22,14 @@ def get_window_bounds(hwnd):
     )
     scaling = user32.GetDpiForWindow(hwnd) / 96
     client_x, client_y, client_width, client_height = win32gui.GetClientRect(hwnd)
-    client_width = int(client_width / scaling)
-    client_height = int(client_height / scaling)
-    window_width = int((extended_frame_bounds.right - extended_frame_bounds.left) / scaling)
-    window_height = int((extended_frame_bounds.bottom - extended_frame_bounds.top) / scaling)
+    window_width = extended_frame_bounds.right - extended_frame_bounds.left
+    window_height = extended_frame_bounds.bottom - extended_frame_bounds.top
     border = int((window_width - client_width) / 2)
     title = window_height - client_height - border
-    return int(extended_frame_bounds.left / scaling), int(
-        extended_frame_bounds.top / scaling), border, title, client_width, client_height, scaling
+    window_rect = win32gui.GetWindowRect(hwnd)
+    ext_left_bounds = extended_frame_bounds.left - window_rect[0]
+    ext_top_bounds = extended_frame_bounds.top - window_rect[1]
+    return extended_frame_bounds.left, extended_frame_bounds.top, border, title, client_width, client_height, scaling, ext_left_bounds, ext_top_bounds
 
 
 def is_foreground_window(hwnd):

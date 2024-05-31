@@ -35,11 +35,13 @@ def get_substring_from_last_dot_exclusive(s):
 auto_helper_logger = logging.getLogger("ok")
 
 
-def log_exception_handler(exctype, value, traceback):
+def log_exception_handler(exc_type, exc_value, exc_traceback):
     if auto_helper_logger is not None:
-        auto_helper_logger.error(f"Uncaught exception: {exctype}, traceback: {traceback}")
-        # Call the default excepthook to print the traceback
-        sys.__excepthook__(exctype, value, traceback)
+        # Format the traceback
+        tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        tb_text = ''.join(tb_lines)
+        # Log the exception
+        auto_helper_logger.error(f"Uncaught exception: {tb_text}")
 
 
 def config_logger(config):

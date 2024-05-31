@@ -30,12 +30,12 @@
 <context>
     <name>LabelAndSwitchButton</name>
     <message>
-        <location filename="../tasks/LabelAndSwitchButton.py" line="13"/>
+        <location filename="../tasks/LabelAndSwitchButton.py" line="12"/>
         <source>Yes</source>
         <translation>是</translation>
     </message>
     <message>
-        <location filename="../tasks/LabelAndSwitchButton.py" line="14"/>
+        <location filename="../tasks/LabelAndSwitchButton.py" line="13"/>
         <source>No</source>
         <translation>否</translation>
     </message>
@@ -63,28 +63,33 @@
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="89"/>
+        <location filename="../MainWindow.py" line="74"/>
+        <source>Error</source>
+        <translation>错误</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.py" line="103"/>
         <source>Please check whether the game window is selected correctly!</source>
         <translation>请检查游戏窗口是否正确选择</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="90"/>
+        <location filename="../MainWindow.py" line="104"/>
         <source>Capture Error</source>
         <translation>截图错误</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="107"/>
+        <location filename="../MainWindow.py" line="121"/>
         <source>Start Success.</source>
         <translation>启动成功。</translation>
     </message>
     <message>
         <location filename="../MainWindow.py" line="59"/>
-        <location filename="../MainWindow.py" line="124"/>
+        <location filename="../MainWindow.py" line="138"/>
         <source>Exit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="126"/>
+        <location filename="../MainWindow.py" line="140"/>
         <source>Are you sure you want to exit the app?</source>
         <translation>确定要退出应用吗？</translation>
     </message>
@@ -138,7 +143,7 @@
 <context>
     <name>ModifyListItem</name>
     <message>
-        <location filename="../tasks/ModifyListItem.py" line="15"/>
+        <location filename="../tasks/ModifyListItem.py" line="13"/>
         <source>Modify</source>
         <translation>修改</translation>
     </message>
@@ -318,61 +323,88 @@
 <context>
     <name>StartCard</name>
     <message>
-        <location filename="../start/StartCard.py" line="20"/>
-        <location filename="../start/StartCard.py" line="91"/>
+        <location filename="../start/StartCard.py" line="25"/>
+        <location filename="../start/StartCard.py" line="137"/>
         <source>Start</source>
         <translation>开始</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="44"/>
-        <location filename="../start/StartCard.py" line="57"/>
-        <location filename="../start/StartCard.py" line="71"/>
+        <location filename="../start/StartCard.py" line="55"/>
+        <source>Info:</source>
+        <translation>信息:</translation>
+    </message>
+    <message>
+        <location filename="../start/StartCard.py" line="56"/>
+        <source>Start Game {game}</source>
+        <translation>启动游戏 </translation>
+    </message>
+    <message>
+        <location filename="../start/StartCard.py" line="65"/>
+        <location filename="../start/StartCard.py" line="76"/>
+        <location filename="../start/StartCard.py" line="87"/>
+        <location filename="../start/StartCard.py" line="100"/>
+        <location filename="../start/StartCard.py" line="113"/>
         <source>Error:</source>
         <translation>错误：</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="45"/>
+        <location filename="../start/StartCard.py" line="66"/>
+        <source>Game window path does not exist: {path}</source>
+        <translation>游戏安装路径不存在</translation>
+    </message>
+    <message>
+        <location filename="../start/StartCard.py" line="77"/>
+        <source>Selected capture method is not supported by the game or your system!</source>
+        <translation>当前游戏或模拟器不支持选择的截图方式!</translation>
+    </message>
+    <message>
+        <location filename="../start/StartCard.py" line="88"/>
         <source>Game window is not connected, please select the game window and capture method.</source>
         <translation>游戏窗口未连接，请选择游戏窗口和截图方式。</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="60"/>
-        <source>Window resolution {resolution} is not supported, the supported ratio is {supported_ratio}</source>
-        <translation>当前游戏窗口分辨率{resolution}不支持, 支持的分辨率是 {supported_ratio}</translation>
+        <location filename="../start/StartCard.py" line="103"/>
+        <source>Window resolution {resolution} is not supported, the supported ratio is {supported_ratio}, check if game windows is minimized, resized or out of screen.</source>
+        <translation>当前游戏窗口分辨率{resolution}不支持, 支持的分辨率是{supported_ratio}, 请检查游戏窗口是否最小化, 被拉伸或者部分在屏幕外</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="73"/>
+        <location filename="../start/StartCard.py" line="115"/>
         <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
         <translation>PC版需要管理员权限，请以管理员权限重启此应用！</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="95"/>
+        <location filename="../start/StartCard.py" line="135"/>
+        <source>Start Game</source>
+        <translation>启动游戏</translation>
+    </message>
+    <message>
+        <location filename="../start/StartCard.py" line="141"/>
         <source>Pause</source>
         <translation>暂停</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="98"/>
+        <location filename="../start/StartCard.py" line="144"/>
         <source>Game Window Disconnected</source>
         <translation>游戏窗口已断开</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="101"/>
+        <location filename="../start/StartCard.py" line="147"/>
         <source>Paused: PC Game Window Must Be in Front!</source>
         <translation>已暂停：PC版游戏窗口必须在前台！</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="105"/>
-        <location filename="../start/StartCard.py" line="108"/>
+        <location filename="../start/StartCard.py" line="151"/>
+        <location filename="../start/StartCard.py" line="154"/>
         <source>Running</source>
         <translation>运行中</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="105"/>
+        <location filename="../start/StartCard.py" line="151"/>
         <source>Trigger Tasks</source>
         <translation>个触发器</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="111"/>
+        <location filename="../start/StartCard.py" line="157"/>
         <source>Waiting for task to be enabled</source>
         <translation>等待选择任务开始</translation>
     </message>
@@ -397,27 +429,27 @@
         <translation>截图方式</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="107"/>
+        <location filename="../start/StartTab.py" line="109"/>
         <source>PC</source>
         <translation>PC版</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="108"/>
+        <location filename="../start/StartTab.py" line="110"/>
         <source>Android</source>
         <translation>安卓版</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="108"/>
+        <location filename="../start/StartTab.py" line="110"/>
         <source>Connected</source>
         <translation>已连接</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="109"/>
+        <location filename="../start/StartTab.py" line="111"/>
         <source>Disconnected</source>
         <translation>已断开</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="127"/>
+        <location filename="../start/StartTab.py" line="129"/>
         <source>Refresh</source>
         <translation>刷新</translation>
     </message>

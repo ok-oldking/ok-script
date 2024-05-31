@@ -3,7 +3,6 @@
 import winreg
 from dataclasses import dataclass
 
-import adbutils
 import win32com.client
 
 from ok.capture.adb.targets import ADBControllerTarget
@@ -122,20 +121,3 @@ def installed_emulator():
     except Exception as e:
         logger.error(f'failed to check server :{server} {e}', e)
     return results
-
-
-def _main():
-    logger.config({'debug': True})
-    adb = adbutils.AdbClient(host="127.0.0.1", port=5037)
-    for x in installed_emulator():
-        logger.debug(f'installed emulators {x}')
-        adb.connect(x.adb_address)
-
-    logger.debug(adb.device_list())
-    for device in adb.device_list():
-        logger.debug(device.shell('settings get secure android_id'))
-        logger.debug(f'{device.info}')
-
-
-if __name__ == '__main__':
-    _main()

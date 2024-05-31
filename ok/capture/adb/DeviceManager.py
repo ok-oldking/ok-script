@@ -1,13 +1,12 @@
 import threading
 
-import adbutils
 import win32gui
 from adbutils import AdbError
 
 from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title_and_exe
 from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod, do_screencap
+from ok.capture.adb.WindowsCaptureFactory import update_capture_method
 from ok.capture.adb.vbox import installed_emulator
-from ok.capture.windows.WindowsGraphicsCaptureMethod import WindowsGraphicsCaptureMethod
 from ok.capture.windows.window import get_window_bounds
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
@@ -20,22 +19,24 @@ logger = get_logger(__name__)
 
 class DeviceManager:
 
-    def __init__(self, config_folder, hwnd_title=None, exe_name=None, debug=False, exit_event=None):
+    def __init__(self, config_folder, windows_capture_config, adb_capture_config, debug=False, exit_event=None):
         self._device = None
         self._connect_all = False
-        self.adb = self.adb = adbutils.AdbClient(host="127.0.0.1")
-        logger.debug(f'connect adb')
-        self.hwnd_title = hwnd_title
+        self._adb = None
+        self.windows_capture_config = windows_capture_config
+        self.adb_capture_config = adb_capture_config
         self.pc_device = None
-        self.exe_name = exe_name
         self.debug = debug
         self.interaction = None
         self.exit_event = exit_event
-        if hwnd_title is not None:
-            self.hwnd = HwndWindow(exit_event, hwnd_title, exe_name)
-        self.config = Config({"devices": {}, "preferred": "none"}, config_folder, "DeviceManager")
+        if windows_capture_config is not None:
+            self.hwnd = HwndWindow(exit_event, windows_capture_config.get('title'),
+                                   windows_capture_config.get('exe'))
+        self.config = Config({"devices": {}, "preferred": "none", "pc_full_path": None}, config_folder,
+                             "DeviceManager")
         self.thread = None
         self.capture_method = None
+        self.update_pc_device()
         self.start()
 
     def refresh(self):
@@ -55,6 +56,14 @@ class DeviceManager:
         else:
             return device_dict
 
+    @property
+    def adb(self):
+        if self._adb is None:
+            import adbutils
+            self._adb = adbutils.AdbClient(host="127.0.0.1")
+            logger.debug(f'connect adb')
+        return self._adb
+
     def connect_all(self):
         if not self._connect_all:
             for device in self.device_dict.values():
@@ -69,49 +78,62 @@ class DeviceManager:
     def get_devices(self):
         return list(self.device_dict.values())
 
-    def do_refresh(self):
-
-        if self.hwnd_title:
+    def update_pc_device(self):
+        if self.windows_capture_config is not None:
             nick = ""
             width = 0
             height = 0
-            hwnd = find_hwnd_by_title_and_exe(self.hwnd_title, self.exe_name)
+            hwnd, full_path = find_hwnd_by_title_and_exe(self.windows_capture_config.get('title'),
+                                                         self.windows_capture_config.get('exe'))
             if hwnd is not None:
                 nick = win32gui.GetWindowText(hwnd)
-                _, _, _, _, width, height, _ = get_window_bounds(
+                _, _, _, _, width, height, _, _, _ = get_window_bounds(
                     hwnd)
             if not nick:
-                nick = self.exe_name
+                nick = self.windows_capture_config.get('exe')
             self.pc_device = {"address": "", "imei": 'pc', "device": "windows",
                               "model": "", "nick": nick, "width": width,
                               "height": height,
                               "hwnd": nick, "capture": "windows",
-                              "connected": hwnd is not None
+                              "connected": hwnd is not None,
+                              "full_path": full_path or self.config.get('pc_full_path')
                               }
+            if full_path and full_path != self.config.get('pc_full_path'):
+                self.config['pc_full_path'] = full_path
+
             if width != 0:
                 self.pc_device["resolution"] = f"{width}x{height}"
             communicate.adb_devices.emit(False)
 
-        self.connect_all()
+    def do_refresh(self, fast=False):
+        self.update_pc_device()
 
-        installed_emulators = installed_emulator()
+        self.refresh_adb_device(fast)
+
+        if self.exit_event.is_set():
+            return
+        self.start()
+        communicate.adb_devices.emit(True)
+        logger.debug(f'refresh {self.device_dict}')
+
+    def refresh_adb_device(self, fast):
+        if self.adb_capture_config is None:
+            return
+        if not fast:
+            self.connect_all()
+        installed_emulators = [] if fast else installed_emulator()
         for device in self.adb.list():
             logger.debug(f'adb.list() {device}')
-
         for emulator in installed_emulators:
             logger.debug(f"installed_emulator: {emulator}")
-            self.adb.connect(emulator.adb_address)
-
+            self.adb.connect(emulator.adb_address, timeout=1)
         device_list = self.adb.device_list()
-
         device_list = sorted(device_list, key=lambda x: x.serial)
-
         adb_connected = []
-
         for device in device_list:
             imei = device.shell("settings get secure android_id") or device.shell(
                 "service call iphonesubinfo 4") or device.prop.model
-            frame = do_screencap(device)
+            frame = None if fast else do_screencap(device)
             width, height = 0, 0
             if frame is not None:
                 height, width, _ = frame.shape
@@ -137,16 +159,9 @@ class DeviceManager:
                 self.update_device(imei, adb_device)
             adb_connected.append(imei)
         for imei in self.device_dict:
-            if imei not in adb_connected and self.device_dict[imei]['device'] == 'adb':
-                self.update_device_value(imei, 'connected', False)
-
+            if self.device_dict[imei]['device'] == 'adb':
+                self.update_device_value(imei, 'connected', imei in adb_connected)
         self.config.save_file()
-
-        if self.exit_event.is_set():
-            return
-        self.start()
-        communicate.adb_devices.emit(True)
-        logger.debug(f'refresh {self.device_dict}')
 
     def update_device(self, imei, device=None):
         devices = self.config.get("devices", {})
@@ -204,6 +219,16 @@ class DeviceManager:
             self.hwnd.update_frame_size(frame_width, frame_height)
             self.hwnd.update_title_and_exe(title, exe)
 
+    def use_windows_capture(self, override_config=None, require_bg=False):
+        if not override_config:
+            override_config = self.windows_capture_config
+        self.capture_method = update_capture_method(override_config, self.capture_method, self.hwnd,
+                                                    require_bg)
+        if self.capture_method is None:
+            logger.error(f'can find a usable windows capture')
+        else:
+            logger.info(f'capture method {type(self.capture_method)}')
+
     def start(self):
         preferred = self.get_preferred_device()
         if preferred is None:
@@ -212,14 +237,11 @@ class DeviceManager:
             return
 
         if preferred['device'] == 'windows':
-            self.ensure_hwnd(self.hwnd_title, self.exe_name)
-            if not isinstance(self.capture_method, WindowsGraphicsCaptureMethod):
-                if self.capture_method is not None:
-                    self.capture_method.close()
-                self.capture_method = WindowsGraphicsCaptureMethod(self.hwnd)
+            self.ensure_hwnd(self.windows_capture_config.get('title'), self.windows_capture_config.get('exe'))
+            self.use_windows_capture()
             if not isinstance(self.interaction, Win32Interaction):
                 self.interaction = Win32Interaction(self.capture_method)
-            self.capture_method.hwnd_window = self.hwnd
+            preferred['connected'] = self.capture_method.connected()
         else:
             self.connect_all()
             for adb_device in self.adb.device_list():
@@ -231,11 +253,9 @@ class DeviceManager:
             height = preferred.get('height', 0)
             if preferred.get('capture') == "windows":
                 self.ensure_hwnd(hwnd_name, None, width, height)
-                if not isinstance(self.capture_method, WindowsGraphicsCaptureMethod):
-                    if self.capture_method is not None:
-                        self.capture_method.close()
-                    self.capture_method = WindowsGraphicsCaptureMethod(self.hwnd)
-                self.capture_method.hwnd_window = self.hwnd
+                if self.hwnd.exe_full_path:
+                    self.update_device_value(preferred['imei'], 'full_path', self.hwnd.exe_full_path)
+                self.use_windows_capture({'can_bit_blt': True}, require_bg=True)
             elif not isinstance(self.capture_method, ADBCaptureMethod):
                 if self.capture_method is not None:
                     self.capture_method.close()
@@ -284,3 +304,11 @@ class DeviceManager:
                 return device.shell(*args, **kwargs)
         else:
             raise Exception('Device is none')
+
+    def get_exe_path(self, device):
+        path = device.get('full_path')
+        if device.get('device') == 'windows' and self.windows_capture_config and self.windows_capture_config.get(
+                'calculate_pc_exe_path'):
+            return self.windows_capture_config.get('calculate_pc_exe_path')(path)
+        else:
+            return path

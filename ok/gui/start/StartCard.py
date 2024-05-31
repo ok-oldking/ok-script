@@ -1,3 +1,5 @@
+import os
+
 from PySide6.QtCore import Qt, Signal
 from qfluentwidgets import FluentIcon, SettingCard, PushButton, InfoBar, InfoBarPosition
 
@@ -5,6 +7,9 @@ import ok
 from ok.gui.Communicate import communicate
 from ok.gui.widget.StatusBar import StatusBar
 from ok.interaction.Win32Interaction import is_admin
+from ok.logging.Logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class StartCard(SettingCard):
@@ -13,7 +18,7 @@ class StartCard(SettingCard):
     def __init__(self):
         super().__init__(FluentIcon.PLAY, f'{self.tr("Start")} {ok.gui.app.title}', ok.gui.app.title)
         self.hBoxLayout.setAlignment(Qt.AlignVCenter)
-        self.status_bar = StatusBar("test", done_icon=FluentIcon.REMOVE)
+        self.status_bar = StatusBar("test")
         self.status_bar.clicked.connect(self.status_clicked)
         self.hBoxLayout.addWidget(self.status_bar, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(16)
@@ -39,6 +44,44 @@ class StartCard(SettingCard):
     def clicked(self):
         supported_ratio = ok.gui.app.config.get(
             'supported_screen_ratio')
+        device = ok.gui.device_manager.get_preferred_device()
+        ok.gui.device_manager.do_refresh(fast=True)
+        if device and not device['connected'] and device.get('full_path'):
+            path = ok.gui.device_manager.get_exe_path(device)
+            if os.path.exists(path):
+                start_exe_background(path)
+                logger.info(f"start_exe_background path, full_path: {device.get('full_path')}")
+                InfoBar.info(
+                    title=self.tr('Info:'),
+                    content=self.tr("Start Game {game}").format(game=device.get('full_path')),
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP,
+                    duration=5000,
+                    parent=self.parent()
+                )
+            else:
+                InfoBar.error(
+                    title=self.tr('Error:'),
+                    content=self.tr("Game window path does not exist: {path}").format(path=path),
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP,
+                    duration=5000,
+                    parent=self.parent()
+                )
+            return
+        if ok.gui.device_manager.capture_method is None:
+            InfoBar.error(
+                title=self.tr('Error:'),
+                content=self.tr("Selected capture method is not supported by the game or your system!"),
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=5000,
+                parent=self.parent()
+            )
+            return
         if not ok.gui.executor.connected():
             InfoBar.error(
                 title=self.tr('Error:'),
@@ -47,7 +90,7 @@ class StartCard(SettingCard):
                 isClosable=True,
                 position=InfoBarPosition.TOP,
                 duration=5000,
-                parent=self
+                parent=self.parent()
             )
             self.show_choose_hwnd.emit()
             return
@@ -56,17 +99,16 @@ class StartCard(SettingCard):
             InfoBar.error(
                 title=self.tr('Error:'),
                 content=self.tr(
-                    "Window resolution {resolution} is not supported, the supported ratio is {supported_ratio}",
+                    "Window resolution {resolution} is not supported, the supported ratio is {supported_ratio}, check if game windows is minimized, resized or out of screen.",
                 ).format(resolution=resolution, supported_ratio=supported_ratio),
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
                 duration=5000,
-                parent=self
+                parent=self.window()
             )
             return
-        device = ok.gui.device_manager.get_preferred_device()['device']
-        if device == "windows" and not is_admin():
+        if device and device['device'] == "windows" and not is_admin():
             InfoBar.error(
                 title=self.tr('Error:'),
                 content=self.tr(
@@ -88,7 +130,11 @@ class StartCard(SettingCard):
 
     def update_status(self):
         if ok.gui.executor.paused:
-            self.start_button.setText(self.tr("Start"))
+            device = ok.gui.device_manager.get_preferred_device()
+            if device and not device['connected'] and device.get('full_path'):
+                self.start_button.setText(self.tr("Start Game"))
+            else:
+                self.start_button.setText(self.tr("Start"))
             self.start_button.setIcon(FluentIcon.PLAY)
             self.status_bar.hide()
         else:
@@ -111,3 +157,14 @@ class StartCard(SettingCard):
                 self.status_bar.setTitle(self.tr("Waiting for task to be enabled"))
                 self.status_bar.setState(False)
             self.status_bar.show()
+
+
+def start_exe_background(exe_path):
+    # # Start the process in the background
+    # try:
+    #     process = subprocess.Popen(exe_path)
+    #     return True  # Successfully started
+    # except Exception as e:
+    #     print(f"An error occurred: {e}")
+    #     return False  # Failed to start
+    os.startfile(exe_path)
