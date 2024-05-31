@@ -39,7 +39,7 @@ class OCR:
                 result, _ = self.executor.ocr(image, use_det=True, use_cls=False, use_rec=True)
             except Exception as e:
                 logger.error('ocr_error sleep and retry once', e)
-                self.sleep(3)
+                time.sleep(3)
                 result, _ = self.executor.ocr(image, use_det=True, use_cls=False, use_rec=True)
             detected_boxes = []
             # Process the results and create Box objects

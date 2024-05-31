@@ -36,7 +36,6 @@ class Screenshot(QObject):
         self.click_screenshot_folder = get_path_relative_to_exe(ok.gui.ok.config.get("click_screenshots_folder"))
         self.screenshot_folder = get_path_relative_to_exe(ok.gui.ok.config.get("screenshots_folder"))
         logger.debug(f"init Screenshot {self.screenshot_folder} {self.click_screenshot_folder}")
-        print(f"init Screenshot {self.screenshot_folder} {self.screenshot_folder}")
         if self.click_screenshot_folder is not None or self.screenshot_folder is not None:
             self.task_queue = queue.Queue()
             self.exit_event.bind_queue(self.task_queue)

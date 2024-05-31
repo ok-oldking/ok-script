@@ -28,6 +28,8 @@ class OK:
 
     def __init__(self, config: Dict[str, Any]):
         print(f"AutoHelper init, config: {config}")
+        config_logger(config)
+        logger.info(f"AutoHelper init, config: {config}")
         ok.gui.ok = self
         self.debug = config.get("debug", False)
         try:
@@ -44,6 +46,7 @@ class OK:
                 self.device_manager.start()
                 self.do_init()
         except Exception as e:
+            logger.error(f'__init__ error', e)
             self.quit()
             raise e
 
@@ -93,8 +96,6 @@ class OK:
             from rapidocr_openvino import RapidOCR
             inference_num_threads = self.config.get('ocr').get('inference_num_threads', -1)
             self.ocr = RapidOCR(inference_num_threads=inference_num_threads)
-
-        config_logger(self.config)
 
         if self.config.get('coco_feature_folder') is not None:
             coco_feature_folder = self.config.get('coco_feature_folder')

@@ -406,7 +406,7 @@
     <message>
         <location filename="../start/StartCard.py" line="157"/>
         <source>Waiting for task to be enabled</source>
-        <translation>等待选择任务开始</translation>
+        <translation>点击选择任务开始</translation>
     </message>
 </context>
 <context>
