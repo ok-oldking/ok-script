@@ -190,13 +190,13 @@
     </message>
     <message>
         <location filename="../start/SelectCaptureListView.py" line="23"/>
-        <source>Emulator Window</source>
-        <translation>模拟器窗口</translation>
+        <source>Emulator Window(Supports Background, Fast, Low Latency)</source>
+        <translation>模拟器窗口(支持后台, 速度快, 延迟低)</translation>
     </message>
     <message>
         <location filename="../start/SelectCaptureListView.py" line="24"/>
-        <source>ADB (Supports Background, High Compatibility, High Latency)</source>
-        <translation>ADB截图(支持后台, 兼容性高, 延迟高)</translation>
+        <source>ADB(Supports Background, Slow, High Compatibility, High Latency)</source>
+        <translation>ADB截图(支持后台, 兼容性高, 速度慢, 延迟高)</translation>
     </message>
 </context>
 <context>

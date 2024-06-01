@@ -13,6 +13,7 @@ from ok.gui.MessageWindow import MessageWindow
 from ok.gui.i18n.path import i18n_path
 from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.logging.Logger import get_logger
+from ok.update.Updater import Updater
 
 logger = get_logger(__name__)
 
@@ -31,6 +32,8 @@ class App:
         self.app = QApplication(sys.argv)
         self.app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
         qconfig.theme = Theme.AUTO
+
+        self.updater = Updater(self.config, exit_event)
 
         self.about = self.config.get('about')
         self.title = self.config.get('gui_title')
@@ -75,8 +78,9 @@ class App:
         self.show_message_window(title, content)
 
     def show_main_window(self):
-        self.main_window = MainWindow(self.icon, self.overlay, self.about, exit_event=self.exit_event)
-        self.main_window.setWindowTitle(f'{self.title} {self.version}')  # Set the window title here
+        self.main_window = MainWindow(self.icon, self.title, self.version, self.overlay, self.about,
+                                      exit_event=self.exit_event)
+        # Set the window title here
         self.main_window.setWindowIcon(self.icon)
         if self.overlay and ok.gui.device_manager.hwnd is not None:
             self.overlay_window = OverlayWindow(ok.gui.device_manager.hwnd)
@@ -105,4 +109,5 @@ class App:
         sys.exit(self.app.exec())
 
     def quit(self):
+        self.exit_event.set()
         self.app.quit()

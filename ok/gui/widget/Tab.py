@@ -29,9 +29,13 @@ class Tab(ScrollArea):
 
     def addCard(self, title, widget, stretch=0, parent=None):
         container = Card(title, widget)
-        self.vBoxLayout.addWidget(container, stretch, Qt.AlignTop)
+        self.addWidget(container, stretch)
         return container
 
-    def addWidget(self, widget, stretch=0):
-        self.vBoxLayout.addWidget(widget, stretch, Qt.AlignTop)
+    def addWidget(self, widget, stretch=0, align=Qt.AlignTop):
+        self.vBoxLayout.addWidget(widget, stretch, align)
         return widget
+
+    def addLayout(self, layout, stretch=0):
+        self.vBoxLayout.addLayout(layout, stretch)
+        return layout

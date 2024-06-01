@@ -3,6 +3,7 @@ import time
 import traceback
 
 from ok.capture.BaseCaptureMethod import CaptureException
+from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod
 from ok.capture.adb.DeviceManager import DeviceManager
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
@@ -73,6 +74,7 @@ class TaskExecutor:
         return self._frame
 
     def supports_screen_ratio(self, supported_ratio):
+        frame = self.method.get_frame() if not isinstance(self.method, ADBCaptureMethod) else None
         if supported_ratio is None:
             return True, None
         width = self.method.width
@@ -88,9 +90,13 @@ class TaskExecutor:
 
         # Calculate the difference between the actual and supported ratios
         difference = abs(actual_ratio - supported_ratio)
-
+        support = difference <= 0.01 * supported_ratio
+        if not support:
+            logger.error(f'resolution error {width}x{height} {frame is None}')
+        if not support and frame:
+            communicate.screenshot.emit(frame, "resolution_error")
         # Check if the difference is within 1%
-        return difference <= 0.01 * supported_ratio, f"{width}x{height}"
+        return support, f"{width}x{height}"
 
     def can_capture(self):
         return self.method is not None and self.interaction is not None and self.interaction.should_capture()

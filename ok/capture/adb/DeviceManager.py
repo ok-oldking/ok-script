@@ -1,12 +1,10 @@
 import threading
 
 import win32gui
-from adbutils import AdbError
 
 from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title_and_exe
 from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod, do_screencap
 from ok.capture.adb.WindowsCaptureFactory import update_capture_method
-from ok.capture.adb.vbox import installed_emulator
 from ok.capture.windows.window import get_window_bounds
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
@@ -36,8 +34,7 @@ class DeviceManager:
                              "DeviceManager")
         self.thread = None
         self.capture_method = None
-        self.update_pc_device()
-        self.start()
+        self.refresh()
 
     def refresh(self):
         if self.thread is None or not self.thread.is_alive():
@@ -121,6 +118,7 @@ class DeviceManager:
             return
         if not fast:
             self.connect_all()
+        from ok.capture.adb.vbox import installed_emulator
         installed_emulators = [] if fast else installed_emulator()
         for device in self.adb.list():
             logger.debug(f'adb.list() {device}')
@@ -295,6 +293,7 @@ class DeviceManager:
     def shell(self, *args, **kwargs):
         device = self.device
         if device is not None:
+            from adbutils import AdbError
             try:
                 return device.shell(*args, **kwargs)
             except AdbError as e:

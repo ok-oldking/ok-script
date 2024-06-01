@@ -1,3 +1,4 @@
+import hashlib
 import os
 import re
 import sys
@@ -49,10 +50,16 @@ def ensure_dir_for_file(file_path):
 
 
 def ensure_dir(directory):
+    # Check if the directory is a file
+    if os.path.isfile(directory):
+        # If it is a file, delete it
+        os.remove(directory)
+
     # Check if the directory exists
     if directory and not os.path.exists(directory):
         # If the directory does not exist, create it (including any intermediate directories)
         os.makedirs(directory)
+
     return directory
 
 
@@ -95,3 +102,42 @@ def get_path_in_package(base, file):
 
     # Get the path of the file relative to the script
     return os.path.join(the_dir, file)
+
+
+def dir_checksum(directory, excludes=None):
+    if excludes is None:
+        excludes = []
+    md5_hash = hashlib.md5()
+
+    # Iterate over all files in the directory
+    for path, dirs, files in os.walk(directory):
+        for name in files:
+            # Skip files in the excludes list
+            if name in excludes:
+                continue
+
+            filepath = os.path.join(path, name)
+
+            # Open the file in binary mode and calculate its MD5 checksum
+            with open(filepath, 'rb') as f:
+                while True:
+                    data = f.read(8192)
+                    if not data:
+                        break
+                    md5_hash.update(data)
+
+    # Return the hexadecimal representation of the checksum
+    return md5_hash.hexdigest()
+
+
+def find_folder_with_file(root_folder, target_file):
+    # Check the root folder itself
+    if target_file in os.listdir(root_folder):
+        return root_folder
+
+    # Iterate over all subfolders in the root folder
+    for folder, subfolders, files in os.walk(root_folder):
+        if target_file in files:
+            return folder
+
+    return None

@@ -20,7 +20,7 @@ class Communicate(QObject):
 
 
 class MainWindow(MSFluentWindow):
-    def __init__(self, icon, debug=False, about=None, exit_event=None):
+    def __init__(self, icon, title, version, debug=False, about=None, exit_event=None):
         super().__init__()
         self.exit_event = exit_event
         self.start_tab = StartTab()
@@ -42,11 +42,11 @@ class MainWindow(MSFluentWindow):
         #     self.addSubInterface(debug_tab, FluentIcon.COMMAND_PROMPT, self.tr('Debug'))
         # ... Add other tabs similarly
         if about:
-            about_tab = AboutTab(about)
+            about_tab = AboutTab(icon, title, version, about)
             self.addSubInterface(about_tab, FluentIcon.QUESTION, self.tr('About'),
                                  position=NavigationItemPosition.BOTTOM)
         # Styling the tabs and content if needed, for example:
-        self.setWindowTitle("Close Event Example")
+        self.setWindowTitle(f'{title} {version}')
 
         communicate.executor_paused.connect(self.executor_paused)
         communicate.tab.connect(self.navigate_tab)
