@@ -11,16 +11,29 @@ import requests
 
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
+from ok.update.GithubMultiDownloader import GithubMultiDownloader
 from ok.util.path import get_path_relative_to_exe, ensure_dir, dir_checksum, find_folder_with_file
 
 logger = get_logger(__name__)
 
 updater_bat = r'''@echo off
-set "source_folder=%~1"
-set "target_folder=%~2"
+set "source_dir=%~1"
+set "target_dir=%~2"
 
+if not defined source_dir (
+    echo Source directory is not defined.
+    exit /b
+)
 
-for /R "%source_dir%" %%F in (*) do (
+if not defined target_dir (
+    echo Target directory is not defined.
+    exit /b
+)
+
+echo "%source_dir%"
+echo "%target_dir%"
+
+for %%F in ("%source_dir%\*") do (
     if exist "%target_dir%\%%~nxF" (
         echo Deleting "%target_dir%\%%~nxF"
         del /Q /F "%target_dir%\%%~nxF"
@@ -59,6 +72,7 @@ class Updater:
         self.exit_event = exit_event
         self.task_queue = queue.Queue()
         self.exit_event.bind_queue(self.task_queue)
+        self.downloader = GithubMultiDownloader(app_config, exit_event)
         t = threading.Thread(target=self._run_tasks, name='run_tasks')
         t.start()
 
@@ -118,7 +132,6 @@ class Updater:
         try:
             ensure_dir(self.update_dir)
             file = os.path.join(self.update_dir, release.get('version') + '.' + release.get('type'))
-            downloaded = 0
             size = release.get('size')
             if os.path.exists(file):
                 downloaded = os.path.getsize(file)
@@ -126,34 +139,17 @@ class Updater:
                     logger.info(f'File {file} already downloaded')
                     self.extract(file, release.get('version'))
                     return
-                elif downloaded > size:
-                    logger.warning(f'File {file} already downloaded greater than target')
+                else:
+                    logger.warning(f'File size error {file} {downloaded} != {size}')
                     os.remove(file)
-                    downloaded = 0
-
-            headers = {'Range': f'bytes={downloaded}-'}
-            response = requests.get(self.get_url(release.get('url')), headers=headers, stream=True)
-            response.raise_for_status()
-            logger.info(f'download update to: {file} downloaded {convert_size(downloaded)}')
             self.downloading = True
-            communicate.download_update.emit(0, "", False, None)
-            with open(file, 'ab') as f:
-                for chunk in response.iter_content(chunk_size=1024):  # 1 KB chunks
-                    if self.exit_event.is_set():
-                        return
-                    if chunk:
-                        downloaded += len(chunk)
-                        percent = downloaded / size * 100
-                        # Every 1%
-                        communicate.download_update.emit(percent,
-                                                         convert_size(downloaded) + '/' + convert_size(size), False,
-                                                         None
-                                                         )
-                        f.write(chunk)  # Write chunk to file
+            success = self.downloader.download(self.update_dir, release)
             self.downloading = False
-            logger.info(f'download success: {file}')
-            self.extract(file)
+            if success:
+                logger.info(f'download success: {file}')
+                self.extract(file, release.get('version'))
             return
+
         except Exception as e:
             logger.error('download error occurred', e)
             self.downloading = False
@@ -163,13 +159,17 @@ class Updater:
         communicate.download_update.emit(100, "Extracting", False, None)
         folder, extension = file.rsplit('.', 1)
         ensure_dir(folder)
-        if extension == '7z':
-            with py7zr.SevenZipFile(file, mode='r') as z:
-                z.extractall(folder)
-        elif extension == 'zip':
-            with zipfile.ZipFile(file, 'r') as z:
-                z.extractall(folder)
-
+        try:
+            if extension == '7z':
+                with py7zr.SevenZipFile(file, mode='r') as z:
+                    z.extractall(folder)
+            elif extension == 'zip':
+                with zipfile.ZipFile(file, 'r') as z:
+                    z.extractall(folder)
+        except Exception as e:
+            logger.error('extract error occurred', e)
+            self.check_package_error()
+            return
         update_package_folder = find_folder_with_file(folder, 'md5.txt')
 
         if update_package_folder is None:
