@@ -18,6 +18,9 @@ class LabelAndDropDown(ConfigLabelAndWidget):
     def text_changed(self, text):
         self.update_config(text)
 
+    def update_value(self):
+        self.combo_box.setText(self.config.get(self.key))
+
 
 def find_string_index(my_list, target_string):
     try:

@@ -6,6 +6,7 @@ import threading
 import zipfile
 from datetime import datetime
 
+import psutil
 import py7zr
 import requests
 
@@ -13,13 +14,33 @@ import ok
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 from ok.update.GithubMultiDownloader import GithubMultiDownloader
-from ok.util.path import get_path_relative_to_exe, ensure_dir, dir_checksum, find_folder_with_file
+from ok.util.path import get_path_relative_to_exe, ensure_dir, dir_checksum, find_folder_with_file, clear_folder
 
 logger = get_logger(__name__)
 
 updater_bat = r'''@echo off
+setlocal enabledelayedexpansion
 set "source_dir=%~1"
 set "target_dir=%~2"
+set "exe=%~3"
+
+REM Initialize an empty pid_list
+set "pid_list="
+
+REM Loop through the arguments starting from the 4th
+set "i=4"
+:loop
+    call set "arg=%%%i%%%"
+    if "%arg%"=="" goto endloop
+    if defined pid_list (
+        set "pid_list=!pid_list! %arg%"
+    ) else (
+        set "pid_list=%arg%"
+    )
+    set /a i+=1
+    goto loop
+
+:endloop
 
 if not defined source_dir (
     echo Source directory is not defined.
@@ -31,16 +52,56 @@ if not defined target_dir (
     exit /b
 )
 
-echo "%source_dir%"
-echo "%target_dir%"
+if not defined pid_list (
+    echo pid_list is not defined.
+    exit /b
+)
+
+if not defined exe (
+    echo exe is not defined.
+    exit /b
+)
+
+echo %time% - "%source_dir%"
+echo %time% - "%target_dir%"
+echo %time% - "%exe%"
+echo %time% - "%pid_list%"
+
+REM Check all PIDs every second and terminate them after 10 seconds if still running
+set "check_duration=10"
+
+for %%A in (%pid_list%) do (
+    set "elapsed_time=0"
+    :check_loop
+    echo %time% - Waiting for PID %%A to exit...
+    tasklist /fi "PID eq %%A" | find ":" >nul
+    if errorlevel 1 (
+        echo %time% - PID %%A has exited.
+        goto next_pid
+    ) else (
+        timeout /t 1 /nobreak >nul
+        set /a elapsed_time+=1
+        if !elapsed_time! geq %check_duration% (
+            echo %time% - PID %%A is still running after %check_duration% seconds, killing it...
+            taskkill /f /pid %%A
+            goto next_pid
+        )
+        goto check_loop
+    )
+    :next_pid
+    echo %time% - continue
+)
+
+REM Sleep for one second
+timeout /t 1 /nobreak >nul
 
 for %%F in ("%source_dir%\*") do (
     if exist "%target_dir%\%%~nxF" (
-        echo Deleting "%target_dir%\%%~nxF"
+        echo %time% - Deleting "%target_dir%\%%~nxF"
         del /Q /F "%target_dir%\%%~nxF"
     )
-    echo Copying "%%F"
-    copy /Y "%%F" "%target_dir%"
+    echo %time% - Copying "%%F" to "%target_dir%"
+    copy /Y "%%F" "%target_dir%" >nul
 )
 
 for /D %%D in ("%source_dir%\*") do (
@@ -49,8 +110,11 @@ for /D %%D in ("%source_dir%\*") do (
         rmdir /S /Q "%target_dir%\%%~nxD"
     )
     echo Copying "%%D"
-    xcopy /E /I "%%D" "%target_dir%\%%~nxD"
+    xcopy /E /I "%%D" "%target_dir%\%%~nxD" >nul
 )
+echo %time% Update Success
+start "" %exe%
+endlocal
 '''
 
 
@@ -64,6 +128,7 @@ class Updater:
         self.error = None
         self.to_update = None
         self.downloading = False
+        self.exe_name = self.config.get('exe_name')
         if self.config is None:
             return
         self.update_url = self.config.get('releases_url')
@@ -213,13 +278,19 @@ class Updater:
 
     def update(self):
         exe_folder = get_path_relative_to_exe()
-        batch_command = f'{self.to_update.get("updater_bat")} {self.to_update.get("update_package_folder")} {exe_folder}'
+        batch_command = [self.to_update.get("updater_bat"), self.to_update.get("update_package_folder"), exe_folder,
+                         os.path.join(exe_folder, self.exe_name), os.path.join(exe_folder, 'md5.txt'), str(os.getpid())]
+        for proc in psutil.process_iter(['pid', 'name']):
+            if proc.info['name'] == 'adb.exe':
+                batch_command.append(str(proc.info['pid']))
+
         logger.info(f'execute update {batch_command}')
-        subprocess.run(batch_command, shell=True)
-        ok.gui.app.quit()
+
+        subprocess.Popen(batch_command, creationflags=subprocess.CREATE_NEW_CONSOLE)
+        ok.gui.ok.quit()
 
     def check_package_error(self):
-        # clear_folder(self.update_dir)
+        clear_folder(self.update_dir)
         communicate.download_update.emit(100, "", True, "Update Package CheckSum Error!")
 
     def enabled(self):

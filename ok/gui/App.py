@@ -8,6 +8,7 @@ from qfluentwidgets import FluentTranslator, qconfig, Theme
 
 import ok
 import ok.gui.resources
+from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.gui.MessageWindow import MessageWindow
 from ok.gui.i18n.path import i18n_path
@@ -30,6 +31,7 @@ class App:
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
         self.app = QApplication(sys.argv)
+        communicate.quit.connect(self.app.quit)
         self.app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
         qconfig.theme = Theme.AUTO
 
@@ -108,6 +110,6 @@ class App:
     def exec(self):
         sys.exit(self.app.exec())
 
-    def quit(self):
-        self.exit_event.set()
-        self.app.quit()
+    @staticmethod
+    def quit():
+        communicate.quit.emit()
