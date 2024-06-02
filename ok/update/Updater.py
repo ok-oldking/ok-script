@@ -9,6 +9,7 @@ from datetime import datetime
 import py7zr
 import requests
 
+import ok
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 from ok.update.GithubMultiDownloader import GithubMultiDownloader
@@ -214,9 +215,8 @@ class Updater:
         exe_folder = get_path_relative_to_exe()
         batch_command = f'{self.to_update.get("updater_bat")} {self.to_update.get("update_package_folder")} {exe_folder}'
         logger.info(f'execute update {batch_command}')
-        # ok.gui.app.quit()
-        os._exit(0)
         subprocess.run(batch_command, shell=True)
+        ok.gui.app.quit()
 
     def check_package_error(self):
         # clear_folder(self.update_dir)

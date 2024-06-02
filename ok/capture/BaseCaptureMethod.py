@@ -1,5 +1,9 @@
 import numpy as np
 
+from ok.logging.Logger import get_logger
+
+logger = get_logger(__name__)
+
 
 class CaptureException(Exception):
     pass
@@ -21,13 +25,19 @@ class BaseCaptureMethod:
     @property
     def width(self):
         if self._size[0] == 0:
-            self.get_frame()
+            try:
+                self.get_frame()
+            except Exception as e:
+                logger.error('get frame error')
         return self._size[0]
 
     @property
     def height(self):
         if self._size[1] == 0:
-            self.get_frame()
+            try:
+                self.get_frame()
+            except Exception as e:
+                logger.error('get frame error')
         return self._size[1]
 
     def get_frame(self) -> np.ndarray | None:
@@ -35,8 +45,8 @@ class BaseCaptureMethod:
             frame = self.do_get_frame()
             if frame is not None:
                 self._size = (frame.shape[1], frame.shape[0])
-            if frame.shape[2] == 4:
-                frame = frame[:, :, :3]
+                if frame.shape[2] == 4:
+                    frame = frame[:, :, :3]
             return frame
         except Exception as e:
             raise CaptureException() from e

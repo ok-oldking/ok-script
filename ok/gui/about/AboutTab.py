@@ -31,11 +31,11 @@ class AboutTab(Tab):
             self.update_hbox.addWidget(self.download_stable_button)
 
             self.download_bar = ProgressBar(self)
-            self.download_bar.setFixedWidth(150)
+            self.download_bar.setFixedWidth(80)
             self.update_hbox.addWidget(self.download_bar)
 
             self.downloading_text = QLabel()
-            self.downloading_text.setFixedWidth(150)
+            self.downloading_text.setFixedWidth(200)
             self.update_hbox.addWidget(self.downloading_text)
 
             self.update_button = PushButton()
