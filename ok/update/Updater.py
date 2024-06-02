@@ -175,6 +175,8 @@ class Updater:
             self.stable_release = None
             for release in releases:
                 release = self.parse_data(release)
+                if not release:
+                    continue
 
                 if not release.get('draft') and is_newer_version(self.version, release.get('version')):
                     if self.latest_release is None:
@@ -206,6 +208,7 @@ class Updater:
     def _auto_check_update(self):
         if not self.exit_event.is_set() and self.task_queue.empty() and not self.latest_release and not self.stable_release and not self.downloading:
             self.async_run(self.check_for_updates)
+            self.timer.cancel()
 
     def async_run(self, task):
         self.task_queue.put(task)
@@ -287,7 +290,7 @@ class Updater:
             logger.error(f'write updater_bat error', e)
             self.check_package_error()
             return
-
+        
         # Now, 'Hello, World!' is written to 'filename.txt'
         self.to_update = {'version': version, 'update_package_folder': update_package_folder,
                           'updater_bat': bat_path, 'notes': release.get('notes'), 'release': release}
@@ -316,6 +319,8 @@ class Updater:
 
     def parse_data(self, release):
         version = release.get('tag_name')
+        if not release.get('assets'):
+            return None
         date = datetime.strptime(release.get('published_at'), "%Y-%m-%dT%H:%M:%SZ").strftime('%Y-%m-%d')
         target_asset = None
         for asset in release.get('assets'):
@@ -333,7 +338,7 @@ class Updater:
                 elif 'release' in url and not self.debug:
                     target_asset = asset
         if not target_asset:
-            raise ValueError(f'No asset found for version: {version}')
+            return None
         release = {
             'version': version,
             'notes': release.get('body'),

@@ -40,6 +40,7 @@ class AboutTab(Tab):
             self.stable_hbox.addWidget(self.download_stable_button, stretch=0)
 
             communicate.download_update.connect(self.download_update)
+            communicate.check_update.connect(self.update_update)
 
             self.update_update_buttons(0)
         about_label = QLabel()
@@ -54,7 +55,7 @@ class AboutTab(Tab):
             dump_button.clicked.connect(dump_threads)
             self.addWidget(dump_button)
 
-    def update_update_buttons(self, percent, progress=""):
+    def update_update_buttons(self):
         if ok.gui.app.updater.latest_release:
             self.latest_label.setText(self.get_version_text(ok.gui.app.updater.latest_release))
             self.download_latest_button.show()
@@ -86,6 +87,9 @@ class AboutTab(Tab):
             self.download_latest_button.setText(self.tr('Download'))
             self.download_stable_button.setText(self.tr('Download'))
 
+    def update_update(self, error):
+        self.update_update_buttons()
+
     def get_version_text(self, release):
         text = "<h3>{title}: {version} ({size})</h3>"
         if release.get('prerelease'):
@@ -101,7 +105,6 @@ class AboutTab(Tab):
         ok.gui.app.updater.async_run(lambda: ok.gui.app.updater.update())
 
     def download_update(self, percent, progress, done, error):
-        message = ""
         if done:
             if error:
                 title = self.tr('Download Error:')
