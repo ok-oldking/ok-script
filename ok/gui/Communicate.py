@@ -20,7 +20,7 @@ class Communicate(QObject):
     config_validation: Signal = Signal(str)
     tab = Signal(str)
     capture_error = Signal()
-    check_update = Signal()
+    check_update = Signal(str)
     download_update = Signal(float, str, bool, str)
     quit = Signal()
 

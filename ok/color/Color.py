@@ -17,8 +17,9 @@ def calculate_color_percentage(image, color_ranges, box=None):
     # Check if the ROI is within the image bounds
     if box is not None:
         if (box.x >= 0 and box.y >= 0 and
-                box.x + box.width <= image.shape[1] and  # image.shape[1] is the width of the image
-                box.y + box.height <= image.shape[0]):  # image.shape[0] is the height of the image
+            box.x + box.width <= image.shape[1] and  # image.shape[1] is the width of the image
+            box.y + box.height <= image.shape[
+                0]) and box.width > 0 and box.height > 0:  # image.shape[0] is the height of the image
 
             # Extract the region of interest (ROI) using slicing
 

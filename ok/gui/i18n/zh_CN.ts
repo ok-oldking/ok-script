@@ -4,9 +4,48 @@
 <context>
     <name>AboutTab</name>
     <message>
-        <location filename="../about/AboutTab.py" line="20"/>
+        <location filename="../about/AboutTab.py" line="22"/>
+        <location filename="../about/AboutTab.py" line="32"/>
+        <location filename="../about/AboutTab.py" line="86"/>
+        <location filename="../about/AboutTab.py" line="87"/>
+        <source>Download</source>
+        <translation>下载</translation>
+    </message>
+    <message>
+        <location filename="../about/AboutTab.py" line="53"/>
         <source>Dump Threads(HotKey:Ctrl+Alt+D)</source>
         <translation>Dump Threads(快捷键:Ctrl+Alt+D)</translation>
+    </message>
+    <message>
+        <location filename="../about/AboutTab.py" line="82"/>
+        <location filename="../about/AboutTab.py" line="84"/>
+        <source>Update</source>
+        <translation>更新</translation>
+    </message>
+    <message>
+        <location filename="../about/AboutTab.py" line="93"/>
+        <source>Beta Version</source>
+        <translation>测试版</translation>
+    </message>
+    <message>
+        <location filename="../about/AboutTab.py" line="95"/>
+        <source>Release Version</source>
+        <translation>正式版</translation>
+    </message>
+    <message>
+        <location filename="../about/AboutTab.py" line="108"/>
+        <source>Download Error:</source>
+        <translation>下载错误: </translation>
+    </message>
+    <message>
+        <location filename="../about/AboutTab.py" line="125"/>
+        <source>Update Now</source>
+        <translation>现在更新</translation>
+    </message>
+    <message>
+        <location filename="../about/AboutTab.py" line="126"/>
+        <source>Are you sure you want to update to {version}?</source>
+        <translation>你确定要更新到{version}版本吗？</translation>
     </message>
 </context>
 <context>
@@ -175,26 +214,17 @@
     <name>SelectCaptureListView</name>
     <message>
         <location filename="../start/SelectCaptureListView.py" line="12"/>
-        <source>Game Window(Supports Background, Low Compatibility, Low Latency)</source>
-        <translation>游戏窗口(支持后台, 兼容性低, 延迟低)</translation>
-    </message>
-    <message>
         <location filename="../start/SelectCaptureListView.py" line="17"/>
-        <source>Supports Background, Low Compatibility, Low Latency</source>
-        <translation>支持后台, 兼容性低, 延迟低</translation>
-    </message>
-    <message>
-        <location filename="../start/SelectCaptureListView.py" line="19"/>
         <source>Game Window</source>
         <translation>游戏窗口</translation>
     </message>
     <message>
-        <location filename="../start/SelectCaptureListView.py" line="23"/>
+        <location filename="../start/SelectCaptureListView.py" line="21"/>
         <source>Emulator Window(Supports Background, Fast, Low Latency)</source>
         <translation>模拟器窗口(支持后台, 速度快, 延迟低)</translation>
     </message>
     <message>
-        <location filename="../start/SelectCaptureListView.py" line="24"/>
+        <location filename="../start/SelectCaptureListView.py" line="22"/>
         <source>ADB(Supports Background, Slow, High Compatibility, High Latency)</source>
         <translation>ADB截图(支持后台, 兼容性高, 速度慢, 延迟高)</translation>
     </message>
@@ -329,46 +359,46 @@
         <translation>开始</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="55"/>
+        <location filename="../start/StartCard.py" line="58"/>
         <source>Info:</source>
         <translation>信息:</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="56"/>
+        <location filename="../start/StartCard.py" line="59"/>
         <source>Start Game {game}</source>
         <translation>启动游戏 </translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="65"/>
-        <location filename="../start/StartCard.py" line="76"/>
-        <location filename="../start/StartCard.py" line="87"/>
-        <location filename="../start/StartCard.py" line="100"/>
-        <location filename="../start/StartCard.py" line="113"/>
+        <location filename="../start/StartCard.py" line="68"/>
+        <location filename="../start/StartCard.py" line="79"/>
+        <location filename="../start/StartCard.py" line="90"/>
+        <location filename="../start/StartCard.py" line="103"/>
+        <location filename="../start/StartCard.py" line="116"/>
         <source>Error:</source>
         <translation>错误：</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="66"/>
+        <location filename="../start/StartCard.py" line="69"/>
         <source>Game window path does not exist: {path}</source>
         <translation>游戏安装路径不存在</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="77"/>
+        <location filename="../start/StartCard.py" line="80"/>
         <source>Selected capture method is not supported by the game or your system!</source>
         <translation>当前游戏或模拟器不支持选择的截图方式!</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="88"/>
+        <location filename="../start/StartCard.py" line="91"/>
         <source>Game window is not connected, please select the game window and capture method.</source>
         <translation>游戏窗口未连接，请选择游戏窗口和截图方式。</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="103"/>
+        <location filename="../start/StartCard.py" line="106"/>
         <source>Window resolution {resolution} is not supported, the supported ratio is {supported_ratio}, check if game windows is minimized, resized or out of screen.</source>
         <translation>当前游戏窗口分辨率{resolution}不支持, 支持的分辨率是{supported_ratio}, 请检查游戏窗口是否最小化, 被拉伸或者部分在屏幕外</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="115"/>
+        <location filename="../start/StartCard.py" line="118"/>
         <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
         <translation>PC版需要管理员权限，请以管理员权限重启此应用！</translation>
     </message>
@@ -388,23 +418,24 @@
         <translation>游戏窗口已断开</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="147"/>
+        <location filename="../start/StartCard.py" line="148"/>
+        <location filename="../start/StartCard.py" line="156"/>
         <source>Paused: PC Game Window Must Be in Front!</source>
         <translation>已暂停：PC版游戏窗口必须在前台！</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="151"/>
-        <location filename="../start/StartCard.py" line="154"/>
+        <location filename="../start/StartCard.py" line="152"/>
+        <location filename="../start/StartCard.py" line="159"/>
         <source>Running</source>
         <translation>运行中</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="151"/>
+        <location filename="../start/StartCard.py" line="152"/>
         <source>Trigger Tasks</source>
         <translation>个触发器</translation>
     </message>
     <message>
-        <location filename="../start/StartCard.py" line="157"/>
+        <location filename="../start/StartCard.py" line="162"/>
         <source>Waiting for task to be enabled</source>
         <translation>点击选择任务开始</translation>
     </message>
@@ -561,14 +592,52 @@
     </message>
 </context>
 <context>
+    <name>VersionCard</name>
+    <message>
+        <location filename="../about/VersionCard.py" line="24"/>
+        <source>Check for updates</source>
+        <translation>检查新版本</translation>
+    </message>
+    <message>
+        <location filename="../about/VersionCard.py" line="39"/>
+        <source>Downloading {progress} {percent}%</source>
+        <translation>下载中: {progress} {percent}%</translation>
+    </message>
+    <message>
+        <location filename="../about/VersionCard.py" line="48"/>
+        <source>Info</source>
+        <translation>信息</translation>
+    </message>
+    <message>
+        <location filename="../about/VersionCard.py" line="51"/>
+        <source>Found new version!</source>
+        <translation>发现新版本</translation>
+    </message>
+    <message>
+        <location filename="../about/VersionCard.py" line="54"/>
+        <source>Check for update error!</source>
+        <translation>检查更新错误</translation>
+    </message>
+    <message>
+        <location filename="../about/VersionCard.py" line="58"/>
+        <source>This is the newest version!</source>
+        <translation>目前已经是最新版本！</translation>
+    </message>
+    <message>
+        <location filename="../about/VersionCard.py" line="71"/>
+        <source>Checking for updates</source>
+        <translation>检查更新</translation>
+    </message>
+</context>
+<context>
     <name>app</name>
     <message>
-        <location filename="../App.py" line="72"/>
+        <location filename="../App.py" line="77"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../App.py" line="73"/>
+        <location filename="../App.py" line="78"/>
         <source>Install dir {path} must be an English path, move to another path.</source>
         <translation>安装目录{path}必须是英文目录，请移动到英文目录。</translation>
     </message>

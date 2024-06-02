@@ -39,6 +39,17 @@ Card>#card InfoBadge {
     font-size: 11px;
 }
 
+EmptyCard>#card {
+    border: 1px solid rgb(36, 36, 36);
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.1795);
+}
+
+EmptyCard>#card {
+    border: 1px solid rgb(36, 36, 36);
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.1795);
+}
 
 #sourceWidget {
     background-color: rgba(255, 255, 255, 0.09);

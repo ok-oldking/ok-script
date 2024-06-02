@@ -1,40 +1,72 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout
-from qfluentwidgets import IconWidget, TextWrap, CardWidget
+from PySide6.QtWidgets import QLabel
+from qfluentwidgets import SettingCard, PushButton, ProgressBar, InfoBar, InfoBarPosition
+
+import ok
+from ok.gui.Communicate import communicate
 
 
-class VersionCard(CardWidget):
+class VersionCard(SettingCard):
     """ Sample card """
 
     def __init__(self, icon, title, version, parent=None):
-        super().__init__(parent=parent)
+        super().__init__(icon, title, version)
+        self.downloading_text = QLabel()
+        self.hBoxLayout.addWidget(self.downloading_text)
+        self.hBoxLayout.addSpacing(16)
 
-        self.iconWidget = IconWidget(icon, self)
-        self.titleLabel = QLabel(title, self)
-        self.contentLabel = QLabel(TextWrap.wrap(version, 45, False)[0], self)
+        self.download_bar = ProgressBar(self)
+        self.download_bar.setFixedWidth(80)
+        self.download_bar.setFixedHeight(6)
+        self.hBoxLayout.addWidget(self.download_bar)
+        self.hBoxLayout.addSpacing(16)
 
-        self.hBoxLayout = QHBoxLayout(self)
-        self.vBoxLayout = QVBoxLayout()
+        self.check_update_button = PushButton(self.tr("Check for updates"))
+        self.check_update_button.clicked.connect(self.check_update)
+        self.hBoxLayout.addWidget(self.check_update_button)
+        self.hBoxLayout.addSpacing(16)
+        self.update_buttons(0, "")
+        communicate.check_update.connect(self.update_update)
+        communicate.download_update.connect(self.download_update)
 
-        self.setFixedSize(360, 90)
-        self.iconWidget.setFixedSize(48, 48)
+    def download_update(self, percent, progress, done, error):
+        self.update_buttons(percent, progress)
 
-        self.hBoxLayout.setSpacing(28)
-        self.hBoxLayout.setContentsMargins(20, 0, 0, 0)
-        self.vBoxLayout.setSpacing(2)
-        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
-        self.vBoxLayout.setAlignment(Qt.AlignVCenter)
+    def update_buttons(self, percent, progress):
+        if ok.gui.app.updater.downloading:
+            self.downloading_text.show()
+            self.downloading_text.setText(
+                self.tr('Downloading {progress} {percent}%').format(progress=progress, percent=format(percent, '.1f')))
+            self.download_bar.show()
+            self.download_bar.setValue(percent)
+        else:
+            self.downloading_text.hide()
+            self.download_bar.hide()
 
-        self.hBoxLayout.setAlignment(Qt.AlignVCenter)
-        self.hBoxLayout.addWidget(self.iconWidget)
-        self.hBoxLayout.addLayout(self.vBoxLayout)
-        self.vBoxLayout.addStretch(1)
-        self.vBoxLayout.addWidget(self.titleLabel)
-        self.vBoxLayout.addWidget(self.contentLabel)
-        self.vBoxLayout.addStretch(1)
+    def update_update(self, error):
+        title = self.tr('Info')
+        if ok.gui.app.updater.latest_release or ok.gui.app.updater.stable_release:
+            bar = InfoBar.info
+            message = self.tr('Found new version!')
+        elif error:
+            bar = InfoBar.error
+            title = self.tr('Check for update error!')
+            message = error
+        else:
+            bar = InfoBar.info
+            message = self.tr("This is the newest version!")
+        bar(
+            title=title,
+            content=message,
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=5000,  # won't disappear automatically
+            parent=self
+        )
+        self.check_update_button.setEnabled(True)
 
-        self.titleLabel.setObjectName('titleLabel')
-        self.contentLabel.setObjectName('contentLabel')
-
-    def mouseReleaseEvent(self, e):
-        super().mouseReleaseEvent(e)
+    def check_update(self):
+        ok.gui.app.updater.async_run(lambda: ok.gui.app.updater.check_for_updates())
+        self.check_update_button.setText(self.tr("Checking for updates"))
+        self.check_update_button.setEnabled(False)

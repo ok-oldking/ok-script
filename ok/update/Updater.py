@@ -125,7 +125,6 @@ class Updater:
         self.debug = app_config.get('debug')
         self.latest_release = None
         self.stable_release = None
-        self.error = None
         self.to_update = None
         self.downloading = False
         self.exe_name = self.config.get('exe_name')
@@ -141,6 +140,8 @@ class Updater:
         self.downloader = GithubMultiDownloader(app_config, exit_event)
         t = threading.Thread(target=self._run_tasks, name='run_tasks')
         t.start()
+        self.timer = threading.Timer(30, self._auto_check_update)
+        self.timer.start()
 
     def _run_tasks(self):
         while True and not self.exit_event.is_set():
@@ -150,6 +151,7 @@ class Updater:
                 break
             task()
             self.task_queue.task_done()
+        self.timer.cancel()
 
     def get_url(self, url):
         if self.use_proxy:
@@ -171,7 +173,6 @@ class Updater:
             # Extract useful information from each release
             self.latest_release = None
             self.stable_release = None
-            self.error = None
             for release in releases:
                 release = self.parse_data(release)
 
@@ -187,9 +188,24 @@ class Updater:
             if self.latest_release == self.stable_release:
                 self.latest_release = None
 
+            if self.stable_release is not None:
+                communicate.notification.emit(
+                    ok.gui.app.app.translate('@default',
+                                             'Start downloading latest release version {version}'.format(
+                                                 version=self.stable_release.get('version'))),
+                    ok.gui.app.app.translate('@default', 'Version Update'),
+                    False)
+                self.download(self.stable_release)
+            if not self.latest_release and not self.stable_release:
+                logger.info("check update newest version clear update folder")
+                clear_folder(self.update_dir)
+            communicate.check_update.emit()
         except Exception as e:
-            print(f"HTTP error occurred: {e}")
-        communicate.check_update.emit()
+            communicate.check_update.emit(str(e))
+
+    def _auto_check_update(self):
+        if not self.exit_event.is_set() and self.task_queue.empty() and not self.latest_release and not self.stable_release and not self.downloading:
+            self.async_run(self.check_for_updates)
 
     def async_run(self, task):
         self.task_queue.put(task)
@@ -203,7 +219,7 @@ class Updater:
                 downloaded = os.path.getsize(file)
                 if downloaded == size:
                     logger.info(f'File {file} already downloaded')
-                    self.extract(file, release.get('version'))
+                    self.extract(file, release)
                     return
                 else:
                     logger.warning(f'File size error {file} {downloaded} != {size}')
@@ -213,7 +229,7 @@ class Updater:
             self.downloading = False
             if success:
                 logger.info(f'download success: {file}')
-                self.extract(file, release.get('version'))
+                self.extract(file, release)
             return
 
         except Exception as e:
@@ -221,7 +237,8 @@ class Updater:
             self.downloading = False
             communicate.download_update.emit(0, "", True, e.args[0])
 
-    def extract(self, file, version):
+    def extract(self, file, release):
+        version = release.get('version')
         communicate.download_update.emit(100, "Extracting", False, None)
         folder, extension = file.rsplit('.', 1)
         ensure_dir(folder)
@@ -273,8 +290,9 @@ class Updater:
 
         # Now, 'Hello, World!' is written to 'filename.txt'
         self.to_update = {'version': version, 'update_package_folder': update_package_folder,
-                          'updater_bat': bat_path}
+                          'updater_bat': bat_path, 'notes': release.get('notes'), 'release': release}
         communicate.download_update.emit(100, "", True, None)
+        return True
 
     def update(self):
         exe_folder = get_path_relative_to_exe()
@@ -298,7 +316,7 @@ class Updater:
 
     def parse_data(self, release):
         version = release.get('tag_name')
-        time = datetime.strptime(release.get('published_at'), "%Y-%m-%dT%H:%M:%SZ").strftime('%Y-%m-%d %H:%M:%S')
+        date = datetime.strptime(release.get('published_at'), "%Y-%m-%dT%H:%M:%SZ").strftime('%Y-%m-%d')
         target_asset = None
         for asset in release.get('assets'):
             asset = {
@@ -319,7 +337,7 @@ class Updater:
         release = {
             'version': version,
             'notes': release.get('body'),
-            'time': time,
+            'date': date,
             'draft': release.get('draft'),
             'prerelease': release.get('prerelease'),
         }

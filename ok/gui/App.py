@@ -35,8 +35,6 @@ class App:
         self.app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
         qconfig.theme = Theme.AUTO
 
-        self.updater = Updater(self.config, exit_event)
-
         self.about = self.config.get('about')
         self.title = self.config.get('gui_title')
         self.version = self.config.get('version')
@@ -59,6 +57,8 @@ class App:
             logger.debug(f"translator install success {QCoreApplication.translate('MainWindow', 'Debug')}")
         else:
             logger.debug(f"No translation available for {self.locale}, falling back to English/default. {full_path}")
+
+        self.updater = Updater(self.config, exit_event)
 
     def center_window(self, window):
         screen = self.app.primaryScreen()
