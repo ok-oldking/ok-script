@@ -271,7 +271,7 @@ class DeviceManager:
     def device(self):
         return self._device
 
-    def stop(self):
+    def adb_kill_server(self):
         if self.adb is not None:
             self.adb.server_kill()
             logger.debug('adb kill_server')

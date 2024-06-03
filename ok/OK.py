@@ -128,8 +128,6 @@ class OK:
     def quit(self):
         logger.debug('quit app')
         self.exit_event.set()
-        if self.device_manager is not None:
-            self.device_manager.stop()
         if self.app:
             self.app.quit()
 

@@ -297,6 +297,7 @@ class Updater:
         logger.info(f'execute update {batch_command}')
 
         subprocess.Popen(batch_command, creationflags=subprocess.CREATE_NEW_CONSOLE)
+        ok.gui.device_manager.adb_kill_server()
         ok.gui.ok.quit()
 
     def check_package_error(self):
