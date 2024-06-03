@@ -1,4 +1,5 @@
 # original https://github.com/dantmnf & https://github.com/hakaboom/winAuto
+import os.path
 import re
 import threading
 import time
@@ -155,7 +156,7 @@ def find_hwnd_by_title_and_exe(title, exe_name):
                     return True
             name, full_path = get_exe_by_hwnd(hwnd)
             if exe_name:
-                if name == exe_name:
+                if name == exe_name or exe_name == full_path:
                     result.append((hwnd, full_path))
                     return True  # Stop enumeration as we found the first match
             else:
@@ -176,3 +177,24 @@ def get_exe_by_hwnd(hwnd):
     # Get the process name and executable path
     process = psutil.Process(pid)
     return process.name(), process.exe()
+
+
+def enum_windows(emulator_path=None):
+    if emulator_path is not None:
+        emulator_path = os.path.normpath(emulator_path)
+
+    def callback(hwnd, extra):
+        name, full_path = get_exe_by_hwnd(hwnd)
+        if emulator_path and emulator_path != full_path:
+            return True
+        buff = win32gui.GetWindowText(hwnd)
+        if buff and win32gui.IsWindowVisible(hwnd):
+            rect = win32gui.GetWindowRect(hwnd)
+            width = rect[2] - rect[0]
+            height = rect[3] - rect[1]
+            extra.append((hwnd, buff, width, height))
+        return True
+
+    windows = []
+    win32gui.EnumWindows(callback, windows)
+    return windows

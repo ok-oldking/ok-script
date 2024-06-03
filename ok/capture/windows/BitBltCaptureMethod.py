@@ -92,6 +92,6 @@ class BitBltCaptureMethod(BaseWindowsCaptureMethod):
     def test_exclusive_full_screen(self):
         frame = self.do_get_frame()
         if frame is None:
-            logger.error('Failed to test_exclusive_full_screen')
+            logger.error(f'Failed to test_exclusive_full_screen {self.hwnd_window}')
             return False
         return True

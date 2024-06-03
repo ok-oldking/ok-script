@@ -57,7 +57,7 @@ class StartTab(Tab):
             self.choose_window_button.setDisabled(True)
         else:
             self.choose_window_button.setDisabled(False)
-        self.window_list.update_for_device(data.get("device"), data.get("hwnd"), data.get("capture"))
+        self.window_list.update_for_device()
 
     def refresh_clicked(self):
         ok.gui.device_manager.refresh()
@@ -66,7 +66,8 @@ class StartTab(Tab):
 
     def choose_window_clicked(self):
         if self.choose_window_button.isEnabled():
-            self.select_hwnd_window = SelectHwndWindow(self.update_window_list, self.window())
+            device = ok.gui.device_manager.get_devices()[self.device_list_row]
+            self.select_hwnd_window = SelectHwndWindow(device.get('full_path'), self.update_window_list, self.window())
             self.select_hwnd_window.show()
 
     def capture_index_changed(self):  # i is an index
@@ -127,6 +128,7 @@ class StartTab(Tab):
         if finished:
             self.refresh_button.setDisabled(False)
             self.refresh_button.setText(self.tr("Refresh"))
+            self.window_list.update_for_device()
 
     def update_selection(self):
         if ok.gui.executor.paused:

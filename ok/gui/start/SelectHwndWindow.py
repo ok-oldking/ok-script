@@ -2,26 +2,14 @@ import win32gui
 from qfluentwidgets import MessageBoxBase, ListWidget, LineEdit, SubtitleLabel
 
 import ok
+from ok.capture.HwndWindow import enum_windows
 
 
 # Function to get all windows
-def enum_windows():
-    def callback(hwnd, extra):
-        buff = win32gui.GetWindowText(hwnd)
-        if buff and win32gui.IsWindowVisible(hwnd):
-            rect = win32gui.GetWindowRect(hwnd)
-            width = rect[2] - rect[0]
-            height = rect[3] - rect[1]
-            extra.append((hwnd, buff, width, height))
-        return True
-
-    windows = []
-    win32gui.EnumWindows(callback, windows)
-    return windows
 
 
 class SelectHwndWindow(MessageBoxBase):
-    def __init__(self, callback, parent):
+    def __init__(self, emulator_path, callback, parent):
         super().__init__(parent)
         self.titleLabel = SubtitleLabel(self.tr("Select Window"), self)
         self.callback = callback
@@ -42,7 +30,7 @@ class SelectHwndWindow(MessageBoxBase):
         self.accepted.connect(self.confirm)
         self.cancelButton.setText(self.tr('Cancel'))
 
-        self.hwnds = enum_windows()
+        self.hwnds = enum_windows(emulator_path)
         self.filtered_hwnds = []  # Add this line
         self.update_list()
 

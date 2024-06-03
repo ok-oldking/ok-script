@@ -1,6 +1,6 @@
 import win32gui
 
-from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title_and_exe
+from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title_and_exe, enum_windows
 from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod, do_screencap
 from ok.capture.adb.WindowsCaptureFactory import update_capture_method
 from ok.capture.windows.window import get_window_bounds
@@ -101,7 +101,6 @@ class DeviceManager:
 
             if width != 0:
                 self.pc_device["resolution"] = f"{width}x{height}"
-            communicate.adb_devices.emit(False)
 
     def do_refresh(self, fast=False):
         self.update_pc_device()
@@ -119,13 +118,14 @@ class DeviceManager:
             return
         if not fast:
             self.connect_all()
-        from ok.capture.adb.vbox import installed_emulator
-        installed_emulators = [] if fast else installed_emulator()
+        from ok.alas.emulator_windows import EmulatorManager
+        manager = EmulatorManager()
+        installed_emulators = [] if fast else manager.all_emulator_instances
         for device in self.adb.list():
             logger.debug(f'adb.list() {device}')
         for emulator in installed_emulators:
             logger.debug(f"installed_emulator: {emulator}")
-            self.adb_connect(emulator.adb_address)
+            self.adb_connect(emulator.serial)
         device_list = self.adb.device_list()
         device_list = sorted(device_list, key=lambda x: x.serial)
         adb_connected = []
@@ -140,15 +140,23 @@ class DeviceManager:
                           "height": height,
                           "model": device.prop.model, "nick": device.prop.model, "connected": True,
                           "resolution": f"{width}x{height}"}
-            found = False
+            found_emulator = None
             for emulator in installed_emulators:
-                if emulator.adb_address == adb_device['address']:
-                    adb_device['nick'] = emulator.description
-                    found = True
+                if emulator.serial == adb_device['address']:
+                    adb_device['nick'] = emulator.name
+                    found_emulator = emulator
             if self.device_dict.get(imei):
-                if found or not self.device_dict[imei]['connected']:
+                if found_emulator or not self.device_dict[imei]['connected']:
                     old_capture = self.device_dict[imei].get("capture")
                     old_hwnd = self.device_dict[imei].get("hwnd")
+                    if not old_hwnd and found_emulator and found_emulator.path:
+                        windows = enum_windows(found_emulator.path)
+                        logger.debug(f'try auto set hwnd window from emulator {found_emulator} {windows}')
+                        if len(windows) == 1:
+                            logger.info(f'set hwnd window from emulator {windows[0][1]} {found_emulator}')
+                            old_hwnd = windows[0][1]
+                    if found_emulator:
+                        self.update_device_value(imei, 'full_path', found_emulator.path)
                     self.device_dict[imei] = adb_device
                     if old_capture is not None:
                         self.update_device_value(imei, 'capture', old_capture)
@@ -251,9 +259,7 @@ class DeviceManager:
             width = preferred.get('width', 0)
             height = preferred.get('height', 0)
             if preferred.get('capture') == "windows":
-                self.ensure_hwnd(hwnd_name, None, width, height)
-                if self.hwnd.exe_full_path:
-                    self.update_device_value(preferred['imei'], 'full_path', self.hwnd.exe_full_path)
+                self.ensure_hwnd(hwnd_name, preferred.get('full_path'), width, height)
                 self.use_windows_capture({'can_bit_blt': True}, require_bg=True)
             elif not isinstance(self.capture_method, ADBCaptureMethod):
                 if self.capture_method is not None:
