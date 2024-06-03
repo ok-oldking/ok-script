@@ -9,7 +9,9 @@ import ok
 from ok.logging.Logger import get_logger, config_logger
 from ok.util.exit_event import ExitEvent
 from ok.util.path import install_path_isascii
+from ok.util.win32_process import check_mutex
 
+check_mutex()
 logger = get_logger(__name__)
 
 

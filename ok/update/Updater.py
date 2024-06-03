@@ -1,8 +1,6 @@
 import math
 import os
-import queue
 import subprocess
-import threading
 import zipfile
 from datetime import datetime
 
@@ -14,6 +12,7 @@ import ok
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 from ok.update.GithubMultiDownloader import GithubMultiDownloader
+from ok.util.Handler import Handler
 from ok.util.path import get_path_relative_to_exe, ensure_dir, dir_checksum, find_folder_with_file, clear_folder
 
 logger = get_logger(__name__)
@@ -135,23 +134,9 @@ class Updater:
         self.use_proxy = self.config.get('use_proxy')
         self.update_dir = get_path_relative_to_exe('updates')
         self.exit_event = exit_event
-        self.task_queue = queue.Queue()
-        self.exit_event.bind_queue(self.task_queue)
+        self.handler = Handler(exit_event, self.__class__.__name__)
         self.downloader = GithubMultiDownloader(app_config, exit_event)
-        t = threading.Thread(target=self._run_tasks, name='run_tasks')
-        t.start()
-        self.timer = threading.Timer(30, self._auto_check_update)
-        self.timer.start()
-
-    def _run_tasks(self):
-        while True and not self.exit_event.is_set():
-            task = self.task_queue.get()
-            if task is None:
-                logger.debug("Task queue get is None quit")
-                break
-            task()
-            self.task_queue.task_done()
-        self.timer.cancel()
+        self.handler.post(self.do_check_for_updates, 30)
 
     def get_url(self, url):
         if self.use_proxy:
@@ -160,6 +145,9 @@ class Updater:
         return url
 
     def check_for_updates(self):
+        self.handler.post(self.do_check_for_updates, remove_existing=True)
+
+    def do_check_for_updates(self):
         try:
             # Send GET request to the API endpoint
             response = requests.get(self.get_url(self.update_url))
@@ -173,66 +161,67 @@ class Updater:
             # Extract useful information from each release
             self.latest_release = None
             self.stable_release = None
+
             for release in releases:
-                release = self.parse_data(release)
-                if not release:
-                    continue
+                try:
+                    release = self.parse_data(release)
+                    if not release:
+                        continue
 
-                if not release.get('draft') and is_newer_version(self.version, release.get('version')):
-                    if self.latest_release is None:
-                        self.latest_release = release
-                    if not release.get('prerelease') and self.stable_release is None:
-                        self.stable_release = release
+                    if not release.get('draft'):
+                        if self.latest_release is None:
+                            self.latest_release = release
+                        if not release.get('prerelease') and self.stable_release is None:
+                            self.stable_release = release
 
-                    if self.latest_release and self.stable_release:
-                        break
+                        if self.latest_release and self.stable_release:
+                            break
+                except Exception as e:
+                    logger.error(f'parse data error {release}', e)
 
             if self.latest_release == self.stable_release:
                 self.latest_release = None
 
-            if self.stable_release is not None:
+            if self.stable_release is not None and self.stable_release.get('version') != self.version:
                 communicate.notification.emit(
                     ok.gui.app.app.translate('@default',
                                              'Start downloading latest release version {version}'.format(
                                                  version=self.stable_release.get('version'))),
                     ok.gui.app.app.translate('@default', 'Version Update'),
-                    False)
-                self.download(self.stable_release)
+                    False, False)
+                self.download(self.stable_release, False)
             if not self.latest_release and not self.stable_release:
-                logger.info("check update newest version clear update folder")
+                logger.info(f"check update newest version clear update folder {self.update_dir}")
                 clear_folder(self.update_dir)
-            communicate.check_update.emit()
+            communicate.check_update.emit(None)
         except Exception as e:
+            logger.error(f'check_update_error: ', e)
             communicate.check_update.emit(str(e))
 
-    def _auto_check_update(self):
-        if not self.exit_event.is_set() and self.task_queue.empty() and not self.latest_release and not self.stable_release and not self.downloading:
-            self.async_run(self.check_for_updates)
-            self.timer.cancel()
-
     def async_run(self, task):
-        self.task_queue.put(task)
+        self.handler.post(task)
 
-    def download(self, release):
+    def download(self, release, debug):
         try:
             ensure_dir(self.update_dir)
-            file = os.path.join(self.update_dir, release.get('version') + '.' + release.get('type'))
-            size = release.get('size')
+            asset = release.get('debug_asset') if debug else release.get('release_asset')
+            file = os.path.join(self.update_dir, release.get('version') + '.' + asset.get('type'))
+            size = asset.get('size')
             if os.path.exists(file):
                 downloaded = os.path.getsize(file)
                 if downloaded == size:
                     logger.info(f'File {file} already downloaded')
-                    self.extract(file, release)
+                    self.extract(file, release, debug)
                     return
                 else:
                     logger.warning(f'File size error {file} {downloaded} != {size}')
                     os.remove(file)
             self.downloading = True
-            success = self.downloader.download(self.update_dir, release)
+            success = self.downloader.download(self.update_dir, asset)
             self.downloading = False
             if success:
                 logger.info(f'download success: {file}')
-                self.extract(file, release)
+                self.extract(file, release, debug)
             return
 
         except Exception as e:
@@ -240,7 +229,7 @@ class Updater:
             self.downloading = False
             communicate.download_update.emit(0, "", True, e.args[0])
 
-    def extract(self, file, release):
+    def extract(self, file, release, debug):
         version = release.get('version')
         communicate.download_update.emit(100, "Extracting", False, None)
         folder, extension = file.rsplit('.', 1)
@@ -290,9 +279,9 @@ class Updater:
             logger.error(f'write updater_bat error', e)
             self.check_package_error()
             return
-        
+
         # Now, 'Hello, World!' is written to 'filename.txt'
-        self.to_update = {'version': version, 'update_package_folder': update_package_folder,
+        self.to_update = {'version': version, 'update_package_folder': update_package_folder, 'debug': debug,
                           'updater_bat': bat_path, 'notes': release.get('notes'), 'release': release}
         communicate.download_update.emit(100, "", True, None)
         return True
@@ -321,41 +310,50 @@ class Updater:
         version = release.get('tag_name')
         if not release.get('assets'):
             return None
+        if not is_newer_or_eq_version(self.version, version):
+            return None
         date = datetime.strptime(release.get('published_at'), "%Y-%m-%dT%H:%M:%SZ").strftime('%Y-%m-%d')
-        target_asset = None
+        release_asset = None
+        debug_asset = None
         for asset in release.get('assets'):
             asset = {
                 'name': asset.get('name'),
                 'url': asset.get('browser_download_url'),
                 'size': asset.get('size'),
-                'readable_size': convert_size(asset.get('size'))
+                'readable_size': convert_size(asset.get('size')),
+                'version': version
             }
             asset['type'] = asset['url'].rsplit('.', 1)[1]
             url = asset.get('url')
             if version in url:
-                if 'debug' in url and self.debug:
-                    target_asset = asset
-                elif 'release' in url and not self.debug:
-                    target_asset = asset
-        if not target_asset:
+                if 'debug' in url:
+                    debug_asset = asset
+                elif 'release' in url:
+                    release_asset = asset
+            if version == self.version:
+                if self.debug:
+                    debug_asset = None
+                else:
+                    release_asset = None
+        if not release_asset and not debug_asset:
             return None
-        release = {
+        return {
             'version': version,
             'notes': release.get('body'),
             'date': date,
             'draft': release.get('draft'),
             'prerelease': release.get('prerelease'),
+            'release_asset': release_asset,
+            'debug_asset': debug_asset
         }
-        release.update(target_asset)
-        return release
 
 
-def is_newer_version(base_version, target_version):
+def is_newer_or_eq_version(base_version, target_version):
     base_version = list(map(int, base_version[1:].split('.')))
     target_version = list(map(int, target_version[1:].split('.')))
 
     # Compare the versions
-    return base_version < target_version
+    return base_version <= target_version
 
 
 def convert_size(size_bytes):

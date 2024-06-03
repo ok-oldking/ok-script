@@ -1,9 +1,40 @@
 from __future__ import annotations
 
 import ctypes
+import hashlib
 import msvcrt
 import os
+import sys
+from ctypes import wintypes
 from typing import Union
+
+from ok.util.path import get_path_relative_to_exe
+
+# Define necessary constants and functions
+ERROR_ALREADY_EXISTS = 183
+NULL = 0
+LPSECURITY_ATTRIBUTES = wintypes.LPVOID
+BOOL = ctypes.c_int
+DWORD = ctypes.c_ulong
+HANDLE = ctypes.c_void_p
+CreateMutex = ctypes.windll.kernel32.CreateMutexW
+CreateMutex.argtypes = [LPSECURITY_ATTRIBUTES, BOOL, wintypes.LPCWSTR]
+CreateMutex.restype = HANDLE
+GetLastError = ctypes.windll.kernel32.GetLastError
+GetLastError.argtypes = []
+GetLastError.restype = DWORD
+
+
+def check_mutex():
+    path = get_path_relative_to_exe()
+    # Try to create a named mutex
+    path = hashlib.md5(path.encode()).hexdigest()
+    mutex = CreateMutex(NULL, False, f"{path}")
+
+    # Check if the mutex already exists
+    if GetLastError() == ERROR_ALREADY_EXISTS:
+        print(f"Another instance of this application is already running. {path}")
+        sys.exit(0)
 
 
 def all_pids() -> list[int]:

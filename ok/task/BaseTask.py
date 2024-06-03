@@ -65,7 +65,7 @@ class BaseTask(ExecutorOperation):
 
     @staticmethod
     def notification(message, title=None, error=False):
-        communicate.notification.emit(message, title, error)
+        communicate.notification.emit(message, title, error, False)
 
     @property
     def enabled(self):

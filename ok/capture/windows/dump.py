@@ -1,14 +1,17 @@
+import subprocess
 import sys
-import traceback
 import threading
+import traceback
 
 from ok.util.path import get_path_relative_to_exe
+
 
 def get_thread_name(thread_id):
     for thread in threading.enumerate():
         if thread.ident == thread_id:
             return thread.name
     return ""  # Return empty string if the thread name is not found
+
 
 def dump_threads():
     # Get the stack trace for each thread
@@ -25,3 +28,4 @@ def dump_threads():
 
     with open(output_file, "w") as file:
         file.write("\n\n".join(thread_dumps))
+        subprocess.Popen(r'explorer /select,"{}"'.format(output_file))

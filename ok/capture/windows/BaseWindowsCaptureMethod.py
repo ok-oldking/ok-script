@@ -34,3 +34,11 @@ class BaseWindowsCaptureMethod(BaseCaptureMethod):
 
     def clickable(self):
         return self.hwnd_window is not None and self.hwnd_window.visible
+
+    def __str__(self):
+        result = f'{self.__class__.__name__}_{self.width}x{self.height}'
+        if self.hwnd_window is None:
+            result += '_no_window'
+        else:
+            result += f'_{self.hwnd_window}'
+        return result

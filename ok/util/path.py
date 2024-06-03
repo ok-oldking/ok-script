@@ -1,6 +1,7 @@
 import hashlib
 import os
 import re
+import shutil
 import sys
 
 
@@ -84,9 +85,13 @@ def clear_folder(folder_path):
     # Delete all files in the folder
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)
-        # Check if the path is a file
-        if os.path.isfile(file_path):
-            os.remove(file_path)
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)  # remove the file
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)  # remove dir and all contains
+        except Exception as e:
+            print(f"Failed to delete {file_path}. Reason: {e}")
 
 
 def find_first_existing_file(filenames, directory):

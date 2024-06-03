@@ -7,6 +7,7 @@ import ok.gui
 from ok.capture.windows.dump import dump_threads
 from ok.gui.Communicate import communicate
 from ok.gui.about.AboutTab import AboutTab
+from ok.gui.debug.DebugTab import DebugTab
 from ok.gui.start.StartTab import StartTab
 from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
 from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
@@ -41,8 +42,13 @@ class MainWindow(MSFluentWindow):
         #     debug_tab = DebugTab()
         #     self.addSubInterface(debug_tab, FluentIcon.COMMAND_PROMPT, self.tr('Debug'))
         # ... Add other tabs similarly
+        if debug:
+            debug_tab = DebugTab(exit_event)
+            self.addSubInterface(debug_tab, FluentIcon.DEVELOPER_TOOLS, self.tr('Debug'),
+                                 position=NavigationItemPosition.BOTTOM)
+
         if about:
-            about_tab = AboutTab(icon, title, version, about)
+            about_tab = AboutTab(icon, title, version, debug, about)
             self.addSubInterface(about_tab, FluentIcon.QUESTION, self.tr('About'),
                                  position=NavigationItemPosition.BOTTOM)
         # Styling the tabs and content if needed, for example:
@@ -82,7 +88,7 @@ class MainWindow(MSFluentWindow):
         )
         self.tray.showMessage(title, message)
 
-    def show_notification(self, message, title=None, error=None):
+    def show_notification(self, message, title=None, error=False, tray=True):
         bar = InfoBar.error if error else InfoBar.info
         if title is None:
             title = f"{self.tr('Error') if error else 'Info'}:"
@@ -95,9 +101,8 @@ class MainWindow(MSFluentWindow):
             duration=5000,  # won't disappear automatically
             parent=self.window()
         )
-        if title is None:
-            title = self.title
-        self.tray.showMessage(title, message)
+        if tray:
+            self.tray.showMessage(title, message)
 
     def capture_error(self):
         self.show_notification(self.tr('Please check whether the game window is selected correctly!'),

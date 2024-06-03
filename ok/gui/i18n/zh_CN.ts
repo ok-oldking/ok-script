@@ -4,48 +4,31 @@
 <context>
     <name>AboutTab</name>
     <message>
-        <location filename="../about/AboutTab.py" line="22"/>
-        <location filename="../about/AboutTab.py" line="32"/>
-        <location filename="../about/AboutTab.py" line="86"/>
-        <location filename="../about/AboutTab.py" line="87"/>
-        <source>Download</source>
-        <translation>下载</translation>
+        <location filename="../about/AboutTab.py" line="28"/>
+        <location filename="../about/AboutTab.py" line="44"/>
+        <source>Download Release</source>
+        <translation>下载正式版</translation>
     </message>
     <message>
-        <location filename="../about/AboutTab.py" line="53"/>
-        <source>Dump Threads(HotKey:Ctrl+Alt+D)</source>
-        <translation>Dump Threads(快捷键:Ctrl+Alt+D)</translation>
+        <location filename="../about/AboutTab.py" line="30"/>
+        <location filename="../about/AboutTab.py" line="46"/>
+        <source>Download Debug</source>
+        <translation>下载开发版</translation>
     </message>
     <message>
-        <location filename="../about/AboutTab.py" line="82"/>
-        <location filename="../about/AboutTab.py" line="84"/>
-        <source>Update</source>
-        <translation>更新</translation>
-    </message>
-    <message>
-        <location filename="../about/AboutTab.py" line="93"/>
+        <location filename="../about/AboutTab.py" line="99"/>
         <source>Beta Version</source>
         <translation>测试版</translation>
     </message>
     <message>
-        <location filename="../about/AboutTab.py" line="95"/>
-        <source>Release Version</source>
+        <location filename="../about/AboutTab.py" line="101"/>
+        <source>Stable Version</source>
         <translation>正式版</translation>
     </message>
     <message>
-        <location filename="../about/AboutTab.py" line="108"/>
+        <location filename="../about/AboutTab.py" line="110"/>
         <source>Download Error:</source>
         <translation>下载错误: </translation>
-    </message>
-    <message>
-        <location filename="../about/AboutTab.py" line="125"/>
-        <source>Update Now</source>
-        <translation>现在更新</translation>
-    </message>
-    <message>
-        <location filename="../about/AboutTab.py" line="126"/>
-        <source>Are you sure you want to update to {version}?</source>
-        <translation>你确定要更新到{version}版本吗？</translation>
     </message>
 </context>
 <context>
@@ -67,6 +50,39 @@
     </message>
 </context>
 <context>
+    <name>DebugTab</name>
+    <message>
+        <location filename="../debug/DebugTab.py" line="27"/>
+        <source>Dump Threads(HotKey:Ctrl+Alt+D)</source>
+        <translation>Dump Threads(快捷键:Ctrl+Alt+D)</translation>
+    </message>
+    <message>
+        <location filename="../debug/DebugTab.py" line="31"/>
+        <source>Capture Screenshot</source>
+        <translation>截图</translation>
+    </message>
+    <message>
+        <location filename="../debug/DebugTab.py" line="35"/>
+        <source>Open Logs</source>
+        <translation>打开日志文件夹</translation>
+    </message>
+    <message>
+        <location filename="../debug/DebugTab.py" line="49"/>
+        <source>Capture Success</source>
+        <translation>截图成功</translation>
+    </message>
+    <message>
+        <location filename="../debug/DebugTab.py" line="51"/>
+        <source>Capture returned None</source>
+        <translation>截图返回空</translation>
+    </message>
+    <message>
+        <location filename="../debug/DebugTab.py" line="53"/>
+        <source>No Capture Available or Selected</source>
+        <translation>截图方式不可用或未选择</translation>
+    </message>
+</context>
+<context>
     <name>LabelAndSwitchButton</name>
     <message>
         <location filename="../tasks/LabelAndSwitchButton.py" line="12"/>
@@ -82,53 +98,58 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../MainWindow.py" line="30"/>
+        <location filename="../MainWindow.py" line="31"/>
         <source>Start</source>
         <translation>开始</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="34"/>
+        <location filename="../MainWindow.py" line="35"/>
         <source>Tasks</source>
         <translation>任务</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="39"/>
+        <location filename="../MainWindow.py" line="40"/>
         <source>Triggers</source>
         <translation>触发器</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="46"/>
+        <location filename="../MainWindow.py" line="47"/>
+        <source>Debug</source>
+        <translation>调试</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.py" line="52"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="74"/>
+        <location filename="../MainWindow.py" line="80"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="103"/>
+        <location filename="../MainWindow.py" line="108"/>
         <source>Please check whether the game window is selected correctly!</source>
         <translation>请检查游戏窗口是否正确选择</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="104"/>
+        <location filename="../MainWindow.py" line="109"/>
         <source>Capture Error</source>
         <translation>截图错误</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="121"/>
+        <location filename="../MainWindow.py" line="126"/>
         <source>Start Success.</source>
         <translation>启动成功。</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="59"/>
-        <location filename="../MainWindow.py" line="138"/>
+        <location filename="../MainWindow.py" line="65"/>
+        <location filename="../MainWindow.py" line="143"/>
         <source>Exit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="140"/>
+        <location filename="../MainWindow.py" line="145"/>
         <source>Are you sure you want to exit the app?</source>
         <translation>确定要退出应用吗？</translation>
     </message>
@@ -484,14 +505,6 @@
         <source>Refresh</source>
         <translation>刷新</translation>
     </message>
-    <message>
-        <source>Exit</source>
-        <translation type="vanished">退出</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to exit the app?</source>
-        <translation type="vanished">确定要退出应用吗？</translation>
-    </message>
 </context>
 <context>
     <name>TaskButtons</name>
@@ -594,37 +607,62 @@
 <context>
     <name>VersionCard</name>
     <message>
-        <location filename="../about/VersionCard.py" line="24"/>
+        <location filename="../about/VersionCard.py" line="27"/>
         <source>Check for updates</source>
         <translation>检查新版本</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="39"/>
+        <location filename="../about/VersionCard.py" line="48"/>
         <source>Downloading {progress} {percent}%</source>
         <translation>下载中: {progress} {percent}%</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="48"/>
+        <location filename="../about/VersionCard.py" line="56"/>
+        <source>Update to {version} {type}</source>
+        <translation>更新到{version}{type}</translation>
+    </message>
+    <message>
+        <location filename="../about/VersionCard.py" line="63"/>
+        <source>Debug</source>
+        <translation>开发版</translation>
+    </message>
+    <message>
+        <location filename="../about/VersionCard.py" line="65"/>
+        <source>Release</source>
+        <translation>正式版</translation>
+    </message>
+    <message>
+        <location filename="../about/VersionCard.py" line="67"/>
+        <source>Update Now</source>
+        <translation>现在更新</translation>
+    </message>
+    <message>
+        <location filename="../about/VersionCard.py" line="68"/>
+        <source>Are you sure you want to update to {version} {type}?</source>
+        <translation>确定更新到{version}{type}吗？</translation>
+    </message>
+    <message>
+        <location filename="../about/VersionCard.py" line="84"/>
         <source>Info</source>
         <translation>信息</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="51"/>
+        <location filename="../about/VersionCard.py" line="87"/>
         <source>Found new version!</source>
         <translation>发现新版本</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="54"/>
+        <location filename="../about/VersionCard.py" line="90"/>
         <source>Check for update error!</source>
         <translation>检查更新错误</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="58"/>
+        <location filename="../about/VersionCard.py" line="94"/>
         <source>This is the newest version!</source>
         <translation>目前已经是最新版本！</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="71"/>
+        <location filename="../about/VersionCard.py" line="107"/>
         <source>Checking for updates</source>
         <translation>检查更新</translation>
     </message>
@@ -632,12 +670,12 @@
 <context>
     <name>app</name>
     <message>
-        <location filename="../App.py" line="77"/>
+        <location filename="../App.py" line="80"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../App.py" line="78"/>
+        <location filename="../App.py" line="81"/>
         <source>Install dir {path} must be an English path, move to another path.</source>
         <translation>安装目录{path}必须是英文目录，请移动到英文目录。</translation>
     </message>

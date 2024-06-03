@@ -27,25 +27,6 @@ class VBoxSerever(VBoxClass):
 
 import ctypes
 
-vbox_clsids = [
-    VBoxClass('{20190809-47b9-4a1e-82b2-07ccd5323c3f}', 'LDPlayer', 'ld'),
-    VBoxClass('{20191216-47b9-4a1e-82b2-07ccd5323c3f}', 'LDPlayer9', 'ld9'),
-    VBoxClass('{88888888-47b9-4a1e-82b2-07ccd5323c3f}', 'Nox', 'nox'),
-    VBoxClass('{baf3f651-58d8-429d-97ad-2b5699b43567}', 'BlueStacks', 'bstk'),
-    VBoxClass('{b1a7a4f2-47b9-4a1e-82b2-07ccd5323c3a}', 'Memu', 'memu'),
-    VBoxClass('{81919390-a492-11e5-a837-0800200c9a66}', 'MuMu', 'mumu'),
-    VBoxClass('{23cd1535-edaa-4f21-a4ab-45d97fd1d58b}', 'MuMu 12',
-              'mumu 12'),
-    # ('{B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F}', 'Oracle', 'oracle'),  # nobody uses this
-]
-
-OpenProcess = ctypes.windll.kernel32.OpenProcess
-OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_bool, ctypes.c_uint32]
-OpenProcess.restype = ctypes.c_void_p
-PROCESS_QUERY_INFORMATION = 0x0400
-CloseHandle = ctypes.windll.kernel32.CloseHandle
-CloseHandle.argtypes = [ctypes.c_void_p]
-
 
 def get_server(clsid):
     try:
@@ -60,6 +41,24 @@ def get_server(clsid):
 
 # current process's privilege must equal to the target process's privilege, can raise a error if not
 def installed_emulator():
+    vbox_clsids = [
+        VBoxClass('{20190809-47b9-4a1e-82b2-07ccd5323c3f}', 'LDPlayer', 'ld'),
+        VBoxClass('{20191216-47b9-4a1e-82b2-07ccd5323c3f}', 'LDPlayer9', 'ld9'),
+        VBoxClass('{88888888-47b9-4a1e-82b2-07ccd5323c3f}', 'Nox', 'nox'),
+        VBoxClass('{baf3f651-58d8-429d-97ad-2b5699b43567}', 'BlueStacks', 'bstk'),
+        VBoxClass('{b1a7a4f2-47b9-4a1e-82b2-07ccd5323c3a}', 'Memu', 'memu'),
+        VBoxClass('{81919390-a492-11e5-a837-0800200c9a66}', 'MuMu', 'mumu'),
+        VBoxClass('{23cd1535-edaa-4f21-a4ab-45d97fd1d58b}', 'MuMu 12',
+                  'mumu 12'),
+        # ('{B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F}', 'Oracle', 'oracle'),  # nobody uses this
+    ]
+
+    OpenProcess = ctypes.windll.kernel32.OpenProcess
+    OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_bool, ctypes.c_uint32]
+    OpenProcess.restype = ctypes.c_void_p
+    PROCESS_QUERY_INFORMATION = 0x0400
+    CloseHandle = ctypes.windll.kernel32.CloseHandle
+    CloseHandle.argtypes = [ctypes.c_void_p]
     logger.debug('enumerating vbox targets')
     vbox_servers: list[VBoxSerever] = []
     for vboxcls in vbox_clsids:
@@ -84,6 +83,7 @@ def installed_emulator():
 
     logger.debug(f'running VirtualBox servers: {running_servers}')
     results = []
+    server = ""
     try:
         for server in running_servers:
             logger.debug(f'checking {server}')

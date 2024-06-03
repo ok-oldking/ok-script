@@ -51,6 +51,9 @@ class BaseCaptureMethod:
         except Exception as e:
             raise CaptureException() from e
 
+    def __str__(self):
+        return f'{self.__class__.__name__}_{self.width}x{self.height}'
+
     def do_get_frame(self):
         pass
 

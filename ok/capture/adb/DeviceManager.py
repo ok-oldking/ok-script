@@ -1,5 +1,3 @@
-import threading
-
 import win32gui
 
 from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title_and_exe
@@ -11,6 +9,7 @@ from ok.gui.Communicate import communicate
 from ok.interaction.ADBInteraction import ADBBaseInteraction
 from ok.interaction.Win32Interaction import Win32Interaction
 from ok.logging.Logger import get_logger
+from ok.util.Handler import Handler
 
 logger = get_logger(__name__)
 
@@ -32,14 +31,13 @@ class DeviceManager:
                                    windows_capture_config.get('exe'))
         self.config = Config({"devices": {}, "preferred": "none", "pc_full_path": None}, config_folder,
                              "DeviceManager")
-        self.thread = None
         self.capture_method = None
-        self.refresh()
+        self.handler = Handler(exit_event, 'RefreshAdb')
+        self.handler.post(self.do_refresh, 5)
 
     def refresh(self):
-        if self.thread is None or not self.thread.is_alive():
-            self.thread = threading.Thread(target=self.do_refresh, name="refresh adb")
-            self.thread.start()
+        logger.debug('calling refresh')
+        self.handler.post(self.do_refresh, remove_existing=True)
 
     @property
     def device_dict(self):
@@ -61,14 +59,17 @@ class DeviceManager:
             logger.debug(f'connect adb')
         return self._adb
 
+    def adb_connect(self, addr):
+        try:
+            self.adb.connect(addr, timeout=2)
+        except Exception as e:
+            logger.error("adb connect error", e)
+
     def connect_all(self):
         if not self._connect_all:
             for device in self.device_dict.values():
                 if device["device"] == "adb":
-                    try:
-                        self.adb.connect(device['address'])
-                    except Exception as e:
-                        logger.error("adb connect error", e)
+                    self.adb_connect(device['address'])
             self._connect_all = True
             logger.debug(f'connect_all')
 
@@ -124,7 +125,7 @@ class DeviceManager:
             logger.debug(f'adb.list() {device}')
         for emulator in installed_emulators:
             logger.debug(f"installed_emulator: {emulator}")
-            self.adb.connect(emulator.adb_address, timeout=1)
+            self.adb_connect(emulator.adb_address)
         device_list = self.adb.device_list()
         device_list = sorted(device_list, key=lambda x: x.serial)
         adb_connected = []

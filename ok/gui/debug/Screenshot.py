@@ -107,31 +107,35 @@ class Screenshot(QObject):
         pil_image = self.to_pil_image(frame)
         if pil_image is None:
             return
-        self.save_pil_image(name + '_original', folder, pil_image)
+
+        originl_name = self.save_pil_image(name + '_original', folder, pil_image)
         # Ensure no fill
         draw = ImageDraw.Draw(pil_image)
 
         frame_ratio = 1
-        for key, value in ui_dict.items():
-            boxes = value[0]
-            color = tuple([int(x) for x in value[2].getRgb()])  # Convert QColor to BGR tuple
-            for box in boxes:
-                width = int(box.width * frame_ratio)
-                height = int(box.height * frame_ratio)
-                if width <= 0 or height <= 0:
-                    logger.error(f"box height and width <=0 {box}")
-                    continue
-                x = int(box.x * frame_ratio)
-                y = int(box.y * frame_ratio)
-                # Draw a rectangle. Arguments are (x, y, width, height).
-                # Adjust these values according to the desired size and position.
-                draw.rectangle([x, y, x + width, y + height], outline=color, width=2)
-                # Put text
-                draw.text((x, y + height + 8), f"{box.name or key}_{round(box.confidence * 100)}", fill=color,
-                          font=self.pil_font)
-        self.save_pil_image(name + '_boxed', folder, pil_image)
+        if len(ui_dict) > 0:
+            for key, value in ui_dict.items():
+                boxes = value[0]
+                color = tuple([int(x) for x in value[2].getRgb()])  # Convert QColor to BGR tuple
+                for box in boxes:
+                    width = int(box.width * frame_ratio)
+                    height = int(box.height * frame_ratio)
+                    if width <= 0 or height <= 0:
+                        logger.error(f"box height and width <=0 {box}")
+                        continue
+                    x = int(box.x * frame_ratio)
+                    y = int(box.y * frame_ratio)
+                    # Draw a rectangle. Arguments are (x, y, width, height).
+                    # Adjust these values according to the desired size and position.
+                    draw.rectangle([x, y, x + width, y + height], outline=color, width=2)
+                    # Put text
+                    draw.text((x, y + height + 8), f"{box.name or key}_{round(box.confidence * 100)}", fill=color,
+                              font=self.pil_font)
+            self.save_pil_image(name + '_boxed', folder, pil_image)
+        return originl_name
 
-    def save_pil_image(self, name, folder, pil_image):
+    @staticmethod
+    def save_pil_image(name, folder, pil_image):
 
         now = datetime.now()
 
@@ -145,7 +149,9 @@ class Screenshot(QObject):
         try:
             pil_image.save(file)
         except OSError:
-            pil_image.save(os.path.join(folder, f"{time_string}.png"))
+            file = os.path.join(folder, f"{time_string}.png")
+            pil_image.save(file)
+        return file
 
     def stop(self):
         logger.debug(f'stop screenshot')

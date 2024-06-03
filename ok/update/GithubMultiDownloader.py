@@ -17,7 +17,7 @@ class GithubMultiDownloader:
     def __init__(self, app_config, exit_event):
         self.app_config = app_config
         self.exit_event = exit_event
-        self.proxys = ["https://gh.h233.eu.org", "https://gh.ddlc.top",
+        self.proxys = ["", "https://gh.h233.eu.org", "https://gh.ddlc.top",
                        "https://dl.ghpig.top", "https://slink.ltd",
                        "https://gh.con.sh", "https://cors.isteed.cc/github.com",
                        "https://hub.gitmirror.com", "https://sciproxy.com/github.com",
@@ -44,7 +44,8 @@ class GithubMultiDownloader:
             elif len(self.proxys) > 0:
                 proxy = self.proxys.pop(0)  # Remove the first item
                 self.proxys.append(proxy)  # Add the removed item to the end
-            url = proxy + '/' + url if proxy is not None else None
+            prefix = '/' if proxy else ''
+            url = proxy + prefix + url if proxy is not None else None
             return url, proxy
 
     def download_part(self, part_size, start, end, file, giturl, last_proxy=None):
