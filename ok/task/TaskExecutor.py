@@ -45,6 +45,7 @@ class TaskExecutor:
         self.wait_until_before_delay = wait_until_before_delay
         self.wait_scene_timeout = wait_until_timeout
         self.exit_event = exit_event
+        self.debug_mode = False
         self.ocr = ocr
         self.current_task = None
         self.trigger_tasks = trigger_tasks
@@ -134,6 +135,9 @@ class TaskExecutor:
 
         :param timeout: The total time to sleep in seconds.
         """
+        if self.debug_mode:
+            time.sleep(timeout)
+            return
         self.frame_stats.add_sleep(timeout)
         self.pause_end_time = time.time() + timeout
         while True:
@@ -316,6 +320,17 @@ class TaskExecutor:
 
     def wait_until_done(self):
         self.thread.join()
+
+    def get_all_tasks(self):
+        return self.onetime_tasks + self.trigger_tasks
+
+    def get_task_by_class_name(self, class_name):
+        for onetime_task in self.onetime_tasks:
+            if onetime_task.__class__.__name__ == class_name:
+                return onetime_task
+        for trigger_task in self.trigger_tasks:
+            if trigger_task.__class__.__name__ == class_name:
+                return trigger_task
 
 
 def list_or_obj_to_str(val):

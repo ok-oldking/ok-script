@@ -83,8 +83,8 @@ class App:
         self.show_message_window(title, content)
 
     def show_main_window(self):
-        self.main_window = MainWindow(self.icon, self.title, self.version, self.overlay, self.about,
-                                      exit_event=self.exit_event)
+        self.main_window = MainWindow(self.config, self.icon, self.title, self.version, self.overlay, self.about,
+                                      self.exit_event)
         # Set the window title here
         self.main_window.setWindowIcon(self.icon)
         if self.overlay and ok.gui.device_manager.hwnd is not None:

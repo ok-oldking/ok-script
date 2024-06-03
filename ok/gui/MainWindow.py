@@ -21,7 +21,7 @@ class Communicate(QObject):
 
 
 class MainWindow(MSFluentWindow):
-    def __init__(self, icon, title, version, debug=False, about=None, exit_event=None):
+    def __init__(self, config, icon, title, version, debug=False, about=None, exit_event=None):
         super().__init__()
         self.exit_event = exit_event
         self.start_tab = StartTab()
@@ -43,7 +43,7 @@ class MainWindow(MSFluentWindow):
         #     self.addSubInterface(debug_tab, FluentIcon.COMMAND_PROMPT, self.tr('Debug'))
         # ... Add other tabs similarly
         if debug:
-            debug_tab = DebugTab(exit_event)
+            debug_tab = DebugTab(config, exit_event)
             self.addSubInterface(debug_tab, FluentIcon.DEVELOPER_TOOLS, self.tr('Debug'),
                                  position=NavigationItemPosition.BOTTOM)
 

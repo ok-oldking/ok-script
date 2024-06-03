@@ -99,15 +99,20 @@ class Logger:
         self.logger.warning(f"{self.name}:{message}")
 
     def error(self, message, exception=None):
-        if exception is not None:
-            traceback.print_exc()
-            stack_trace_str = traceback.format_exc()
-        else:
-            stack_trace_str = ""
+        stack_trace_str = exception_to_str(exception)
         self.logger.error(f"{self.name}:{message} {stack_trace_str}")
 
     def critical(self, message):
         self.logger.critical(f"{self.name}:{message}")
+
+
+def exception_to_str(exception):
+    if exception is not None:
+        traceback.print_exc()
+        stack_trace_str = traceback.format_exc()
+    else:
+        stack_trace_str = ""
+    return stack_trace_str
 
 
 def get_logger(name):

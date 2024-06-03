@@ -30,6 +30,7 @@ class OK:
 
     def __init__(self, config: Dict[str, Any]):
         print(f"AutoHelper init, config: {config}")
+        config["config_folder"] = config.get("config_folder") or 'configs'
         config_logger(config)
         logger.info(f"AutoHelper init, config: {config}")
         ok.gui.ok = self
@@ -113,7 +114,7 @@ class OK:
                                           trigger_tasks=self.config.get('trigger_tasks', []),
                                           scenes=self.config['scenes'],
                                           feature_set=self.feature_set,
-                                          ocr=self.ocr, config_folder=self.config.get("config_folder") or "config")
+                                          ocr=self.ocr, config_folder=self.config.get("config_folder"))
 
         if self.app:
             ok.gui.executor = self.task_executor
