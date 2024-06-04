@@ -11,6 +11,8 @@ from ok.gui.debug.DebugTab import DebugTab
 from ok.gui.start.StartTab import StartTab
 from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
 from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
+from ok.gui.util.Alert import alert_error
+from ok.gui.widget.StartLoadingDialog import StartLoadingDialog
 from ok.logging.Logger import get_logger
 
 logger = get_logger(__name__)
@@ -23,25 +25,29 @@ class Communicate(QObject):
 class MainWindow(MSFluentWindow):
     def __init__(self, config, icon, title, version, debug=False, about=None, exit_event=None):
         super().__init__()
+        self.original_layout = None
         self.exit_event = exit_event
         self.start_tab = StartTab()
-        self.second_tab = None
+        self.first_tab = None
         self.onetime_tab = None
         self.trigger_tab = None
-        self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Start'))
+        self.emulator_starting_dialog = None
+
         if len(ok.gui.executor.onetime_tasks) > 0:
             self.onetime_tab = OneTimeTaskTab()
-            self.second_tab = self.onetime_tab
+            self.first_tab = self.onetime_tab
             self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('Tasks'))
         if len(ok.gui.executor.trigger_tasks) > 0:
             self.trigger_tab = TriggerTaskTab()
-            if self.second_tab is None:
-                self.second_tab = self.trigger_tab
+            if self.first_tab is None:
+                self.first_tab = self.trigger_tab
             self.addSubInterface(self.trigger_tab, FluentIcon.ROBOT, self.tr('Triggers'))
         # if debug:
         #     debug_tab = DebugTab()
         #     self.addSubInterface(debug_tab, FluentIcon.COMMAND_PROMPT, self.tr('Debug'))
         # ... Add other tabs similarly
+        self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Capture'))
+
         if debug:
             debug_tab = DebugTab(config, exit_event)
             self.addSubInterface(debug_tab, FluentIcon.DEVELOPER_TOOLS, self.tr('Debug'),
@@ -71,9 +77,29 @@ class MainWindow(MSFluentWindow):
         self.tray.setContextMenu(menu)
         self.tray.show()
 
+        if ok.gui.device_manager.get_preferred_device() is not None and self.onetime_tab is not None:
+            self.switchTo(self.onetime_tab)
+
         communicate.capture_error.connect(self.capture_error)
         communicate.notification.connect(self.show_notification)
         communicate.config_validation.connect(self.config_validation)
+        communicate.starting_emulator.connect(self.starting_emulator)
+
+    def starting_emulator(self, done, error, seconds_left):
+        if error:
+            self.switchTo(self.start_tab)
+            alert_error(error)
+        if done:
+            self.emulator_starting_dialog.close()
+            return
+        else:
+            if self.emulator_starting_dialog is None:
+                self.emulator_starting_dialog = StartLoadingDialog(seconds_left,
+                                                                   self)
+
+            else:
+                self.emulator_starting_dialog.set_seconds_left(seconds_left)
+            self.emulator_starting_dialog.show()
 
     def config_validation(self, message):
         title = self.tr('Error')
@@ -111,9 +137,9 @@ class MainWindow(MSFluentWindow):
     def navigate_tab(self, index):
         if index == "start":
             self.switchTo(self.start_tab)
-        elif index == "second":
-            self.switchTo(self.second_tab)
-        elif index == "onetime" and self.onetime_tab is not None:
+        elif index == "first":
+            self.switchTo(self.first_tab)
+        elif index == "first" and self.onetime_tab is not None:
             self.switchTo(self.onetime_tab)
         elif index == "trigger" and self.trigger_tab is not None:
             self.switchTo(self.trigger_tab)
@@ -143,7 +169,6 @@ class MainWindow(MSFluentWindow):
         content = self.tr(
             "Are you sure you want to exit the app?")
         w = MessageBox(title, content, self.window())
-        w.setContentCopyable(True)
         if w.exec():
             logger.info("Window closed")
             ok.gui.ok.quit()

@@ -90,13 +90,8 @@ class StartTab(Tab):
         logger.debug(f"device_index_changed {i}")
         if i == -1:
             return
-        devices = ok.gui.device_manager.get_devices()
-        if len(devices) > 0:
-            imei = devices[i]["imei"]
-            ok.gui.device_manager.set_preferred_device(imei)
-            self.update_window_list()
-            self.capture_index_changed()
-        self.start_card.update_status()
+        ok.gui.device_manager.set_preferred_device(index=i)
+        logger.debug(f"device_index_changed done {i}")
 
     def update_capture(self, finished):
         devices = ok.gui.device_manager.get_devices()
@@ -109,7 +104,7 @@ class StartTab(Tab):
                 selected = row
             method = self.tr("PC") if device['device'] == "windows" else self.tr("Android")
             connected = self.tr("Connected") if device['connected'] else self.tr("Disconnected")
-            item_text = f"{method} {connected}: {device['nick']} {device['address']} {device.get('resolution') or ''}"
+            item_text = f"{method} {connected}: {device.get('nick')} {device['address']} {device.get('resolution') or ''}"
 
             if row < self.device_list.count():
                 # Update the existing item

@@ -3,7 +3,7 @@ import re
 import typing as t
 from dataclasses import dataclass
 
-from ok.alas.utils import cached_property, iter_folder
+from ok.alas.utils import iter_folder
 
 
 def abspath(path):
@@ -63,7 +63,7 @@ class EmulatorInstanceBase:
     def __str__(self):
         return f'{self.type}(serial="{self.serial}", name="{self.name}", path="{self.path}")'
 
-    @cached_property
+    @property
     def type(self) -> str:
         """
         Returns:
@@ -71,7 +71,7 @@ class EmulatorInstanceBase:
         """
         return self.emulator.type
 
-    @cached_property
+    @property
     def emulator(self):
         """
         Returns:
@@ -94,7 +94,7 @@ class EmulatorInstanceBase:
     def __bool__(self):
         return True
 
-    @cached_property
+    @property
     def MuMuPlayer12_id(self):
         """
         Convert MuMu 12 instance name to instance id.
@@ -228,21 +228,21 @@ class EmulatorManagerBase:
         """
         return
 
-    @cached_property
+    @property
     def all_emulators(self) -> t.List[EmulatorBase]:
         """
         Get all emulators installed on current computer.
         """
         return []
 
-    @cached_property
+    @property
     def all_emulator_instances(self) -> t.List[EmulatorInstanceBase]:
         """
         Get all emulator instances installed on current computer.
         """
         return []
 
-    @cached_property
+    @property
     def all_emulator_serials(self) -> t.List[str]:
         """
         Returns:
@@ -257,7 +257,7 @@ class EmulatorManagerBase:
                 out.append(emu_serial)
         return out
 
-    @cached_property
+    @property
     def all_adb_binaries(self) -> t.List[str]:
         """
         Returns:

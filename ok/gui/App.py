@@ -8,6 +8,7 @@ from qfluentwidgets import FluentTranslator, qconfig, Theme
 
 import ok
 import ok.gui.resources
+from ok.capture.adb.StartController import StartController
 from ok.firebase.FireBaseAnalytics import FireBaseAnalytics
 from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
@@ -62,6 +63,7 @@ class App:
             logger.debug(f"No translation available for {self.locale}, falling back to English/default. {full_path}")
 
         self.updater = Updater(self.config, exit_event)
+        self.start_controller = StartController(self.config, exit_event)
 
     def center_window(self, window):
         screen = self.app.primaryScreen()

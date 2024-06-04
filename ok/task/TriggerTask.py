@@ -8,7 +8,7 @@ class TriggerTask(BaseTask):
 
     def __init__(self):
         super().__init__()
-        self.default_enable = True
+        self.default_config = {'_enabled': True}
         self.trigger_count = 0
 
     def on_create(self):

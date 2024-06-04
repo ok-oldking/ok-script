@@ -16,7 +16,7 @@ class SelectCaptureListView(ListWidget):
                 item = QListWidgetItem(self.tr(f"Game Window"))
                 self.addItem(item)
             tips = device.get("hwnd") or ""
-            if device == "windows":
+            if device['device'] == "windows":
                 title = self.tr("Game Window")
                 if self.count() == 2:
                     self.takeItem(1)

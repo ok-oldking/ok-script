@@ -63,8 +63,7 @@ class BaseTask(ExecutorOperation):
             self.notification(message)
         communicate.task_info.emit()
 
-    @staticmethod
-    def notification(message, title=None, error=False):
+    def notification(self, message, title=None, error=False):
         communicate.notification.emit(message, title, error, False)
 
     @property
@@ -126,14 +125,20 @@ class BaseTask(ExecutorOperation):
     def run(self):
         pass
 
+    def check_trigger(self):
+        return True
+
+    def check_condition(self):
+        return True
+
     def on_destroy(self):
+        pass
+
+    def on_create(self):
         pass
 
     def set_executor(self, executor):
         self.executor = executor
         self.feature_set = executor.feature_set
         self.load_config(executor.config_folder)
-        from ok.task.TriggerTask import TriggerTask
-        if isinstance(self, TriggerTask):
-            self._enabled = self.config.get('_enabled', self.default_enable)
         self.on_create()

@@ -6,7 +6,7 @@ logger = get_logger(__name__)
 def update_capture_method(config, capture_method, hwnd, require_bg=False):
     if config.get('can_bit_blt'):
         logger.debug(
-            f"try BitBlt method {config} current_type:{type(capture_method)}")
+            f"try BitBlt method {config} {hwnd} current_type:{type(capture_method)}")
         from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
         target_method = BitBltCaptureMethod
         capture_method = get_capture(capture_method, target_method, hwnd)

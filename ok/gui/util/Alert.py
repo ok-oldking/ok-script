@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QMessageBox
 
 import ok
+from ok.gui.Communicate import communicate
 
 
 def show_alert(title, message):
@@ -18,3 +19,11 @@ def show_alert(title, message):
 
     # Show the message box
     msg.exec()
+
+
+def alert_info(message):
+    communicate.notification.emit(None, message, False, False)
+
+
+def alert_error(message):
+    communicate.notification.emit(None, message, True, False)

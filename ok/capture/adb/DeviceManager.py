@@ -1,8 +1,11 @@
 import win32gui
+from adbutils import AdbTimeout
 
+from ok.alas.platform_windows import get_emulator_exe
 from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title_and_exe, enum_windows
 from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod, do_screencap
 from ok.capture.adb.WindowsCaptureFactory import update_capture_method
+from ok.capture.windows.BitBltCaptureMethod import bit_blt_test_hwnd
 from ok.capture.windows.window import get_window_bounds
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
@@ -18,13 +21,13 @@ class DeviceManager:
 
     def __init__(self, config_folder, windows_capture_config, adb_capture_config, debug=False, exit_event=None):
         self._device = None
-        self._connect_all = False
         self._adb = None
         self.windows_capture_config = windows_capture_config
         self.adb_capture_config = adb_capture_config
         self.pc_device = None
         self.debug = debug
         self.interaction = None
+        self.emulator_dict = {}
         self.exit_event = exit_event
         if windows_capture_config is not None:
             self.hwnd = HwndWindow(exit_event, windows_capture_config.get('title'),
@@ -33,11 +36,11 @@ class DeviceManager:
                              "DeviceManager")
         self.capture_method = None
         self.handler = Handler(exit_event, 'RefreshAdb')
-        self.handler.post(self.do_refresh, 5)
+        self.handler.post(self.do_refresh, 3)
 
     def refresh(self):
         logger.debug('calling refresh')
-        self.handler.post(self.do_refresh, remove_existing=True)
+        self.handler.post(self.do_refresh, remove_existing=True, skip_if_running=True)
 
     @property
     def device_dict(self):
@@ -61,17 +64,18 @@ class DeviceManager:
 
     def adb_connect(self, addr):
         try:
-            self.adb.connect(addr, timeout=2)
+            self.adb.connect(addr, timeout=5)
+            device = self.adb.device(addr)
+            logger.debug(f'adb_connect {addr} device {device}')
+            # for adb_device in self.adb.device_list():
+            #     if addr == adb_device.serial:
+            return device
+        except AdbTimeout as e:
+            logger.error(f"adb connect error try kill server {addr}", e)
+            # self.adb.server_kill()
+            # self._adb = None
         except Exception as e:
-            logger.error("adb connect error", e)
-
-    def connect_all(self):
-        if not self._connect_all:
-            for device in self.device_dict.values():
-                if device["device"] == "adb":
-                    self.adb_connect(device['address'])
-            self._connect_all = True
-            logger.debug(f'connect_all')
+            logger.error(f"adb connect error return none {addr}", e)
 
     def get_devices(self):
         return list(self.device_dict.values())
@@ -105,70 +109,73 @@ class DeviceManager:
     def do_refresh(self, fast=False):
         self.update_pc_device()
 
-        self.refresh_adb_device(fast)
+        self.refresh_emulators()
 
         if self.exit_event.is_set():
             return
         self.start()
-        communicate.adb_devices.emit(True)
+
         logger.debug(f'refresh {self.device_dict}')
 
-    def refresh_adb_device(self, fast):
-        if self.adb_capture_config is None:
-            return
-        if not fast:
-            self.connect_all()
+    def refresh_emulators(self):
         from ok.alas.emulator_windows import EmulatorManager
         manager = EmulatorManager()
-        installed_emulators = [] if fast else manager.all_emulator_instances
-        for device in self.adb.list():
-            logger.debug(f'adb.list() {device}')
+        installed_emulators = manager.all_emulator_instances
+        to_delete = []
+        # delete no exist and update old
+        for imei, device in self.config.get("devices").items():
+            if device["device"] == 'adb':
+                found = False
+                for emulator in installed_emulators:
+                    if emulator.serial == device['address']:
+                        found = True
+                        break
+                if not found:
+                    to_delete.append(imei)
+        logger.debug(f'emulator delete {to_delete}')
+        for key in to_delete:
+            del self.config.get("devices")[key]
         for emulator in installed_emulators:
-            logger.debug(f"installed_emulator: {emulator}")
-            self.adb_connect(emulator.serial)
-        device_list = self.adb.device_list()
-        device_list = sorted(device_list, key=lambda x: x.serial)
-        adb_connected = []
-        for device in device_list:
-            imei = device.shell("settings get secure android_id") or device.shell(
-                "service call iphonesubinfo 4") or device.prop.model
-            frame = None if fast else do_screencap(device)
-            width, height = 0, 0
+            self.emulator_dict[emulator.serial] = emulator
+            found = None
+            adb_device = self.adb_connect(emulator.serial)
+            windows = enum_windows(emulator.path)
+            connected = adb_device is not None and len(windows) > 0
+            height, width = self.get_resolution(adb_device)
+            to_update = {"address": emulator.serial, "imei": emulator.name, "device": "adb",
+                         "full_path": emulator.path, "connected": connected,
+                         "nick": emulator.name}
+            if adb_device is not None:
+                to_update["resolution"] = f"{width}x{height}"
+            for imei, device in self.config.get("devices").items():
+                if device["device"] == 'adb':
+                    if emulator.serial == device['address']:
+                        device.update(to_update)
+                        found = device
+                        break
+            if not found or found.get('hwnd') is None:
+                if len(windows) > 0:
+                    for hwnd, title, _, _ in windows:
+                        if bit_blt_test_hwnd(hwnd):
+                            to_update["hwnd"] = title
+                            if found:
+                                found['hwnd'] = title
+                            logger.info(f'update hwnd from emulator {title}')
+                            break
+            if not found:
+                to_update['capture'] = 'windows'
+                self.config.get("devices")[emulator.name] = to_update
+        logger.debug(f'refresh emulators {self.config.get("devices")}')
+
+    def get_resolution(self, device=None):
+        if device is None:
+            device = self.device
+        width, height = 0, 0
+        if device is not None:
+            frame = do_screencap(device)
             if frame is not None:
                 height, width, _ = frame.shape
-            adb_device = {"address": device.serial, "imei": imei, "device": "adb", "capture": "adb", "width": width,
-                          "height": height,
-                          "model": device.prop.model, "nick": device.prop.model, "connected": True,
-                          "resolution": f"{width}x{height}"}
-            found_emulator = None
-            for emulator in installed_emulators:
-                if emulator.serial == adb_device['address']:
-                    adb_device['nick'] = emulator.name
-                    found_emulator = emulator
-            if self.device_dict.get(imei):
-                if found_emulator or not self.device_dict[imei]['connected']:
-                    old_capture = self.device_dict[imei].get("capture")
-                    old_hwnd = self.device_dict[imei].get("hwnd")
-                    if not old_hwnd and found_emulator and found_emulator.path:
-                        windows = enum_windows(found_emulator.path)
-                        logger.debug(f'try auto set hwnd window from emulator {found_emulator} {windows}')
-                        if len(windows) == 1:
-                            logger.info(f'set hwnd window from emulator {windows[0][1]} {found_emulator}')
-                            old_hwnd = windows[0][1]
-                    if found_emulator:
-                        self.update_device_value(imei, 'full_path', found_emulator.path)
-                    self.device_dict[imei] = adb_device
-                    if old_capture is not None:
-                        self.update_device_value(imei, 'capture', old_capture)
-                    if old_hwnd is not None:
-                        self.update_device_value(imei, 'hwnd', old_hwnd)
-            else:
-                self.update_device(imei, adb_device)
-            adb_connected.append(imei)
-        for imei in self.device_dict:
-            if self.device_dict[imei]['device'] == 'adb':
-                self.update_device_value(imei, 'connected', imei in adb_connected)
-        self.config.save_file()
+        return height, width
 
     def update_device(self, imei, device=None):
         devices = self.config.get("devices", {})
@@ -181,20 +188,26 @@ class DeviceManager:
             devices[imei][key] = value
         self.config["devices"] = devices
 
-    def set_preferred_device(self, imei=None):
-        logger.debug(f"set_preferred_device {imei}")
-        if imei is None:
+    def set_preferred_device(self, imei=None, index=-1):
+        logger.debug(f"set_preferred_device {imei} {index}")
+        if index != -1:
+            imei = self.get_devices()[index]['imei']
+        elif imei is None:
             imei = self.config.get("preferred")
         preferred = self.device_dict.get(imei)
-        if preferred is None and len(self.device_dict) > 0:
-            preferred = next(iter(self.device_dict.values()))
-            imei = preferred['imei']
+        if preferred is None:
+            if len(self.device_dict) > 0:
+                preferred = next(iter(self.device_dict.values()))
+                imei = preferred['imei']
+            else:
+                logger.warning(f'no devices')
+                return
         if self.config.get("preferred") != imei:
+            logger.info(f'preferred device did change {imei}')
             self.config["preferred"] = imei
             self.config.save_file()
+            self.handler.post(self.start, remove_existing=True, skip_if_running=True)
         logger.debug(f'preferred device: {preferred}')
-        self.start()
-        return preferred
 
     def get_preferred_device(self):
         imei = self.config.get("preferred")
@@ -205,15 +218,16 @@ class DeviceManager:
         preferred = self.get_preferred_device()
         if preferred.get("hwnd") != hwnd_name:
             preferred['hwnd'] = hwnd_name
+            if self.hwnd:
+                self.hwnd.title = hwnd_name
             self.config.save_file()
-            self.start()
 
     def set_capture(self, capture):
         preferred = self.get_preferred_device()
         if preferred.get("capture") != capture:
             preferred['capture'] = capture
             self.config.save_file()
-        self.start()
+            self.handler.post(self.start, remove_existing=True, skip_if_running=True)
 
     def get_hwnd_name(self):
         preferred = self.get_preferred_device()
@@ -237,6 +251,9 @@ class DeviceManager:
             logger.info(f'capture method {type(self.capture_method)}')
 
     def start(self):
+        self.handler.post(self.do_start, remove_existing=True, skip_if_running=True)
+
+    def do_start(self):
         preferred = self.get_preferred_device()
         if preferred is None:
             if self.device_dict:
@@ -250,14 +267,8 @@ class DeviceManager:
                 self.interaction = Win32Interaction(self.capture_method)
             preferred['connected'] = self.capture_method.connected()
         else:
-            self.connect_all()
-            for adb_device in self.adb.device_list():
-                if adb_device.serial == preferred.get('address'):
-                    logger.debug(f"set device {adb_device}")
-                    self._device = adb_device
             hwnd_name = preferred.get('hwnd')
-            width = preferred.get('width', 0)
-            height = preferred.get('height', 0)
+            height, width = self.get_resolution()
             if preferred.get('capture') == "windows":
                 self.ensure_hwnd(hwnd_name, preferred.get('full_path'), width, height)
                 self.use_windows_capture({'can_bit_blt': True}, require_bg=True)
@@ -266,15 +277,38 @@ class DeviceManager:
                     self.capture_method.close()
                 self.capture_method = ADBCaptureMethod(self, self.exit_event, width=width,
                                                        height=height)
-            self.interaction = ADBBaseInteraction(self, self.capture_method, width, height)
-            if self.debug and hwnd_name:
-                self.ensure_hwnd(hwnd_name, None, width, height)
-            elif self.hwnd is not None:
-                self.hwnd.stop()
-                self.hwnd = None
+                if self.debug and hwnd_name:
+                    self.ensure_hwnd(hwnd_name, None, width, height)
+                elif self.hwnd is not None:
+                    self.hwnd.stop()
+                    self.hwnd = None
+            if not isinstance(self.interaction, ADBBaseInteraction):
+                self.interaction = ADBBaseInteraction(self, self.capture_method, width, height)
+            else:
+                self.interaction.capture = self.capture_method
+                self.interaction.width = width
+                self.interaction.height = height
+
+        self.config.save_file()
+        communicate.adb_devices.emit(True)
+
+    def update_resolution_for_hwnd(self):
+        if self.hwnd is not None and self.hwnd.frame_aspect_ratio == 0:
+            height, width = self.get_resolution()
+            logger.debug(f'update resolution for {self.hwnd} {width}x{height}')
+            self.hwnd.update_frame_size(width, height)
 
     @property
     def device(self):
+        if preferred := self.get_preferred_device():
+            if self._device is None:
+                logger.debug(f'get device connect {preferred}')
+                self._device = self.adb_connect(preferred.get('address'))
+            if self._device is not None and self._device.serial != preferred.get('address'):
+                logger.info(f'get device adb device addr changed {preferred}')
+                self._device = self.adb_connect(preferred.get('address'))
+        else:
+            logger.error(f'self.get_preferred_device returned None')
         return self._device
 
     def adb_kill_server(self):
@@ -300,21 +334,64 @@ class DeviceManager:
     def shell(self, *args, **kwargs):
         device = self.device
         if device is not None:
-            from adbutils import AdbError
             try:
                 return device.shell(*args, **kwargs)
-            except AdbError as e:
+            except Exception as e:
                 addr = self.get_preferred_device()['address']
-                self.adb.connect(addr)
-                logger.error(f"shell_wrapper error occurred: {e} ,try reconnect {addr}")
-                return device.shell(*args, **kwargs)
+                self.refresh_emulators()
+                new_addr = self.get_preferred_device()['address']
+                logger.error(f"shell_wrapper error occurred,try refresh_emulators {addr} {new_addr}", e)
+                return None
         else:
             raise Exception('Device is none')
+
+    def device_connected(self):
+        if self.get_preferred_device()['device'] == 'windows':
+            return True
+        elif self.device is not None:
+            try:
+                state = self.shell('echo 1')
+                logger.debug(f'device_connected check device state is {state}')
+                return state is not None
+            except Exception as e:
+                logger.error(f'device_connected error occurred, {e}')
 
     def get_exe_path(self, device):
         path = device.get('full_path')
         if device.get('device') == 'windows' and self.windows_capture_config and self.windows_capture_config.get(
                 'calculate_pc_exe_path'):
             return self.windows_capture_config.get('calculate_pc_exe_path')(path)
+        elif emulator := self.emulator_dict.get(device.get('address')):
+            return get_emulator_exe(emulator)
         else:
-            return path
+            return None
+
+    def adb_check_installed(self, packages):
+        installed = self.shell('pm list packages')
+        if isinstance(packages, str):
+            packages = [packages]
+        for package in packages:
+            if package in installed:
+                return package
+
+    def adb_check_in_front(self, packages):
+        front = self.device.app_current()
+        logger.debug(f'adb_check_in_front {front}')
+        if front:
+            if isinstance(packages, str):
+                packages = [packages]
+            for package in packages:
+                if package == front.package:
+                    return package
+
+    def adb_start_package(self, package):
+        self.shell(f'monkey -p {package} -c android.intent.category.LAUNCHER 1')
+
+    def adb_ensure_in_front(self, packages):
+        front = self.adb_check_in_front(packages)
+        logger.debug(f'adb_ensure_in_front {front}')
+        if front:
+            return front
+        elif installed := self.adb_check_installed(packages):
+            self.adb_start_package(installed)
+            return True

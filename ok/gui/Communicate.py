@@ -22,6 +22,7 @@ class Communicate(QObject):
     capture_error = Signal()
     check_update = Signal(str)
     download_update = Signal(float, str, bool, str)
+    starting_emulator = Signal(bool, str, int)
     quit = Signal()
 
     def emit_draw_box(self, key: str = None, boxes=None, color=None, frame=None):

@@ -137,7 +137,7 @@ class HwndWindow:
         return ""
 
     def __str__(self) -> str:
-        return f"title:{self.title}_{self.exe_name}_{self.width}x{self.height}_{self.exists}_{self.visible}"
+        return f"title:{self.title}_{self.exe_name}_{self.width}x{self.height}_{self.hwnd}_{self.exists}_{self.visible}"
 
 
 def find_hwnd_by_title_and_exe(title, exe_name):

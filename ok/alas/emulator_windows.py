@@ -5,12 +5,8 @@ import typing as t
 import winreg
 from dataclasses import dataclass
 
-# module/device/platform/emulator_base.py
-# module/device/platform/emulator_windows.py
-# Will be used in Alas Easy Install, they shouldn't import any Alas modules.
-from ok.alas.emulator_base import EmulatorBase, EmulatorInstanceBase, EmulatorManagerBase, \
-    remove_duplicated_path
-from ok.alas.utils import cached_property, iter_folder
+from ok.alas.emulator_base import EmulatorInstanceBase, EmulatorBase, EmulatorManagerBase, remove_duplicated_path
+from ok.alas.utils import iter_folder
 
 
 @dataclass
@@ -57,7 +53,7 @@ def abspath(path):
 
 
 class EmulatorInstance(EmulatorInstanceBase):
-    @cached_property
+    @property
     def emulator(self):
         """
         Returns:
@@ -478,7 +474,7 @@ class EmulatorManager(EmulatorManagerBase):
             if Emulator.is_emulator(exe):
                 yield exe
 
-    @cached_property
+    @property
     def all_emulators(self) -> t.List[Emulator]:
         """
         Get all emulators installed on current computer.
@@ -529,7 +525,7 @@ class EmulatorManager(EmulatorManagerBase):
         exe = [Emulator(path) for path in remove_duplicated_path(exe)]
         return exe
 
-    @cached_property
+    @property
     def all_emulator_instances(self) -> t.List[EmulatorInstance]:
         """
         Get all emulator instances installed on current computer.

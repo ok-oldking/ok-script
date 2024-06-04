@@ -113,7 +113,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         return self.hwnd_window is not None and self.hwnd_window.exists and self.frame_pool is not None
 
     def start_or_stop(self, capture_cursor=False):
-        if self.hwnd_window.exists and self.frame_pool is None:
+        if self.hwnd_window.hwnd and self.hwnd_window.exists and self.frame_pool is None:
             try:
                 from ok.rotypes import IInspectable
                 from ok.rotypes.Windows.Foundation import TypedEventHandler

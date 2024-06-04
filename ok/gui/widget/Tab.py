@@ -2,7 +2,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QVBoxLayout, QWidget, QSizePolicy
 from qfluentwidgets import ScrollArea
 
-from ok.gui.Communicate import communicate
 from ok.gui.common.style_sheet import StyleSheet
 from ok.gui.widget.Card import Card
 
@@ -40,9 +39,4 @@ class Tab(ScrollArea):
     def addLayout(self, layout, stretch=0):
         self.vBoxLayout.addLayout(layout, stretch)
         return layout
-
-    def alert_info(self, message):
-        communicate.notification.emit(None, message, False, False)
-
-    def alert_error(self, message):
-        communicate.notification.emit(None, message, True, False)
+    

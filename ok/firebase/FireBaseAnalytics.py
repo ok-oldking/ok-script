@@ -65,13 +65,12 @@ class FireBaseAnalytics:
         return self._user_properties
 
     def report_open(self):
-        logger.debug(f'send app_open {self.user_properties}')
-        self.send_event('app_open')
+        self.send_event('app_open', {'version': self.app_config.get('version'), 'debug': self.app_config.get('debug')})
 
     @property
     def client_id(self):
         if self._config is None:
-            self._config = Config({}, self.app_config.get("config_folder") or "config", 'statistics')
+            self._config = Config({'client_id': ''}, self.app_config.get("config_folder") or "config", 'statistics')
         if not self._config.get('client_id'):
             self._config['client_id'] = get_unique_client_id()
         return self._config.get('client_id')
@@ -100,6 +99,7 @@ class FireBaseAnalytics:
             headers=headers
         )
 
+        logger.debug(f'send {event_name} {payload}')
         if response.status_code == 204:
             logger.debug(f'Successfully sent event: {event_name}')
         else:

@@ -133,6 +133,8 @@ class TaskButtons(QWidget):
         self.adjust_spacing()
 
     def start_clicked(self):
+        ok.gui.app.start_controller.start(self.task)
+        return
         if not ok.gui.executor.connected():
             InfoBar.error(
                 title=self.tr('Error'),

@@ -3,7 +3,6 @@ import time
 import traceback
 
 from ok.capture.BaseCaptureMethod import CaptureException
-from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod
 from ok.capture.adb.DeviceManager import DeviceManager
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
@@ -74,10 +73,13 @@ class TaskExecutor:
     def nullable_frame(self):
         return self._frame
 
-    def supports_screen_ratio(self, supported_ratio):
-        frame = self.method.get_frame() if not isinstance(self.method, ADBCaptureMethod) else None
+    def check_frame_and_resolution(self, supported_ratio):
+        frame = self.method.get_frame()
+        if frame is None:
+            return False, None
         if supported_ratio is None:
             return True, None
+        self.device_manager.update_resolution_for_hwnd()
         width = self.method.width
         height = self.method.height
         if height == 0:
@@ -94,7 +96,7 @@ class TaskExecutor:
         support = difference <= 0.01 * supported_ratio
         if not support:
             logger.error(f'resolution error {width}x{height} {frame is None}')
-        if not support and frame:
+        if not support and frame is not None:
             communicate.screenshot.emit(frame, "resolution_error")
         # Check if the difference is within 1%
         return support, f"{width}x{height}"
@@ -219,7 +221,8 @@ class TaskExecutor:
                 self.trigger_task_index = -1
                 cycled = True
             self.trigger_task_index += 1
-            return self.trigger_tasks[self.trigger_task_index], cycled
+            if self.trigger_tasks[self.trigger_task_index].enabled:
+                return self.trigger_tasks[self.trigger_task_index], cycled
         return None, False
 
     def active_trigger_task_count(self):
@@ -237,24 +240,29 @@ class TaskExecutor:
                 if isinstance(self.current_task, OneTimeTask):
                     self.current_task.running = True
                     communicate.task.emit(self.current_task)
-                if cycled or self._frame is None:
-                    self.next_frame()
-                    processing_time = 0
-                if processing_time > 1:
-                    logger.debug(
-                        f"{processing_time} taking too long get new frame {processing_time}")
-                    self.next_frame()
-                self.detect_scene()
-                start = time.time()
-                result = self.current_task.run()
-                processing_time += time.time() - start
-                if result and isinstance(self.current_task, TriggerTask):
-                    self.current_task.trigger_count += 1
-                    communicate.task.emit(self.current_task)
+                result = False
+                if self.current_task.check_condition() and self.current_task.check_trigger():
+                    if cycled or self._frame is None:
+                        self.next_frame()
+                        processing_time = 0
+                    if processing_time > 1:
+                        logger.debug(
+                            f"{processing_time} taking too long get new frame {processing_time}")
+                        self.next_frame()
+                    self.detect_scene()
+                    start = time.time()
+                    result = self.current_task.run()
+                    processing_time += time.time() - start
+                task = self.current_task
+                if isinstance(self.current_task, TriggerTask):
+                    if result:
+                        self.current_task.trigger_count += 1
+                        self.current_task = None
+                        communicate.task.emit(task)
                 elif isinstance(self.current_task, OneTimeTask):
                     self.current_task.set_done()
-                    communicate.task.emit(self.current_task)
-                self.current_task = None
+                    self.current_task = None
+                    communicate.task.emit(task)
             except TaskDisabledException:
                 logger.info(f"task is disabled, go to next task")
             except FinishedException:

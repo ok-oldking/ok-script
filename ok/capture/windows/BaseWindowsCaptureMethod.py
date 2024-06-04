@@ -27,6 +27,7 @@ class BaseWindowsCaptureMethod(BaseCaptureMethod):
         self._hwnd_window = hwnd_window
 
     def connected(self):
+        logger.debug(f"check connected {self._hwnd_window}")
         return self.hwnd_window is not None and self.hwnd_window.exists
 
     def get_abs_cords(self, x, y):

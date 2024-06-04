@@ -40,6 +40,7 @@ class OK:
             self.init_device_manager()
             from ok.gui.debug.Screenshot import Screenshot
             self.screenshot = Screenshot(self.exit_event)
+            self.do_init()
             if config.get("use_gui"):
                 from ok.gui.App import App
                 self.app = App(config, self.exit_event)
@@ -47,7 +48,6 @@ class OK:
             else:
                 self.device_manager.set_preferred_device()
                 self.device_manager.start()
-                self.do_init()
         except Exception as e:
             logger.error(f'__init__ error', e)
             self.quit()
@@ -56,8 +56,7 @@ class OK:
     def start(self):
         try:
             if self.config.get("use_gui"):
-                if self.do_init():
-                    self.app.show_main_window()
+                self.app.show_main_window()
                 self.app.exec()
             else:
                 self.task_executor.start()
@@ -116,8 +115,7 @@ class OK:
                                           feature_set=self.feature_set,
                                           ocr=self.ocr, config_folder=self.config.get("config_folder"))
 
-        if self.app:
-            ok.gui.executor = self.task_executor
+        ok.gui.executor = self.task_executor
 
         return True
 
@@ -135,8 +133,8 @@ class OK:
         if self.device_manager is None:
             from ok.capture.adb.DeviceManager import DeviceManager
             self.device_manager = DeviceManager(self.config.get("config_folder") or "config",
-                                                self.config.get('windows_capture'),
-                                                self.config.get('adb_capture'),
+                                                self.config.get('windows'),
+                                                self.config.get('adb'),
                                                 self.config.get("debug"),
                                                 self.exit_event)
             ok.gui.device_manager = self.device_manager

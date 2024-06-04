@@ -8,6 +8,7 @@ import ok.gui
 from ok.capture.image.ImageCaptureMethod import ImageCaptureMethod
 from ok.capture.windows.dump import dump_threads
 from ok.config.Config import Config
+from ok.gui.util.Alert import alert_info, alert_error
 from ok.gui.widget.Tab import Tab
 from ok.interaction.DoNothingInteraction import DoNothingInteraction
 from ok.logging.Logger import get_logger, exception_to_str
@@ -91,7 +92,7 @@ class DebugTab(Tab):
         task = ok.gui.executor.get_task_by_class_name(task_name)
 
         if not hasattr(task, func_name):
-            self.alert_error(self.tr(f"No such attr: {func_name}"))
+            alert_error(self.tr(f"No such attr: {func_name}"))
             return
         old_capture = ok.gui.device_manager.capture_method
         old_interaction = ok.gui.device_manager.interaction
@@ -113,7 +114,7 @@ class DebugTab(Tab):
         ok.gui.device_manager.interaction = old_interaction
         self.update_result_text.emit(result)
         self.config['target_function'] = func_name
-        self.alert_info(self.tr(f"call success: {result}"))
+        alert_info(self.tr(f"call success: {result}"))
 
     def task_changed(self, text):
         self.config['target_task'] = text
@@ -147,8 +148,8 @@ class DebugTab(Tab):
                 # Use subprocess.Popen to open the file explorer and select the file
                 subprocess.Popen(r'explorer /select,"{}"'.format(file_path))
                 logger.info(f'captured screenshot: {capture}')
-                self.alert_info(self.tr('Capture Success'))
+                alert_info(self.tr('Capture Success'))
             else:
-                self.alert_error(self.tr('Capture returned None'))
+                alert_error(self.tr('Capture returned None'))
         else:
-            self.alert_error(self.tr('No Capture Available or Selected'))
+            alert_error(self.tr('No Capture Available or Selected'))

@@ -18,6 +18,7 @@ class ScheduledTask:
 class Handler:
     def __init__(self, event: ExitEvent, name=None):
         self.task_queue = []
+        self.executing = None
         self.condition = threading.Condition()
         self.exit_event = event
         self.exit_event.bind_stop(self)
@@ -36,10 +37,13 @@ class Handler:
                     if scheduled_task.task is None:
                         logger.debug(f'stopping handler {self.thread.name}')
                         return
+                    self.executing = scheduled_task.task
                     try:
                         scheduled_task.task()
+                        self.executing = None
                     except Exception as e:
                         logger.error(f'handler {self.thread.name} raised exception', e)
+                    self.executing = scheduled_task.task
 
                 if self.task_queue:
                     next_time = self.task_queue[0].execute_at
@@ -47,13 +51,16 @@ class Handler:
                     if timeout > 0:
                         self.condition.wait(timeout=timeout)
 
-    def post(self, task, delay=0, remove_existing=False):
+    def post(self, task, delay=0, remove_existing=False, skip_if_running=False):
         with self.condition:
             if remove_existing and len(self.task_queue) > 0:
                 for obj in self.task_queue.copy():
                     if obj.task == task:
                         self.task_queue.remove(obj)
                         logger.debug(f'removing duplicate task {task}')
+            if remove_existing and self.executing == task:
+                logger.debug(f'skipping duplicate task {task}')
+                return
             if delay > 0:
                 scheduled_task = ScheduledTask(time.time() + delay, task)
             else:

@@ -167,3 +167,6 @@ class ExecutorOperation:
     @staticmethod
     def draw_boxes(feature_name=None, boxes=None, color="red"):
         communicate.emit_draw_box(feature_name, boxes, color)
+
+    def adb_shell(self, *args, **kwargs):
+        return self.executor.device_manager.shell(*args, **kwargs)
