@@ -15,18 +15,21 @@ class SelectCaptureListView(ListWidget):
             if self.count() == 0:
                 item = QListWidgetItem(self.tr(f"Game Window"))
                 self.addItem(item)
-            tips = device.get("hwnd") or ""
+            selected = 0
             if device['device'] == "windows":
                 title = self.tr("Game Window")
                 if self.count() == 2:
                     self.takeItem(1)
-            else:
-                title = self.tr("Emulator Window(Supports Background, Fast, Low Latency)")
+            elif device.get('emulator') is not None:
+                title = self.tr("ADB(Supports Background, Slow, High Compatibility, High Latency)")
                 if self.count() == 1:
-                    item = QListWidgetItem(self.tr("ADB(Supports Background, Slow, High Compatibility, High Latency)"))
+                    item = QListWidgetItem(self.tr("Emulator Window(Supports Background, Fast, Low Latency)"))
                     self.addItem(item)
-            self.item(0).setText(f"{title} - {tips}")
-            selected = 0
-            if device.get('capture') == "adb":
-                selected = 1
+                if ok.gui.device_manager.get_preferred_capture() == "windows":
+                    selected = 1
+            else:
+                title = self.tr("ADB(Supports Background, Slow, High Compatibility, High Latency)")
+                if self.count() == 2:
+                    self.takeItem(1)
+            self.item(0).setText(f"{title}")
             self.setCurrentRow(selected)

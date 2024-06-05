@@ -1,4 +1,5 @@
 import queue
+from typing import List
 
 from ok.feature.Box import Box, find_box_by_name
 from ok.gui.Communicate import communicate
@@ -121,7 +122,7 @@ class ExecutorOperation:
     def move_relative(self, x, y):
         self.executor.interaction.move_relative(x, y)
 
-    def click_box(self, box: Box = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=True):
+    def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=True):
         if box is None:
             self.logger.error(f"click_box box is None")
             if raise_if_not_found:

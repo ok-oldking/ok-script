@@ -33,9 +33,9 @@ class FindFeature:
             setattr(self, feature, result)
         return ret
 
-    def wait_and_click(self, feature, horizontal_variance=0, vertical_variance=0, threshold=0, relative_x=0.5,
-                       relative_y=0.5,
-                       time_out=0, pre_action=None, post_action=None):
+    def wait_click_feature(self, feature, horizontal_variance=0, vertical_variance=0, threshold=0, relative_x=0.5,
+                           relative_y=0.5,
+                           time_out=0, pre_action=None, post_action=None):
         box = self.wait_until(lambda: self.find_one(feature, horizontal_variance, vertical_variance, threshold),
                               time_out,
                               pre_action,

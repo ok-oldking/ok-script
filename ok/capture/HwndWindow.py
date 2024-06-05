@@ -92,7 +92,7 @@ class HwndWindow:
         try:
             visible, x, y, border, title_height, width, height, scaling, ext_left_bounds, ext_top_bounds = self.visible, self.x, self.y, self.border, self.title_height, self.width, self.height, self.scaling, self.ext_left_bounds, self.ext_top_bounds
             if self.hwnd is None:
-                self.hwnd, self.exe_full_path, self.real_x_offset, self.real_y_offset, self.real_width, self.real_height = find_hwnd(
+                name, self.hwnd, self.exe_full_path, self.real_x_offset, self.real_y_offset, self.real_width, self.real_height = find_hwnd(
                     self.title,
                     self.exe_name,
                     self.frame_aspect_ratio)
@@ -150,12 +150,12 @@ class HwndWindow:
 def find_hwnd(title, exe_name, frame_aspect_ratio=0):
     results = []
     if exe_name is None and title is None:
-        return None, None
+        return None, None, None, 0, 0, 0, 0
 
     def callback(hwnd, lParam):
         if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
+            text = win32gui.GetWindowText(hwnd)
             if title:
-                text = win32gui.GetWindowText(hwnd)
                 if isinstance(title, str):
                     if title != text:
                         return True
@@ -164,7 +164,7 @@ def find_hwnd(title, exe_name, frame_aspect_ratio=0):
             name, full_path = get_exe_by_hwnd(hwnd)
             x, y, border, title_height, width, height, scaling, ext_left_bounds, ext_top_bounds = get_window_bounds(
                 hwnd)
-            ret = (hwnd, full_path, width, height, x, y)
+            ret = (hwnd, full_path, width, height, x, y, text)
             if exe_name:
                 if name != exe_name and exe_name != full_path:
                     return True
@@ -195,9 +195,9 @@ def find_hwnd(title, exe_name, frame_aspect_ratio=0):
             real_width = ratio_match[2]
             real_height = ratio_match[3]
         logger.debug(f'find_hwnd {results} {biggest} {x_offset, y_offset, real_width, real_height}')
-        return biggest[0], biggest[1], x_offset, y_offset, real_width, real_height
+        return biggest[6], biggest[0], biggest[1], x_offset, y_offset, real_width, real_height,
     else:
-        return None, None, 0, 0, 0, 0,
+        return None, None, None, 0, 0, 0, 0
 
 
 def get_exe_by_hwnd(hwnd):

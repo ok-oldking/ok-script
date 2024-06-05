@@ -14,7 +14,10 @@ class OCR:
     ocr_default_threshold = 0.5
     ocr_target_height = 0
 
-    def ocr(self, box: Box = None, match=None, threshold=0, frame=None, target_height=0):
+    def ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box: Box = None, name=None, match=None, threshold=0,
+            frame=None, target_height=0):
+        if box is None:
+            box = self.box_of_screen(x, y, width=width, height=height, to_x=to_x, to_y=to_y, name=name)
         if self.paused:
             self.sleep(1)
         if threshold == 0:
@@ -70,6 +73,25 @@ class OCR:
         for result in self.ocr(box, confidence):
             if result.name == text:
                 return result
+
+    def wait_click_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box=None, name=None, match=None, threshold=0,
+                       frame=None, target_height=0):
+        box = self.wait_ocr(x, y, width=width, height=height, to_x=to_x, to_y=to_y, box=box, name=name, match=match,
+                            threshold=threshold,
+                            frame=frame, target_height=target_height)
+        if box is not None:
+            self.click_box(box)
+            return box
+        else:
+            logger.error(f'wait ocr no box {x} {y} {width} {height} {to_x} {to_y} {match}')
+
+    def wait_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, name=None, box=None, match=None, threshold=0,
+                 frame=None, target_height=0):
+        return self.wait_until(lambda:
+                               self.ocr(x, y, width=width, height=height, to_x=to_x, to_y=to_y, box=box, name=name,
+                                        match=match,
+                                        threshold=threshold,
+                                        frame=frame, target_height=target_height))
 
 
 def resize_image(image, original_height, target_height):
