@@ -250,3 +250,13 @@ def boxes_to_map_by_list_of_names(boxes: list[Box], name_list: list[str]) -> dic
                 box_dict[box.name] = box
         if len(box_dict) == len(name_list):
             return box_dict
+
+
+def relative_box(frame_width, frame_height, x, y, to_x=1, to_y=1, width=0, height=0, name=None):
+    if width == 0:
+        width = to_x - x
+    if height == 0:
+        height = to_y - y
+    return Box(int(x * frame_width), int(y * frame_height),
+               int(width * frame_width), int(height * frame_height),
+               name=name)

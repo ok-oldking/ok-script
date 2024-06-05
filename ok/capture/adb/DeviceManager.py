@@ -204,8 +204,7 @@ class DeviceManager:
         if self.hwnd is None:
             self.hwnd = HwndWindow(self.exit_event, title, exe, frame_width, frame_height)
         else:
-            self.hwnd.update_frame_size(frame_width, frame_height)
-            self.hwnd.update_title_and_exe(title, exe)
+            self.hwnd.update_window(title, exe, frame_width, frame_height)
 
     def use_windows_capture(self, override_config=None, require_bg=False, use_bit_blt_only=False):
         if not override_config:

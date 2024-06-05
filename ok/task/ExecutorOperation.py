@@ -1,7 +1,7 @@
 import queue
 from typing import List
 
-from ok.feature.Box import Box, find_box_by_name
+from ok.feature.Box import Box, find_box_by_name, relative_box
 from ok.gui.Communicate import communicate
 
 
@@ -82,17 +82,11 @@ class ExecutorOperation:
             self.click_box(to_click, relative_x, relative_y)
             return to_click
 
-    def box_of_screen(self, x, y, width=0, height=0, to_x=1, to_y=1, name=None):
-        if width == 0:
-            width = to_x - x
-        if height == 0:
-            height = to_y - y
-
+    def box_of_screen(self, x, y, to_x=1, to_y=1, width=0, height=0, name=None):
         if name is None:
             name = f"{x} {y} {width} {height}"
-        return Box(int(x * self.executor.method.width), int(y * self.executor.method.height),
-                   int(width * self.executor.method.width), int(height * self.executor.method.height),
-                   name=name)
+        return relative_box(self.executor.method.width, self.executor.method.height, x, y,
+                            to_x=to_x, to_y=to_y, width=width, height=height, name=name)
 
     def height_of_screen(self, percent):
         return int(percent * self.executor.method.height)

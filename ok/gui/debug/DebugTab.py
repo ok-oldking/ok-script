@@ -12,6 +12,7 @@ from ok.gui.util.Alert import alert_info, alert_error
 from ok.gui.widget.Tab import Tab
 from ok.interaction.DoNothingInteraction import DoNothingInteraction
 from ok.logging.Logger import get_logger, exception_to_str
+from ok.ocr.OCR import OCR
 from ok.util.Handler import Handler
 
 logger = get_logger(__name__)
@@ -43,6 +44,10 @@ class DebugTab(Tab):
         capture_button = PushButton(self.tr("Capture Screenshot"))
         capture_button.clicked.connect(lambda: self.handler.post(self.capture))
         layout.addWidget(capture_button)
+
+        ocr_button = PushButton("OCR")
+        ocr_button.clicked.connect(lambda: self.handler.post(self.ocr))
+        layout.addWidget(ocr_button)
 
         open_log_folder = PushButton(self.tr("Open Logs"))
 
@@ -115,6 +120,25 @@ class DebugTab(Tab):
         self.update_result_text.emit(result)
         self.config['target_function'] = func_name
         alert_info(self.tr(f"call success: {result}"))
+
+    def ocr(self):
+        if not ok.gui.executor.ocr:
+            alert_error(self.tr('No OCR configured'))
+            return
+        if ok.gui.device_manager.capture_method is not None:
+            logger.info(f'ok.gui.device_manager.capture_method {ok.gui.device_manager.capture_method}')
+            capture = str(ok.gui.device_manager.capture_method)
+            frame = ok.gui.device_manager.capture_method.do_get_frame()
+            if frame is not None:
+                ocr = OCR()
+                ocr.executor = ok.gui.executor
+                result = ocr.ocr(frame=frame)
+                self.update_result_text.emit(str(result))
+                alert_info(self.tr(f"OCR success: {result}"))
+            else:
+                alert_error(self.tr('Capture returned None'))
+        else:
+            alert_error(self.tr('No Capture Available or Selected'))
 
     def task_changed(self, text):
         self.config['target_task'] = text

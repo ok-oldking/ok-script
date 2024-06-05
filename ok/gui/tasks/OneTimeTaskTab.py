@@ -19,6 +19,7 @@ class OneTimeTaskTab(Tab):
         super().__init__()
 
         self.task_info_table = TooltipTableWidget()
+        self.task_info_table.setFixedHeight(300)
         self.task_info_container = self.addCard(self.tr("Choose Window"), self.task_info_table)
         self.addWidget(self.task_info_container)
 

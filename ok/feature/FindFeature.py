@@ -11,11 +11,11 @@ class FindFeature:
         self.executor = None
 
     def find_feature(self, feature_name, horizontal_variance=0, vertical_variance=0, threshold=0,
-                     use_gray_scale=False) -> List[Box]:
+                     use_gray_scale=False, x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1) -> List[Box]:
         if self.executor.frame is None:
             return list()
         return self.feature_set.find_feature(self.executor.frame, feature_name, horizontal_variance, vertical_variance,
-                                             threshold, use_gray_scale)
+                                             threshold, use_gray_scale, x, y, to_x, to_y, width, height)
 
     def get_box_by_name(self, name):
         return self.feature_set.get_box_by_name(name)

@@ -2,7 +2,7 @@ import time
 
 import cv2
 
-from ok.feature.Box import Box, sort_boxes, find_boxes_by_name
+from ok.feature.Box import Box, sort_boxes, find_boxes_by_name, relative_box
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 
@@ -16,9 +16,7 @@ class OCR:
 
     def ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box: Box = None, name=None, match=None, threshold=0,
             frame=None, target_height=0):
-        if box is None:
-            box = self.box_of_screen(x, y, width=width, height=height, to_x=to_x, to_y=to_y, name=name)
-        if self.paused:
+        if hasattr(self, 'paused') and self.paused:
             self.sleep(1)
         if threshold == 0:
             threshold = self.ocr_default_threshold
@@ -32,10 +30,15 @@ class OCR:
         if image is None:
             raise Exception("ocr no frame")
         else:
+            if box is None:
+                frame_height, frame_width, *_ = image.shape[1], image.shape[0]
+                box = relative_box(frame_height, frame_width, x, y, to_x, to_y, width, height, name)
             original_height = image.shape[0]
             if box is not None:
                 x, y, w, h = box.x, box.y, box.width, box.height
                 image = image[y:y + h, x:x + w]
+                if not box.name and match:
+                    box.name = str(match)
 
             image, scale_factor = resize_image(image, original_height, target_height)
             try:
@@ -69,11 +72,6 @@ class OCR:
                 f"ocr_zone {box} found result: {len(detected_boxes)}) time: {(time.time() - start):.2f} scale_factor: {scale_factor:.2f}")
             return sort_boxes(detected_boxes)
 
-    def find_text(self, text, box: Box = None, confidence=0):
-        for result in self.ocr(box, confidence):
-            if result.name == text:
-                return result
-
     def wait_click_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box=None, name=None, match=None, threshold=0,
                        frame=None, target_height=0):
         box = self.wait_ocr(x, y, width=width, height=height, to_x=to_x, to_y=to_y, box=box, name=name, match=match,
@@ -86,12 +84,12 @@ class OCR:
             logger.error(f'wait ocr no box {x} {y} {width} {height} {to_x} {to_y} {match}')
 
     def wait_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, name=None, box=None, match=None, threshold=0,
-                 frame=None, target_height=0):
+                 frame=None, target_height=0, time_out=0):
         return self.wait_until(lambda:
-                               self.ocr(x, y, width=width, height=height, to_x=to_x, to_y=to_y, box=box, name=name,
+                               self.ocr(x, y, to_x=to_x, to_y=to_y, width=width, height=height, box=box, name=name,
                                         match=match,
                                         threshold=threshold,
-                                        frame=frame, target_height=target_height))
+                                        frame=frame, target_height=target_height), time_out=time_out)
 
 
 def resize_image(image, original_height, target_height):

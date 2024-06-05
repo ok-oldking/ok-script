@@ -50,8 +50,7 @@ class HwndWindow:
         self.title = title
         self.stop_event = threading.Event()
         self.visible = False
-        self.update_frame_size(frame_width, frame_height)
-        self.do_update_window_size()
+        self.update_window(title, exe_name, frame_width, frame_height)
         self.thread = threading.Thread(target=self.update_window_size, name="update_window_size")
         self.thread.start()
 
@@ -68,14 +67,21 @@ class HwndWindow:
     def stop(self):
         self.stop_event.set()
 
+    def update_window(self, title, exe_name, frame_width, frame_height):
+        self.title = title
+        self.exe_name = exe_name
+        self.update_frame_size(frame_width, frame_height)
+
     def update_frame_size(self, width, height):
         logger.debug(f"update_frame_size:{self.frame_width}x{self.frame_height} to {width}x{height}")
         if width != self.frame_width or height != self.frame_height:
+            self.hwnd = None
             self.frame_width = width
             self.frame_height = height
             if width > 0 and height > 0:
                 self.frame_aspect_ratio = width / height
                 logger.debug(f"HwndWindow: frame ratio:{self.frame_aspect_ratio} width: {width}, height: {height}")
+            self.do_update_window_size()
 
     def update_window_size(self):
         while not self.app_exit_event.is_set() and not self.stop_event.is_set():
@@ -194,7 +200,7 @@ def find_hwnd(title, exe_name, frame_aspect_ratio=0):
             y_offset = ratio_match[5] - biggest[5]
             real_width = ratio_match[2]
             real_height = ratio_match[3]
-        logger.debug(f'find_hwnd {results} {biggest} {x_offset, y_offset, real_width, real_height}')
+        logger.debug(f'find_hwnd {results} {biggest} {ratio_match} {x_offset, y_offset, real_width, real_height}')
         return biggest[6], biggest[0], biggest[1], x_offset, y_offset, real_width, real_height,
     else:
         return None, None, None, 0, 0, 0, 0

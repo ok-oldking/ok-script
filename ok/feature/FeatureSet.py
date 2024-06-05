@@ -143,7 +143,8 @@ class FeatureSet:
             return boxes[0]
 
     def find_feature(self, mat: np.ndarray, category_name: str, horizontal_variance: float = 0,
-                     vertical_variance: float = 0, threshold: float = 0, use_gray_scale: bool = False) -> List[Box]:
+                     vertical_variance: float = 0, threshold: float = 0, use_gray_scale: bool = False, x=-1, y=-1,
+                     to_x=-1, to_y=-1, width=-1, height=-1) -> List[Box]:
         """
         Find a feature within a given variance.
 
@@ -168,15 +169,24 @@ class FeatureSet:
             vertical_variance = self.default_vertical_variance
         if category_name not in self.feature_dict:
             raise ValueError(f"FeatureSet: {category_name} not found in featureDict")
-
         feature = self.feature_dict[category_name]
         feature_width, feature_height = feature.width, feature.height
-
-        # Define search area using variance
-        search_x1 = max(0, int(feature.x - self.width * horizontal_variance))
-        search_y1 = max(0, int(feature.y - self.height * vertical_variance))
-        search_x2 = min(self.width, int(feature.x + feature_width + self.width * horizontal_variance))
-        search_y2 = min(self.height, int(feature.y + feature_height + self.height * vertical_variance))
+        if x != -1 and y != -1:
+            frame_height, frame_width, *_ = mat.shape
+            if width == -1:
+                width = to_x - x
+            if height == -1:
+                height = to_y - y
+            search_x1 = int(x * frame_width)
+            search_y1 = int(y * frame_height)
+            search_x2 = int((x + width) * frame_width)
+            search_y2 = int((y + height) * frame_height)
+        else:
+            # Define search area using variance
+            search_x1 = max(0, int(feature.x - self.width * horizontal_variance))
+            search_y1 = max(0, int(feature.y - self.height * vertical_variance))
+            search_x2 = min(self.width, int(feature.x + feature_width + self.width * horizontal_variance))
+            search_y2 = min(self.height, int(feature.y + feature_height + self.height * vertical_variance))
 
         search_area = mat[search_y1:search_y2, search_x1:search_x2, :3]
         # Crop the search area from the image
