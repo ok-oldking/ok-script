@@ -3,7 +3,7 @@ from ok.logging.Logger import get_logger
 logger = get_logger(__name__)
 
 
-def update_capture_method(config, capture_method, hwnd, require_bg=False):
+def update_capture_method(config, capture_method, hwnd, require_bg=False, use_bit_blt_only=False):
     if config.get('can_bit_blt'):
         logger.debug(
             f"try BitBlt method {config} {hwnd} current_type:{type(capture_method)}")
@@ -14,6 +14,8 @@ def update_capture_method(config, capture_method, hwnd, require_bg=False):
             return capture_method
         else:
             logger.info("test_exclusive_full_screen failed, can't use BitBlt")
+    if use_bit_blt_only:
+        return None
     from ok.capture.windows.WindowsGraphicsCaptureMethod import windows_graphics_available
     if windows_graphics_available():
         from ok.capture.windows.WindowsGraphicsCaptureMethod import WindowsGraphicsCaptureMethod

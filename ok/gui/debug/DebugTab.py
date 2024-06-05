@@ -148,7 +148,7 @@ class DebugTab(Tab):
                 # Use subprocess.Popen to open the file explorer and select the file
                 subprocess.Popen(r'explorer /select,"{}"'.format(file_path))
                 logger.info(f'captured screenshot: {capture}')
-                alert_info(self.tr('Capture Success'))
+                alert_info(self.tr('Capture Success'), True)
             else:
                 alert_error(self.tr('Capture returned None'))
         else:

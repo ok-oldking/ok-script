@@ -40,8 +40,18 @@ class BitBltCaptureMethod(BaseWindowsCaptureMethod):
 
     @override
     def do_get_frame(self) -> MatLike | None:
-        return bit_blt_capture_frame(self.hwnd_window.hwnd, self.hwnd_window.border,
-                                     self.hwnd_window.title_height, self.hwnd_window.width, self.hwnd_window.height,
+        # return bit_blt_capture_frame(self.hwnd_window.hwnd, self.hwnd_window.border,
+        #                              self.hwnd_window.title_height, self.hwnd_window.width, self.hwnd_window.height,
+        #                              self.hwnd_window.ext_left_bounds, self.hwnd_window.ext_top_bounds)
+
+        # if self.hwnd_window.real_y_offset:
+        #     real_title_height = self.hwnd_window.real_y_offset + self.hwnd_window.border
+        # else:
+        #     real_title_height = self.hwnd_window.title_height
+        return bit_blt_capture_frame(self.hwnd_window.hwnd, self.hwnd_window.real_x_offset or self.hwnd_window.border,
+                                     self.hwnd_window.real_y_offset or self.hwnd_window.title_height,
+                                     self.hwnd_window.real_width or self.hwnd_window.width,
+                                     self.hwnd_window.real_height or self.hwnd_window.height,
                                      self.hwnd_window.ext_left_bounds, self.hwnd_window.ext_top_bounds)
 
     def test_exclusive_full_screen(self):
@@ -109,3 +119,7 @@ def bit_blt_capture_frame(hwnd, border, title_height, width, height, ext_left_bo
     win32gui.ReleaseDC(hwnd, window_dc)
     win32gui.DeleteObject(bitmap.GetHandle())
     return image
+
+
+if __name__ == '__main__':
+    print(bit_blt_capture_frame("MuMu模拟器12", None))

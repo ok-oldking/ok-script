@@ -38,6 +38,10 @@ class HwndWindow:
     exists = False
     title = None
     exe_full_path = None
+    real_width = 0
+    real_height = 0
+    real_x_offset = 0
+    real_y_offset = 0
 
     def __init__(self, exit_event, title, exe_name=None, frame_width=0, frame_height=0):
         super().__init__()
@@ -88,7 +92,10 @@ class HwndWindow:
         try:
             visible, x, y, border, title_height, width, height, scaling, ext_left_bounds, ext_top_bounds = self.visible, self.x, self.y, self.border, self.title_height, self.width, self.height, self.scaling, self.ext_left_bounds, self.ext_top_bounds
             if self.hwnd is None:
-                self.hwnd, self.exe_full_path = find_hwnd_by_title_and_exe(self.title, self.exe_name)
+                self.hwnd, self.exe_full_path, self.real_x_offset, self.real_y_offset, self.real_width, self.real_height = find_hwnd(
+                    self.title,
+                    self.exe_name,
+                    self.frame_aspect_ratio)
                 self.exists = self.hwnd is not None
             if self.hwnd is not None:
                 self.exists = win32gui.IsWindow(self.hwnd)
@@ -140,13 +147,13 @@ class HwndWindow:
         return f"title:{self.title}_{self.exe_name}_{self.width}x{self.height}_{self.hwnd}_{self.exists}_{self.visible}"
 
 
-def find_hwnd_by_title_and_exe(title, exe_name):
-    result = []
-    if title is None and exe_name is None:
+def find_hwnd(title, exe_name, frame_aspect_ratio=0):
+    results = []
+    if exe_name is None and title is None:
         return None, None
 
     def callback(hwnd, lParam):
-        if len(result) == 0 and win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
+        if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
             if title:
                 text = win32gui.GetWindowText(hwnd)
                 if isinstance(title, str):
@@ -155,19 +162,42 @@ def find_hwnd_by_title_and_exe(title, exe_name):
                 elif not re.search(title, text):
                     return True
             name, full_path = get_exe_by_hwnd(hwnd)
+            x, y, border, title_height, width, height, scaling, ext_left_bounds, ext_top_bounds = get_window_bounds(
+                hwnd)
+            ret = (hwnd, full_path, width, height, x, y)
             if exe_name:
-                if name == exe_name or exe_name == full_path:
-                    result.append((hwnd, full_path))
-                    return True  # Stop enumeration as we found the first match
-            else:
-                result.append((hwnd, full_path))
+                if name != exe_name and exe_name != full_path:
+                    return True
+            results.append(ret)
         return True
 
     win32gui.EnumWindows(callback, None)
-    if result:
-        return result[0][0], result[0][1]
+    biggest = None
+    ratio_match = None
+    if len(results) > 0:
+        for result in results:
+            from ok.capture.windows.BitBltCaptureMethod import bit_blt_test_hwnd
+            if (biggest is None or (result[2] * result[3]) > biggest[2] * biggest[3]) and bit_blt_test_hwnd(result[0]):
+                biggest = result
+        for result in results:
+            if frame_aspect_ratio != 0:
+                ratio = result[2] / result[3]
+                difference = abs(ratio - frame_aspect_ratio)
+                support = difference <= 0.01 * frame_aspect_ratio
+                if support and biggest != result:
+                    ratio_match = result
+        x_offset = 0
+        y_offset = 0
+        real_width, real_height = biggest[2], biggest[3]
+        if ratio_match is not None and ratio_match[4] - biggest[4] >= 0 and ratio_match[5] - biggest[5] >= 0:
+            x_offset = ratio_match[4] - biggest[4]
+            y_offset = ratio_match[5] - biggest[5]
+            real_width = ratio_match[2]
+            real_height = ratio_match[3]
+        logger.debug(f'find_hwnd {results} {biggest} {x_offset, y_offset, real_width, real_height}')
+        return biggest[0], biggest[1], x_offset, y_offset, real_width, real_height
     else:
-        return None, None
+        return None, None, 0, 0, 0, 0,
 
 
 def get_exe_by_hwnd(hwnd):
@@ -198,3 +228,12 @@ def enum_windows(emulator_path=None):
     windows = []
     win32gui.EnumWindows(callback, windows)
     return windows
+
+
+if __name__ == '__main__':
+    print(find_hwnd("MuMu模拟器12", None))
+    hwnd_window = HwndWindow(threading.Event(), None, 'D:\\MuMuPlayer-12.0\\shell\\MuMuPlayer.exe', 16, 9)
+    from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
+
+    method = BitBltCaptureMethod(hwnd_window)
+    method.get_frame()

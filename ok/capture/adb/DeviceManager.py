@@ -2,10 +2,9 @@ import win32gui
 from adbutils import AdbTimeout
 
 from ok.alas.platform_windows import get_emulator_exe
-from ok.capture.HwndWindow import HwndWindow, find_hwnd_by_title_and_exe, enum_windows
+from ok.capture.HwndWindow import HwndWindow, enum_windows, find_hwnd
 from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod, do_screencap
 from ok.capture.adb.WindowsCaptureFactory import update_capture_method
-from ok.capture.windows.BitBltCaptureMethod import bit_blt_test_hwnd
 from ok.capture.windows.window import get_window_bounds
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
@@ -33,7 +32,7 @@ class DeviceManager:
             self.hwnd = HwndWindow(exit_event, windows_capture_config.get('title'),
                                    windows_capture_config.get('exe'))
         self.config = Config({"devices": {}, "preferred": "none", "pc_full_path": None}, config_folder,
-                             "DeviceManager")
+                             "devices")
         self.capture_method = None
         self.handler = Handler(exit_event, 'RefreshAdb')
         self.handler.post(self.do_refresh, 3)
@@ -64,6 +63,14 @@ class DeviceManager:
 
     def adb_connect(self, addr):
         try:
+            for info in self.adb.list():
+                if info.serial == addr:
+                    if info.state == 'offline':
+                        logger.debug(f'adb_connect offline disconnect first {addr}')
+                        self.adb.disconnect(addr)
+                    else:
+                        logger.debug(f'adb_connect already connected {addr}')
+                        return self.adb.device(addr)
             self.adb.connect(addr, timeout=5)
             device = self.adb.device(addr)
             logger.debug(f'adb_connect {addr} device {device}')
@@ -85,8 +92,8 @@ class DeviceManager:
             nick = ""
             width = 0
             height = 0
-            hwnd, full_path = find_hwnd_by_title_and_exe(self.windows_capture_config.get('title'),
-                                                         self.windows_capture_config.get('exe'))
+            hwnd, full_path, *_ = find_hwnd(self.windows_capture_config.get('title'),
+                                            self.windows_capture_config.get('exe'))
             if hwnd is not None:
                 nick = win32gui.GetWindowText(hwnd)
                 _, _, _, _, width, height, _, _, _ = get_window_bounds(
@@ -153,15 +160,6 @@ class DeviceManager:
                         device.update(to_update)
                         found = device
                         break
-            if not found or found.get('hwnd') is None:
-                if len(windows) > 0:
-                    for hwnd, title, _, _ in windows:
-                        if bit_blt_test_hwnd(hwnd):
-                            to_update["hwnd"] = title
-                            if found:
-                                found['hwnd'] = title
-                            logger.info(f'update hwnd from emulator {title}')
-                            break
             if not found:
                 to_update['capture'] = 'windows'
                 self.config.get("devices")[emulator.name] = to_update
@@ -240,11 +238,11 @@ class DeviceManager:
             self.hwnd.update_frame_size(frame_width, frame_height)
             self.hwnd.update_title_and_exe(title, exe)
 
-    def use_windows_capture(self, override_config=None, require_bg=False):
+    def use_windows_capture(self, override_config=None, require_bg=False, use_bit_blt_only=False):
         if not override_config:
             override_config = self.windows_capture_config
         self.capture_method = update_capture_method(override_config, self.capture_method, self.hwnd,
-                                                    require_bg)
+                                                    require_bg, use_bit_blt_only=use_bit_blt_only)
         if self.capture_method is None:
             logger.error(f'can find a usable windows capture')
         else:
@@ -271,14 +269,15 @@ class DeviceManager:
             height, width = self.get_resolution()
             if preferred.get('capture') == "windows":
                 self.ensure_hwnd(hwnd_name, preferred.get('full_path'), width, height)
-                self.use_windows_capture({'can_bit_blt': True}, require_bg=True)
+                self.use_windows_capture({'can_bit_blt': True}, require_bg=True, use_bit_blt_only=True)
             elif not isinstance(self.capture_method, ADBCaptureMethod):
+                logger.debug(f'use adb capture')
                 if self.capture_method is not None:
                     self.capture_method.close()
                 self.capture_method = ADBCaptureMethod(self, self.exit_event, width=width,
                                                        height=height)
                 if self.debug and hwnd_name:
-                    self.ensure_hwnd(hwnd_name, None, width, height)
+                    self.ensure_hwnd(hwnd_name, preferred.get('full_path'), width, height)
                 elif self.hwnd is not None:
                     self.hwnd.stop()
                     self.hwnd = None
@@ -332,6 +331,9 @@ class DeviceManager:
         pass
 
     def shell(self, *args, **kwargs):
+        # Set default timeout to 5 if not provided
+        kwargs.setdefault('timeout', 5)
+
         device = self.device
         if device is not None:
             try:
@@ -340,7 +342,7 @@ class DeviceManager:
                 addr = self.get_preferred_device()['address']
                 self.refresh_emulators()
                 new_addr = self.get_preferred_device()['address']
-                logger.error(f"shell_wrapper error occurred,try refresh_emulators {addr} {new_addr}", e)
+                logger.error(f"shell_wrapper error occurred, try refresh_emulators {addr} {new_addr}", e)
                 return None
         else:
             raise Exception('Device is none')

@@ -88,7 +88,7 @@ class MainWindow(MSFluentWindow):
     def starting_emulator(self, done, error, seconds_left):
         if error:
             self.switchTo(self.start_tab)
-            alert_error(error)
+            alert_error(error, True)
         if done:
             self.emulator_starting_dialog.close()
             return
@@ -114,7 +114,7 @@ class MainWindow(MSFluentWindow):
         )
         self.tray.showMessage(title, message)
 
-    def show_notification(self, message, title=None, error=False, tray=True):
+    def show_notification(self, message, title=None, error=False, tray=False):
         bar = InfoBar.error if error else InfoBar.info
         if title is None:
             title = f"{self.tr('Error') if error else 'Info'}:"
