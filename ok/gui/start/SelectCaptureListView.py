@@ -27,4 +27,6 @@ class SelectCaptureListView(ListWidget):
                     self.addItem(item)
             self.item(0).setText(f"{title} - {tips}")
             selected = 0
+            if device.get('capture') == "adb":
+                selected = 1
             self.setCurrentRow(selected)

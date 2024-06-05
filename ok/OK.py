@@ -99,13 +99,16 @@ class OK:
             inference_num_threads = self.config.get('ocr').get('inference_num_threads', -1)
             self.ocr = RapidOCR(inference_num_threads=inference_num_threads)
 
-        if self.config.get('coco_feature_folder') is not None:
-            coco_feature_folder = self.config.get('coco_feature_folder')
+        template_matching = self.config.get('template_matching')
+        if template_matching is not None:
+            coco_feature_folder = self.config.get('template_matching').get('coco_feature_folder')
             from ok.feature.FeatureSet import FeatureSet
             self.feature_set = FeatureSet(coco_feature_folder,
-                                          default_horizontal_variance=self.config.get('default_horizontal_variance', 0),
-                                          default_vertical_variance=self.config.get('default_vertical_variance', 0),
-                                          default_threshold=self.config.get('default_threshold', 0))
+                                          default_horizontal_variance=template_matching.get(
+                                              'default_horizontal_variance', 0),
+                                          default_vertical_variance=template_matching.get('default_vertical_variance',
+                                                                                          0),
+                                          default_threshold=template_matching.get('default_threshold', 0))
 
         from ok.task.TaskExecutor import TaskExecutor
         self.task_executor = TaskExecutor(self.device_manager, exit_event=self.exit_event,

@@ -10,11 +10,15 @@ class FindFeature:
         self.feature_set = None
         self.executor = None
 
-    def find_feature(self, feature_name, horizontal_variance=0, vertical_variance=0, threshold=0) -> List[Box]:
+    def find_feature(self, feature_name, horizontal_variance=0, vertical_variance=0, threshold=0,
+                     use_gray_scale=False) -> List[Box]:
         if self.executor.frame is None:
             return list()
         return self.feature_set.find_feature(self.executor.frame, feature_name, horizontal_variance, vertical_variance,
-                                             threshold)
+                                             threshold, use_gray_scale)
+
+    def get_box_by_name(self, name):
+        return self.feature_set.get_box_by_name(name)
 
     def find_feature_and_set(self, features, horizontal_variance=0, vertical_variance=0, threshold=0):
         ret = True
@@ -41,8 +45,9 @@ class FindFeature:
             return True
         return False
 
-    def find_one(self, feature_name, horizontal_variance=0, vertical_variance=0, threshold=0) -> Box:
-        boxes = self.find_feature(feature_name, horizontal_variance, vertical_variance, threshold)
+    def find_one(self, feature_name, horizontal_variance=0, vertical_variance=0, threshold=0,
+                 use_gray_scale=False) -> Box:
+        boxes = self.find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale=False)
         if len(boxes) > 0:
             if len(boxes) > 1:
                 print(f"find_one:found {feature_name} too many {len(boxes)}", file=sys.stderr)

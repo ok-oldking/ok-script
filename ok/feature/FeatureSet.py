@@ -18,7 +18,8 @@ logger = get_logger(__name__)
 
 class FeatureSet:
     # Category_name to OpenCV Mat
-    featureDict: Dict[str, Feature] = {}
+    feature_dict: Dict[str, Feature] = {}
+    box_dict: Dict[str, Box] = {}
 
     def __init__(self, coco_folder: str, default_horizontal_variance=0,
                  default_vertical_variance=0, default_threshold=0.95) -> None:
@@ -59,7 +60,8 @@ class FeatureSet:
             width (int): Target width for scaling images.
             height (int): Target height for scaling images.
         """
-        self.featureDict.clear()
+        self.feature_dict.clear()
+        self.box_dict.clear()
         json_path = os.path.join(self.coco_folder, '_annotations.coco.json')
         with open(json_path, 'r') as file:
             data = json.load(file)
@@ -78,27 +80,36 @@ class FeatureSet:
             # Load and scale the image
             image_path = f'{self.coco_folder}/{image_map[image_id]}'
             image = cv2.imread(image_path)
-            original_width, _ = image.shape[:2]
+            _, original_width = image.shape[:2]
             if image is None:
                 logger.error(f'Could not read image {image_path}')
                 continue
-            scale_x, scale_y = self.width / image.shape[1], self.height / image.shape[0]
-            image = cv2.resize(image, (self.width, self.height))
-
-            # Calculate the scaled bounding box
             x, y, w, h = bbox
-            x, y, w, h = round(x * scale_x), round(y * scale_y), round(w * scale_x), round(h * scale_y)
+            if self.width != image.shape[1] or self.height != image.shape[0]:
+                scale_x, scale_y = self.width / image.shape[1], self.height / image.shape[0]
+                logger.debug(f'scaling images {scale_x}, {scale_y}')
+                image = cv2.resize(image, (self.width, self.height))
+                # Calculate the scaled bounding box
+                x, y, w, h = x * scale_x, y * scale_y, w * scale_x, h * scale_y
 
             # Crop the image to the bounding box
-            cropped_image = image[y:y + h, x:x + w, :3]
+            image = image[int(y):int(y + h), int(x):int(x + w), :3]
 
             # Store in featureDict using the category name
             category_name = category_map[category_id]
             logger.debug(
-                f"loaded {category_name} resized width {self.width} / original_width:{original_width},scale_x:{scale_x},scale_y:{scale_y}")
-            if category_name in self.featureDict:
+                f"loaded {category_name} resized width {self.width} / original_width:{original_width},scale_x:{self.width / original_width}")
+            if category_name in self.feature_dict:
                 raise ValueError(f"Multiple boxes found for category {category_name}")
-            self.featureDict[category_name] = Feature(cropped_image, x, y, w, h)
+            if not category_name.startswith('box_'):
+                self.feature_dict[category_name] = Feature(image, x, y, w, h)
+            self.box_dict[category_name] = Box(x, y, w, h, name=category_name)
+
+    def get_box_by_name(self, category_name: str) -> Box:
+        if category_name in self.box_dict:
+            return self.box_dict[category_name]
+        else:
+            raise ValueError(f"No box found for category {category_name}")
 
     def save_images(self, target_folder: str) -> None:
         """
@@ -111,7 +122,7 @@ class FeatureSet:
         os.makedirs(target_folder, exist_ok=True)
 
         # Iterate through the featureDict and save each image
-        for category_name, image in self.featureDict.items():
+        for category_name, image in self.feature_dict.items():
             # Construct the filename
             file_name = f"{category_name}.jpg"
             file_path = os.path.join(target_folder, file_name)
@@ -122,16 +133,17 @@ class FeatureSet:
 
     def find_one(self, mat: np.ndarray, category_name: str, horizontal_variance: float = 0,
                  vertical_variance: float = 0,
-                 threshold=0) -> Box:
+                 threshold=0, use_gray_scale=False) -> Box:
         boxes = self.find_feature(mat, category_name, horizontal_variance=horizontal_variance,
-                                  vertical_variance=vertical_variance, threshold=threshold)
+                                  vertical_variance=vertical_variance, threshold=threshold,
+                                  use_gray_scale=use_gray_scale)
         if len(boxes) > 1:
             logger.warning(f"find_one:found too many {len(boxes)} return first", file=sys.stderr)
         if len(boxes) >= 1:
             return boxes[0]
 
     def find_feature(self, mat: np.ndarray, category_name: str, horizontal_variance: float = 0,
-                     vertical_variance: float = 0, threshold: float = 0) -> List[Box]:
+                     vertical_variance: float = 0, threshold: float = 0, use_gray_scale: bool = False) -> List[Box]:
         """
         Find a feature within a given variance.
 
@@ -140,7 +152,8 @@ class FeatureSet:
             category_name (str): The category name of the feature to find.
             horizontal_variance (float): Allowed horizontal variance as a percentage of width.
             vertical_variance (float): Allowed vertical variance as a percentage of height.
-            threshold: Allowed confidence threshold for the feature
+            threshold (float): Allowed confidence threshold for the feature.
+            use_gray_scale (bool): If True, convert image to grayscale before finding the feature.
 
         Returns:
             List[Box]: A list of boxes where the feature is found.
@@ -153,27 +166,25 @@ class FeatureSet:
             horizontal_variance = self.default_horizontal_variance
         if vertical_variance == 0:
             vertical_variance = self.default_vertical_variance
-        if category_name not in self.featureDict:
+        if category_name not in self.feature_dict:
             raise ValueError(f"FeatureSet: {category_name} not found in featureDict")
 
-        feature = self.featureDict[category_name]
+        feature = self.feature_dict[category_name]
         feature_width, feature_height = feature.width, feature.height
 
         # Define search area using variance
-        search_x1 = max(0, round(feature.x - self.width * horizontal_variance))
-        search_y1 = max(0, round(feature.y - self.height * vertical_variance))
-        search_x2 = min(self.width, round(feature.x + feature_width + self.width * horizontal_variance))
-        search_y2 = min(self.height, round(feature.y + feature_height + self.height * vertical_variance))
+        search_x1 = max(0, int(feature.x - self.width * horizontal_variance))
+        search_y1 = max(0, int(feature.y - self.height * vertical_variance))
+        search_x2 = min(self.width, int(feature.x + feature_width + self.width * horizontal_variance))
+        search_y2 = min(self.height, int(feature.y + feature_height + self.height * vertical_variance))
 
         search_area = mat[search_y1:search_y2, search_x1:search_x2, :3]
         # Crop the search area from the image
-        # print(f"search_area: ({self.width,self.height})({search_x1},{search_x2},{search_y1},{search_y2}) ({get_depth(search_area),get_depth(feature.mat)})")
-
-        # cv2.imwrite("images/test.jpg", search_area)
-
-        # Template matchingTM_CCORR_NORMED
-        # result = cv2.matchTemplate(search_area, feature.mat, cv2.TM_CCOEFF_NORMED)
-        result = cv2.matchTemplate(search_area, feature.mat, cv2.TM_CCOEFF_NORMED)
+        template = feature.mat
+        if use_gray_scale:
+            search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
+            template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+        result = cv2.matchTemplate(search_area, template, cv2.TM_CCOEFF_NORMED)
 
         # Define a threshold for acceptable matches
         locations = filter_and_sort_matches(result, threshold, feature_width, feature_height)
@@ -183,11 +194,13 @@ class FeatureSet:
             x, y = loc[0] + search_x1, loc[1] + search_y1
             confidence = result[loc[1], loc[0]]  # Retrieve the confidence score
             boxes.append(Box(x, y, feature_width, feature_height, confidence, category_name))
-            # cv2.rectangle(mat, (x, y), (x + feature_width,y+feature_height),(0, 255, 0), 2)
-            # cv2.imwrite("images/test.jpg", mat)
 
         result = sort_boxes(boxes)
         communicate.emit_draw_box(category_name, result, "red")
+        search_name = "search_" + category_name
+        communicate.emit_draw_box(search_name,
+                                  Box(search_x1, search_y1, search_x2 - search_x1, search_y2 - search_y1,
+                                      name=search_name), "blue")
         return result
 
 
