@@ -177,7 +177,7 @@
     <message>
         <location filename="../MainWindow.py" line="53"/>
         <source>Debug</source>
-        <translation>调试</translation>
+        <translation>开发版</translation>
     </message>
     <message>
         <location filename="../MainWindow.py" line="58"/>

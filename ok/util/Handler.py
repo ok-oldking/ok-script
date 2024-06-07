@@ -40,10 +40,9 @@ class Handler:
                     self.executing = scheduled_task.task
                     try:
                         scheduled_task.task()
-                        self.executing = None
                     except Exception as e:
                         logger.error(f'handler {self.thread.name} raised exception', e)
-                    self.executing = scheduled_task.task
+                    self.executing = None
 
                 if self.task_queue:
                     next_time = self.task_queue[0].execute_at
