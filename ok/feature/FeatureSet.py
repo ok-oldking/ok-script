@@ -21,19 +21,20 @@ class FeatureSet:
     feature_dict: Dict[str, Feature] = {}
     box_dict: Dict[str, Box] = {}
 
-    def __init__(self, coco_folder: str, default_horizontal_variance=0,
+    def __init__(self, coco_json: str, default_horizontal_variance=0,
                  default_vertical_variance=0, default_threshold=0.95) -> None:
         """
         Initialize the FeatureSet by loading images and annotations from a COCO dataset.
 
         Args:
-            coco_folder (str): Directory containing the JSON file and images.
+            coco_json (str): Directory containing the JSON file and images.
             width (int): Scale images to this width.
             height (int): Scale images to this height.
         """
-        self.coco_folder = resource_path(coco_folder)
+        self.coco_json = resource_path(coco_json)
+        self.coco_folder = os.path.dirname(self.coco_json)
 
-        logger.debug(f'Loading features from {self.coco_folder}')
+        logger.debug(f'Loading features from {self.coco_json}')
 
         # Process images and annotations
         self.width = 0
@@ -62,8 +63,7 @@ class FeatureSet:
         """
         self.feature_dict.clear()
         self.box_dict.clear()
-        json_path = os.path.join(self.coco_folder, '_annotations.coco.json')
-        with open(json_path, 'r') as file:
+        with open(self.coco_json, 'r') as file:
             data = json.load(file)
 
         # Create a map from image ID to file name
@@ -78,7 +78,7 @@ class FeatureSet:
             bbox = annotation['bbox']
 
             # Load and scale the image
-            image_path = f'{self.coco_folder}/{image_map[image_id]}'
+            image_path = str(os.path.join(self.coco_folder, image_map[image_id]))
             image = cv2.imread(image_path)
             _, original_width = image.shape[:2]
             if image is None:
@@ -168,7 +168,7 @@ class FeatureSet:
         if vertical_variance == 0:
             vertical_variance = self.default_vertical_variance
         if category_name not in self.feature_dict:
-            raise ValueError(f"FeatureSet: {category_name} not found in featureDict")
+            raise ValueError(f"FeatureSet: " + category_name + " not found in featureDict")
         feature = self.feature_dict[category_name]
         feature_width, feature_height = feature.width, feature.height
         if x != -1 and y != -1:
