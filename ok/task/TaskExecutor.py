@@ -186,6 +186,7 @@ class TaskExecutor:
             if pre_action is not None:
                 pre_action()
             self.sleep(wait_until_before_delay)
+            self.next_frame()
             result = condition()
             self.add_frame_stats()
             result_str = list_or_obj_to_str(result)

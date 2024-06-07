@@ -51,6 +51,7 @@ class VersionCard(SettingCard):
         else:
             self.downloading_text.hide()
             self.download_bar.hide()
+            self.download_bar.setValue(0)
         if ok.gui.app.updater.to_update:
             self.update_button.setText(
                 self.tr('Update to {version} {type}').format(version=ok.gui.app.updater.to_update.get('version'),
@@ -71,6 +72,7 @@ class VersionCard(SettingCard):
             'notes')
 
         w = MessageBox(title, content, self.window())
+        w.contentLabel.setMaximumHeight(400)
         w.setContentCopyable(True)
         if w.exec():
             logger.info("user click update")

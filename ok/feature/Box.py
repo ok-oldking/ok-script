@@ -6,12 +6,20 @@ from typing import List
 
 
 class Box:
-    def __init__(self, x: int, y: int, width: int, height: int, confidence: float = 1, name=None) -> None:
+    def __init__(self, x: int | float, y: int | float, width: int | float = 0, height: int | float = 0,
+                 confidence: float = 1,
+                 name=None, to_x: int | float = -1, to_y: int | float = -1) -> None:
         self.name = name
         self.x = int(x)
         self.y = int(y)
-        self.width = int(width)
-        self.height = int(height)
+        if to_x != -1 and to_y != -1:
+            self.width = int(to_x - x)
+            self.height = int(to_y - y)
+        else:
+            self.width = int(width)
+            self.height = int(height)
+        if self.width <= 0 or self.height <= 0:
+            raise ValueError(f'width and height must be greater than zero {x} {y} {width} {height} {to_x} {to_y}')
         self.confidence = confidence
 
     def __eq__(self, other):
