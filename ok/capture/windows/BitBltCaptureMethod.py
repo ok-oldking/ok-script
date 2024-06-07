@@ -40,8 +40,15 @@ class BitBltCaptureMethod(BaseWindowsCaptureMethod):
 
     @override
     def do_get_frame(self) -> MatLike | None:
-        return bit_blt_capture_frame(self.hwnd_window.hwnd, self.hwnd_window.real_x_offset or self.hwnd_window.border,
-                                     self.hwnd_window.real_y_offset or self.hwnd_window.title_height,
+        if self.hwnd_window.real_x_offset != 0 or self.hwnd_window.real_y_offset != 0:
+            x = self.hwnd_window.real_x_offset
+            y = self.hwnd_window.real_y_offset
+        else:
+            x = self.hwnd_window.border
+            y = self.hwnd_window.title_height
+
+        return bit_blt_capture_frame(self.hwnd_window.hwnd, x,
+                                     y,
                                      self.hwnd_window.real_width or self.hwnd_window.width,
                                      self.hwnd_window.real_height or self.hwnd_window.height,
                                      self.hwnd_window.ext_left_bounds, self.hwnd_window.ext_top_bounds)

@@ -16,19 +16,25 @@ logger = get_logger(__name__)
 
 class DeviceManager:
 
-    def __init__(self, config_folder, windows_capture_config, adb_capture_config, debug=False, exit_event=None):
+    def __init__(self, app_config, exit_event=None):
         self._device = None
         self._adb = None
-        self.windows_capture_config = windows_capture_config
-        self.adb_capture_config = adb_capture_config
-        self.debug = debug
+        self.supported_ratio = parse_ratio(app_config.get(
+            'supported_screen_ratio'))
+        self.windows_capture_config = app_config.get('windows')
+        self.adb_capture_config = app_config.get('adb')
+        self.debug = app_config.get('debug')
         self.interaction = None
         self.device_dict = {}
         self.exit_event = exit_event
-        if windows_capture_config is not None:
-            self.hwnd = HwndWindow(exit_event, windows_capture_config.get('title'),
-                                   windows_capture_config.get('exe'))
-        self.config = Config({"preferred": "none", "pc_full_path": "none", 'capture': 'windows'}, config_folder,
+        self.resolution_dict = {}
+        if self.windows_capture_config is not None:
+            self.hwnd = HwndWindow(exit_event, self.windows_capture_config.get('title'),
+                                   self.windows_capture_config.get('exe'))
+        else:
+            self.hwnd = None
+        self.config = Config({"preferred": "none", "pc_full_path": "none", 'capture': 'windows'},
+                             app_config.get('config_folder'),
                              "devices")
         self.capture_method = None
         self.handler = Handler(exit_event, 'RefreshAdb')
@@ -73,7 +79,7 @@ class DeviceManager:
     def update_pc_device(self):
         if self.windows_capture_config is not None:
             name, hwnd, full_path, x, y, width, height = find_hwnd(self.windows_capture_config.get('title'),
-                                                                   self.windows_capture_config.get('exe'))
+                                                                   self.windows_capture_config.get('exe'), 0, 0)
             nick = name or self.windows_capture_config.get('exe')
             pc_device = {"address": "", "imei": 'pc', "device": "windows",
                          "model": "", "nick": nick, "width": width,
@@ -98,7 +104,7 @@ class DeviceManager:
 
         if self.exit_event.is_set():
             return
-        self.start()
+        self.do_start()
 
         logger.debug(f'refresh {self.device_dict}')
 
@@ -112,10 +118,11 @@ class DeviceManager:
                         found = True
                         break
                 if not found:
+                    width, height = self.get_resolution(adb_device)
                     logger.debug(f'refresh_phones found an phone {adb_device}')
                     phone_device = {"address": adb_device.serial, "device": "adb", "connected": True, "imei": imei,
                                     "nick": adb_device.prop.model or imei,
-                                    "resolution": self.get_resolution(adb_device)}
+                                    "resolution": f'{width}x{height}'}
                     self.device_dict[imei] = phone_device
 
     def refresh_emulators(self):
@@ -124,8 +131,9 @@ class DeviceManager:
         installed_emulators = manager.all_emulator_instances
         for emulator in installed_emulators:
             adb_device = self.adb_connect(emulator.serial)
+            width, height = self.get_resolution(adb_device)
             name, hwnd, full_path, x, y, width, height = find_hwnd(None,
-                                                                   emulator.path)
+                                                                   emulator.path, width, height)
             connected = adb_device is not None and name is not None
             emulator_device = {"address": emulator.serial, "device": "adb",
                                "full_path": emulator.path, "connected": connected,
@@ -142,10 +150,16 @@ class DeviceManager:
             device = self.device
         width, height = 0, 0
         if device is not None:
+            if resolution := self.resolution_dict.get(device.serial):
+                return resolution
             frame = do_screencap(device)
             if frame is not None:
                 height, width, _ = frame.shape
-        return height, width
+                if self.supported_ratio is None or abs(width / height - self.supported_ratio) < 0.01:
+                    self.resolution_dict[device.serial] = (width, height)
+                else:
+                    logger.warning(f'resolution error {device.serial} {self.supported_ratio} {width, height}')
+        return width, height
 
     def set_preferred_device(self, imei=None, index=-1):
         logger.debug(f"set_preferred_device {imei} {index}")
@@ -156,7 +170,12 @@ class DeviceManager:
         preferred = self.device_dict.get(imei)
         if preferred is None:
             if len(self.device_dict) > 0:
-                preferred = next(iter(self.device_dict.values()))
+                connected_device = None
+                for device in self.device_dict.values():
+                    if device.get('connected') or connected_device is None:
+                        connected_device = device
+                logger.info(f'first start use first or connected device {connected_device}')
+                preferred = connected_device
                 imei = preferred['imei']
             else:
                 logger.warning(f'no devices')
@@ -233,17 +252,18 @@ class DeviceManager:
                 self.interaction = Win32Interaction(self.capture_method)
             preferred['connected'] = self.capture_method.connected()
         else:
-            height, width = self.get_resolution()
+            width, height = self.get_resolution()
             if self.config.get('capture') == "windows":
                 self.ensure_hwnd(None, preferred.get('full_path'), width, height)
                 self.use_windows_capture({'can_bit_blt': True}, require_bg=True, use_bit_blt_only=True)
-            elif not isinstance(self.capture_method, ADBCaptureMethod):
-                logger.debug(f'use adb capture')
-                if self.capture_method is not None:
-                    self.capture_method.close()
-                self.capture_method = ADBCaptureMethod(self, self.exit_event, width=width,
-                                                       height=height)
-                if self.debug:
+            else:
+                if not isinstance(self.capture_method, ADBCaptureMethod):
+                    logger.debug(f'use adb capture')
+                    if self.capture_method is not None:
+                        self.capture_method.close()
+                    self.capture_method = ADBCaptureMethod(self, self.exit_event, width=width,
+                                                           height=height)
+                if self.debug and preferred.get('full_path'):
                     self.ensure_hwnd(None, preferred.get('full_path'), width, height)
                 elif self.hwnd is not None:
                     self.hwnd.stop()
@@ -259,7 +279,7 @@ class DeviceManager:
 
     def update_resolution_for_hwnd(self):
         if self.hwnd is not None and self.hwnd.frame_aspect_ratio == 0:
-            height, width = self.get_resolution()
+            width, height = self.get_resolution()
             logger.debug(f'update resolution for {self.hwnd} {width}x{height}')
             self.hwnd.update_frame_size(width, height)
 
@@ -363,3 +383,12 @@ class DeviceManager:
         elif installed := self.adb_check_installed(packages):
             self.adb_start_package(installed)
             return True
+
+
+def parse_ratio(ratio_str):
+    if ratio_str:
+        # Split the string into two parts: '16' and '9'
+        numerator, denominator = ratio_str.split(':')
+        # Convert the strings to integers and perform the division
+        ratio_float = int(numerator) / int(denominator)
+        return ratio_float

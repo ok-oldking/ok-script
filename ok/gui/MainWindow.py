@@ -1,3 +1,6 @@
+import os
+import sys
+
 from PySide6.QtCore import QObject, Signal, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
@@ -58,7 +61,9 @@ class MainWindow(MSFluentWindow):
             self.addSubInterface(about_tab, FluentIcon.QUESTION, self.tr('About'),
                                  position=NavigationItemPosition.BOTTOM)
         # Styling the tabs and content if needed, for example:
-        self.setWindowTitle(f'{title} {version}')
+        dev = self.tr('Debug')
+        release = self.tr('Release')
+        self.setWindowTitle(f'{title} {version} {dev if debug else release}')
 
         communicate.executor_paused.connect(self.executor_paused)
         communicate.tab.connect(self.navigate_tab)
@@ -162,12 +167,16 @@ class MainWindow(MSFluentWindow):
 
     def closeEvent(self, event):
         # Create a message box that asks the user if they really want to close the window
+        if sys.platform == 'win32' and 'shutdown' in os.environ.get('SESSIONNAME', '').lower():
+            event.accept()
+            return
+
+            # Your existing code for the message box
         if ok.gui.ok.exit_event.is_set():
             event.accept()
             return
         title = self.tr('Exit')
-        content = self.tr(
-            "Are you sure you want to exit the app?")
+        content = self.tr("Are you sure you want to exit the app?")
         w = MessageBox(title, content, self.window())
         if w.exec():
             logger.info("Window closed")

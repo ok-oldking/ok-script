@@ -1,4 +1,5 @@
 import time
+from typing import List, Pattern
 
 import cv2
 
@@ -14,7 +15,8 @@ class OCR:
     ocr_default_threshold = 0.5
     ocr_target_height = 0
 
-    def ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box: Box = None, name=None, match=None, threshold=0,
+    def ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box: Box = None, name=None,
+            match: str | List[str] | Pattern[str] | List[Pattern[str]] | None = None, threshold=0,
             frame=None, target_height=0):
         if hasattr(self, 'paused') and self.paused:
             self.sleep(1)
@@ -72,18 +74,20 @@ class OCR:
                 f"ocr_zone {box} found result: {len(detected_boxes)}) time: {(time.time() - start):.2f} scale_factor: {scale_factor:.2f}")
             return sort_boxes(detected_boxes)
 
-    def wait_click_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box=None, name=None, match=None, threshold=0,
-                       frame=None, target_height=0):
+    def wait_click_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box=None, name=None,
+                       match: str | List[str] | Pattern[str] | List[Pattern[str]] | None = None, threshold=0,
+                       frame=None, target_height=0, time_out=0):
         box = self.wait_ocr(x, y, width=width, height=height, to_x=to_x, to_y=to_y, box=box, name=name, match=match,
                             threshold=threshold,
-                            frame=frame, target_height=target_height)
+                            frame=frame, target_height=target_height, time_out=time_out)
         if box is not None:
             self.click_box(box)
             return box
         else:
             logger.error(f'wait ocr no box {x} {y} {width} {height} {to_x} {to_y} {match}')
 
-    def wait_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, name=None, box=None, match=None, threshold=0,
+    def wait_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, name=None, box=None,
+                 match: str | List[str] | Pattern[str] | List[Pattern[str]] | None = None, threshold=0,
                  frame=None, target_height=0, time_out=0):
         return self.wait_until(lambda:
                                self.ocr(x, y, to_x=to_x, to_y=to_y, width=width, height=height, box=box, name=name,

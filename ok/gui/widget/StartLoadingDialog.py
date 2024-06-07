@@ -50,7 +50,7 @@ class StartLoadingDialog(MaskDialogBase):
 
     def set_seconds_left(self, seconds_left: int):
         self.seconds_left = seconds_left
-        text = self.tr(f'Starting, waiting for {self.seconds_left} seconds.')
+        text = self.tr('Starting, timeout after {seconds_left} seconds.').format(seconds_left=self.seconds_left)
         self.loading_label.setText(f'<h2>{text}</h2>')
 
     def update_countdown(self):

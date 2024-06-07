@@ -8,11 +8,11 @@ from qfluentwidgets import FluentTranslator, qconfig, Theme
 
 import ok
 import ok.gui.resources
-from ok.capture.adb.StartController import StartController
-from ok.firebase.FireBaseAnalytics import FireBaseAnalytics
+from ok.firebase.Analytics import Analytics
 from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.gui.MessageWindow import MessageWindow
+from ok.gui.StartController import StartController
 from ok.gui.i18n.path import i18n_path
 from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.logging.Logger import get_logger
@@ -49,8 +49,8 @@ class App:
         self.main_window = None
         self.exit_event = exit_event
         self.icon = QIcon(self.config.get('gui_icon') or ":/icon/icon.ico")
-        if self.config.get('firebase'):
-            self.fire_base_analytics = FireBaseAnalytics(self.config, self.exit_event)
+        if self.config.get('analytics'):
+            self.fire_base_analytics = Analytics(self.config, self.exit_event)
 
         translator = QTranslator(self.app)
         full_path = os.path.join(i18n_path, f"{self.locale.name()}")

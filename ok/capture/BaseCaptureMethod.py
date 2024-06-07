@@ -28,7 +28,7 @@ class BaseCaptureMethod:
             try:
                 self.get_frame()
             except Exception as e:
-                logger.error('get frame error')
+                logger.error('width get frame error', e)
         return self._size[0]
 
     @property
@@ -37,7 +37,7 @@ class BaseCaptureMethod:
             try:
                 self.get_frame()
             except Exception as e:
-                logger.error('get frame error')
+                logger.error('height get frame error', e)
         return self._size[1]
 
     def get_frame(self) -> np.ndarray | None:

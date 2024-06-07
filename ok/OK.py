@@ -34,13 +34,13 @@ class OK:
         config_logger(config)
         logger.info(f"AutoHelper init, config: {config}")
         ok.gui.ok = self
-        self.debug = config.get("debug", False)
+        config['debug'] = config.get("debug", False)
+        self.debug = config['debug']
         try:
             self.config = config
             self.init_device_manager()
             from ok.gui.debug.Screenshot import Screenshot
             self.screenshot = Screenshot(self.exit_event)
-            self.do_init()
             if config.get("use_gui"):
                 from ok.gui.App import App
                 self.app = App(config, self.exit_event)
@@ -48,6 +48,7 @@ class OK:
             else:
                 self.device_manager.set_preferred_device()
                 self.device_manager.start()
+            self.do_init()
         except Exception as e:
             logger.error(f'__init__ error', e)
             self.quit()
@@ -101,9 +102,9 @@ class OK:
 
         template_matching = self.config.get('template_matching')
         if template_matching is not None:
-            coco_feature_folder = self.config.get('template_matching').get('coco_feature_folder')
+            coco_feature_json = self.config.get('template_matching').get('coco_feature_json')
             from ok.feature.FeatureSet import FeatureSet
-            self.feature_set = FeatureSet(coco_feature_folder,
+            self.feature_set = FeatureSet(coco_feature_json,
                                           default_horizontal_variance=template_matching.get(
                                               'default_horizontal_variance', 0),
                                           default_vertical_variance=template_matching.get('default_vertical_variance',
@@ -135,9 +136,6 @@ class OK:
     def init_device_manager(self):
         if self.device_manager is None:
             from ok.capture.adb.DeviceManager import DeviceManager
-            self.device_manager = DeviceManager(self.config.get("config_folder") or "config",
-                                                self.config.get('windows'),
-                                                self.config.get('adb'),
-                                                self.config.get("debug"),
+            self.device_manager = DeviceManager(self.config,
                                                 self.exit_event)
             ok.gui.device_manager = self.device_manager

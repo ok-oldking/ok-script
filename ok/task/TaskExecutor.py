@@ -74,12 +74,12 @@ class TaskExecutor:
         return self._frame
 
     def check_frame_and_resolution(self, supported_ratio):
+        self.device_manager.update_resolution_for_hwnd()
         frame = self.method.get_frame()
         if frame is None:
             return False, None
         if supported_ratio is None:
             return True, None
-        self.device_manager.update_resolution_for_hwnd()
         width = self.method.width
         height = self.method.height
         if height == 0:
@@ -186,15 +186,13 @@ class TaskExecutor:
             if pre_action is not None:
                 pre_action()
             self.sleep(wait_until_before_delay)
-            self._frame = self.next_frame()
-            if self._frame is not None:
-                result = condition()
-                self.add_frame_stats()
-                result_str = list_or_obj_to_str(result)
-                if result:
-                    logger.debug(f"found result {result_str}")
-                    self.sleep(self.wait_until_check_delay)
-                    return result
+            result = condition()
+            self.add_frame_stats()
+            result_str = list_or_obj_to_str(result)
+            if result:
+                logger.debug(f"found result {result_str}")
+                self.sleep(self.wait_until_check_delay)
+                return result
             if post_action is not None:
                 post_action()
             if time.time() - start > time_out:

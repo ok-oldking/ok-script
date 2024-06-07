@@ -30,11 +30,14 @@ class FrameWidget(QWidget):
         communicate.update_overlay.connect(self.update)
 
     def update_mouse_position(self):
-        x, y = win32api.GetCursorPos()
-        relative = self.mapFromGlobal(QPoint(x / self.scaling, y / self.scaling))
-        if self._mouse_position != relative and relative.x() > 0 and relative.y() > 0 and self._visible:
-            self._mouse_position = relative
-            self.update()
+        try:
+            x, y = win32api.GetCursorPos()
+            relative = self.mapFromGlobal(QPoint(x / self.scaling, y / self.scaling))
+            if self._mouse_position != relative and relative.x() > 0 and relative.y() > 0 and self._visible:
+                self._mouse_position = relative
+                self.update()
+        except Exception as e:
+            logger.warning(f'GetCursorPos exception {e}')
 
     def frame_ratio(self):
         if ok.gui.device_manager.width == 0:

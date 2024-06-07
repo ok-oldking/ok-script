@@ -1,5 +1,4 @@
 # original https://github.com/dantmnf & https://github.com/hakaboom/winAuto
-import os.path
 import re
 import threading
 import time
@@ -75,13 +74,13 @@ class HwndWindow:
     def update_frame_size(self, width, height):
         logger.debug(f"update_frame_size:{self.frame_width}x{self.frame_height} to {width}x{height}")
         if width != self.frame_width or height != self.frame_height:
-            self.hwnd = None
             self.frame_width = width
             self.frame_height = height
             if width > 0 and height > 0:
                 self.frame_aspect_ratio = width / height
-                logger.debug(f"HwndWindow: frame ratio:{self.frame_aspect_ratio} width: {width}, height: {height}")
-            self.do_update_window_size()
+                logger.debug(f"HwndWindow: frame ratio: width: {width}, height: {height}")
+        self.hwnd = None
+        self.do_update_window_size()
 
     def update_window_size(self):
         while not self.app_exit_event.is_set() and not self.stop_event.is_set():
@@ -101,7 +100,7 @@ class HwndWindow:
                 name, self.hwnd, self.exe_full_path, self.real_x_offset, self.real_y_offset, self.real_width, self.real_height = find_hwnd(
                     self.title,
                     self.exe_name,
-                    self.frame_aspect_ratio)
+                    self.frame_width, self.frame_height)
                 self.exists = self.hwnd is not None
             if self.hwnd is not None:
                 self.exists = win32gui.IsWindow(self.hwnd)
@@ -131,8 +130,8 @@ class HwndWindow:
                     self.x, self.y, self.border, self.title_height, self.width, self.height, self.ext_left_bounds, self.ext_top_bounds = x, y, border, title_height, width, height, ext_left_bounds, ext_top_bounds
                     changed = True
                 if changed:
-                    logger.debug(
-                        f"do_update_window_size changed,visible:{self.visible} x:{self.x} y:{self.y} border:{self.border} width:{self.width} height:{self.height} self.title_height:{self.title_height} scaling:{self.scaling}")
+                    logger.info(
+                        f"do_update_window_size changed,visible:{self.visible} x:{self.x} y:{self.y} border:{self.border} window:{self.width}x{self.height} self.title_height:{self.title_height} real:{self.real_width}x{self.real_height} scaling:{self.scaling}")
                     communicate.window.emit(self.visible, self.x, self.y, self.border, self.title_height, self.width,
                                             self.height, self.scaling)
         except Exception as e:
@@ -153,10 +152,11 @@ class HwndWindow:
         return f"title:{self.title}_{self.exe_name}_{self.width}x{self.height}_{self.hwnd}_{self.exists}_{self.visible}"
 
 
-def find_hwnd(title, exe_name, frame_aspect_ratio=0):
+def find_hwnd(title, exe_name, frame_width, frame_height):
     results = []
     if exe_name is None and title is None:
         return None, None, None, 0, 0, 0, 0
+    frame_aspect_ratio = frame_width / frame_height if frame_height != 0 else 0
 
     def callback(hwnd, lParam):
         if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
@@ -179,31 +179,52 @@ def find_hwnd(title, exe_name, frame_aspect_ratio=0):
 
     win32gui.EnumWindows(callback, None)
     biggest = None
-    ratio_match = None
     if len(results) > 0:
         for result in results:
             from ok.capture.windows.BitBltCaptureMethod import bit_blt_test_hwnd
             if (biggest is None or (result[2] * result[3]) > biggest[2] * biggest[3]) and bit_blt_test_hwnd(result[0]):
                 biggest = result
-        for result in results:
-            if frame_aspect_ratio != 0:
-                ratio = result[2] / result[3]
-                difference = abs(ratio - frame_aspect_ratio)
-                support = difference <= 0.01 * frame_aspect_ratio
-                if support and biggest != result:
-                    ratio_match = result
         x_offset = 0
         y_offset = 0
         real_width, real_height = biggest[2], biggest[3]
-        if ratio_match is not None and ratio_match[4] - biggest[4] >= 0 and ratio_match[5] - biggest[5] >= 0:
-            x_offset = ratio_match[4] - biggest[4]
-            y_offset = ratio_match[5] - biggest[5]
-            real_width = ratio_match[2]
-            real_height = ratio_match[3]
-        logger.debug(f'find_hwnd {results} {biggest} {ratio_match} {x_offset, y_offset, real_width, real_height}')
+        if biggest is not None and frame_aspect_ratio != 0:
+            matching_child = enum_child_windows(biggest, frame_aspect_ratio)
+            if matching_child is not None:
+                x_offset, y_offset, real_width, real_height = matching_child
+        logger.info(f'find_hwnd {frame_width, frame_height} {biggest} {x_offset, y_offset, real_width, real_height}')
         return biggest[6], biggest[0], biggest[1], x_offset, y_offset, real_width, real_height,
     else:
         return None, None, None, 0, 0, 0, 0
+
+
+def enum_child_windows(biggest, frame_aspect_ratio):
+    ratio_match = []
+    """
+    A function to enumerate all child windows of the given parent window handle
+    and print their handle and window title.
+    """
+
+    def child_callback(hwnd, _):
+        visible = win32gui.IsWindowVisible(hwnd)
+        parent = win32gui.GetParent(hwnd)
+        rect = win32gui.GetWindowRect(hwnd)
+        real_width = rect[2] - rect[0]
+        real_height = rect[3] - rect[1]
+        logger.info(f'find_hwnd child_callback {visible} {biggest[0]} {parent} {rect} {real_width} {real_height}')
+        if visible and parent == biggest[0]:
+            ratio = real_width / real_height
+            difference = abs(ratio - frame_aspect_ratio)
+            support = difference <= 0.01 * frame_aspect_ratio
+            percent = (real_width * real_height) / (biggest[2] * biggest[3])
+            if support and percent >= 0.7:
+                x_offset = rect[0] - biggest[4]
+                y_offset = rect[1] - biggest[5]
+                ratio_match.append((x_offset, y_offset, real_width, real_height))
+        return True
+
+    win32gui.EnumChildWindows(biggest[0], child_callback, None)
+    if len(ratio_match) > 0:
+        return ratio_match[0]
 
 
 def get_exe_by_hwnd(hwnd):
@@ -215,31 +236,10 @@ def get_exe_by_hwnd(hwnd):
     return process.name(), process.exe()
 
 
-def enum_windows(emulator_path=None):
-    if emulator_path is not None:
-        emulator_path = os.path.normpath(emulator_path)
-
-    def callback(hwnd, extra):
-        name, full_path = get_exe_by_hwnd(hwnd)
-        if emulator_path and emulator_path != full_path:
-            return True
-        buff = win32gui.GetWindowText(hwnd)
-        if buff and win32gui.IsWindowVisible(hwnd):
-            rect = win32gui.GetWindowRect(hwnd)
-            width = rect[2] - rect[0]
-            height = rect[3] - rect[1]
-            extra.append((hwnd, buff, width, height))
-        return True
-
-    windows = []
-    win32gui.EnumWindows(callback, windows)
-    return windows
-
-
 if __name__ == '__main__':
     print(find_hwnd("MuMu模拟器12", None))
-    hwnd_window = HwndWindow(threading.Event(), None, 'D:\\MuMuPlayer-12.0\\shell\\MuMuPlayer.exe', 16, 9)
-    from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
-
-    method = BitBltCaptureMethod(hwnd_window)
-    method.get_frame()
+    # hwnd_window = HwndWindow(threading.Event(), None, 'D:\\MuMuPlayer-12.0\\shell\\MuMuPlayer.exe', 16, 9)
+    # from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
+    #
+    # method = BitBltCaptureMethod(hwnd_window)
+    # method.get_frame()
