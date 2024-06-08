@@ -55,6 +55,9 @@ class DeviceManager:
     def adb_connect(self, addr):
         try:
             for info in self.adb.list():
+                if self.exit_event.is_set():
+                    logger.error(f"adb_connect exit_event is set")
+                    return None
                 if info.serial == addr:
                     if info.state == 'offline':
                         logger.debug(f'adb_connect offline disconnect first {addr}')
@@ -185,7 +188,7 @@ class DeviceManager:
         if self.config.get("preferred") != imei:
             logger.info(f'preferred device did change {imei}')
             self.config["preferred"] = imei
-            self.handler.post(self.start, remove_existing=True, skip_if_running=True)
+            self.start()
         logger.debug(f'preferred device: {preferred}')
 
     def adb_get_imei(self, device):
@@ -215,7 +218,7 @@ class DeviceManager:
     def set_capture(self, capture):
         if self.config.get("capture") != capture:
             self.config['capture'] = capture
-            self.handler.post(self.start, remove_existing=True, skip_if_running=True)
+            self.start()
 
     def get_hwnd_name(self):
         preferred = self.get_preferred_device()
@@ -372,7 +375,7 @@ class DeviceManager:
                 packages = [packages]
             for package in packages:
                 if package == front.package:
-                    return False
+                    return True
 
     def adb_start_package(self, package):
         self.shell(f'monkey -p {package} -c android.intent.category.LAUNCHER 1')

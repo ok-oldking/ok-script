@@ -17,7 +17,7 @@ class ExitEvent(threading.Event):
 
     def set(self):
         super(ExitEvent, self).set()
-        logger.debug(f"ExitEvent set event empty queues")
+        logger.debug(f"ExitEvent set event empty queues {self.queues} to_stops: {self.to_stops}")
         for queue in self.queues:
             queue.put(None)
 

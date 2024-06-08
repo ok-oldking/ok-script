@@ -11,7 +11,6 @@ from ok.util.exit_event import ExitEvent
 from ok.util.path import install_path_isascii
 from ok.util.win32_process import check_mutex
 
-check_mutex()
 logger = get_logger(__name__)
 
 
@@ -125,6 +124,10 @@ class OK:
             inference_num_threads = self.config.get('ocr').get('inference_num_threads', -1)
             self.ocr = RapidOCR(inference_num_threads=inference_num_threads)
             self.task_executor.ocr = self.ocr
+
+        if not check_mutex():
+            self.init_error = True
+            self.app.show_already_running_error()
 
         return True
 

@@ -44,6 +44,8 @@ def get_emulator_exe(instance: EmulatorInstance):
     elif instance == Emulator.BlueStacks4:
         # BlueStacks\Client\Bluestacks.exe -vmname Android_1
         return f'"{exe}" -vmname {instance.name}'
+    elif instance == Emulator.LDPlayerFamily:
+        return f'"{exe}" -name {instance.name}'
     else:
         raise EmulatorUnknown(f'Cannot start an unknown emulator instance: {instance}')
 

@@ -82,6 +82,8 @@ class StartTab(Tab):
         preferred = ok.gui.device_manager.config.get("preferred")
         selected = self.device_list_row
 
+        logger.debug('update_capture')
+
         # Update the existing items in the device_list and ok.gui.device_manager.get_devices()
         for row, device in enumerate(devices):
             if device["imei"] == preferred:

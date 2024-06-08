@@ -4,7 +4,6 @@ import ctypes
 import hashlib
 import msvcrt
 import os
-import sys
 from ctypes import wintypes
 from typing import Union
 
@@ -34,7 +33,8 @@ def check_mutex():
     # Check if the mutex already exists
     if GetLastError() == ERROR_ALREADY_EXISTS:
         print(f"Another instance of this application is already running. {path}")
-        sys.exit(0)
+        return False
+    return True
 
 
 def all_pids() -> list[int]:

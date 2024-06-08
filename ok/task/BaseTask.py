@@ -1,8 +1,11 @@
+import threading
+
 from ok.config.Config import Config
 from ok.config.InfoDict import InfoDict
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 from ok.task.ExecutorOperation import ExecutorOperation
+from ok.util.Handler import Handler
 
 logger = get_logger(__name__)
 
@@ -22,6 +25,15 @@ class BaseTask(ExecutorOperation):
         self.config_description = {}
         self.config_type = {}
         self._paused = False
+        self.lock = threading.Lock()
+        self._handler = None
+
+    @property
+    def handler(self) -> Handler:
+        with self.lock:
+            if self._handler is None:
+                self._handler = Handler(self.executor.exit_event, __name__)
+            return self._handler
 
     def pause(self):
         self.executor.pause(self)

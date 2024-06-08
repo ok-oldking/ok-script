@@ -79,6 +79,12 @@ class App:
         message_window = MessageWindow(self.icon, title, message, exit_event=self.exit_event)
         message_window.show()
 
+    def show_already_running_error(self):
+        title = QCoreApplication.translate("app", 'Error')
+        content = QCoreApplication.translate("app",
+                                             "Another instance is already running")
+        self.show_message_window(title, content)
+
     def show_path_ascii_error(self, path):
         title = QCoreApplication.translate("app", 'Error')
         content = QCoreApplication.translate("app",

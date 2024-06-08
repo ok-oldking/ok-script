@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="ok-script",
-    version="0.0.78",
+    version="0.0.79",
     author="ok-oldking",
     author_email="firedcto@gmail.com",
     description="Automation with Computer Vision for Python",

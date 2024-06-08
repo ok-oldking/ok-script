@@ -10,7 +10,6 @@ from ok.scene.Scene import Scene
 from ok.stats.StreamStats import StreamStats
 from ok.task.OneTimeTask import OneTimeTask
 from ok.task.TriggerTask import TriggerTask
-from ok.util.exit_event import ExitEvent
 
 logger = get_logger(__name__)
 
@@ -35,7 +34,7 @@ class TaskExecutor:
 
     def __init__(self, device_manager: DeviceManager,
                  wait_until_timeout=10, wait_until_before_delay=1, wait_until_check_delay=1,
-                 exit_event=ExitEvent(), trigger_tasks=[], onetime_tasks=[], scenes=[], feature_set=None,
+                 exit_event=None, trigger_tasks=[], onetime_tasks=[], scenes=[], feature_set=None,
                  ocr=None,
                  config_folder=None):
         self.device_manager = device_manager

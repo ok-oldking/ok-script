@@ -31,33 +31,40 @@ class Handler:
                 while not self.task_queue:
                     self.condition.wait()
 
-                now = time.time()
-                while self.task_queue and self.task_queue[0].execute_at <= now:
-                    scheduled_task = heapq.heappop(self.task_queue)
-                    if scheduled_task.task is None:
-                        logger.debug(f'stopping handler {self.thread.name}')
-                        return
-                    self.executing = scheduled_task.task
-                    try:
-                        scheduled_task.task()
-                    except Exception as e:
-                        logger.error(f'handler {self.thread.name} raised exception', e)
-                    self.executing = None
-
+            now = time.time()
+            self.condition.acquire()
+            if self.task_queue and self.task_queue[0].execute_at <= now:
+                scheduled_task = heapq.heappop(self.task_queue)
+                self.condition.release()
+                if scheduled_task.task is None:
+                    logger.debug(f'stopping handler {self.thread.name}')
+                    return
+                self.executing = scheduled_task.task
+                try:
+                    scheduled_task.task()
+                except Exception as e:
+                    logger.error(f'handler {self.thread.name} raised exception', e)
+                self.executing = None
+            else:
                 if self.task_queue:
                     next_time = self.task_queue[0].execute_at
                     timeout = next_time - now
                     if timeout > 0:
                         self.condition.wait(timeout=timeout)
+                self.condition.release()
 
     def post(self, task, delay=0, remove_existing=False, skip_if_running=False):
         with self.condition:
+            if self.exit_event.is_set():
+                logger.error(f'post handler {self.thread.name} already exits')
+                self.condition.notify_all()
+                return
             if remove_existing and len(self.task_queue) > 0:
                 for obj in self.task_queue.copy():
                     if obj.task == task:
                         self.task_queue.remove(obj)
                         logger.debug(f'removing duplicate task {task}')
-            if remove_existing and self.executing == task:
+            if skip_if_running and self.executing == task:
                 logger.debug(f'skipping duplicate task {task}')
                 return
             if delay > 0:
@@ -65,36 +72,9 @@ class Handler:
             else:
                 scheduled_task = ScheduledTask(0, task)
             heapq.heappush(self.task_queue, scheduled_task)
-            self.condition.notify()
-
-    def stop(self):
-        heapq.heappush(self.task_queue, ScheduledTask(0, None))
-        with self.condition:
             self.condition.notify_all()
 
-
-# Example usage
-if __name__ == "__main__":
-    def print_message(message):
-        from datetime import datetime
-        print(f"{message} at {datetime.now().time()}")
-
-
-    exit_event = ExitEvent()
-    handler = Handler(event=ExitEvent(), name="MyHandlerThread")
-
-    # Post a task to run immediately
-    handler.post(lambda: print_message("Immediate task"))
-
-    # Post a task to run after a delay (e.g., 2 seconds)
-    handler.post_delayed(lambda: print_message("Delayed task"), 2)
-
-    # Post a function to run immediately
-    handler.post(lambda: print_message("Immediate function"))
-
-    # Post a function to run after a delay (e.g., 3 seconds)
-    handler.post_delayed(lambda: print_message("Delayed function"), 3)
-
-    # Let the handler run for a while to process the tasks
-    time.sleep(5)
-    exit_event.set()
+    def stop(self):
+        with self.condition:
+            heapq.heappush(self.task_queue, ScheduledTask(0, None))
+            self.condition.notify_all()

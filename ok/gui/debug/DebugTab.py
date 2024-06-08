@@ -109,6 +109,7 @@ class DebugTab(Tab):
             if msg.message == 0x0312:  # WM_HOTKEY
                 logger.debug(f'hotkey pressed {msg}')
                 if msg.wParam == 1:
+                    logger.debug('dumping threads')
                     dump_threads()
                 elif msg.wParam == 2:
                     self.handler.post(self.capture)

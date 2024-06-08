@@ -163,8 +163,9 @@ class MainWindow(MSFluentWindow):
     def closeEvent(self, event):
         # Create a message box that asks the user if they really want to close the window
         if sys.platform == 'win32' and 'shutdown' in os.environ.get('SESSIONNAME', '').lower():
-            event.accept()
+            logger.info("system shutting down")
             ok.gui.ok.quit()
+            event.accept()
             return
 
         if ok.gui.ok.exit_event.is_set():
@@ -175,7 +176,7 @@ class MainWindow(MSFluentWindow):
         w = MessageBox(title, content, self.window())
         if w.exec():
             logger.info("Window closed")
-            event.accept()
             ok.gui.ok.quit()
+            event.accept()
         else:
             event.ignore()
