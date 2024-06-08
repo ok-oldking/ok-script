@@ -62,7 +62,8 @@ class GithubMultiDownloader:
                     os.remove(file)
                 else:
                     part_start += downloaded
-                    self.downloaded += downloaded
+                    if last_proxy is None:
+                        self.downloaded += downloaded
 
         target_size = end - part_start + 1
 
@@ -93,9 +94,9 @@ class GithubMultiDownloader:
             with open(file, 'ab') as f:
                 for chunk in response.iter_content(chunk_size=1024):  # 1 KB chunks
                     with self.lock:
-                        if time.time() - last_chunk_time > 5:  # If more than 5 seconds have passed since the last chunk
+                        if time.time() - last_chunk_time > 0.5:  # If more than 1 seconds have passed since the last chunk
                             response.close()
-                            logger.error(f'{proxy} Server is not responding with the chunk every 5 seconds')
+                            logger.error(f'{proxy} Server is not responding with the chunk every 0.5 seconds')
                             break
                         if self.exit_event.is_set():
                             return
@@ -123,7 +124,6 @@ class GithubMultiDownloader:
                     return
                 else:
                     logger.warning(f'download_part size failed {part_downloaded} {target_size}')
-                return True
         except Exception as e:
             with self.lock:
                 if proxy in self.proxys:
