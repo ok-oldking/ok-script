@@ -55,13 +55,14 @@ class GithubMultiDownloader:
                 downloaded = os.path.getsize(file)
                 if downloaded == part_size:
                     logger.info(f'File {file} already downloaded')
+                    self.downloaded += part_size
                     return
                 elif downloaded > part_size:
                     logger.warning(f'File size error {file} {downloaded} > {part_size}')
                     os.remove(file)
                 else:
                     part_start += downloaded
-                self.downloaded += part_size
+                    self.downloaded += downloaded
 
         target_size = end - part_start + 1
 
@@ -117,6 +118,12 @@ class GithubMultiDownloader:
                             response.close()
                             logger.debug('switch to fast proxy')
                             break
+                if part_downloaded == target_size:
+                    logger.debug("download_part finished")
+                    return
+                else:
+                    logger.warning(f'download_part size failed {part_downloaded} {target_size}')
+                return True
         except Exception as e:
             with self.lock:
                 if proxy in self.proxys:

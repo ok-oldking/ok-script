@@ -1,6 +1,7 @@
 import queue
 from typing import List
 
+from ok.color.Color import calculate_color_percentage
 from ok.feature.Box import Box, find_box_by_name, relative_box
 from ok.gui.Communicate import communicate
 
@@ -162,6 +163,12 @@ class ExecutorOperation:
     @staticmethod
     def draw_boxes(feature_name=None, boxes=None, color="red"):
         communicate.emit_draw_box(feature_name, boxes, color)
+
+    def calculate_color_percentage(self, color, box: Box):
+        percentage = calculate_color_percentage(self.frame, color, box)
+        box.confidence = percentage
+        self.draw_boxes(box.name, box)
+        return percentage
 
     def adb_shell(self, *args, **kwargs):
         return self.executor.device_manager.shell(*args, **kwargs)

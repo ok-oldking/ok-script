@@ -1,9 +1,8 @@
 import subprocess
 from ctypes import windll, wintypes
 
-from PySide6.QtCore import Qt, Signal, QEvent
-from PySide6.QtGui import QShortcut, QKeySequence
-from PySide6.QtWidgets import QWidget, QFileDialog, QCompleter, QVBoxLayout, QHBoxLayout, QMessageBox
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QWidget, QFileDialog, QCompleter, QVBoxLayout, QHBoxLayout
 from _ctypes import byref
 from qfluentwidgets import PushButton, FlowLayout, ComboBox, SearchLineEdit, TextEdit
 
@@ -124,9 +123,9 @@ class DebugTab(Tab):
         VK_S = 0x53
 
         if not windll.user32.RegisterHotKey(None, 1, MOD_ALT | MOD_CONTROL, VK_D):
-            print("Failed to register hotkey for Alt+Ctrl+D")
+            logger.debug("Failed to register hotkey for Alt+Ctrl+D")
         if not windll.user32.RegisterHotKey(None, 2, MOD_ALT | MOD_CONTROL, VK_S):
-            print("Failed to register hotkey for Alt+Ctrl+S")
+            logger.debug("Failed to register hotkey for Alt+Ctrl+S")
         logger.debug('bind_hot_keys')
 
     def __del__(self):

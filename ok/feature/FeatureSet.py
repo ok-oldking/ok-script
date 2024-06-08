@@ -105,7 +105,8 @@ class FeatureSet:
                 self.feature_dict[category_name] = Feature(image, x, y, w, h)
             self.box_dict[category_name] = Box(x, y, w, h, name=category_name)
 
-    def get_box_by_name(self, category_name: str) -> Box:
+    def get_box_by_name(self, mat, category_name: str) -> Box:
+        self.check_size(mat)
         if category_name in self.box_dict:
             return self.box_dict[category_name]
         else:

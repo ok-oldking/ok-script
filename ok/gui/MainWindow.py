@@ -2,12 +2,10 @@ import os
 import sys
 
 from PySide6.QtCore import QObject, Signal, Qt
-from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow, InfoBar, InfoBarPosition, MessageBox
 
 import ok.gui
-from ok.capture.windows.dump import dump_threads
 from ok.gui.Communicate import communicate
 from ok.gui.about.AboutTab import AboutTab
 from ok.gui.debug.DebugTab import DebugTab
@@ -67,8 +65,6 @@ class MainWindow(MSFluentWindow):
 
         communicate.executor_paused.connect(self.executor_paused)
         communicate.tab.connect(self.navigate_tab)
-
-      
 
         # Create a context menu for the tray
         menu = QMenu()
@@ -168,9 +164,9 @@ class MainWindow(MSFluentWindow):
         # Create a message box that asks the user if they really want to close the window
         if sys.platform == 'win32' and 'shutdown' in os.environ.get('SESSIONNAME', '').lower():
             event.accept()
+            ok.gui.ok.quit()
             return
 
-            # Your existing code for the message box
         if ok.gui.ok.exit_event.is_set():
             event.accept()
             return
@@ -179,7 +175,7 @@ class MainWindow(MSFluentWindow):
         w = MessageBox(title, content, self.window())
         if w.exec():
             logger.info("Window closed")
-            ok.gui.ok.quit()
             event.accept()
+            ok.gui.ok.quit()
         else:
             event.ignore()

@@ -186,8 +186,9 @@ def find_hwnd(title, exe_name, frame_width, frame_height):
                 biggest = result
         x_offset = 0
         y_offset = 0
-        real_width, real_height = biggest[2], biggest[3]
+        real_width, real_height = 0, 0
         if biggest is not None and frame_aspect_ratio != 0:
+            real_width, real_height = biggest[2], biggest[3]
             matching_child = enum_child_windows(biggest, frame_aspect_ratio)
             if matching_child is not None:
                 x_offset, y_offset, real_width, real_height = matching_child

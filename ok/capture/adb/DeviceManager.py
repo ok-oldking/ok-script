@@ -280,7 +280,7 @@ class DeviceManager:
         communicate.adb_devices.emit(True)
 
     def update_resolution_for_hwnd(self):
-        if self.hwnd is not None and self.hwnd.frame_aspect_ratio == 0:
+        if self.hwnd is not None and self.hwnd.frame_aspect_ratio == 0 and self.adb_capture_config:
             width, height = self.get_resolution()
             logger.debug(f'update resolution for {self.hwnd} {width}x{height}')
             self.hwnd.update_frame_size(width, height)

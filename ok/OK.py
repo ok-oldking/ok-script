@@ -27,6 +27,7 @@ class OK:
     app = None
     screenshot = None
     exit_event = ExitEvent()
+    init_error = None
 
     def __init__(self, config: Dict[str, Any]):
         print(f"AutoHelper init, config: {config}")
@@ -57,7 +58,8 @@ class OK:
     def start(self):
         try:
             if self.config.get("use_gui"):
-                self.app.show_main_window()
+                if not self.init_error:
+                    self.app.show_main_window()
                 self.app.exec()
             else:
                 self.task_executor.start()
@@ -91,14 +93,6 @@ class OK:
 
     def do_init(self):
         logger.info(f"initializing {self.__class__.__name__}, config: {self.config}")
-        if self.config.get('ocr'):
-            isascii, path = install_path_isascii()
-            if not isascii:
-                self.app.show_path_ascii_error(path)
-                return False
-            from rapidocr_openvino import RapidOCR
-            inference_num_threads = self.config.get('ocr').get('inference_num_threads', -1)
-            self.ocr = RapidOCR(inference_num_threads=inference_num_threads)
 
         template_matching = self.config.get('template_matching')
         if template_matching is not None:
@@ -117,9 +111,20 @@ class OK:
                                           trigger_tasks=self.config.get('trigger_tasks', []),
                                           scenes=self.config['scenes'],
                                           feature_set=self.feature_set,
-                                          ocr=self.ocr, config_folder=self.config.get("config_folder"))
+                                          config_folder=self.config.get("config_folder"))
 
         ok.gui.executor = self.task_executor
+
+        if self.config.get('ocr'):
+            isascii, path = install_path_isascii()
+            if not isascii:
+                self.app.show_path_ascii_error(path)
+                self.init_error = True
+                return False
+            from rapidocr_openvino import RapidOCR
+            inference_num_threads = self.config.get('ocr').get('inference_num_threads', -1)
+            self.ocr = RapidOCR(inference_num_threads=inference_num_threads)
+            self.task_executor.ocr = self.ocr
 
         return True
 

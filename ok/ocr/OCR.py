@@ -51,6 +51,7 @@ class OCR:
                 time.sleep(3)
                 result, _ = self.executor.ocr(image, use_det=True, use_cls=False, use_rec=True)
             detected_boxes = []
+            ocr_boxes = None
             # Process the results and create Box objects
             if result is not None:
                 for res in result:
@@ -70,6 +71,7 @@ class OCR:
                             detected_box.x += box.x
                             detected_box.y += box.y
                         detected_boxes.append(detected_box)
+                        ocr_boxes = detected_boxes
                 if match is not None:
                     detected_boxes = find_boxes_by_name(detected_boxes, match)
 
@@ -77,6 +79,8 @@ class OCR:
             communicate.emit_draw_box("ocr_zone", box, "blue")
             logger.debug(
                 f"ocr_zone {box} found result: {len(detected_boxes)}) time: {(time.time() - start):.2f} scale_factor: {scale_factor:.2f}")
+            if not detected_boxes and ocr_boxes:
+                logger.info(f'ocr detected but no match: {match} {ocr_boxes}')
             return sort_boxes(detected_boxes)
 
     def wait_click_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box=None, name=None,

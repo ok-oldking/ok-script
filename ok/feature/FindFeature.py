@@ -18,7 +18,7 @@ class FindFeature:
                                              threshold, use_gray_scale, x, y, to_x, to_y, width, height)
 
     def get_box_by_name(self, name):
-        return self.feature_set.get_box_by_name(name)
+        return self.feature_set.get_box_by_name(self.executor.frame, name)
 
     def find_feature_and_set(self, features, horizontal_variance=0, vertical_variance=0, threshold=0):
         ret = True
