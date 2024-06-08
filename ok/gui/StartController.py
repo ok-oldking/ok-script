@@ -45,7 +45,7 @@ class StartController(QObject):
                         communicate.starting_emulator.emit(True, self.tr('Start game timeout!'), 0)
                         return
                     communicate.starting_emulator.emit(False, None, int(remaining_time))
-                    time.sleep(1)
+                    time.sleep(2)
             else:
                 communicate.starting_emulator.emit(True,
                                                    self.tr('Game path does not exist, Please open game manually!'), 0)

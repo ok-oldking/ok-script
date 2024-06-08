@@ -7,6 +7,7 @@ import uuid
 import requests
 import wmi
 
+import ok.gui
 from ok.config.Config import Config
 from ok.logging.Logger import get_logger
 from ok.util.Handler import Handler
@@ -58,11 +59,20 @@ class Analytics:
             self._user_properties = {
                 "os": 'windows',
                 "os_version": os_version,
-                "os_build": os_build,
+                "os_build": str(os_build),
                 "cpu": cpu_name,
-                "memory": int(total_memory),
+                "memory": str(int(total_memory)),
                 "gpu": gpu_name,
             }
+            config = ok.gui.device_manager.config
+            if config:
+                self._user_properties["device"] = config.get('preferred')
+                self._user_properties["device_capture"] = config.get('capture')
+            capture = ok.gui.device_manager.capture_method
+            if capture:
+                width, height = ok.gui.device_manager.capture_method._size
+                if width and height:
+                    self._user_properties["device_sr"] = f'{width}x{height}'
         return self._user_properties
 
     #

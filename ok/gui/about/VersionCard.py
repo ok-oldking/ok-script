@@ -14,27 +14,29 @@ class VersionCard(SettingCard):
 
     def __init__(self, icon, title, version, debug, parent=None):
         super().__init__(icon, title, f'{version} {self.get_type(debug)}')
-        self.downloading_text = QLabel()
-        self.hBoxLayout.addWidget(self.downloading_text)
-        self.hBoxLayout.addSpacing(16)
 
-        self.download_bar = ProgressBar(self)
-        self.download_bar.setFixedWidth(80)
-        self.download_bar.setFixedHeight(6)
-        self.hBoxLayout.addWidget(self.download_bar)
-        self.hBoxLayout.addSpacing(16)
+        if ok.gui.app.updater is not None:
+            self.downloading_text = QLabel()
+            self.hBoxLayout.addWidget(self.downloading_text)
+            self.hBoxLayout.addSpacing(16)
 
-        self.check_update_button = PushButton(self.tr("Check for updates"))
-        self.check_update_button.clicked.connect(self.check_update)
-        self.hBoxLayout.addWidget(self.check_update_button)
-        self.hBoxLayout.addSpacing(16)
-        self.update_button = PushButton()
-        self.update_button.clicked.connect(self.show_update_dialog)
-        self.hBoxLayout.addWidget(self.update_button)
-        self.hBoxLayout.addSpacing(16)
-        self.update_buttons(0, "")
-        communicate.check_update.connect(self.update_update)
-        communicate.download_update.connect(self.download_update)
+            self.download_bar = ProgressBar(self)
+            self.download_bar.setFixedWidth(80)
+            self.download_bar.setFixedHeight(6)
+            self.hBoxLayout.addWidget(self.download_bar)
+            self.hBoxLayout.addSpacing(16)
+
+            self.check_update_button = PushButton(self.tr("Check for updates"))
+            self.check_update_button.clicked.connect(self.check_update)
+            self.hBoxLayout.addWidget(self.check_update_button)
+            self.hBoxLayout.addSpacing(16)
+            self.update_button = PushButton()
+            self.update_button.clicked.connect(self.show_update_dialog)
+            self.hBoxLayout.addWidget(self.update_button)
+            self.hBoxLayout.addSpacing(16)
+            self.update_buttons(0, "")
+            communicate.check_update.connect(self.update_update)
+            communicate.download_update.connect(self.download_update)
 
     def download_update(self, percent, progress, done, error):
         if done and not error:

@@ -277,6 +277,8 @@ class TaskExecutor:
                 traceback.print_exc()
                 stack_trace_str = traceback.format_exc()
                 logger.error(f"{name} exception: {e}, traceback: {stack_trace_str}")
+                if self._frame:
+                    communicate.screenshot.emit(self.frame, name)
             self.current_task = None
             if isinstance(self.current_task, OneTimeTask):
                 self.current_task.running = False

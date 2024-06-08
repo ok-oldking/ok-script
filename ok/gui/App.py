@@ -61,8 +61,10 @@ class App:
             logger.debug(f"translator install success {QCoreApplication.translate('MainWindow', 'Debug')}")
         else:
             logger.debug(f"No translation available for {self.locale}, falling back to English/default. {full_path}")
-
-        self.updater = Updater(self.config, exit_event)
+        if self.config.get('update'):
+            self.updater = Updater(self.config, exit_event)
+        else:
+            self.updater = None
         self.start_controller = StartController(self.config, exit_event)
 
     def center_window(self, window):

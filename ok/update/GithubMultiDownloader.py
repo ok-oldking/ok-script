@@ -44,8 +44,8 @@ class GithubMultiDownloader:
             elif len(self.proxys) > 0:
                 proxy = self.proxys.pop(0)  # Remove the first item
                 self.proxys.append(proxy)  # Add the removed item to the end
-            prefix = '/' if proxy else ''
-            url = proxy + prefix + url if proxy is not None else None
+            prefix = '' if proxy == "" else '/'
+            url = (proxy + prefix + url) if proxy is not None else None
             return url, proxy
 
     def download_part(self, part_size, start, end, file, giturl, last_proxy=None):
@@ -74,7 +74,7 @@ class GithubMultiDownloader:
 
         headers = {'Range': f'bytes={part_start}-{end}'}
         url, proxy = self.next_url(giturl)
-        if url is None:
+        if proxy is None:
             logger.error(f'all proxies failed to download {file}')
             return
         logger.debug(f'start multi part downloading {part_size} {target_size} {target_size <= part_size} {file} {url}')

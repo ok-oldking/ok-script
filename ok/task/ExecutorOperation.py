@@ -33,11 +33,11 @@ class ExecutorOperation:
     def is_scene(self, the_scene):
         return isinstance(self.executor.current_scene, the_scene)
 
-    def click(self, x, y, move_back=False):
+    def click(self, x, y, move_back=False, name=None):
         frame = self.executor.nullable_frame()
         communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green", frame)
         self.executor.reset_scene()
-        self.executor.interaction.click(x, y, move_back)
+        self.executor.interaction.click(x, y, move_back, name=name)
 
     def swipe_relative(self, from_x, from_y, to_x, to_y, duration=0.5):
         self.swipe(int(self.width * from_x), int(self.height * from_y), int(self.width * to_x),
@@ -103,7 +103,7 @@ class ExecutorOperation:
         return int(percent * self.executor.method.width)
 
     def click_relative(self, x, y, move_back=False):
-        self.click(int(self.width * x), int(self.height * y), move_back)
+        self.click(int(self.width * x), int(self.height * y), move_back, name=f'relative({x:.2f}, {y:.2f})')
 
     @property
     def height(self):
@@ -117,18 +117,18 @@ class ExecutorOperation:
         self.executor.interaction.move_relative(x, y)
 
     def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=True):
-        if box is None:
-            self.logger.error(f"click_box box is None")
-            if raise_if_not_found:
-                raise Exception(f"click_box box is None")
-            return
         if isinstance(box, list):
             if len(box) > 0:
                 box = box[0]
             else:
                 self.logger.error(f"No box")
+        if box is None:
+            self.logger.error(f"click_box box is None")
+            if raise_if_not_found:
+                raise Exception(f"click_box box is None")
+            return
         x, y = box.relative_with_variance(relative_x, relative_y)
-        self.click(x, y)
+        self.click(x, y, name=box.name)
 
     def wait_scene(self, scene_type=None, time_out=0, pre_action=None, post_action=None):
         return self.executor.wait_scene(scene_type, time_out, pre_action, post_action)

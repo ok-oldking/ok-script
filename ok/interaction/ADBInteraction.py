@@ -23,8 +23,8 @@ class ADBBaseInteraction(BaseInteraction):
     def swipe(self, from_x, from_y, to_x, to_y, duration):
         self.device_manager.device.shell(f"input swipe {from_x} {from_y} {to_x} {to_y} {duration}")
 
-    def click(self, x=-1, y=-1, move_back=False):
-        super().click(x, y)
+    def click(self, x=-1, y=-1, move_back=False, name=None):
+        super().click(x, y, name=name)
         x = int(x * self.width / self.capture.width)
         y = int(y * self.height / self.capture.height)
         self.device_manager.shell(f"input tap {x} {y}")

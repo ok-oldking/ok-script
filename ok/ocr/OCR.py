@@ -57,6 +57,10 @@ class OCR:
                     pos = res[0]
                     text = res[1]
                     confidence = res[2]
+                    width, height = int(pos[2][0] - pos[0][0]), int(pos[2][1] - pos[0][1])
+                    if width <= 0 or height <= 0:
+                        logger.error(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
+                        continue
                     if confidence >= threshold:
                         detected_box = Box(int(pos[0][0]), int(pos[0][1]), int(pos[2][0] - pos[0][0]),
                                            int(pos[2][1] - pos[0][1]),

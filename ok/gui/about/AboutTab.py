@@ -24,7 +24,7 @@ class AboutTab(Tab):
 
         # Set the layout on the widget
         self.addWidget(about_label)
-        if ok.gui.app.updater.enabled():
+        if ok.gui.app.updater is not None and ok.gui.app.updater.enabled():
             self.download_latest_button = PushButton(self.tr('Download Release'))
             self.download_latest_button.clicked.connect(self.download_latest)
             self.download_latest_debug_button = PushButton(self.tr('Download Debug'))

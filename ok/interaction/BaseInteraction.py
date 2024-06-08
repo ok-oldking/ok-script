@@ -23,5 +23,8 @@ class BaseInteraction:
     def move_relative(self, x, y):
         self.move(int(self.capture.width * x), int(self.capture.height * y))
 
-    def click(self, x=-1, y=-1):
-        logger.info(f"click {x, y}")
+    def click(self, x=-1, y=-1, name=None):
+        if name is None:
+            logger.info(f"click {x, y}")
+        else:
+            logger.info(f"click {name} {x, y}")

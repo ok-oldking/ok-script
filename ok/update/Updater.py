@@ -350,11 +350,14 @@ class Updater:
 
 
 def is_newer_or_eq_version(base_version, target_version):
-    base_version = list(map(int, base_version[1:].split('.')))
-    target_version = list(map(int, target_version[1:].split('.')))
-
-    # Compare the versions
-    return base_version <= target_version
+    try:
+        base_version = list(map(int, base_version[1:].split('.')))
+        target_version = list(map(int, target_version[1:].split('.')))
+        # Compare the versions
+        return base_version <= target_version
+    except Exception as e:
+        logger.error(f'is_newer_or_eq_version error {base_version} {target_version}', e)
+        return False
 
 
 def convert_size(size_bytes):

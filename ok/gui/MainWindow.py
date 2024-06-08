@@ -68,8 +68,7 @@ class MainWindow(MSFluentWindow):
         communicate.executor_paused.connect(self.executor_paused)
         communicate.tab.connect(self.navigate_tab)
 
-        self.shortcut = QShortcut(QKeySequence("Ctrl+Alt+D"), self)
-        self.shortcut.activated.connect(dump_threads)
+      
 
         # Create a context menu for the tray
         menu = QMenu()

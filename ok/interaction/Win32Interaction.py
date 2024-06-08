@@ -64,8 +64,8 @@ class Win32Interaction(BaseInteraction):
         # Release the left mouse button
         pydirectinput.mouseUp()
 
-    def click(self, x=-1, y=-1, move_back=False):
-        super().click(x, y)
+    def click(self, x=-1, y=-1, move_back=False, name=None):
+        super().click(x, y, name=name)
         if not self.capture.clickable():
             logger.info(f"window in background, not clickable")
             return

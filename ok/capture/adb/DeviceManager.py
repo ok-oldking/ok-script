@@ -126,6 +126,8 @@ class DeviceManager:
                     self.device_dict[imei] = phone_device
 
     def refresh_emulators(self):
+        if self.adb_capture_config is None:
+            return
         from ok.alas.emulator_windows import EmulatorManager
         manager = EmulatorManager()
         installed_emulators = manager.all_emulator_instances
@@ -370,7 +372,7 @@ class DeviceManager:
                 packages = [packages]
             for package in packages:
                 if package == front.package:
-                    return package
+                    return False
 
     def adb_start_package(self, package):
         self.shell(f'monkey -p {package} -c android.intent.category.LAUNCHER 1')
