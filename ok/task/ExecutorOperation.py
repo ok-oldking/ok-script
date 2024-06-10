@@ -46,9 +46,9 @@ class ExecutorOperation:
 
     def swipe(self, from_x, from_y, to_x, to_y, duration=0.5):
         frame = self.executor.nullable_frame()
-        communicate.emit_draw_box("click", [
-            Box(min(from_x, to_x), min(from_y, to_y), min(abs(from_x - from_x), 10), min(abs(from_y - to_y), 10),
-                name="click")], "green", frame)
+        communicate.emit_draw_box("swipe", [
+            Box(min(from_x, to_x), min(from_y, to_y), max(abs(from_x - from_x), 10), max(abs(from_y - to_y), 10),
+                name="swipe")], "green", frame)
         ms = int(duration * 1000)
         self.executor.reset_scene()
         self.executor.interaction.swipe(from_x, from_y, to_x, to_y, ms)
