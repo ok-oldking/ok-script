@@ -19,8 +19,9 @@ class DeviceManager:
     def __init__(self, app_config, exit_event=None):
         self._device = None
         self._adb = None
-        self.supported_ratio = parse_ratio(app_config.get(
-            'supported_screen_ratio'))
+        supported_resolution = app_config.get(
+            'supported_resolution', {})
+        self.supported_ratio = parse_ratio(supported_resolution.get('ratio'))
         self.windows_capture_config = app_config.get('windows')
         self.adb_capture_config = app_config.get('adb')
         self.debug = app_config.get('debug')
@@ -142,10 +143,10 @@ class DeviceManager:
             connected = adb_device is not None and name is not None
             emulator_device = {"address": emulator.serial, "device": "adb",
                                "full_path": emulator.path, "connected": connected,
+                               "imei": emulator.name,
                                "nick": name or emulator.name, "emulator": emulator}
             if adb_device is not None:
                 emulator_device["resolution"] = f"{width}x{height}"
-                emulator_device["imei"] = emulator.name
                 emulator_device["adb_imei"] = self.adb_get_imei(adb_device)
             self.device_dict[emulator.name] = emulator_device
         logger.debug(f'refresh emulators {self.device_dict}')

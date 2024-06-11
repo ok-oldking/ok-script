@@ -86,7 +86,7 @@ class StartTab(Tab):
 
         # Update the existing items in the device_list and ok.gui.device_manager.get_devices()
         for row, device in enumerate(devices):
-            if device["imei"] == preferred:
+            if device.get('imei') == preferred:
                 selected = row
             if device['device'] == "windows":
                 method = self.tr("PC")

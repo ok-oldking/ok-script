@@ -88,6 +88,7 @@ class DebugTab(Tab):
             self.task_changed(self.config.get('target_task'))
         else:
             self.tasks_combo_box.setCurrentIndex(0)
+            self.config['target_task'] = class_names[0]
 
         self.call_button = PushButton(self.tr("Call"))
         self.call_button.clicked.connect(lambda: self.handler.post(self.call))
@@ -146,8 +147,9 @@ class DebugTab(Tab):
         old_interaction = ok.gui.device_manager.interaction
         try:
             images = self.config.get("target_images")
-            ok.gui.device_manager.capture_method = ImageCaptureMethod(images)
-            ok.gui.device_manager.interaction = DoNothingInteraction(ok.gui.device_manager.capture_method)
+            if images:
+                ok.gui.device_manager.capture_method = ImageCaptureMethod(images)
+                ok.gui.device_manager.interaction = DoNothingInteraction(ok.gui.device_manager.capture_method)
             ok.gui.executor.debug_mode = True
             attr = getattr(task, func_name)
             if callable(attr):

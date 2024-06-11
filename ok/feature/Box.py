@@ -10,14 +10,14 @@ class Box:
                  confidence: float = 1,
                  name=None, to_x: int | float = -1, to_y: int | float = -1) -> None:
         self.name = name
-        self.x = int(x)
-        self.y = int(y)
+        self.x = round(x)
+        self.y = round(y)
         if to_x != -1 and to_y != -1:
-            self.width = int(to_x - x)
-            self.height = int(to_y - y)
+            self.width = round(to_x - x)
+            self.height = round(to_y - y)
         else:
-            self.width = int(width)
-            self.height = int(height)
+            self.width = round(width)
+            self.height = round(height)
         if self.width <= 0 or self.height <= 0:
             raise ValueError(f'width and height must be greater than zero {x} {y} {width} {height} {to_x} {to_y}')
         self.confidence = confidence
@@ -265,6 +265,6 @@ def relative_box(frame_width, frame_height, x, y, to_x=1, to_y=1, width=0, heigh
         width = to_x - x
     if height == 0:
         height = to_y - y
-    return Box(int(x * frame_width), int(y * frame_height),
-               int(width * frame_width), int(height * frame_height),
+    return Box(round(x * frame_width), round(y * frame_height),
+               round(width * frame_width), round(height * frame_height),
                name=name)

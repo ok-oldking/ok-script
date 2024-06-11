@@ -14,6 +14,12 @@ class BaseInteraction:
     def send_key(self, key, down_time=0.02):
         pass
 
+    def send_key_down(self, key):
+        pass
+    
+    def send_key_up(self, key):
+        pass
+
     def move(self, x, y):
         pass
 

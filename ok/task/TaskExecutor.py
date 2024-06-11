@@ -72,13 +72,13 @@ class TaskExecutor:
     def nullable_frame(self):
         return self._frame
 
-    def check_frame_and_resolution(self, supported_ratio):
+    def check_frame_and_resolution(self, supported_ratio, min_size):
+        if supported_ratio is None or min_size is None:
+            return True, None
         self.device_manager.update_resolution_for_hwnd()
         frame = self.method.get_frame()
         if frame is None:
             return False, None
-        if supported_ratio is None:
-            return True, None
         width = self.method.width
         height = self.method.height
         if height == 0:
@@ -98,6 +98,9 @@ class TaskExecutor:
         if not support and frame is not None:
             communicate.screenshot.emit(frame, "resolution_error")
         # Check if the difference is within 1%
+        if support and min_size is not None:
+            if width < min_size[0] or height < min_size[1]:
+                support = False
         return support, f"{width}x{height}"
 
     def can_capture(self):
@@ -276,7 +279,7 @@ class TaskExecutor:
                 traceback.print_exc()
                 stack_trace_str = traceback.format_exc()
                 logger.error(f"{name} exception: {e}, traceback: {stack_trace_str}")
-                if self._frame:
+                if self._frame is not None:
                     communicate.screenshot.emit(self.frame, name)
             self.current_task = None
             if isinstance(self.current_task, OneTimeTask):

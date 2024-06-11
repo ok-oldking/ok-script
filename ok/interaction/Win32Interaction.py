@@ -22,10 +22,23 @@ class Win32Interaction(BaseInteraction):
 
     def send_key(self, key, down_time=0.02):
         if not self.capture.clickable():
+            logger.error(f"can't click on {key}, because capture is not clickable")
             return
-        pydirectinput.keyDown(key)
+        pydirectinput.keyDown(str(key))
         time.sleep(down_time)
-        pydirectinput.keyUp(key)
+        pydirectinput.keyUp(str(key))
+
+    def send_key_down(self, key):
+        if not self.capture.clickable():
+            logger.error(f"can't click on {key}, because capture is not clickable")
+            return
+        pydirectinput.keyDown(str(key))
+
+    def send_key_up(self, key):
+        if not self.capture.clickable():
+            logger.error(f"can't click on {key}, because capture is not clickable")
+            return
+        pydirectinput.keyUp(str(key))
 
     def move(self, x, y):
         if not self.capture.clickable():
@@ -81,6 +94,22 @@ class Win32Interaction(BaseInteraction):
         pydirectinput.click()
         if current_x != -1 and current_y != -1:
             pydirectinput.moveTo(current_x, current_y)
+
+    def mouse_down(self, x=-1, y=-1, name=None):
+        if not self.capture.clickable():
+            logger.info(f"window in background, not clickable")
+            return
+        if x != -1 and y != -1:
+            x, y = self.capture.get_abs_cords(x, y)
+            logger.info(f"left_click {x, y}")
+            pydirectinput.moveTo(x, y)
+        pydirectinput.mouseDown()
+
+    def mouse_up(self):
+        if not self.capture.clickable():
+            logger.info(f"window in background, not clickable")
+            return
+        pydirectinput.mouseUp()
 
     def should_capture(self):
         return self.capture.clickable()

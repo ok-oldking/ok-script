@@ -73,13 +73,21 @@ class StartController(QObject):
         if not ok.gui.device_manager.capture_method.connected():
             logger.error(f'Game window is not connected {ok.gui.device_manager.capture_method}')
             return self.tr("Game window is not connected, please select the game window and capture method.")
-        supported_ratio = self.config.get(
-            'supported_screen_ratio')
-        supported, resolution = ok.gui.executor.check_frame_and_resolution(supported_ratio)
+        supported_resolution = self.config.get(
+            'supported_resolution', {})
+        supported_ratio = supported_resolution.get('ratio')
+        min_size = supported_resolution.get('min_size')
+        supported, resolution = ok.gui.executor.check_frame_and_resolution(supported_ratio, min_size)
         if not supported:
-            return self.tr(
-                "Window resolution {resolution} is not supported, the supported ratio is {supported_ratio}, check if game windows is minimized, resized or out of screen.",
-            ).format(resolution=resolution, supported_ratio=supported_ratio)
+            error = self.tr(
+                "Game resolution {resolution} is not supported").format(resolution=resolution)
+            if supported_ratio:
+                error += self.tr(', the supported ratio is {supported_ratio}').format(supported_ratio=supported_ratio)
+            if supported_ratio:
+                error += self.tr(', the supported min resolution is {min_size}').format(
+                    min_size=f'{min_size[0]}x{min_size[1]}')
+            error += self.tr(', check if game windows is minimized, resized or out of screen.')
+            return error
         if device and device['device'] == "windows" and not is_admin():
             return self.tr(
                 f"PC version requires admin privileges, Please restart this app with admin privileges!")

@@ -145,7 +145,7 @@ class FeatureSet:
 
     def find_feature(self, mat: np.ndarray, category_name: str, horizontal_variance: float = 0,
                      vertical_variance: float = 0, threshold: float = 0, use_gray_scale: bool = False, x=-1, y=-1,
-                     to_x=-1, to_y=-1, width=-1, height=-1) -> List[Box]:
+                     to_x=-1, to_y=-1, width=-1, height=-1, box=None) -> List[Box]:
         """
         Find a feature within a given variance.
 
@@ -172,7 +172,12 @@ class FeatureSet:
             raise ValueError(f"FeatureSet: " + category_name + " not found in featureDict")
         feature = self.feature_dict[category_name]
         feature_width, feature_height = feature.width, feature.height
-        if x != -1 and y != -1:
+        if box is not None:
+            search_x1 = box.x
+            search_y1 = box.y
+            search_x2 = box.x + box.width
+            search_y2 = box.y + box.height
+        elif x != -1 and y != -1:
             frame_height, frame_width, *_ = mat.shape
             if width == -1:
                 width = to_x - x

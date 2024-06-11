@@ -34,11 +34,26 @@ class ExecutorOperation:
     def is_scene(self, the_scene):
         return isinstance(self.executor.current_scene, the_scene)
 
-    def click(self, x, y, move_back=False, name=None):
+    def click(self, x=-1, y=-1, move_back=False, name=None):
         frame = self.executor.nullable_frame()
         communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green", frame)
         self.executor.reset_scene()
         self.executor.interaction.click(x, y, move_back, name=name)
+
+    def mouse_down(self, x=-1, y=-1, name=None):
+        frame = self.executor.nullable_frame()
+        communicate.emit_draw_box("mouse_down", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green",
+                                  frame)
+        self.executor.reset_scene()
+        self.executor.interaction.mouse_down(x, y, name=name)
+
+    def mouse_up(self, name=None):
+        frame = self.executor.nullable_frame()
+        communicate.emit_draw_box("mouse_up", self.box_of_screen(0.5, 0.5, width=0.01, height=0.01, name="click"),
+                                  "green",
+                                  frame)
+        self.executor.reset_scene()
+        self.executor.interaction.mouse_up()
 
     def swipe_relative(self, from_x, from_y, to_x, to_y, duration=0.5):
         self.swipe(int(self.width * from_x), int(self.height * from_y), int(self.width * to_x),
@@ -83,7 +98,7 @@ class ExecutorOperation:
             self.click_box(to_click, relative_x, relative_y)
             return to_click
 
-    def box_of_screen(self, x, y, to_x=1, to_y=1, width=0, height=0, name=None):
+    def box_of_screen(self, x, y, to_x: float = 1, to_y: float = 1, width: float = 0, height: float = 0, name=None):
         if name is None:
             name = f"{x} {y} {width} {height}"
         return relative_box(self.executor.method.width, self.executor.method.height, x, y,
@@ -121,9 +136,8 @@ class ExecutorOperation:
         if isinstance(box, list):
             if len(box) > 0:
                 box = box[0]
-            else:
-                self.logger.error(f"No box")
-        if box is None:
+
+        if not box:
             self.logger.error(f"click_box box is None")
             if raise_if_not_found:
                 raise Exception(f"click_box box is None")
@@ -140,6 +154,12 @@ class ExecutorOperation:
 
     def send_key(self, key, down_time=0.02):
         self.executor.interaction.send_key(key, down_time)
+
+    def send_key_down(self, key):
+        self.executor.interaction.send_key_down(key)
+
+    def send_key_up(self, key):
+        self.executor.interaction.send_key_up(key)
 
     def wait_until(self, condition, time_out=0, pre_action=None, post_action=None, wait_until_before_delay=0):
         return self.executor.wait_condition(condition, time_out, pre_action, post_action, wait_until_before_delay)

@@ -52,90 +52,90 @@
 <context>
     <name>DebugTab</name>
     <message>
-        <location filename="../debug/DebugTab.py" line="40"/>
+        <location filename="../debug/DebugTab.py" line="42"/>
         <source>Dump Threads(HotKey:Ctrl+Alt+D)</source>
         <translation>Dump Threads(快捷键:Ctrl+Alt+D)</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="44"/>
+        <location filename="../debug/DebugTab.py" line="48"/>
         <source>Capture Screenshot</source>
         <translation>截图</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="52"/>
+        <location filename="../debug/DebugTab.py" line="59"/>
         <source>Open Logs</source>
         <translation>打开日志文件夹</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="58"/>
+        <location filename="../debug/DebugTab.py" line="65"/>
         <source>Debug Task Function</source>
         <translation>调用Task方法</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="61"/>
-        <location filename="../debug/DebugTab.py" line="157"/>
+        <location filename="../debug/DebugTab.py" line="68"/>
+        <location filename="../debug/DebugTab.py" line="200"/>
         <source>{num} images selected</source>
         <translation>已选择{num}个图片</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="61"/>
+        <location filename="../debug/DebugTab.py" line="68"/>
         <source>Select Screenshots</source>
         <translation>选择截图</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="73"/>
+        <location filename="../debug/DebugTab.py" line="80"/>
         <source>Type a function or property</source>
         <translation>输入方法或属性</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="85"/>
+        <location filename="../debug/DebugTab.py" line="92"/>
         <source>Call</source>
         <translation>调用</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="100"/>
+        <location filename="../debug/DebugTab.py" line="143"/>
         <source>No such attr: {func_name}</source>
         <translation>没有属性或方法: {func_name}</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="122"/>
+        <location filename="../debug/DebugTab.py" line="165"/>
         <source>call success: {result}</source>
         <translation>调用成功 success: {result}</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="126"/>
+        <location filename="../debug/DebugTab.py" line="169"/>
         <source>No OCR configured</source>
         <translation>没有配置OCR</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="137"/>
+        <location filename="../debug/DebugTab.py" line="180"/>
         <source>OCR success: {result}</source>
         <translation>OCR调用成功: {result}</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="160"/>
+        <location filename="../debug/DebugTab.py" line="203"/>
         <source>Drop or Select Screenshot</source>
         <translation>选择截图</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="175"/>
+        <location filename="../debug/DebugTab.py" line="218"/>
         <source>Capture Success</source>
         <translation>截图成功</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="139"/>
-        <location filename="../debug/DebugTab.py" line="177"/>
+        <location filename="../debug/DebugTab.py" line="182"/>
+        <location filename="../debug/DebugTab.py" line="220"/>
         <source>Capture returned None</source>
         <translation>截图返回空</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="38"/>
+        <location filename="../debug/DebugTab.py" line="40"/>
         <source>Debug Tool</source>
         <translation>调试工具</translation>
     </message>
     <message>
-        <location filename="../debug/DebugTab.py" line="141"/>
-        <location filename="../debug/DebugTab.py" line="179"/>
+        <location filename="../debug/DebugTab.py" line="184"/>
+        <location filename="../debug/DebugTab.py" line="222"/>
         <source>No Capture Available or Selected</source>
         <translation>截图方式不可用或未选择</translation>
     </message>
@@ -160,29 +160,35 @@
         <translation type="vanished">开始</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="39"/>
+        <location filename="../MainWindow.py" line="40"/>
         <source>Tasks</source>
         <translation>任务</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="44"/>
+        <location filename="../MainWindow.py" line="45"/>
         <source>Triggers</source>
         <translation>触发器</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="49"/>
+        <location filename="../MainWindow.py" line="50"/>
         <source>Capture</source>
         <translation>截图方式</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="53"/>
+        <location filename="../MainWindow.py" line="54"/>
+        <location filename="../MainWindow.py" line="63"/>
         <source>Debug</source>
         <translation>开发版</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="58"/>
+        <location filename="../MainWindow.py" line="59"/>
         <source>About</source>
         <translation>关于</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.py" line="64"/>
+        <source>Release</source>
+        <translation>正式版</translation>
     </message>
     <message>
         <location filename="../MainWindow.py" line="106"/>
@@ -206,12 +212,12 @@
     </message>
     <message>
         <location filename="../MainWindow.py" line="71"/>
-        <location filename="../MainWindow.py" line="169"/>
+        <location filename="../MainWindow.py" line="175"/>
         <source>Exit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="171"/>
+        <location filename="../MainWindow.py" line="176"/>
         <source>Are you sure you want to exit the app?</source>
         <translation>确定要退出应用吗？</translation>
     </message>
@@ -219,7 +225,7 @@
 <context>
     <name>MessageWindow</name>
     <message>
-        <location filename="../MessageWindow.py" line="32"/>
+        <location filename="../MessageWindow.py" line="33"/>
         <source>Confirm</source>
         <translation>确认</translation>
     </message>
@@ -512,47 +518,66 @@
 <context>
     <name>StartController</name>
     <message>
-        <location filename="../StartController.py" line="47"/>
+        <location filename="../StartController.py" line="45"/>
         <source>Start game timeout!</source>
         <translation>启动超时!</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="53"/>
+        <location filename="../StartController.py" line="51"/>
         <source>Game path does not exist, Please open game manually!</source>
         <translation>无法启动游戏, 请手动打开游戏</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="70"/>
+        <location filename="../StartController.py" line="68"/>
         <source>No game selected!</source>
         <translation>未选择游戏窗口</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="72"/>
+        <location filename="../StartController.py" line="70"/>
         <source>Selected capture method is not supported by the game or your system!</source>
         <translation>当前游戏或模拟器不支持选择的截图方式!</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="75"/>
+        <location filename="../StartController.py" line="73"/>
         <source>Emulator is not connected, start the emulator first!</source>
         <translation>模拟器未连接, 请先启动!</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="78"/>
+        <location filename="../StartController.py" line="76"/>
         <source>Game window is not connected, please select the game window and capture method.</source>
         <translation>游戏窗口未连接，请选择游戏窗口和截图方式。</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="84"/>
-        <source>Window resolution {resolution} is not supported, the supported ratio is {supported_ratio}, check if game windows is minimized, resized or out of screen.</source>
-        <translation>当前游戏窗口分辨率{resolution}不支持, 支持的分辨率是{supported_ratio}, 请检查游戏窗口是否最小化, 被拉伸或者部分在屏幕外</translation>
+        <location filename="../StartController.py" line="83"/>
+        <source>Game resolution {resolution} is not supported</source>
+        <translation>不支持当前分辨率{resolution}</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="88"/>
+        <location filename="../StartController.py" line="85"/>
+        <source>, the supported ratio is {supported_ratio}</source>
+        <translation>支持的窗口比例是{supported_ratio}</translation>
+    </message>
+    <message>
+        <location filename="../StartController.py" line="87"/>
+        <source>, the supported min resolution is {min_size}</source>
+        <translation>, 支持的最小分辨率是</translation>
+    </message>
+    <message>
+        <location filename="../StartController.py" line="90"/>
+        <source>, check if game windows is minimized, resized or out of screen.</source>
+        <translation>, 确认游戏窗口是否被拉伸,隐藏,或者在屏幕外.</translation>
+    </message>
+    <message>
+        <source>Window resolution {resolution} is not supported, the supported ratio is {supported_ratio}, check if game windows is minimized, resized or out of screen.</source>
+        <translation type="vanished">当前游戏窗口分辨率{resolution}不支持, 支持的分辨率是{supported_ratio}, 请检查游戏窗口是否最小化, 被拉伸或者部分在屏幕外</translation>
+    </message>
+    <message>
+        <location filename="../StartController.py" line="94"/>
         <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
         <translation>PC版需要管理员权限，请以管理员权限重启此应用！</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="94"/>
+        <location filename="../StartController.py" line="100"/>
         <source>Can&apos;t start game, make sure the game is installed</source>
         <translation>无法启动游戏, 请确认游戏已安装!</translation>
     </message>
@@ -584,32 +609,32 @@
         <translation>截图方式</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="91"/>
+        <location filename="../start/StartTab.py" line="93"/>
         <source>PC</source>
         <translation>PC版</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="93"/>
+        <location filename="../start/StartTab.py" line="95"/>
         <source>Emulator</source>
         <translation>模拟器</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="95"/>
+        <location filename="../start/StartTab.py" line="97"/>
         <source>Android</source>
         <translation>安卓版</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="95"/>
+        <location filename="../start/StartTab.py" line="97"/>
         <source>Connected</source>
         <translation>已连接</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="96"/>
+        <location filename="../start/StartTab.py" line="98"/>
         <source>Disconnected</source>
         <translation>已断开</translation>
     </message>
     <message>
-        <location filename="../start/StartTab.py" line="114"/>
+        <location filename="../start/StartTab.py" line="116"/>
         <source>Refresh</source>
         <translation>刷新</translation>
     </message>
@@ -715,62 +740,62 @@
 <context>
     <name>VersionCard</name>
     <message>
-        <location filename="../about/VersionCard.py" line="27"/>
+        <location filename="../about/VersionCard.py" line="29"/>
         <source>Check for updates</source>
         <translation>检查新版本</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="48"/>
+        <location filename="../about/VersionCard.py" line="50"/>
         <source>Downloading {progress} {percent}%</source>
         <translation>下载中: {progress} {percent}%</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="56"/>
+        <location filename="../about/VersionCard.py" line="59"/>
         <source>Update to {version} {type}</source>
         <translation>更新到{version}{type}</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="63"/>
+        <location filename="../about/VersionCard.py" line="66"/>
         <source>Debug</source>
         <translation>开发版</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="65"/>
+        <location filename="../about/VersionCard.py" line="68"/>
         <source>Release</source>
         <translation>正式版</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="67"/>
+        <location filename="../about/VersionCard.py" line="70"/>
         <source>Update Now</source>
         <translation>现在更新</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="68"/>
+        <location filename="../about/VersionCard.py" line="71"/>
         <source>Are you sure you want to update to {version} {type}?</source>
         <translation>确定更新到{version}{type}吗？</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="84"/>
+        <location filename="../about/VersionCard.py" line="88"/>
         <source>Info</source>
         <translation>信息</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="87"/>
+        <location filename="../about/VersionCard.py" line="91"/>
         <source>Found new version!</source>
         <translation>发现新版本</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="90"/>
+        <location filename="../about/VersionCard.py" line="94"/>
         <source>Check for update error!</source>
         <translation>检查更新错误</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="94"/>
+        <location filename="../about/VersionCard.py" line="98"/>
         <source>This is the newest version!</source>
         <translation>目前已经是最新版本！</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="107"/>
+        <location filename="../about/VersionCard.py" line="111"/>
         <source>Checking for updates</source>
         <translation>检查更新</translation>
     </message>
@@ -778,12 +803,18 @@
 <context>
     <name>app</name>
     <message>
-        <location filename="../App.py" line="82"/>
+        <location filename="../App.py" line="84"/>
+        <location filename="../App.py" line="90"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../App.py" line="83"/>
+        <location filename="../App.py" line="86"/>
+        <source>Another instance is already running</source>
+        <translation>另一个实例已经在运行, 请手动结束另一个实例.</translation>
+    </message>
+    <message>
+        <location filename="../App.py" line="91"/>
         <source>Install dir {path} must be an English path, move to another path.</source>
         <translation>安装目录{path}必须是英文目录，请移动到英文目录。</translation>
     </message>
