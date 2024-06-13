@@ -44,12 +44,9 @@ class OCR:
                     box.name = str(match)
 
             image, scale_factor = resize_image(image, original_height, target_height)
-            try:
-                result, _ = self.executor.ocr(image, use_det=True, use_cls=False, use_rec=True)
-            except Exception as e:
-                logger.error('ocr_error sleep and retry once', e)
-                time.sleep(3)
-                result, _ = self.executor.ocr(image, use_det=True, use_cls=False, use_rec=True)
+
+            result, _ = self.executor.ocr(image, use_det=True, use_cls=False, use_rec=True)
+
             detected_boxes = []
             ocr_boxes = None
             # Process the results and create Box objects

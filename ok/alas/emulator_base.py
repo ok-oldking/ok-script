@@ -114,6 +114,14 @@ class EmulatorInstanceBase:
 
         return None
 
+    @property
+    def player_id(self):
+
+        # Find all integer groups in the string that are at the end of the string
+        integers = re.findall(r'\d+$', self.name)
+        # Return the last integer if it exists, otherwise return 0
+        return int(integers[0]) if integers else 0
+
 
 class EmulatorBase:
     # Values here must match those in argument.yaml EmulatorInfo.Emulator.option

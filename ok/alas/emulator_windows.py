@@ -467,7 +467,7 @@ class EmulatorManager(EmulatorManagerBase):
             try:
                 exe = proc.cmdline()
                 exe = exe[0]
-            except (psutil.AccessDenied, IndexError):
+            except (psutil.AccessDenied, psutil.NoSuchProcess, IndexError):
                 # psutil.AccessDenied
                 continue
 

@@ -24,7 +24,7 @@ class StartController(QObject):
 
     def do_start(self, task=None):
         communicate.starting_emulator.emit(False, None, 30)
-        ok.gui.device_manager.do_refresh()
+        ok.gui.device_manager.do_refresh(True)
 
         device = ok.gui.device_manager.get_preferred_device()
 
@@ -35,7 +35,7 @@ class StartController(QObject):
                 execute(path)
                 wait_until = time.time() + 30
                 while not self.exit_event.is_set():
-                    ok.gui.device_manager.do_refresh()
+                    ok.gui.device_manager.do_refresh(True)
                     error = self.check_device_error()
                     if error is None:
                         break

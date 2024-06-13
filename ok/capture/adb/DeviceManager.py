@@ -99,12 +99,12 @@ class DeviceManager:
                 pc_device["resolution"] = f"{width}x{height}"
             self.device_dict['pc'] = pc_device
 
-    def do_refresh(self, fast=False):
+    def do_refresh(self, current=False):
         self.update_pc_device()
 
-        self.refresh_emulators()
+        self.refresh_emulators(current)
 
-        self.refresh_phones()
+        self.refresh_phones(current)
 
         if self.exit_event.is_set():
             return
@@ -112,10 +112,16 @@ class DeviceManager:
 
         logger.debug(f'refresh {self.device_dict}')
 
-    def refresh_phones(self):
+    def refresh_phones(self, current=False):
+        if self.adb_capture_config is None:
+            return
         for adb_device in self.adb.iter_device():
             imei = self.adb_get_imei(adb_device)
             if imei is not None:
+                preferred = self.get_preferred_device()
+                if current and preferred is not None and preferred['imei'] != imei:
+                    logger.debug(f"refresh current only skip others {preferred['imei']} != imei")
+                    break
                 found = False
                 for device in self.device_dict.values():
                     if device.get('adb_imei') == imei:
@@ -129,17 +135,21 @@ class DeviceManager:
                                     "resolution": f'{width}x{height}'}
                     self.device_dict[imei] = phone_device
 
-    def refresh_emulators(self):
+    def refresh_emulators(self, current=False):
         if self.adb_capture_config is None:
             return
         from ok.alas.emulator_windows import EmulatorManager
         manager = EmulatorManager()
         installed_emulators = manager.all_emulator_instances
         for emulator in installed_emulators:
+            preferred = self.get_preferred_device()
+            if current and preferred is not None and preferred['imei'] != emulator.name:
+                logger.debug(f"refresh current only skip others {preferred['imei']} != {emulator.name}")
+                break
             adb_device = self.adb_connect(emulator.serial)
             width, height = self.get_resolution(adb_device)
             name, hwnd, full_path, x, y, width, height = find_hwnd(None,
-                                                                   emulator.path, width, height)
+                                                                   emulator.path, width, height, emulator.player_id)
             connected = adb_device is not None and name is not None
             emulator_device = {"address": emulator.serial, "device": "adb",
                                "full_path": emulator.path, "connected": connected,
@@ -192,12 +202,13 @@ class DeviceManager:
             self.start()
         logger.debug(f'preferred device: {preferred}')
 
-    def adb_get_imei(self, device):
+    @staticmethod
+    def adb_get_imei(device):
         try:
             return device.shell("settings get secure android_id") or device.shell(
                 "service call iphonesubinfo 4") or device.prop.model
         except Exception as e:
-            logger.error(f"adb_get_imei error {device}", e)
+            logger.error(f"adb_get_imei error maybe offline {device}")
             return None
 
     def get_preferred_device(self):

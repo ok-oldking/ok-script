@@ -152,7 +152,7 @@ class HwndWindow:
         return f"title:{self.title}_{self.exe_name}_{self.width}x{self.height}_{self.hwnd}_{self.exists}_{self.visible}"
 
 
-def find_hwnd(title, exe_name, frame_width, frame_height):
+def find_hwnd(title, exe_name, frame_width, frame_height, player_id=-1):
     results = []
     if exe_name is None and title is None:
         return None, None, None, 0, 0, 0, 0
@@ -167,35 +167,50 @@ def find_hwnd(title, exe_name, frame_width, frame_height):
                         return True
                 elif not re.search(title, text):
                     return True
-            name, full_path = get_exe_by_hwnd(hwnd)
+            name, full_path, cmdline = get_exe_by_hwnd(hwnd)
             x, y, border, title_height, width, height, scaling, ext_left_bounds, ext_top_bounds = get_window_bounds(
                 hwnd)
             ret = (hwnd, full_path, width, height, x, y, text)
             if exe_name:
                 if name != exe_name and exe_name != full_path:
                     return True
+            if player_id != -1:
+                if player_id != get_player_id_from_cmdline(cmdline):
+                    logger.debug(
+                        f'player id check failed,cmdline {cmdline} {get_player_id_from_cmdline(cmdline)} != {player_id}')
+                    return True
             results.append(ret)
         return True
 
     win32gui.EnumWindows(callback, None)
-    biggest = None
     if len(results) > 0:
+        biggest = results[0]
         for result in results:
             from ok.capture.windows.BitBltCaptureMethod import bit_blt_test_hwnd
             if (biggest is None or (result[2] * result[3]) > biggest[2] * biggest[3]) and bit_blt_test_hwnd(result[0]):
                 biggest = result
         x_offset = 0
         y_offset = 0
-        real_width, real_height = 0, 0
-        if biggest is not None and frame_aspect_ratio != 0:
+        real_width = 0
+        real_height = 0
+        if frame_aspect_ratio != 0:
             real_width, real_height = biggest[2], biggest[3]
             matching_child = enum_child_windows(biggest, frame_aspect_ratio)
             if matching_child is not None:
                 x_offset, y_offset, real_width, real_height = matching_child
-        logger.info(f'find_hwnd {frame_width, frame_height} {biggest} {x_offset, y_offset, real_width, real_height}')
-        return biggest[6], biggest[0], biggest[1], x_offset, y_offset, real_width, real_height,
-    else:
-        return None, None, None, 0, 0, 0, 0
+            logger.info(
+                f'find_hwnd {frame_width, frame_height} {biggest} {x_offset, y_offset, real_width, real_height}')
+        return biggest[6], biggest[0], biggest[1], x_offset, y_offset, real_width, real_height
+
+    return None, None, None, 0, 0, 0, 0
+
+
+def get_player_id_from_cmdline(cmdline):
+    for i in range(len(cmdline)):
+        if i != 0:
+            if cmdline[i].isdigit():
+                return int(cmdline[i])
+    return 0
 
 
 def enum_child_windows(biggest, frame_aspect_ratio):
@@ -234,7 +249,7 @@ def get_exe_by_hwnd(hwnd):
 
     # Get the process name and executable path
     process = psutil.Process(pid)
-    return process.name(), process.exe()
+    return process.name(), process.exe(), process.cmdline()
 
 
 if __name__ == '__main__':
