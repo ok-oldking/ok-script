@@ -42,31 +42,23 @@ class HwndWindow:
     real_x_offset = 0
     real_y_offset = 0
 
-    def __init__(self, exit_event, title, exe_name=None, frame_width=0, frame_height=0):
+    def __init__(self, exit_event, title, exe_name=None, frame_width=0, frame_height=0, player_id=-1):
         super().__init__()
         self.app_exit_event = exit_event
         self.exe_name = exe_name
         self.title = title
         self.stop_event = threading.Event()
         self.visible = False
+        self.player_id = player_id
         self.update_window(title, exe_name, frame_width, frame_height)
         self.thread = threading.Thread(target=self.update_window_size, name="update_window_size")
         self.thread.start()
 
-    def update_title_and_exe(self, title, exe):
-        self.title = title
-        self.exe_name = exe
-        self.hwnd = None
-        self.visible = False
-        self.exists = False
-        self.width = 0
-        self.height = 0
-        self.do_update_window_size()
-
     def stop(self):
         self.stop_event.set()
 
-    def update_window(self, title, exe_name, frame_width, frame_height):
+    def update_window(self, title, exe_name, frame_width, frame_height, player_id=-1):
+        self.player_id = player_id
         self.title = title
         self.exe_name = exe_name
         self.update_frame_size(frame_width, frame_height)
@@ -100,7 +92,7 @@ class HwndWindow:
                 name, self.hwnd, self.exe_full_path, self.real_x_offset, self.real_y_offset, self.real_width, self.real_height = find_hwnd(
                     self.title,
                     self.exe_name,
-                    self.frame_width, self.frame_height)
+                    self.frame_width, self.frame_height, player_id=self.player_id)
                 self.exists = self.hwnd is not None
             if self.hwnd is not None:
                 self.exists = win32gui.IsWindow(self.hwnd)
@@ -168,6 +160,8 @@ def find_hwnd(title, exe_name, frame_width, frame_height, player_id=-1):
                 elif not re.search(title, text):
                     return True
             name, full_path, cmdline = get_exe_by_hwnd(hwnd)
+            if not name:
+                return True
             x, y, border, title_height, width, height, scaling, ext_left_bounds, ext_top_bounds = get_window_bounds(
                 hwnd)
             ret = (hwnd, full_path, width, height, x, y, text)
@@ -210,6 +204,12 @@ def get_player_id_from_cmdline(cmdline):
         if i != 0:
             if cmdline[i].isdigit():
                 return int(cmdline[i])
+    for i in range(len(cmdline)):
+        if i != 0:
+            value = re.search(r'index=(\d+)', cmdline[i])
+            # Return the value if it exists, otherwise return None
+            if value is not None:
+                return int(value.group(1))
     return 0
 
 
@@ -248,8 +248,11 @@ def get_exe_by_hwnd(hwnd):
     _, pid = win32process.GetWindowThreadProcessId(hwnd)
 
     # Get the process name and executable path
-    process = psutil.Process(pid)
-    return process.name(), process.exe(), process.cmdline()
+    if pid > 0:
+        process = psutil.Process(pid)
+        return process.name(), process.exe(), process.cmdline()
+    else:
+        return None, None, None
 
 
 if __name__ == '__main__':

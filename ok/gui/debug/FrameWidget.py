@@ -6,7 +6,6 @@ from PySide6.QtGui import QPainter, QColor, QPen, QFont, QGuiApplication
 from PySide6.QtWidgets import QWidget
 
 import ok.gui
-from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 
 logger = get_logger(__name__)
@@ -15,10 +14,8 @@ logger = get_logger(__name__)
 class FrameWidget(QWidget):
     def __init__(self):
         super(FrameWidget, self).__init__()
-        self._visible = True
         self._mouse_position = QPoint(0, 0)
         self.setMouseTracking(True)
-        communicate.update_overlay.connect(self.update)
         # Start a timer to update mouse position using Windows API
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_mouse_position)
@@ -27,13 +24,14 @@ class FrameWidget(QWidget):
         self.mouse_font.setPointSize(10)  # Adjust the size as needed
         screen = QGuiApplication.primaryScreen()
         self.scaling = screen.devicePixelRatio()
-        communicate.update_overlay.connect(self.update)
 
     def update_mouse_position(self):
         try:
+            if not self.isVisible():
+                return
             x, y = win32api.GetCursorPos()
             relative = self.mapFromGlobal(QPoint(x / self.scaling, y / self.scaling))
-            if self._mouse_position != relative and relative.x() > 0 and relative.y() > 0 and self._visible:
+            if self._mouse_position != relative and relative.x() > 0 and relative.y() > 0:
                 self._mouse_position = relative
                 self.update()
         except Exception as e:
@@ -45,7 +43,7 @@ class FrameWidget(QWidget):
         return self.width() / ok.gui.device_manager.width
 
     def paintEvent(self, event):
-        if not self._visible:
+        if not self.isVisible():
             return
         painter = QPainter(self)
         self.paint_border(painter)

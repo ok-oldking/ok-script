@@ -13,6 +13,7 @@ from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.gui.MessageWindow import MessageWindow
 from ok.gui.StartController import StartController
+from ok.gui.debug.LogWindow import LogWindow
 from ok.gui.i18n.path import i18n_path
 from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.logging.Logger import get_logger
@@ -47,6 +48,7 @@ class App:
         self.loading_window = None
         self.overlay_window = None
         self.main_window = None
+        self.log_window = None
         self.exit_event = exit_event
         self.icon = QIcon(self.config.get('gui_icon') or ":/icon/icon.ico")
         if self.config.get('analytics'):
@@ -109,6 +111,10 @@ class App:
         self.main_window.show()
         self.main_window.raise_()
         self.main_window.activateWindow()
+        if self.config.get('debug'):
+            self.log_window = LogWindow()
+            self.log_window.show()
+            logger.debug('showing log_window')
 
     def size_relative_to_screen(self, width, height):
         screen = self.app.primaryScreen()

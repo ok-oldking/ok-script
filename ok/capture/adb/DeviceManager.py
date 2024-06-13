@@ -101,9 +101,7 @@ class DeviceManager:
 
     def do_refresh(self, current=False):
         self.update_pc_device()
-
         self.refresh_emulators(current)
-
         self.refresh_phones(current)
 
         if self.exit_event.is_set():
@@ -131,7 +129,7 @@ class DeviceManager:
                     width, height = self.get_resolution(adb_device)
                     logger.debug(f'refresh_phones found an phone {adb_device}')
                     phone_device = {"address": adb_device.serial, "device": "adb", "connected": True, "imei": imei,
-                                    "nick": adb_device.prop.model or imei,
+                                    "nick": adb_device.prop.model or imei, "player_id": -1,
                                     "resolution": f'{width}x{height}'}
                     self.device_dict[imei] = phone_device
 
@@ -153,7 +151,7 @@ class DeviceManager:
             connected = adb_device is not None and name is not None
             emulator_device = {"address": emulator.serial, "device": "adb",
                                "full_path": emulator.path, "connected": connected,
-                               "imei": emulator.name,
+                               "imei": emulator.name, "player_id": emulator.player_id,
                                "nick": name or emulator.name, "emulator": emulator}
             if adb_device is not None:
                 emulator_device["resolution"] = f"{width}x{height}"
@@ -236,11 +234,11 @@ class DeviceManager:
         preferred = self.get_preferred_device()
         return preferred.get('hwnd')
 
-    def ensure_hwnd(self, title, exe, frame_width=0, frame_height=0):
+    def ensure_hwnd(self, title, exe, frame_width=0, frame_height=0, player_id=-1):
         if self.hwnd is None:
-            self.hwnd = HwndWindow(self.exit_event, title, exe, frame_width, frame_height)
+            self.hwnd = HwndWindow(self.exit_event, title, exe, frame_width, frame_height, player_id)
         else:
-            self.hwnd.update_window(title, exe, frame_width, frame_height)
+            self.hwnd.update_window(title, exe, frame_width, frame_height, player_id)
 
     def use_windows_capture(self, override_config=None, require_bg=False, use_bit_blt_only=False):
         if not override_config:
@@ -271,7 +269,7 @@ class DeviceManager:
         else:
             width, height = self.get_resolution()
             if self.config.get('capture') == "windows":
-                self.ensure_hwnd(None, preferred.get('full_path'), width, height)
+                self.ensure_hwnd(None, preferred.get('full_path'), width, height, preferred['player_id'])
                 self.use_windows_capture({'can_bit_blt': True}, require_bg=True, use_bit_blt_only=True)
             else:
                 if not isinstance(self.capture_method, ADBCaptureMethod):
@@ -281,7 +279,7 @@ class DeviceManager:
                     self.capture_method = ADBCaptureMethod(self, self.exit_event, width=width,
                                                            height=height)
                 if self.debug and preferred.get('full_path'):
-                    self.ensure_hwnd(None, preferred.get('full_path'), width, height)
+                    self.ensure_hwnd(None, preferred.get('full_path'), width, height, preferred['player_id'])
                 elif self.hwnd is not None:
                     self.hwnd.stop()
                     self.hwnd = None

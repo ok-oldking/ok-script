@@ -78,7 +78,6 @@ class Screenshot(QObject):
         self.remove_expired()
         if self.click_screenshot_folder is not None and frame is not None:
             self.add_task(frame, self.click_screenshot_folder, key)
-        communicate.update_overlay.emit()
 
     def remove_expired(self):
         current_time = time.time()
