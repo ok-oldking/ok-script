@@ -43,10 +43,7 @@ class MainWindow(MSFluentWindow):
             if self.first_tab is None:
                 self.first_tab = self.trigger_tab
             self.addSubInterface(self.trigger_tab, FluentIcon.ROBOT, self.tr('Triggers'))
-        # if debug:
-        #     debug_tab = DebugTab()
-        #     self.addSubInterface(debug_tab, FluentIcon.COMMAND_PROMPT, self.tr('Debug'))
-        # ... Add other tabs similarly
+
         self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Capture'))
 
         if debug:
@@ -77,8 +74,8 @@ class MainWindow(MSFluentWindow):
         self.tray.setContextMenu(menu)
         self.tray.show()
 
-        if ok.gui.device_manager.get_preferred_device() is not None and self.onetime_tab is not None:
-            self.switchTo(self.onetime_tab)
+        if ok.gui.device_manager.get_preferred_device() is None or self.onetime_tab is None:
+            self.switchTo(self.start_tab)
 
         communicate.capture_error.connect(self.capture_error)
         communicate.notification.connect(self.show_notification)

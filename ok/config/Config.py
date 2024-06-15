@@ -78,8 +78,10 @@ class Config(dict):
 
     def __setitem__(self, key, value):
         if self.validate(key, value):
+            old_value = self.get(key)
             super().__setitem__(key, value)
-            self.save_file()
+            if old_value != value:
+                self.save_file()
 
     def __getitem__(self, key):
         try:

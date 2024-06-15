@@ -44,9 +44,9 @@ class FindFeature:
         return False
 
     def find_one(self, feature_name, horizontal_variance=0, vertical_variance=0, threshold=0,
-                 use_gray_scale=False) -> Box:
+                 use_gray_scale=False, box=None) -> Box:
         boxes = self.find_feature(feature_name, horizontal_variance, vertical_variance, threshold,
-                                  use_gray_scale=use_gray_scale)
+                                  use_gray_scale=use_gray_scale, box=box)
         if len(boxes) > 0:
             if len(boxes) > 1:
                 print(f"find_one:found {feature_name} too many {len(boxes)}", file=sys.stderr)

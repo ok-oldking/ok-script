@@ -16,7 +16,7 @@ class BaseInteraction:
 
     def send_key_down(self, key):
         pass
-    
+
     def send_key_up(self, key):
         pass
 
@@ -31,6 +31,6 @@ class BaseInteraction:
 
     def click(self, x=-1, y=-1, name=None):
         if name is None:
-            logger.info(f"click {x, y}")
+            logger.debug(f"click {x, y}")
         else:
-            logger.info(f"click {name} {x, y}")
+            logger.debug(f"click {name} {x, y}")

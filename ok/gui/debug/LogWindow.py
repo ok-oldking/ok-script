@@ -3,9 +3,10 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QVBoxLayout, QListView, QLineEdit, QHBoxLayout, QComboBox, QAbstractItemView, QWidget, \
     QPushButton, QLabel, QStyledItemDelegate
 
+from ok.config.Config import Config
 from ok.gui.Communicate import communicate
 
-LOG_BG_TRANS = 40
+LOG_BG_TRANS = 80
 color_codes = {
     "INFO": QColor(85, 85, 255, LOG_BG_TRANS),  # Light blue
     "DEBUG": QColor(85, 255, 85, LOG_BG_TRANS),  # Light green
@@ -75,16 +76,20 @@ class LogModel(QAbstractListModel):
         self.current_level = level
         self.current_keyword = keyword
         keyword = keyword.lower()
+
+        # Get the numeric severity for the current level
+        current_level_severity = level_severity.get(level, 0)
+
+        # Filter logs based on severity level and keyword
         if level == "ALL":
-            if not keyword:
-                self.filtered_logs = self.logs
-            else:
-                self.filtered_logs = [log for log in self.logs if keyword in log.text.lower()]
+            self.filtered_logs = [log for log in self.logs if keyword in log.text.lower()]
         else:
-            if not keyword:
-                self.filtered_logs = [log for log in self.logs if level == log.level]
-            else:
-                self.filtered_logs = [log for log in self.logs if level == log.level and keyword in log.text.lower()]
+            self.filtered_logs = [
+                log for log in self.logs
+                if level_severity.get(log.level, 0) >= current_level_severity
+                   and keyword in log.text.lower()
+            ]
+
         self.layoutChanged.emit()
         self.log_list.scrollToBottom()
 
@@ -95,15 +100,21 @@ class LogModel(QAbstractListModel):
 
 
 log_levels = {10: "DEBUG", 20: "INFO", 30: "WARNING", 40: "ERROR"}
+level_severity = {v: k for k, v in log_levels.items()}
 
 
 class LogWindow(QWidget):
-    def __init__(self):
+    def __init__(self, app_config):
         super().__init__()
         self.setWindowTitle('Log Viewer')
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setFixedSize(800, 300)
+
+        self.config = Config({'width': 800, 'height': 300, 'x': 0, 'y': 0,
+                              'level': 'ALL'},
+                             app_config.get('config_folder'), 'log_window')
+        self.setGeometry(self.config['x'], self.config['y'], self.config['width'], self.config['height'])
+
         self.refresh_signal = Signal()
 
         self.old_pos = None
@@ -120,6 +131,7 @@ class LogWindow(QWidget):
 
         self.level_filter = QComboBox()
         self.level_filter.addItems(["ALL", "DEBUG", "INFO", "WARNING", "ERROR"])
+        self.level_filter.setCurrentText(self.config.get('level'))
         self.level_filter.currentIndexChanged.connect(self.filter_logs)
 
         self.keyword_filter = QLineEdit()
@@ -148,6 +160,7 @@ class LogWindow(QWidget):
         communicate.log.connect(self.add_log)
 
         self.logs = []
+        self.filter_logs()
 
     def add_log(self, level_no, message):
         self.logs.append(message)
@@ -155,6 +168,7 @@ class LogWindow(QWidget):
 
     def filter_logs(self):
         level = self.level_filter.currentText()
+        self.config['level'] = level
         keyword = self.keyword_filter.text()
         self.log_model.filter_logs(level, keyword)
 
@@ -170,4 +184,6 @@ class LogWindow(QWidget):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
+            self.config['x'] = self.x()
+            self.config['y'] = self.y()
             self.old_pos = None

@@ -49,9 +49,6 @@ class DebugTab(Tab):
         capture_button.clicked.connect(lambda: self.handler.post(self.capture))
         layout.addWidget(capture_button)
 
-        # self.shortcut = QShortcut(QKeySequence("Ctrl+Alt+S"), self)
-        # self.shortcut.activated.connect(lambda: self.handler.post(self.capture))
-
         ocr_button = PushButton("OCR")
         ocr_button.clicked.connect(lambda: self.handler.post(self.ocr))
         layout.addWidget(ocr_button)

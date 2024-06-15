@@ -112,7 +112,7 @@ class App:
         self.main_window.raise_()
         self.main_window.activateWindow()
         if self.config.get('debug'):
-            self.log_window = LogWindow()
+            self.log_window = LogWindow(self.config)
             self.log_window.show()
             logger.debug('showing log_window')
 
