@@ -69,6 +69,8 @@ class LogModel(QAbstractListModel):
         self.beginInsertRows(QModelIndex(), self.rowCount(QModelIndex()), self.rowCount(QModelIndex()))
         self.do_filter_logs()
         self.endInsertRows()
+        self.layoutChanged.emit()
+        self.log_list.scrollToBottom()
 
     def do_filter_logs(self):
 
