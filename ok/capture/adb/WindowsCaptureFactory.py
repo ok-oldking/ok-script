@@ -4,32 +4,33 @@ logger = get_logger(__name__)
 
 
 def update_capture_method(config, capture_method, hwnd, require_bg=False, use_bit_blt_only=False):
-    if config.get('can_bit_blt'):
-        logger.debug(
-            f"try BitBlt method {config} {hwnd} current_type:{type(capture_method)}")
-        from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
-        target_method = BitBltCaptureMethod
-        capture_method = get_capture(capture_method, target_method, hwnd)
-        if capture_method.test_exclusive_full_screen():
+    try:
+        if config.get('can_bit_blt'):
+            logger.debug(
+                f"try BitBlt method {config} {hwnd} current_type:{type(capture_method)}")
+            from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
+            target_method = BitBltCaptureMethod
+            capture_method = get_capture(capture_method, target_method, hwnd)
+            if capture_method.test_exclusive_full_screen():
+                return capture_method
+            else:
+                logger.info("test_exclusive_full_screen failed, can't use BitBlt")
+        if use_bit_blt_only:
+            return None
+        from ok.capture.windows.WindowsGraphicsCaptureMethod import windows_graphics_available
+        if windows_graphics_available():
+            from ok.capture.windows.WindowsGraphicsCaptureMethod import WindowsGraphicsCaptureMethod
+            target_method = WindowsGraphicsCaptureMethod
+            capture_method = get_capture(capture_method, target_method, hwnd)
             return capture_method
-        else:
-            logger.info("test_exclusive_full_screen failed, can't use BitBlt")
-    if use_bit_blt_only:
-        return None
-    from ok.capture.windows.WindowsGraphicsCaptureMethod import windows_graphics_available
-    if windows_graphics_available():
-        from ok.capture.windows.WindowsGraphicsCaptureMethod import WindowsGraphicsCaptureMethod
-        target_method = WindowsGraphicsCaptureMethod
-        capture_method = get_capture(capture_method, target_method, hwnd)
-        return capture_method
 
-    if not require_bg:
-        from ok.capture.windows.DesktopDuplicationCaptureMethod import DesktopDuplicationCaptureMethod
-        target_method = DesktopDuplicationCaptureMethod
-        capture_method = get_capture(capture_method, target_method, hwnd)
-        return capture_method
-
-    return None
+        if not require_bg:
+            from ok.capture.windows.DesktopDuplicationCaptureMethod import DesktopDuplicationCaptureMethod
+            target_method = DesktopDuplicationCaptureMethod
+            capture_method = get_capture(capture_method, target_method, hwnd)
+            return capture_method
+    except Exception as e:
+        logger.error(f'update_capture_method exception, return None: ', e)
 
 
 def get_capture(capture_method, target_method, hwnd):

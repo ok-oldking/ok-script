@@ -34,9 +34,11 @@ class ExecutorOperation:
     def is_scene(self, the_scene):
         return isinstance(self.executor.current_scene, the_scene)
 
-    def click(self, x=-1, y=-1, move_back=False, name=None):
-        frame = self.executor.nullable_frame()
-        communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green", frame)
+    def click(self, x: int | Box = -1, y=-1, move_back=False, name=None):
+        if isinstance(x, Box):
+            self.click_box(x, move_back=move_back)
+            return
+        communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green")
         self.executor.reset_scene()
         self.executor.interaction.click(x, y, move_back, name=name)
 

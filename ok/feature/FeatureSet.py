@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import threading
 from typing import Dict
 from typing import List
 
@@ -21,7 +22,7 @@ class FeatureSet:
     feature_dict: Dict[str, Feature] = {}
     box_dict: Dict[str, Box] = {}
 
-    def __init__(self, coco_json: str, default_horizontal_variance=0,
+    def __init__(self, debug, coco_json: str, default_horizontal_variance=0,
                  default_vertical_variance=0, default_threshold=0.95) -> None:
         """
         Initialize the FeatureSet by loading images and annotations from a COCO dataset.
@@ -33,6 +34,7 @@ class FeatureSet:
         """
         self.coco_json = resource_path(coco_json)
         self.coco_folder = os.path.dirname(self.coco_json)
+        self.debug = debug
 
         logger.debug(f'Loading features from {self.coco_json}')
 
@@ -44,6 +46,7 @@ class FeatureSet:
         self.default_threshold = default_threshold
         self.default_horizontal_variance = default_horizontal_variance
         self.default_vertical_variance = default_vertical_variance
+        self.lock = threading.Lock()
 
     def check_size(self, frame):
         height, width = frame.shape[:2]
@@ -51,6 +54,8 @@ class FeatureSet:
             logger.info(f"FeatureSet: Width and height changed from {self.width}x{self.height} to {width}x{height}")
             self.width = width
             self.height = height
+            self.process_data()
+        elif not self.feature_dict:
             self.process_data()
 
     def process_data(self) -> None:
@@ -61,49 +66,60 @@ class FeatureSet:
             width (int): Target width for scaling images.
             height (int): Target height for scaling images.
         """
-        self.feature_dict.clear()
-        self.box_dict.clear()
-        with open(self.coco_json, 'r') as file:
-            data = json.load(file)
+        with self.lock:
+            if self.debug:
+                folder_size = sum(os.path.getsize(os.path.join(dirpath, filename))
+                                  for dirpath, dirnames, filenames in os.walk(self.coco_folder)
+                                  for filename in filenames)
+                # Convert size to MB
+                folder_size_mb = folder_size / (1024 * 1024)
+                if folder_size_mb > 5:
+                    from ok.feature.CompressCoco import compress_coco
+                    logger.info(f'template folder greater than 5MB try to compress the COCO dataset')
+                    compress_coco(self.coco_json)
+            self.feature_dict.clear()
+            self.box_dict.clear()
+            with open(self.coco_json, 'r') as file:
+                data = json.load(file)
 
-        # Create a map from image ID to file name
-        image_map = {image['id']: image['file_name'] for image in data['images']}
+            # Create a map from image ID to file name
+            image_map = {image['id']: image['file_name'] for image in data['images']}
 
-        # Create a map from category ID to category name
-        category_map = {category['id']: category['name'] for category in data['categories']}
+            # Create a map from category ID to category name
+            category_map = {category['id']: category['name'] for category in data['categories']}
 
-        for annotation in data['annotations']:
-            image_id = annotation['image_id']
-            category_id = annotation['category_id']
-            bbox = annotation['bbox']
+            for annotation in data['annotations']:
+                image_id = annotation['image_id']
+                category_id = annotation['category_id']
+                bbox = annotation['bbox']
 
-            # Load and scale the image
-            image_path = str(os.path.join(self.coco_folder, image_map[image_id]))
-            image = cv2.imread(image_path)
-            _, original_width = image.shape[:2]
-            if image is None:
-                logger.error(f'Could not read image {image_path}')
-                continue
-            x, y, w, h = bbox
-            if self.width != image.shape[1] or self.height != image.shape[0]:
-                scale_x, scale_y = self.width / image.shape[1], self.height / image.shape[0]
-                logger.debug(f'scaling images {scale_x}, {scale_y}')
-                image = cv2.resize(image, (self.width, self.height))
-                # Calculate the scaled bounding box
-                x, y, w, h = x * scale_x, y * scale_y, w * scale_x, h * scale_y
+                # Load and scale the image
+                image_path = str(os.path.join(self.coco_folder, image_map[image_id]))
+                image = cv2.imread(image_path)
+                _, original_width = image.shape[:2]
+                if image is None:
+                    logger.error(f'Could not read image {image_path}')
+                    continue
+                x, y, w, h = bbox
+                if self.width != image.shape[1] or self.height != image.shape[0]:
+                    scale_x, scale_y = self.width / image.shape[1], self.height / image.shape[0]
+                    logger.debug(f'scaling images {scale_x}, {scale_y}')
+                    image = cv2.resize(image, (self.width, self.height))
+                    # Calculate the scaled bounding box
+                    x, y, w, h = x * scale_x, y * scale_y, w * scale_x, h * scale_y
 
-            # Crop the image to the bounding box
-            image = image[int(y):int(y + h), int(x):int(x + w), :3]
+                # Crop the image to the bounding box
+                image = image[round(y):round(y + h), round(x):round(x + w), :3]
 
-            # Store in featureDict using the category name
-            category_name = category_map[category_id]
-            logger.debug(
-                f"loaded {category_name} resized width {self.width} / original_width:{original_width},scale_x:{self.width / original_width}")
-            if category_name in self.feature_dict:
-                raise ValueError(f"Multiple boxes found for category {category_name}")
-            if not category_name.startswith('box_'):
-                self.feature_dict[category_name] = Feature(image, x, y, w, h)
-            self.box_dict[category_name] = Box(x, y, w, h, name=category_name)
+                # Store in featureDict using the category name
+                category_name = category_map[category_id]
+                logger.debug(
+                    f"loaded {category_name} resized width {self.width} / original_width:{original_width},scale_x:{self.width / original_width}")
+                if category_name in self.feature_dict:
+                    raise ValueError(f"Multiple boxes found for category {category_name}")
+                if not category_name.startswith('box_'):
+                    self.feature_dict[category_name] = Feature(image, x, y, w, h)
+                self.box_dict[category_name] = Box(x, y, w, h, name=category_name)
 
     def get_box_by_name(self, mat, category_name: str) -> Box:
         self.check_size(mat)
@@ -130,7 +146,6 @@ class FeatureSet:
 
             # Save the image
             cv2.imwrite(file_path, image.mat)
-            print(f"Saved {file_path}")
 
     def find_one(self, mat: np.ndarray, category_name: str, horizontal_variance: float = 0,
                  vertical_variance: float = 0,
@@ -183,16 +198,16 @@ class FeatureSet:
                 width = to_x - x
             if height == -1:
                 height = to_y - y
-            search_x1 = int(x * frame_width)
-            search_y1 = int(y * frame_height)
-            search_x2 = int((x + width) * frame_width)
-            search_y2 = int((y + height) * frame_height)
+            search_x1 = round(x * frame_width)
+            search_y1 = round(y * frame_height)
+            search_x2 = round((x + width) * frame_width)
+            search_y2 = round((y + height) * frame_height)
         else:
             # Define search area using variance
-            search_x1 = max(0, int(feature.x - self.width * horizontal_variance))
-            search_y1 = max(0, int(feature.y - self.height * vertical_variance))
-            search_x2 = min(self.width, int(feature.x + feature_width + self.width * horizontal_variance))
-            search_y2 = min(self.height, int(feature.y + feature_height + self.height * vertical_variance))
+            search_x1 = max(0, round(feature.x - self.width * horizontal_variance))
+            search_y1 = max(0, round(feature.y - self.height * vertical_variance))
+            search_x2 = min(self.width, round(feature.x + feature_width + self.width * horizontal_variance))
+            search_y2 = min(self.height, round(feature.y + feature_height + self.height * vertical_variance))
 
         search_area = mat[search_y1:search_y2, search_x1:search_x2, :3]
         # Crop the search area from the image

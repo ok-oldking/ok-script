@@ -97,7 +97,7 @@ class OK:
         if template_matching is not None:
             coco_feature_json = self.config.get('template_matching').get('coco_feature_json')
             from ok.feature.FeatureSet import FeatureSet
-            self.feature_set = FeatureSet(coco_feature_json,
+            self.feature_set = FeatureSet(self.debug, coco_feature_json,
                                           default_horizontal_variance=template_matching.get(
                                               'default_horizontal_variance', 0),
                                           default_vertical_variance=template_matching.get('default_vertical_variance',

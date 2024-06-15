@@ -214,7 +214,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 logger.warning(f"latency too large return None frame: {latency}")
                 return None
             else:
-                logger.debug(f'frame latency: {latency}')
+                # logger.debug(f'frame latency: {latency}')
                 return frame
 
     def reset_framepool(self, size, reset_device=False):
