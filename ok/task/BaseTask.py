@@ -1,4 +1,5 @@
 import threading
+import time
 
 from ok.config.Config import Config
 from ok.config.InfoDict import InfoDict
@@ -27,8 +28,17 @@ class BaseTask(ExecutorOperation):
         self._paused = False
         self.lock = threading.Lock()
         self._handler = None
-        self._done = False
         self.running = False
+        self.check_trigger_interval = 0
+        self.last_check_trigger_time = 0
+
+    def should_check_trigger(self):
+        now = time.time()
+        time_diff = now - self.last_check_trigger_time
+        if time_diff > self.check_trigger_interval:
+            self.last_check_trigger_time = now
+            return True
+        return False
 
     def get_status(self):
         if self.running:
@@ -46,15 +56,6 @@ class BaseTask(ExecutorOperation):
             self._enabled = True
             self.info_clear()
         communicate.task.emit(self)
-        self._done = False
-
-    @property
-    def done(self):
-        return self._done
-
-    def set_done(self):
-        self._done = True
-        self.disable()
 
     @property
     def handler(self) -> Handler:
@@ -156,10 +157,7 @@ class BaseTask(ExecutorOperation):
     def run(self):
         pass
 
-    def check_trigger(self):
-        return True
-
-    def check_condition(self):
+    def trigger(self):
         return True
 
     def on_destroy(self):

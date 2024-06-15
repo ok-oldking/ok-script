@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     name = "Windows Graphics Capture"
     description = "fast, most compatible, capped at 60fps"
-    last_frame = None
+    last_dx_frame = None
     last_frame_time = 0
     frame_pool = None
     item = None
@@ -38,67 +38,71 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
     def frame_arrived_callback(self, x, y):
         try:
-            frame = self.frame_pool.TryGetNextFrame()
+            self.last_frame_time = time.time()
+            self.last_dx_frame = self.frame_pool.TryGetNextFrame()
         except Exception as e:
             logger.error(f"TryGetNextFrame error {e}")
             self.close()
             return
+
+    def convert_dx_frame(self):
+        frame = self.last_dx_frame
         if not frame:
+            return None
+
+        need_reset_framepool = False
+        if frame.ContentSize.Width != self.last_size.Width or frame.ContentSize.Height != self.last_size.Height:
+            need_reset_framepool = True
+            self.last_size = frame.ContentSize
+
+        if need_reset_framepool:
+            logger.info('need_reset_framepool')
+            self.reset_framepool(frame.ContentSize)
             return
-        self.last_frame_time = time.time()
-        img = None
-        with frame:
-            need_reset_framepool = False
-            need_reset_device = False
-            if frame.ContentSize.Width != self.last_size.Width or frame.ContentSize.Height != self.last_size.Height:
+        need_reset_device = False
+
+        tex = None
+
+        cputex = None
+        try:
+            from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDxgiInterfaceAccess
+            from ok.rotypes.roapi import GetActivationFactory
+            tex = frame.Surface.astype(IDirect3DDxgiInterfaceAccess).GetInterface(
+                d3d11.ID3D11Texture2D.GUID).astype(d3d11.ID3D11Texture2D)
+            desc = tex.GetDesc()
+            desc2 = d3d11.D3D11_TEXTURE2D_DESC()
+            desc2.Width = desc.Width
+            desc2.Height = desc.Height
+            desc2.MipLevels = desc.MipLevels
+            desc2.ArraySize = desc.ArraySize
+            desc2.Format = desc.Format
+            desc2.SampleDesc = desc.SampleDesc
+            desc2.Usage = d3d11.D3D11_USAGE_STAGING
+            desc2.CPUAccessFlags = d3d11.D3D11_CPU_ACCESS_READ
+            desc2.BindFlags = 0
+            desc2.MiscFlags = 0
+            cputex = self.dxdevice.CreateTexture2D(ctypes.byref(desc2), None)
+            self.immediatedc.CopyResource(cputex, tex)
+            mapinfo = self.immediatedc.Map(cputex, 0, d3d11.D3D11_MAP_READ, 0)
+            img = np.ctypeslib.as_array(ctypes.cast(mapinfo.pData, PBYTE),
+                                        (desc.Height, mapinfo.RowPitch // 4, 4))[
+                  :, :desc.Width].copy()
+            self.immediatedc.Unmap(cputex, 0)
+            return img
+        except OSError as e:
+            if e.winerror == d3d11.DXGI_ERROR_DEVICE_REMOVED or e.winerror == d3d11.DXGI_ERROR_DEVICE_RESET:
                 need_reset_framepool = True
-                self.last_size = frame.ContentSize
-
-            if need_reset_framepool:
-                self.reset_framepool(frame.ContentSize)
-                return
-            tex = None
-
-            cputex = None
-            try:
-                from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDxgiInterfaceAccess
-                from ok.rotypes.roapi import GetActivationFactory
-                tex = frame.Surface.astype(IDirect3DDxgiInterfaceAccess).GetInterface(
-                    d3d11.ID3D11Texture2D.GUID).astype(d3d11.ID3D11Texture2D)
-                desc = tex.GetDesc()
-                desc2 = d3d11.D3D11_TEXTURE2D_DESC()
-                desc2.Width = desc.Width
-                desc2.Height = desc.Height
-                desc2.MipLevels = desc.MipLevels
-                desc2.ArraySize = desc.ArraySize
-                desc2.Format = desc.Format
-                desc2.SampleDesc = desc.SampleDesc
-                desc2.Usage = d3d11.D3D11_USAGE_STAGING
-                desc2.CPUAccessFlags = d3d11.D3D11_CPU_ACCESS_READ
-                desc2.BindFlags = 0
-                desc2.MiscFlags = 0
-                cputex = self.dxdevice.CreateTexture2D(ctypes.byref(desc2), None)
-                self.immediatedc.CopyResource(cputex, tex)
-                mapinfo = self.immediatedc.Map(cputex, 0, d3d11.D3D11_MAP_READ, 0)
-                img = np.ctypeslib.as_array(ctypes.cast(mapinfo.pData, PBYTE),
-                                            (desc.Height, mapinfo.RowPitch // 4, 4))[
-                      :, :desc.Width].copy()
-                self.immediatedc.Unmap(cputex, 0)
-            except OSError as e:
-                if e.winerror == d3d11.DXGI_ERROR_DEVICE_REMOVED or e.winerror == d3d11.DXGI_ERROR_DEVICE_RESET:
-                    need_reset_framepool = True
-                    need_reset_device = True
-                else:
-                    raise
-            finally:
-                if tex is not None:
-                    tex.Release()
-                if cputex is not None:
-                    cputex.Release()
-            if need_reset_framepool:
-                self.reset_framepool(frame.ContentSize, need_reset_device)
-                return self.get_frame()
-        self.last_frame = img
+                need_reset_device = True
+            else:
+                raise e
+        finally:
+            if tex is not None:
+                tex.Release()
+            if cputex is not None:
+                cputex.Release()
+        if need_reset_framepool:
+            self.reset_framepool(frame.ContentSize, need_reset_device)
+            return self.get_frame()
 
     @property
     def hwnd_window(self):
@@ -139,7 +143,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 self.evtoken = item.add_Closed(delegate)
                 self.frame_pool = Direct3D11CaptureFramePool.CreateFreeThreaded(self.rtdevice,
                                                                                 DirectXPixelFormat.B8G8R8A8UIntNormalized,
-                                                                                1, item.Size)
+                                                                                2, item.Size)
                 self.session = self.frame_pool.CreateCaptureSession(item)
                 pool = self.frame_pool
                 pool.add_FrameArrived(
@@ -193,10 +197,11 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     @override
     def do_get_frame(self):
         if self.start_or_stop():
-            frame = self.last_frame
-            self.last_frame = None
+            frame = self.convert_dx_frame()
+            if frame is None:
+                return
+            self.last_dx_frame = None
             latency = time.time() - self.last_frame_time
-            self.last_frame_time = time.time()
 
             frame = self.crop_image(frame)
 
@@ -209,14 +214,16 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 logger.warning(f"latency too large return None frame: {latency}")
                 return None
             else:
+                logger.debug(f'frame latency: {latency}')
                 return frame
 
     def reset_framepool(self, size, reset_device=False):
+        logger.info(f'reset_framepool')
         from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
         if reset_device:
             self.create_device()
         self.frame_pool.Recreate(self.rtdevice,
-                                 DirectXPixelFormat.B8G8R8A8UIntNormalized, 1, size)
+                                 DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, size)
 
     def crop_image(self, frame):
         if frame is not None:

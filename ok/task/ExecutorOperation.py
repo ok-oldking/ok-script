@@ -132,7 +132,8 @@ class ExecutorOperation:
     def move_relative(self, x, y):
         self.executor.interaction.move_relative(x, y)
 
-    def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=True):
+    def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=True,
+                  move_back=False):
         if isinstance(box, list):
             if len(box) > 0:
                 box = box[0]
@@ -143,7 +144,7 @@ class ExecutorOperation:
                 raise Exception(f"click_box box is None")
             return
         x, y = box.relative_with_variance(relative_x, relative_y)
-        self.click(x, y, name=box.name)
+        self.click(x, y, name=box.name, move_back=move_back)
 
     def wait_scene(self, scene_type=None, time_out=0, pre_action=None, post_action=None):
         return self.executor.wait_scene(scene_type, time_out, pre_action, post_action)

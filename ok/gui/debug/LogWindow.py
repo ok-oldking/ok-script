@@ -60,28 +60,25 @@ class LogModel(QAbstractListModel):
         # Create colored text based on level
         color_format = self.get_color_format(level)
         colored_text = ColoredText(message, color_format, level)
-
+        self.logs.append(colored_text)
         if len(self.logs) >= 500:
             self.beginRemoveRows(QModelIndex(), 0, 0)
             self.logs.pop(0)
             self.endRemoveRows()
 
         self.beginInsertRows(QModelIndex(), self.rowCount(QModelIndex()), self.rowCount(QModelIndex()))
-        self.logs.append(colored_text)
+        self.do_filter_logs()
         self.endInsertRows()
 
-        self.filter_logs(self.current_level, self.current_keyword)
+    def do_filter_logs(self):
 
-    def filter_logs(self, level, keyword):
-        self.current_level = level
-        self.current_keyword = keyword
-        keyword = keyword.lower()
+        keyword = self.current_keyword.lower()
 
         # Get the numeric severity for the current level
-        current_level_severity = level_severity.get(level, 0)
+        current_level_severity = level_severity.get(self.current_level, 0)
 
         # Filter logs based on severity level and keyword
-        if level == "ALL":
+        if self.current_level == "ALL":
             self.filtered_logs = [log for log in self.logs if keyword in log.text.lower()]
         else:
             self.filtered_logs = [
@@ -90,6 +87,10 @@ class LogModel(QAbstractListModel):
                    and keyword in log.text.lower()
             ]
 
+    def filter_logs(self, level, keyword):
+        self.current_level = level
+        self.current_keyword = keyword
+        self.do_filter_logs()
         self.layoutChanged.emit()
         self.log_list.scrollToBottom()
 

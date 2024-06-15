@@ -32,6 +32,7 @@ class TaskExecutor:
     ocr = None
     pause_start = time.time()
     pause_end_time = time.time()
+    _last_frame_time = 0
 
     def __init__(self, device_manager: DeviceManager,
                  wait_until_timeout=10, wait_until_before_delay=1, wait_until_check_delay=1,
@@ -113,6 +114,7 @@ class TaskExecutor:
             if self.can_capture():
                 self._frame = self.method.get_frame()
                 if self._frame is not None:
+                    self._last_frame_time = time.time()
                     height, width = self._frame.shape[:2]
                     if height <= 0 or width <= 0:
                         logger.warning(f"captured wrong size frame: {width}x{height}")
@@ -149,7 +151,7 @@ class TaskExecutor:
             if self.exit_event.is_set():
                 logger.info("Exit event set. Exiting early.")
                 return
-            if (self.current_task and not self.current_task.enabled) or self.current_task is None:
+            if self.current_task and not self.current_task.enabled:
                 raise TaskDisabledException()
             if not (self.paused or (
                     self.current_task is not None and self.current_task.paused) or self.interaction is None or not self.interaction.should_capture()):
@@ -223,48 +225,46 @@ class TaskExecutor:
                 self.trigger_task_index = -1
                 cycled = True
             self.trigger_task_index += 1
-            if self.trigger_tasks[self.trigger_task_index].enabled:
-                return self.trigger_tasks[self.trigger_task_index], cycled
-        return None, False
+            task = self.trigger_tasks[self.trigger_task_index]
+            if task.enabled and task.should_check_trigger():
+                return task, cycled
+        return None, cycled
 
     def active_trigger_task_count(self):
         return len([x for x in self.trigger_tasks if x.enabled])
 
     def execute(self):
         logger.info(f"start execute")
-        processing_time = 0
+        last_frame_time = 0
         while not self.exit_event.is_set():
+            task, cycled = self.next_task()
+            if not task:
+                time.sleep(1)
+                continue
+            if cycled:
+                self.next_frame()
+                self.detect_scene()
+            elif time.time() - self._last_frame_time > 1:
+                logger.warning(f'processing cost too much time, get new frame')
+                self.next_frame()
+                self.detect_scene()
             try:
-                self.current_task, cycled = self.next_task()
-                if not self.current_task:
-                    time.sleep(1)
-                    continue
-                if not isinstance(self.current_task, TriggerTask):
+                if task.trigger():
+                    self.current_task = task
                     self.current_task.running = True
                     communicate.task.emit(self.current_task)
-                result = False
-                if self.current_task.check_condition() and self.current_task.check_trigger():
                     if cycled or self._frame is None:
                         self.next_frame()
-                        processing_time = 0
-                    if processing_time > 1:
-                        logger.debug(
-                            f"{processing_time} taking too long get new frame {processing_time}")
-                        self.next_frame()
-                    self.detect_scene()
-                    start = time.time()
-                    result = self.current_task.run()
-                    processing_time += time.time() - start
-                task = self.current_task
-                if isinstance(self.current_task, TriggerTask):
-                    if result:
-                        self.current_task.trigger_count += 1
-                        self.current_task = None
-                        communicate.task.emit(task)
-                elif not isinstance(self.current_task, TriggerTask):
-                    self.current_task.set_done()
+                    self.current_task.run()
+                    if not isinstance(self.current_task, TriggerTask):
+                        self.current_task.disable()
                     self.current_task = None
                     communicate.task.emit(task)
+                if self.current_task is not None:
+                    self.current_task.running = False
+                    if not isinstance(self.current_task, TriggerTask):
+                        communicate.task.emit(self.current_task)
+                    self.current_task = None
             except TaskDisabledException:
                 logger.info(f"task is disabled, go to next task")
             except FinishedException:
@@ -282,11 +282,6 @@ class TaskExecutor:
                 logger.error(f"{name} exception: {e}, traceback: {stack_trace_str}")
                 if self._frame is not None:
                     communicate.screenshot.emit(self.frame, name)
-            if self.current_task is not None:
-                self.current_task.running = False
-                if not isinstance(self.current_task, TriggerTask):
-                    communicate.task.emit(self.current_task)
-                self.current_task = None
 
         logger.debug(f'exit_event is set, destroy all tasks')
         for task in self.onetime_tasks:

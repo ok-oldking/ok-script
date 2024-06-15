@@ -15,19 +15,13 @@ class TaskOpButton(QPushButton):
 
     def update_task(self, task: BaseTask):
         if task.enabled:
-            if task.done:
-                self.setText(self.tr("Rerun"))
-            else:
-                self.setText(self.tr("Disable"))
+            self.setText(self.tr("Disable"))
         else:
             self.setText(self.tr("Enable"))
 
     @Slot()
     def toggle_text(self):
         if self.task.enabled:
-            if self.task.done:
-                self.task.enable()
-            else:
-                self.task.disable()
+            self.task.disable()
         else:
             self.task.disable()
