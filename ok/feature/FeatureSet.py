@@ -49,14 +49,15 @@ class FeatureSet:
         self.lock = threading.Lock()
 
     def check_size(self, frame):
-        height, width = frame.shape[:2]
-        if self.width != width or self.height != height and height > 0 and width > 0:
-            logger.info(f"FeatureSet: Width and height changed from {self.width}x{self.height} to {width}x{height}")
-            self.width = width
-            self.height = height
-            self.process_data()
-        elif not self.feature_dict:
-            self.process_data()
+        with self.lock:
+            height, width = frame.shape[:2]
+            if self.width != width or self.height != height and height > 0 and width > 0:
+                logger.info(f"FeatureSet: Width and height changed from {self.width}x{self.height} to {width}x{height}")
+                self.width = width
+                self.height = height
+                self.process_data()
+            elif not self.feature_dict:
+                self.process_data()
 
     def process_data(self) -> None:
         """
@@ -66,60 +67,59 @@ class FeatureSet:
             width (int): Target width for scaling images.
             height (int): Target height for scaling images.
         """
-        with self.lock:
-            if self.debug:
-                folder_size = sum(os.path.getsize(os.path.join(dirpath, filename))
-                                  for dirpath, dirnames, filenames in os.walk(self.coco_folder)
-                                  for filename in filenames)
-                # Convert size to MB
-                folder_size_mb = folder_size / (1024 * 1024)
-                if folder_size_mb > 5:
-                    from ok.feature.CompressCoco import compress_coco
-                    logger.info(f'template folder greater than 5MB try to compress the COCO dataset')
-                    compress_coco(self.coco_json)
-            self.feature_dict.clear()
-            self.box_dict.clear()
-            with open(self.coco_json, 'r') as file:
-                data = json.load(file)
+        if self.debug:
+            folder_size = sum(os.path.getsize(os.path.join(dirpath, filename))
+                              for dirpath, dirnames, filenames in os.walk(self.coco_folder)
+                              for filename in filenames)
+            # Convert size to MB
+            folder_size_mb = folder_size / (1024 * 1024)
+            if folder_size_mb > 5:
+                from ok.feature.CompressCoco import compress_coco
+                logger.info(f'template folder greater than 5MB try to compress the COCO dataset')
+                compress_coco(self.coco_json)
+        self.feature_dict.clear()
+        self.box_dict.clear()
+        with open(self.coco_json, 'r') as file:
+            data = json.load(file)
 
-            # Create a map from image ID to file name
-            image_map = {image['id']: image['file_name'] for image in data['images']}
+        # Create a map from image ID to file name
+        image_map = {image['id']: image['file_name'] for image in data['images']}
 
-            # Create a map from category ID to category name
-            category_map = {category['id']: category['name'] for category in data['categories']}
+        # Create a map from category ID to category name
+        category_map = {category['id']: category['name'] for category in data['categories']}
 
-            for annotation in data['annotations']:
-                image_id = annotation['image_id']
-                category_id = annotation['category_id']
-                bbox = annotation['bbox']
+        for annotation in data['annotations']:
+            image_id = annotation['image_id']
+            category_id = annotation['category_id']
+            bbox = annotation['bbox']
 
-                # Load and scale the image
-                image_path = str(os.path.join(self.coco_folder, image_map[image_id]))
-                image = cv2.imread(image_path)
-                _, original_width = image.shape[:2]
-                if image is None:
-                    logger.error(f'Could not read image {image_path}')
-                    continue
-                x, y, w, h = bbox
-                if self.width != image.shape[1] or self.height != image.shape[0]:
-                    scale_x, scale_y = self.width / image.shape[1], self.height / image.shape[0]
-                    logger.debug(f'scaling images {scale_x}, {scale_y}')
-                    image = cv2.resize(image, (self.width, self.height))
-                    # Calculate the scaled bounding box
-                    x, y, w, h = x * scale_x, y * scale_y, w * scale_x, h * scale_y
+            # Load and scale the image
+            image_path = str(os.path.join(self.coco_folder, image_map[image_id]))
+            image = cv2.imread(image_path)
+            _, original_width = image.shape[:2]
+            if image is None:
+                logger.error(f'Could not read image {image_path}')
+                continue
+            x, y, w, h = bbox
+            if self.width != image.shape[1] or self.height != image.shape[0]:
+                scale_x, scale_y = self.width / image.shape[1], self.height / image.shape[0]
+                logger.debug(f'scaling images {scale_x}, {scale_y}')
+                image = cv2.resize(image, (self.width, self.height))
+                # Calculate the scaled bounding box
+                x, y, w, h = x * scale_x, y * scale_y, w * scale_x, h * scale_y
 
-                # Crop the image to the bounding box
-                image = image[round(y):round(y + h), round(x):round(x + w), :3]
+            # Crop the image to the bounding box
+            image = image[round(y):round(y + h), round(x):round(x + w), :3]
 
-                # Store in featureDict using the category name
-                category_name = category_map[category_id]
-                logger.debug(
-                    f"loaded {category_name} resized width {self.width} / original_width:{original_width},scale_x:{self.width / original_width}")
-                if category_name in self.feature_dict:
-                    raise ValueError(f"Multiple boxes found for category {category_name}")
-                if not category_name.startswith('box_'):
-                    self.feature_dict[category_name] = Feature(image, x, y, w, h)
-                self.box_dict[category_name] = Box(x, y, w, h, name=category_name)
+            # Store in featureDict using the category name
+            category_name = category_map[category_id]
+            logger.debug(
+                f"loaded {category_name} resized width {self.width} / original_width:{original_width},scale_x:{self.width / original_width}")
+            if category_name in self.feature_dict:
+                raise ValueError(f"Multiple boxes found for category {category_name}")
+            if not category_name.startswith('box_'):
+                self.feature_dict[category_name] = Feature(image, x, y, w, h)
+            self.box_dict[category_name] = Box(x, y, w, h, name=category_name)
 
     def get_box_by_name(self, mat, category_name: str) -> Box:
         self.check_size(mat)

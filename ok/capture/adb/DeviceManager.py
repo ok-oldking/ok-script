@@ -263,7 +263,7 @@ class DeviceManager:
             self.use_windows_capture()
             if not isinstance(self.interaction, Win32Interaction):
                 self.interaction = Win32Interaction(self.capture_method)
-            preferred['connected'] = self.capture_method.connected()
+            preferred['connected'] = self.capture_method is not None and self.capture_method.connected()
         else:
             width, height = self.get_resolution()
             if self.config.get('capture') == "windows":
