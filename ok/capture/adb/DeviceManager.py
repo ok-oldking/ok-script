@@ -1,4 +1,4 @@
-from adbutils import AdbTimeout
+from adbutils import AdbTimeout, AdbError
 
 from ok.alas.platform_windows import get_emulator_exe
 from ok.capture.HwndWindow import HwndWindow, find_hwnd
@@ -53,27 +53,25 @@ class DeviceManager:
             logger.debug(f'connect adb')
         return self._adb
 
-    def adb_connect(self, addr):
+    def adb_connect(self, addr, try_connect=True):
         try:
-            for info in self.adb.list():
+            for device in self.adb.device_list():
                 if self.exit_event.is_set():
                     logger.error(f"adb_connect exit_event is set")
                     return None
-                if info.serial == addr:
-                    if info.state == 'offline':
+                if device.serial == addr:
+                    if device.info['state'] == 'offline':
                         logger.debug(f'adb_connect offline disconnect first {addr}')
                         self.adb.disconnect(addr)
                     else:
                         logger.debug(f'adb_connect already connected {addr}')
-                        return self.adb.device(addr)
-            self.adb.connect(addr, timeout=5)
-            device = self.adb.device(addr)
-            logger.debug(f'adb_connect {addr} device {device}')
-            return device
+                        return device
+            if try_connect:
+                self.adb.connect(addr, timeout=5)
+                logger.debug(f'adb_connect {addr}')
+                return self.adb_connect(addr, try_connect=False)
         except AdbTimeout as e:
             logger.error(f"adb connect error try kill server {addr}", e)
-            # self.adb.server_kill()
-            # self._adb = None
         except Exception as e:
             logger.error(f"adb connect error return none {addr}", e)
 
@@ -145,7 +143,7 @@ class DeviceManager:
                 logger.debug(f"refresh current only skip others {preferred['imei']} != {emulator.name}")
                 break
             adb_device = self.adb_connect(emulator.serial)
-            width, height = self.get_resolution(adb_device)
+            width, height = self.get_resolution(adb_device) if adb_device is not None else 0, 0
             name, hwnd, full_path, x, y, width, height = find_hwnd(None,
                                                                    emulator.path, width, height, emulator.player_id)
             connected = adb_device is not None and name is not None
@@ -339,12 +337,13 @@ class DeviceManager:
         if device is not None:
             try:
                 return device.shell(*args, **kwargs)
+            except AdbError as e:
+                logger.debug(f'shell adb error {args} {e}')
             except Exception as e:
                 addr = self.get_preferred_device()['address']
                 self.refresh_emulators()
                 new_addr = self.get_preferred_device()['address']
                 logger.error(f"shell_wrapper error occurred, try refresh_emulators {addr} {new_addr}", e)
-                return None
         else:
             raise Exception('Device is none')
 

@@ -74,7 +74,7 @@ class MainWindow(MSFluentWindow):
         self.tray.setContextMenu(menu)
         self.tray.show()
 
-        if ok.gui.device_manager.get_preferred_device() is None or self.onetime_tab is None:
+        if ok.gui.device_manager.config.get("preferred") is None or self.onetime_tab is None:
             self.switchTo(self.start_tab)
 
         communicate.capture_error.connect(self.capture_error)

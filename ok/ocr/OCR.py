@@ -90,7 +90,7 @@ class OCR:
             self.click_box(box)
             return box
         else:
-            logger.error(f'wait ocr no box {x} {y} {width} {height} {to_x} {to_y} {match}')
+            logger.warning(f'wait ocr no box {x} {y} {width} {height} {to_x} {to_y} {match}')
 
     def wait_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, name=None, box=None,
                  match: str | List[str] | Pattern[str] | List[Pattern[str]] | None = None, threshold=0,

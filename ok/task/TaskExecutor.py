@@ -1,6 +1,7 @@
 import threading
 import time
 import traceback
+from typing import Tuple
 
 from ok.capture.BaseCaptureMethod import CaptureException
 from ok.capture.adb.DeviceManager import DeviceManager
@@ -8,7 +9,7 @@ from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 from ok.scene.Scene import Scene
 from ok.stats.StreamStats import StreamStats
-from ok.task.OneTimeTask import OneTimeTask
+from ok.task.BaseTask import BaseTask
 from ok.task.TriggerTask import TriggerTask
 
 logger = get_logger(__name__)
@@ -209,7 +210,7 @@ class TaskExecutor:
         self.last_scene = self.current_scene or self.last_scene
         self.current_scene = None
 
-    def next_task(self):
+    def next_task(self) -> Tuple[BaseTask | None, bool]:
         if self.exit_event.is_set():
             logger.error(f"next_task exit_event.is_set exit")
             return None, False
@@ -238,7 +239,7 @@ class TaskExecutor:
                 if not self.current_task:
                     time.sleep(1)
                     continue
-                if isinstance(self.current_task, OneTimeTask):
+                if not isinstance(self.current_task, TriggerTask):
                     self.current_task.running = True
                     communicate.task.emit(self.current_task)
                 result = False
@@ -260,7 +261,7 @@ class TaskExecutor:
                         self.current_task.trigger_count += 1
                         self.current_task = None
                         communicate.task.emit(task)
-                elif isinstance(self.current_task, OneTimeTask):
+                elif not isinstance(self.current_task, TriggerTask):
                     self.current_task.set_done()
                     self.current_task = None
                     communicate.task.emit(task)
@@ -281,10 +282,12 @@ class TaskExecutor:
                 logger.error(f"{name} exception: {e}, traceback: {stack_trace_str}")
                 if self._frame is not None:
                     communicate.screenshot.emit(self.frame, name)
-            self.current_task = None
-            if isinstance(self.current_task, OneTimeTask):
+            if self.current_task is not None:
                 self.current_task.running = False
-                communicate.task.emit(self.current_task)
+                if not isinstance(self.current_task, TriggerTask):
+                    communicate.task.emit(self.current_task)
+                self.current_task = None
+
         logger.debug(f'exit_event is set, destroy all tasks')
         for task in self.onetime_tasks:
             task.on_destroy()

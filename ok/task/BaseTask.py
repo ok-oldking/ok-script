@@ -27,6 +27,34 @@ class BaseTask(ExecutorOperation):
         self._paused = False
         self.lock = threading.Lock()
         self._handler = None
+        self._done = False
+        self.running = False
+
+    def get_status(self):
+        if self.running:
+            return "Running"
+        elif self.enabled:
+            if self.paused:
+                return "Paused"
+            else:
+                return "In Queue"
+        else:
+            return "Not Started"
+
+    def enable(self):
+        if not self._enabled:
+            self._enabled = True
+            self.info_clear()
+        communicate.task.emit(self)
+        self._done = False
+
+    @property
+    def done(self):
+        return self._done
+
+    def set_done(self):
+        self._done = True
+        self.disable()
 
     @property
     def handler(self) -> Handler:
@@ -120,19 +148,10 @@ class BaseTask(ExecutorOperation):
     def validate_config(self, key, value):
         pass
 
-    def enable(self):
-        if not self._enabled:
-            self._enabled = True
-            self.info_clear()
-        communicate.task.emit(self)
-
     def disable(self):
         self._enabled = False
         self.executor.current_task = None
         communicate.task.emit(self)
-
-    def get_status(self):
-        pass
 
     def run(self):
         pass

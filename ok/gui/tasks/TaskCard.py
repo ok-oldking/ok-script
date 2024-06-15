@@ -7,7 +7,7 @@ from ok.gui.Communicate import communicate
 from ok.gui.common.OKIcon import OKIcon
 from ok.gui.tasks.ConfigItemFactory import config_widget
 from ok.task.BaseTask import BaseTask
-from ok.task.OneTimeTask import OneTimeTask
+from ok.task.TriggerTask import TriggerTask
 
 
 class TaskCard(ExpandSettingCard):
@@ -19,7 +19,7 @@ class TaskCard(ExpandSettingCard):
             self.addWidget(self.reset_config)
             self.reset_config.clicked.connect(self.reset_clicked)
 
-        if isinstance(task, OneTimeTask):
+        if not isinstance(task, TriggerTask):
             self.task_buttons = TaskButtons(self.task)
             self.addWidget(self.task_buttons)
         else:
@@ -49,10 +49,10 @@ class TaskCard(ExpandSettingCard):
 
     def update_buttons(self, task):
         if task == self.task:
-            if isinstance(task, OneTimeTask):
-                self.task_buttons.update_buttons()
-            else:
+            if isinstance(task, TriggerTask):
                 self.enable_button.setChecked(task.enabled)
+            else:
+                self.task_buttons.update_buttons()
 
     def check_changed(self, checked):
         if checked:
