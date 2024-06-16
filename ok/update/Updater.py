@@ -70,26 +70,9 @@ REM Check all PIDs every second and terminate them after 10 seconds if still run
 set "check_duration=10"
 
 for %%A in (%pid_list%) do (
-    set "elapsed_time=0"
-    :check_loop
-    echo %time% - Waiting for PID %%A to exit...
-    tasklist /fi "PID eq %%A" | find ":" >nul
-    if errorlevel 1 (
-        echo %time% - PID %%A has exited.
-        goto next_pid
-    ) else (
-        timeout /t 1 /nobreak >nul
-        set /a elapsed_time+=1
-        if !elapsed_time! geq %check_duration% (
-            echo %time% - PID %%A is still running after %check_duration% seconds, killing it...
-            taskkill /f /pid %%A
-            goto next_pid
-        )
-        goto check_loop
-    )
-    :next_pid
-    echo %time% - continue
+    call :check_pid %%A
 )
+
 
 REM Sleep for one second
 timeout /t 1 /nobreak >nul
@@ -114,6 +97,29 @@ for /D %%D in ("%source_dir%\*") do (
 echo %time% Update Success
 start "" %exe%
 endlocal
+
+
+goto :eof
+
+:check_pid
+set "elapsed_time=0"
+:check_loop
+echo %time% - Waiting for PID %1 to exit...
+tasklist /fi "PID eq %1" | find ":" >nul
+if errorlevel 1 (
+    echo %time% - PID %1 has exited.
+    goto :eof
+) else (
+    timeout /t 1 /nobreak >nul
+    set /a elapsed_time+=1
+    if !elapsed_time! geq %check_duration% (
+        echo %time% - PID %1 is still running after %check_duration% seconds, killing it...
+        taskkill /f /pid %1
+        goto :eof
+    )
+    goto check_loop
+)
+goto :eof
 '''
 
 
@@ -287,17 +293,23 @@ class Updater:
         return True
 
     def update(self):
+        ok.gui.device_manager.adb_kill_server()
         exe_folder = get_path_relative_to_exe()
         batch_command = [self.to_update.get("updater_bat"), self.to_update.get("update_package_folder"), exe_folder,
-                         os.path.join(exe_folder, self.exe_name), os.path.join(exe_folder, 'md5.txt'), str(os.getpid())]
-        for proc in psutil.process_iter(['pid', 'name']):
-            if proc.info['name'] == 'adb.exe':
+                         os.path.join(exe_folder, self.exe_name), str(os.getpid())]
+        for proc in psutil.process_iter(['pid', 'name', 'exe']):
+            if proc.info['name'] == 'adb.exe' and os.path.normpath(proc.info['exe']).startswith(
+                    os.path.normpath(exe_folder)):
+                try:
+                    logger.info(f'try kill the adb process {proc.info}')
+                    proc.kill()
+                except Exception as e:
+                    logger.error(f'kill process error', e)
                 batch_command.append(str(proc.info['pid']))
 
         logger.info(f'execute update {batch_command}')
 
         subprocess.Popen(batch_command, creationflags=subprocess.CREATE_NEW_CONSOLE)
-        ok.gui.device_manager.adb_kill_server()
         ok.gui.ok.quit()
 
     def check_package_error(self):
