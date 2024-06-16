@@ -14,7 +14,7 @@ def update_capture_method(config, capture_method, hwnd, require_bg=False, use_bi
             if capture_method.test_is_not_pure_color():
                 return capture_method
             else:
-                logger.info("test_exclusive_full_screen failed, can't use BitBlt")
+                logger.info("test_is_not_pure_color failed, can't use BitBlt")
         if use_bit_blt_only:
             return None
         from ok.capture.windows.WindowsGraphicsCaptureMethod import windows_graphics_available

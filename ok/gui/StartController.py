@@ -83,7 +83,7 @@ class StartController(QObject):
                 "Game resolution {resolution} is not supported").format(resolution=resolution)
             if supported_ratio:
                 error += self.tr(', the supported ratio is {supported_ratio}').format(supported_ratio=supported_ratio)
-            if supported_ratio:
+            if min_size:
                 error += self.tr(', the supported min resolution is {min_size}').format(
                     min_size=f'{min_size[0]}x{min_size[1]}')
             error += self.tr(', check if game windows is minimized, resized or out of screen.')
