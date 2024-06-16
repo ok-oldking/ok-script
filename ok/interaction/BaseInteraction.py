@@ -34,3 +34,9 @@ class BaseInteraction:
             logger.debug(f"click {x, y}")
         else:
             logger.debug(f"click {name} {x, y}")
+
+    def right_click(self, x=-1, y=-1, move_back=False, name=None):
+        if name is None:
+            logger.debug(f"right_click {x, y}")
+        else:
+            logger.debug(f"right_click {name} {x, y}")

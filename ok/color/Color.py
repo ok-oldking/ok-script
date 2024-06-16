@@ -1,3 +1,6 @@
+import os
+from collections import defaultdict
+
 import cv2
 import numpy as np
 
@@ -14,6 +17,29 @@ white_color = {
     'g': (255, 255),  # Green range
     'b': (255, 255)  # Blue range
 }
+
+
+def is_close_to_pure_color(image, max_colors=1000, percent=0.99):
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Step 2: Initialize a dictionary to count color frequencies
+    color_counts = defaultdict(int)
+    # Step 3: Go through each pixel and count
+    for row in image:
+        for pixel in row:
+            # Convert the pixel tuple to a hashable type for counting
+            color = tuple(pixel)
+            color_counts[color] += 1
+            if len(color_counts) > max_colors:
+                return False
+
+    # Step 4: Find the most dominant color and its percentage
+    dominant_color = max(color_counts, key=color_counts.get)
+    dominant_count = color_counts[dominant_color]
+    total_pixels = image.shape[0] * image.shape[1]
+    percentage = (dominant_count / total_pixels)
+
+    return percentage > percent
 
 
 def calculate_colorfulness(image, box=None):
@@ -146,3 +172,11 @@ def calculate_color_percentage(image, color_ranges, box=None):
     total_pixels = image.size / 3  # Divide by 3 for an RGB image
     percentage = target_pixels / total_pixels
     return percentage
+
+
+if __name__ == '__main__':
+    file = 'C:\\Users\\ok\Downloads\\ok-baijing (2)\\screenshots\\16_23_04_367272_original.png'
+    exists = os.path.exists(file)
+    image = cv2.imread(file
+                       )
+    is_close_to_pure_color(image)

@@ -39,7 +39,11 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     def frame_arrived_callback(self, x, y):
         try:
             self.last_frame_time = time.time()
-            self.last_dx_frame = self.frame_pool.TryGetNextFrame()
+            next_frame = self.frame_pool.TryGetNextFrame()
+            if next_frame is not None:
+                self.last_dx_frame = next_frame
+            else:
+                logger.warning('frame_arrived_callback TryGetNextFrame returned None')
         except Exception as e:
             logger.error(f"TryGetNextFrame error {e}")
             self.close()
@@ -47,7 +51,9 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
     def convert_dx_frame(self):
         frame = self.last_dx_frame
+        self.last_dx_frame = None
         if not frame:
+            logger.warning('convert_dx_frame self.last_dx_frame is none')
             return None
 
         need_reset_framepool = False
@@ -93,6 +99,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             if e.winerror == d3d11.DXGI_ERROR_DEVICE_REMOVED or e.winerror == d3d11.DXGI_ERROR_DEVICE_RESET:
                 need_reset_framepool = True
                 need_reset_device = True
+                logger.error('convert_dx_frame win error', e)
             else:
                 raise e
         finally:
@@ -200,7 +207,6 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             frame = self.convert_dx_frame()
             if frame is None:
                 return
-            self.last_dx_frame = None
             latency = time.time() - self.last_frame_time
 
             frame = self.crop_image(frame)
@@ -210,7 +216,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 if new_width <= 0 or new_width <= 0:
                     logger.warning(f"get_frame size <=0 {new_width}x{new_height}")
                     frame = None
-            if latency > 1:
+            if latency > 2:
                 logger.warning(f"latency too large return None frame: {latency}")
                 return None
             else:

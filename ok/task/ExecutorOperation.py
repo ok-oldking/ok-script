@@ -57,6 +57,12 @@ class ExecutorOperation:
         self.executor.reset_scene()
         self.executor.interaction.mouse_up()
 
+    def right_click(self, x=-1, y=-1, move_back=False, name=None):
+        communicate.emit_draw_box("right_click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="right_click")],
+                                  "green")
+        self.executor.reset_scene()
+        self.executor.interaction.right_click(x, y, move_back, name=name)
+
     def swipe_relative(self, from_x, from_y, to_x, to_y, duration=0.5):
         self.swipe(int(self.width * from_x), int(self.height * from_y), int(self.width * to_x),
                    int(self.height * to_y), duration)
@@ -156,6 +162,9 @@ class ExecutorOperation:
         self.executor.sleep(timeout)
 
     def send_key(self, key, down_time=0.02):
+        frame = self.executor.nullable_frame()
+        communicate.emit_draw_box("send_key", [Box(max(0, 0), max(0, 0), 20, 20, name="send_key_" + str(key))], "green",
+                                  frame)
         self.executor.reset_scene()
         self.executor.interaction.send_key(key, down_time)
 

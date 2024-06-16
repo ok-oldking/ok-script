@@ -10,7 +10,7 @@ from typing_extensions import override
 
 from ok.capture.windows.BaseWindowsCaptureMethod import BaseWindowsCaptureMethod
 from ok.capture.windows.utils import try_delete_dc, BGRA_CHANNEL_COUNT
-from ok.capture.windows.window import get_window_bounds
+from ok.color.Color import is_close_to_pure_color
 from ok.logging.Logger import get_logger
 
 # This is an undocumented nFlag value for PrintWindow
@@ -60,12 +60,17 @@ class BitBltCaptureMethod(BaseWindowsCaptureMethod):
             return False
         return True
 
-
-def bit_blt_test_hwnd(hwnd):
-    x, y, border, title_height, width, height, scaling, ext_left_bounds, ext_top_bounds = get_window_bounds(
-        hwnd)
-    frame = bit_blt_capture_frame(hwnd, border, title_height, width, height, ext_left_bounds, ext_top_bounds)
-    return frame is not None
+    def test_is_not_pure_color(self):
+        frame = self.do_get_frame()
+        if frame is None:
+            logger.error(f'Failed to test_is_not_pure_color frame is None {self.hwnd_window}')
+            return False
+        else:
+            if is_close_to_pure_color(frame):
+                logger.error(f'Failed to test_is_not_pure_color failed {self.hwnd_window}')
+                return False
+            else:
+                return True
 
 
 def bit_blt_capture_frame(hwnd, border, title_height, width, height, ext_left_bounds, ext_top_bounds,

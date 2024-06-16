@@ -178,10 +178,9 @@ def find_hwnd(title, exe_name, frame_width, frame_height, player_id=-1):
 
     win32gui.EnumWindows(callback, None)
     if len(results) > 0:
-        biggest = results[0]
+        biggest = None
         for result in results:
-            from ok.capture.windows.BitBltCaptureMethod import bit_blt_test_hwnd
-            if (biggest is None or (result[2] * result[3]) > biggest[2] * biggest[3]) and bit_blt_test_hwnd(result[0]):
+            if biggest is None or (result[2] * result[3]) > biggest[2] * biggest[3]:
                 biggest = result
         x_offset = 0
         y_offset = 0

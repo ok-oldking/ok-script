@@ -151,7 +151,6 @@ class BaseTask(ExecutorOperation):
 
     def disable(self):
         self._enabled = False
-        self.executor.current_task = None
         communicate.task.emit(self)
 
     def run(self):

@@ -76,11 +76,11 @@ class TaskExecutor:
 
     def check_frame_and_resolution(self, supported_ratio, min_size):
         if supported_ratio is None or min_size is None:
-            return True, None
+            return True, '0x0'
         self.device_manager.update_resolution_for_hwnd()
         frame = self.method.get_frame()
         if frame is None:
-            return False, None
+            return False, '0x0'
         width = self.method.width
         height = self.method.height
         if height == 0:

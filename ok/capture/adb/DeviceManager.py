@@ -268,7 +268,7 @@ class DeviceManager:
             width, height = self.get_resolution()
             if self.config.get('capture') == "windows":
                 self.ensure_hwnd(None, preferred.get('full_path'), width, height, preferred['player_id'])
-                self.use_windows_capture({'can_bit_blt': True}, require_bg=True, use_bit_blt_only=True)
+                self.use_windows_capture({'can_bit_blt': True}, require_bg=True, use_bit_blt_only=False)
             else:
                 if not isinstance(self.capture_method, ADBCaptureMethod):
                     logger.debug(f'use adb capture')

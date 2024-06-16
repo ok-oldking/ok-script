@@ -24,20 +24,10 @@ class BaseCaptureMethod:
 
     @property
     def width(self):
-        if self._size[0] == 0:
-            try:
-                self.get_frame()
-            except Exception as e:
-                logger.error('width get frame error', e)
         return self._size[0]
 
     @property
     def height(self):
-        if self._size[1] == 0:
-            try:
-                self.get_frame()
-            except Exception as e:
-                logger.error('height get frame error', e)
         return self._size[1]
 
     def get_frame(self) -> np.ndarray | None:

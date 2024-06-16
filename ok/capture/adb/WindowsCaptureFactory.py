@@ -11,7 +11,7 @@ def update_capture_method(config, capture_method, hwnd, require_bg=False, use_bi
             from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
             target_method = BitBltCaptureMethod
             capture_method = get_capture(capture_method, target_method, hwnd)
-            if capture_method.test_exclusive_full_screen():
+            if capture_method.test_is_not_pure_color():
                 return capture_method
             else:
                 logger.info("test_exclusive_full_screen failed, can't use BitBlt")

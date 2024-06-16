@@ -95,6 +95,24 @@ class Win32Interaction(BaseInteraction):
         if current_x != -1 and current_y != -1:
             pydirectinput.moveTo(current_x, current_y)
 
+    def right_click(self, x=-1, y=-1, move_back=False, name=None):
+        super().right_click(x, y, name=name)
+        if not self.capture.clickable():
+            logger.info(f"window in background, not clickable")
+            return
+        # Convert the x, y position to lParam
+        # lParam = win32api.MAKELONG(x, y)
+        current_x, current_y = -1, -1
+        if move_back:
+            current_x, current_y = pydirectinput.position()
+        if x != -1 and y != -1:
+            x, y = self.capture.get_abs_cords(x, y)
+            logger.info(f"left_click {x, y}")
+            pydirectinput.moveTo(x, y)
+        pydirectinput.rightClick()
+        if current_x != -1 and current_y != -1:
+            pydirectinput.moveTo(current_x, current_y)
+
     def mouse_down(self, x=-1, y=-1, name=None):
         if not self.capture.clickable():
             logger.info(f"window in background, not clickable")
