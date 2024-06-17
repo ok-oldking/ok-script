@@ -39,7 +39,7 @@ class StartController(QObject):
                     error = self.check_device_error()
                     if error is None:
                         break
-                    logger.debug(f'waiting for game to start error {error}')
+                    logger.error(f'waiting for game to start error {error}')
                     remaining_time = wait_until - time.time()
                     if remaining_time <= 0:
                         communicate.starting_emulator.emit(True, self.tr('Start game timeout!'), 0)

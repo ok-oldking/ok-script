@@ -5,6 +5,7 @@ from qfluentwidgets import FluentIcon, SettingCard, PushButton
 
 import ok
 from ok.gui.Communicate import communicate
+from ok.gui.debug.DebugTab import capture
 from ok.gui.widget.StatusBar import StatusBar
 from ok.logging.Logger import get_logger
 
@@ -19,8 +20,16 @@ class StartCard(SettingCard):
         self.hBoxLayout.setAlignment(Qt.AlignVCenter)
         self.status_bar = StatusBar("test")
         self.status_bar.clicked.connect(self.status_clicked)
+
         self.hBoxLayout.addWidget(self.status_bar, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(16)
+
+        self.capture_button = PushButton(FluentIcon.ZOOM, self.tr("Test Capture"), self)
+        self.hBoxLayout.addWidget(self.capture_button, 0, Qt.AlignRight)
+        self.capture_button.clicked.connect(capture)
+
+        self.hBoxLayout.addSpacing(16)
+
         self.start_button = PushButton(FluentIcon.PLAY, self.tr("Start"), self)
         self.hBoxLayout.addWidget(self.start_button, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(16)

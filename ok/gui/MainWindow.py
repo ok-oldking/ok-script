@@ -1,9 +1,8 @@
 import os
-import sys
 
 from PySide6.QtCore import QObject, Signal, Qt
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
-from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow, InfoBar, InfoBarPosition, MessageBox
+from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow, InfoBar, InfoBarPosition
 
 import ok.gui
 from ok.gui.Communicate import communicate
@@ -158,22 +157,11 @@ class MainWindow(MSFluentWindow):
         self.comm.speak.emit("Hello, PySide6 with parameters!")
 
     def closeEvent(self, event):
-        # Create a message box that asks the user if they really want to close the window
-        if sys.platform == 'win32' and 'shutdown' in os.environ.get('SESSIONNAME', '').lower():
-            logger.info("system shutting down")
-            ok.gui.ok.quit()
-            event.accept()
-            return
-
         if ok.gui.ok.exit_event.is_set():
+            logger.info("Window closed exit_event.is_set")
             event.accept()
             return
-        title = self.tr('Exit')
-        content = self.tr("Are you sure you want to exit the app?")
-        w = MessageBox(title, content, self.window())
-        if w.exec():
-            logger.info("Window closed")
+        else:
+            logger.info("Window closed exit_event.is not set")
             ok.gui.ok.quit()
             event.accept()
-        else:
-            event.ignore()

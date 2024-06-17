@@ -67,7 +67,7 @@ class DeviceManager:
                         logger.debug(f'adb_connect already connected {addr}')
                         return device
             if try_connect:
-                self.adb.connect(addr, timeout=5)
+                self.adb.connect(addr, timeout=3)
                 logger.debug(f'adb_connect {addr}')
                 return self.adb_connect(addr, try_connect=False)
         except AdbTimeout as e:

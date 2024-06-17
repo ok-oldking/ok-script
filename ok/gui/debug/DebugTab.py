@@ -1,7 +1,7 @@
 import subprocess
 from ctypes import windll, wintypes
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QCoreApplication
 from PySide6.QtWidgets import QWidget, QFileDialog, QCompleter, QVBoxLayout, QHBoxLayout
 from _ctypes import byref
 from qfluentwidgets import PushButton, FlowLayout, ComboBox, SearchLineEdit, TextEdit
@@ -46,7 +46,7 @@ class DebugTab(Tab):
         # self.dump_shortcut.activated.connect(dump_threads)
 
         capture_button = PushButton(self.tr("Capture Screenshot"))
-        capture_button.clicked.connect(lambda: self.handler.post(self.capture))
+        capture_button.clicked.connect(lambda: self.handler.post(capture))
         layout.addWidget(capture_button)
 
         ocr_button = PushButton("OCR")
@@ -202,20 +202,22 @@ class DebugTab(Tab):
             self.select_screenshot_button.setText(self.tr("Drop or Select Screenshot"))
             self.config['target_images'] = None
 
-    def capture(self):
-        if ok.gui.device_manager.capture_method is not None:
-            logger.info(f'ok.gui.device_manager.capture_method {ok.gui.device_manager.capture_method}')
-            capture = str(ok.gui.device_manager.capture_method)
-            frame = ok.gui.device_manager.capture_method.do_get_frame()
-            if frame is not None:
-                file_path = ok.gui.ok.screenshot.generate_screen_shot(frame, ok.gui.ok.screenshot.ui_dict,
-                                                                      ok.gui.ok.screenshot.screenshot_folder, capture)
 
-                # Use subprocess.Popen to open the file explorer and select the file
-                subprocess.Popen(r'explorer /select,"{}"'.format(file_path))
-                logger.info(f'captured screenshot: {capture}')
-                alert_info(self.tr('Capture Success'), True)
-            else:
-                alert_error(self.tr('Capture returned None'))
+def capture():
+    if ok.gui.device_manager.capture_method is not None:
+        logger.info(f'ok.gui.device_manager.capture_method {ok.gui.device_manager.capture_method}')
+        current_capture = str(ok.gui.device_manager.capture_method)
+        frame = ok.gui.device_manager.capture_method.do_get_frame()
+        if frame is not None:
+            file_path = ok.gui.ok.screenshot.generate_screen_shot(frame, ok.gui.ok.screenshot.ui_dict,
+                                                                  ok.gui.ok.screenshot.screenshot_folder,
+                                                                  current_capture)
+
+            # Use subprocess.Popen to open the file explorer and select the file
+            subprocess.Popen(r'explorer /select,"{}"'.format(file_path))
+            logger.info(f'captured screenshot: {current_capture}')
+            alert_info(QCoreApplication.translate('DebugTab', 'Capture Success'), True)
         else:
-            alert_error(self.tr('No Capture Available or Selected'))
+            alert_error(QCoreApplication.translate('DebugTab', 'Capture returned None'))
+    else:
+        alert_error(QCoreApplication.translate('DebugTab', 'No Capture Available or Selected'))

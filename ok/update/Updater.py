@@ -144,19 +144,20 @@ class Updater:
         self.downloader = GithubMultiDownloader(app_config, exit_event)
         self.handler.post(self.do_check_for_updates, 30)
 
-    def get_url(self, url):
+    def get_proxy_url(self, url):
         if self.use_proxy:
             url = self.proxy_url + url
-        logger.info(f'get_url: {url}')
-        return url
+            logger.info(f'get_url: {url}')
+            return url
 
     def check_for_updates(self):
         self.handler.post(self.do_check_for_updates, remove_existing=True)
 
-    def do_check_for_updates(self):
+    def do_check_for_updates(self, proxied_url=None):
+
         try:
             # Send GET request to the API endpoint
-            response = requests.get(self.get_url(self.update_url))
+            response = requests.get(proxied_url or self.update_url)
 
             # Raise an exception if the request was unsuccessful
             response.raise_for_status()
@@ -200,6 +201,14 @@ class Updater:
                 logger.info(f"check update newest version clear update folder {self.update_dir}")
                 clear_folder(self.update_dir)
             communicate.check_update.emit(None)
+        except (requests.exceptions.HTTPError,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                requests.exceptions.RequestException) as e:
+            logger.error(f'check_update http error, retry with proxy', e)
+            proxy = self.get_proxy_url(self.update_url)
+            if proxied_url is None and proxy:
+                self.do_check_for_updates(proxy)
         except Exception as e:
             logger.error(f'check_update_error: ', e)
             communicate.check_update.emit(str(e))

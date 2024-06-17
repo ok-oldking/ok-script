@@ -37,6 +37,9 @@ class OK:
         config['debug'] = config.get("debug", False)
         self.debug = config['debug']
         try:
+            if self.debug:
+                import win32api
+                win32api.SetConsoleCtrlHandler(self.console_handler, True)
             self.config = config
             self.init_device_manager()
             from ok.gui.debug.Screenshot import Screenshot
@@ -59,6 +62,7 @@ class OK:
             if self.config.get("use_gui"):
                 if not self.init_error:
                     self.app.show_main_window()
+                logger.debug('start app.exec()')
                 self.app.exec()
             else:
                 self.task_executor.start()
@@ -134,6 +138,26 @@ class OK:
     def wait_task(self):
         while not self.exit_event.is_set():
             time.sleep(1)
+
+    def console_handler(self, event):
+        import win32con
+        if event == win32con.CTRL_C_EVENT:
+            logger.info("CTRL+C event dump threads")
+            from ok.capture.windows.dump import dump_threads
+            dump_threads()
+            self.quit()
+        elif event == win32con.CTRL_CLOSE_EVENT:
+            logger.info("Close event quit")
+            self.quit()
+        elif event == win32con.CTRL_LOGOFF_EVENT:
+            logger.info("Logoff event quit")
+            self.quit()
+        elif event == win32con.CTRL_SHUTDOWN_EVENT:
+            logger.info("Shutdown event quit")
+            self.quit()
+        else:  # Perform clean-up tasks here
+            print("Performing clean-up...")
+        return True
 
     def quit(self):
         logger.debug('quit app')

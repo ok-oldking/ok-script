@@ -1,6 +1,5 @@
 import threading
 import time
-import traceback
 from typing import Tuple
 
 from ok.capture.BaseCaptureMethod import CaptureException
@@ -276,10 +275,9 @@ class TaskExecutor:
                 name = ""
                 if self.current_task is not None:
                     name = self.current_task.name
-                    self.current_task.disable()
-                traceback.print_exc()
-                stack_trace_str = traceback.format_exc()
-                logger.error(f"{name} exception: {e}, traceback: {stack_trace_str}")
+                    if not isinstance(self.current_task, TriggerTask):
+                        self.current_task.disable()
+                logger.error(f"{name} exception", e)
                 if self._frame is not None:
                     communicate.screenshot.emit(self.frame, name)
 

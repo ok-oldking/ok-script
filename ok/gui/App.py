@@ -13,7 +13,6 @@ from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.gui.MessageWindow import MessageWindow
 from ok.gui.StartController import StartController
-from ok.gui.debug.LogWindow import LogWindow
 from ok.gui.i18n.path import i18n_path
 from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.logging.Logger import get_logger
@@ -95,26 +94,28 @@ class App:
         self.show_message_window(title, content)
 
     def show_main_window(self):
+
+        if self.overlay and ok.gui.device_manager.hwnd is not None:
+            self.overlay_window = OverlayWindow(ok.gui.device_manager.hwnd)
+
+        if self.config.get('debug'):
+            from ok.gui.debug.LogWindow import LogWindow
+            self.log_window = LogWindow(self.config)
+            self.log_window.show()
+            logger.debug('showing log_window')
+
         self.main_window = MainWindow(self.config, self.icon, self.title, self.version, self.overlay, self.about,
                                       self.exit_event)
         # Set the window title here
         self.main_window.setWindowIcon(self.icon)
-        if self.overlay and ok.gui.device_manager.hwnd is not None:
-            self.overlay_window = OverlayWindow(ok.gui.device_manager.hwnd)
 
         size = self.size_relative_to_screen(width=0.5, height=0.6)
         self.main_window.resize(size)
         self.main_window.setMinimumSize(size)
 
-        # Optional: Move the window to the center of the screen
-
         self.main_window.show()
         self.main_window.raise_()
         self.main_window.activateWindow()
-        if self.config.get('debug'):
-            self.log_window = LogWindow(self.config)
-            self.log_window.show()
-            logger.debug('showing log_window')
 
     def size_relative_to_screen(self, width, height):
         screen = self.app.primaryScreen()

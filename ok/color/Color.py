@@ -19,7 +19,7 @@ white_color = {
 }
 
 
-def is_close_to_pure_color(image, max_colors=1000, percent=0.99):
+def is_close_to_pure_color(image, max_colors=5000, percent=0.97):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     # Step 2: Initialize a dictionary to count color frequencies
@@ -175,8 +175,8 @@ def calculate_color_percentage(image, color_ranges, box=None):
 
 
 if __name__ == '__main__':
-    file = 'C:\\Users\\ok\Downloads\\ok-baijing (2)\\screenshots\\16_23_04_367272_original.png'
+    file = 'C:\\Users\\ok\Downloads\\ok-baijing (2)\\screenshots\\1.png'
     exists = os.path.exists(file)
     image = cv2.imread(file
                        )
-    is_close_to_pure_color(image)
+    print(is_close_to_pure_color(image))

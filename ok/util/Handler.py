@@ -76,5 +76,6 @@ class Handler:
 
     def stop(self):
         with self.condition:
+            self.task_queue.clear()
             heapq.heappush(self.task_queue, ScheduledTask(0, None))
             self.condition.notify_all()

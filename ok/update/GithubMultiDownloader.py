@@ -12,22 +12,59 @@ from ok.logging.Logger import get_logger
 
 logger = get_logger(__name__)
 
+# https://update.greasyfork.org/scripts/412245/Github%20%E5%A2%9E%E5%BC%BA%20-%20%E9%AB%98%E9%80%9F%E4%B8%8B%E8%BD%BD.user.js
+download_url_us = [
+    ['https://gh.h233.eu.org/https://github.com', '美国',
+     '[美国 Cloudflare CDN] - 该公益加速源由 [@X.I.U/XIU2] 提供'],
+    [
+        'https://gh.ddlc.top/https://github.com', '美国',
+        '[美国 Cloudflare CDN] - 该公益加速源由 [@mtr-static-official] 提供'],
+    ['https://dl.ghpig.top/https://github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [feizhuqwq.com] 提供'],
+    ['https://slink.ltd/https://github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [知了小站] 提供'],
+    ['https://gh.con.sh/https://github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [佚名] 提供'],
+    ['https://cors.isteed.cc/github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [@Lufs\'s] 提供'],
+    ['https://hub.gitmirror.com/https://github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [GitMirror] 提供'],
+    ['https://sciproxy.com/github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [sciproxy.com] 提供'],
+    ['https://ghproxy.cc/https://github.com', '美国', '[美国 洛杉矶] - 该公益加速源由 [@yionchiii lau] 提供'],
+    ['https://cf.ghproxy.cc/https://github.com', '美国',
+     '[美国 Cloudflare CDN] - 该公益加速源由 [@yionchiii lau] 提供'],
+    ['https://www.ghproxy.cc/https://github.com', '美国',
+     '[美国 Cloudflare CDN] - 该公益加速源由 [@yionchiii lau] 提供'],
+    ['https://ghproxy.cn/https://github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [@yionchiii lau] 提供'],
+    ['https://www.ghproxy.cn/https://github.com', '美国',
+     '[美国 Cloudflare CDN] - 该公益加速源由 [@yionchiii lau] 提供'],
+    ['https://gh.jiasu.in/https://github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [@0-RTT] 提供'],
+    ['https://dgithub.xyz', '美国', '[美国 西雅图] - 该公益加速源由 [dgithub.xyz] 提供'],
+    ['https://download.ixnic.net', '美国', '[美国 洛杉矶] - 该公益加速源由 [FastGit 群组成员] 提供'],
+    ['https://download.nuaa.cf', '美国', '[美国 洛杉矶] - 该公益加速源由 [FastGit 群组成员] 提供'],
+    ['https://download.yzuu.cf', '美国', '[美国 纽约] - 该公益加速源由 [FastGit 群组成员] 提供'],
+    ['https://download.scholar.rr.nu', '美国', '[美国 纽约] - 该公益加速源由 [FastGit 群组成员] 提供'],
+    ['https://hub.whtrys.space', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [FastGit 群组成员] 提供']
+]
+
+download_url = [
+    ['https://mirror.ghproxy.com/https://github.com', '韩国',
+     '[日本、韩国、德国等]（CDN 不固定） - 该公益加速源由 [ghproxy] 提供&#10;&#10;提示：希望大家尽量多使用前面的美国节点（每次随机 负载均衡），&#10;避免流量都集中到亚洲公益节点，减少成本压力，公益才能更持久~'],
+    ['https://ghproxy.net/https://github.com', '日本',
+     '[日本 大阪] - 该公益加速源由 [ghproxy] 提供&#10;&#10;提示：希望大家尽量多使用前面的美国节点（每次随机 负载均衡），&#10;避免流量都集中到亚洲公益节点，减少成本压力，公益才能更持久~'],
+    ['https://kkgithub.com', '香港',
+     '[中国香港、日本、新加坡等] - 该公益加速源由 [help.kkgithub.com] 提供&#10;&#10;提示：希望大家尽量多使用前面的美国节点（每次随机 4 个来负载均衡），&#10;避免流量都集中到亚洲公益节点，减少成本压力，公益才能更持久~']
+]
+
+
+def parse_url(urls):
+    ret = []
+    for sublist in urls:
+        ret.append(sublist[0].replace('/https://github.com', ''))
+    return ret
+
 
 class GithubMultiDownloader:
     def __init__(self, app_config, exit_event):
         self.app_config = app_config
         self.exit_event = exit_event
-        self.proxys = ["", "https://gh.h233.eu.org", "https://gh.ddlc.top",
-                       "https://dl.ghpig.top", "https://slink.ltd",
-                       "https://gh.con.sh", "https://cors.isteed.cc/github.com",
-                       "https://hub.gitmirror.com", "https://sciproxy.com/github.com",
-                       "https://ghproxy.cc", "https://cf.ghproxy.cc",
-                       "https://www.ghproxy.cc", "https://ghproxy.cn",
-                       "https://www.ghproxy.cn", "https://gh.jiasu.in",
-                       "https://dgithub.xyz", "https://download.ixnic.net", "https://download.nuaa.cf",
-                       "https://download.scholar.rr.nu", "https://download.yzuu.cf",
-                       "https://mirror.ghproxy.com", "https://ghproxy.net",
-                       "https://kkgithub.com"]
+        self.proxys = [""] + parse_url(download_url_us) + parse_url(download_url)
+        logger.debug(f'proxys = {self.proxys}')
         self.fast_proxys = []
         random.shuffle(self.proxys)
         self.lock = threading.Lock()

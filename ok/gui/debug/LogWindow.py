@@ -1,7 +1,8 @@
-from PySide6.QtCore import Qt, QAbstractListModel, QModelIndex, QPoint, Signal
+from PySide6.QtCore import Qt, QAbstractListModel, QPoint, QModelIndex
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QVBoxLayout, QListView, QLineEdit, QHBoxLayout, QComboBox, QAbstractItemView, QWidget, \
-    QPushButton, QLabel, QStyledItemDelegate
+from PySide6.QtWidgets import QWidget, \
+    QStyledItemDelegate, QListView, QVBoxLayout, QHBoxLayout, QAbstractItemView, QComboBox, QLineEdit, QLabel, \
+    QPushButton
 
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
@@ -39,19 +40,19 @@ class ColorDelegate(QStyledItemDelegate):
 
 
 class LogModel(QAbstractListModel):
-    def __init__(self, log_list):
+    def __init__(self):
         super(LogModel, self).__init__()
-        self.log_list = log_list
         self.logs = []
-        self.filtered_logs = self.logs[:]
+        self.filtered_logs = []
         self.current_level = "ALL"
         self.current_keyword = ""
 
     def data(self, index, role):
-        if role == Qt.DisplayRole:
-            return self.filtered_logs[index.row()].text
-        elif role == Qt.ForegroundRole:
-            return self.filtered_logs[index.row()].format
+        if 0 <= index.row() < len(self.filtered_logs):
+            if role == Qt.DisplayRole:
+                return self.filtered_logs[index.row()].text
+            elif role == Qt.ForegroundRole:
+                return self.filtered_logs[index.row()].format
 
     def rowCount(self, index):
         return len(self.filtered_logs)
@@ -62,15 +63,15 @@ class LogModel(QAbstractListModel):
         colored_text = ColoredText(message, color_format, level)
         self.logs.append(colored_text)
         if len(self.logs) >= 500:
-            self.beginRemoveRows(QModelIndex(), 0, 0)
+            # self.beginRemoveRows(QModelIndex(), 0, 0)
             self.logs.pop(0)
-            self.endRemoveRows()
-
+            # self.endRemoveRows()
         self.beginInsertRows(QModelIndex(), self.rowCount(QModelIndex()), self.rowCount(QModelIndex()))
         self.do_filter_logs()
         self.endInsertRows()
-        self.layoutChanged.emit()
-        self.log_list.scrollToBottom()
+
+        # self.layoutChanged.emit()
+        # self.log_list.scrollToBottom()
 
     def do_filter_logs(self):
 
@@ -92,9 +93,10 @@ class LogModel(QAbstractListModel):
     def filter_logs(self, level, keyword):
         self.current_level = level
         self.current_keyword = keyword
+        self.beginRemoveRows(QModelIndex(), 0, self.rowCount(QModelIndex()) - 1)
+        self.filtered_logs.clear()
+        self.endRemoveRows()
         self.do_filter_logs()
-        self.layoutChanged.emit()
-        self.log_list.scrollToBottom()
 
     def get_color_format(self, level):
         # Define color codes for different levels
@@ -117,8 +119,6 @@ class LogWindow(QWidget):
                               'level': 'ALL'},
                              app_config.get('config_folder'), 'log_window')
         self.setGeometry(self.config['x'], self.config['y'], self.config['width'], self.config['height'])
-
-        self.refresh_signal = Signal()
 
         self.old_pos = None
 
@@ -158,16 +158,15 @@ class LogWindow(QWidget):
 
         self.setLayout(self.layout)
 
-        self.log_model = LogModel(self.log_list)
+        self.log_model = LogModel()
         self.log_list.setModel(self.log_model)
+
         communicate.log.connect(self.add_log)
 
-        self.logs = []
-        self.filter_logs()
-
     def add_log(self, level_no, message):
-        self.logs.append(message)
+        # print('add_log', level_no, message)
         self.log_model.add_log(log_levels.get(level_no, 'DEBUG'), message)
+        self.log_list.scrollToBottom()
 
     def filter_logs(self):
         level = self.level_filter.currentText()
