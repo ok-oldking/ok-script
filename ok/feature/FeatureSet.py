@@ -77,49 +77,7 @@ class FeatureSet:
                 from ok.feature.CompressCoco import compress_coco
                 logger.info(f'template folder greater than 5MB try to compress the COCO dataset')
                 compress_coco(self.coco_json)
-        self.feature_dict.clear()
-        self.box_dict.clear()
-        with open(self.coco_json, 'r') as file:
-            data = json.load(file)
-
-        # Create a map from image ID to file name
-        image_map = {image['id']: image['file_name'] for image in data['images']}
-
-        # Create a map from category ID to category name
-        category_map = {category['id']: category['name'] for category in data['categories']}
-
-        for annotation in data['annotations']:
-            image_id = annotation['image_id']
-            category_id = annotation['category_id']
-            bbox = annotation['bbox']
-
-            # Load and scale the image
-            image_path = str(os.path.join(self.coco_folder, image_map[image_id]))
-            image = cv2.imread(image_path)
-            _, original_width = image.shape[:2]
-            if image is None:
-                logger.error(f'Could not read image {image_path}')
-                continue
-            x, y, w, h = bbox
-            if self.width != image.shape[1] or self.height != image.shape[0]:
-                scale_x, scale_y = self.width / image.shape[1], self.height / image.shape[0]
-                logger.debug(f'scaling images {scale_x}, {scale_y}')
-                image = cv2.resize(image, (self.width, self.height))
-                # Calculate the scaled bounding box
-                x, y, w, h = x * scale_x, y * scale_y, w * scale_x, h * scale_y
-
-            # Crop the image to the bounding box
-            image = image[round(y):round(y + h), round(x):round(x + w), :3]
-
-            # Store in featureDict using the category name
-            category_name = category_map[category_id]
-            logger.debug(
-                f"loaded {category_name} resized width {self.width} / original_width:{original_width},scale_x:{self.width / original_width}")
-            if category_name in self.feature_dict:
-                raise ValueError(f"Multiple boxes found for category {category_name}")
-            if not category_name.startswith('box_'):
-                self.feature_dict[category_name] = Feature(image, x, y, w, h)
-            self.box_dict[category_name] = Box(x, y, w, h, name=category_name)
+        self.feature_dict, self.box_dict = read_from_json(self.coco_json, self.width, self.height)
 
     def get_box_by_name(self, mat, category_name: str) -> Box:
         self.check_size(mat)
@@ -233,6 +191,53 @@ class FeatureSet:
                                   Box(search_x1, search_y1, search_x2 - search_x1, search_y2 - search_y1,
                                       name=search_name), "blue")
         return result
+
+
+def read_from_json(coco_json, width=-1, height=-1):
+    feature_dict = {}
+    box_dict = {}
+    with open(coco_json, 'r') as file:
+        data = json.load(file)
+    coco_folder = os.path.dirname(coco_json)
+    # Create a map from image ID to file name
+    image_map = {image['id']: image['file_name'] for image in data['images']}
+
+    # Create a map from category ID to category name
+    category_map = {category['id']: category['name'] for category in data['categories']}
+
+    for annotation in data['annotations']:
+        image_id = annotation['image_id']
+        category_id = annotation['category_id']
+        bbox = annotation['bbox']
+
+        # Load and scale the image
+        image_path = str(os.path.join(coco_folder, image_map[image_id]))
+        image = cv2.imread(image_path)
+        _, original_width = image.shape[:2]
+        if image is None:
+            logger.error(f'Could not read image {image_path}')
+            continue
+        x, y, w, h = bbox
+        if width != -1 and height != -1 and width != image.shape[1] or height != image.shape[0]:
+            scale_x, scale_y = width / image.shape[1], height / image.shape[0]
+            logger.debug(f'scaling images {scale_x}, {scale_y}')
+            image = cv2.resize(image, (width, height))
+            # Calculate the scaled bounding box
+            x, y, w, h = x * scale_x, y * scale_y, w * scale_x, h * scale_y
+
+        # Crop the image to the bounding box
+        image = image[round(y):round(y + h), round(x):round(x + w), :3]
+
+        # Store in featureDict using the category name
+        category_name = category_map[category_id]
+        logger.debug(
+            f"loaded {category_name} resized width {width} / original_width:{original_width},scale_x:{width / original_width}")
+        if category_name in feature_dict:
+            raise ValueError(f"Multiple boxes found for category {category_name}")
+        if not category_name.startswith('box_'):
+            feature_dict[category_name] = Feature(image, x, y, w, h)
+        box_dict[category_name] = Box(x, y, w, h, name=category_name)
+    return feature_dict, box_dict
 
 
 def filter_and_sort_matches(result, threshold, width, height):

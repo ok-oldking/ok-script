@@ -116,8 +116,8 @@ class DeviceManager:
             if imei is not None:
                 preferred = self.get_preferred_device()
                 if current and preferred is not None and preferred['imei'] != imei:
-                    logger.debug(f"refresh current only skip others {preferred['imei']} != imei")
-                    break
+                    logger.debug(f"refresh current only skip others {preferred['imei']} != {imei}")
+                    continue
                 found = False
                 for device in self.device_dict.values():
                     if device.get('adb_imei') == imei:

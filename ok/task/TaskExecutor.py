@@ -73,12 +73,17 @@ class TaskExecutor:
     def nullable_frame(self):
         return self._frame
 
-    def check_frame_and_resolution(self, supported_ratio, min_size):
+    def check_frame_and_resolution(self, supported_ratio, min_size, time_out=3):
         if supported_ratio is None or min_size is None:
             return True, '0x0'
         self.device_manager.update_resolution_for_hwnd()
-        frame = self.method.get_frame()
+        start = time.time()
+        frame = None
+        while frame is None and time.time() - start < time_out:
+            frame = self.method.get_frame()
+            time.sleep(0.1)
         if frame is None:
+            logger.error(f'check_frame_and_resolution failed can not get frame after {time_out}')
             return False, '0x0'
         width = self.method.width
         height = self.method.height

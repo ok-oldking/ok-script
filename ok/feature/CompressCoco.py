@@ -5,6 +5,8 @@ import sys
 import cv2
 from PIL import Image
 
+from ok.feature.FeatureSet import read_from_json
+
 
 def compress_coco(coco_json) -> None:
     coco_folder = os.path.dirname(coco_json)
@@ -15,26 +17,7 @@ def compress_coco(coco_json) -> None:
 
         image_map = {image['id']: image['file_name'] for image in data['images']}
         category_map = {category['id']: category['name'] for category in data['categories']}
-
-        for annotation in data['annotations']:
-            image_id = annotation['image_id']
-            category_id = annotation['category_id']
-            bbox = annotation['bbox']
-
-            # Load and scale the image
-            image_path = str(os.path.join(coco_folder, image_map[image_id]))
-            image = cv2.imread(image_path)
-            original_height, original_width = image.shape[:2]
-            if image is None:
-                print(f'Could not read image {image_path}')
-                continue
-            x, y, w, h = bbox
-            # Crop the image to the bounding box
-            image = image[round(y):round(y + h), round(x):round(x + w), :3]
-
-            image_features = image_dict.get(image_path, [])
-            image_features.append((round(x), round(y), image, original_width, original_height))
-            image_dict[image_path] = image_features
+        image_dict = read_from_json(coco_json)
 
         # Loop through the image_dict and write all the image_feature associated with it in a new PNG
         for image_path, features in image_dict.items():
