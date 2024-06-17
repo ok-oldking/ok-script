@@ -28,7 +28,10 @@ def dump_threads():
     print(f'Dumping threads to {output_file}')
 
     with open(output_file, "w") as file:
-        file.write("\n\n".join(thread_dumps))
+        # Open the file with UTF-8 encoding
+        with open('file.txt', 'w', encoding='utf-8') as f:
+            f.write("\n\n".join(thread_dumps))
+
         # subprocess.Popen(r'explorer /select,"{}"'.format(output_file))
 
 

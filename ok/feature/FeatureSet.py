@@ -7,6 +7,7 @@ from typing import List
 
 import cv2
 import numpy as np
+from PIL import Image
 
 from ok.feature.Box import Box, sort_boxes
 from ok.feature.Feature import Feature
@@ -33,7 +34,6 @@ class FeatureSet:
             height (int): Scale images to this height.
         """
         self.coco_json = resource_path(coco_json)
-        self.coco_folder = os.path.dirname(self.coco_json)
         self.debug = debug
 
         logger.debug(f'Loading features from {self.coco_json}')
@@ -41,6 +41,8 @@ class FeatureSet:
         # Process images and annotations
         self.width = 0
         self.height = 0
+        self.canny_lower = 50
+        self.canny_higher = 150
         if default_threshold == 0:
             default_threshold = 0.95
         self.default_threshold = default_threshold
@@ -67,17 +69,14 @@ class FeatureSet:
             width (int): Target width for scaling images.
             height (int): Target height for scaling images.
         """
-        if self.debug:
-            folder_size = sum(os.path.getsize(os.path.join(dirpath, filename))
-                              for dirpath, dirnames, filenames in os.walk(self.coco_folder)
-                              for filename in filenames)
-            # Convert size to MB
-            folder_size_mb = folder_size / (1024 * 1024)
-            if folder_size_mb > 5:
-                from ok.feature.CompressCoco import compress_coco
-                logger.info(f'template folder greater than 5MB try to compress the COCO dataset')
-                compress_coco(self.coco_json)
-        self.feature_dict, self.box_dict = read_from_json(self.coco_json, self.width, self.height)
+        self.feature_dict, self.box_dict, compressed = read_from_json(self.coco_json, self.width, self.height,
+                                                                      self.canny_lower, self.canny_higher)
+        if self.debug and not compressed:
+            from ok.feature.CompressCoco import compress_coco
+            logger.info(f'coco not compressed try to compress the COCO dataset')
+            compress_coco(self.coco_json, self.canny_lower, self.canny_higher)
+            self.feature_dict, self.box_dict, compressed = read_from_json(self.coco_json, self.width, self.height,
+                                                                          self.canny_lower, self.canny_higher)
 
     def get_box_by_name(self, mat, category_name: str) -> Box:
         self.check_size(mat)
@@ -173,6 +172,8 @@ class FeatureSet:
         if use_gray_scale:
             search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
             template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+        # if category_name.startswith('edge_'):
+        #     search_area =
         result = cv2.matchTemplate(search_area, template, cv2.TM_CCOEFF_NORMED)
 
         # Define a threshold for acceptable matches
@@ -180,8 +181,8 @@ class FeatureSet:
         boxes = []
 
         for loc in locations:  # Iterate through found locations            
-            x, y = loc[0] + search_x1, loc[1] + search_y1
-            confidence = result[loc[1], loc[0]]  # Retrieve the confidence score
+            x, y = loc[0][0] + search_x1, loc[0][1] + search_y1
+            confidence = loc[1]  # Retrieve the confidence score
             boxes.append(Box(x, y, feature_width, feature_height, confidence, category_name))
 
         result = sort_boxes(boxes)
@@ -193,67 +194,98 @@ class FeatureSet:
         return result
 
 
-def read_from_json(coco_json, width=-1, height=-1):
+def read_from_json(coco_json, width=-1, height=-1, canny_lower=50, canny_upper=150):
     feature_dict = {}
     box_dict = {}
+    ok_compressed = None
     with open(coco_json, 'r') as file:
         data = json.load(file)
     coco_folder = os.path.dirname(coco_json)
+
     # Create a map from image ID to file name
     image_map = {image['id']: image['file_name'] for image in data['images']}
 
     # Create a map from category ID to category name
     category_map = {category['id']: category['name'] for category in data['categories']}
 
-    for annotation in data['annotations']:
-        image_id = annotation['image_id']
-        category_id = annotation['category_id']
-        bbox = annotation['bbox']
-
+    for image_id, file_name in image_map.items():
         # Load and scale the image
-        image_path = str(os.path.join(coco_folder, image_map[image_id]))
-        image = cv2.imread(image_path)
-        _, original_width = image.shape[:2]
-        if image is None:
+        image_path = str(os.path.join(coco_folder, file_name))
+        if ok_compressed is None:
+            image = Image.open(image_path)
+            ok_compressed = 'ok_compressed' in image.info.items()
+        whole_image = cv2.imread(image_path)
+        if whole_image is None:
             logger.error(f'Could not read image {image_path}')
             continue
-        x, y, w, h = bbox
-        if width != -1 and height != -1 and width != image.shape[1] or height != image.shape[0]:
-            scale_x, scale_y = width / image.shape[1], height / image.shape[0]
-            logger.debug(f'scaling images {scale_x}, {scale_y}')
-            image = cv2.resize(image, (width, height))
+        _, original_width = whole_image.shape[:2]
+
+        if width != -1 and height != -1 and (width != whole_image.shape[1] or height != whole_image.shape[0]):
+            scale_x, scale_y = width / whole_image.shape[1], height / whole_image.shape[0]
+            logger.debug(f'scaling images {scale_x}, {scale_y} to {width}x{height}')
+        else:
+            scale_x, scale_y = 1, 1
+
+        for annotation in data['annotations']:
+            if image_id != annotation['image_id']:
+                continue
+
+            category_id = annotation['category_id']
+            bbox = annotation['bbox']
+            x, y, w, h = bbox
+
+            # Crop the image to the bounding box
+            image = whole_image[round(y):round(y + h), round(x):round(x + w), :3]
+
+            x, y = round(x), round(y)
+            h, w, *_ = image.shape
             # Calculate the scaled bounding box
-            x, y, w, h = x * scale_x, y * scale_y, w * scale_x, h * scale_y
+            x, y, w, h = round(x * scale_x), round(y * scale_y), round(w * scale_x), round(h * scale_y)
 
-        # Crop the image to the bounding box
-        image = image[round(y):round(y + h), round(x):round(x + w), :3]
+            image = cv2.resize(image, (w, h))
 
-        # Store in featureDict using the category name
-        category_name = category_map[category_id]
-        logger.debug(
-            f"loaded {category_name} resized width {width} / original_width:{original_width},scale_x:{width / original_width}")
-        if category_name in feature_dict:
-            raise ValueError(f"Multiple boxes found for category {category_name}")
-        if not category_name.startswith('box_'):
-            feature_dict[category_name] = Feature(image, x, y, w, h)
-        box_dict[category_name] = Box(x, y, w, h, name=category_name)
-    return feature_dict, box_dict
+            # Store in featureDict using the category name
+            category_name = category_map[category_id]
+            logger.debug(
+                f"loaded {category_name} resized width {width} / original_width:{original_width},scale_x:{width / original_width}")
+            if category_name in feature_dict:
+                raise ValueError(f"Multiple boxes found for category {category_name}")
+            if not category_name.startswith('box_'):
+                if category_name.startswith('edge_'):
+                    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                    image = cv2.Canny(image, canny_lower, canny_upper)
+                elif category_name.startswith('gray_'):
+                    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                feature_dict[category_name] = Feature(image, x, y)
+            box_dict[category_name] = Box(x, y, image.shape[1], image.shape[2], name=category_name)
+
+    return feature_dict, box_dict, ok_compressed
 
 
-def filter_and_sort_matches(result, threshold, width, height):
-    # Filter matches based on the threshold
+def filter_and_sort_matches(result, threshold, w, h):
+    # Find all matches above the confidence threshold
     loc = np.where(result >= threshold)
+    matches = list(zip(*loc[::-1]))  # Convert to (x, y) coordinates
 
-    # Zip the locations into a list of tuples and sort by threshold in descending order
-    matches = sorted(zip(*loc[::-1]), key=lambda p: result[p[::-1]], reverse=True)
+    # Get the match confidence scores
+    confidences = result[result >= threshold]
 
-    # Filter out overlapping matches
-    unique_matches = []
-    for pt in matches:
-        if all(not (pt[0] >= m[0] - width and pt[0] <= m[0] + width and
-                    pt[1] >= m[1] - height and pt[1] <= m[1] + height)
-               for m in unique_matches):
-            unique_matches.append(pt)
+    # Combine the coordinates and confidences, and sort by confidence in descending order
+    matches_with_confidence = sorted(zip(matches, confidences), key=lambda x: x[1], reverse=True)
 
-    # print(f"result {len(result)} loc {len(loc)} matches {len(matches)} unique_matches {unique_matches}")
-    return unique_matches
+    # List to store selected matches
+    selected_matches = []
+
+    def is_overlapping(match, selected):
+        x1, y1 = match
+        for (x2, y2), _ in selected:
+            if (x1 < x2 + w and x1 + w > x2 and y1 < y2 + h and y1 + h > y2):
+                return True
+        return False
+
+    # Select non-overlapping matches
+    for match, confidence in matches_with_confidence:
+        if not is_overlapping(match, selected_matches):
+            selected_matches.append((match, confidence))
+
+    return selected_matches
