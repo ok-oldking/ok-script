@@ -114,7 +114,7 @@ class OK:
                                           trigger_tasks=self.config.get('trigger_tasks', []),
                                           scenes=self.config['scenes'],
                                           feature_set=self.feature_set,
-                                          config_folder=self.config.get("config_folder"))
+                                          config_folder=self.config.get("config_folder"), debug=self.debug)
 
         ok.gui.executor = self.task_executor
 

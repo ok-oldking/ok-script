@@ -37,7 +37,7 @@ class TaskExecutor:
                  wait_until_timeout=10, wait_until_before_delay=1, wait_until_check_delay=1,
                  exit_event=None, trigger_tasks=[], onetime_tasks=[], scenes=[], feature_set=None,
                  ocr=None,
-                 config_folder=None):
+                 config_folder=None, debug=False):
         self.device_manager = device_manager
         self.feature_set = feature_set
         self.wait_until_check_delay = wait_until_check_delay
@@ -45,6 +45,7 @@ class TaskExecutor:
         self.wait_scene_timeout = wait_until_timeout
         self.exit_event = exit_event
         self.debug_mode = False
+        self.debug = False
         self.ocr = ocr
         self.current_task = None
         self.trigger_tasks = trigger_tasks
@@ -269,8 +270,6 @@ class TaskExecutor:
                     if not isinstance(self.current_task, TriggerTask):
                         communicate.task.emit(self.current_task)
                     self.current_task = None
-            except TaskDisabledException:
-                logger.info(f"task is disabled, go to next task")
             except FinishedException:
                 logger.info(f"FinishedException, breaking")
                 break
@@ -285,6 +284,8 @@ class TaskExecutor:
                 logger.error(f"{name} exception", e)
                 if self._frame is not None:
                     communicate.screenshot.emit(self.frame, name)
+                self.current_task = None
+                communicate.task.emit(None)
 
         logger.debug(f'exit_event is set, destroy all tasks')
         for task in self.onetime_tasks:

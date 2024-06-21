@@ -110,7 +110,7 @@ class DebugTab(Tab):
                     logger.debug('dumping threads')
                     dump_threads()
                 elif msg.wParam == 2:
-                    self.handler.post(self.capture)
+                    self.handler.post(capture)
 
         # Repost the check_hotkey method to be called after 100 ms
         self.handler.post(self.check_hotkey, 0.1)

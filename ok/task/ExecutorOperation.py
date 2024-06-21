@@ -1,4 +1,3 @@
-import queue
 from typing import List
 
 from ok.color.Color import calculate_color_percentage
@@ -26,10 +25,9 @@ class ExecutorOperation:
         else:
             return False
 
-    def new_queue(self):
-        q = queue.Queue()
-        self.executor.exit_event.bind_queue(q)
-        return q
+    @property
+    def debug(self):
+        return self.executor.debug
 
     def is_scene(self, the_scene):
         return isinstance(self.executor.current_scene, the_scene)

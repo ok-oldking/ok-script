@@ -103,14 +103,14 @@ class Analytics:
 
         params.update(self.user_properties)
 
-        logger.debug(f'send report {params}')
+        logger.info(f'send report {params}')
 
         response = requests.post(self.report_url, json=params)
 
         if response.status_code == 200:
             logger.debug(f'Successfully send report')
         else:
-            logger.debug(f'Failed to send event: {response.status_code} - {response.text}')
+            logger.error(f'Failed to send event: {response.status_code} - {response.text}')
 
         self._handler.post(self.send_alive, 3600)
 

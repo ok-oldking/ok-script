@@ -5,6 +5,7 @@ import sys
 import cv2
 import numpy as np
 from PIL import Image
+from PIL.PngImagePlugin import PngInfo
 
 from ok.feature.FeatureSet import read_from_json
 
@@ -51,19 +52,22 @@ def compress_coco(coco_json, canny_upper, canny_lower) -> None:
             }
 
             # Save the image with metadata
-            save_image_with_metadata(background, image_path, metadata)
+            save_image_with_metadata(background, image_path)
 
 
-def save_image_with_metadata(image, image_path, metadata):
+def save_image_with_metadata(image, image_path):
     # Convert OpenCV image (numpy array) to PIL Image
     pil_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
 
+    metadata = PngInfo()
+
     # Add metadata
-    for key, value in metadata.items():
-        pil_image.info[key] = value
+    metadata.add_text('ok_compressed', '1')
+    metadata.add_text("Author", "ok_compress")
+    metadata.add_text("Description", "This is a sample image")
 
     # Save the image with metadata
-    pil_image.save(image_path, 'PNG', optimize=True)
+    pil_image.save(image_path, 'PNG', optimize=True, pnginfo=metadata)
 
 
 if __name__ == '__main__':

@@ -172,8 +172,12 @@ class FeatureSet:
         if use_gray_scale:
             search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
             template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-        # if category_name.startswith('edge_'):
-        #     search_area =
+        if category_name.startswith('edge_'):
+            search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
+            # search_area = cv2.Canny(search_area, self.canny_lower, self.canny_higher)
+        elif category_name.startswith('gray_'):
+            search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
+
         result = cv2.matchTemplate(search_area, template, cv2.TM_CCOEFF_NORMED)
 
         # Define a threshold for acceptable matches
@@ -213,7 +217,7 @@ def read_from_json(coco_json, width=-1, height=-1, canny_lower=50, canny_upper=1
         image_path = str(os.path.join(coco_folder, file_name))
         if ok_compressed is None:
             image = Image.open(image_path)
-            ok_compressed = 'ok_compressed' in image.info.items()
+            ok_compressed = 'ok_compressed' in image.info.keys()
         whole_image = cv2.imread(image_path)
         if whole_image is None:
             logger.error(f'Could not read image {image_path}')
@@ -251,13 +255,14 @@ def read_from_json(coco_json, width=-1, height=-1, canny_lower=50, canny_upper=1
             if category_name in feature_dict:
                 raise ValueError(f"Multiple boxes found for category {category_name}")
             if not category_name.startswith('box_'):
-                if category_name.startswith('edge_'):
-                    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                    image = cv2.Canny(image, canny_lower, canny_upper)
-                elif category_name.startswith('gray_'):
-                    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                if ok_compressed:
+                    if category_name.startswith('edge_'):
+                        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                        # image = cv2.Canny(image, canny_lower, canny_upper)
+                    elif category_name.startswith('gray_'):
+                        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 feature_dict[category_name] = Feature(image, x, y)
-            box_dict[category_name] = Box(x, y, image.shape[1], image.shape[2], name=category_name)
+            box_dict[category_name] = Box(x, y, image.shape[1], image.shape[0], name=category_name)
 
     return feature_dict, box_dict, ok_compressed
 

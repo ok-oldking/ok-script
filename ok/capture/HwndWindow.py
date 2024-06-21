@@ -29,7 +29,6 @@ class HwndWindow:
     left_cut = 0
     ext_left_bounds = 0  # for BitBlt
     ext_top_bounds = 0  # for BitBlt
-    window_change_listeners = []
     frame_aspect_ratio = 0
     hwnd = None
     frame_width = 0

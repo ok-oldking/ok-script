@@ -27,12 +27,10 @@ def dump_threads():
     output_file = get_path_relative_to_exe(os.path.join('logs', "thread_dumps.txt"))
     print(f'Dumping threads to {output_file}')
 
-    with open(output_file, "w") as file:
-        # Open the file with UTF-8 encoding
-        with open('file.txt', 'w', encoding='utf-8') as f:
-            f.write("\n\n".join(thread_dumps))
+    with open(output_file, "w", encoding='utf-8') as f:
+        f.write("\n\n".join(thread_dumps))
 
-        # subprocess.Popen(r'explorer /select,"{}"'.format(output_file))
+    # subprocess.Popen(r'explorer /select,"{}"'.format(output_file))
 
 
 def kill_dump():
