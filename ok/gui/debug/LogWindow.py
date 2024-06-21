@@ -4,7 +4,6 @@ from PySide6.QtWidgets import QWidget, \
     QStyledItemDelegate, QListView, QVBoxLayout, QHBoxLayout, QAbstractItemView, QComboBox, QLineEdit, QLabel, \
     QPushButton
 
-from ok.config.Config import Config
 from ok.gui.Communicate import communicate
 
 LOG_BG_TRANS = 80
@@ -70,9 +69,6 @@ class LogModel(QAbstractListModel):
         self.do_filter_logs()
         self.endInsertRows()
 
-        # self.layoutChanged.emit()
-        # self.log_list.scrollToBottom()
-
     def do_filter_logs(self):
 
         keyword = self.current_keyword.lower()
@@ -109,15 +105,13 @@ level_severity = {v: k for k, v in log_levels.items()}
 
 
 class LogWindow(QWidget):
-    def __init__(self, app_config):
+    def __init__(self, config):
         super().__init__()
         self.setWindowTitle('Log Viewer')
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
-        self.config = Config({'width': 800, 'height': 300, 'x': 0, 'y': 0,
-                              'level': 'ALL'},
-                             app_config.get('config_folder'), 'log_window')
+        self.config = config
         self.setGeometry(self.config['x'], self.config['y'], self.config['width'], self.config['height'])
 
         self.old_pos = None
@@ -189,3 +183,6 @@ class LogWindow(QWidget):
             self.config['x'] = self.x()
             self.config['y'] = self.y()
             self.old_pos = None
+
+    def closeEvent(self, event):
+        self.config['show'] = False

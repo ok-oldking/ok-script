@@ -47,7 +47,6 @@ class App:
         self.loading_window = None
         self.overlay_window = None
         self.main_window = None
-        self.log_window = None
         self.exit_event = exit_event
         self.icon = QIcon(self.config.get('gui_icon') or ":/icon/icon.ico")
         if self.config.get('analytics'):
@@ -97,12 +96,6 @@ class App:
 
         if self.overlay and ok.gui.device_manager.hwnd is not None:
             self.overlay_window = OverlayWindow(ok.gui.device_manager.hwnd)
-
-        if self.config.get('debug'):
-            from ok.gui.debug.LogWindow import LogWindow
-            self.log_window = LogWindow(self.config)
-            self.log_window.show()
-            logger.debug('showing log_window')
 
         self.main_window = MainWindow(self.config, self.icon, self.title, self.version, self.overlay, self.about,
                                       self.exit_event)
