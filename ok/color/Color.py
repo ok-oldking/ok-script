@@ -104,6 +104,11 @@ def find_color_rectangles(image, color_range, min_width, min_height, max_width=-
         raise ValueError("Image not found or path is incorrect")
     if box is not None:
         image = image[box.y:box.y + box.height, box.x:box.x + box.width, :3]
+        x_offset = box.x
+        y_offset = box.y
+    else:
+        x_offset = 0
+        y_offset = 0
 
     # Convert color range to BGR format for OpenCV
     lower_bound = np.array([color_range['b'][0], color_range['g'][0], color_range['r'][0]], dtype="uint8")
@@ -139,7 +144,7 @@ def find_color_rectangles(image, color_range, min_width, min_height, max_width=-
             if percent >= threshold:
                 # Store the result
                 results.append(
-                    Box(x, y, w, h, confidence=percent)
+                    Box(x + x_offset, y + y_offset, w, h, confidence=percent)
                 )
 
     return results

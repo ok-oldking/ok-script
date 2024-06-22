@@ -133,6 +133,8 @@ class LogWindow(QWidget):
 
         self.keyword_filter = QLineEdit()
         self.keyword_filter.setPlaceholderText("Filter by keyword")
+        if keyword := self.config.get('keyword'):
+            self.keyword_filter.setText(keyword)
         self.keyword_filter.textChanged.connect(self.filter_logs)
 
         self.drag_button = QLabel(self.tr("Drag"))
@@ -156,6 +158,11 @@ class LogWindow(QWidget):
         self.log_list.setModel(self.log_model)
 
         communicate.log.connect(self.add_log)
+        self.filter_logs()
+
+    def close(self):
+        super().close()
+        self.config['show'] = False
 
     def add_log(self, level_no, message):
         # print('add_log', level_no, message)
@@ -164,8 +171,9 @@ class LogWindow(QWidget):
 
     def filter_logs(self):
         level = self.level_filter.currentText()
-        self.config['level'] = level
         keyword = self.keyword_filter.text()
+        self.config['keyword'] = keyword
+        self.config['level'] = level
         self.log_model.filter_logs(level, keyword)
 
     def mousePressEvent(self, event):
@@ -183,6 +191,3 @@ class LogWindow(QWidget):
             self.config['x'] = self.x()
             self.config['y'] = self.y()
             self.old_pos = None
-
-    def closeEvent(self, event):
-        self.config['show'] = False

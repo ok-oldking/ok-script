@@ -95,6 +95,9 @@ class Box:
         return Box(self.x + x_offset, self.y + y_offset, self.width + width_offset, self.height + height_offset,
                    self.confidence, name or self.name)
 
+    def crop_frame(self, frame):
+        return frame[self.y:self.y + self.height, self.x:self.x + self.width]
+
     def center(self):
         return self.x + self.width / 2, self.y + self.height / 2
 

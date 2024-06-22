@@ -174,7 +174,7 @@ class FeatureSet:
             template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
         if category_name.startswith('edge_'):
             search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
-            # search_area = cv2.Canny(search_area, self.canny_lower, self.canny_higher)
+            search_area = cv2.Canny(search_area, self.canny_lower, self.canny_higher)
         elif category_name.startswith('gray_'):
             search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
 
@@ -258,7 +258,7 @@ def read_from_json(coco_json, width=-1, height=-1, canny_lower=50, canny_upper=1
                 if ok_compressed:
                     if category_name.startswith('edge_'):
                         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                        # image = cv2.Canny(image, canny_lower, canny_upper)
+                        image = cv2.Canny(image, canny_lower, canny_upper)
                     elif category_name.startswith('gray_'):
                         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 feature_dict[category_name] = Feature(image, x, y)

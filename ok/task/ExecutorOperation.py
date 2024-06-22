@@ -138,7 +138,7 @@ class ExecutorOperation:
     def move_relative(self, x, y):
         self.executor.interaction.move_relative(x, y)
 
-    def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=True,
+    def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=False,
                   move_back=False):
         if isinstance(box, list):
             if len(box) > 0:
@@ -156,7 +156,6 @@ class ExecutorOperation:
         return self.executor.wait_scene(scene_type, time_out, pre_action, post_action)
 
     def sleep(self, timeout):
-        self.executor.reset_scene()
         self.executor.sleep(timeout)
 
     def send_key(self, key, down_time=0.02):
@@ -174,10 +173,12 @@ class ExecutorOperation:
         self.executor.reset_scene()
         self.executor.interaction.send_key_up(key)
 
-    def wait_until(self, condition, time_out=0, pre_action=None, post_action=None, wait_until_before_delay=0):
-        return self.executor.wait_condition(condition, time_out, pre_action, post_action, wait_until_before_delay)
+    def wait_until(self, condition, time_out=0, pre_action=None, post_action=None, wait_until_before_delay=-1,
+                   raise_if_not_found=False):
+        return self.executor.wait_condition(condition, time_out, pre_action, post_action, wait_until_before_delay,
+                                            raise_if_not_found)
 
-    def wait_click_box(self, condition, time_out=0, pre_action=None, post_action=None, raise_if_not_found=True):
+    def wait_click_box(self, condition, time_out=0, pre_action=None, post_action=None, raise_if_not_found=False):
         target = self.wait_until(condition, time_out, pre_action, post_action)
         self.click_box(box=target, raise_if_not_found=raise_if_not_found)
         return target

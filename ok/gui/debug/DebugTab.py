@@ -29,7 +29,7 @@ class DebugTab(Tab):
 
         self.config = Config({'target_task': "", 'target_images': [], 'target_function': ""},
                              app_config.get('config_folder'), 'debug')
-        self.log_window_config = Config({'width': 800, 'height': 300, 'x': 0, 'y': 0,
+        self.log_window_config = Config({'width': 800, 'height': 300, 'x': 0, 'y': 0, 'keyword': '',
                                          'level': 'ALL', 'show': True},
                                         app_config.get('config_folder'), 'log_window')
         tool_widget = QWidget()
@@ -108,11 +108,15 @@ class DebugTab(Tab):
         self.handler.post(self.bind_hot_keys)
         self.handler.post(self.check_hotkey, 0.1)
 
+        ok.gui.app.app.aboutToQuit.connect(self.unregister)
+
     def toggle_log_window(self):
         if self.log_window is None:
             from ok.gui.debug.LogWindow import LogWindow
             self.log_window = LogWindow(self.log_window_config)
-        if self.log_window.isVisible():
+            self.log_window.show()
+            self.log_window_config['show'] = True
+        elif self.log_window.isVisible():
             self.log_window.hide()
             self.log_window_config['show'] = False
         else:
@@ -149,8 +153,10 @@ class DebugTab(Tab):
             logger.debug("Failed to register hotkey for Alt+Ctrl+S")
         logger.debug('bind_hot_keys')
 
-    def __del__(self):
+    @staticmethod
+    def unregister():
         # Unregister the hotkeys
+        logger.debug('Unregister the hotkeys')
         windll.user32.UnregisterHotKey(None, 1)
         windll.user32.UnregisterHotKey(None, 2)
 

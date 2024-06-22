@@ -20,7 +20,7 @@ class Win32Interaction(BaseInteraction):
         if not is_admin():
             logger.error(f"You must be an admin to use Win32Interaction")
 
-    def send_key(self, key, down_time=0.02):
+    def send_key(self, key, down_time=0.01):
         if not self.capture.clickable():
             logger.error(f"can't click on {key}, because capture is not clickable")
             return

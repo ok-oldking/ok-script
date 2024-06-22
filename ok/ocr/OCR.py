@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 
 class OCR:
     executor = None
-    ocr_default_threshold = 0.5
+    ocr_default_threshold = 0.8
     ocr_target_height = 0
 
     def ocr(self, x=0, y=0, to_x=1, to_y=1, match: str | List[str] | Pattern[str] | List[Pattern[str]] | None = None,
@@ -75,7 +75,7 @@ class OCR:
             communicate.emit_draw_box("ocr", detected_boxes, "red")
             communicate.emit_draw_box("ocr_zone", box, "blue")
             logger.debug(
-                f"ocr_zone {box} found result: {len(detected_boxes)}) time: {(time.time() - start):.2f} scale_factor: {scale_factor:.2f}")
+                f"ocr_zone {box} found result: {detected_boxes}) time: {(time.time() - start):.2f} scale_factor: {scale_factor:.2f}")
             if not detected_boxes and ocr_boxes:
                 logger.info(f'ocr detected but no match: {match} {ocr_boxes}')
             return sort_boxes(detected_boxes)

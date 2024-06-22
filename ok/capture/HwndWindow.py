@@ -243,13 +243,17 @@ def enum_child_windows(biggest, frame_aspect_ratio):
 
 def get_exe_by_hwnd(hwnd):
     # Get the process ID associated with the window
-    _, pid = win32process.GetWindowThreadProcessId(hwnd)
+    try:
+        _, pid = win32process.GetWindowThreadProcessId(hwnd)
 
-    # Get the process name and executable path
-    if pid > 0:
-        process = psutil.Process(pid)
-        return process.name(), process.exe(), process.cmdline()
-    else:
+        # Get the process name and executable path
+        if pid > 0:
+            process = psutil.Process(pid)
+            return process.name(), process.exe(), process.cmdline()
+        else:
+            return None, None, None
+    except Exception as e:
+        logger.error('get_exe_by_hwnd error', e)
         return None, None, None
 
 

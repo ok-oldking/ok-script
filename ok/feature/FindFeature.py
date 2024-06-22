@@ -31,13 +31,24 @@ class FindFeature:
             setattr(self, feature, result)
         return ret
 
+    def wait_feature(self, feature, horizontal_variance=0, vertical_variance=0, threshold=0, wait_until_before_delay=-1,
+                     time_out=0, pre_action=None, post_action=None, use_gray_scale=False, box=None,
+                     raise_if_not_found=False):
+        return self.wait_until(
+            lambda: self.find_one(feature, horizontal_variance, vertical_variance, threshold,
+                                  use_gray_scale=use_gray_scale, box=box),
+            time_out,
+            pre_action,
+            post_action, wait_until_before_delay, raise_if_not_found)
+
     def wait_click_feature(self, feature, horizontal_variance=0, vertical_variance=0, threshold=0, relative_x=0.5,
                            relative_y=0.5,
-                           time_out=0, pre_action=None, post_action=None):
-        box = self.wait_until(lambda: self.find_one(feature, horizontal_variance, vertical_variance, threshold),
-                              time_out,
-                              pre_action,
-                              post_action)
+                           time_out=0, pre_action=None, post_action=None, box=None, raise_if_not_found=True):
+        box = self.wait_until(
+            lambda: self.find_one(feature, horizontal_variance, vertical_variance, threshold, box=box),
+            time_out,
+            pre_action,
+            post_action, raise_if_not_found)
         if box is not None:
             self.click_box(box, relative_x, relative_y)
             return True

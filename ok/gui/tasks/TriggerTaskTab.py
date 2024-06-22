@@ -13,7 +13,7 @@ class TriggerTaskTab(TaskTab):
         super().__init__()
 
         for task in ok.gui.executor.trigger_tasks:
-            task_card = TaskCard(task)
+            task_card = TaskCard(task, False)
             self.addWidget(task_card)
 
     def in_current_list(self, task):

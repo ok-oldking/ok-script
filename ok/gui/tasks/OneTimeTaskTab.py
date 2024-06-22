@@ -13,7 +13,7 @@ class OneTimeTaskTab(TaskTab):
         super().__init__()
 
         for task in ok.gui.executor.onetime_tasks:
-            task_card = TaskCard(task)
+            task_card = TaskCard(task, True)
             self.addWidget(task_card)
 
     def in_current_list(self, task):

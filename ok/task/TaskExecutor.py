@@ -18,7 +18,15 @@ class TaskDisabledException(Exception):
     pass
 
 
+class CannotFindException(Exception):
+    pass
+
+
 class FinishedException(Exception):
+    pass
+
+
+class WaitFailedException(Exception):
     pass
 
 
@@ -34,7 +42,7 @@ class TaskExecutor:
     _last_frame_time = 0
 
     def __init__(self, device_manager: DeviceManager,
-                 wait_until_timeout=10, wait_until_before_delay=1, wait_until_check_delay=1,
+                 wait_until_timeout=10, wait_until_before_delay=1, wait_until_check_delay=0,
                  exit_event=None, trigger_tasks=[], onetime_tasks=[], scenes=[], feature_set=None,
                  ocr=None,
                  config_folder=None, debug=False):
@@ -45,7 +53,7 @@ class TaskExecutor:
         self.wait_scene_timeout = wait_until_timeout
         self.exit_event = exit_event
         self.debug_mode = False
-        self.debug = False
+        self.debug = debug
         self.ocr = ocr
         self.current_task = None
         self.trigger_tasks = trigger_tasks
@@ -136,6 +144,11 @@ class TaskExecutor:
 
     @property
     def frame(self):
+        while self.paused:
+            time.sleep(1)
+        if self.exit_event.is_set():
+            logger.info("Exit event set. Exiting early.")
+            return
         if self._frame is None:
             return self.next_frame()
         else:
@@ -150,6 +163,7 @@ class TaskExecutor:
         if self.debug_mode:
             time.sleep(timeout)
             return
+        self.reset_scene()
         self.frame_stats.add_sleep(timeout)
         self.pause_end_time = time.time() + timeout
         while True:
@@ -185,8 +199,9 @@ class TaskExecutor:
     def wait_scene(self, scene_type, time_out, pre_action, post_action):
         return self.wait_condition(lambda: self.detect_scene(scene_type), time_out, pre_action, post_action)
 
-    def wait_condition(self, condition, time_out=0, pre_action=None, post_action=None, wait_until_before_delay=0):
-        if wait_until_before_delay == 0:
+    def wait_condition(self, condition, time_out=0, pre_action=None, post_action=None, wait_until_before_delay=-1,
+                       raise_if_not_found=False):
+        if wait_until_before_delay == -1:
             wait_until_before_delay = self.wait_until_before_delay
         self.reset_scene()
         start = time.time()
@@ -201,15 +216,17 @@ class TaskExecutor:
             self.add_frame_stats()
             result_str = list_or_obj_to_str(result)
             if result:
-                logger.debug(f"found result {result_str}")
-                self.sleep(self.wait_until_check_delay)
+                logger.debug(
+                    f"found result {result_str} {(time.time() - start):.3f} delay {wait_until_before_delay} {self.wait_until_check_delay}")
                 return result
             if post_action is not None:
                 post_action()
             if time.time() - start > time_out:
                 logger.info(f"wait_until timeout {condition} {time_out} seconds")
                 break
-            self.sleep(0.01)
+            self.sleep(self.wait_until_check_delay)
+        if raise_if_not_found:
+            raise WaitFailedException()
         return None
 
     def reset_scene(self):

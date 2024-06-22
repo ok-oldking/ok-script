@@ -51,11 +51,12 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
     def convert_dx_frame(self):
         frame = self.last_dx_frame
-        self.last_dx_frame = None
         if not frame:
-            logger.warning('convert_dx_frame self.last_dx_frame is none')
+            # logger.warning('convert_dx_frame self.last_dx_frame is none')
             return None
-
+        start = time.time()
+        dx_time = self.last_frame_time
+        self.last_dx_frame = None
         need_reset_framepool = False
         if frame.ContentSize.Width != self.last_size.Width or frame.ContentSize.Height != self.last_size.Height:
             need_reset_framepool = True
@@ -94,6 +95,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                                         (desc.Height, mapinfo.RowPitch // 4, 4))[
                   :, :desc.Width].copy()
             self.immediatedc.Unmap(cputex, 0)
+            # logger.debug(f'frame latency {(time.time() - start):.3f} {(time.time() - dx_time):.3f}')
             return img
         except OSError as e:
             if e.winerror == d3d11.DXGI_ERROR_DEVICE_REMOVED or e.winerror == d3d11.DXGI_ERROR_DEVICE_RESET:
@@ -150,7 +152,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 self.evtoken = item.add_Closed(delegate)
                 self.frame_pool = Direct3D11CaptureFramePool.CreateFreeThreaded(self.rtdevice,
                                                                                 DirectXPixelFormat.B8G8R8A8UIntNormalized,
-                                                                                2, item.Size)
+                                                                                1, item.Size)
                 self.session = self.frame_pool.CreateCaptureSession(item)
                 pool = self.frame_pool
                 pool.add_FrameArrived(
