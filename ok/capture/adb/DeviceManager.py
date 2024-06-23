@@ -1,8 +1,13 @@
-from adbutils import AdbTimeout, AdbError
+import os
+import threading
+
+import cv2
+import numpy as np
+from adbutils import AdbError
 
 from ok.alas.platform_windows import get_emulator_exe
 from ok.capture.HwndWindow import HwndWindow, find_hwnd
-from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod, do_screencap
+from ok.capture.adb.ADBCaptureMethod import ADBCaptureMethod
 from ok.capture.adb.WindowsCaptureFactory import update_capture_method
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
@@ -19,6 +24,7 @@ class DeviceManager:
     def __init__(self, app_config, exit_event=None):
         self._device = None
         self._adb = None
+        self._adb_lock = threading.Lock()
         supported_resolution = app_config.get(
             'supported_resolution', {})
         self.supported_ratio = parse_ratio(supported_resolution.get('ratio'))
@@ -47,11 +53,37 @@ class DeviceManager:
 
     @property
     def adb(self):
-        if self._adb is None:
-            import adbutils
-            self._adb = adbutils.AdbClient(host="127.0.0.1")
-            logger.debug(f'connect adb')
-        return self._adb
+        with self._adb_lock:
+            if self._adb is None:
+                import adbutils
+                logger.debug(f'init adb')
+                from adbutils._utils import _get_bin_dir
+                bin_dir = _get_bin_dir()
+                exe = os.path.join(bin_dir, "adb.exe" if os.name == 'nt' else 'adb')
+                from adbutils._utils import _is_valid_exe
+                if os.path.isfile(exe) and _is_valid_exe(exe):
+                    os.environ['ADBUTILS_ADB_PATH'] = exe
+                    logger.debug(f'set adb utils adb {os.getenv("ADBUTILS_ADB_PATH")}')
+                self._adb = adbutils.AdbClient(host="127.0.0.1", socket_timeout=4)
+                try:
+                    self._adb.device_list()
+                except AdbError as e:
+                    self.try_kill_adb(e)
+            return self._adb
+
+    def try_kill_adb(self, e=None):
+        logger.error('try kill adb server', e)
+        import psutil
+        for proc in psutil.process_iter():
+            # Check whether the process name matches
+            if proc.name() == 'adb.exe' or proc.name() == 'adb':
+                logger.info(f'kill adb by process name {proc.cmdline()}')
+                try:
+                    proc.kill()
+                except Exception as e:
+                    logger.error(f'kill adb server failed', e)
+        logger.info('try kill adb end')
+        self._adb.server_kill()
 
     def adb_connect(self, addr, try_connect=True):
         try:
@@ -70,8 +102,9 @@ class DeviceManager:
                 self.adb.connect(addr, timeout=3)
                 logger.debug(f'adb_connect {addr}')
                 return self.adb_connect(addr, try_connect=False)
-        except AdbTimeout as e:
-            logger.error(f"adb connect error try kill server {addr}", e)
+        except AdbError as e:
+            logger.error(f"adb connect error {addr}", e)
+            self.try_kill_adb(e)
         except Exception as e:
             logger.error(f"adb connect error return none {addr}", e)
 
@@ -165,7 +198,7 @@ class DeviceManager:
         if device is not None:
             if resolution := self.resolution_dict.get(device.serial):
                 return resolution
-            frame = do_screencap(device)
+            frame = self.do_screencap(device)
             if frame is not None:
                 height, width, _ = frame.shape
                 if self.supported_ratio is None or abs(width / height - self.supported_ratio) < 0.01:
@@ -199,14 +232,41 @@ class DeviceManager:
             self.start()
         logger.debug(f'preferred device: {preferred}')
 
-    @staticmethod
-    def adb_get_imei(device):
+    def shell_device(self, device, *args, **kwargs):
+        kwargs.setdefault('timeout', 5)
         try:
-            return device.shell("settings get secure android_id") or device.shell(
-                "service call iphonesubinfo 4") or device.prop.model
+            return device.shell(*args, **kwargs)
+        except AdbError as e:
+            logger.error(f"adb shell AdbError try kill server {device}", e)
+            self.try_kill_adb(e)
+            addr = self.get_preferred_device()['address']
+            self.refresh_emulators()
+            self.refresh_phones()
+            new_addr = self.get_preferred_device()['address']
+            logger.error(f"shell_wrapper error occurred, try refresh_emulators {addr} {new_addr}", e)
+            return device.shell(*args, **kwargs)
         except Exception as e:
-            logger.error(f"adb_get_imei error maybe offline {device}")
+            logger.error(f"adb shell error maybe offline {device}", e)
             return None
+
+    def adb_get_imei(self, device):
+        return (self.shell_device(device, "settings get secure android_id") or
+                self.shell_device(device, "service call iphonesubinfo 4") or device.prop.model)
+
+    def do_screencap(self, device) -> np.ndarray | None:
+        if device is None:
+            return None
+        try:
+            png_bytes = self.shell_device(device, "screencap -p", encoding=None)
+            if png_bytes is not None and len(png_bytes) > 0:
+                image_data = np.frombuffer(png_bytes, dtype=np.uint8)
+                image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
+                if image is not None:
+                    return image
+                else:
+                    logger.error(f"Screencap image decode error, probably disconnected")
+        except Exception as e:
+            logger.error('screencap', e)
 
     def get_preferred_device(self):
         imei = self.config.get("preferred")
@@ -332,19 +392,10 @@ class DeviceManager:
 
     def shell(self, *args, **kwargs):
         # Set default timeout to 5 if not provided
-        kwargs.setdefault('timeout', 5)
 
         device = self.device
         if device is not None:
-            try:
-                return device.shell(*args, **kwargs)
-            except AdbError as e:
-                logger.debug(f'shell adb error {args} {e}')
-            except Exception as e:
-                addr = self.get_preferred_device()['address']
-                self.refresh_emulators()
-                new_addr = self.get_preferred_device()['address']
-                logger.error(f"shell_wrapper error occurred, try refresh_emulators {addr} {new_addr}", e)
+            return self.shell_device(device, *args, **kwargs)
         else:
             raise Exception('Device is none')
 
