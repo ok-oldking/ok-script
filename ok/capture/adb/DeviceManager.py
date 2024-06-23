@@ -137,11 +137,12 @@ class DeviceManager:
         from ok.alas.emulator_windows import EmulatorManager
         manager = EmulatorManager()
         installed_emulators = manager.all_emulator_instances
+        logger.info(f'installed emulators {installed_emulators}')
         for emulator in installed_emulators:
             preferred = self.get_preferred_device()
             if current and preferred is not None and preferred['imei'] != emulator.name:
                 logger.debug(f"refresh current only skip others {preferred['imei']} != {emulator.name}")
-                break
+                continue
             adb_device = self.adb_connect(emulator.serial)
             width, height = self.get_resolution(adb_device) if adb_device is not None else 0, 0
             name, hwnd, full_path, x, y, width, height = find_hwnd(None,
