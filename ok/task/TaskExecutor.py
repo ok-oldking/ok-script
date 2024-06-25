@@ -148,7 +148,7 @@ class TaskExecutor:
             time.sleep(1)
         if self.exit_event.is_set():
             logger.info("Exit event set. Exiting early.")
-            return
+            raise FinishedException("Exit event set. Exiting early.")
         if self._frame is None:
             return self.next_frame()
         else:

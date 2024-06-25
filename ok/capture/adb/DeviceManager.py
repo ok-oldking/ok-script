@@ -63,7 +63,9 @@ class DeviceManager:
                 from adbutils._utils import _is_valid_exe
                 if os.path.isfile(exe) and _is_valid_exe(exe):
                     os.environ['ADBUTILS_ADB_PATH'] = exe
-                    logger.debug(f'set adb utils adb {os.getenv("ADBUTILS_ADB_PATH")}')
+                    logger.info(f'set ADBUTILS_ADB_PATH {os.getenv("ADBUTILS_ADB_PATH")}')
+                else:
+                    logger.error(f'set ADBUTILS_ADB_PATH failed {exe}')
                 self._adb = adbutils.AdbClient(host="127.0.0.1", socket_timeout=4)
                 try:
                     self._adb.device_list()
@@ -83,7 +85,7 @@ class DeviceManager:
                 except Exception as e:
                     logger.error(f'kill adb server failed', e)
         logger.info('try kill adb end')
-        self._adb.server_kill()
+        # self._adb.server_kill()
 
     def adb_connect(self, addr, try_connect=True):
         try:
@@ -99,7 +101,7 @@ class DeviceManager:
                         logger.debug(f'adb_connect already connected {addr}')
                         return device
             if try_connect:
-                self.adb.connect(addr, timeout=3)
+                self.adb.connect(addr, timeout=5)
                 logger.debug(f'adb_connect {addr}')
                 return self.adb_connect(addr, try_connect=False)
         except AdbError as e:
@@ -244,6 +246,7 @@ class DeviceManager:
             self.refresh_phones()
             new_addr = self.get_preferred_device()['address']
             logger.error(f"shell_wrapper error occurred, try refresh_emulators {addr} {new_addr}", e)
+            device = self.adb_connect(device.serial)
             return device.shell(*args, **kwargs)
         except Exception as e:
             logger.error(f"adb shell error maybe offline {device}", e)
