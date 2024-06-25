@@ -106,10 +106,10 @@ class FeatureSet:
 
     def find_one(self, mat: np.ndarray, category_name: str, horizontal_variance: float = 0,
                  vertical_variance: float = 0,
-                 threshold=0, use_gray_scale=False) -> Box:
+                 threshold=0, use_gray_scale=False, canny_lower=0, canny_higher=0) -> Box:
         boxes = self.find_feature(mat, category_name, horizontal_variance=horizontal_variance,
                                   vertical_variance=vertical_variance, threshold=threshold,
-                                  use_gray_scale=use_gray_scale)
+                                  use_gray_scale=use_gray_scale, canny_lower=canny_lower, canny_higher=canny_higher)
         if len(boxes) > 1:
             logger.warning(f"find_one:found too many {len(boxes)} return first", file=sys.stderr)
         if len(boxes) >= 1:
@@ -117,7 +117,7 @@ class FeatureSet:
 
     def find_feature(self, mat: np.ndarray, category_name: str, horizontal_variance: float = 0,
                      vertical_variance: float = 0, threshold: float = 0, use_gray_scale: bool = False, x=-1, y=-1,
-                     to_x=-1, to_y=-1, width=-1, height=-1, box=None) -> List[Box]:
+                     to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0, canny_higher=0) -> List[Box]:
         """
         Find a feature within a given variance.
 
@@ -168,17 +168,19 @@ class FeatureSet:
 
         search_area = mat[search_y1:search_y2, search_x1:search_x2, :3]
         # Crop the search area from the image
-        template = feature.mat
+
         if use_gray_scale:
             search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
-            template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-        if category_name.startswith('edge_'):
+            if len(feature.mat.shape) != 2:
+                feature.mat = cv2.cvtColor(feature.mat, cv2.COLOR_BGR2GRAY)
+        if canny_lower != 0 and canny_higher != 0:
             search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
-            search_area = cv2.Canny(search_area, self.canny_lower, self.canny_higher)
-        elif category_name.startswith('gray_'):
-            search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
+            search_area = cv2.Canny(search_area, canny_lower, canny_higher)
+            if len(feature.mat.shape) != 2:
+                feature.mat = cv2.cvtColor(feature.mat, cv2.COLOR_BGR2GRAY)
+                feature.mat = cv2.Canny(feature.mat, canny_lower, canny_higher)
 
-        result = cv2.matchTemplate(search_area, template, cv2.TM_CCOEFF_NORMED)
+        result = cv2.matchTemplate(search_area, feature.mat, cv2.TM_CCOEFF_NORMED)
 
         # Define a threshold for acceptable matches
         locations = filter_and_sort_matches(result, threshold, feature_width, feature_height)
@@ -255,12 +257,6 @@ def read_from_json(coco_json, width=-1, height=-1, canny_lower=50, canny_upper=1
             if category_name in feature_dict:
                 raise ValueError(f"Multiple boxes found for category {category_name}")
             if not category_name.startswith('box_'):
-                if ok_compressed:
-                    if category_name.startswith('edge_'):
-                        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                        image = cv2.Canny(image, canny_lower, canny_upper)
-                    elif category_name.startswith('gray_'):
-                        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 feature_dict[category_name] = Feature(image, x, y)
             box_dict[category_name] = Box(x, y, image.shape[1], image.shape[0], name=category_name)
 

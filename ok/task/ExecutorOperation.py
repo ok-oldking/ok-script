@@ -32,6 +32,9 @@ class ExecutorOperation:
     def is_scene(self, the_scene):
         return isinstance(self.executor.current_scene, the_scene)
 
+    def reset_scene(self):
+        self.executor.reset_scene()
+
     def click(self, x: int | Box = -1, y=-1, move_back=False, name=None):
         if isinstance(x, Box):
             self.click_box(x, move_back=move_back)

@@ -28,22 +28,21 @@ class MainWindow(MSFluentWindow):
         self.original_layout = None
         self.exit_event = exit_event
         self.start_tab = StartTab()
-        self.first_tab = None
         self.onetime_tab = None
         self.trigger_tab = None
         self.emulator_starting_dialog = None
 
+        self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Capture'))
+
         if len(ok.gui.executor.onetime_tasks) > 0:
             self.onetime_tab = OneTimeTaskTab()
-            self.first_tab = self.onetime_tab
+            self.first_task_tab = self.onetime_tab
             self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('Tasks'))
         if len(ok.gui.executor.trigger_tasks) > 0:
             self.trigger_tab = TriggerTaskTab()
-            if self.first_tab is None:
-                self.first_tab = self.trigger_tab
+            if self.first_task_tab is None:
+                self.first_task_tab = self.trigger_tab
             self.addSubInterface(self.trigger_tab, FluentIcon.ROBOT, self.tr('Triggers'))
-
-        self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Capture'))
 
         if debug:
             debug_tab = DebugTab(config, exit_event)
@@ -133,9 +132,7 @@ class MainWindow(MSFluentWindow):
     def navigate_tab(self, index):
         if index == "start":
             self.switchTo(self.start_tab)
-        elif index == "first":
-            self.switchTo(self.first_tab)
-        elif index == "first" and self.onetime_tab is not None:
+        elif index == "onetime" and self.onetime_tab is not None:
             self.switchTo(self.onetime_tab)
         elif index == "trigger" and self.trigger_tab is not None:
             self.switchTo(self.trigger_tab)

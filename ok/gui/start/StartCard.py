@@ -46,7 +46,7 @@ class StartCard(SettingCard):
             elif ok.gui.executor.active_trigger_task_count():
                 communicate.tab.emit("trigger")
             else:
-                communicate.tab.emit("first")
+                communicate.tab.emit("start")
             self.status_bar.show()
 
     def clicked(self):
