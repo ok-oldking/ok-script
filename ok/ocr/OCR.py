@@ -18,7 +18,7 @@ class OCR:
     def ocr(self, x=0, y=0, to_x=1, to_y=1, match: str | List[str] | Pattern[str] | List[Pattern[str]] | None = None,
             width=0, height=0, box: Box = None, name=None,
             threshold=0,
-            frame=None, target_height=0):
+            frame=None, target_height=0, use_grayscale=False):
         if hasattr(self, 'paused') and self.paused:
             self.sleep(1)
         if threshold == 0:
@@ -42,6 +42,8 @@ class OCR:
                 image = image[y:y + h, x:x + w]
                 if not box.name and match:
                     box.name = str(match)
+            if use_grayscale:
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
             image, scale_factor = resize_image(image, original_height, target_height)
 
