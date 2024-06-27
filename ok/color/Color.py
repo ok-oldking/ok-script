@@ -42,6 +42,33 @@ def is_close_to_pure_color(image, max_colors=5000, percent=0.97):
     return percentage > percent
 
 
+def keep_pixels_in_color_range(image, color_range):
+    lower_bound, upper_bound = color_range_to_bound(color_range)
+    mask = cv2.inRange(image, lower_bound, upper_bound)
+
+    # Apply mask to original image
+    return cv2.bitwise_and(image, image, mask=mask)
+
+
+def get_connected_area_by_color(image, color_range, connectivity=4):
+    lower_bound, upper_bound = color_range_to_bound(color_range)
+
+    # Create mask
+    mask = cv2.inRange(image, lower_bound, upper_bound)
+
+    # Find connected components
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=connectivity)
+
+    # Print the area of each connected component
+    return num_labels, stats
+
+
+def color_range_to_bound(color_range):
+    lower_bound = np.array([color_range['b'][0], color_range['g'][0], color_range['r'][0]], dtype="uint8")
+    upper_bound = np.array([color_range['b'][1], color_range['g'][1], color_range['r'][1]], dtype="uint8")
+    return lower_bound, upper_bound
+
+
 def calculate_colorfulness(image, box=None):
     if box is not None:
         image = image[box.y:box.y + box.height, box.x:box.x + box.width, :3]
@@ -111,8 +138,7 @@ def find_color_rectangles(image, color_range, min_width, min_height, max_width=-
         y_offset = 0
 
     # Convert color range to BGR format for OpenCV
-    lower_bound = np.array([color_range['b'][0], color_range['g'][0], color_range['r'][0]], dtype="uint8")
-    upper_bound = np.array([color_range['b'][1], color_range['g'][1], color_range['r'][1]], dtype="uint8")
+    lower_bound, upper_bound = color_range_to_bound(color_range)
 
     # Create a mask for the color range
     mask = cv2.inRange(image, lower_bound, upper_bound)
