@@ -41,8 +41,6 @@ class FeatureSet:
         # Process images and annotations
         self.width = 0
         self.height = 0
-        self.canny_lower = 50
-        self.canny_higher = 150
         if default_threshold == 0:
             default_threshold = 0.95
         self.default_threshold = default_threshold
@@ -69,14 +67,12 @@ class FeatureSet:
             width (int): Target width for scaling images.
             height (int): Target height for scaling images.
         """
-        self.feature_dict, self.box_dict, compressed = read_from_json(self.coco_json, self.width, self.height,
-                                                                      self.canny_lower, self.canny_higher)
+        self.feature_dict, self.box_dict, compressed = read_from_json(self.coco_json, self.width, self.height)
         if self.debug and not compressed:
             from ok.feature.CompressCoco import compress_coco
             logger.info(f'coco not compressed try to compress the COCO dataset')
-            compress_coco(self.coco_json, self.canny_lower, self.canny_higher)
-            self.feature_dict, self.box_dict, compressed = read_from_json(self.coco_json, self.width, self.height,
-                                                                          self.canny_lower, self.canny_higher)
+            compress_coco(self.coco_json)
+            self.feature_dict, self.box_dict, compressed = read_from_json(self.coco_json, self.width, self.height)
 
     def get_box_by_name(self, mat, category_name: str) -> Box:
         self.check_size(mat)
@@ -200,7 +196,7 @@ class FeatureSet:
         return result
 
 
-def read_from_json(coco_json, width=-1, height=-1, canny_lower=50, canny_upper=150):
+def read_from_json(coco_json, width=-1, height=-1):
     feature_dict = {}
     box_dict = {}
     ok_compressed = None
@@ -261,6 +257,11 @@ def read_from_json(coco_json, width=-1, height=-1, canny_lower=50, canny_upper=1
             box_dict[category_name] = Box(x, y, image.shape[1], image.shape[0], name=category_name)
 
     return feature_dict, box_dict, ok_compressed
+
+
+def replace_extension(filename):
+    if filename.endswith('.jpg'):
+        return filename[:-4] + '.png', True
 
 
 def filter_and_sort_matches(result, threshold, w, h):

@@ -1,3 +1,4 @@
+import time
 from typing import List
 
 from ok.color.Color import calculate_color_percentage
@@ -7,6 +8,7 @@ from ok.gui.Communicate import communicate
 
 class ExecutorOperation:
     executor = None
+    last_click_time = 0
 
     def exit_is_set(self):
         return self.executor.exit_event.is_set()
@@ -35,13 +37,25 @@ class ExecutorOperation:
     def reset_scene(self):
         self.executor.reset_scene()
 
-    def click(self, x: int | Box = -1, y=-1, move_back=False, name=None):
+    def click(self, x: int | Box = -1, y=-1, move_back=False, name=None, interval=-1):
         if isinstance(x, Box):
             self.click_box(x, move_back=move_back)
+            return
+        if not self.check_interval(interval):
             return
         communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green")
         self.executor.reset_scene()
         self.executor.interaction.click(x, y, move_back, name=name)
+
+    def check_interval(self, interval):
+        if interval <= 0:
+            return True
+        now = time.time()
+        if now - self.last_click_time < interval:
+            return False
+        else:
+            self.last_click_time = now
+            return True
 
     def mouse_down(self, x=-1, y=-1, name=None):
         frame = self.executor.nullable_frame()
@@ -161,7 +175,9 @@ class ExecutorOperation:
     def sleep(self, timeout):
         self.executor.sleep(timeout)
 
-    def send_key(self, key, down_time=0.02):
+    def send_key(self, key, down_time=0.02, interval=-1):
+        if not self.check_interval(interval):
+            return
         frame = self.executor.nullable_frame()
         communicate.emit_draw_box("send_key", [Box(max(0, 0), max(0, 0), 20, 20, name="send_key_" + str(key))], "green",
                                   frame)

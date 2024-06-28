@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 
 import cv2
 import numpy as np
@@ -10,8 +9,8 @@ from PIL.PngImagePlugin import PngInfo
 from ok.feature.FeatureSet import read_from_json
 
 
-def compress_coco(coco_json, canny_upper, canny_lower) -> None:
-    feature_dict, *_ = read_from_json(coco_json, canny_lower=canny_lower, canny_upper=canny_upper)
+def compress_coco(coco_json) -> None:
+    feature_dict, *_ = read_from_json(coco_json)
     with open(coco_json, 'r') as file:
         image_dict = {}
         data = json.load(file)
@@ -46,13 +45,21 @@ def compress_coco(coco_json, canny_upper, canny_lower) -> None:
                 h, w = feature.mat.shape[:2]
                 background[y:y + h, x:x + w] = feature.mat
 
-            # Add metadata
-            metadata = {
-                "ok_compressed": "1"
-            }
-
             # Save the image with metadata
             save_image_with_metadata(background, image_path)
+
+        replaced = False
+        for image in data['images']:
+            image['file_name'], replaced = replace_extension(image['file_name'])
+
+        if replaced:
+            with open(coco_json, 'w') as json_file:
+                json.dump(data, json_file, indent=4)
+
+
+def replace_extension(filename):
+    if filename.endswith('.jpg'):
+        return filename[:-4] + '.png', True
 
 
 def save_image_with_metadata(image, image_path):
@@ -65,11 +72,9 @@ def save_image_with_metadata(image, image_path):
     metadata.add_text('ok_compressed', '1')
     metadata.add_text("Author", "ok_compress")
     metadata.add_text("Description", "This is a sample image")
-
+    new_path, replaced = replace_extension(image_path)
+    if replaced:
+        os.remove(image_path)
     # Save the image with metadata
-    pil_image.save(image_path, 'PNG', optimize=True, pnginfo=metadata)
-
-
-if __name__ == '__main__':
-    json_file = sys.argv[1]
-    compress_coco(json_file)
+    pil_image.save(new_path, 'PNG', optimize=True, pnginfo=metadata)
+    return image_path
