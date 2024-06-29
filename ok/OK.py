@@ -6,6 +6,7 @@ from typing import Dict, Any
 from PySide6.QtWidgets import QApplication
 
 import ok
+from ok.config.Config import Config
 from ok.logging.Logger import get_logger, config_logger
 from ok.util.exit_event import ExitEvent
 from ok.util.path import install_path_isascii
@@ -31,6 +32,7 @@ class OK:
     def __init__(self, config: Dict[str, Any]):
         print(f"AutoHelper init, config: {config}")
         config["config_folder"] = config.get("config_folder") or 'configs'
+        Config.config_folder = config["config_folder"]
         config_logger(config)
         logger.info(f"AutoHelper init, config: {config}")
         ok.gui.ok = self

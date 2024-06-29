@@ -23,17 +23,17 @@ logger = get_logger(__name__)
 class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     name = "Windows Graphics Capture"
     description = "fast, most compatible, capped at 60fps"
-    last_dx_frame = None
-    last_frame_time = 0
-    frame_pool = None
-    item = None
-    session = None
-    cputex = None
-    rtdevice = None
-    dxdevice = None
 
     def __init__(self, hwnd_window: HwndWindow):
         super().__init__(hwnd_window)
+        self.last_dx_frame = None
+        self.last_frame_time = 0
+        self.frame_pool = None
+        self.item = None
+        self.session = None
+        self.cputex = None
+        self.rtdevice = None
+        self.dxdevice = None
         self.start_or_stop()
 
     def frame_arrived_callback(self, x, y):
@@ -54,8 +54,6 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         if not frame:
             # logger.warning('convert_dx_frame self.last_dx_frame is none')
             return None
-        start = time.time()
-        dx_time = self.last_frame_time
         self.last_dx_frame = None
         need_reset_framepool = False
         if frame.ContentSize.Width != self.last_size.Width or frame.ContentSize.Height != self.last_size.Height:
@@ -208,7 +206,13 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         if self.start_or_stop():
             frame = self.convert_dx_frame()
             if frame is None:
-                return
+                if time.time() - self.last_frame_time > 10:
+                    logger.warning(f'no frame for 10 sec, try to restart')
+                    self.close()
+                    self.last_frame_time = time.time()
+                    return self.do_get_frame()
+                else:
+                    return None
             latency = time.time() - self.last_frame_time
 
             frame = self.crop_image(frame)

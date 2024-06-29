@@ -83,7 +83,7 @@ class Analytics:
     @property
     def client_id(self):
         if self._config is None:
-            self._config = Config({'client_id': ''}, self.app_config.get("config_folder") or "config", 'statistics')
+            self._config = Config({'client_id': ''}, 'statistics')
         if not self._config.get('client_id'):
             self._config['client_id'] = self.get_unique_client_id()
         else:

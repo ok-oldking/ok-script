@@ -41,7 +41,6 @@ class DeviceManager:
         else:
             self.hwnd = None
         self.config = Config({"preferred": "none", "pc_full_path": "none", 'capture': 'windows'},
-                             app_config.get('config_folder'),
                              "devices")
         self.capture_method = None
         self.handler = Handler(exit_event, 'RefreshAdb')

@@ -136,8 +136,8 @@ class BaseTask(ExecutorOperation):
     def info_add(self, key, count=1):
         self.info[key] = self.info.get(key, 0) + count
 
-    def load_config(self, folder):
-        self.config = Config(self.default_config, folder, self.__class__.__name__, self.validate)
+    def load_config(self):
+        self.config = Config(self.default_config, self.__class__.__name__, validator=self.validate)
 
     def validate(self, key, value):
         message = self.validate_config(key, value)
@@ -168,5 +168,5 @@ class BaseTask(ExecutorOperation):
     def set_executor(self, executor):
         self.executor = executor
         self.feature_set = executor.feature_set
-        self.load_config(executor.config_folder)
+        self.load_config()
         self.on_create()

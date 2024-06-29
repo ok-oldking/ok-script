@@ -7,7 +7,9 @@ logger = get_logger(__name__)
 
 
 class Config(dict):
-    def __init__(self, default, folder, name, validator=None):
+    config_folder = 'configs'
+
+    def __init__(self, default, name, folder=None, validator=None):
         """
         Initialize the Config object.
 
@@ -18,6 +20,8 @@ class Config(dict):
         """
         self.default = default
         self.validator = validator
+        if folder is None:
+            folder = self.config_folder
         self.config_file = get_path_relative_to_exe(folder, f"{name}.json")
 
         # Read the config file, if it exists, otherwise use default

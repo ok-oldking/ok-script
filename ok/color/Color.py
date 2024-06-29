@@ -47,7 +47,12 @@ def keep_pixels_in_color_range(image, color_range):
     mask = cv2.inRange(image, lower_bound, upper_bound)
 
     # Apply mask to original image
-    return cv2.bitwise_and(image, image, mask=mask)
+    result = cv2.bitwise_and(image, image, mask=mask)
+
+    # Count the number of white pixels in the mask
+    pixel_count = np.count_nonzero(mask)
+
+    return result, pixel_count
 
 
 def get_connected_area_by_color(image, color_range, connectivity=4):

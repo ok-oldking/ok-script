@@ -33,7 +33,7 @@ class FrameWidget(QWidget):
             relative = self.mapFromGlobal(QPoint(x / self.scaling, y / self.scaling))
             if self._mouse_position != relative and relative.x() > 0 and relative.y() > 0:
                 self._mouse_position = relative
-                self.update()
+            self.update()
         except Exception as e:
             logger.warning(f'GetCursorPos exception {e}')
 
