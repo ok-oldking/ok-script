@@ -257,8 +257,10 @@ class TaskExecutor:
 
     def execute(self):
         logger.info(f"start execute")
-        last_frame_time = 0
         while not self.exit_event.is_set():
+            if self.paused:
+                logger.info(f'executor is paused sleep')
+                self.sleep(1)
             task, cycled = self.next_task()
             if not task:
                 time.sleep(1)

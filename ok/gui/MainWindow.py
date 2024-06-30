@@ -25,6 +25,7 @@ class Communicate(QObject):
 class MainWindow(MSFluentWindow):
     def __init__(self, config, icon, title, version, debug=False, about=None, exit_event=None):
         super().__init__()
+        logger.info('main window __init__')
         self.original_layout = None
         self.exit_event = exit_event
         self.start_tab = StartTab()
@@ -72,13 +73,14 @@ class MainWindow(MSFluentWindow):
         self.tray.setContextMenu(menu)
         self.tray.show()
 
-        if ok.gui.device_manager.config.get("preferred") is None or self.onetime_tab is None:
-            self.switchTo(self.start_tab)
+        # if ok.gui.device_manager.config.get("preferred") is None or self.onetime_tab is None:
+        #     self.switchTo(self.start_tab)
 
         communicate.capture_error.connect(self.capture_error)
         communicate.notification.connect(self.show_notification)
         communicate.config_validation.connect(self.config_validation)
         communicate.starting_emulator.connect(self.starting_emulator)
+        logger.info('main window __init__ done')
 
     def starting_emulator(self, done, error, seconds_left):
         if error:
@@ -91,7 +93,6 @@ class MainWindow(MSFluentWindow):
             if self.emulator_starting_dialog is None:
                 self.emulator_starting_dialog = StartLoadingDialog(seconds_left,
                                                                    self)
-
             else:
                 self.emulator_starting_dialog.set_seconds_left(seconds_left)
             self.emulator_starting_dialog.show()
