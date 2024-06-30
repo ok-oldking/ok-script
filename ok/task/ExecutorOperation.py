@@ -39,14 +39,14 @@ class ExecutorOperation:
 
     def click(self, x: int | Box = -1, y=-1, move_back=False, name=None, interval=-1):
         if isinstance(x, Box):
-            self.click_box(x, move_back=move_back)
-            return
+            return self.click_box(x, move_back=move_back)
         if not self.check_interval(interval):
             self.executor.reset_scene()
-            return
+            return False
         communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green")
         self.executor.reset_scene()
         self.executor.interaction.click(x, y, move_back, name=name)
+        return True
 
     def check_interval(self, interval):
         if interval <= 0:
@@ -70,8 +70,8 @@ class ExecutorOperation:
         communicate.emit_draw_box("mouse_up", self.box_of_screen(0.5, 0.5, width=0.01, height=0.01, name="click"),
                                   "green",
                                   frame)
-        self.executor.reset_scene()
         self.executor.interaction.mouse_up()
+        self.executor.reset_scene()
 
     def right_click(self, x=-1, y=-1, move_back=False, name=None):
         communicate.emit_draw_box("right_click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="right_click")],
@@ -179,12 +179,13 @@ class ExecutorOperation:
     def send_key(self, key, down_time=0.02, interval=-1):
         if not self.check_interval(interval):
             self.executor.reset_scene()
-            return
+            return False
         frame = self.executor.nullable_frame()
         communicate.emit_draw_box("send_key", [Box(max(0, 0), max(0, 0), 20, 20, name="send_key_" + str(key))], "green",
                                   frame)
         self.executor.reset_scene()
         self.executor.interaction.send_key(key, down_time)
+        return True
 
     def send_key_down(self, key):
         self.executor.reset_scene()

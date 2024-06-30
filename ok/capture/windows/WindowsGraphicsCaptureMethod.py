@@ -26,7 +26,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
     def __init__(self, hwnd_window: HwndWindow):
         super().__init__(hwnd_window)
-        self.last_dx_frame = None
+        self.last_frame = None
         self.last_frame_time = 0
         self.frame_pool = None
         self.item = None
@@ -41,7 +41,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             self.last_frame_time = time.time()
             next_frame = self.frame_pool.TryGetNextFrame()
             if next_frame is not None:
-                self.last_dx_frame = next_frame
+                self.last_frame = self.convert_dx_frame(next_frame)
             else:
                 logger.warning('frame_arrived_callback TryGetNextFrame returned None')
         except Exception as e:
@@ -49,12 +49,10 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             self.close()
             return
 
-    def convert_dx_frame(self):
-        frame = self.last_dx_frame
+    def convert_dx_frame(self, frame):
         if not frame:
             # logger.warning('convert_dx_frame self.last_dx_frame is none')
             return None
-        self.last_dx_frame = None
         need_reset_framepool = False
         if frame.ContentSize.Width != self.last_size.Width or frame.ContentSize.Height != self.last_size.Height:
             need_reset_framepool = True
@@ -204,7 +202,8 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     @override
     def do_get_frame(self):
         if self.start_or_stop():
-            frame = self.convert_dx_frame()
+            frame = self.last_frame
+            self.last_frame = None
             if frame is None:
                 if time.time() - self.last_frame_time > 10:
                     logger.warning(f'no frame for 10 sec, try to restart')
