@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Feature:
-    def __init__(self, mat: np.ndarray, x: int, y: int) -> None:
+    def __init__(self, mat: np.ndarray, x: int, y: int, scaling=1) -> None:
         """
         Initialize a Feature with an image (Mat) and its bounding box coordinates.
 
@@ -14,6 +14,7 @@ class Feature:
             height (int): The height of the bounding box.
         """
         self.mat = mat
+        self.scaling = scaling
         self.x = round(x)
         self.y = round(y)
 
@@ -24,6 +25,9 @@ class Feature:
     @property
     def height(self):
         return self.mat.shape[0]
+
+    def scaling(self):
+        return self.scaling
 
     def __str__(self) -> str:
         return f'self.x: {self.x}, self.y: {self.y}, width: {self.width}, height: {self.height}'

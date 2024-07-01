@@ -157,10 +157,19 @@ class FeatureSet:
             search_y2 = round((y + height) * frame_height)
         else:
             # Define search area using variance
-            search_x1 = max(0, round(feature.x - self.width * horizontal_variance))
-            search_y1 = max(0, round(feature.y - self.height * vertical_variance))
-            search_x2 = min(self.width, round(feature.x + feature_width + self.width * horizontal_variance))
-            search_y2 = min(self.height, round(feature.y + feature_height + self.height * vertical_variance))
+            x_offset = self.width * horizontal_variance
+            y_offset = self.height * vertical_variance
+            # if the feature was scaled increase the search area by 1px each direction
+            if feature.scaling != 1:
+                if horizontal_variance == 0:
+                    x_offset = 1
+                if vertical_variance == 0:
+                    y_offset = 1
+
+            search_x1 = max(0, round(feature.x - x_offset))
+            search_y1 = max(0, round(feature.y - y_offset))
+            search_x2 = min(self.width, round(feature.x + feature_width + x_offset))
+            search_y2 = min(self.height, round(feature.y + feature_height + y_offset))
 
         search_area = mat[search_y1:search_y2, search_x1:search_x2, :3]
         # Crop the search area from the image
@@ -253,7 +262,7 @@ def read_from_json(coco_json, width=-1, height=-1):
             if category_name in feature_dict:
                 raise ValueError(f"Multiple boxes found for category {category_name}")
             if not category_name.startswith('box_'):
-                feature_dict[category_name] = Feature(image, x, y)
+                feature_dict[category_name] = Feature(image, x, y, scale_x)
             box_dict[category_name] = Box(x, y, image.shape[1], image.shape[0], name=category_name)
 
     return feature_dict, box_dict, ok_compressed

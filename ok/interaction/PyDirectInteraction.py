@@ -12,11 +12,10 @@ logger = get_logger(__name__)
 pydirectinput.FAILSAFE = False
 
 
-class Win32Interaction(BaseInteraction):
+class PyDirectInteraction(BaseInteraction):
 
-    def __init__(self, capture: BaseCaptureMethod):
+    def __init__(self, capture: BaseCaptureMethod, device_manager):
         super().__init__(capture)
-        self.post = ctypes.windll.user32.PostMessageW
         if not is_admin():
             logger.error(f"You must be an admin to use Win32Interaction")
 

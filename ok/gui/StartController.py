@@ -5,7 +5,7 @@ from PySide6.QtCore import QObject
 import ok.gui
 from ok.alas.platform_windows import execute
 from ok.gui.Communicate import communicate
-from ok.interaction.Win32Interaction import is_admin
+from ok.interaction.PyDirectInteraction import is_admin
 from ok.logging.Logger import get_logger
 from ok.util.Handler import Handler
 

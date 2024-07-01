@@ -63,10 +63,16 @@ class FindFeature:
         boxes = self.find_feature(feature_name, horizontal_variance, vertical_variance, threshold,
                                   use_gray_scale=use_gray_scale, box=box, canny_lower=canny_lower,
                                   canny_higher=canny_higher)
+        highest_conf = 0
+        highest_box = None
         if len(boxes) > 0:
             if len(boxes) > 1:
                 print(f"find_one:found {feature_name} too many {len(boxes)}", file=sys.stderr)
-            return boxes[0]
+            for box in boxes:
+                if box.confidence > highest_conf:
+                    highest_conf = box.confidence
+                    highest_box = box
+            return highest_box
 
     def on_feature(self, boxes):
         pass
