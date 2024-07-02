@@ -92,6 +92,8 @@ class HwndWindow:
                     self.title,
                     self.exe_name,
                     self.frame_width, self.frame_height, player_id=self.player_id)
+                if self.hwnd is not None:
+                    logger.info(f'found hwnd {self.hwnd} {self.exe_full_path} {win32gui.GetClassName(self.hwnd)}')
                 self.exists = self.hwnd is not None
             if self.hwnd is not None:
                 self.exists = win32gui.IsWindow(self.hwnd)

@@ -44,8 +44,17 @@ class ExecutorOperation:
             self.executor.reset_scene()
             return False
         communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green")
-        self.executor.reset_scene()
         self.executor.interaction.click(x, y, move_back, name=name)
+        self.executor.reset_scene()
+        return True
+
+    def middle_click(self, x: int | Box = -1, y=-1, move_back=False, name=None, interval=-1):
+        if not self.check_interval(interval):
+            self.executor.reset_scene()
+            return False
+        communicate.emit_draw_box("middle_click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green")
+        self.executor.interaction.middle_click(x, y, move_back, name=name)
+        self.executor.reset_scene()
         return True
 
     def check_interval(self, interval):
@@ -145,6 +154,10 @@ class ExecutorOperation:
     def click_relative(self, x, y, move_back=False):
         self.click(int(self.width * x), int(self.height * y), move_back, name=f'relative({x:.2f}, {y:.2f})')
 
+    def middle_click_relative(self, x, y, move_back=False):
+        self.middle_click(int(self.width * x), int(self.height * y), move_back,
+                          name=f'relative({x:.2f}, {y:.2f})')
+
     @property
     def height(self):
         return self.executor.method.height
@@ -154,7 +167,11 @@ class ExecutorOperation:
         return self.executor.method.width
 
     def move_relative(self, x, y):
-        self.executor.interaction.move_relative(x, y)
+        self.move(int(self.width * x), int(self.height * y))
+
+    def move(self, x, y):
+        self.executor.interaction.move(x, y)
+        self.executor.reset_scene()
 
     def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=False,
                   move_back=False):

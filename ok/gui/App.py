@@ -108,6 +108,7 @@ class App:
         self.main_window.show()
         self.main_window.raise_()
         self.main_window.activateWindow()
+        logger.debug(f'show_main_window end')
 
     def size_relative_to_screen(self, width, height):
         screen = self.app.primaryScreen()

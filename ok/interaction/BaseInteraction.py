@@ -5,7 +5,7 @@ logger = get_logger(__name__)
 
 class BaseInteraction:
 
-    def __init__(self, capture):
+    def __init__(self, capture, hwnd_window, exit_event):
         self.capture = capture
 
     def should_capture(self):
@@ -26,8 +26,9 @@ class BaseInteraction:
     def swipe(self, from_x, from_y, to_x, to_y, duration):
         pass
 
-    def move_relative(self, x, y):
-        self.move(int(self.capture.width * x), int(self.capture.height * y))
+    def middle_click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.05):
+        logger.debug(f"middle_click {x, y}")
+        pass
 
     def click(self, x=-1, y=-1, name=None):
         if name is None:
