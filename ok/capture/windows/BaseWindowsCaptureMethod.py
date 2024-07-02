@@ -43,3 +43,9 @@ class BaseWindowsCaptureMethod(BaseCaptureMethod):
         else:
             result += f'_{self.hwnd_window}'
         return result
+
+    @staticmethod
+    def get_crop_point(frame_width, frame_height, target_width, target_height):
+        x = round((frame_width - target_width) / 2)
+        y = (frame_height - target_height) - x
+        return x, y

@@ -24,15 +24,15 @@ class OverlayWindow(FrameWidget):
         # Set window flag to handle mouse events properly with translucent background
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool | Qt.WindowTransparentForInput)
         communicate.window.connect(self.update_overlay)
-        self.update_overlay(hwnd_window.visible, hwnd_window.x, hwnd_window.y, hwnd_window.border,
-                            hwnd_window.title_height, hwnd_window.width, hwnd_window.height, hwnd_window.scaling)
+        self.update_overlay(hwnd_window.visible, hwnd_window.x, hwnd_window.y, hwnd_window.window_width,
+                            hwnd_window.window_height, hwnd_window.width, hwnd_window.height, hwnd_window.scaling)
 
         self.setMouseTracking(True)
 
-    def update_overlay(self, visible, x, y, border, title_height, width, height, scaling):
-        logger.debug(f'update_overlay: {visible}, {x}, {y}, {border}, {title_height} {width}, {height}, {scaling}')
+    def update_overlay(self, visible, x, y, window_width, window_height, width, height, scaling):
+        logger.debug(f'update_overlay: {visible}, {x}, {y}, {width}, {height}, {scaling}')
         if visible:
-            self.setGeometry((x + border) / scaling, (y + title_height) / scaling, width / scaling, height / scaling)
+            self.setGeometry(x / scaling, y / scaling, width / scaling, height / scaling)
         if visible:
             self.show()
         else:

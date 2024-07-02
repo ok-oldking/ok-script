@@ -39,6 +39,10 @@ class OK:
         config['debug'] = config.get("debug", False)
         self.debug = config['debug']
         try:
+            import ctypes
+            # Set DPI Awareness (Windows 10 and 8)
+            errorCode = ctypes.windll.shcore.SetProcessDpiAwareness(1)
+            logger.info(f'SetProcessDpiAwareness {errorCode}')
             if self.debug:
                 import win32api
                 win32api.SetConsoleCtrlHandler(self.console_handler, True)

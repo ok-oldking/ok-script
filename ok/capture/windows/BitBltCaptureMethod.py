@@ -45,14 +45,18 @@ class BitBltCaptureMethod(BaseWindowsCaptureMethod):
             x = self.hwnd_window.real_x_offset
             y = self.hwnd_window.real_y_offset
         else:
-            x = self.hwnd_window.border
-            y = self.hwnd_window.title_height
-
+            # x = self.hwnd_window.border
+            # y = self.hwnd_window.title_height
+            # rect = win32gui.GetWindowRect(self.hwnd_window.hwnd)
+            # Calculate the width and height
+            # window_width = rect[2] - rect[0]
+            # window_height = rect[3] - rect[1]
+            x, y = self.get_crop_point(self.hwnd_window.window_width, self.hwnd_window.window_height,
+                                       self.hwnd_window.width, self.hwnd_window.height)
         return bit_blt_capture_frame(self.hwnd_window.hwnd, x,
                                      y,
                                      self.hwnd_window.real_width or self.hwnd_window.width,
                                      self.hwnd_window.real_height or self.hwnd_window.height,
-                                     self.hwnd_window.ext_left_bounds, self.hwnd_window.ext_top_bounds,
                                      self.render_full)
 
     def test_exclusive_full_screen(self):
@@ -75,21 +79,21 @@ class BitBltCaptureMethod(BaseWindowsCaptureMethod):
                 return True
 
 
-def bit_blt_capture_frame(hwnd, border, title_height, width, height, ext_left_bounds, ext_top_bounds,
-                          _render_full_content=False):
+def bit_blt_capture_frame(hwnd, border, title_height, width, height, _render_full_content=False):
     image: MatLike | None = None
     start = time.time()
 
     if hwnd is None:
         return image
 
-    x, y, width, height = (border + ext_left_bounds,
-                           title_height + ext_top_bounds, width, height)
+    x, y, width, height = (border,
+                           title_height, width, height)
 
     if width <= 0 or height <= 0:
         return None
     # If the window closes while it's being manipulated, it could cause a crash
     try:
+
         window_dc = win32gui.GetWindowDC(hwnd)
         dc_object = win32ui.CreateDCFromHandle(window_dc)
 
@@ -102,6 +106,7 @@ def bit_blt_capture_frame(hwnd, border, title_height, width, height, ext_left_bo
         compatible_dc = dc_object.CreateCompatibleDC()
         bitmap = win32ui.CreateBitmap()
         bitmap.CreateCompatibleBitmap(dc_object, width, height)
+
         compatible_dc.SelectObject(bitmap)
         compatible_dc.BitBlt(
             (0, 0),
@@ -125,7 +130,7 @@ def bit_blt_capture_frame(hwnd, border, title_height, width, height, ext_left_bo
     try_delete_dc(compatible_dc)
     win32gui.ReleaseDC(hwnd, window_dc)
     win32gui.DeleteObject(bitmap.GetHandle())
-    # logger.debug(f'bit_blt capture {time.time() - start}')
+    # logger.debug(f'bit_blt capture {time.time() - start} {x, y}')
     return image
 
 

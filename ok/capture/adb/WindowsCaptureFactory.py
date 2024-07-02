@@ -5,26 +5,25 @@ logger = get_logger(__name__)
 
 def update_capture_method(config, capture_method, hwnd, require_bg=False, use_bit_blt_only=False):
     try:
-        if config.get('can_bit_blt'):
-            logger.debug(
-                f"try BitBlt method {config} {hwnd} current_type:{type(capture_method)}")
-            from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
-            if config.get('bit_blt_render_full'):
-                BitBltCaptureMethod.render_full = True
-            target_method = BitBltCaptureMethod
-            capture_method = get_capture(capture_method, target_method, hwnd)
+        if config.get('can_bit_blt') and config.get('bit_blt_render_full'):  # slow try win graphics first
+            if config.get('can_bit_blt'):
+                if config.get('bit_blt_render_full'):
+                    if win_graphic := get_win_graphics_capture(capture_method, hwnd):
+                        return win_graphic
+                logger.debug(
+                    f"try BitBlt method {config} {hwnd} current_type:{type(capture_method)}")
+                from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
+                BitBltCaptureMethod.render_full = config.get('bit_blt_render_full', False)
+                target_method = BitBltCaptureMethod
+                capture_method = get_capture(capture_method, target_method, hwnd)
             if capture_method.test_is_not_pure_color():
                 return capture_method
             else:
                 logger.info("test_is_not_pure_color failed, can't use BitBlt")
         if use_bit_blt_only:
             return None
-        from ok.capture.windows.WindowsGraphicsCaptureMethod import windows_graphics_available
-        if windows_graphics_available():
-            from ok.capture.windows.WindowsGraphicsCaptureMethod import WindowsGraphicsCaptureMethod
-            target_method = WindowsGraphicsCaptureMethod
-            capture_method = get_capture(capture_method, target_method, hwnd)
-            return capture_method
+        if win_graphic := get_win_graphics_capture(capture_method, hwnd):
+            return win_graphic
 
         if not require_bg:
             from ok.capture.windows.DesktopDuplicationCaptureMethod import DesktopDuplicationCaptureMethod
@@ -33,6 +32,15 @@ def update_capture_method(config, capture_method, hwnd, require_bg=False, use_bi
             return capture_method
     except Exception as e:
         logger.error(f'update_capture_method exception, return None: ', e)
+
+
+def get_win_graphics_capture(capture_method, hwnd):
+    from ok.capture.windows.WindowsGraphicsCaptureMethod import windows_graphics_available
+    if windows_graphics_available():
+        from ok.capture.windows.WindowsGraphicsCaptureMethod import WindowsGraphicsCaptureMethod
+        target_method = WindowsGraphicsCaptureMethod
+        capture_method = get_capture(capture_method, target_method, hwnd)
+        return capture_method
 
 
 def get_capture(capture_method, target_method, hwnd):

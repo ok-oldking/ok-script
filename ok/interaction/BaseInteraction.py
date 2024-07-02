@@ -5,7 +5,7 @@ logger = get_logger(__name__)
 
 class BaseInteraction:
 
-    def __init__(self, capture, hwnd_window, exit_event):
+    def __init__(self, capture):
         self.capture = capture
 
     def should_capture(self):

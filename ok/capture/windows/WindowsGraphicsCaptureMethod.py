@@ -238,7 +238,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
     def crop_image(self, frame):
         if frame is not None:
-            x, y = self.hwnd_window.get_top_left_frame_offset()
+            x, y = self.get_crop_point(frame.shape[1], frame.shape[0], self.hwnd_window.width, self.hwnd_window.height)
             if x > 0 or y > 0:
                 frame = crop_image(frame, x, y)
         return frame

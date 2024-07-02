@@ -15,31 +15,6 @@ logger = get_logger(__name__)
 
 
 class HwndWindow:
-    visible = True
-    x = 0
-    y = 0
-    width = 0
-    height = 0
-    title_height = 0
-    border = 0
-    scaling = 1
-    top_cut = 0
-    right_cut = 0
-    bottom_cut = 0
-    left_cut = 0
-    ext_left_bounds = 0  # for BitBlt
-    ext_top_bounds = 0  # for BitBlt
-    frame_aspect_ratio = 0
-    hwnd = None
-    frame_width = 0
-    frame_height = 0
-    exists = False
-    title = None
-    exe_full_path = None
-    real_width = 0
-    real_height = 0
-    real_x_offset = 0
-    real_y_offset = 0
 
     def __init__(self, exit_event, title, exe_name=None, frame_width=0, frame_height=0, player_id=-1):
         super().__init__()
@@ -49,6 +24,25 @@ class HwndWindow:
         self.stop_event = threading.Event()
         self.visible = False
         self.player_id = player_id
+        self.window_width = 0
+        self.window_height = 0
+        self.visible = True
+        self.x = 0
+        self.y = 0
+        self.width = 0
+        self.height = 0
+        self.hwnd = None
+        self.frame_width = 0
+        self.frame_height = 0
+        self.exists = False
+        self.title = None
+        self.exe_full_path = None
+        self.real_width = 0
+        self.real_height = 0
+        self.real_x_offset = 0
+        self.real_y_offset = 0
+        self.scaling = 1.0
+        self.frame_aspect_ratio = 0
         self.update_window(title, exe_name, frame_width, frame_height)
         self.thread = threading.Thread(target=self.update_window_size, name="update_window_size")
         self.thread.start()
@@ -79,53 +73,48 @@ class HwndWindow:
             time.sleep(0.2)
 
     def get_abs_cords(self, x, y):
-        return self.x + self.border + x, self.y + y + self.title_height
-
-    def get_top_left_frame_offset(self):
-        return self.border, self.title_height
+        return self.x + x, self.y + y
 
     def do_update_window_size(self):
         try:
-            visible, x, y, border, title_height, width, height, scaling, ext_left_bounds, ext_top_bounds = self.visible, self.x, self.y, self.border, self.title_height, self.width, self.height, self.scaling, self.ext_left_bounds, self.ext_top_bounds
+            visible, x, y, window_width, window_height, width, height, scaling = self.visible, self.x, self.y, self.window_width, self.window_height, self.width, self.height, self.scaling
             if self.hwnd is None:
                 name, self.hwnd, self.exe_full_path, self.real_x_offset, self.real_y_offset, self.real_width, self.real_height = find_hwnd(
                     self.title,
                     self.exe_name,
                     self.frame_width, self.frame_height, player_id=self.player_id)
                 if self.hwnd is not None:
-                    logger.info(f'found hwnd {self.hwnd} {self.exe_full_path} {win32gui.GetClassName(self.hwnd)}')
+                    logger.info(
+                        f'found hwnd {self.hwnd} {self.exe_full_path} {win32gui.GetClassName(self.hwnd)} real:{self.real_x_offset},{self.real_y_offset},{self.real_width},{self.real_height}')
                 self.exists = self.hwnd is not None
             if self.hwnd is not None:
                 self.exists = win32gui.IsWindow(self.hwnd)
                 if self.exists:
                     visible = is_foreground_window(self.hwnd)
-                    x, y, border, title_height, width, height, scaling, ext_left_bounds, ext_top_bounds = get_window_bounds(
+                    x, y, window_width, window_height, width, height, scaling = get_window_bounds(
                         self.hwnd)
                     if self.frame_aspect_ratio != 0 and height != 0:
                         window_ratio = width / height
                         if window_ratio < self.frame_aspect_ratio:
                             cropped_window_height = int(width / self.frame_aspect_ratio)
-                            title_height += height - cropped_window_height
                             height = cropped_window_height
-                    height = height
-                    width = width
-                    title_height = title_height
                 else:
                     self.hwnd = None
                 changed = False
-                if visible != self.visible or self.scaling != scaling:
+                if visible != self.visible:
                     self.visible = visible
-                    self.scaling = scaling
                     changed = True
-                if (ext_left_bounds != self.ext_left_bounds or ext_top_bounds != self.ext_top_bounds or
-                    x != self.x or y != self.y or border != self.border or title_height != self.title_height or width != self.width or height != self.height or scaling != self.scaling) and (
+                if (window_width != self.window_width or window_height != self.window_height or
+                    x != self.x or y != self.y or width != self.width or height != self.height or scaling != self.scaling) and (
                         (x >= -1 and y >= -1) or self.visible):
-                    self.x, self.y, self.border, self.title_height, self.width, self.height, self.ext_left_bounds, self.ext_top_bounds = x, y, border, title_height, width, height, ext_left_bounds, ext_top_bounds
+                    self.x, self.y, self.window_width, self.window_height, self.width, self.height, self.scaling = x, y, window_width, window_height, width, height, scaling
                     changed = True
                 if changed:
                     logger.info(
-                        f"do_update_window_size changed,visible:{self.visible} x:{self.x} y:{self.y} border:{self.border} window:{self.width}x{self.height} self.title_height:{self.title_height} real:{self.real_width}x{self.real_height} scaling:{self.scaling}")
-                    communicate.window.emit(self.visible, self.x, self.y, self.border, self.title_height, self.width,
+                        f"do_update_window_size changed,visible:{self.visible} x:{self.x} y:{self.y} window:{self.width}x{self.height} self.window:{self.window_width}x{self.window_height} real:{self.real_width}x{self.real_height}")
+                    communicate.window.emit(self.visible, self.x + self.real_x_offset, self.y + self.real_y_offset,
+                                            self.window_width, self.window_height,
+                                            self.width,
                                             self.height, self.scaling)
         except Exception as e:
             logger.error(f"do_update_window_size exception", e)
@@ -163,7 +152,7 @@ def find_hwnd(title, exe_name, frame_width, frame_height, player_id=-1):
             name, full_path, cmdline = get_exe_by_hwnd(hwnd)
             if not name:
                 return True
-            x, y, border, title_height, width, height, scaling, ext_left_bounds, ext_top_bounds = get_window_bounds(
+            x, y, _, _, width, height, scaling = get_window_bounds(
                 hwnd)
             ret = (hwnd, full_path, width, height, x, y, text)
             if exe_name:

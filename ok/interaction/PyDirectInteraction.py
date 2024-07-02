@@ -14,7 +14,7 @@ pydirectinput.FAILSAFE = False
 
 class PyDirectInteraction(BaseInteraction):
 
-    def __init__(self, capture: BaseCaptureMethod, device_manager):
+    def __init__(self, capture: BaseCaptureMethod, hwnd_window):
         super().__init__(capture)
         if not is_admin():
             logger.error(f"You must be an admin to use Win32Interaction")

@@ -3,6 +3,7 @@ import ctypes.wintypes
 
 import win32gui
 
+MDT_EFFECTIVE_DPI = 0
 user32 = ctypes.WinDLL('user32', use_last_error=True)
 
 DWMWA_EXTENDED_FRAME_BOUNDS = 9
@@ -22,16 +23,28 @@ def get_window_bounds(hwnd):
     )
     scaling = user32.GetDpiForWindow(hwnd) / 96
     client_x, client_y, client_width, client_height = win32gui.GetClientRect(hwnd)
-    window_left, window_top, window_right, client_bottom = win32gui.GetWindowRect(hwnd)
+    window_left, window_top, window_right, window_bottom = win32gui.GetWindowRect(hwnd)
     window_width = window_right - window_left
-    left_diff = extended_frame_bounds.left - window_left
-    window_height = extended_frame_bounds.bottom - extended_frame_bounds.top
-    border = int((window_width - client_width - left_diff * 2) / 2)
-    title = window_height - client_height - border
+    # left_diff = extended_frame_bounds.left - window_left
+    window_height = window_bottom - window_top
+    # border = int((window_width - client_width - left_diff * 2) / 2)
+    # title = window_height - client_height - border
 
-    ext_left_bounds = extended_frame_bounds.left - window_left
-    ext_top_bounds = extended_frame_bounds.top - window_top
-    return extended_frame_bounds.left, extended_frame_bounds.top, border, title, client_width, client_height, scaling, ext_left_bounds, ext_top_bounds
+    client_x, client_y = win32gui.ClientToScreen(hwnd, (client_x, client_y))
+    #
+    # title = client_y - window_top
+    # if title > 0:
+    #     border = round(scaling * 1)
+    # else:
+    #     border = 0
+    # Get the monitor handle
+    monitor = user32.MonitorFromWindow(hwnd, 2)  # 2 = MONITOR_DEFAULTTONEAREST
+
+    # Get the DPI
+    dpiX = ctypes.c_uint()
+    dpiY = ctypes.c_uint()
+    ctypes.windll.shcore.GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, ctypes.byref(dpiX), ctypes.byref(dpiY))
+    return client_x, client_y, window_width, window_height, client_width, client_height, dpiX.value / 96
 
 
 def is_foreground_window(hwnd):

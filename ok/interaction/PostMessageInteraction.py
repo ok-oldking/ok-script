@@ -14,8 +14,8 @@ logger = get_logger(__name__)
 # can interact with background windows, some games support it, like wuthering waves
 class PostMessageInteraction(BaseInteraction):
 
-    def __init__(self, capture: BaseCaptureMethod, hwnd_window, exit_event):
-        super().__init__(capture, hwnd_window, exit_event)
+    def __init__(self, capture: BaseCaptureMethod, hwnd_window):
+        super().__init__(capture)
         self.hwnd_window = hwnd_window
         self.post = win32gui.PostMessage
 
