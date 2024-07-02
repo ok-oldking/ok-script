@@ -1,4 +1,5 @@
 import ctypes
+import time
 
 import numpy as np
 import pywintypes
@@ -36,7 +37,7 @@ class BitBltCaptureMethod(BaseWindowsCaptureMethod):
             + "\nThe smaller the selected region, the more efficient it is. "
     )
 
-    _render_full_content = False
+    render_full = False
 
     @override
     def do_get_frame(self) -> MatLike | None:
@@ -51,7 +52,8 @@ class BitBltCaptureMethod(BaseWindowsCaptureMethod):
                                      y,
                                      self.hwnd_window.real_width or self.hwnd_window.width,
                                      self.hwnd_window.real_height or self.hwnd_window.height,
-                                     self.hwnd_window.ext_left_bounds, self.hwnd_window.ext_top_bounds)
+                                     self.hwnd_window.ext_left_bounds, self.hwnd_window.ext_top_bounds,
+                                     self.render_full)
 
     def test_exclusive_full_screen(self):
         frame = self.do_get_frame()
@@ -76,6 +78,7 @@ class BitBltCaptureMethod(BaseWindowsCaptureMethod):
 def bit_blt_capture_frame(hwnd, border, title_height, width, height, ext_left_bounds, ext_top_bounds,
                           _render_full_content=False):
     image: MatLike | None = None
+    start = time.time()
 
     if hwnd is None:
         return image
@@ -122,6 +125,7 @@ def bit_blt_capture_frame(hwnd, border, title_height, width, height, ext_left_bo
     try_delete_dc(compatible_dc)
     win32gui.ReleaseDC(hwnd, window_dc)
     win32gui.DeleteObject(bitmap.GetHandle())
+    # logger.debug(f'bit_blt capture {time.time() - start}')
     return image
 
 

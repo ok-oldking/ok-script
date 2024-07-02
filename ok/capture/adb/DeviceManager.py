@@ -12,7 +12,6 @@ from ok.capture.adb.WindowsCaptureFactory import update_capture_method
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
 from ok.interaction.ADBInteraction import ADBBaseInteraction
-from ok.interaction.PyDirectInteraction import PyDirectInteraction
 from ok.logging.Logger import get_logger
 from ok.util.Handler import Handler
 
@@ -38,7 +37,10 @@ class DeviceManager:
         if self.windows_capture_config is not None:
             self.hwnd = HwndWindow(exit_event, self.windows_capture_config.get('title'),
                                    self.windows_capture_config.get('exe'))
-            self.win_interaction_class = self.windows_capture_config.get('interaction') or PyDirectInteraction
+            from ok.interaction.PostMessageInteraction import PostMessageInteraction
+            from ok.interaction.PyDirectInteraction import PyDirectInteraction
+            self.win_interaction_class = PostMessageInteraction if self.windows_capture_config.get(
+                'interaction') == 'PostMessage' else PyDirectInteraction
         else:
             self.hwnd = None
         self.config = Config({"preferred": "none", "pc_full_path": "none", 'capture': 'windows'},

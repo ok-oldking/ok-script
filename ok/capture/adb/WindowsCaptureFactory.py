@@ -9,6 +9,8 @@ def update_capture_method(config, capture_method, hwnd, require_bg=False, use_bi
             logger.debug(
                 f"try BitBlt method {config} {hwnd} current_type:{type(capture_method)}")
             from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
+            if config.get('bit_blt_render_full'):
+                BitBltCaptureMethod.render_full = True
             target_method = BitBltCaptureMethod
             capture_method = get_capture(capture_method, target_method, hwnd)
             if capture_method.test_is_not_pure_color():
