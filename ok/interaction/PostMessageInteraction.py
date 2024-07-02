@@ -3,12 +3,10 @@ import time
 import win32api
 import win32con
 import win32gui
-from pynput.mouse import Controller
 
 from ok.capture.BaseCaptureMethod import BaseCaptureMethod
 from ok.interaction.BaseInteraction import BaseInteraction
 from ok.logging.Logger import get_logger
-from ok.util.Handler import Handler
 
 logger = get_logger(__name__)
 
@@ -20,10 +18,6 @@ class PostMessageInteraction(BaseInteraction):
         super().__init__(capture, hwnd_window, exit_event)
         self.hwnd_window = hwnd_window
         self.post = win32gui.PostMessage
-        self.mouse_pos = (0, 0)
-        self.handler = Handler(exit_event, name='reset_mouse')
-        self.mouse = Controller()
-        self.last_position = self.mouse.position
 
     @property
     def hwnd(self):
