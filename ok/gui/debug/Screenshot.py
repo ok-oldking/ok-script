@@ -13,7 +13,7 @@ import ok.gui
 from ok.feature.Box import Box
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
-from ok.util.path import get_path_relative_to_exe, find_first_existing_file, clear_folder, sanitize_filename
+from ok.util.path import get_path_relative_to_exe, find_first_existing_file, clear_folder
 
 logger = get_logger(__name__)
 
@@ -88,7 +88,7 @@ class Screenshot(QObject):
 
     def add_task(self, frame, folder, name=None):
         if self.task_queue is not None:
-            self.task_queue.put((frame, self.ui_dict.copy(), folder, name))
+            self.task_queue.put((frame, self.ui_dict.copy(), folder, f'{get_current_time_formatted()}_{name}'))
 
     def _worker(self):
         while True and not self.exit_event.is_set():
@@ -135,20 +135,11 @@ class Screenshot(QObject):
 
     @staticmethod
     def save_pil_image(name, folder, pil_image):
-
-        now = datetime.now()
-
-        # Convert to string with milliseconds
-        time_string = now.strftime("%H_%M_%S_%f")
-        file_name = time_string
-        if name:
-            name = sanitize_filename(name)
-            file_name = f"{time_string}_{name}"
-        file = os.path.join(folder, f"{file_name}.png")
+        file = os.path.join(folder, f"{name}.png")
         try:
             pil_image.save(file)
         except OSError:
-            file = os.path.join(folder, f"{time_string}.png")
+            file = os.path.join(folder, f"{get_current_time_formatted()}.png")
             pil_image.save(file)
         return file
 
@@ -161,3 +152,9 @@ class Screenshot(QObject):
         if frame is None:
             return None
         return Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+
+def get_current_time_formatted():
+    now = datetime.now()
+    time_string = now.strftime("%H-%M-%S.") + str(now.microsecond // 1000).zfill(3)
+    return time_string

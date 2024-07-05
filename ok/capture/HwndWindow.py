@@ -131,7 +131,7 @@ class HwndWindow:
         return ""
 
     def __str__(self) -> str:
-        return f"title:{self.title}_{self.exe_name}_{self.width}x{self.height}_{self.hwnd}_{self.exists}_{self.visible}"
+        return f"title_{self.title}_{self.exe_name}_{self.width}x{self.height}_{self.hwnd}_{self.exists}_{self.visible}"
 
 
 def find_hwnd(title, exe_name, frame_width, frame_height, player_id=-1):

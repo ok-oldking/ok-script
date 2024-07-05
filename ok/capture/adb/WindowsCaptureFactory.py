@@ -3,11 +3,12 @@ from ok.logging.Logger import get_logger
 logger = get_logger(__name__)
 
 
-def update_capture_method(config, capture_method, hwnd, require_bg=False, use_bit_blt_only=False):
+def update_capture_method(config, capture_method, hwnd, require_bg=False, use_bit_blt_only=False,
+                          bit_blt_render_full=False):
     try:
-        if config.get('can_bit_blt') and config.get('bit_blt_render_full'):  # slow try win graphics first
+        if config.get('can_bit_blt'):  # slow try win graphics first
             if config.get('can_bit_blt'):
-                if config.get('bit_blt_render_full'):
+                if bit_blt_render_full:
                     if win_graphic := get_win_graphics_capture(capture_method, hwnd):
                         return win_graphic
                 logger.debug(

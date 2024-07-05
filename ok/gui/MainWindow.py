@@ -131,6 +131,7 @@ class MainWindow(MSFluentWindow):
                                self.tr('Capture Error'), error=True)
 
     def navigate_tab(self, index):
+        logger.debug(f'navigate_tab {index}')
         if index == "start":
             self.switchTo(self.start_tab)
         elif index == "onetime" and self.onetime_tab is not None:

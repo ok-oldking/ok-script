@@ -84,10 +84,11 @@ class OCR:
 
     def wait_click_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box=None, name=None,
                        match: str | List[str] | Pattern[str] | List[Pattern[str]] | None = None, threshold=0,
-                       frame=None, target_height=0, time_out=0):
+                       frame=None, target_height=0, time_out=0, raise_if_not_found=False):
         box = self.wait_ocr(x, y, width=width, height=height, to_x=to_x, to_y=to_y, box=box, name=name, match=match,
                             threshold=threshold,
-                            frame=frame, target_height=target_height, time_out=time_out)
+                            frame=frame, target_height=target_height, time_out=time_out,
+                            raise_if_not_found=raise_if_not_found)
         if box is not None:
             self.click_box(box)
             return box

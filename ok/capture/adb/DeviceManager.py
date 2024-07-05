@@ -3,7 +3,6 @@ import threading
 
 import cv2
 import numpy as np
-from adbutils import AdbError
 
 from ok.alas.platform_windows import get_emulator_exe
 from ok.capture.HwndWindow import HwndWindow, find_hwnd
@@ -69,6 +68,7 @@ class DeviceManager:
                 else:
                     logger.error(f'set ADBUTILS_ADB_PATH failed {exe}')
                 self._adb = adbutils.AdbClient(host="127.0.0.1", socket_timeout=4)
+                from adbutils import AdbError
                 try:
                     self._adb.device_list()
                 except AdbError as e:
@@ -87,9 +87,9 @@ class DeviceManager:
                 except Exception as e:
                     logger.error(f'kill adb server failed', e)
         logger.info('try kill adb end')
-        # self._adb.server_kill()
 
     def adb_connect(self, addr, try_connect=True):
+        from adbutils import AdbError
         try:
             for device in self.adb.device_list():
                 if self.exit_event.is_set():
@@ -238,6 +238,7 @@ class DeviceManager:
 
     def shell_device(self, device, *args, **kwargs):
         kwargs.setdefault('timeout', 5)
+        from adbutils import AdbError
         try:
             return device.shell(*args, **kwargs)
         except AdbError as e:
@@ -304,11 +305,13 @@ class DeviceManager:
         else:
             self.hwnd.update_window(title, exe, frame_width, frame_height, player_id)
 
-    def use_windows_capture(self, override_config=None, require_bg=False, use_bit_blt_only=False):
+    def use_windows_capture(self, override_config=None, require_bg=False, use_bit_blt_only=False,
+                            bit_blt_render_full=False):
         if not override_config:
             override_config = self.windows_capture_config
         self.capture_method = update_capture_method(override_config, self.capture_method, self.hwnd,
-                                                    require_bg, use_bit_blt_only=use_bit_blt_only)
+                                                    require_bg, use_bit_blt_only=use_bit_blt_only,
+                                                    bit_blt_render_full=bit_blt_render_full)
         if self.capture_method is None:
             logger.error(f'can find a usable windows capture')
         else:
@@ -326,7 +329,7 @@ class DeviceManager:
 
         if preferred['device'] == 'windows':
             self.ensure_hwnd(self.windows_capture_config.get('title'), self.windows_capture_config.get('exe'))
-            self.use_windows_capture()
+            self.use_windows_capture(self.windows_capture_config.get('bit_blt_render_full'))
             if not isinstance(self.interaction, self.win_interaction_class):
                 self.interaction = self.win_interaction_class(self.capture_method, self.hwnd)
             preferred['connected'] = self.capture_method is not None and self.capture_method.connected()
@@ -334,7 +337,8 @@ class DeviceManager:
             width, height = self.get_resolution()
             if self.config.get('capture') == "windows":
                 self.ensure_hwnd(None, preferred.get('full_path'), width, height, preferred['player_id'])
-                self.use_windows_capture({'can_bit_blt': True}, require_bg=True, use_bit_blt_only=False)
+                self.use_windows_capture({'can_bit_blt': True}, require_bg=True, use_bit_blt_only=False,
+                                         bit_blt_render_full=False)
             else:
                 if not isinstance(self.capture_method, ADBCaptureMethod):
                     logger.debug(f'use adb capture')

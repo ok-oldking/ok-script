@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentTranslator, qconfig, Theme
 
 import ok
+import ok.gui.resources as resources
 from ok.firebase.Analytics import Analytics
 from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
@@ -25,7 +26,7 @@ class App:
                  exit_event=None):
         super().__init__()
         self.config = config
-
+        logger.debug(f'resources.qt_resource_name {resources.qt_resource_name}')
         QApplication.setHighDpiScaleFactorRoundingPolicy(
             Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)

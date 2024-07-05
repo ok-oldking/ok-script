@@ -43,7 +43,7 @@ class Box:
         return in_boundary_boxes
 
     def __repr__(self):
-        return str(self.name)
+        return f'{self.name}_{self.confidence:.2f}'
 
     def __str__(self) -> str:
         if self.name is not None:
