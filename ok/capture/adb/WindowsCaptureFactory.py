@@ -7,16 +7,15 @@ def update_capture_method(config, capture_method, hwnd, require_bg=False, use_bi
                           bit_blt_render_full=False):
     try:
         if config.get('can_bit_blt'):  # slow try win graphics first
-            if config.get('can_bit_blt'):
-                if bit_blt_render_full:
-                    if win_graphic := get_win_graphics_capture(capture_method, hwnd):
-                        return win_graphic
+            if bit_blt_render_full:
+                if win_graphic := get_win_graphics_capture(capture_method, hwnd):
+                    return win_graphic
                 logger.debug(
                     f"try BitBlt method {config} {hwnd} current_type:{type(capture_method)}")
-                from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
-                BitBltCaptureMethod.render_full = config.get('bit_blt_render_full', False)
-                target_method = BitBltCaptureMethod
-                capture_method = get_capture(capture_method, target_method, hwnd)
+            from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
+            BitBltCaptureMethod.render_full = config.get('bit_blt_render_full', False)
+            target_method = BitBltCaptureMethod
+            capture_method = get_capture(capture_method, target_method, hwnd)
             if capture_method.test_is_not_pure_color():
                 return capture_method
             else:

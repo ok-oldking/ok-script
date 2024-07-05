@@ -23,7 +23,7 @@ class Screenshot(QObject):
     def __init__(self, exit_event):
         super().__init__()
         self.queue = []
-        self.time_to_expire = 3
+        self.time_to_expire = 4
         self.ui_dict = {}
         self.color_map = {
             "red": QColor(255, 0, 0),  # RGB for red
@@ -70,12 +70,12 @@ class Screenshot(QObject):
             key = boxes[0].name
         timestamp = time.time()
         q_color = self.color_map.get(color, self.color_map.get("red"))
+        self.remove_expired()
         if key:
             self.ui_dict[key] = [boxes, timestamp, q_color]
         else:
             for box in boxes:
                 self.ui_dict[box.name] = [[box], timestamp, q_color]
-        self.remove_expired()
         if self.click_screenshot_folder is not None and frame is not None:
             self.add_task(frame, self.click_screenshot_folder, key)
 

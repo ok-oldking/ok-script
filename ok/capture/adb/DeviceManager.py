@@ -329,7 +329,8 @@ class DeviceManager:
 
         if preferred['device'] == 'windows':
             self.ensure_hwnd(self.windows_capture_config.get('title'), self.windows_capture_config.get('exe'))
-            self.use_windows_capture(self.windows_capture_config.get('bit_blt_render_full'))
+            self.use_windows_capture(self.windows_capture_config,
+                                     bit_blt_render_full=self.windows_capture_config.get('bit_blt_render_full'))
             if not isinstance(self.interaction, self.win_interaction_class):
                 self.interaction = self.win_interaction_class(self.capture_method, self.hwnd)
             preferred['connected'] = self.capture_method is not None and self.capture_method.connected()

@@ -43,7 +43,8 @@ class ExecutorOperation:
         if not self.check_interval(interval):
             self.executor.reset_scene()
             return False
-        communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green")
+        communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green",
+                                  frame=self.executor.nullable_frame())
         self.executor.interaction.click(x, y, move_back, name=name)
         self.executor.reset_scene()
         return True
