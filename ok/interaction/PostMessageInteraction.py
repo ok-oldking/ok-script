@@ -18,6 +18,7 @@ class PostMessageInteraction(BaseInteraction):
         super().__init__(capture)
         self.hwnd_window = hwnd_window
         self.post = win32gui.PostMessage
+        self.mouse_pos = (0, 0)
 
     @property
     def hwnd(self):
