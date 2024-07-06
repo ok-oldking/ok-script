@@ -17,6 +17,7 @@ class Feature:
         self.scaling = scaling
         self.x = round(x)
         self.y = round(y)
+        self.mask = None
 
     @property
     def width(self):

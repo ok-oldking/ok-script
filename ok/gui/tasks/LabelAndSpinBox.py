@@ -9,7 +9,8 @@ class LabelAndSpinBox(ConfigLabelAndWidget):
         super().__init__(task, key)
         self.key = key
         self.spin_box = SpinBox()
-        self.spin_box.setFixedWidth(130)
+        self.spin_box.setRange(1, 99999999)
+        self.spin_box.setFixedWidth(180)
         self.update_value()
         self.spin_box.valueChanged.connect(self.value_changed)
         self.add_widget(self.spin_box)

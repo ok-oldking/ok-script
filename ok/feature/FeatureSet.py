@@ -1,6 +1,6 @@
 import json
+import math
 import os
-import sys
 import threading
 from typing import Dict
 from typing import List
@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from ok.color.Color import rgb_to_gray
 from ok.feature.Box import Box, sort_boxes
 from ok.feature.Feature import Feature
 from ok.gui.Communicate import communicate
@@ -100,20 +101,24 @@ class FeatureSet:
             # Save the image
             cv2.imwrite(file_path, image.mat)
 
-    def find_one(self, mat: np.ndarray, category_name: str, horizontal_variance: float = 0,
-                 vertical_variance: float = 0,
-                 threshold=0, use_gray_scale=False, canny_lower=0, canny_higher=0) -> Box:
-        boxes = self.find_feature(mat, category_name, horizontal_variance=horizontal_variance,
-                                  vertical_variance=vertical_variance, threshold=threshold,
-                                  use_gray_scale=use_gray_scale, canny_lower=canny_lower, canny_higher=canny_higher)
-        if len(boxes) > 1:
-            logger.warning(f"find_one:found too many {len(boxes)} return first", file=sys.stderr)
-        if len(boxes) >= 1:
-            return boxes[0]
+    # def find_one(self, mat: np.ndarray, category_name: str, horizontal_variance: float = 0,
+    #              vertical_variance: float = 0,
+    #              threshold=0, use_gray_scale=False, canny_lower=0, canny_higher=0) -> Box:
+    #     boxes = self.find_feature(mat, category_name, horizontal_variance=horizontal_variance,
+    #                               vertical_variance=vertical_variance, threshold=threshold,
+    #                               use_gray_scale=use_gray_scale, canny_lower=canny_lower, canny_higher=canny_higher)
+    #     if len(boxes) > 1:
+    #         logger.warning(f"find_one:found too many {len(boxes)} return first", file=sys.stderr)
+    #     if len(boxes) >= 1:
+    #         return boxes[0]
+
+    def get_feature_by_name(self, name):
+        return self.feature_dict.get(name)
 
     def find_feature(self, mat: np.ndarray, category_name: str, horizontal_variance: float = 0,
                      vertical_variance: float = 0, threshold: float = 0, use_gray_scale: bool = False, x=-1, y=-1,
-                     to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0, canny_higher=0) -> List[Box]:
+                     to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0, canny_higher=0,
+                     inverse_mask_color=None, frame_processor=None) -> List[Box]:
         """
         Find a feature within a given variance.
 
@@ -172,6 +177,7 @@ class FeatureSet:
             search_y2 = min(self.height, round(feature.y + feature_height + y_offset))
 
         search_area = mat[search_y1:search_y2, search_x1:search_x2, :3]
+
         # Crop the search area from the image
 
         if use_gray_scale:
@@ -184,8 +190,20 @@ class FeatureSet:
             if len(feature.mat.shape) != 2:
                 feature.mat = cv2.cvtColor(feature.mat, cv2.COLOR_BGR2GRAY)
                 feature.mat = cv2.Canny(feature.mat, canny_lower, canny_higher)
+        if feature.mask is None and inverse_mask_color is not None:
+            if len(feature.mat.shape) == 2:
+                gray_mask_color = rgb_to_gray(inverse_mask_color)
+                feature.mask = cv2.compare(feature.mat, gray_mask_color, cv2.CMP_NE)
+            else:
+                bound = np.array([inverse_mask_color[0], inverse_mask_color[1], inverse_mask_color[2]],
+                                 dtype=np.uint8)
+                feature.mask = cv2.inRange(feature.mat, bound, bound)
+                feature.mask = cv2.bitwise_not(feature.mask)
 
-        result = cv2.matchTemplate(search_area, feature.mat, cv2.TM_CCOEFF_NORMED)
+        if frame_processor is not None:
+            search_area = frame_processor(search_area)
+
+        result = cv2.matchTemplate(search_area, feature.mat, cv2.TM_CCOEFF_NORMED, mask=feature.mask)
 
         # Define a threshold for acceptable matches
         locations = filter_and_sort_matches(result, threshold, feature_width, feature_height)
@@ -193,16 +211,16 @@ class FeatureSet:
 
         for loc in locations:  # Iterate through found locations            
             x, y = loc[0][0] + search_x1, loc[0][1] + search_y1
-            confidence = loc[1]  # Retrieve the confidence score
+            confidence = 1.0 if math.isinf(loc[1]) and loc[1] > 0 else loc[1]
             boxes.append(Box(x, y, feature_width, feature_height, confidence, category_name))
 
-        result = sort_boxes(boxes)
-        communicate.emit_draw_box(category_name, result, "red")
+        boxes = sort_boxes(boxes)
+        communicate.emit_draw_box(category_name, boxes, "red")
         search_name = "search_" + category_name
         communicate.emit_draw_box(search_name,
                                   Box(search_x1, search_y1, search_x2 - search_x1, search_y2 - search_y1,
                                       name=search_name), "blue")
-        return result
+        return boxes
 
 
 def read_from_json(coco_json, width=-1, height=-1):

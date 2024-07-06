@@ -210,6 +210,10 @@ def calculate_color_percentage(image, color_ranges, box=None):
     return percentage
 
 
+def rgb_to_gray(rgb):
+    return 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]
+
+
 if __name__ == '__main__':
     file = 'C:\\Users\\ok\Downloads\\ok-baijing (2)\\screenshots\\1.png'
     exists = os.path.exists(file)
