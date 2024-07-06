@@ -46,8 +46,8 @@ class DesktopDuplicationCaptureMethod(BaseWindowsCaptureMethod):
             in self.desktop_duplication.displays
             if display.hmonitor == hmonitor
         )
-        left = self.hwnd_window.border + self.hwnd_window.ext_left_bounds + self.hwnd_window.x
-        top = self.hwnd_window.title_height + self.hwnd_window.ext_top_bounds + self.hwnd_window.y
+        left = self.hwnd_window.x
+        top = self.hwnd_window.y
         right = left + self.hwnd_window.width
         bottom = top + self.hwnd_window.height
         screenshot = cast(

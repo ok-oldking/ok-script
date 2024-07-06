@@ -144,8 +144,8 @@ class TaskExecutor:
 
     @property
     def frame(self):
-        while self.paused:
-            time.sleep(1)
+        while self.paused and not self.debug_mode:
+            self.sleep(1)
         if self.exit_event.is_set():
             logger.info("Exit event set. Exiting early.")
             raise FinishedException("Exit event set. Exiting early.")

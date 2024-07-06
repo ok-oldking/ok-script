@@ -16,7 +16,7 @@ def update_capture_method(config, capture_method, hwnd, require_bg=False, use_bi
             BitBltCaptureMethod.render_full = config.get('bit_blt_render_full', False)
             target_method = BitBltCaptureMethod
             capture_method = get_capture(capture_method, target_method, hwnd)
-            if capture_method.test_is_not_pure_color():
+            if bit_blt_render_full or capture_method.test_is_not_pure_color():
                 return capture_method
             else:
                 logger.info("test_is_not_pure_color failed, can't use BitBlt")
