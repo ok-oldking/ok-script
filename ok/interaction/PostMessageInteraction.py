@@ -30,12 +30,12 @@ class PostMessageInteraction(BaseInteraction):
         self.send_key_up(key)
 
     def send_key_down(self, key):
-        logger.debug(f'send_key_down {key}')
+        # logger.debug(f'send_key_down {key}')
         vk_code = self.get_key_by_str(key)
         self.post(self.hwnd, win32con.WM_KEYDOWN, vk_code, 0)
 
     def send_key_up(self, key):
-        logger.debug(f'send_key_up {key}')
+        # logger.debug(f'send_key_up {key}')
         vk_code = self.get_key_by_str(key)
         self.post(self.hwnd, win32con.WM_KEYUP, vk_code, 0)
 
@@ -62,7 +62,7 @@ class PostMessageInteraction(BaseInteraction):
         win32gui.PostMessage(
             self.hwnd, win32con.WM_MBUTTONUP, win32con.MK_MBUTTON, long_position
         )
-        logger.debug(f'middle click {long_position}')
+        # logger.debug(f'middle click {long_position}')
 
     def swipe(self, x1, y1, x2, y2, duration):
         # x1, y1 = self.get_scaled_pos(x1), self.get_scaled_pos(y1)

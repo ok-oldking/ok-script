@@ -23,7 +23,7 @@ class StartController(QObject):
         self.handler.post(lambda: self.do_start(task))
 
     def do_start(self, task=None):
-        communicate.starting_emulator.emit(False, None, 30)
+        communicate.starting_emulator.emit(False, None, 50)
         ok.gui.device_manager.do_refresh(True)
 
         device = ok.gui.device_manager.get_preferred_device()
@@ -33,7 +33,7 @@ class StartController(QObject):
             if path:
                 logger.info(f"starting game {path}")
                 execute(path)
-                wait_until = time.time() + 30
+                wait_until = time.time() + 50
                 while not self.exit_event.is_set():
                     ok.gui.device_manager.do_refresh(True)
                     error = self.check_device_error()

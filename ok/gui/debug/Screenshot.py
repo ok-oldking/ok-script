@@ -33,7 +33,9 @@ class Screenshot(QObject):
         self.exit_event = exit_event
         communicate.draw_box.connect(self.draw_box)
         communicate.screenshot.connect(self.screenshot)
-        self.click_screenshot_folder = get_path_relative_to_exe(ok.gui.ok.config.get("click_screenshots_folder"))
+        self.click_screenshot_folder = get_path_relative_to_exe(
+            ok.gui.ok.config.get("click_screenshots_folder")) if ok.gui.ok.config.get(
+            "click_screenshots_folder") else None
         self.screenshot_folder = get_path_relative_to_exe(ok.gui.ok.config.get("screenshots_folder"))
         logger.debug(f"init Screenshot {self.screenshot_folder} {self.click_screenshot_folder}")
         if self.click_screenshot_folder is not None or self.screenshot_folder is not None:

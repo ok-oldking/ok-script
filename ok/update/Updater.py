@@ -142,7 +142,7 @@ class Updater:
         self.exit_event = exit_event
         self.handler = Handler(exit_event, self.__class__.__name__)
         self.downloader = GithubMultiDownloader(app_config, exit_event)
-        self.handler.post(self.do_check_for_updates, 30)
+        self.handler.post(self.do_check_for_updates, 50)
 
     def get_proxy_url(self, url):
         if self.use_proxy:

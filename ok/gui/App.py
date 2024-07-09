@@ -92,10 +92,15 @@ class App:
             path=path)
         self.show_message_window(title, content)
 
+    def update_overlay(self, visible, x, y, window_width, window_height, width, height, scaling):
+        if self.overlay_window is None:
+            self.overlay_window = OverlayWindow(ok.gui.device_manager.hwnd)
+        self.overlay_window.update_overlay(visible, x, y, window_width, window_height, width, height, scaling)
+
     def show_main_window(self):
 
         if self.overlay and ok.gui.device_manager.hwnd is not None:
-            self.overlay_window = OverlayWindow(ok.gui.device_manager.hwnd)
+            communicate.window.connect(self.update_overlay)
 
         self.main_window = MainWindow(self.config, self.icon, self.title, self.version, self.overlay, self.about,
                                       self.exit_event)
