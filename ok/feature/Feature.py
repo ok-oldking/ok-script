@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Feature:
-    def __init__(self, mat: np.ndarray, x: int, y: int, scaling=1) -> None:
+    def __init__(self, mat: np.ndarray, x: int = 0, y: int = 0, scaling=1) -> None:
         """
         Initialize a Feature with an image (Mat) and its bounding box coordinates.
 

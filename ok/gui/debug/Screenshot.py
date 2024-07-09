@@ -13,7 +13,7 @@ import ok.gui
 from ok.feature.Box import Box
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
-from ok.util.path import get_path_relative_to_exe, find_first_existing_file, clear_folder
+from ok.util.path import get_path_relative_to_exe, find_first_existing_file, clear_folder, sanitize_filename
 
 logger = get_logger(__name__)
 
@@ -137,12 +137,14 @@ class Screenshot(QObject):
 
     @staticmethod
     def save_pil_image(name, folder, pil_image):
+        name = sanitize_filename(name)
         file = os.path.join(folder, f"{name}.png")
         try:
             pil_image.save(file)
         except OSError:
             file = os.path.join(folder, f"{get_current_time_formatted()}.png")
             pil_image.save(file)
+            logger.error(f'save pil_image failed, use only timestamp as name {pil_image}')
         return file
 
     def stop(self):

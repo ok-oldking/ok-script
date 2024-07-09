@@ -1,3 +1,4 @@
+import sys
 import threading
 import time
 from typing import Tuple
@@ -148,7 +149,7 @@ class TaskExecutor:
             self.sleep(1)
         if self.exit_event.is_set():
             logger.info("Exit event set. Exiting early.")
-            raise FinishedException("Exit event set. Exiting early.")
+            sys.exit(0)
         if self._frame is None:
             return self.next_frame()
         else:

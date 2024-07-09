@@ -93,6 +93,19 @@ class ExecutorOperation:
         self.swipe(int(self.width * from_x), int(self.height * from_y), int(self.width * to_x),
                    int(self.height * to_y), duration)
 
+    def scroll_relative(self, x, y, count):
+        self.scroll(int(self.width * x), int(self.height * y), count)
+
+    def scroll(self, x, y, count):
+        frame = self.executor.nullable_frame()
+        communicate.emit_draw_box("scroll", [
+            Box(x, y, 10, 10,
+                name="scroll")], "green", frame)
+        # ms = int(duration * 1000)
+        self.executor.interaction.scroll(x, y, count)
+        self.executor.reset_scene()
+        # self.sleep(duration)
+
     def swipe(self, from_x, from_y, to_x, to_y, duration=0.5):
         frame = self.executor.nullable_frame()
         communicate.emit_draw_box("swipe", [
@@ -104,6 +117,8 @@ class ExecutorOperation:
         self.sleep(duration)
 
     def screenshot(self, name=None, frame=None):
+        if name is None:
+            raise ValueError('screenshot name cannot be None')
         communicate.screenshot.emit(self.frame if frame is None else frame, name)
 
     def click_box_if_name_match(self, boxes, names, relative_x=0.5, relative_y=0.5):
@@ -224,7 +239,8 @@ class ExecutorOperation:
         return target
 
     def next_frame(self):
-        return self.executor.next_frame()
+        self.executor.next_frame()
+        return self.frame
 
     @property
     def scene(self):
