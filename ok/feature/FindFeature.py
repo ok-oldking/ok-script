@@ -37,10 +37,12 @@ class FindFeature:
 
     def wait_feature(self, feature, horizontal_variance=0, vertical_variance=0, threshold=0, wait_until_before_delay=-1,
                      time_out=0, pre_action=None, post_action=None, use_gray_scale=False, box=None,
-                     raise_if_not_found=False, inverse_mask_color=None, frame_processor=None):
+                     raise_if_not_found=False, canny_lower=0, canny_higher=0, inverse_mask_color=None,
+                     frame_processor=None):
         return self.wait_until(
             lambda: self.find_one(feature, horizontal_variance, vertical_variance, threshold,
                                   use_gray_scale=use_gray_scale, box=box, inverse_mask_color=inverse_mask_color,
+                                  canny_lower=canny_lower, canny_higher=canny_higher,
                                   frame_processor=frame_processor),
             time_out=time_out,
             pre_action=pre_action,

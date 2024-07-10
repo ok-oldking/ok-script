@@ -181,6 +181,23 @@ def find_color_rectangles(image, color_range, min_width, min_height, max_width=-
     return results
 
 
+def is_pure_black(frame):
+    # means, stddevs = cv2.meanStdDev(frame)
+    #
+    # # Check if all channel means are very close to zero (black)
+    # all_black_means = np.all(np.isclose(means, 0.0, atol=1e-3))
+    #
+    # # Check if all channel standard deviations are low (uniform)
+    # low_stddevs = np.all(stddevs[0] < 1e-3)
+    #
+    # # Return True if all channels are black and uniform
+    # return all_black_means and low_stddevs
+    for channel in cv2.split(frame):
+        if cv2.countNonZero(channel) > 0:
+            return False
+    return True
+
+
 def calculate_color_percentage(image, color_ranges, box=None):
     # Check if the ROI is within the image bounds
     if box is not None:

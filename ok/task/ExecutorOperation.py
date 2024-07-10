@@ -208,6 +208,7 @@ class ExecutorOperation:
 
     def sleep(self, timeout):
         self.executor.sleep(timeout)
+        return True
 
     def send_key(self, key, down_time=0.02, interval=-1):
         if not self.check_interval(interval):

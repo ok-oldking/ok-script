@@ -185,7 +185,8 @@ class FeatureSet:
             if len(feature.mat.shape) != 2:
                 feature.mat = cv2.cvtColor(feature.mat, cv2.COLOR_BGR2GRAY)
         if canny_lower != 0 and canny_higher != 0:
-            search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
+            if len(search_area.shape) != 2:
+                search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
             search_area = cv2.Canny(search_area, canny_lower, canny_higher)
             if len(feature.mat.shape) != 2:
                 feature.mat = cv2.cvtColor(feature.mat, cv2.COLOR_BGR2GRAY)
