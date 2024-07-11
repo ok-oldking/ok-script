@@ -11,14 +11,11 @@
 5. 支持Python3.7以上版本
 6. 学习成本低, 自定义函数少, 也可以直接使用opencv, RapidOCR等api
 
-
 ## 目前有两个已完成项目：
-基于OCR，白荆回廊自动凹技能，可以连续跑几个小时的自动脚本[https://github.com/ok-oldking/ok-baijing](https://github.com/ok-oldking/ok-baijing)
 
-触发式任务，原神自动拾取， 跳过剧情等[https://github.com/ok-oldking/ok-genshin](https://github.com/ok-oldking/ok-genshin)
+基于OCR，白荆回廊自动凹技能，7*24小时自动脚本[ok-baijing](https://github.com/ok-oldking/ok-baijing)
 
-
-## Scenes
+自动战斗, 自动刷声骸, 跳过剧情等[ok-ww](https://github.com/ok-oldking/ok-wuthering-waves)
 
 ## Tasks
 

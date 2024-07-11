@@ -65,7 +65,10 @@ class PostMessageInteraction(BaseInteraction):
         # Calculate the wParam
         # Positive scroll_amount indicates scroll up, negative is scroll down
         logger.debug(f'scroll {x}, {y}, {scroll_amount}')
-        long_position = self.update_mouse_pos(x, y)
+        if x > 0 and y > 0:
+            long_position = self.update_mouse_pos(x, y)
+        else:
+            long_position = 0
         wParam = win32api.MAKELONG(0, win32con.WHEEL_DELTA * scroll_amount)
         # Send the WM_MOUSEWHEEL message
         self.post(win32con.WM_MOUSEWHEEL, wParam, long_position)
