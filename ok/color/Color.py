@@ -42,17 +42,17 @@ def is_close_to_pure_color(image, max_colors=5000, percent=0.97):
     return percentage > percent
 
 
-def keep_pixels_in_color_range(image, color_range):
+def get_mask_in_color_range(image, color_range):
     lower_bound, upper_bound = color_range_to_bound(color_range)
     mask = cv2.inRange(image, lower_bound, upper_bound)
 
     # Apply mask to original image
-    result = cv2.bitwise_and(image, image, mask=mask)
+    # result = cv2.bitwise_and(image, image, mask=mask)
 
     # Count the number of white pixels in the mask
     pixel_count = np.count_nonzero(mask)
 
-    return result, pixel_count
+    return mask, pixel_count
 
 
 def get_connected_area_by_color(image, color_range, connectivity=4):

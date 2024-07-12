@@ -161,6 +161,8 @@ class TaskExecutor:
 
         :param timeout: The total time to sleep in seconds.
         """
+        if timeout <= 0:
+            return
         if self.debug_mode:
             time.sleep(timeout)
             return

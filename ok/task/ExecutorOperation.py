@@ -68,19 +68,19 @@ class ExecutorOperation:
             self.last_click_time = now
             return True
 
-    def mouse_down(self, x=-1, y=-1, name=None):
+    def mouse_down(self, x=-1, y=-1, name=None, key="left"):
         frame = self.executor.nullable_frame()
         communicate.emit_draw_box("mouse_down", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green",
                                   frame)
         self.executor.reset_scene()
-        self.executor.interaction.mouse_down(x, y, name=name)
+        self.executor.interaction.mouse_down(x, y, name=name, key=key)
 
-    def mouse_up(self, name=None):
+    def mouse_up(self, name=None, key="left"):
         frame = self.executor.nullable_frame()
         communicate.emit_draw_box("mouse_up", self.box_of_screen(0.5, 0.5, width=0.01, height=0.01, name="click"),
                                   "green",
                                   frame)
-        self.executor.interaction.mouse_up()
+        self.executor.interaction.mouse_up(key=key)
         self.executor.reset_scene()
 
     def right_click(self, x=-1, y=-1, move_back=False, name=None):
@@ -232,7 +232,7 @@ class ExecutorOperation:
     def wait_until(self, condition, time_out=0, pre_action=None, post_action=None, wait_until_before_delay=-1,
                    raise_if_not_found=False):
         return self.executor.wait_condition(condition, time_out, pre_action, post_action, wait_until_before_delay,
-                                            raise_if_not_found)
+                                            raise_if_not_found=raise_if_not_found)
 
     def wait_click_box(self, condition, time_out=0, pre_action=None, post_action=None, raise_if_not_found=False):
         target = self.wait_until(condition, time_out, pre_action, post_action)

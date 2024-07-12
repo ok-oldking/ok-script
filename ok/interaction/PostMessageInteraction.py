@@ -120,15 +120,13 @@ class PostMessageInteraction(BaseInteraction):
         super().right_click(x, y, name=name)
         long_position = self.update_mouse_pos(x, y)
         self.post(win32con.WM_RBUTTONDOWN, win32con.MK_RBUTTON, long_position)
-
         self.post(win32con.WM_RBUTTONUP, 0, long_position)
 
-    def mouse_down(self, x=-1, y=-1, name=None):
+    def mouse_down(self, x=-1, y=-1, name=None, key="left"):
         long_position = self.update_mouse_pos(x, y)
-        # self.post(
-        #     self.hwnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, long_position
-        # )
-        self.post(win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, long_position)
+        action = win32con.WM_LBUTTONDOWN if key == "left" else win32con.WM_RBUTTONDOWN
+        btn = win32con.MK_LBUTTON if key == "left" else win32con.MK_RBUTTON
+        self.post(action, btn, long_position)
 
     def update_mouse_pos(self, x, y, activate=True):
         if activate:
@@ -139,8 +137,9 @@ class PostMessageInteraction(BaseInteraction):
             self.mouse_pos = (x, y)
         return win32api.MAKELONG(x, y)
 
-    def mouse_up(self):
-        self.post(win32con.WM_LBUTTONUP, win32con.MK_LBUTTON,
+    def mouse_up(self, key="left"):
+        action = win32con.WM_LBUTTONUP if key == "left" else win32con.WM_RBUTTONUP
+        self.post(action, 0,
                   win32api.MAKELONG(self.mouse_pos[0], self.mouse_pos[1]))
 
     def should_capture(self):
