@@ -5,8 +5,8 @@ from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 class LabelAndSpinBox(ConfigLabelAndWidget):
 
-    def __init__(self, task, key: str):
-        super().__init__(task, key)
+    def __init__(self, config_desc, config, key: str):
+        super().__init__(config_desc, config, key)
         self.key = key
         self.spin_box = SpinBox()
         self.spin_box.setRange(1, 99999999)

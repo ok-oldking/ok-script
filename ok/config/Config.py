@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 class Config(dict):
     config_folder = 'configs'
 
-    def __init__(self, default, name, folder=None, validator=None):
+    def __init__(self, name, default, folder=None, validator=None):
         """
         Initialize the Config object.
 
@@ -93,6 +93,9 @@ class Config(dict):
         except KeyError as e:
             logger.error(f'KeyError: {key} not found in config: {self}')
             raise e
+
+    def has_user_config(self):
+        return not all(key.startswith('_') for key in self)
 
     def validate(self, key, value):
         """

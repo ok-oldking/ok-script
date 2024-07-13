@@ -8,8 +8,8 @@ from ok.gui.widget.UpdateConfigWidgetItem import value_to_string
 
 class ModifyListItem(ConfigLabelAndWidget):
 
-    def __init__(self, task, key: str):
-        super().__init__(task, key)
+    def __init__(self, config_desc, config, key: str):
+        super().__init__(config_desc, config, key)
         self.switch_button = PushButton(self.tr('Modify'))
         self.switch_button.clicked.connect(self.clicked)
         self.list_text = QLabel("")

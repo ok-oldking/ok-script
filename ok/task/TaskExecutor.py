@@ -5,9 +5,9 @@ from typing import Tuple
 
 from ok.capture.BaseCaptureMethod import CaptureException
 from ok.capture.adb.DeviceManager import DeviceManager
+from ok.config.GlobalConfig import GlobalConfig
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
-from ok.scene.Scene import Scene
 from ok.stats.StreamStats import StreamStats
 from ok.task.BaseTask import BaseTask
 from ok.task.TriggerTask import TriggerTask
@@ -32,8 +32,6 @@ class WaitFailedException(Exception):
 
 
 class TaskExecutor:
-    current_scene: Scene | None = None
-    last_scene: Scene | None = None
     frame_stats = StreamStats()
     _frame = None
     paused = True
@@ -44,7 +42,7 @@ class TaskExecutor:
 
     def __init__(self, device_manager: DeviceManager,
                  wait_until_timeout=10, wait_until_before_delay=1, wait_until_check_delay=0,
-                 exit_event=None, trigger_tasks=[], onetime_tasks=[], scenes=[], feature_set=None,
+                 exit_event=None, trigger_tasks=[], onetime_tasks=[], feature_set=None,
                  ocr=None,
                  config_folder=None, debug=False):
         self.device_manager = device_manager
@@ -55,22 +53,27 @@ class TaskExecutor:
         self.exit_event = exit_event
         self.debug_mode = False
         self.debug = debug
+        self.global_config = GlobalConfig()
         self.ocr = ocr
         self.current_task = None
-        self.trigger_tasks = trigger_tasks
-        self.onetime_tasks = onetime_tasks
-        self.scenes = scenes
         self.config_folder = config_folder or "config"
         self.trigger_task_index = -1
-        for scene in self.scenes:
-            scene.executor = self
-            scene.feature_set = self.feature_set
-        for task in self.trigger_tasks:
-            task.set_executor(self)
-        for task in self.onetime_tasks:
-            task.set_executor(self)
+
+        from ok.task.ExecutorOperation import ExecutorOperation
+        ExecutorOperation.executor = self
+
+        self.trigger_tasks = self.init_tasks(trigger_tasks)
+        self.onetime_tasks = self.init_tasks(onetime_tasks)
         self.thread = threading.Thread(target=self.execute, name="TaskExecutor")
         self.thread.start()
+
+    def init_tasks(self, task_classes):
+        tasks = []
+        for task_class in task_classes:
+            task = task_class()
+            task.set_executor(self)
+            tasks.append(task)
+        return tasks
 
     @property
     def interaction(self):
@@ -199,9 +202,6 @@ class TaskExecutor:
             communicate.executor_paused.emit(self.paused)
             self.pause_end_time += self.pause_start - time.time()
 
-    def wait_scene(self, scene_type, time_out, pre_action, post_action):
-        return self.wait_condition(lambda: self.detect_scene(scene_type), time_out, pre_action, post_action)
-
     def wait_condition(self, condition, time_out=0, pre_action=None, post_action=None, wait_until_before_delay=-1,
                        raise_if_not_found=False):
         if wait_until_before_delay == -1:
@@ -216,7 +216,6 @@ class TaskExecutor:
             self.sleep(wait_until_before_delay)
             self.next_frame()
             result = condition()
-            self.add_frame_stats()
             result_str = list_or_obj_to_str(result)
             if result:
                 logger.debug(
@@ -234,8 +233,6 @@ class TaskExecutor:
 
     def reset_scene(self):
         self._frame = None
-        self.last_scene = self.current_scene or self.last_scene
-        self.current_scene = None
 
     def next_task(self) -> Tuple[BaseTask | None, bool]:
         if self.exit_event.is_set():
@@ -270,11 +267,9 @@ class TaskExecutor:
                 continue
             if cycled:
                 self.next_frame()
-                self.detect_scene()
             elif time.time() - self._last_frame_time > 1:
                 logger.warning(f'processing cost too much time, get new frame')
                 self.next_frame()
-                self.detect_scene()
             try:
                 if task.trigger():
                     self.current_task = task
@@ -314,40 +309,6 @@ class TaskExecutor:
             task.on_destroy()
         for task in self.trigger_tasks:
             task.on_destroy()
-
-    def add_frame_stats(self):
-        self.frame_stats.add_frame()
-        mean = self.frame_stats.mean()
-        if mean > 0:
-            communicate.frame_time.emit(mean)
-            communicate.fps.emit(round(1000 / mean))
-            scene = "None"
-            if self.current_scene is not None:
-                scene = self.current_scene.name or self.current_scene.__class__.__name__
-            communicate.scene.emit(scene)
-
-    def latest_scene(self):
-        return self.current_scene or self.last_scene
-
-    def detect_scene(self, scene_type=None):
-        latest_scene = self.latest_scene()
-        if latest_scene is not None:
-            # detect the last scene optimistically
-            if latest_scene.detect(self._frame):
-                self.current_scene = latest_scene
-                return latest_scene
-        for scene in self.scenes:
-            if scene_type is not None and not isinstance(scene, scene_type):
-                continue
-            if scene != latest_scene:
-                if scene.detect(self._frame):
-                    self.current_scene = scene
-                    logger.debug(f"TaskExecutor: scene changed {scene.__class__.__name__}")
-                    return scene
-        if self.current_scene is not None:
-            logger.debug(f"TaskExecutor: scene changed to None")
-            self.current_scene = None
-        return self.current_scene
 
     def stop(self):
         logger.info('stop')

@@ -3,7 +3,9 @@ from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, OptionsSettingCard, ComboBoxSettingCard, setTheme)
 
+import ok.gui
 from ok.gui.common.config import cfg
+from ok.gui.settings.GlobalConfigCard import GlobalConfigCard
 from ok.gui.widget.Tab import Tab
 
 
@@ -42,7 +44,7 @@ class SettingTab(Tab):
             texts=['简体中文', 'English', self.tr('Use system setting')],
             parent=self.personalGroup
         )
-
+        self.app_group = None
         self.__initWidget()
 
         # StyleSheet.SETTING_INTERFACE.apply(self)
@@ -61,15 +63,22 @@ class SettingTab(Tab):
 
         # initialize layout
         self.__initLayout()
+        self.add_global_config()
         self.__connectSignalToSlot()
 
     def __initLayout(self):
         self.personalGroup.addSettingCard(self.themeCard)
         self.personalGroup.addSettingCard(self.languageCard)
-        # add setting card group to layout
-        # self.expandLayout.setSpacing(28)
-        # self.expandLayout.setContentsMargins(36, 10, 36, 0)
-        # self.expandLayout.addWidget(self.personalGroup)
+
+    def add_global_config(self):
+        global_configs = ok.gui.executor.global_config.get_all_visible_configs()
+        if global_configs:
+            self.app_group = SettingCardGroup(
+                self.tr('App Settings'))
+            for name, config, option in global_configs:
+                card = GlobalConfigCard(config, option)
+                self.app_group.addSettingCard(card)
+            self.vBoxLayout.addWidget(self.app_group)
 
     def __showRestartTooltip(self):
         """ show restart tooltip """

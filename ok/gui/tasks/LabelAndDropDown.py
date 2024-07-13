@@ -5,8 +5,8 @@ from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 class LabelAndDropDown(ConfigLabelAndWidget):
 
-    def __init__(self, task, options, key: str):
-        super().__init__(task, key)
+    def __init__(self, config_desc, options, config, key: str):
+        super().__init__(config_desc, config, key)
         self.key = key
         self.combo_box = ComboBox()
         self.combo_box.addItems(options)

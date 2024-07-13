@@ -27,10 +27,10 @@ class DebugTab(Tab):
 
         super().__init__()
 
-        self.config = Config({'target_task': "", 'target_images': [], 'target_function': ""},
-                             'debug')
-        self.log_window_config = Config({'width': 800, 'height': 300, 'x': 0, 'y': 0, 'keyword': '',
-                                         'level': 'ALL', 'show': True}, 'log_window')
+        self.config = Config('debug', {'target_task': "", 'target_images': [], 'target_function': ""}
+                             )
+        self.log_window_config = Config('log_window', {'width': 800, 'height': 300, 'x': 0, 'y': 0, 'keyword': '',
+                                                       'level': 'ALL', 'show': True})
         tool_widget = QWidget()
         layout = FlowLayout(tool_widget, False)
 

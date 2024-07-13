@@ -137,7 +137,7 @@ class BaseTask(ExecutorOperation):
         self.info[key] = self.info.get(key, 0) + count
 
     def load_config(self):
-        self.config = Config(self.default_config, self.__class__.__name__, validator=self.validate)
+        self.config = Config(self.__class__.__name__, self.default_config, validator=self.validate)
 
     def validate(self, key, value):
         message = self.validate_config(key, value)

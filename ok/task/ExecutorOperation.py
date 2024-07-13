@@ -2,13 +2,16 @@ import time
 from typing import List
 
 from ok.color.Color import calculate_color_percentage
+from ok.config.ConfigOption import ConfigOption
 from ok.feature.Box import Box, find_box_by_name, relative_box
 from ok.gui.Communicate import communicate
 
 
 class ExecutorOperation:
     executor = None
-    last_click_time = 0
+
+    def __init__(self):
+        self.last_click_time = 0
 
     def exit_is_set(self):
         return self.executor.exit_event.is_set()
@@ -220,6 +223,9 @@ class ExecutorOperation:
         self.executor.reset_scene()
         self.executor.interaction.send_key(key, down_time)
         return True
+
+    def get_config(self, option: ConfigOption):
+        return self.executor.global_config.get_config(option)
 
     def send_key_down(self, key):
         self.executor.reset_scene()

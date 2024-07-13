@@ -6,20 +6,20 @@ from ok.gui.tasks.LabelAndSwitchButton import LabelAndSwitchButton
 from ok.gui.tasks.ModifyListItem import ModifyListItem
 
 
-def config_widget(task, key, value):
-    the_type = task.config_type.get(key)
+def config_widget(config_type, config_desc, config, key, value):
+    the_type = config_type.get(key) if config_type is not None else None
     if the_type:
         if the_type['type'] == 'drop_down':
-            return LabelAndDropDown(task, the_type['options'], key)
+            return LabelAndDropDown(config_desc, the_type['options'], config, key)
     if isinstance(value, bool):
-        return LabelAndSwitchButton(task, key)
+        return LabelAndSwitchButton(config_desc, config, key)
     elif isinstance(value, list):
-        return ModifyListItem(task, key)
+        return ModifyListItem(config_desc, config, key)
     elif isinstance(value, int):
-        return LabelAndSpinBox(task, key)
+        return LabelAndSpinBox(config_desc, config, key)
     elif isinstance(value, float):
-        return LabelAndDoubleSpinBox(task, key)
+        return LabelAndDoubleSpinBox(config_desc, config, key)
     elif isinstance(value, str):
-        return LabelAndLineEdit(task, key)
+        return LabelAndLineEdit(config_desc, config, key)
     else:
         raise ValueError(f"invalid type {type(value)}, value {value}")

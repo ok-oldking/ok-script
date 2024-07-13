@@ -1,23 +1,20 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QWidget
-from qfluentwidgets import FluentIcon, PushButton, ExpandSettingCard, InfoBar, InfoBarPosition, SwitchButton
+from qfluentwidgets import FluentIcon, PushButton, InfoBar, InfoBarPosition, SwitchButton
 
 import ok.gui
 from ok.gui.Communicate import communicate
 from ok.gui.common.OKIcon import OKIcon
-from ok.gui.tasks.ConfigItemFactory import config_widget
+from ok.gui.tasks.ConfigCard import ConfigCard
 from ok.task.BaseTask import BaseTask
 
 
-class TaskCard(ExpandSettingCard):
+class TaskCard(ConfigCard):
     def __init__(self, task: BaseTask, onetime):
-        super().__init__(FluentIcon.INFO, task.name, task.description)
+        super().__init__(task.name, task.config, task.description, task.default_config, task.config_description,
+                         task.config_type)
         self.task = task
         self.onetime = onetime
-        if task.default_config:
-            self.reset_config = PushButton(FluentIcon.CANCEL, self.tr("Reset Config"), self)
-            self.addWidget(self.reset_config)
-            self.reset_config.clicked.connect(self.reset_clicked)
 
         if onetime:
             self.task_buttons = TaskButtons(self.task)
@@ -33,20 +30,6 @@ class TaskCard(ExpandSettingCard):
 
         communicate.task.connect(self.update_buttons)
 
-        self.config_widgets = []
-        self.__initWidget()
-
-    def __initWidget(self):
-        # initialize layout
-        self.viewLayout.setSpacing(0)
-        self.viewLayout.setAlignment(Qt.AlignTop)
-        self.viewLayout.setContentsMargins(0, 0, 0, 0)
-        if not self.task.default_config:
-            self.card.expandButton.hide()
-        for key, value in self.task.config.items():
-            if not key.startswith('_'):
-                self.__addConfig(key, value)
-
     def update_buttons(self, task):
         if task == self.task:
             if self.onetime:
@@ -60,21 +43,7 @@ class TaskCard(ExpandSettingCard):
         else:
             self.task.disable()
 
-    def __addConfig(self, key: str, value):
-        widget = config_widget(self.task, key, value)
-        self.config_widgets.append(widget)
-        self.viewLayout.addWidget(widget)
-        self._adjustViewSize()
-
-    def __updateConfig(self):
-        for widget in self.config_widgets:
-            widget.update_value()
-
-    def reset_clicked(self):
-        self.task.config.reset_to_default()
-        self.__updateConfig()
-
-
+    
 class TaskButtons(QWidget):
     def __init__(self, task):
         super().__init__()

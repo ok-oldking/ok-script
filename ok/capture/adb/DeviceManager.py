@@ -42,8 +42,7 @@ class DeviceManager:
                 'interaction') == 'PostMessage' else PyDirectInteraction
         else:
             self.hwnd = None
-        self.config = Config({"preferred": "none", "pc_full_path": "none", 'capture': 'windows'},
-                             "devices")
+        self.config = Config("devices", {"preferred": "none", "pc_full_path": "none", 'capture': 'windows'})
         self.capture_method = None
         self.handler = Handler(exit_event, 'RefreshAdb')
         self.handler.post(self.do_refresh, 3)

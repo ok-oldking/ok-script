@@ -118,7 +118,6 @@ class OK:
         self.task_executor = TaskExecutor(self.device_manager, exit_event=self.exit_event,
                                           onetime_tasks=self.config.get('onetime_tasks', []),
                                           trigger_tasks=self.config.get('trigger_tasks', []),
-                                          scenes=self.config['scenes'],
                                           feature_set=self.feature_set,
                                           config_folder=self.config.get("config_folder"), debug=self.debug)
 
