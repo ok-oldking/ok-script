@@ -47,7 +47,7 @@ class PostMessageInteraction(BaseInteraction):
         return vk_code
 
     def move(self, x, y, down_btn=0):
-        long_pos = self.update_mouse_pos(x, y, False)
+        long_pos = self.update_mouse_pos(x, y, True)
         self.post(win32con.WM_MOUSEMOVE, down_btn, long_pos)
         logger.debug(f'move {x, y}')
 
@@ -108,7 +108,8 @@ class PostMessageInteraction(BaseInteraction):
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01):
         super().click(x, y, name=name)
-        long_position = self.update_mouse_pos(x, y)
+        self.move(x, y)
+        long_position = self.update_mouse_pos(x, y, activate=False)
         # self.move(x, y)
         self.post(win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, long_position
                   )
@@ -135,6 +136,7 @@ class PostMessageInteraction(BaseInteraction):
             x, y = self.mouse_pos
         else:
             self.mouse_pos = (x, y)
+        logger.debug(f'mouse_pos: {x, y}')
         return win32api.MAKELONG(x, y)
 
     def mouse_up(self, key="left"):
