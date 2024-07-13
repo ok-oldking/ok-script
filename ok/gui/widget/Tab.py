@@ -39,4 +39,3 @@ class Tab(ScrollArea):
     def addLayout(self, layout, stretch=0):
         self.vBoxLayout.addLayout(layout, stretch)
         return layout
-    

@@ -5,7 +5,9 @@ from enum import Enum
 from PySide6.QtCore import QLocale
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
-                            FolderListValidator, Theme, FolderValidator, ConfigSerializer)
+                            FolderListValidator, FolderValidator, ConfigSerializer)
+
+from ok.util.path import get_path_relative_to_exe
 
 
 class Language(Enum):
@@ -54,5 +56,4 @@ class AppConfig(QConfig):
 
 
 cfg = AppConfig()
-cfg.themeMode.value = Theme.AUTO
-qconfig.load('config/app_config.json', cfg)
+qconfig.load(get_path_relative_to_exe('configs', f"ui_config.json"), cfg)

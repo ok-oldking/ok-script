@@ -12,6 +12,7 @@ class StyleSheet(StyleSheetBase, Enum):
     STATUS_BAR = "status_bar"
     TAB = "tab"
     MESSAGE_WINDOW = "message_window"
+    SETTING_INTERFACE = "setting_interface"
 
     def path(self, theme=Theme.AUTO):
         theme = qconfig.theme if theme == Theme.AUTO else theme

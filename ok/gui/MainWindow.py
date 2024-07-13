@@ -8,6 +8,7 @@ import ok.gui
 from ok.gui.Communicate import communicate
 from ok.gui.about.AboutTab import AboutTab
 from ok.gui.debug.DebugTab import DebugTab
+from ok.gui.settings.SettingTab import SettingTab
 from ok.gui.start.StartTab import StartTab
 from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
 from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
@@ -54,6 +55,11 @@ class MainWindow(MSFluentWindow):
             about_tab = AboutTab(icon, title, version, debug, about)
             self.addSubInterface(about_tab, FluentIcon.QUESTION, self.tr('About'),
                                  position=NavigationItemPosition.BOTTOM)
+
+        setting_tab = SettingTab()
+        self.addSubInterface(setting_tab, FluentIcon.SETTING, self.tr('Settings'),
+                             position=NavigationItemPosition.BOTTOM)
+
         # Styling the tabs and content if needed, for example:
         dev = self.tr('Debug')
         release = self.tr('Release')

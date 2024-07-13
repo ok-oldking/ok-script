@@ -4,15 +4,16 @@ import sys
 from PySide6.QtCore import QSize, QCoreApplication, QLocale, QTranslator, Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentTranslator, qconfig, Theme
+from qfluentwidgets import FluentTranslator, qconfig
 
 import ok
-import ok.gui.resources as resources
 from ok.firebase.Analytics import Analytics
+from ok.gui import resources
 from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.gui.MessageWindow import MessageWindow
 from ok.gui.StartController import StartController
+from ok.gui.common.config import cfg
 from ok.gui.i18n.path import i18n_path
 from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.logging.Logger import get_logger
@@ -26,7 +27,8 @@ class App:
                  exit_event=None):
         super().__init__()
         self.config = config
-        logger.debug(f'resources.qt_resource_name {resources.qt_resource_name}')
+        logger.debug(
+            f'{cfg.get(cfg.language).value} resources.qt_resource_name {resources.qt_resource_name} cfg.themeMode {cfg.themeMode.value}')
         QApplication.setHighDpiScaleFactorRoundingPolicy(
             Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
@@ -35,13 +37,13 @@ class App:
         self.app = QApplication(sys.argv)
         communicate.quit.connect(self.app.quit)
         self.app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
-        qconfig.theme = Theme.AUTO
+        qconfig.theme = cfg.themeMode.value
 
         self.about = self.config.get('about')
         self.title = self.config.get('gui_title')
         self.version = self.config.get('version')
         self.overlay = self.config.get('debug')
-        self.locale = QLocale(self.config.get('locale')) if self.config.get('locale') else QLocale()
+        self.locale = QLocale(cfg.get(cfg.language).value)
         translator = FluentTranslator(self.locale)
         self.app.installTranslator(translator)
         self.loading_window = None
