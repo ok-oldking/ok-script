@@ -88,8 +88,8 @@ class App:
                 self.po_translation = get_translations(self.locale.name())
                 self.po_translation.install()
                 logger.info(f'translation installed for {self.locale.name()}')
-            except FileNotFoundError:
-                logger.error(f'translation not found for {self.locale.name()}')
+            except Exception as e:
+                logger.error(f'install translations error for {self.locale.name()}', e)
                 self.po_translation = "Failed"
         if self.po_translation != 'Failed':
             return self.po_translation.gettext(key)
