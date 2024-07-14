@@ -5,7 +5,7 @@ from enum import Enum
 from PySide6.QtCore import QLocale
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
-                            FolderListValidator, FolderValidator, ConfigSerializer)
+                            ConfigSerializer, Theme, EnumSerializer)
 
 from ok.util.path import get_path_relative_to_exe
 
@@ -35,12 +35,6 @@ def isWin11():
 class AppConfig(QConfig):
     """ Config of application """
 
-    # folders
-    musicFolders = ConfigItem(
-        "Folders", "LocalMusic", [], FolderListValidator())
-    downloadFolder = ConfigItem(
-        "Folders", "Download", "app/download", FolderValidator())
-
     # main window
     micaEnabled = ConfigItem("MainWindow", "MicaEnabled", isWin11(), BoolValidator())
     dpiScale = OptionsConfigItem(
@@ -53,6 +47,8 @@ class AppConfig(QConfig):
 
     # software update
     checkUpdateAtStartUp = ConfigItem("Update", "CheckUpdateAtStartUp", True, BoolValidator())
+    themeMode = OptionsConfigItem(
+        "QFluentWidgets", "ThemeMode", Theme.AUTO, OptionsValidator(Theme), EnumSerializer(Theme))
 
 
 cfg = AppConfig()
