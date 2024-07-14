@@ -53,7 +53,6 @@ class OK:
             if config.get("use_gui"):
                 from ok.gui.App import App
                 self.app = App(config, self.exit_event)
-                ok.gui.app = self.app
             else:
                 self.device_manager.set_preferred_device()
                 self.device_manager.start()

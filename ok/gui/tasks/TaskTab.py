@@ -43,13 +43,13 @@ class TaskTab(Tab):
         else:
             self.task_info_container.show()
             info = task.info
-            self.task_info_container.titleLabel.setText(self.tr('Running') + f": {task.name}")
+            self.task_info_container.titleLabel.setText(self.tr('Running') + f": {ok.gui.app.tr(task.name)}")
             self.task_info_table.setRowCount(len(info))
             for row, (key, value) in enumerate(info.items()):
                 if not self.task_info_table.item(row, 0):
                     item0 = self.uneditable_item()
                     self.task_info_table.setItem(row, 0, item0)
-                self.task_info_table.item(row, 0).setText(key)
+                self.task_info_table.item(row, 0).setText(ok.gui.app.tr(key))
                 if not self.task_info_table.item(row, 1):
                     item1 = self.uneditable_item()
                     self.task_info_table.setItem(row, 1, item1)

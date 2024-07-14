@@ -1,7 +1,8 @@
+import gettext
 import os
 import sys
 
-from PySide6.QtCore import QSize, QCoreApplication, QLocale, QTranslator, Qt
+from PySide6.QtCore import QSize, QCoreApplication, QTranslator, Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentTranslator, qconfig
@@ -13,7 +14,8 @@ from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.gui.MessageWindow import MessageWindow
 from ok.gui.StartController import StartController
-from ok.gui.common.config import cfg
+from ok.gui.common.config import cfg, Language
+from ok.gui.i18n.GettextTranslator import get_translations
 from ok.gui.i18n.path import i18n_path
 from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.logging.Logger import get_logger
@@ -28,7 +30,7 @@ class App:
         super().__init__()
         self.config = config
         logger.debug(
-            f'{cfg.get(cfg.language).value} resources.qt_resource_name {resources.qt_resource_name} cfg.themeMode {cfg.themeMode.value}')
+            f'resources.qt_resource_name {resources.qt_resource_name} cfg.themeMode {cfg.themeMode.value}')
         QApplication.setHighDpiScaleFactorRoundingPolicy(
             Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
@@ -43,7 +45,8 @@ class App:
         self.title = self.config.get('gui_title')
         self.version = self.config.get('version')
         self.overlay = self.config.get('debug')
-        self.locale = QLocale(cfg.get(cfg.language).value)
+        self.locale = cfg.get(cfg.language).value
+        logger.debug(f'locale name {self.locale.name()}')
         translator = FluentTranslator(self.locale)
         self.app.installTranslator(translator)
         self.loading_window = None
@@ -68,6 +71,37 @@ class App:
         else:
             self.updater = None
         self.start_controller = StartController(self.config, exit_event)
+        if self.config.get('debug'):
+            self.to_translate = set()
+        else:
+            self.to_translate = None
+        self.po_translation = None
+        ok.gui.app = self
+
+    def tr(self, key):
+        if not key:
+            return key
+        if self.to_translate is not None:
+            self.to_translate.add(key)
+        if self.po_translation is None:
+            try:
+                self.po_translation = get_translations(self.locale.name())
+                self.po_translation.install()
+                logger.info(f'translation installed for {self.locale.name()}')
+            except FileNotFoundError:
+                logger.error(f'translation not found for {self.locale.name()}')
+                self.po_translation = "Failed"
+        if self.po_translation != 'Failed':
+            return self.po_translation.gettext(key)
+        else:
+            return key
+
+    def gen_tr_po_files(self):
+        folder = ""
+        for locale in Language:
+            from ok.gui.i18n.GettextTranslator import update_po_file
+            folder = update_po_file(self.to_translate, locale.value.name())
+        return folder
 
     def center_window(self, window):
         screen = self.app.primaryScreen()

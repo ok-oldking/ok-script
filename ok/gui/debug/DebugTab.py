@@ -10,6 +10,7 @@ import ok.gui
 from ok.capture.image.ImageCaptureMethod import ImageCaptureMethod
 from ok.capture.windows.dump import dump_threads
 from ok.config.Config import Config
+from ok.gui.i18n.GettextTranslator import convert_to_mo_files
 from ok.gui.util.Alert import alert_info, alert_error
 from ok.gui.widget.Tab import Tab
 from ok.interaction.DoNothingInteraction import DoNothingInteraction
@@ -63,6 +64,14 @@ class DebugTab(Tab):
 
         if self.log_window_config.get('show'):
             self.toggle_log_window()
+
+        gen_tr_button = PushButton(self.tr("Generate i18n files"))
+        gen_tr_button.clicked.connect(self.gen_tr)
+        layout.addWidget(gen_tr_button)
+
+        convert_tr_button = PushButton(self.tr("Convert i18n files"))
+        convert_tr_button.clicked.connect(convert_to_mo_files)
+        layout.addWidget(convert_tr_button)
 
         call_task_widget = QWidget()
         call_task_container = QVBoxLayout(call_task_widget)
@@ -122,6 +131,10 @@ class DebugTab(Tab):
             self.log_window_config['show'] = True
             self.log_window.show()
         logger.debug('showing log_window')
+
+    def gen_tr(self):
+        folder = ok.gui.app.gen_tr_po_files()
+        subprocess.Popen(r'explorer /select,"{}"'.format(folder))
 
     def check_hotkey(self):
         # Example event type, you should use the appropriate QEvent.Type for your case
