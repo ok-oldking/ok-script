@@ -23,6 +23,10 @@ set "source_dir=%~1"
 set "target_dir=%~2"
 set "exe=%~3"
 
+echo Pausing for 10 seconds...
+timeout /t 10 /nobreak
+echo Resuming script...
+
 REM Initialize an empty pid_list
 set "pid_list="
 

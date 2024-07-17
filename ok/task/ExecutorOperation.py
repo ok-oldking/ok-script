@@ -204,7 +204,7 @@ class ExecutorOperation:
                 raise Exception(f"click_box box is None")
             return
         x, y = box.relative_with_variance(relative_x, relative_y)
-        self.click(x, y, name=box.name, move_back=move_back)
+        return self.click(x, y, name=box.name, move_back=move_back)
 
     def wait_scene(self, scene_type=None, time_out=0, pre_action=None, post_action=None):
         return self.executor.wait_scene(scene_type, time_out, pre_action, post_action)

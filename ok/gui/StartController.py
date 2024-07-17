@@ -4,6 +4,7 @@ from PySide6.QtCore import QObject
 
 import ok.gui
 from ok.alas.platform_windows import execute
+from ok.capture.windows.BaseWindowsCaptureMethod import BaseWindowsCaptureMethod
 from ok.gui.Communicate import communicate
 from ok.interaction.PyDirectInteraction import is_admin
 from ok.logging.Logger import get_logger
@@ -73,6 +74,16 @@ class StartController(QObject):
         if not ok.gui.device_manager.capture_method.connected():
             logger.error(f'Game window is not connected {ok.gui.device_manager.capture_method}')
             return self.tr("Game window is not connected, please select the game window and capture method.")
+        if isinstance(ok.gui.device_manager.capture_method, BaseWindowsCaptureMethod) and self.config.get('windows',
+                                                                                                          {}).get(
+            'check_hdr_and_night_light', False):
+            logger.info(f'start checking for hdr and night light')
+            from ok.display.display import is_night_light_enabled
+            if is_night_light_enabled():
+                return self.tr(f'Windows night light is enabled, please turn it off first.')
+            from ok.display.display import is_hdr_enabled
+            if is_hdr_enabled():
+                return self.tr(f'Windows HDR is enabled, please turn it off first.')
         supported_resolution = self.config.get(
             'supported_resolution', {})
         supported_ratio = supported_resolution.get('ratio')

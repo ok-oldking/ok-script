@@ -134,12 +134,12 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                     IDirect3DDxgiInterfaceAccess
                 from ok.rotypes.roapi import GetActivationFactory
                 logger.info('init windows capture')
+                interop = GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(
+                    IGraphicsCaptureItemInterop)
                 self.rtdevice = IDirect3DDevice()
                 self.dxdevice = d3d11.ID3D11Device()
                 self.immediatedc = d3d11.ID3D11DeviceContext()
                 self.create_device()
-                interop = GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(
-                    IGraphicsCaptureItemInterop)
                 item = interop.CreateForWindow(self.hwnd_window.hwnd, IGraphicsCaptureItem.GUID)
                 self.item = item
                 self.last_size = item.Size
