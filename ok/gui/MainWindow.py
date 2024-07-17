@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow, InfoBar, InfoBarPosition
 
 import ok.gui
+from ok.config.Config import Config
 from ok.gui.Communicate import communicate
 from ok.gui.about.AboutTab import AboutTab
 from ok.gui.debug.DebugTab import DebugTab
@@ -27,6 +28,7 @@ class MainWindow(MSFluentWindow):
     def __init__(self, config, icon, title, version, debug=False, about=None, exit_event=None):
         super().__init__()
         logger.info('main window __init__')
+        self.main_window_config = Config('main_window', {'last_version': 'v0.0.0'})
         self.original_layout = None
         self.exit_event = exit_event
         self.start_tab = StartTab()
@@ -52,9 +54,11 @@ class MainWindow(MSFluentWindow):
                                  position=NavigationItemPosition.BOTTOM)
 
         if about:
-            about_tab = AboutTab(icon, title, version, debug, about)
-            self.addSubInterface(about_tab, FluentIcon.QUESTION, self.tr('About'),
+            self.about_tab = AboutTab(icon, title, version, debug, about)
+            self.addSubInterface(self.about_tab, FluentIcon.QUESTION, self.tr('About'),
                                  position=NavigationItemPosition.BOTTOM)
+        else:
+            self.about_tab = None
 
         setting_tab = SettingTab()
         self.addSubInterface(setting_tab, FluentIcon.SETTING, self.tr('Settings'),
@@ -86,6 +90,10 @@ class MainWindow(MSFluentWindow):
         communicate.notification.connect(self.show_notification)
         communicate.config_validation.connect(self.config_validation)
         communicate.starting_emulator.connect(self.starting_emulator)
+        if self.about_tab is not None and version != self.main_window_config.get('last_version'):
+            logger.info(f'first run show about tab last version:{self.main_window_config.get("last_version")}')
+            self.main_window_config['last_version'] = version
+            self.switchTo(self.about_tab)
         logger.info('main window __init__ done')
 
     def starting_emulator(self, done, error, seconds_left):

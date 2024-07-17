@@ -151,7 +151,7 @@ class TaskExecutor:
         while self.paused and not self.debug_mode:
             self.sleep(1)
         if self.exit_event.is_set():
-            logger.info("Exit event set. Exiting early.")
+            logger.info("frame Exit event set. Exiting early.")
             sys.exit(0)
         if self._frame is None:
             return self.next_frame()
@@ -174,8 +174,8 @@ class TaskExecutor:
         self.pause_end_time = time.time() + timeout
         while True:
             if self.exit_event.is_set():
-                logger.info("Exit event set. Exiting early.")
-                return
+                logger.info("sleep Exit event set. Exiting early.")
+                sys.exit(0)
             if self.current_task and not self.current_task.enabled:
                 raise TaskDisabledException()
             if not (self.paused or (
