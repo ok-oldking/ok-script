@@ -18,7 +18,7 @@ class OCR:
     def ocr(self, x=0, y=0, to_x=1, to_y=1, match: str | List[str] | Pattern[str] | List[Pattern[str]] | None = None,
             width=0, height=0, box: Box = None, name=None,
             threshold=0,
-            frame=None, target_height=0, use_grayscale=False):
+            frame=None, target_height=0, use_grayscale=False, log=False):
         if hasattr(self, 'paused') and self.paused:
             self.sleep(1)
         if threshold == 0:
@@ -76,10 +76,11 @@ class OCR:
 
             communicate.emit_draw_box("ocr", detected_boxes, "red")
             communicate.emit_draw_box("ocr_zone", box, "blue")
-            # logger.debug(
-            #     f"ocr_zone {box} found result: {detected_boxes}) time: {(time.time() - start):.2f} scale_factor: {scale_factor:.2f}")
-            # if not detected_boxes and ocr_boxes:
-            #     logger.debug(f'ocr detected but no match: {match} {ocr_boxes}')
+            if log:
+                logger.debug(
+                    f"ocr_zone {box} found result: {detected_boxes}) time: {(time.time() - start):.2f} scale_factor: {scale_factor:.2f}")
+            if log and not detected_boxes and ocr_boxes:
+                logger.debug(f'ocr detected but no match: {match} {ocr_boxes}')
             return sort_boxes(detected_boxes)
 
     def wait_click_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box=None, name=None,
