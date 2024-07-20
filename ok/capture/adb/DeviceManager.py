@@ -237,18 +237,7 @@ class DeviceManager:
 
     def shell_device(self, device, *args, **kwargs):
         kwargs.setdefault('timeout', 5)
-        from adbutils import AdbError
         try:
-            return device.shell(*args, **kwargs)
-        except AdbError as e:
-            logger.error(f"adb shell AdbError try kill server {device}", e)
-            self.try_kill_adb(e)
-            addr = self.get_preferred_device()['address']
-            self.refresh_emulators()
-            self.refresh_phones()
-            new_addr = self.get_preferred_device()['address']
-            logger.error(f"shell_wrapper error occurred, try refresh_emulators {addr} {new_addr}", e)
-            device = self.adb_connect(device.serial)
             return device.shell(*args, **kwargs)
         except Exception as e:
             logger.error(f"adb shell error maybe offline {device}", e)
