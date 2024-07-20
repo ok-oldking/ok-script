@@ -205,15 +205,12 @@ class Updater:
                 logger.info(f"check update newest version clear update folder {self.update_dir}")
                 clear_folder(self.update_dir)
             communicate.check_update.emit(None)
-        except (requests.exceptions.HTTPError,
-                requests.exceptions.ConnectionError,
-                requests.exceptions.Timeout,
-                requests.exceptions.RequestException) as e:
+        except Exception as e:
             logger.error(f'check_update http error, retry with proxy', e)
             proxy = self.get_proxy_url(self.update_url)
             if proxied_url is None and proxy:
                 self.do_check_for_updates(proxy)
-        except Exception as e:
+                return
             logger.error(f'check_update_error: ', e)
             communicate.check_update.emit(str(e))
 
