@@ -14,11 +14,9 @@ logger = get_logger(__name__)
 
 # https://update.greasyfork.org/scripts/412245/Github%20%E5%A2%9E%E5%BC%BA%20-%20%E9%AB%98%E9%80%9F%E4%B8%8B%E8%BD%BD.user.js
 download_url_us = [
-    ['https://gh.h233.eu.org/https://github.com', '美国',
-     '[美国 Cloudflare CDN] - 该公益加速源由 [@X.I.U/XIU2] 提供'],
-    [
-        'https://gh.ddlc.top/https://github.com', '美国',
-        '[美国 Cloudflare CDN] - 该公益加速源由 [@mtr-static-official] 提供'],
+    ['https://gh.h233.eu.org/https://github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [@X.I.U/XIU2] 提供'],
+    ['https://gh.ddlc.top/https://github.com', '美国',
+     '[美国 Cloudflare CDN] - 该公益加速源由 [@mtr-static-official] 提供'],
     ['https://dl.ghpig.top/https://github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [feizhuqwq.com] 提供'],
     ['https://slink.ltd/https://github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [知了小站] 提供'],
     ['https://gh.con.sh/https://github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [佚名] 提供'],
@@ -35,11 +33,9 @@ download_url_us = [
      '[美国 Cloudflare CDN] - 该公益加速源由 [@yionchiii lau] 提供'],
     ['https://gh.jiasu.in/https://github.com', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [@0-RTT] 提供'],
     ['https://dgithub.xyz', '美国', '[美国 西雅图] - 该公益加速源由 [dgithub.xyz] 提供'],
-    ['https://download.ixnic.net', '美国', '[美国 洛杉矶] - 该公益加速源由 [FastGit 群组成员] 提供'],
+    ['https://download.ixnic.net', '美国', '[美国 洛杉矶] - 该公益加速源由 [@黃埔興國] 提供'],
     ['https://download.nuaa.cf', '美国', '[美国 洛杉矶] - 该公益加速源由 [FastGit 群组成员] 提供'],
-    ['https://download.yzuu.cf', '美国', '[美国 纽约] - 该公益加速源由 [FastGit 群组成员] 提供'],
-    ['https://download.scholar.rr.nu', '美国', '[美国 纽约] - 该公益加速源由 [FastGit 群组成员] 提供'],
-    ['https://hub.whtrys.space', '美国', '[美国 Cloudflare CDN] - 该公益加速源由 [FastGit 群组成员] 提供']
+    ['https://download.yzuu.cf', '美国', '[美国 纽约] - 该公益加速源由 [FastGit 群组成员] 提供']
 ]
 
 download_url = [
@@ -48,7 +44,7 @@ download_url = [
     ['https://ghproxy.net/https://github.com', '日本',
      '[日本 大阪] - 该公益加速源由 [ghproxy] 提供&#10;&#10;提示：希望大家尽量多使用前面的美国节点（每次随机 负载均衡），&#10;避免流量都集中到亚洲公益节点，减少成本压力，公益才能更持久~'],
     ['https://kkgithub.com', '香港',
-     '[中国香港、日本、新加坡等] - 该公益加速源由 [help.kkgithub.com] 提供&#10;&#10;提示：希望大家尽量多使用前面的美国节点（每次随机 4 个来负载均衡），&#10;避免流量都集中到亚洲公益节点，减少成本压力，公益才能更持久~']
+     '[中国香港、日本、新加坡等] - 该公益加速源由 [help.kkgithub.com] 提供&#10;&#10;提示：希望大家尽量多使用前面的美国节点（每次随机 4 个来负载均衡），&#10;避免流量都集中到亚洲公益节点，减少成本压力，公益才能更持久~'],
 ]
 
 
@@ -63,12 +59,13 @@ class GithubMultiDownloader:
     def __init__(self, app_config, exit_event):
         self.app_config = app_config
         self.exit_event = exit_event
-        self.proxys = [""] + parse_url(download_url_us) + parse_url(download_url)
+        self.proxys = parse_url(download_url) + parse_url(download_url_us)
         logger.debug(f'proxys = {self.proxys}')
         self.fast_proxys = []
         random.shuffle(self.proxys)
+        self.proxys = ["", "", "", "", ""] + self.proxys  # try to use no proxy first
         self.lock = threading.Lock()
-        self.num_parts = 6
+        self.num_parts = 5
         self.downloaded = 0
         self.start_time = 0
         self.size = 0
@@ -131,7 +128,7 @@ class GithubMultiDownloader:
             with open(file, 'ab') as f:
                 for chunk in response.iter_content(chunk_size=1024):  # 1 KB chunks
                     with self.lock:
-                        if time.time() - last_chunk_time > 0.5:  # If more than 1 seconds have passed since the last chunk
+                        if time.time() - last_chunk_time > 1 and time.time() - start_time > 10:  # If more than 1 seconds have passed since the last chunk
                             response.close()
                             logger.error(f'{proxy} Server is not responding with the chunk every 0.5 seconds')
                             break

@@ -248,7 +248,7 @@ class TaskExecutor:
                 cycled = True
             self.trigger_task_index += 1
             task = self.trigger_tasks[self.trigger_task_index]
-            if task.enabled and task.should_check_trigger():
+            if task.enabled and task.should_trigger():
                 return task, cycled
         return None, cycled
 
@@ -267,8 +267,9 @@ class TaskExecutor:
                 continue
             if cycled:
                 self.next_frame()
-            elif time.time() - self._last_frame_time > 1:
-                logger.warning(f'processing cost too much time, get new frame')
+            elif time.time() - self._last_frame_time > 0.1:
+                # logger.warning(
+                #     f'processing {task} cost too much time {time.time() - self._last_frame_time}, get new frame')
                 self.next_frame()
             try:
                 if task.trigger():

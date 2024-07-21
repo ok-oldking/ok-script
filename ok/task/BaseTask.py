@@ -29,14 +29,16 @@ class BaseTask(ExecutorOperation):
         self.lock = threading.Lock()
         self._handler = None
         self.running = False
-        self.check_trigger_interval = 0
-        self.last_check_trigger_time = 0
+        self.trigger_interval = 0
+        self.last_trigger_time = 0
 
-    def should_check_trigger(self):
+    def should_trigger(self):
+        if self.trigger_interval == 0:
+            return True
         now = time.time()
-        time_diff = now - self.last_check_trigger_time
-        if time_diff > self.check_trigger_interval:
-            self.last_check_trigger_time = now
+        time_diff = now - self.last_trigger_time
+        if time_diff > self.trigger_interval:
+            self.last_trigger_time = now
             return True
         return False
 

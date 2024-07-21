@@ -1,7 +1,10 @@
 import sys
 from typing import List
 
-from ok.feature.Box import Box
+from ok.feature.Box import Box, find_highest_confidence_box
+from ok.logging.Logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class FindFeature:
@@ -73,15 +76,10 @@ class FindFeature:
                                   use_gray_scale=use_gray_scale, box=box, canny_lower=canny_lower,
                                   canny_higher=canny_higher, inverse_mask_color=inverse_mask_color,
                                   frame_processor=frame_processor)
-        highest_conf = 0
-        highest_box = None
         if len(boxes) > 0:
             if len(boxes) > 1:
-                print(f"find_one:found {feature_name} too many {len(boxes)}", file=sys.stderr)
-            for box in boxes:
-                if box.confidence > highest_conf:
-                    highest_conf = box.confidence
-                    highest_box = box
+                logger.warning(f"find_one:found {feature_name} too many {len(boxes)}", file=sys.stderr)
+            highest_box = find_highest_confidence_box(boxes)
             return highest_box
 
     def on_feature(self, boxes):

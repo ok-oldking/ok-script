@@ -141,6 +141,13 @@ class Box:
         return None
 
 
+def find_highest_confidence_box(boxes):
+    if not boxes:
+        return None
+    highest_confidence_box = max(boxes, key=lambda box: box.confidence)
+    return highest_confidence_box
+
+
 def sort_boxes(boxes: List[Box]) -> List[Box]:
     def box_intersect(box1, box2):
         return not (box1.y > box2.y + box2.height or box1.y + box1.height < box2.y)

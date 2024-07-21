@@ -99,7 +99,7 @@ for /D %%D in ("%source_dir%\*") do (
     xcopy /E /I "%%D" "%target_dir%\%%~nxD" >nul
 )
 echo %time% Update Success
-start "" %exe%
+start "" "%exe%"
 endlocal
 
 
@@ -109,8 +109,10 @@ goto :eof
 set "elapsed_time=0"
 :check_loop
 echo %time% - Waiting for PID %1 to exit...
-tasklist /fi "PID eq %1" | find ":" >nul
-if errorlevel 1 (
+tasklist /fi "PID eq %1" | find /C "Image Name" > temp.txt
+set /p count=<temp.txt
+del temp.txt
+if %count% leq 1 (
     echo %time% - PID %1 has exited.
     goto :eof
 ) else (
@@ -160,8 +162,10 @@ class Updater:
     def do_check_for_updates(self, proxied_url=None):
 
         try:
+            url = proxied_url or self.update_url
+            logger.info(f'do_check_for_updates: {url}')
             # Send GET request to the API endpoint
-            response = requests.get(proxied_url or self.update_url)
+            response = requests.get(url, timeout=10)
 
             # Raise an exception if the request was unsuccessful
             response.raise_for_status()
@@ -243,7 +247,7 @@ class Updater:
         except Exception as e:
             logger.error('download error occurred', e)
             self.downloading = False
-            communicate.download_update.emit(0, "", True, e.args[0])
+            communicate.download_update.emit(0, "", True, "download error")
 
     def extract(self, file, release, debug):
         version = release.get('version')
@@ -261,6 +265,7 @@ class Updater:
             logger.error('extract error occurred', e)
             self.check_package_error()
             return
+
         update_package_folder = find_folder_with_file(folder, 'md5.txt')
 
         if update_package_folder is None:

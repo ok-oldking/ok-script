@@ -38,9 +38,9 @@ def update_po_file(strings, language_code):
             po.append(entry)
 
     # Remove obsolete keys
-    for msgid in list(existing_ids.keys()):
-        if msgid not in strings:
-            po.remove(existing_ids[msgid])
+    # for msgid in list(existing_ids.keys()):
+    #     if msgid not in strings:
+    #         po.remove(existing_ids[msgid])
 
     # Save the .po file
     po.wrapwidth = 999999
