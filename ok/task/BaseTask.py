@@ -31,6 +31,7 @@ class BaseTask(ExecutorOperation):
         self.running = False
         self.trigger_interval = 0
         self.last_trigger_time = 0
+        self.start_time = 0
 
     def should_trigger(self):
         if self.trigger_interval == 0:
@@ -87,7 +88,6 @@ class BaseTask(ExecutorOperation):
         self.info_set("Log", message)
         if notify:
             self.notification(message)
-        communicate.task_info.emit()
 
     def log_debug(self, message, notify=False):
         self.logger.debug(message)

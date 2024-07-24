@@ -9,7 +9,6 @@ class Communicate(QObject):
     scene = Signal(str)
     draw_box = Signal(str, object, str, np.ndarray)
     task = Signal(object)
-    task_info = Signal()
     window = Signal(bool, int, int, int, int, int, int, float)
     loading_progress = Signal(str)
     notification = Signal(str, str, bool, bool)

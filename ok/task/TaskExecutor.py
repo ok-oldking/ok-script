@@ -275,6 +275,7 @@ class TaskExecutor:
                 if task.trigger():
                     self.current_task = task
                     self.current_task.running = True
+                    self.current_task.start_time = time.time()
                     communicate.task.emit(self.current_task)
                     if cycled or self._frame is None:
                         self.next_frame()

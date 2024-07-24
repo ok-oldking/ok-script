@@ -13,8 +13,11 @@ def is_night_light_enabled():
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path)
         value, type = winreg.QueryValueEx(key, "Data")
         winreg.CloseKey(key)
-
-        enabled = (value[18] == 0x15)
+        if len(value) > 18:
+            enabled = (value[18] == 0x15)
+        else:
+            logger.warning(f'is_night_light_enabled index of out bounds')
+            enabled = False
         logger.info(f'is_night_light_enabled is {enabled}')
         return enabled
     except Exception as e:
