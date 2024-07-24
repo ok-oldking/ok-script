@@ -219,7 +219,7 @@
     <message>
         <location filename="../MainWindow.py" line="47"/>
         <source>Triggers</source>
-        <translation>触发器</translation>
+        <translation>实时触发</translation>
     </message>
     <message>
         <location filename="../MainWindow.py" line="37"/>
@@ -513,7 +513,7 @@
     <message>
         <location filename="../start/StartCard.py" line="82"/>
         <source>Trigger Tasks</source>
-        <translation>个触发器</translation>
+        <translation>个实时触发任务</translation>
     </message>
     <message>
         <location filename="../start/StartCard.py" line="92"/>

@@ -109,10 +109,11 @@ class OCR:
 
 def resize_image(image, original_height, target_height):
     scale_factor = 1
-    if target_height > 0 and original_height >= 2 * target_height:
+    if target_height > 0 and original_height >= 1.5 * target_height:
         image_height, image_width = image.shape[:2]
-        times = int(original_height / target_height)
-        scale_factor = 1 / times
+        # times = int(original_height / target_height)
+        # scale_factor = 1 / times
+        scale_factor = target_height / original_height
         # Calculate the new width to maintain the aspect ratio
         new_width = round(image_width * scale_factor)
         new_height = round(image_height * scale_factor)
