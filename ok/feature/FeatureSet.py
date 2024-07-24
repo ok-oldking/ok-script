@@ -49,6 +49,9 @@ class FeatureSet:
         self.default_vertical_variance = default_vertical_variance
         self.lock = threading.Lock()
 
+    def feature_exists(self, feature_name: str) -> bool:
+        return feature_name in self.feature_dict
+
     def check_size(self, frame):
         with self.lock:
             height, width = frame.shape[:2]

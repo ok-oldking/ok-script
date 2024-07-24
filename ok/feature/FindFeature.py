@@ -83,3 +83,6 @@ class FindFeature:
 
     def on_feature(self, boxes):
         pass
+
+    def feature_exists(self, feature_name: str) -> bool:
+        return self.feature_set.feature_exists(feature_name)
