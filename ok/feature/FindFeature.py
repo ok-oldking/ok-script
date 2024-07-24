@@ -1,4 +1,3 @@
-import sys
 from typing import List
 
 from ok.feature.Box import Box, find_highest_confidence_box
@@ -78,7 +77,7 @@ class FindFeature:
                                   frame_processor=frame_processor)
         if len(boxes) > 0:
             if len(boxes) > 1:
-                logger.warning(f"find_one:found {feature_name} too many {len(boxes)}", file=sys.stderr)
+                logger.warning(f"find_one:found {feature_name} too many {len(boxes)}")
             highest_box = find_highest_confidence_box(boxes)
             return highest_box
 
