@@ -155,6 +155,13 @@ class BaseTask(ExecutorOperation):
         self._enabled = False
         communicate.task.emit(self)
 
+    @property
+    def hwnd_title(self):
+        if self.executor.device_manager.hwnd:
+            return self.executor.device_manager.hwnd.hwnd_title
+        else:
+            return ""
+
     def run(self):
         pass
 

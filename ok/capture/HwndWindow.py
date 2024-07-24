@@ -46,6 +46,7 @@ class HwndWindow:
         self.update_window(title, exe_name, frame_width, frame_height)
         self.thread = threading.Thread(target=self.update_window_size, name="update_window_size")
         self.thread.start()
+        self._hwnd_title = ""
 
     def stop(self):
         self.stop_event.set()
@@ -125,10 +126,12 @@ class HwndWindow:
         else:
             return size
 
-    def title_text(self):
-        if self.hwnd:
-            return win32gui.GetWindowText(self.hwnd)
-        return ""
+    @property
+    def hwnd_title(self):
+        if not self._hwnd_title:
+            if self.hwnd:
+                self._hwnd_title = win32gui.GetWindowText(self.hwnd)
+        return self._hwnd_title
 
     def __str__(self) -> str:
         return f"title_{self.title}_{self.exe_name}_{self.width}x{self.height}_{self.hwnd}_{self.exists}_{self.visible}"
