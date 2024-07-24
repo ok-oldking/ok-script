@@ -36,10 +36,18 @@ def install_path_isascii():
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
+    # Get the absolute path of the current script
     base_dir = os.path.dirname(os.path.abspath(__file__))
+    if 'site-packages' in base_dir:  # if ok is installed by pip
+        return relative_path
+    # Move up one directory level
     base_dir = os.path.dirname(base_dir)
+    # Move up another directory level
     base_dir = os.path.dirname(base_dir)
+    # Check if the '_MEIPASS' attribute exists in the 'sys' module (used by PyInstaller)
+    # If it exists, set 'base_path' to its value; otherwise, use 'base_dir'
     base_path = getattr(sys, '_MEIPASS', base_dir)
+    # Combine 'base_path' with 'relative_path' to form the absolute path to the resource
     return os.path.join(base_path, relative_path)
 
 
