@@ -84,6 +84,12 @@ class StartController(QObject):
             from ok.display.display import is_hdr_enabled
             if is_hdr_enabled():
                 return self.tr(f'Windows HDR is enabled, please turn it off first.')
+        frame = self.try_capture_a_frame()
+        if frame is None:
+            return self.tr('Capture failed, please check game window')
+        if ok.gui.executor.feature_set is not None and not ok.gui.executor.feature_set.check_size(frame):
+            return self.tr(
+                'Image resource load failed, please try install again.(Don\'t put the app in Downloads folder)')
         supported_resolution = self.config.get(
             'supported_resolution', {})
         supported_ratio = supported_resolution.get('ratio')
@@ -108,3 +114,15 @@ class StartController(QObject):
                 started = ok.gui.device_manager.adb_ensure_in_front(packages)
                 if not started:
                     return self.tr("Can't start game, make sure the game is installed")
+
+    @staticmethod
+    def try_capture_a_frame():
+        start = time.time()
+        while True:
+            frame = ok.gui.device_manager.capture_method.get_frame()
+            if frame is not None:
+                return frame
+            if time.time() - start > 5:
+                logger.error(f'time out try_capture_a_frame')
+                return None
+            time.sleep(0.1)

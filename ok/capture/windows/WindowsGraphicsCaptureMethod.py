@@ -16,6 +16,7 @@ from ok.logging.Logger import get_logger
 
 PBYTE = ctypes.POINTER(ctypes.c_ubyte)
 WGC_NO_BORDER_MIN_BUILD = 20348
+WGC_MIN_BUILD = 19041
 
 logger = get_logger(__name__)
 
@@ -267,13 +268,12 @@ def crop_image(image, border, title_height):
 
 
 WINDOWS_BUILD_NUMBER = int(platform.version().split(".")[-1]) if sys.platform == "win32" else -1
-WGC_MIN_BUILD = 17134
 
 
 def windows_graphics_available():
     logger.debug(
         f"check available WINDOWS_BUILD_NUMBER:{WINDOWS_BUILD_NUMBER} >= {WGC_MIN_BUILD} {WINDOWS_BUILD_NUMBER >= WGC_MIN_BUILD}")
-    if WINDOWS_BUILD_NUMBER >= WGC_NO_BORDER_MIN_BUILD:
+    if WINDOWS_BUILD_NUMBER >= WGC_MIN_BUILD:
         try:
             from ok.rotypes.roapi import GetActivationFactory
             from ok.rotypes.Windows.Graphics.Capture import IGraphicsCaptureItemInterop

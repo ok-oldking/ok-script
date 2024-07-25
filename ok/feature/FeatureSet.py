@@ -23,6 +23,7 @@ class FeatureSet:
     # Category_name to OpenCV Mat
     feature_dict: Dict[str, Feature] = {}
     box_dict: Dict[str, Box] = {}
+    load_success = False
 
     def __init__(self, debug, coco_json: str, default_horizontal_variance=0,
                  default_vertical_variance=0, default_threshold=0.95) -> None:
@@ -52,6 +53,9 @@ class FeatureSet:
     def feature_exists(self, feature_name: str) -> bool:
         return feature_name in self.feature_dict
 
+    def empty(self):
+        return len(self.feature_dict) == 0 and len(self.box_dict) == 0
+
     def check_size(self, frame):
         with self.lock:
             height, width = frame.shape[:2]
@@ -62,8 +66,9 @@ class FeatureSet:
                 self.process_data()
             elif not self.feature_dict:
                 self.process_data()
+        return self.load_success
 
-    def process_data(self) -> None:
+    def process_data(self) -> bool:
         """
         Process the images and annotations from the COCO dataset.
 
@@ -71,12 +76,15 @@ class FeatureSet:
             width (int): Target width for scaling images.
             height (int): Target height for scaling images.
         """
-        self.feature_dict, self.box_dict, compressed = read_from_json(self.coco_json, self.width, self.height)
+        self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
+                                                                                         self.height)
         if self.debug and not compressed:
             from ok.feature.CompressCoco import compress_coco
             logger.info(f'coco not compressed try to compress the COCO dataset')
             compress_coco(self.coco_json)
-            self.feature_dict, self.box_dict, compressed = read_from_json(self.coco_json, self.width, self.height)
+            self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
+                                                                                             self.height)
+        return self.load_success
 
     def get_box_by_name(self, mat, category_name: str) -> Box:
         self.check_size(mat)
@@ -231,6 +239,7 @@ def read_from_json(coco_json, width=-1, height=-1):
     feature_dict = {}
     box_dict = {}
     ok_compressed = None
+    load_success = True
     with open(coco_json, 'r') as file:
         data = json.load(file)
     coco_folder = os.path.dirname(coco_json)
@@ -249,6 +258,7 @@ def read_from_json(coco_json, width=-1, height=-1):
             ok_compressed = 'ok_compressed' in image.info.keys()
         whole_image = cv2.imread(image_path)
         if whole_image is None:
+            load_success = False
             logger.error(f'Could not read image {image_path}')
             continue
         _, original_width = whole_image.shape[:2]
@@ -287,7 +297,7 @@ def read_from_json(coco_json, width=-1, height=-1):
                 feature_dict[category_name] = Feature(image, x, y, scale_x)
             box_dict[category_name] = Box(x, y, image.shape[1], image.shape[0], name=category_name)
 
-    return feature_dict, box_dict, ok_compressed
+    return feature_dict, box_dict, ok_compressed, load_success
 
 
 def replace_extension(filename):

@@ -212,63 +212,63 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../MainWindow.py" line="42"/>
+        <location filename="../MainWindow.py" line="44"/>
         <source>Tasks</source>
         <translation>任务</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="47"/>
+        <location filename="../MainWindow.py" line="49"/>
         <source>Triggers</source>
         <translation>实时触发</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="37"/>
+        <location filename="../MainWindow.py" line="39"/>
         <source>Capture</source>
         <translation>截图方式</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="51"/>
-        <location filename="../MainWindow.py" line="65"/>
+        <location filename="../MainWindow.py" line="53"/>
+        <location filename="../MainWindow.py" line="69"/>
         <source>Debug</source>
         <translation>开发工具</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="56"/>
+        <location filename="../MainWindow.py" line="58"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="60"/>
+        <location filename="../MainWindow.py" line="64"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="66"/>
+        <location filename="../MainWindow.py" line="70"/>
         <source>Release</source>
         <translation>正式版</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="108"/>
+        <location filename="../MainWindow.py" line="116"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="136"/>
+        <location filename="../MainWindow.py" line="144"/>
         <source>Please check whether the game window is selected correctly!</source>
         <translation>请检查游戏窗口是否正确选择</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="137"/>
+        <location filename="../MainWindow.py" line="145"/>
         <source>Capture Error</source>
         <translation>截图错误</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="153"/>
+        <location filename="../MainWindow.py" line="161"/>
         <source>Start Success.</source>
         <translation>启动成功。</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="73"/>
+        <location filename="../MainWindow.py" line="77"/>
         <source>Exit</source>
         <translation>退出</translation>
     </message>
@@ -564,32 +564,42 @@
         <translation>Windows显示设置HDR已打开, 请先关闭!</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="94"/>
+        <location filename="../StartController.py" line="90"/>
+        <source>Capture failed, please check game window</source>
+        <translation>截图失败,请检查游戏窗口</translation>
+    </message>
+    <message>
+        <location filename="../StartController.py" line="93"/>
+        <source>Image resource load failed, please try install again.(Don&apos;t put the app in Downloads folder)</source>
+        <translation>模板图片加载失败,请重新安装.(不要放在下载目录等可能会被自动删除图片的目录.)</translation>
+    </message>
+    <message>
+        <location filename="../StartController.py" line="100"/>
         <source>Game resolution {resolution} is not supported</source>
         <translation>不支持当前分辨率{resolution}</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="96"/>
+        <location filename="../StartController.py" line="102"/>
         <source>, the supported ratio is {supported_ratio}</source>
         <translation>支持的窗口比例是{supported_ratio}</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="98"/>
+        <location filename="../StartController.py" line="104"/>
         <source>, the supported min resolution is {min_size}</source>
         <translation>, 支持的最小分辨率是</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="101"/>
+        <location filename="../StartController.py" line="107"/>
         <source>, check if game windows is minimized, resized or out of screen.</source>
         <translation>, 确认游戏窗口是否被拉伸,隐藏,或者在屏幕外.</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="105"/>
+        <location filename="../StartController.py" line="111"/>
         <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
         <translation>PC版需要管理员权限，请以管理员权限重启此应用！</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="111"/>
+        <location filename="../StartController.py" line="118"/>
         <source>Can&apos;t start game, make sure the game is installed</source>
         <translation>无法启动游戏, 请确认游戏已安装!</translation>
     </message>
@@ -718,22 +728,22 @@
 <context>
     <name>TaskTab</name>
     <message>
-        <location filename="../tasks/TaskTab.py" line="22"/>
+        <location filename="../tasks/TaskTab.py" line="21"/>
         <source>Choose Window</source>
         <translation>选择窗口</translation>
     </message>
     <message>
-        <location filename="../tasks/TaskTab.py" line="25"/>
+        <location filename="../tasks/TaskTab.py" line="24"/>
         <source>Info</source>
         <translation>信息</translation>
     </message>
     <message>
-        <location filename="../tasks/TaskTab.py" line="26"/>
+        <location filename="../tasks/TaskTab.py" line="25"/>
         <source>Value</source>
         <translation>值</translation>
     </message>
     <message>
-        <location filename="../tasks/TaskTab.py" line="46"/>
+        <location filename="../tasks/TaskTab.py" line="66"/>
         <source>Running</source>
         <translation>运行中</translation>
     </message>

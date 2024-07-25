@@ -104,7 +104,6 @@ class BaseTask(ExecutorOperation):
         self.info_set("Error", message)
         if notify:
             self.notification(message)
-        communicate.task_info.emit()
 
     def notification(self, message, title=None, error=False):
         communicate.notification.emit(message, title, error, False)
