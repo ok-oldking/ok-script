@@ -28,6 +28,7 @@ class TaskTab(Tab):
 
         # Create a QTimer object
         self.timer = QTimer()
+        self.task_info_container.hide()
 
         # Connect the timer's timeout signal to the update function
         self.timer.timeout.connect(self.update_info_table)
