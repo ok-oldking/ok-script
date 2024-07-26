@@ -129,8 +129,7 @@ class OK:
                 self.init_error = True
                 return False
             from rapidocr_openvino import RapidOCR
-            inference_num_threads = self.config.get('ocr').get('inference_num_threads', -1)
-            self.ocr = RapidOCR(inference_num_threads=inference_num_threads)
+            self.ocr = RapidOCR()
             self.task_executor.ocr = self.ocr
 
         if not check_mutex():
