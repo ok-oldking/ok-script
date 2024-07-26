@@ -165,7 +165,7 @@ class Updater:
             url = proxied_url or self.update_url
             logger.info(f'do_check_for_updates: {url}')
             # Send GET request to the API endpoint
-            response = requests.get(url, timeout=10)
+            response = requests.get(url, timeout=10, verify=False)
 
             # Raise an exception if the request was unsuccessful
             response.raise_for_status()

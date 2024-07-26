@@ -117,7 +117,7 @@ class GithubMultiDownloader:
         start_time = time.time()
 
         try:
-            response = requests.get(url, headers=headers, stream=True, timeout=5)  # 10 seconds timeout
+            response = requests.get(url, headers=headers, stream=True, timeout=5, verify=False)  # 10 seconds timeout
             response_size = int(response.headers.get('Content-Length', 0))
 
             if response_size != target_size:
