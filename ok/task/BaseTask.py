@@ -106,7 +106,8 @@ class BaseTask(ExecutorOperation):
             self.notification(message)
 
     def notification(self, message, title=None, error=False):
-        communicate.notification.emit(message, title, error, False)
+        from ok.gui import app
+        communicate.notification.emit(app.tr(message), app.tr(title), error, False)
 
     @property
     def enabled(self):

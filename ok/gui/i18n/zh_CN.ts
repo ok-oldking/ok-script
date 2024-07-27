@@ -586,7 +586,7 @@
     <message>
         <location filename="../StartController.py" line="104"/>
         <source>, the supported min resolution is {min_size}</source>
-        <translation>, 支持的最小分辨率是</translation>
+        <translation>, 支持的最小分辨率是  {min_size}</translation>
     </message>
     <message>
         <location filename="../StartController.py" line="107"/>
