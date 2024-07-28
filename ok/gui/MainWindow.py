@@ -1,6 +1,6 @@
 import os
 
-from PySide6.QtCore import QObject, Signal, Qt
+from PySide6.QtCore import QObject, Signal, Qt, QCoreApplication
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow, InfoBar, InfoBarPosition
 
@@ -126,6 +126,8 @@ class MainWindow(MSFluentWindow):
 
     def show_notification(self, message, title=None, error=False, tray=False):
         bar = InfoBar.error if error else InfoBar.info
+        title = QCoreApplication.translate('app', title)
+        message = QCoreApplication.translate('app', message)
         if title is None:
             title = f"{self.tr('Error') if error else 'Info'}:"
         bar(

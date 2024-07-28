@@ -829,5 +829,9 @@
         <source>Install dir {path} must be an English path, move to another path.</source>
         <translation>安装目录{path}必须是英文目录，请移动到英文目录。</translation>
     </message>
+    <message>
+        <source>Paused because game exited</source>
+        <translation>已暂停：游戏已经退出！</translation>
+    </message>
 </context>
 </TS>

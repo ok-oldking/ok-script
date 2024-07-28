@@ -7,6 +7,7 @@ import psutil
 import win32process
 from win32 import win32gui
 
+import ok.gui
 from ok.capture.windows.window import is_foreground_window, get_window_bounds
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
@@ -100,6 +101,8 @@ class HwndWindow:
                             cropped_window_height = int(width / self.frame_aspect_ratio)
                             height = cropped_window_height
                 else:
+                    ok.gui.executor.pause()
+                    communicate.notification.emit('Paused because game exited', None, True, True)
                     self.hwnd = None
                 changed = False
                 if visible != self.visible:
