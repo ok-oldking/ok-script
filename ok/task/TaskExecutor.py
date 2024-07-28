@@ -295,16 +295,13 @@ class TaskExecutor:
             except Exception as e:
                 if isinstance(e, CaptureException):
                     communicate.capture_error.emit()
-                name = ""
-                if self.current_task is not None:
-                    name = self.current_task.name
-                    if not isinstance(self.current_task, TriggerTask):
-                        self.current_task.disable()
+                name = task.name
+                task.disable()
+                communicate.notification.emit(str(e), name, True, True)
                 logger.error(f"{name} exception", e)
                 if self._frame is not None:
                     communicate.screenshot.emit(self.frame, name)
                 self.current_task = None
-                communicate.notification.emit(None, str(e), True, True)
                 communicate.task.emit(None)
 
         logger.debug(f'exit_event is set, destroy all tasks')

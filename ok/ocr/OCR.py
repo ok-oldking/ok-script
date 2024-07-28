@@ -74,8 +74,8 @@ class OCR:
                 if match is not None:
                     detected_boxes = find_boxes_by_name(detected_boxes, match)
 
-            communicate.emit_draw_box("ocr", detected_boxes, "red")
-            communicate.emit_draw_box("ocr_zone", box, "blue")
+            communicate.emit_draw_box("ocr" + name if name else "", detected_boxes, "red")
+            communicate.emit_draw_box("ocr_zone" + name if name else "", box, "blue")
             if log:
                 logger.debug(
                     f"ocr_zone {box} found result: {detected_boxes}) time: {(time.time() - start):.2f} scale_factor: {scale_factor:.2f}")
