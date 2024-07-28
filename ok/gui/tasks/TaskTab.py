@@ -64,7 +64,8 @@ class TaskTab(Tab):
                 self.task_info_container.show()
             info = task.info
             self.task_info_container.titleLabel.setText(
-                self.tr('Running') + f": {ok.gui.app.tr(task.name)} {self.time_elapsed(task.start_time)}")
+                self.tr(
+                    'Running') + f": {ok.gui.app.tr(task.name)} {self.time_elapsed(task.start_time)} {ok.gui.app.tr(task.description)}")
             self.task_info_table.setRowCount(len(info))
             for row, (key, value) in enumerate(info.items()):
                 if not self.task_info_table.item(row, 0):
@@ -74,7 +75,7 @@ class TaskTab(Tab):
                 if not self.task_info_table.item(row, 1):
                     item1 = self.uneditable_item()
                     self.task_info_table.setItem(row, 1, item1)
-                self.task_info_table.item(row, 1).setText(value_to_string(value))
+                self.task_info_table.item(row, 1).setText(ok.gui.app.tr(value_to_string(value)))
 
     def uneditable_item(self):
         item = QTableWidgetItem()

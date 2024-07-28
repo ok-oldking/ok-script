@@ -137,7 +137,7 @@ class TaskExecutor:
                         logger.warning(f"captured wrong size frame: {width}x{height}")
                         self._frame = None
                     return self._frame
-            self.sleep(0.001)
+            self.sleep(0.00001)
         raise FinishedException()
 
     def is_executor_thread(self):
@@ -304,6 +304,7 @@ class TaskExecutor:
                 if self._frame is not None:
                     communicate.screenshot.emit(self.frame, name)
                 self.current_task = None
+                communicate.notification.emit(None, str(e), True, True)
                 communicate.task.emit(None)
 
         logger.debug(f'exit_event is set, destroy all tasks')
