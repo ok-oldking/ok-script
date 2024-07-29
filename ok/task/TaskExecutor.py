@@ -3,6 +3,8 @@ import threading
 import time
 from typing import Tuple
 
+from PySide6.QtCore import QCoreApplication
+
 from ok.capture.BaseCaptureMethod import CaptureException
 from ok.capture.adb.DeviceManager import DeviceManager
 from ok.config.GlobalConfig import GlobalConfig
@@ -177,6 +179,7 @@ class TaskExecutor:
                 logger.info("sleep Exit event set. Exiting early.")
                 sys.exit(0)
             if self.current_task and not self.current_task.enabled:
+                self.current_task = None
                 raise TaskDisabledException()
             if not (self.paused or (
                     self.current_task is not None and self.current_task.paused) or self.interaction is None or not self.interaction.should_capture()):
@@ -280,8 +283,8 @@ class TaskExecutor:
                     if cycled or self._frame is None:
                         self.next_frame()
                     self.current_task.run()
-                    if not isinstance(self.current_task, TriggerTask):
-                        self.current_task.disable()
+                    if not isinstance(task, TriggerTask):
+                        task.disable()
                     self.current_task = None
                     communicate.task.emit(task)
                 if self.current_task is not None:
@@ -289,6 +292,12 @@ class TaskExecutor:
                     if not isinstance(self.current_task, TriggerTask):
                         communicate.task.emit(self.current_task)
                     self.current_task = None
+            except TaskDisabledException:
+                logger.info(f"TaskDisabledException, continue {task}")
+                from ok.gui import ok
+                communicate.notification.emit(QCoreApplication.translate("app", 'Stopped'), ok.app.tr(task.name), True,
+                                              True)
+                continue
             except FinishedException:
                 logger.info(f"FinishedException, breaking")
                 break
@@ -297,7 +306,8 @@ class TaskExecutor:
                     communicate.capture_error.emit()
                 name = task.name
                 task.disable()
-                communicate.notification.emit(str(e), name, True, True)
+                from ok.gui import ok
+                communicate.notification.emit(str(e), ok.app.tr(name), True, True)
                 logger.error(f"{name} exception", e)
                 if self._frame is not None:
                     communicate.screenshot.emit(self.frame, name)

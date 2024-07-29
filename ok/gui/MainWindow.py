@@ -31,7 +31,7 @@ class MainWindow(MSFluentWindow):
         self.main_window_config = Config('main_window', {'last_version': 'v0.0.0'})
         self.original_layout = None
         self.exit_event = exit_event
-        self.start_tab = StartTab()
+        self.start_tab = StartTab(exit_event)
         self.onetime_tab = None
         self.trigger_tab = None
         self.emulator_starting_dialog = None
@@ -156,17 +156,7 @@ class MainWindow(MSFluentWindow):
             self.switchTo(self.trigger_tab)
 
     def executor_paused(self, paused):
-        if not paused:
-            InfoBar.info(
-                title="",
-                content=self.tr(
-                    "Start Success."),
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=5000,  # won't disappear automatically
-                parent=self
-            )
+        self.show_notification(self.tr("Start Success.") if not paused else self.tr("Pause Success."), tray=True)
 
     def btn_clicked(self):
         self.comm.speak.emit("Hello, PySide6 with parameters!")

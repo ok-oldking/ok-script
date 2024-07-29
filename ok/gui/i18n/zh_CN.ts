@@ -265,7 +265,12 @@
     <message>
         <location filename="../MainWindow.py" line="161"/>
         <source>Start Success.</source>
-        <translation>启动成功。</translation>
+        <translation>启动成功</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.py" line="161"/>
+        <source>Pause Success.</source>
+        <translation>暂停成功</translation>
     </message>
     <message>
         <location filename="../MainWindow.py" line="77"/>
@@ -832,6 +837,10 @@
     <message>
         <source>Paused because game exited</source>
         <translation>已暂停：游戏已经退出！</translation>
+    </message>
+    <message>
+        <source>Stopped</source>
+        <translation>已停止</translation>
     </message>
 </context>
 </TS>

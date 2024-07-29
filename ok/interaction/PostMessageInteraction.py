@@ -49,7 +49,7 @@ class PostMessageInteraction(BaseInteraction):
     def move(self, x, y, down_btn=0):
         long_pos = self.update_mouse_pos(x, y, True)
         self.post(win32con.WM_MOUSEMOVE, down_btn, long_pos)
-        logger.debug(f'move {x, y}')
+        # logger.debug(f'move {x, y}')
 
     def middle_click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01):
         super().middle_click(x, y, move_back, name, down_time)
@@ -136,7 +136,7 @@ class PostMessageInteraction(BaseInteraction):
             x, y = self.mouse_pos
         else:
             self.mouse_pos = (x, y)
-        logger.debug(f'mouse_pos: {x, y}')
+        # logger.debug(f'mouse_pos: {x, y}')
         return win32api.MAKELONG(x, y)
 
     def mouse_up(self, key="left"):

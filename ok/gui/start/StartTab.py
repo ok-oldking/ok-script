@@ -13,12 +13,12 @@ logger = get_logger(__name__)
 
 
 class StartTab(Tab):
-    def __init__(self):
+    def __init__(self, exit_event):
         super().__init__()
         self.select_hwnd_window = None
         self.device_list_row = -1
         self.capture_list_row = -1
-        self.start_card = StartCard()
+        self.start_card = StartCard(exit_event)
         self.addWidget(self.start_card)
 
         self.device_list = ListWidget()
