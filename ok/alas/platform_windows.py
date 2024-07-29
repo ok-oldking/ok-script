@@ -1,4 +1,5 @@
 import ctypes
+import os
 import subprocess
 
 from ok.alas.emulator_windows import Emulator, EmulatorInstance
@@ -51,4 +52,9 @@ def get_emulator_exe(instance: EmulatorInstance):
 
 
 def execute(command: str):
-    subprocess.Popen(command, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
+    if os.path.exists(command):
+        try:
+            subprocess.Popen(command, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
+            return True
+        except Exception as e:
+            logger.error('execute error', e)

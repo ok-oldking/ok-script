@@ -33,7 +33,9 @@ class StartController(QObject):
             path = ok.gui.device_manager.get_exe_path(device)
             if path:
                 logger.info(f"starting game {path}")
-                execute(path)
+                if not execute(path):
+                    communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
+                    return
                 wait_until = time.time() + 50
                 while not self.exit_event.is_set():
                     ok.gui.device_manager.do_refresh(True)

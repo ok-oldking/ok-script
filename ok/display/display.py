@@ -22,11 +22,16 @@ def is_night_light_enabled():
         return enabled
     except Exception as e:
         logger.error(f'is_night_light_enabled error', e)
+        return False
 
 
 def is_hdr_enabled():
-    all_monitors: list[DisplayMonitor] = get_all_display_monitors()
-    for monitor in all_monitors:
-        if monitor.is_hdr_enabled():
-            logger.info(f'is_hdr_enabled is enabled {monitor.name}')
-            return True
+    try:
+        all_monitors: list[DisplayMonitor] = get_all_display_monitors()
+        for monitor in all_monitors:
+            if monitor.is_hdr_enabled():
+                logger.info(f'is_hdr_enabled is enabled {monitor.name}')
+                return True
+    except Exception as e:
+        logger.error(f'is_hdr_enabled error', e)
+        return False
