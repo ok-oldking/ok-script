@@ -35,7 +35,8 @@ class DeviceManager:
         self.resolution_dict = {}
         if self.windows_capture_config is not None:
             self.hwnd = HwndWindow(exit_event, self.windows_capture_config.get('title'),
-                                   self.windows_capture_config.get('exe'))
+                                   self.windows_capture_config.get('exe'),
+                                   hwnd_class=self.windows_capture_config.get('hwnd_class'))
             from ok.interaction.PostMessageInteraction import PostMessageInteraction
             from ok.interaction.PyDirectInteraction import PyDirectInteraction
             self.win_interaction_class = PostMessageInteraction if self.windows_capture_config.get(
@@ -117,7 +118,9 @@ class DeviceManager:
     def update_pc_device(self):
         if self.windows_capture_config is not None:
             name, hwnd, full_path, x, y, width, height = find_hwnd(self.windows_capture_config.get('title'),
-                                                                   self.windows_capture_config.get('exe'), 0, 0)
+                                                                   self.windows_capture_config.get('exe'), 0, 0,
+                                                                   class_name=self.windows_capture_config.get(
+                                                                       'hwnd_class'))
             nick = name or self.windows_capture_config.get('exe')
             pc_device = {"address": "", "imei": 'pc', "device": "windows",
                          "model": "", "nick": nick, "width": width,
@@ -289,7 +292,8 @@ class DeviceManager:
 
     def ensure_hwnd(self, title, exe, frame_width=0, frame_height=0, player_id=-1):
         if self.hwnd is None:
-            self.hwnd = HwndWindow(self.exit_event, title, exe, frame_width, frame_height, player_id)
+            self.hwnd = HwndWindow(self.exit_event, title, exe, frame_width, frame_height, player_id,
+                                   self.windows_capture_config.get('hwnd_class'))
         else:
             self.hwnd.update_window(title, exe, frame_width, frame_height, player_id)
 

@@ -76,16 +76,17 @@ class StartController(QObject):
         if not ok.gui.device_manager.capture_method.connected():
             logger.error(f'Game window is not connected {ok.gui.device_manager.capture_method}')
             return self.tr("Game window is not connected, please select the game window and capture method.")
-        if isinstance(ok.gui.device_manager.capture_method, BaseWindowsCaptureMethod) and self.config.get('windows',
-                                                                                                          {}).get(
-            'check_hdr_and_night_light', False):
-            logger.info(f'start checking for hdr and night light')
-            from ok.display.display import is_night_light_enabled
-            if is_night_light_enabled():
-                return self.tr(f'Windows night light is enabled, please turn it off first.')
-            from ok.display.display import is_hdr_enabled
-            if is_hdr_enabled():
-                return self.tr(f'Windows HDR is enabled, please turn it off first.')
+        if isinstance(ok.gui.device_manager.capture_method, BaseWindowsCaptureMethod):
+            if self.config.get('windows', {}).get('check_hdr_and_night_light', False):
+                logger.info(f'start checking for hdr and night light')
+                from ok.display.display import is_night_light_enabled
+                if is_night_light_enabled():
+                    return self.tr(f'Windows night light is enabled, please turn it off first.')
+                from ok.display.display import is_hdr_enabled
+                if is_hdr_enabled():
+                    return self.tr(f'Windows HDR is enabled, please turn it off first.')
+            if not ok.gui.device_manager.capture_method.hwnd_window.pos_valid:
+                return self.tr(f'Game window is minimized or out of screen, please restore it first!')
         frame = self.try_capture_a_frame()
         if frame is None:
             return self.tr('Capture failed, please check game window')

@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 
 class HwndWindow:
 
-    def __init__(self, exit_event, title, exe_name=None, frame_width=0, frame_height=0, player_id=-1):
+    def __init__(self, exit_event, title, exe_name=None, frame_width=0, frame_height=0, player_id=-1, hwnd_class=None):
         super().__init__()
         self.app_exit_event = exit_event
         self.exe_name = exe_name
@@ -44,10 +44,12 @@ class HwndWindow:
         self.real_y_offset = 0
         self.scaling = 1.0
         self.frame_aspect_ratio = 0
+        self.hwnd_class = hwnd_class
+        self.pos_valid = False
+        self._hwnd_title = ""
         self.update_window(title, exe_name, frame_width, frame_height)
         self.thread = threading.Thread(target=self.update_window_size, name="update_window_size")
         self.thread.start()
-        self._hwnd_title = ""
 
     def stop(self):
         self.stop_event.set()
@@ -84,7 +86,7 @@ class HwndWindow:
                 name, self.hwnd, self.exe_full_path, self.real_x_offset, self.real_y_offset, self.real_width, self.real_height = find_hwnd(
                     self.title,
                     self.exe_name,
-                    self.frame_width, self.frame_height, player_id=self.player_id)
+                    self.frame_width, self.frame_height, player_id=self.player_id, class_name=self.hwnd_class)
                 if self.hwnd is not None:
                     logger.info(
                         f'found hwnd {self.hwnd} {self.exe_full_path} {win32gui.GetClassName(self.hwnd)} real:{self.real_x_offset},{self.real_y_offset},{self.real_width},{self.real_height}')
@@ -100,6 +102,14 @@ class HwndWindow:
                         if window_ratio < self.frame_aspect_ratio:
                             cropped_window_height = int(width / self.frame_aspect_ratio)
                             height = cropped_window_height
+                    pos_valid = check_pos(x, y, width, height)
+                    if not pos_valid and pos_valid != self.pos_valid and ok.gui.executor is not None:
+                        ok.gui.executor.pause()
+                        logger.error(f'ok.gui.executor.pause pos_invalid: {x, y, width, height}')
+                        communicate.notification.emit('Paused because game window is minimized or out of screen!', None,
+                                                      True, True)
+                    if pos_valid != self.pos_valid:
+                        self.pos_valid = pos_valid
                 else:
                     ok.gui.executor.pause()
                     communicate.notification.emit('Paused because game exited', None, True, True)
@@ -140,14 +150,18 @@ class HwndWindow:
         return f"title_{self.title}_{self.exe_name}_{self.width}x{self.height}_{self.hwnd}_{self.exists}_{self.visible}"
 
 
-def find_hwnd(title, exe_name, frame_width, frame_height, player_id=-1):
+def check_pos(x, y, width, height):
+    return x >= 0 and y >= 0 and width >= 0 and height >= 0
+
+
+def find_hwnd(title, exe_name, frame_width, frame_height, player_id=-1, class_name=None):
     results = []
     if exe_name is None and title is None:
         return None, None, None, 0, 0, 0, 0
     frame_aspect_ratio = frame_width / frame_height if frame_height != 0 else 0
 
     def callback(hwnd, lParam):
-        if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
+        if win32gui.IsWindow(hwnd) and win32gui.IsWindowEnabled(hwnd) and win32gui.IsWindowVisible(hwnd):
             text = win32gui.GetWindowText(hwnd)
             if title:
                 if isinstance(title, str):
@@ -169,11 +183,15 @@ def find_hwnd(title, exe_name, frame_width, frame_height, player_id=-1):
                     logger.debug(
                         f'player id check failed,cmdline {cmdline} {get_player_id_from_cmdline(cmdline)} != {player_id}')
                     return True
+            if class_name is not None:
+                if win32gui.GetClassName(hwnd) != class_name:
+                    return True
             results.append(ret)
         return True
 
     win32gui.EnumWindows(callback, None)
     if len(results) > 0:
+        logger.info(f'find_hwnd {results}')
         biggest = None
         for result in results:
             if biggest is None or (result[2] * result[3]) > biggest[2] * biggest[3]:
@@ -252,12 +270,3 @@ def get_exe_by_hwnd(hwnd):
     except Exception as e:
         logger.error('get_exe_by_hwnd error', e)
         return None, None, None
-
-
-if __name__ == '__main__':
-    print(find_hwnd("MuMu模拟器12", None))
-    # hwnd_window = HwndWindow(threading.Event(), None, 'D:\\MuMuPlayer-12.0\\shell\\MuMuPlayer.exe', 16, 9)
-    # from ok.capture.windows.BitBltCaptureMethod import BitBltCaptureMethod
-    #
-    # method = BitBltCaptureMethod(hwnd_window)
-    # method.get_frame()
