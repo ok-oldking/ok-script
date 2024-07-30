@@ -122,7 +122,7 @@ class PyDirectInteraction(BaseInteraction):
             pydirectinput.moveTo(x, y)
         pydirectinput.mouseDown()
 
-    def mouse_up(self):
+    def mouse_up(self, key=None):
         if not self.capture.clickable():
             logger.info(f"window in background, not clickable")
             return
