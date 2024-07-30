@@ -105,7 +105,7 @@ class Analytics:
 
         logger.info(f'send report {params}')
 
-        response = requests.post(self.report_url, json=params)
+        response = requests.post(self.report_url, json=params, timeout=10)
 
         if response.status_code == 200:
             logger.debug(f'Successfully send report')

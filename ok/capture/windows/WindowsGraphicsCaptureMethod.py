@@ -159,11 +159,13 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 if WINDOWS_BUILD_NUMBER >= WGC_NO_BORDER_MIN_BUILD:
                     self.session.IsBorderRequired = False
                 self.session.StartCapture()
+                return True
             except Exception as e:
                 logger.error(f'start_or_stop failed: {self.hwnd_window}', exception=e)
+                return False
         elif not self.hwnd_window.exists and self.frame_pool is not None:
             self.close()
-
+            return False
         return self.hwnd_window.exists
 
     def create_device(self):

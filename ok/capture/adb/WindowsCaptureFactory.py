@@ -40,7 +40,8 @@ def get_win_graphics_capture(capture_method, hwnd):
         from ok.capture.windows.WindowsGraphicsCaptureMethod import WindowsGraphicsCaptureMethod
         target_method = WindowsGraphicsCaptureMethod
         capture_method = get_capture(capture_method, target_method, hwnd)
-        return capture_method
+        if capture_method.start_or_stop():
+            return capture_method
 
 
 def get_capture(capture_method, target_method, hwnd):
