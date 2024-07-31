@@ -112,7 +112,7 @@ class PyDirectInteraction(BaseInteraction):
         if current_x != -1 and current_y != -1:
             pydirectinput.moveTo(current_x, current_y)
 
-    def mouse_down(self, x=-1, y=-1, name=None):
+    def mouse_down(self, x=-1, y=-1, name=None, key="left"):
         if not self.capture.clickable():
             logger.info(f"window in background, not clickable")
             return
@@ -120,13 +120,19 @@ class PyDirectInteraction(BaseInteraction):
             x, y = self.capture.get_abs_cords(x, y)
             logger.info(f"left_click {x, y}")
             pydirectinput.moveTo(x, y)
-        pydirectinput.mouseDown()
+        button = self.get_mouse_button(key)
+        pydirectinput.mouseDown(button=button)
 
-    def mouse_up(self):
+    def get_mouse_button(self, key):
+        button = pydirectinput.LEFT if key == "left" else pydirectinput.RIGHT
+        return button
+
+    def mouse_up(self, key="left"):
         if not self.capture.clickable():
             logger.info(f"window in background, not clickable")
             return
-        pydirectinput.mouseUp()
+        button = self.get_mouse_button(key)
+        pydirectinput.mouseUp(button=button)
 
     def should_capture(self):
         return self.capture.clickable()
