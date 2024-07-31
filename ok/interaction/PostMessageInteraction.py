@@ -24,6 +24,7 @@ class PostMessageInteraction(BaseInteraction):
         return self.hwnd_window.hwnd
 
     def send_key(self, key, down_time=0.01):
+        super().send_key(key, down_time)
         self.send_key_down(key)
         time.sleep(down_time)
         self.send_key_up(key)
@@ -108,8 +109,8 @@ class PostMessageInteraction(BaseInteraction):
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01):
         super().click(x, y, name=name)
-        self.move(x, y)
-        long_position = self.update_mouse_pos(x, y, activate=False)
+        # self.move(x, y)
+        long_position = self.update_mouse_pos(x, y, activate=True)
         # self.move(x, y)
         self.post(win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, long_position
                   )

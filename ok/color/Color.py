@@ -55,17 +55,32 @@ def get_mask_in_color_range(image, color_range):
     return mask, pixel_count
 
 
-def get_connected_area_by_color(image, color_range, connectivity=4):
+def get_connected_area_by_color(image, color_range, connectivity=4, gray_range=0):
     lower_bound, upper_bound = color_range_to_bound(color_range)
 
     # Create mask
     mask = cv2.inRange(image, lower_bound, upper_bound)
+    if gray_range > 0:
+        # Ensure the difference between R, G, and B values is within 10
+        # Calculate the absolute differences between the channels
+        diff_rg = np.abs(image[:, :, 0] - image[:, :, 1])
+        diff_gb = np.abs(image[:, :, 1] - image[:, :, 2])
+        diff_br = np.abs(image[:, :, 2] - image[:, :, 0])
+
+        # Create a mask where the differences are within the range of 10
+        gray_mask = (diff_rg <= 10) & (diff_gb <= 10) & (diff_br <= 10)
+
+        # Convert the mask to uint8 type
+        gray_mask = mask.astype(np.uint8) * 255
+
+        # Combine the masks
+        mask = mask & gray_mask
 
     # Find connected components
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=connectivity)
 
     # Print the area of each connected component
-    return num_labels, stats
+    return num_labels, stats, labels
 
 
 def color_range_to_bound(color_range):
