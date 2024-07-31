@@ -139,8 +139,10 @@ class MainWindow(MSFluentWindow):
             duration=5000,  # won't disappear automatically
             parent=self.window()
         )
+
         if tray:
-            self.tray.showMessage(title, message)
+            self.tray.showMessage(title, message, QSystemTrayIcon.Critical if error else QSystemTrayIcon.Information,
+                                  5000)
 
     def capture_error(self):
         self.show_notification(self.tr('Please check whether the game window is selected correctly!'),

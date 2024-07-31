@@ -253,22 +253,22 @@
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="146"/>
+        <location filename="../MainWindow.py" line="148"/>
         <source>Please check whether the game window is selected correctly!</source>
         <translation>请检查游戏窗口是否正确选择</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="147"/>
+        <location filename="../MainWindow.py" line="149"/>
         <source>Capture Error</source>
         <translation>截图错误</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="159"/>
+        <location filename="../MainWindow.py" line="161"/>
         <source>Start Success.</source>
         <translation>启动成功</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="159"/>
+        <location filename="../MainWindow.py" line="161"/>
         <source>Pause Success.</source>
         <translation>暂停成功</translation>
     </message>
@@ -529,92 +529,96 @@
 <context>
     <name>StartController</name>
     <message>
-        <location filename="../StartController.py" line="37"/>
+        <location filename="../StartController.py" line="38"/>
         <source>Start game failed, please start game first</source>
         <translation>启动游戏失败, 请先手动启动游戏!</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="48"/>
+        <location filename="../StartController.py" line="49"/>
         <source>Start game timeout!</source>
         <translation>启动超时!</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="54"/>
+        <location filename="../StartController.py" line="55"/>
         <source>Game path does not exist, Please open game manually!</source>
         <translation>无法启动游戏, 请手动打开游戏</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="71"/>
+        <location filename="../StartController.py" line="72"/>
         <source>No game selected!</source>
         <translation>未选择游戏窗口</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="73"/>
+        <location filename="../StartController.py" line="74"/>
         <source>Selected capture method is not supported by the game or your system!</source>
         <translation>当前游戏或模拟器不支持选择的截图方式!</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="76"/>
+        <location filename="../StartController.py" line="77"/>
         <source>Emulator is not connected, start the emulator first!</source>
         <translation>模拟器未连接, 请先启动!</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="79"/>
+        <location filename="../StartController.py" line="80"/>
         <source>Game window is not connected, please select the game window and capture method.</source>
         <translation>游戏窗口未连接，请选择游戏窗口和截图方式。</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="85"/>
+        <location filename="../StartController.py" line="86"/>
         <source>Windows night light is enabled, please turn it off first.</source>
         <translation>Windows显示设置夜灯/护眼模式已打开, 请先关闭!</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="88"/>
         <source>Windows HDR is enabled, please turn it off first.</source>
-        <translation>Windows显示设置HDR已打开, 请先关闭!</translation>
+        <translation type="vanished">Windows显示设置HDR已打开, 请先关闭!</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="90"/>
+        <location filename="../StartController.py" line="88"/>
+        <source>Windows HDR is enabled, tasks might not work correctly!</source>
+        <translation>Windows显示设置HDR已打开, 可能导致任务运行异常!</translation>
+    </message>
+    <message>
+        <location filename="../StartController.py" line="92"/>
         <source>Game window is minimized or out of screen, please restore it first!</source>
         <translation>游戏窗口最小化或者部分在屏幕外,请先恢复!</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="93"/>
+        <location filename="../StartController.py" line="95"/>
         <source>Capture failed, please check game window</source>
         <translation>截图失败,请检查游戏窗口</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="96"/>
+        <location filename="../StartController.py" line="98"/>
         <source>Image resource load failed, please try install again.(Don&apos;t put the app in Downloads folder)</source>
         <translation>模板图片加载失败,请重新安装.(不要放在下载目录等可能会被自动删除图片的目录.)</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="103"/>
+        <location filename="../StartController.py" line="105"/>
         <source>Game resolution {resolution} is not supported</source>
         <translation>不支持当前分辨率{resolution}</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="105"/>
+        <location filename="../StartController.py" line="107"/>
         <source>, the supported ratio is {supported_ratio}</source>
         <translation>支持的窗口比例是{supported_ratio}</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="107"/>
+        <location filename="../StartController.py" line="109"/>
         <source>, the supported min resolution is {min_size}</source>
         <translation>, 支持的最小分辨率是  {min_size}</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="110"/>
+        <location filename="../StartController.py" line="112"/>
         <source>, check if game windows is minimized, resized or out of screen.</source>
         <translation>, 确认游戏窗口是否被拉伸,隐藏,或者在屏幕外.</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="114"/>
+        <location filename="../StartController.py" line="116"/>
         <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
         <translation>PC版需要管理员权限，请以管理员权限重启此应用！</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="121"/>
+        <location filename="../StartController.py" line="123"/>
         <source>Can&apos;t start game, make sure the game is installed</source>
         <translation>无法启动游戏, 请确认游戏已安装!</translation>
     </message>

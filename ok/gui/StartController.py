@@ -6,6 +6,7 @@ import ok.gui
 from ok.alas.platform_windows import execute
 from ok.capture.windows.BaseWindowsCaptureMethod import BaseWindowsCaptureMethod
 from ok.gui.Communicate import communicate
+from ok.gui.util.Alert import alert_error
 from ok.interaction.PyDirectInteraction import is_admin
 from ok.logging.Logger import get_logger
 from ok.util.Handler import Handler
@@ -84,7 +85,8 @@ class StartController(QObject):
                     return self.tr(f'Windows night light is enabled, please turn it off first.')
                 from ok.display.display import is_hdr_enabled
                 if is_hdr_enabled():
-                    return self.tr(f'Windows HDR is enabled, please turn it off first.')
+                    alert_error(self.tr('Windows HDR is enabled, tasks might not work correctly!'), True)
+                    # return self.tr(f'Windows HDR is enabled, please turn it off first.')
             if not ok.gui.device_manager.capture_method.hwnd_window.pos_valid:
                 return self.tr(f'Game window is minimized or out of screen, please restore it first!')
         frame = self.try_capture_a_frame()
