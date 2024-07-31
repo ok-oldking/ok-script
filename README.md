@@ -17,5 +17,7 @@
 
 自动战斗, 自动刷声骸, 跳过剧情等[ok-ww](https://github.com/ok-oldking/ok-wuthering-waves)
 
-## Tasks
+## 使用
+
+由于目前没有文档以及修改比较频繁, 推荐fork一个版本, 然后软连接到你项目的ok目录进行使用
 
