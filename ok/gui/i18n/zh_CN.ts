@@ -850,15 +850,15 @@
     </message>
     <message>
         <source>Paused because game window is minimized or out of screen!</source>
-        <translation type="vanished">已暂停：游戏窗口最小化或者部分在屏幕外！</translation>
+        <translation>已暂停：游戏窗口最小化或者部分在屏幕外！</translation>
     </message>
     <message>
         <source>Paused because game exited</source>
-        <translation type="vanished">已暂停：游戏已经退出！</translation>
+        <translation>已暂停：游戏已经退出！</translation>
     </message>
     <message>
         <source>Stopped</source>
-        <translation type="vanished">已停止</translation>
+        <translation>已停止</translation>
     </message>
 </context>
 </TS>

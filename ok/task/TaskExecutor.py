@@ -193,11 +193,12 @@ class TaskExecutor:
         if task is not None:
             if self.current_task != task:
                 raise Exception(f"Can only pause current task {self.current_task}")
-        else:
+        elif not self.paused:
             self.paused = True
             communicate.executor_paused.emit(self.paused)
-        self.reset_scene()
-        self.pause_start = time.time()
+            self.reset_scene()
+            self.pause_start = time.time()
+            return True
 
     def start(self):
         if self.paused:

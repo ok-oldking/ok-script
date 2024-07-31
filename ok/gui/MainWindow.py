@@ -158,7 +158,7 @@ class MainWindow(MSFluentWindow):
             self.switchTo(self.trigger_tab)
 
     def executor_paused(self, paused):
-        self.show_notification(self.tr("Start Success.") if not paused else self.tr("Pause Success."), tray=True)
+        self.show_notification(self.tr("Start Success.") if not paused else self.tr("Pause Success."))
 
     def btn_clicked(self):
         self.comm.speak.emit("Hello, PySide6 with parameters!")

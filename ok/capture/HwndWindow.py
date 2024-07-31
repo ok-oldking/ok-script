@@ -4,6 +4,7 @@ import threading
 import time
 
 import psutil
+import win32api
 import win32process
 from win32 import win32gui
 
@@ -47,6 +48,7 @@ class HwndWindow:
         self.hwnd_class = hwnd_class
         self.pos_valid = False
         self._hwnd_title = ""
+        self.monitors_bounds = get_monitors_bounds()
         self.update_window(title, exe_name, frame_width, frame_height)
         self.thread = threading.Thread(target=self.update_window_size, name="update_window_size")
         self.thread.start()
@@ -102,12 +104,13 @@ class HwndWindow:
                         if window_ratio < self.frame_aspect_ratio:
                             cropped_window_height = int(width / self.frame_aspect_ratio)
                             height = cropped_window_height
-                    pos_valid = check_pos(x, y, width, height)
+                    pos_valid = check_pos(x, y, width, height, self.monitors_bounds)
                     if not pos_valid and pos_valid != self.pos_valid and ok.gui.executor is not None:
-                        ok.gui.executor.pause()
-                        logger.error(f'ok.gui.executor.pause pos_invalid: {x, y, width, height}')
-                        communicate.notification.emit('Paused because game window is minimized or out of screen!', None,
-                                                      True, True)
+                        if ok.gui.executor.pause():
+                            logger.error(f'ok.gui.executor.pause pos_invalid: {x, y, width, height}')
+                            communicate.notification.emit('Paused because game window is minimized or out of screen!',
+                                                          None,
+                                                          True, True)
                     if pos_valid != self.pos_valid:
                         self.pos_valid = pos_valid
                 else:
@@ -150,8 +153,32 @@ class HwndWindow:
         return f"title_{self.title}_{self.exe_name}_{self.width}x{self.height}_{self.hwnd}_{self.exists}_{self.visible}"
 
 
-def check_pos(x, y, width, height):
-    return x >= 0 and y >= 0 and width >= 0 and height >= 0
+def check_pos(x, y, width, height, monitors_bounds):
+    return width >= 0 and height >= 0 and is_window_in_screen_bounds(x, y, width, height, monitors_bounds)
+
+
+def get_monitors_bounds():
+    monitors_bounds = []
+    monitors = win32api.EnumDisplayMonitors()
+    for monitor in monitors:
+        monitor_info = win32api.GetMonitorInfo(monitor[0])
+        monitor_rect = monitor_info['Monitor']
+        monitors_bounds.append(monitor_rect)
+    return monitors_bounds
+
+
+def is_window_in_screen_bounds(window_left, window_top, window_width, window_height, monitors_bounds):
+    window_right, window_bottom = window_left + window_width, window_top + window_height
+
+    for monitor_rect in monitors_bounds:
+        monitor_left, monitor_top, monitor_right, monitor_bottom = monitor_rect
+
+        # Check if the window is within the monitor bounds
+        if (window_left >= monitor_left and window_top >= monitor_top and
+                window_right <= monitor_right and window_bottom <= monitor_bottom):
+            return True
+
+    return False
 
 
 def find_hwnd(title, exe_name, frame_width, frame_height, player_id=-1, class_name=None):
