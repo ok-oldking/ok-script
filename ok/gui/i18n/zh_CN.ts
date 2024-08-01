@@ -180,7 +180,7 @@
     <name>GlobalConfigCard</name>
     <message>
         <source>Reset Config</source>
-        <translation type="vanished">重置配置</translation>
+        <translation>重置配置</translation>
     </message>
 </context>
 <context>
@@ -336,19 +336,19 @@
     <name>OneTimeTaskTab</name>
     <message>
         <source>Choose Window</source>
-        <translation type="vanished">选择窗口</translation>
+        <translation>选择窗口</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation type="vanished">信息</translation>
+        <translation>信息</translation>
     </message>
     <message>
         <source>Value</source>
-        <translation type="vanished">值</translation>
+        <translation>值</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="vanished">运行中</translation>
+        <translation>运行中</translation>
     </message>
 </context>
 <context>
@@ -375,7 +375,7 @@
     <name>SettingTab</name>
     <message>
         <source>Settings</source>
-        <translation type="vanished">设置</translation>
+        <translation>设置</translation>
     </message>
     <message>
         <location filename="../settings/SettingTab.py" line="24"/>
@@ -425,31 +425,31 @@
     </message>
     <message>
         <source>Set your preferred language for UI</source>
-        <translation type="vanished">设置UI的首选语言</translation>
+        <translation>设置UI的首选语言</translation>
     </message>
     <message>
         <source>About</source>
-        <translation type="vanished">关于</translation>
+        <translation>关于</translation>
     </message>
     <message>
         <source>Open help page</source>
-        <translation type="vanished">打开帮助页面</translation>
+        <translation>打开帮助页面</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="vanished">帮助</translation>
+        <translation>帮助</translation>
     </message>
     <message>
         <source>Discover new features and learn useful tips about PyQt-Fluent-Widgets</source>
-        <translation type="vanished">发现新功能并学习有关PyQt-Fluent-Widgets的有用提示</translation>
+        <translation>发现新功能并学习有关PyQt-Fluent-Widgets的有用提示</translation>
     </message>
     <message>
         <source>Check update</source>
-        <translation type="vanished">检查更新</translation>
+        <translation>检查更新</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="vanished">版本</translation>
+        <translation>版本</translation>
     </message>
     <message>
         <location filename="../settings/SettingTab.py" line="86"/>
@@ -569,8 +569,13 @@
         <translation>Windows显示设置夜灯/护眼模式已打开, 请先关闭!</translation>
     </message>
     <message>
+        <location filename="../StartController.py" line="105"/>
+        <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
+        <translation>分辨率{resolution}检查失败, 部分任务可能无法正常运行!</translation>
+    </message>
+    <message>
         <source>Windows HDR is enabled, please turn it off first.</source>
-        <translation type="vanished">Windows显示设置HDR已打开, 请先关闭!</translation>
+        <translation>Windows显示设置HDR已打开, 请先关闭!</translation>
     </message>
     <message>
         <location filename="../StartController.py" line="88"/>
@@ -593,32 +598,30 @@
         <translation>模板图片加载失败,请重新安装.(不要放在下载目录等可能会被自动删除图片的目录.)</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="105"/>
         <source>Game resolution {resolution} is not supported</source>
         <translation>不支持当前分辨率{resolution}</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="107"/>
+        <location filename="../StartController.py" line="108"/>
         <source>, the supported ratio is {supported_ratio}</source>
         <translation>支持的窗口比例是{supported_ratio}</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="109"/>
+        <location filename="../StartController.py" line="110"/>
         <source>, the supported min resolution is {min_size}</source>
         <translation>, 支持的最小分辨率是  {min_size}</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="112"/>
         <source>, check if game windows is minimized, resized or out of screen.</source>
         <translation>, 确认游戏窗口是否被拉伸,隐藏,或者在屏幕外.</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="116"/>
+        <location filename="../StartController.py" line="117"/>
         <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
         <translation>PC版需要管理员权限，请以管理员权限重启此应用！</translation>
     </message>
     <message>
-        <location filename="../StartController.py" line="123"/>
+        <location filename="../StartController.py" line="124"/>
         <source>Can&apos;t start game, make sure the game is installed</source>
         <translation>无法启动游戏, 请确认游戏已安装!</translation>
     </message>
@@ -718,7 +721,7 @@
     <name>TaskCard</name>
     <message>
         <source>Reset Config</source>
-        <translation type="vanished">重置配置</translation>
+        <translation>重置配置</translation>
     </message>
     <message>
         <location filename="../tasks/TaskCard.py" line="24"/>

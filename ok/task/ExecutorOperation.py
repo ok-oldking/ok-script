@@ -4,6 +4,7 @@ from typing import List
 from ok.color.Color import calculate_color_percentage
 from ok.config.ConfigOption import ConfigOption
 from ok.feature.Box import Box, find_box_by_name, relative_box
+from ok.feature.FeatureSet import adjust_coordinates
 from ok.gui.Communicate import communicate
 
 
@@ -150,11 +151,38 @@ class ExecutorOperation:
             self.click_box(to_click, relative_x, relative_y)
             return to_click
 
-    def box_of_screen(self, x, y, to_x: float = 1, to_y: float = 1, width: float = 0, height: float = 0, name=None):
+    def box_of_screen(self, x, y, to_x: float = 1, to_y: float = 1, width: float = 0, height: float = 0, name=None,
+                      hcenter=False):
         if name is None:
             name = f"{x} {y} {width} {height}"
-        return relative_box(self.executor.method.width, self.executor.method.height, x, y,
-                            to_x=to_x, to_y=to_y, width=width, height=height, name=name)
+        if self.out_of_ratio():
+            should_width = self.executor.device_manager.supported_ratio * self.height
+            return self.box_of_screen_scaled(should_width, self.height,
+                                             x_original=x * should_width,
+                                             y_original=self.height * y,
+                                             to_x=to_x * should_width,
+                                             to_y=to_y * self.height, width_original=width * should_width,
+                                             height_original=self.height * height,
+                                             name=name, hcenter=hcenter)
+        else:
+            return relative_box(self.executor.method.width, self.executor.method.height, x, y,
+                                to_x=to_x, to_y=to_y, width=width, height=height, name=name)
+
+    def out_of_ratio(self):
+        return self.executor.device_manager.supported_ratio and abs(
+            self.width / self.height - self.executor.device_manager.supported_ratio) > 0.01
+
+    def box_of_screen_scaled(self, original_screen_width, original_screen_height, x_original, y_original,
+                             to_x: int = 0, to_y: int = 0, width_original=0, height_original=0,
+                             name=None, hcenter=False):
+        if width_original == 0:
+            width_original = to_x - x_original
+        if height_original == 0:
+            height_original = to_y - y_original
+        x, y, w, h, scale = adjust_coordinates(x_original, y_original, width_original, height_original,
+                                               self.screen_width, self.screen_height, original_screen_width,
+                                               original_screen_height, hcenter=hcenter)
+        return Box(x, y, w, h, name=name)
 
     def height_of_screen(self, percent):
         return int(percent * self.executor.method.height)
@@ -170,8 +198,16 @@ class ExecutorOperation:
     def width_of_screen(self, percent):
         return int(percent * self.executor.method.width)
 
-    def click_relative(self, x, y, move_back=False):
-        self.click(int(self.width * x), int(self.height * y), move_back, name=f'relative({x:.2f}, {y:.2f})')
+    def click_relative(self, x, y, move_back=False, hcenter=False):
+        if self.out_of_ratio():
+            should_width = self.executor.device_manager.supported_ratio * self.height
+            x, y, w, h, scale = adjust_coordinates(x * should_width, y * self.height, 0, 0,
+                                                   self.screen_width, self.screen_height, should_width,
+                                                   self.height, hcenter=hcenter)
+        else:
+            x, y = int(self.width * x), int(self.height * y)
+
+        self.click(x, y, move_back, name=f'relative({x:.2f}, {y:.2f})')
 
     def middle_click_relative(self, x, y, move_back=False):
         self.middle_click(int(self.width * x), int(self.height * y), move_back,

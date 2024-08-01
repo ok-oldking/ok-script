@@ -102,14 +102,15 @@ class StartController(QObject):
         supported, resolution = ok.gui.executor.check_frame_and_resolution(supported_ratio, min_size)
         if not supported:
             error = self.tr(
-                "Game resolution {resolution} is not supported").format(resolution=resolution)
+                'Resolution {resolution} check failed, some tasks might not work correctly!').format(
+                resolution=resolution)
             if supported_ratio:
                 error += self.tr(', the supported ratio is {supported_ratio}').format(supported_ratio=supported_ratio)
             if min_size:
                 error += self.tr(', the supported min resolution is {min_size}').format(
                     min_size=f'{min_size[0]}x{min_size[1]}')
-            error += self.tr(', check if game windows is minimized, resized or out of screen.')
-            return error
+            alert_error(error, True)
+            # return error
         if device and device['device'] == "windows" and not is_admin():
             return self.tr(
                 f"PC version requires admin privileges, Please restart this app with admin privileges!")

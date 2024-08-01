@@ -221,7 +221,7 @@ class FeatureSet:
         locations = filter_and_sort_matches(result, threshold, feature_width, feature_height)
         boxes = []
 
-        for loc in locations:  # Iterate through found locations            
+        for loc in locations:  # Iterate through found locations
             x, y = loc[0][0] + search_x1, loc[0][1] + search_y1
             confidence = 1.0 if math.isinf(loc[1]) and loc[1] > 0 else loc[1]
             boxes.append(Box(x, y, feature_width, feature_height, confidence, category_name))
@@ -262,12 +262,7 @@ def read_from_json(coco_json, width=-1, height=-1):
             logger.error(f'Could not read image {image_path}')
             continue
         _, original_width = whole_image.shape[:2]
-
-        if width != -1 and height != -1 and (width != whole_image.shape[1] or height != whole_image.shape[0]):
-            scale_x, scale_y = width / whole_image.shape[1], height / whole_image.shape[0]
-            logger.debug(f'scaling images {scale_x}, {scale_y} to {width}x{height}')
-        else:
-            scale_x, scale_y = 1, 1
+        image_height, image_width = whole_image.shape[:2]
 
         for annotation in data['annotations']:
             if image_id != annotation['image_id']:
@@ -281,23 +276,64 @@ def read_from_json(coco_json, width=-1, height=-1):
             image = whole_image[round(y):round(y + h), round(x):round(x + w), :3]
 
             x, y = round(x), round(y)
-            h, w, *_ = image.shape
+            h, w, _ = image.shape
             # Calculate the scaled bounding box
-            x, y, w, h = round(x * scale_x), round(y * scale_y), round(w * scale_x), round(h * scale_y)
-
-            image = cv2.resize(image, (w, h))
 
             # Store in featureDict using the category name
             category_name = category_map[category_id]
+
+            x, y, w, h, scale = adjust_coordinates(x, y, w, h, width, height, image_width, image_height,
+                                                   hcenter='hcenter' in category_name)
+
+            image = cv2.resize(image, (w, h))
+
             logger.debug(
                 f"loaded {category_name} resized width {width} / original_width:{original_width},scale_x:{width / original_width}")
             if category_name in feature_dict:
                 raise ValueError(f"Multiple boxes found for category {category_name}")
             if not category_name.startswith('box_'):
-                feature_dict[category_name] = Feature(image, x, y, scale_x)
+                feature_dict[category_name] = Feature(image, x, y, scale)
             box_dict[category_name] = Box(x, y, image.shape[1], image.shape[0], name=category_name)
 
     return feature_dict, box_dict, ok_compressed, load_success
+
+
+def adjust_coordinates(x, y, w, h, screen_width, screen_height, image_width, image_height, hcenter=False):
+    logger.debug(f'scaling images {screen_width}x{screen_height} {image_width}x{image_height} {x}, {y}, {w}, {h}')
+    if screen_width != -1 and screen_height != -1 and (screen_width != image_width or screen_height != image_height):
+        scale_x, scale_y = screen_width / image_width, screen_height / image_height
+    else:
+        scale_x, scale_y = 1, 1
+
+    scale = min(scale_x, scale_y)
+    w, h = round(w * scale), round(h * scale)
+
+    if scale_x > scale_y:
+        y = round(y * scale)
+        x = scale_by_anchor(x, image_width, screen_width, scale, hcenter=hcenter)
+    elif scale_x < scale_y:
+        x = round(x * scale)
+        y = scale_by_anchor(y, image_height, screen_height, scale, hcenter=hcenter)
+    else:
+        x, y = round(x * scale), round(y * scale)
+
+    logger.debug(f'scaled images {scale_x}, {scale_y} to {screen_width}x{screen_height} {x}, {y}, {w}, {h}')
+
+    return x, y, w, h, scale
+
+
+def scale_by_anchor(x, image_width, screen_width, scale, hcenter=False):
+    if (x + image_width) / 2 > screen_width * 0.5:
+        if hcenter:
+            x = round(screen_width * 0.5 + (x - image_width * 0.5) * scale)
+        else:
+            x = screen_width - round((image_width - x) * scale)
+    else:
+        if hcenter:
+            x = round(screen_width * 0.5 - (image_width * 0.5 - x) * scale)
+        else:
+            x = round(x * scale)
+    return x
 
 
 def replace_extension(filename):
