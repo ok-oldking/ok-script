@@ -299,7 +299,7 @@ def read_from_json(coco_json, width=-1, height=-1):
 
 
 def adjust_coordinates(x, y, w, h, screen_width, screen_height, image_width, image_height, hcenter=False):
-    logger.debug(f'scaling images {screen_width}x{screen_height} {image_width}x{image_height} {x}, {y}, {w}, {h}')
+    # logger.debug(f'scaling images {screen_width}x{screen_height} {image_width}x{image_height} {x}, {y}, {w}, {h}')
     if screen_width != -1 and screen_height != -1 and (screen_width != image_width or screen_height != image_height):
         scale_x, scale_y = screen_width / image_width, screen_height / image_height
     else:
@@ -317,7 +317,7 @@ def adjust_coordinates(x, y, w, h, screen_width, screen_height, image_width, ima
     else:
         x, y = round(x * scale), round(y * scale)
 
-    logger.debug(f'scaled images {scale_x}, {scale_y} to {screen_width}x{screen_height} {x}, {y}, {w}, {h}')
+    # logger.debug(f'scaled images {scale_x}, {scale_y} to {screen_width}x{screen_height} {x}, {y}, {w}, {h}')
 
     return x, y, w, h, scale
 
