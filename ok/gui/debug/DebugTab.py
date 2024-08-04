@@ -1,4 +1,5 @@
 import subprocess
+import time
 from ctypes import windll, wintypes
 
 from PySide6.QtCore import Qt, Signal, QCoreApplication
@@ -27,7 +28,6 @@ class DebugTab(Tab):
     def __init__(self, app_config, exit_event):
 
         super().__init__()
-
         self.config = Config('debug', {'target_task': "", 'target_images': [], 'target_function': ""}
                              )
         self.log_window_config = Config('log_window', {'width': 800, 'height': 300, 'x': 0, 'y': 0, 'keyword': '',
@@ -246,7 +246,7 @@ class DebugTab(Tab):
 def capture():
     if ok.gui.device_manager.capture_method is not None:
         logger.info(f'ok.gui.device_manager.capture_method {ok.gui.device_manager.capture_method}')
-        current_capture = str(ok.gui.device_manager.capture_method)
+        current_capture = str(ok.gui.device_manager.capture_method) + '_' + str(time.time() * 1000)
         frame = ok.gui.device_manager.capture_method.do_get_frame()
         if frame is not None:
             file_path = ok.gui.ok.screenshot.generate_screen_shot(frame, ok.gui.ok.screenshot.ui_dict,

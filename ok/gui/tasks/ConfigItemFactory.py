@@ -1,6 +1,7 @@
 from ok.gui.tasks.LabelAndDoubleSpinBox import LabelAndDoubleSpinBox
 from ok.gui.tasks.LabelAndDropDown import LabelAndDropDown
 from ok.gui.tasks.LabelAndLineEdit import LabelAndLineEdit
+from ok.gui.tasks.LabelAndMultiSelection import LabelAndMultiSelection
 from ok.gui.tasks.LabelAndSpinBox import LabelAndSpinBox
 from ok.gui.tasks.LabelAndSwitchButton import LabelAndSwitchButton
 from ok.gui.tasks.ModifyListItem import ModifyListItem
@@ -11,6 +12,10 @@ def config_widget(config_type, config_desc, config, key, value):
     if the_type:
         if the_type['type'] == 'drop_down':
             return LabelAndDropDown(config_desc, the_type['options'], config, key)
+        elif the_type['type'] == 'multi_selection':
+            return LabelAndMultiSelection(config_desc, the_type['options'], config, key)
+        else:
+            raise Exception('Unknown config type')
     if isinstance(value, bool):
         return LabelAndSwitchButton(config_desc, config, key)
     elif isinstance(value, list):

@@ -115,8 +115,8 @@ class StartCard(SettingCard):
         self.handler.post(self.check_hotkey, 0.1)
 
     def bind_hot_keys(self):
-        VK_F10 = 0x78
+        VK_F9 = 0x78
 
-        if not windll.user32.RegisterHotKey(None, 999, 0, VK_F10):
-            logger.debug("Failed to register hotkey for Alt+Ctrl+D")
-        logger.debug('bind_hot_keys')
+        if not windll.user32.RegisterHotKey(None, 999, 0, VK_F9):
+            logger.error("start card Failed to register hotkey for VK_F9")
+        logger.debug('start card bind_hot_keys')

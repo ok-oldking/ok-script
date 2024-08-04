@@ -107,10 +107,12 @@ class PostMessageInteraction(BaseInteraction):
     def activate(self):
         self.post(win32con.WM_ACTIVATE, win32con.WA_ACTIVE, 0)
 
-    def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01):
+    def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01, move=True):
         super().click(x, y, name=name)
-        # self.move(x, y)
-        long_position = self.update_mouse_pos(x, y, activate=True)
+        if move:
+            self.move(x, y)
+            time.sleep(down_time)
+        long_position = self.update_mouse_pos(x, y, activate=not move)
         # self.move(x, y)
         self.post(win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, long_position
                   )
