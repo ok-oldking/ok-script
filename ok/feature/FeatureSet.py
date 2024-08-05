@@ -129,7 +129,7 @@ class FeatureSet:
     def find_feature(self, mat: np.ndarray, category_name: str, horizontal_variance: float = 0,
                      vertical_variance: float = 0, threshold: float = 0, use_gray_scale: bool = False, x=-1, y=-1,
                      to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0, canny_higher=0,
-                     inverse_mask_color=None, frame_processor=None, template=None) -> List[Box]:
+                     inverse_mask_color=None, frame_processor=None, template=None, mask_function=None) -> List[Box]:
         """
         Find a feature within a given variance.
 
@@ -202,15 +202,18 @@ class FeatureSet:
             if len(feature.mat.shape) != 2:
                 feature.mat = cv2.cvtColor(feature.mat, cv2.COLOR_BGR2GRAY)
                 feature.mat = cv2.Canny(feature.mat, canny_lower, canny_higher)
-        if feature.mask is None and inverse_mask_color is not None:
-            if len(feature.mat.shape) == 2:
-                gray_mask_color = rgb_to_gray(inverse_mask_color)
-                feature.mask = cv2.compare(feature.mat, gray_mask_color, cv2.CMP_NE)
-            else:
-                bound = np.array([inverse_mask_color[0], inverse_mask_color[1], inverse_mask_color[2]],
-                                 dtype=np.uint8)
-                feature.mask = cv2.inRange(feature.mat, bound, bound)
-                feature.mask = cv2.bitwise_not(feature.mask)
+        if feature.mask is None:
+            if inverse_mask_color is not None:
+                if len(feature.mat.shape) == 2:
+                    gray_mask_color = rgb_to_gray(inverse_mask_color)
+                    feature.mask = cv2.compare(feature.mat, gray_mask_color, cv2.CMP_NE)
+                else:
+                    bound = np.array([inverse_mask_color[0], inverse_mask_color[1], inverse_mask_color[2]],
+                                     dtype=np.uint8)
+                    feature.mask = cv2.inRange(feature.mat, bound, bound)
+                    feature.mask = cv2.bitwise_not(feature.mask)
+            elif mask_function is not None:
+                feature.mask = mask_function(feature.mat)
 
         if frame_processor is not None:
             search_area = frame_processor(search_area)

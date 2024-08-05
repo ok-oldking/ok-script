@@ -41,15 +41,19 @@ class ExecutorOperation:
     def reset_scene(self):
         self.executor.reset_scene()
 
-    def click(self, x: int | Box = -1, y=-1, move_back=False, name=None, interval=-1, move=True, down_time=0.01):
-        if isinstance(x, Box):
-            return self.click_box(x, move_back=move_back, down_time=down_time)
+    def click(self, x: int | Box | List[Box] = -1, y=-1, move_back=False, name=None, interval=-1, move=True,
+              down_time=0.01, after_sleep=0):
+        if isinstance(x, Box) or isinstance(x, list):
+            return self.click_box(x, move_back=move_back, down_time=down_time, after_sleep=after_sleep)
         if not self.check_interval(interval):
             self.executor.reset_scene()
             return False
         communicate.emit_draw_box("click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green",
                                   frame=self.executor.nullable_frame())
         self.executor.interaction.click(x, y, move_back, name=name, move=move, down_time=down_time)
+        if after_sleep > 0:
+            self.logger.debug(f'click after_sleep: {after_sleep}')
+            self.sleep(after_sleep)
         self.executor.reset_scene()
         return True
 
@@ -198,7 +202,7 @@ class ExecutorOperation:
     def width_of_screen(self, percent):
         return int(percent * self.executor.method.width)
 
-    def click_relative(self, x, y, move_back=False, hcenter=False, move=True):
+    def click_relative(self, x, y, move_back=False, hcenter=False, move=True, after_sleep=0):
         if self.out_of_ratio():
             should_width = self.executor.device_manager.supported_ratio * self.height
             x, y, w, h, scale = adjust_coordinates(x * should_width, y * self.height, 0, 0,
@@ -207,7 +211,7 @@ class ExecutorOperation:
         else:
             x, y = int(self.width * x), int(self.height * y)
 
-        self.click(x, y, move_back, name=f'relative({x:.2f}, {y:.2f})', move=move)
+        self.click(x, y, move_back, name=f'relative({x:.2f}, {y:.2f})', move=move, after_sleep=after_sleep)
 
     def middle_click_relative(self, x, y, move_back=False):
         self.middle_click(int(self.width * x), int(self.height * y), move_back,
@@ -229,7 +233,7 @@ class ExecutorOperation:
         self.executor.reset_scene()
 
     def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=False,
-                  move_back=False, down_time=0.01):
+                  move_back=False, down_time=0.01, after_sleep=1):
         if isinstance(box, list):
             if len(box) > 0:
                 box = box[0]
@@ -240,7 +244,7 @@ class ExecutorOperation:
                 raise Exception(f"click_box box is None")
             return
         x, y = box.relative_with_variance(relative_x, relative_y)
-        return self.click(x, y, name=box.name, move_back=move_back, down_time=down_time)
+        return self.click(x, y, name=box.name, move_back=move_back, down_time=down_time, after_sleep=after_sleep)
 
     def wait_scene(self, scene_type=None, time_out=0, pre_action=None, post_action=None):
         return self.executor.wait_scene(scene_type, time_out, pre_action, post_action)

@@ -14,12 +14,13 @@ class FindFeature:
 
     def find_feature(self, feature_name, horizontal_variance=0, vertical_variance=0, threshold=0,
                      use_gray_scale=False, x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0,
-                     canny_higher=0, inverse_mask_color=None, frame_processor=None, template=None) -> List[Box]:
+                     canny_higher=0, inverse_mask_color=None, frame_processor=None, template=None,
+                     mask_function=None) -> List[Box]:
         return self.feature_set.find_feature(self.executor.frame, feature_name, horizontal_variance, vertical_variance,
                                              threshold, use_gray_scale, x, y, to_x, to_y, width, height, box=box,
                                              canny_lower=canny_lower, canny_higher=canny_higher,
                                              inverse_mask_color=inverse_mask_color, frame_processor=frame_processor,
-                                             template=template)
+                                             template=template, mask_function=mask_function)
 
     def get_box_by_name(self, name):
         return self.feature_set.get_box_by_name(self.executor.frame, name)
@@ -70,11 +71,11 @@ class FindFeature:
 
     def find_one(self, feature_name, horizontal_variance=0, vertical_variance=0, threshold=0,
                  use_gray_scale=False, box=None, canny_lower=0, canny_higher=0, inverse_mask_color=None,
-                 frame_processor=None) -> Box:
+                 frame_processor=None, mask_function=None) -> Box:
         boxes = self.find_feature(feature_name, horizontal_variance, vertical_variance, threshold,
                                   use_gray_scale=use_gray_scale, box=box, canny_lower=canny_lower,
                                   canny_higher=canny_higher, inverse_mask_color=inverse_mask_color,
-                                  frame_processor=frame_processor)
+                                  frame_processor=frame_processor, mask_function=mask_function)
         if len(boxes) > 0:
             if len(boxes) > 1:
                 logger.warning(f"find_one:found {feature_name} too many {len(boxes)}")
