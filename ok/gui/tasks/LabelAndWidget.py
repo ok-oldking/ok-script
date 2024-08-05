@@ -18,8 +18,8 @@ class LabelAndWidget(QWidget):
             self.title_layout.addWidget(self.contentLabel)
         self.layout.addItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
-    def add_widget(self, widget: QWidget):
-        self.layout.addWidget(widget)
+    def add_widget(self, widget: QWidget, stretch=0):
+        self.layout.addWidget(widget, stretch=stretch)
 
     def add_layout(self, layout: QLayout, stretch=0):
         self.layout.addLayout(layout, stretch=stretch)

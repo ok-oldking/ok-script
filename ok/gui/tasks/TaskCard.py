@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QWidget
-from qfluentwidgets import FluentIcon, PushButton, InfoBar, InfoBarPosition, SwitchButton
+from qfluentwidgets import FluentIcon, PushButton, SwitchButton
 
 import ok.gui
 from ok.gui.Communicate import communicate
@@ -18,6 +18,7 @@ class TaskCard(ConfigCard):
 
         if onetime:
             self.task_buttons = TaskButtons(self.task)
+            self.task_buttons.start_button.clicked.connect(self.start_clicked)
             self.addWidget(self.task_buttons)
         else:
             self.enable_button = SwitchButton()
@@ -29,6 +30,9 @@ class TaskCard(ConfigCard):
         self.update_buttons(self.task)
 
         communicate.task.connect(self.update_buttons)
+
+    def start_clicked(self):
+        self.setExpand(False)
 
     def update_buttons(self, task):
         if task == self.task:
@@ -43,7 +47,7 @@ class TaskCard(ConfigCard):
         else:
             self.task.disable()
 
-    
+
 class TaskButtons(QWidget):
     def __init__(self, task):
         super().__init__()
@@ -103,24 +107,6 @@ class TaskButtons(QWidget):
 
     def start_clicked(self):
         ok.gui.app.start_controller.start(self.task)
-        return
-        if not ok.gui.executor.connected():
-            InfoBar.error(
-                title=self.tr('Error'),
-                content=self.tr(
-                    "Game window is not connected, please select the game window and capture method."),
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=5000,  # won't disappear automatically
-                parent=self.window()
-            )
-            communicate.tab.emit("start")
-            return
-        else:
-            self.task.enable()
-            self.task.unpause()
-            ok.gui.executor.start()
 
     def stop_clicked(self):
         self.task.disable()

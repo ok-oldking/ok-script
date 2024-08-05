@@ -1,9 +1,10 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QHBoxLayout
-from qfluentwidgets import FlowLayout, CheckBox
+from qfluentwidgets import CheckBox
 
 import ok.gui
 from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
+from ok.gui.widget.FlowLayout import FlowLayout
 
 
 class LabelAndMultiSelection(ConfigLabelAndWidget):
@@ -19,14 +20,14 @@ class LabelAndMultiSelection(ConfigLabelAndWidget):
             self.tr_options.append(tr)
             self.tr_dict[tr] = option
         self.content_layout = FlowLayout()
-
-        self.add_layout(self.content_layout, stretch=1)
+        # self.content_layout = QHBoxLayout()
+        self.add_widget(self.content_layout, stretch=1)
         self.check_boxes = []
         for option in self.tr_options:
             checkbox = CheckBox(option)
             checkbox.checkStateChanged.connect(self.check_changed)
             self.check_boxes.append(checkbox)
-            self.content_layout.addWidget(checkbox)
+            self.content_layout.add_widget(checkbox)
         self.update_value()
 
     def check_changed(self, checked):

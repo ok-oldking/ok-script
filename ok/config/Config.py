@@ -29,8 +29,8 @@ class Config(dict):
         if config is None:
             self.reset_to_default()
         else:
-            super().__init__(config)
-            modified = self.verify_config(default)
+            super().__init__()
+            modified = self.verify_config(config, default)
             if modified:
                 self.save_file()
         logger.debug(f'init self.config = {self}')
@@ -112,7 +112,7 @@ class Config(dict):
                 return False
         return True
 
-    def verify_config(self, default_config):
+    def verify_config(self, current, default_config):
         """
         Verify the configuration against the default configuration.
 
@@ -122,20 +122,24 @@ class Config(dict):
         modified = False
 
         # Remove entries that do not exist in default_config
-        for key in list(self.keys()):
+        for key in list(current.keys()):
             if key not in default_config:
-                del self[key]
+                del current[key]
                 modified = True
 
-        # Check entries in default_config
-        for key, default_value in default_config.items():
-            if key not in self or not isinstance(self[key], type(default_value)):
-                self[key] = default_value
+        for key in list(default_config.keys()):
+            if key not in current or not isinstance(current[key], type(default_config[key])):
+                value = default_config[key]
                 modified = True
             elif self.validator is not None:
-                valid = self.validate(key, self[key])
+                valid = self.validate(key, current[key])
                 if not valid:
-                    self[key] = default_value
+                    value = default_config[key]
                     modified = True
+                else:
+                    value = current[key]
+            else:
+                value = current[key]
+            self[key] = value
 
         return modified
