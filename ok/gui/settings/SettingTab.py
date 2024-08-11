@@ -14,12 +14,6 @@ class SettingTab(Tab):
 
     def __init__(self):
         super().__init__()
-        # self.scrollWidget = QWidget()
-        # self.scrollWidget.setObjectName('scrollWidget')
-        # self.expandLayout = ExpandLayout(self.scrollWidget)
-        # self.expandLayout.setObjectName('SettingInterface')
-
-        # personalization
         self.personalGroup = SettingCardGroup(
             self.tr('Personalization'))
         self.vBoxLayout.addWidget(self.personalGroup)
@@ -44,10 +38,9 @@ class SettingTab(Tab):
             texts=['简体中文', 'English', self.tr('Use system setting')],
             parent=self.personalGroup
         )
+
         self.app_group = None
         self.__initWidget()
-
-        # StyleSheet.SETTING_INTERFACE.apply(self)
 
     def __initWidget(self):
         # self.resize(1000, 800)

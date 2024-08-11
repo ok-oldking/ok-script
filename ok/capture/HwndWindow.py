@@ -6,21 +6,31 @@ import time
 import psutil
 import win32api
 import win32process
+from pycaw.api.audioclient import ISimpleAudioVolume
+from pycaw.utils import AudioUtilities
+from qfluentwidgets import FluentIcon
 from win32 import win32gui
 
 import ok.gui
 from ok.capture.windows.window import is_foreground_window, get_window_bounds
+from ok.config.ConfigOption import ConfigOption
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 
 logger = get_logger(__name__)
 
+mute_config_option = ConfigOption('Game Sound', {
+    'Mute Game while in Background': False
+}, icon=FluentIcon.MUTE)
+
 
 class HwndWindow:
 
-    def __init__(self, exit_event, title, exe_name=None, frame_width=0, frame_height=0, player_id=-1, hwnd_class=None):
+    def __init__(self, exit_event, title, exe_name=None, frame_width=0, frame_height=0, player_id=-1, hwnd_class=None,
+                 global_config=None):
         super().__init__()
         self.app_exit_event = exit_event
+        self.mute_option = global_config.get_config(mute_config_option)
         self.exe_name = exe_name
         self.title = title
         self.stop_event = threading.Event()
@@ -121,6 +131,7 @@ class HwndWindow:
                 if visible != self.visible:
                     self.visible = visible
                     changed = True
+                    self.handle_mute()
                 if (window_width != self.window_width or window_height != self.window_height or
                     x != self.x or y != self.y or width != self.width or height != self.height or scaling != self.scaling) and (
                         (x >= -1 and y >= -1) or self.visible):
@@ -135,6 +146,10 @@ class HwndWindow:
                                             self.height, self.scaling)
         except Exception as e:
             logger.error(f"do_update_window_size exception", e)
+
+    def handle_mute(self):
+        if self.hwnd and self.mute_option.get('Mute Game while in Background'):
+            set_mute_state(self.hwnd, 0 if self.visible else 1)
 
     def frame_ratio(self, size):
         if self.frame_width > 0 and self.width > 0:
@@ -237,6 +252,17 @@ def find_hwnd(title, exe_name, frame_width, frame_height, player_id=-1, class_na
         return biggest[6], biggest[0], biggest[1], x_offset, y_offset, real_width, real_height
 
     return None, None, None, 0, 0, 0, 0
+
+
+# Function to get the mute state
+def set_mute_state(hwnd, mute):
+    _, pid = win32process.GetWindowThreadProcessId(hwnd)
+    sessions = AudioUtilities.GetAllSessions()
+    for session in sessions:
+        if session.Process and session.Process.pid == pid:
+            volume = session._ctl.QueryInterface(ISimpleAudioVolume)
+            volume.SetMute(mute, None)  # 0 to unmute, 1 to mute
+            break
 
 
 def get_player_id_from_cmdline(cmdline):

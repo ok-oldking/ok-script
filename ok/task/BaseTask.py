@@ -32,6 +32,7 @@ class BaseTask(ExecutorOperation):
         self.trigger_interval = 0
         self.last_trigger_time = 0
         self.start_time = 0
+        self.icon = None
 
     def should_trigger(self):
         if self.trigger_interval == 0:
@@ -103,7 +104,7 @@ class BaseTask(ExecutorOperation):
                 message += str(exception)
         self.info_set("Error", message)
         if notify:
-            self.notification(message)
+            self.notification(message, error=True)
 
     def notification(self, message, title=None, error=False):
         from ok.gui import app

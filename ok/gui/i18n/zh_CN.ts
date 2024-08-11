@@ -863,5 +863,13 @@
         <source>Stopped</source>
         <translation>已停止</translation>
     </message>
+    <message>
+        <source>Game Sound</source>
+        <translation>游戏声音</translation>
+    </message>
+    <message>
+        <source>Mute Game while in Background</source>
+        <translation>游戏在后台时静音</translation>
+    </message>
 </context>
 </TS>

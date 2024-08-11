@@ -7,7 +7,6 @@ from PySide6.QtCore import QCoreApplication
 
 from ok.capture.BaseCaptureMethod import CaptureException
 from ok.capture.adb.DeviceManager import DeviceManager
-from ok.config.GlobalConfig import GlobalConfig
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 from ok.stats.StreamStats import StreamStats
@@ -46,7 +45,7 @@ class TaskExecutor:
                  wait_until_timeout=10, wait_until_before_delay=1, wait_until_check_delay=0,
                  exit_event=None, trigger_tasks=[], onetime_tasks=[], feature_set=None,
                  ocr=None,
-                 config_folder=None, debug=False):
+                 config_folder=None, debug=False, global_config=None):
         self.device_manager = device_manager
         self.feature_set = feature_set
         self.wait_until_check_delay = wait_until_check_delay
@@ -55,7 +54,7 @@ class TaskExecutor:
         self.exit_event = exit_event
         self.debug_mode = False
         self.debug = debug
-        self.global_config = GlobalConfig()
+        self.global_config = global_config
         self.ocr = ocr
         self.current_task = None
         self.config_folder = config_folder or "config"

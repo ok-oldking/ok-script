@@ -38,6 +38,8 @@ class OK:
         ok.gui.ok = self
         config['debug'] = config.get("debug", False)
         self.debug = config['debug']
+        from ok.config.GlobalConfig import GlobalConfig
+        self.global_config = GlobalConfig()
         try:
             import ctypes
             # Set DPI Awareness (Windows 10 and 8)
@@ -114,11 +116,13 @@ class OK:
                                           default_threshold=template_matching.get('default_threshold', 0))
 
         from ok.task.TaskExecutor import TaskExecutor
+
         self.task_executor = TaskExecutor(self.device_manager, exit_event=self.exit_event,
                                           onetime_tasks=self.config.get('onetime_tasks', []),
                                           trigger_tasks=self.config.get('trigger_tasks', []),
                                           feature_set=self.feature_set,
-                                          config_folder=self.config.get("config_folder"), debug=self.debug)
+                                          config_folder=self.config.get("config_folder"), debug=self.debug,
+                                          global_config=self.global_config)
 
         ok.gui.executor = self.task_executor
 
@@ -172,5 +176,5 @@ class OK:
         if self.device_manager is None:
             from ok.capture.adb.DeviceManager import DeviceManager
             self.device_manager = DeviceManager(self.config,
-                                                self.exit_event)
+                                                self.exit_event, self.global_config)
             ok.gui.device_manager = self.device_manager

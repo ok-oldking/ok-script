@@ -19,9 +19,10 @@ logger = get_logger(__name__)
 
 class DeviceManager:
 
-    def __init__(self, app_config, exit_event=None):
+    def __init__(self, app_config, exit_event=None, global_config=None):
         self._device = None
         self._adb = None
+        self.global_config = global_config
         self._adb_lock = threading.Lock()
         supported_resolution = app_config.get(
             'supported_resolution', {})
@@ -36,7 +37,8 @@ class DeviceManager:
         if self.windows_capture_config is not None:
             self.hwnd = HwndWindow(exit_event, self.windows_capture_config.get('title'),
                                    self.windows_capture_config.get('exe'),
-                                   hwnd_class=self.windows_capture_config.get('hwnd_class'))
+                                   hwnd_class=self.windows_capture_config.get('hwnd_class'),
+                                   global_config=self.global_config)
             from ok.interaction.PostMessageInteraction import PostMessageInteraction
             from ok.interaction.PyDirectInteraction import PyDirectInteraction
             self.win_interaction_class = PostMessageInteraction if self.windows_capture_config.get(
@@ -293,7 +295,7 @@ class DeviceManager:
     def ensure_hwnd(self, title, exe, frame_width=0, frame_height=0, player_id=-1):
         if self.hwnd is None:
             self.hwnd = HwndWindow(self.exit_event, title, exe, frame_width, frame_height, player_id,
-                                   self.windows_capture_config.get('hwnd_class'))
+                                   self.windows_capture_config.get('hwnd_class'), global_config=self.global_config)
         else:
             self.hwnd.update_window(title, exe, frame_width, frame_height, player_id)
 

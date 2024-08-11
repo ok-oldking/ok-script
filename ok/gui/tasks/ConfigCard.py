@@ -6,9 +6,9 @@ from ok.gui.tasks.ConfigItemFactory import config_widget
 
 class ConfigCard(ExpandSettingCard):
     def __init__(self, name, config, description, default_config, config_description,
-                 config_type):
+                 config_type, config_icon):
         from ok.gui import app
-        super().__init__(FluentIcon.INFO, app.tr(name), app.tr(description))
+        super().__init__(config_icon or FluentIcon.INFO, app.tr(name), app.tr(description))
         self.config = config
         self.config_widgets = []
         self.default_config = default_config

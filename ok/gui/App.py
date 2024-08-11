@@ -81,6 +81,9 @@ class App:
     def tr(self, key):
         if not key:
             return key
+        if ok_tr := QCoreApplication.translate("app", key):
+            if ok_tr != key:
+                return ok_tr
         if self.to_translate is not None:
             self.to_translate.add(key)
         if self.po_translation is None:
