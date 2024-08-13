@@ -418,7 +418,10 @@ class DeviceManager:
         path = device.get('full_path')
         if device.get('device') == 'windows' and self.windows_capture_config and self.windows_capture_config.get(
                 'calculate_pc_exe_path'):
-            return self.windows_capture_config.get('calculate_pc_exe_path')(path)
+            path = self.windows_capture_config.get('calculate_pc_exe_path')(path)
+            logger.info(f'calculate_pc_exe_path {path}')
+            if os.path.exists(path):
+                return path
         elif emulator := device.get('emulator'):
             return get_emulator_exe(emulator)
         else:

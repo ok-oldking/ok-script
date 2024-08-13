@@ -1,3 +1,4 @@
+import ctypes
 import sys
 import threading
 import time
@@ -282,8 +283,12 @@ class TaskExecutor:
                     communicate.task.emit(self.current_task)
                     if cycled or self._frame is None:
                         self.next_frame()
-                    self.current_task.run()
-                    if not isinstance(task, TriggerTask):
+                    if isinstance(task, TriggerTask):
+                        self.current_task.run()
+                    else:
+                        prevent_sleeping(True)
+                        self.current_task.run()
+                        prevent_sleeping(False)
                         task.disable()
                     self.current_task = None
                     communicate.task.emit(task)
@@ -347,3 +352,8 @@ def list_or_obj_to_str(val):
             return str(val)
     else:
         return None
+
+
+def prevent_sleeping(yes=True):
+    # Prevent the system from sleeping
+    ctypes.windll.kernel32.SetThreadExecutionState(0x80000002 if yes else 0x80000000)

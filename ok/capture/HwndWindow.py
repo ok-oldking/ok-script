@@ -19,10 +19,6 @@ from ok.logging.Logger import get_logger
 
 logger = get_logger(__name__)
 
-mute_config_option = ConfigOption('Game Sound', {
-    'Mute Game while in Background': False
-}, icon=FluentIcon.MUTE)
-
 
 class HwndWindow:
 
@@ -30,7 +26,6 @@ class HwndWindow:
                  global_config=None):
         super().__init__()
         self.app_exit_event = exit_event
-        self.mute_option = global_config.get_config(mute_config_option)
         self.exe_name = exe_name
         self.title = title
         self.stop_event = threading.Event()
@@ -59,9 +54,19 @@ class HwndWindow:
         self.pos_valid = False
         self._hwnd_title = ""
         self.monitors_bounds = get_monitors_bounds()
+        mute_config_option = ConfigOption('Game Sound', {
+            'Mute Game while in Background': False
+        }, validator=self.validate_mute_config, icon=FluentIcon.MUTE)
+        self.mute_option = global_config.get_config(mute_config_option)
         self.update_window(title, exe_name, frame_width, frame_height)
         self.thread = threading.Thread(target=self.update_window_size, name="update_window_size")
         self.thread.start()
+
+    def validate_mute_config(self, key, value):
+        if key == 'Mute Game while in Background' and not value and self.hwnd:
+            logger.info('unmute game because option is turned off')
+            set_mute_state(self.hwnd, 0)
+        return True, None
 
     def stop(self):
         self.stop_event.set()

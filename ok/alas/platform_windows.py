@@ -51,10 +51,11 @@ def get_emulator_exe(instance: EmulatorInstance):
         raise EmulatorUnknown(f'Cannot start an unknown emulator instance: {instance}')
 
 
-def execute(command: str):
-    if os.path.exists(command):
+def execute(game_path: str):
+    if os.path.exists(game_path):
         try:
-            subprocess.Popen(command, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
+            subprocess.Popen(game_path, cwd=os.path.dirname(game_path), close_fds=True,
+                             creationflags=subprocess.CREATE_NEW_CONSOLE)
             return True
         except Exception as e:
             logger.error('execute error', e)

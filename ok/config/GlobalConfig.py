@@ -14,7 +14,7 @@ class GlobalConfig:
         with self.lock:
             config = self.configs.get(option.name)
             if config is None:
-                config = Config(option.name, option.default_config)
+                config = Config(option.name, option.default_config, validator=option.validator)
                 self.configs[option.name] = config
                 self.config_options[option.name] = option
             return config
