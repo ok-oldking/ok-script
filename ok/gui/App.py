@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentTranslator, qconfig
 
 import ok
-from ok.firebase.Analytics import Analytics
+from ok.analytics.Analytics import Analytics
 from ok.gui import resources
 from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow

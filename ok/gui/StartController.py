@@ -20,12 +20,13 @@ class StartController(QObject):
         self.config = app_config
         self.exit_event = exit_event
         self.handler = Handler(exit_event, __name__)
+        self.start_timeout = app_config.get('start_timeout', 60)
 
     def start(self, task=None):
         self.handler.post(lambda: self.do_start(task))
 
     def do_start(self, task=None):
-        communicate.starting_emulator.emit(False, None, 50)
+        communicate.starting_emulator.emit(False, None, self.start_timeout)
         ok.gui.device_manager.do_refresh(True)
 
         device = ok.gui.device_manager.get_preferred_device()
@@ -37,7 +38,7 @@ class StartController(QObject):
                 if not execute(path):
                     communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
                     return
-                wait_until = time.time() + 50
+                wait_until = time.time() + self.start_timeout
                 while not self.exit_event.is_set():
                     ok.gui.device_manager.do_refresh(True)
                     error = self.check_device_error()
