@@ -1,10 +1,11 @@
+import importlib
 import math
 import os
 import subprocess
+import sys
 import zipfile
 from datetime import datetime
 
-import psutil
 import py7zr
 import requests
 
@@ -311,7 +312,8 @@ class Updater:
         ok.gui.device_manager.adb_kill_server()
         exe_folder = get_path_relative_to_exe()
         batch_command = [self.to_update.get("updater_bat"), self.to_update.get("update_package_folder"), exe_folder,
-                         os.path.join(exe_folder, self.exe_name), str(os.getpid())]
+                         os.path.join(exe_folder, self.exe_name)]
+        pids = [os.getpid()]
         for proc in psutil.process_iter(['pid', 'name', 'exe']):
             if proc.info['name'] == 'adb.exe' and os.path.normpath(proc.info['exe']).startswith(
                     os.path.normpath(exe_folder)):
@@ -320,11 +322,13 @@ class Updater:
                     proc.kill()
                 except Exception as e:
                     logger.error(f'kill process error', e)
-                batch_command.append(str(proc.info['pid']))
+                pids.append(proc.info['pid'])
+
+        batch_command.append(','.join(str(i) for i in pids))
 
         logger.info(f'execute update {batch_command}')
 
-        subprocess.Popen(batch_command, creationflags=subprocess.CREATE_NEW_CONSOLE)
+        subprocess.Popen(batch_command, close_fds=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
         ok.gui.ok.quit()
 
     def check_package_error(self):
@@ -387,6 +391,18 @@ def is_newer_or_eq_version(base_version, target_version):
         return False
 
 
+def get_updater_exe_local():
+    if sys.version_info < (3, 9):
+        context = importlib.resources.path("ok.binaries", "__init__.py")
+    else:
+        ref = importlib.resources.files("ok.binaries") / "__init__.py"
+        context = importlib.resources.as_file(ref)
+    with context as path:
+        pass
+    # Return the dir. We assume that the data files are on a normal dir on the fs.
+    return str(path.parent) + '.exe'
+
+
 def convert_size(size_bytes):
     if size_bytes == 0:
         return "0B"
@@ -395,3 +411,7 @@ def convert_size(size_bytes):
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
     return f"{s} {size_name[i]}"
+
+
+if __name__ == '__main__':
+    print(get_updater_exe_local())

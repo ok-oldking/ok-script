@@ -13,6 +13,10 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/ok-oldking/ok-script",
     packages=setuptools.find_packages(),
+    package_data={
+        'ok': ['binaries/*'],
+    },
+    include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
         "Intended Audience :: Developers",
