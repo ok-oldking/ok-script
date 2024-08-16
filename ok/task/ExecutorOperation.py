@@ -57,12 +57,12 @@ class ExecutorOperation:
         self.executor.reset_scene()
         return True
 
-    def middle_click(self, x: int | Box = -1, y=-1, move_back=False, name=None, interval=-1):
+    def middle_click(self, x: int | Box = -1, y=-1, move_back=False, name=None, interval=-1, down_time=0.01):
         if not self.check_interval(interval):
             self.executor.reset_scene()
             return False
         communicate.emit_draw_box("middle_click", [Box(max(0, x - 10), max(0, y - 10), 20, 20, name="click")], "green")
-        self.executor.interaction.middle_click(x, y, move_back, name=name)
+        self.executor.interaction.middle_click(x, y, move_back, name=name, down_time=down_time)
         self.executor.reset_scene()
         return True
 
@@ -213,9 +213,9 @@ class ExecutorOperation:
 
         self.click(x, y, move_back, name=f'relative({x:.2f}, {y:.2f})', move=move, after_sleep=after_sleep)
 
-    def middle_click_relative(self, x, y, move_back=False):
+    def middle_click_relative(self, x, y, move_back=False, down_time=0.01):
         self.middle_click(int(self.width * x), int(self.height * y), move_back,
-                          name=f'relative({x:.2f}, {y:.2f})')
+                          name=f'relative({x:.2f}, {y:.2f})', down_time=down_time)
 
     @property
     def height(self):

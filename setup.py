@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="ok-script",
-    version="0.0.173",
+    version="0.0.174",
     author="ok-oldking",
     author_email="firedcto@gmail.com",
     description="Automation with Computer Vision for Python",
@@ -13,9 +13,6 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/ok-oldking/ok-script",
     packages=setuptools.find_packages(),
-    package_data={
-        'ok': ['binaries/*'],
-    },
     include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",

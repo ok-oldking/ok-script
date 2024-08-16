@@ -35,6 +35,7 @@ class TaskTab(Tab):
 
         # Start the timer with a timeout of 1000 milliseconds (1 second)
         self.timer.start(1000)
+        self.keep_info_when_done = False
 
     def in_current_list(self, task):
         return True
@@ -58,7 +59,8 @@ class TaskTab(Tab):
         task = ok.gui.executor.current_task
         if task is None or not self.in_current_list(task):
             if self.task_info_table.isVisible():
-                self.task_info_container.hide()
+                if not self.keep_info_when_done or self.task_info_table.rowCount() == 0:
+                    self.task_info_container.hide()
         else:
             if not self.task_info_table.isVisible():
                 self.task_info_container.show()
