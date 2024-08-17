@@ -1,11 +1,13 @@
 import importlib
 import math
 import os
+import shutil
 import subprocess
 import sys
 import zipfile
 from datetime import datetime
 
+import psutil
 import py7zr
 import requests
 
@@ -17,117 +19,6 @@ from ok.util.Handler import Handler
 from ok.util.path import get_path_relative_to_exe, ensure_dir, dir_checksum, find_folder_with_file, clear_folder
 
 logger = get_logger(__name__)
-
-updater_bat = r'''@echo off
-setlocal enabledelayedexpansion
-set "source_dir=%~1"
-set "target_dir=%~2"
-set "exe=%~3"
-
-echo Pausing for 10 seconds...
-timeout /t 10 /nobreak
-echo Resuming script...
-
-REM Initialize an empty pid_list
-set "pid_list="
-
-REM Loop through the arguments starting from the 4th
-set "i=4"
-:loop
-    call set "arg=%%%i%%%"
-    if "%arg%"=="" goto endloop
-    if defined pid_list (
-        set "pid_list=!pid_list! %arg%"
-    ) else (
-        set "pid_list=%arg%"
-    )
-    set /a i+=1
-    goto loop
-
-:endloop
-
-if not defined source_dir (
-    echo Source directory is not defined.
-    exit /b
-)
-
-if not defined target_dir (
-    echo Target directory is not defined.
-    exit /b
-)
-
-if not defined pid_list (
-    echo pid_list is not defined.
-    exit /b
-)
-
-if not defined exe (
-    echo exe is not defined.
-    exit /b
-)
-
-echo %time% - "%source_dir%"
-echo %time% - "%target_dir%"
-echo %time% - "%exe%"
-echo %time% - "%pid_list%"
-
-REM Check all PIDs every second and terminate them after 10 seconds if still running
-set "check_duration=10"
-
-for %%A in (%pid_list%) do (
-    call :check_pid %%A
-)
-
-
-REM Sleep for one second
-timeout /t 1 /nobreak >nul
-
-for %%F in ("%source_dir%\*") do (
-    if exist "%target_dir%\%%~nxF" (
-        echo %time% - Deleting "%target_dir%\%%~nxF"
-        del /Q /F "%target_dir%\%%~nxF"
-    )
-    echo %time% - Copying "%%F" to "%target_dir%"
-    copy /Y "%%F" "%target_dir%" >nul
-)
-
-for /D %%D in ("%source_dir%\*") do (
-    if exist "%target_dir%\%%~nxD" (
-        echo Deleting "%target_dir%\%%~nxD"
-        rmdir /S /Q "%target_dir%\%%~nxD"
-    )
-    echo Copying "%%D"
-    xcopy /E /I "%%D" "%target_dir%\%%~nxD" >nul
-)
-echo %time% Update Success
-start "" "%exe%"
-endlocal
-
-
-goto :eof
-
-:check_pid
-set "elapsed_time=0"
-:check_loop
-echo %time% - Waiting for PID %1 to exit...
-tasklist /fi "PID eq %1" | find /C "Image Name" > temp.txt
-set /p count=<temp.txt
-del temp.txt
-if %count% leq 1 (
-    echo %time% - PID %1 has exited.
-    goto :eof
-) else (
-    timeout /t 1 /nobreak >nul
-    set /a elapsed_time+=1
-    if !elapsed_time! geq %check_duration% (
-        echo %time% - PID %1 is still running after %check_duration% seconds, killing it...
-        taskkill /f /pid %1
-        goto :eof
-    )
-    goto check_loop
-)
-goto :eof
-'''
 
 
 class Updater:
@@ -292,26 +183,30 @@ class Updater:
 
         # Open the file in write mode ('w')
         try:
-            bat_path = get_path_relative_to_exe('update.bat')
-            with open(bat_path, 'w') as file:
-                # Write a string to the file
-                file.write(updater_bat)
-                logger.info(f'write {bat_path} update .bat')
+            updater_exe = os.path.join(update_package_folder, '_internal', 'ok', 'binaries',
+                                       'updater.exe')
+            if not os.path.exists(updater_exe):
+                communicate.download_update.emit(100, "", True, "can't find updater.exe!")
+                return
+            move_file(updater_exe, self.update_dir)
+
+            updater_exe = os.path.join(self.update_dir, 'updater.exe')
+
         except Exception as e:
-            logger.error(f'write updater_bat error', e)
+            logger.error(f'write updater_exe error', e)
             self.check_package_error()
             return
 
         # Now, 'Hello, World!' is written to 'filename.txt'
         self.to_update = {'version': version, 'update_package_folder': update_package_folder, 'debug': debug,
-                          'updater_bat': bat_path, 'notes': release.get('notes'), 'release': release}
+                          'updater_exe': updater_exe, 'notes': release.get('notes'), 'release': release}
         communicate.download_update.emit(100, "", True, None)
         return True
 
     def update(self):
         ok.gui.device_manager.adb_kill_server()
         exe_folder = get_path_relative_to_exe()
-        batch_command = [self.to_update.get("updater_bat"), self.to_update.get("update_package_folder"), exe_folder,
+        batch_command = [self.to_update.get("updater_exe"), self.to_update.get("update_package_folder"), exe_folder,
                          os.path.join(exe_folder, self.exe_name)]
         pids = [os.getpid()]
         for proc in psutil.process_iter(['pid', 'name', 'exe']):
@@ -378,6 +273,18 @@ class Updater:
             'release_asset': release_asset,
             'debug_asset': debug_asset
         }
+
+
+def move_file(src, dst_folder):
+    # Get the file name from the source path
+    file_name = os.path.basename(src)
+    # Construct the full destination path
+    dst = os.path.join(dst_folder, file_name)
+
+    # Check if the destination file already exists
+    if os.path.exists(dst):
+        os.remove(dst)  # Remove the existing file
+    shutil.move(src, dst)  # Move the file
 
 
 def is_newer_or_eq_version(base_version, target_version):
