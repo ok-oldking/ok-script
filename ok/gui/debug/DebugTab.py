@@ -187,6 +187,8 @@ class DebugTab(Tab):
             if images:
                 ok.gui.device_manager.capture_method = ImageCaptureMethod(images)
                 ok.gui.device_manager.interaction = DoNothingInteraction(ok.gui.device_manager.capture_method)
+            else:
+                task.next_frame()
             ok.gui.executor.debug_mode = True
             attr = getattr(task, func_name)
             if callable(attr):

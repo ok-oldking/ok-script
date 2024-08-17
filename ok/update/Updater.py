@@ -207,7 +207,7 @@ class Updater:
         ok.gui.device_manager.adb_kill_server()
         exe_folder = get_path_relative_to_exe()
         batch_command = [self.to_update.get("updater_exe"), self.to_update.get("update_package_folder"), exe_folder,
-                         os.path.join(exe_folder, self.exe_name)]
+                         self.exe_name]
         pids = [os.getpid()]
         for proc in psutil.process_iter(['pid', 'name', 'exe']):
             if proc.info['name'] == 'adb.exe' and os.path.normpath(proc.info['exe']).startswith(

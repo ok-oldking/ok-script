@@ -416,8 +416,9 @@ class DeviceManager:
 
     def get_exe_path(self, device):
         path = device.get('full_path')
-        if device.get('device') == 'windows' and self.windows_capture_config and self.windows_capture_config.get(
-                'calculate_pc_exe_path'):
+        if path != 'none' and device.get(
+                'device') == 'windows' and self.windows_capture_config and self.windows_capture_config.get(
+            'calculate_pc_exe_path'):
             path = self.windows_capture_config.get('calculate_pc_exe_path')(path)
             logger.info(f'calculate_pc_exe_path {path}')
             if os.path.exists(path):
