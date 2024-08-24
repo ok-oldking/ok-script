@@ -209,15 +209,16 @@ class Updater:
         batch_command = [self.to_update.get("updater_exe"), self.to_update.get("update_package_folder"), exe_folder,
                          self.exe_name]
         pids = [os.getpid()]
-        for proc in psutil.process_iter(['pid', 'name', 'exe']):
-            if proc.info['name'] == 'adb.exe' and os.path.normpath(proc.info['exe']).startswith(
-                    os.path.normpath(exe_folder)):
-                try:
-                    logger.info(f'try kill the adb process {proc.info}')
-                    proc.kill()
-                except Exception as e:
-                    logger.error(f'kill process error', e)
-                pids.append(proc.info['pid'])
+        if ok.gui.device_manager.adb:
+            for proc in psutil.process_iter(['pid', 'name', 'exe']):
+                if proc.info['name'] == 'adb.exe' and os.path.normpath(proc.info['exe']).startswith(
+                        os.path.normpath(exe_folder)):
+                    try:
+                        logger.info(f'try kill the adb process {proc.info}')
+                        proc.kill()
+                    except Exception as e:
+                        logger.error(f'kill process error', e)
+                    pids.append(proc.info['pid'])
 
         batch_command.append(','.join(str(i) for i in pids))
 

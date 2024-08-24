@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="ok-script",
-    version="0.0.179",
+    version="0.0.180",
     author="ok-oldking",
     author_email="firedcto@gmail.com",
     description="Automation with Computer Vision for Python",
@@ -28,7 +28,7 @@ setuptools.setup(
         'typing-extensions>=4.11.0',
         'PySide6>=6.7.0',
         'PySide6-Fluent-Widgets>=1.5.6',
-        'psutil>=5.9.8',
+        'psutil>=6.0.0',
         'opencv-python>=4.9.0.80',
         'ok-d3dshot>=0.1.5',
         'py7zr>=0.21.0',
