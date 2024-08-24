@@ -210,7 +210,8 @@ class TaskExecutor:
                        raise_if_not_found=False):
         if wait_until_before_delay == -1:
             wait_until_before_delay = self.wait_until_before_delay
-        self.reset_scene()
+        if wait_until_before_delay > 0:
+            self.reset_scene()
         start = time.time()
         if time_out == 0:
             time_out = self.wait_scene_timeout

@@ -118,6 +118,7 @@ class OK:
         from ok.task.TaskExecutor import TaskExecutor
 
         self.task_executor = TaskExecutor(self.device_manager, exit_event=self.exit_event,
+                                          wait_until_before_delay=self.config.get('wait_until_before_delay', 1),
                                           onetime_tasks=self.config.get('onetime_tasks', []),
                                           trigger_tasks=self.config.get('trigger_tasks', []),
                                           feature_set=self.feature_set,
