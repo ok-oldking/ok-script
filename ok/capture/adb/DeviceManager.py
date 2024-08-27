@@ -93,21 +93,23 @@ class DeviceManager:
     def adb_connect(self, addr, try_connect=True):
         from adbutils import AdbError
         try:
-            for device in self.adb.device_list():
+            for device in self.adb.list():
                 if self.exit_event.is_set():
                     logger.error(f"adb_connect exit_event is set")
                     return None
                 if device.serial == addr:
-                    if device.info['state'] == 'offline':
+                    if device.state == 'offline':
                         logger.debug(f'adb_connect offline disconnect first {addr}')
                         self.adb.disconnect(addr)
                     else:
                         logger.debug(f'adb_connect already connected {addr}')
-                        return device
+                        return self.adb.device(addr)
             if try_connect:
-                self.adb.connect(addr, timeout=5)
-                logger.debug(f'adb_connect {addr}')
+                ret = self.adb.connect(addr, timeout=5)
+                logger.debug(f'adb_connect try_connect {addr} {ret}')
                 return self.adb_connect(addr, try_connect=False)
+            else:
+                logger.debug(f'adb_connect {addr} not in device list {self.adb.list()}')
         except AdbError as e:
             logger.error(f"adb connect error {addr}", e)
             self.try_kill_adb(e)
@@ -185,19 +187,19 @@ class DeviceManager:
                 logger.debug(f"refresh current only skip others {preferred['imei']} != {emulator.name}")
                 continue
             adb_device = self.adb_connect(emulator.serial)
+            logger.info(f'adb_connect emulator result {emulator.type} {adb_device}')
             width, height = self.get_resolution(adb_device) if adb_device is not None else 0, 0
             name, hwnd, full_path, x, y, width, height = find_hwnd(None,
                                                                    emulator.path, width, height, emulator.player_id)
             connected = adb_device is not None and name is not None
-            emulator_device = {"address": emulator.serial, "device": "adb",
-                               "full_path": emulator.path, "connected": connected,
-                               "imei": emulator.name, "player_id": emulator.player_id,
+            emulator_device = {"address": emulator.serial, "device": "adb", "full_path": emulator.path,
+                               "connected": connected, "imei": emulator.name, "player_id": emulator.player_id,
                                "nick": name or emulator.name, "emulator": emulator}
             if adb_device is not None:
                 emulator_device["resolution"] = f"{width}x{height}"
                 emulator_device["adb_imei"] = self.adb_get_imei(adb_device)
             self.device_dict[emulator.name] = emulator_device
-        logger.debug(f'refresh emulators {self.device_dict}')
+        logger.info(f'refresh emulators {self.device_dict}')
 
     def get_resolution(self, device=None):
         if device is None:
@@ -334,6 +336,13 @@ class DeviceManager:
                 self.ensure_hwnd(None, preferred.get('full_path'), width, height, preferred['player_id'])
                 self.use_windows_capture({'can_bit_blt': True}, require_bg=True, use_bit_blt_only=False,
                                          bit_blt_render_full=False)
+            elif self.config.get('capture') == 'ipc':
+                from ok.capture.adb.NemuIpcCaptureMethod import NemuIpcCaptureMethod
+                if not isinstance(self.capture_method, NemuIpcCaptureMethod):
+                    if self.capture_method is not None:
+                        self.capture_method.close()
+                    self.capture_method = NemuIpcCaptureMethod(self, self.exit_event)
+                self.capture_method.update_emulator(self.get_preferred_device()['emulator'])
             else:
                 if not isinstance(self.capture_method, ADBCaptureMethod):
                     logger.debug(f'use adb capture')

@@ -31,8 +31,8 @@ class StartTab(Tab):
         self.device_container.add_top_widget(self.refresh_button)
         communicate.adb_devices.connect(self.update_capture)
 
-        self.window_list = SelectCaptureListView(self.capture_index_changed)
-        self.interaction_container = self.addCard(self.tr("Capture Method"), self.window_list)
+        self.capture_list = SelectCaptureListView(self.capture_index_changed)
+        self.interaction_container = self.addCard(self.tr("Capture Method"), self.capture_list)
 
         self.closed_by_finish_loading = False
         self.message = "Loading"
@@ -46,7 +46,7 @@ class StartTab(Tab):
         if self.device_list_row == -1:
             return
         logger.debug(f"update_window_list {self.device_list_row}")
-        self.window_list.update_for_device()
+        self.capture_list.update_for_device()
 
     def refresh_clicked(self):
         ok.gui.device_manager.refresh()
@@ -54,7 +54,7 @@ class StartTab(Tab):
         self.refresh_button.setText(self.tr("Refreshing"))
 
     def capture_index_changed(self):  # i is an index
-        i = self.window_list.currentRow()
+        i = self.capture_list.currentRow()
         self.capture_list_row = i
         device = ok.gui.device_manager.get_preferred_device()
         logger.debug(f"capture_index_changed {i} {device}")
@@ -64,6 +64,8 @@ class StartTab(Tab):
                     ok.gui.device_manager.set_capture("adb")
                 elif i == 1:
                     ok.gui.device_manager.set_capture("windows")
+                elif i == 2:
+                    ok.gui.device_manager.set_capture("ipc")
             elif device.get('device') == 'windows':
                 ok.gui.device_manager.set_capture("windows")
             self.start_card.update_status()
@@ -114,16 +116,16 @@ class StartTab(Tab):
         if finished:
             self.refresh_button.setDisabled(False)
             self.refresh_button.setText(self.tr("Refresh"))
-            self.window_list.update_for_device()
+            self.capture_list.update_for_device()
 
     def update_selection(self):
         if ok.gui.executor.paused:
             self.device_list.setSelectionMode(QAbstractItemView.SingleSelection)
-            self.window_list.setSelectionMode(QAbstractItemView.SingleSelection)
+            self.capture_list.setSelectionMode(QAbstractItemView.SingleSelection)
             self.update_window_list()
         else:
             self.device_list.setSelectionMode(QAbstractItemView.NoSelection)
-            self.window_list.setSelectionMode(QAbstractItemView.NoSelection)
+            self.capture_list.setSelectionMode(QAbstractItemView.NoSelection)
 
     def update_progress(self, message):
         self.message = message

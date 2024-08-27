@@ -39,7 +39,7 @@ class BaseCaptureMethod:
                     frame = frame[:, :, :3]
             return frame
         except Exception as e:
-            raise CaptureException() from e
+            raise CaptureException(str(e)) from e
 
     def __str__(self):
         return f'{self.__class__.__name__}_{self.width}x{self.height}'

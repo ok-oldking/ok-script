@@ -166,6 +166,9 @@ class TaskExecutor:
 
         :param timeout: The total time to sleep in seconds.
         """
+        if self.current_task and not self.current_task.enabled:
+            self.current_task = None
+            raise TaskDisabledException()
         if timeout <= 0:
             return
         if self.debug_mode:
@@ -178,9 +181,6 @@ class TaskExecutor:
             if self.exit_event.is_set():
                 logger.info("sleep Exit event set. Exiting early.")
                 sys.exit(0)
-            if self.current_task and not self.current_task.enabled:
-                self.current_task = None
-                raise TaskDisabledException()
             if not (self.paused or (
                     self.current_task is not None and self.current_task.paused) or self.interaction is None or not self.interaction.should_capture()):
                 to_sleep = self.pause_end_time - time.time()

@@ -249,17 +249,20 @@ def capture():
     if ok.gui.device_manager.capture_method is not None:
         logger.info(f'ok.gui.device_manager.capture_method {ok.gui.device_manager.capture_method}')
         current_capture = str(ok.gui.device_manager.capture_method) + '_' + str(time.time() * 1000)
-        frame = ok.gui.device_manager.capture_method.do_get_frame()
-        if frame is not None:
-            file_path = ok.gui.ok.screenshot.generate_screen_shot(frame, ok.gui.ok.screenshot.ui_dict,
-                                                                  ok.gui.ok.screenshot.screenshot_folder,
-                                                                  current_capture)
+        try:
+            frame = ok.gui.device_manager.capture_method.do_get_frame()
+            if frame is not None:
+                file_path = ok.gui.ok.screenshot.generate_screen_shot(frame, ok.gui.ok.screenshot.ui_dict,
+                                                                      ok.gui.ok.screenshot.screenshot_folder,
+                                                                      current_capture)
 
-            # Use subprocess.Popen to open the file explorer and select the file
-            subprocess.Popen(r'explorer /select,"{}"'.format(file_path))
-            logger.info(f'captured screenshot: {current_capture}')
-            alert_info(QCoreApplication.translate('DebugTab', 'Capture Success'), True)
-        else:
-            alert_error(QCoreApplication.translate('DebugTab', 'Capture returned None'))
+                # Use subprocess.Popen to open the file explorer and select the file
+                subprocess.Popen(r'explorer /select,"{}"'.format(file_path))
+                logger.info(f'captured screenshot: {current_capture}')
+                alert_info(QCoreApplication.translate('DebugTab', 'Capture Success'), True)
+            else:
+                alert_error(QCoreApplication.translate('DebugTab', 'Capture returned None'))
+        except Exception as e:
+            alert_error(QCoreApplication.translate('DebugTab', str(e)))
     else:
         alert_error(QCoreApplication.translate('DebugTab', 'No Capture Available or Selected'))

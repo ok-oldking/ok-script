@@ -55,13 +55,15 @@ class FindFeature:
     def wait_click_feature(self, feature, horizontal_variance=0, vertical_variance=0, threshold=0, relative_x=0.5,
                            relative_y=0.5,
                            time_out=0, pre_action=None, post_action=None, box=None, raise_if_not_found=True,
-                           use_gray_scale=False, canny_lower=0, canny_higher=0, click_after_delay=0):
+                           use_gray_scale=False, canny_lower=0, canny_higher=0, click_after_delay=0,
+                           wait_until_before_delay=-1):
         box = self.wait_until(
             lambda: self.find_one(feature, horizontal_variance, vertical_variance, threshold, box=box,
                                   use_gray_scale=use_gray_scale, canny_lower=canny_lower, canny_higher=canny_higher),
             time_out=time_out,
             pre_action=pre_action,
-            post_action=post_action, raise_if_not_found=raise_if_not_found)
+            post_action=post_action, raise_if_not_found=raise_if_not_found,
+            wait_until_before_delay=wait_until_before_delay)
         if box is not None:
             if click_after_delay > 0:
                 self.sleep(click_after_delay)
