@@ -92,17 +92,18 @@ class OCR:
         if result:
             for idx in range(len(result)):
                 r = result[idx]
-                for res in r:
-                    pos = res[0]
-                    text = res[1][0]
-                    confidence = res[1][1]
-                    width, height = round(pos[2][0] - pos[0][0]), round(pos[2][1] - pos[0][1])
-                    if width <= 0 or height <= 0:
-                        logger.error(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
-                        continue
-                    detected_box = self.get_box(box, confidence, height, pos, scale_factor, text, threshold, width)
-                    if detected_box:
-                        detected_boxes.append(detected_box)
+                if r:
+                    for res in r:
+                        pos = res[0]
+                        text = res[1][0]
+                        confidence = res[1][1]
+                        width, height = round(pos[2][0] - pos[0][0]), round(pos[2][1] - pos[0][1])
+                        if width <= 0 or height <= 0:
+                            logger.error(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
+                            continue
+                        detected_box = self.get_box(box, confidence, height, pos, scale_factor, text, threshold, width)
+                        if detected_box:
+                            detected_boxes.append(detected_box)
         ocr_boxes = detected_boxes
         if match is not None:
             detected_boxes = find_boxes_by_name(detected_boxes, match)
