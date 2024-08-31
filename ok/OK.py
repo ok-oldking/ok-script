@@ -29,11 +29,12 @@ class OK:
     init_error = None
 
     def __init__(self, config: Dict[str, Any]):
+        self.config = config
         print(f"AutoHelper init, config: {config}")
         config["config_folder"] = config.get("config_folder") or 'configs'
         from ok.config.Config import Config
         Config.config_folder = config["config_folder"]
-        config_logger(config)
+        config_logger(self.config)
         logger.info(f"AutoHelper init, config: {config}")
         ok.gui.ok = self
         config['debug'] = config.get("debug", False)
@@ -126,15 +127,23 @@ class OK:
                                           global_config=self.global_config)
 
         ok.gui.executor = self.task_executor
-
         if self.config.get('ocr'):
-            isascii, path = install_path_isascii()
-            if not isascii:
-                self.app.show_path_ascii_error(path)
-                self.init_error = True
-                return False
-            from rapidocr_openvino import RapidOCR
-            self.ocr = RapidOCR()
+            if self.config.get('ocr').get('lib') == 'paddleocr':
+                logger.info('use paddleocr as ocr lib')
+                from paddleocr import PaddleOCR
+                self.ocr = PaddleOCR(use_angle_cls=False, lang="ch", use_gpu=True)
+                import logging
+                logging.getLogger('ppocr').setLevel(logging.ERROR)
+                config_logger(self.config)
+            else:
+                isascii, path = install_path_isascii()
+                if not isascii:
+                    self.app.show_path_ascii_error(path)
+                    self.init_error = True
+                    return False
+                from rapidocr_openvino import RapidOCR
+                self.ocr = RapidOCR()
+
             self.task_executor.ocr = self.ocr
 
         if not check_mutex():

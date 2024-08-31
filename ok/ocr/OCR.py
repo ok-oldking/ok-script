@@ -46,33 +46,10 @@ class OCR:
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
             image, scale_factor = resize_image(image, original_height, target_height)
-
-            result, _ = self.executor.ocr(image, use_det=True, use_cls=False, use_rec=True)
-
-            detected_boxes = []
-            ocr_boxes = None
-            # Process the results and create Box objects
-            if result is not None:
-                for res in result:
-                    pos = res[0]
-                    text = res[1]
-                    confidence = res[2]
-                    width, height = round(pos[2][0] - pos[0][0]), round(pos[2][1] - pos[0][1])
-                    if width <= 0 or height <= 0:
-                        logger.error(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
-                        continue
-                    if confidence >= threshold:
-                        detected_box = Box(pos[0][0], pos[0][1], width,
-                                           height,
-                                           confidence, text)
-                        scale_box(detected_box, scale_factor)
-                        if box is not None:
-                            detected_box.x += box.x
-                            detected_box.y += box.y
-                        detected_boxes.append(detected_box)
-                        ocr_boxes = detected_boxes
-                if match is not None:
-                    detected_boxes = find_boxes_by_name(detected_boxes, match)
+            if type(self.executor.ocr).__name__ == "PaddleOCR":  # easy ocr
+                detected_boxes, ocr_boxes = self.paddle_ocr(box, image, match, scale_factor, threshold)
+            else:
+                detected_boxes, ocr_boxes = self.rapid_ocr(box, image, match, scale_factor, threshold)
 
             communicate.emit_draw_box("ocr" + name if name else "", detected_boxes, "red")
             communicate.emit_draw_box("ocr_zone" + name if name else "", box, "blue")
@@ -82,6 +59,66 @@ class OCR:
             if log and not detected_boxes and ocr_boxes:
                 logger.info(f'ocr detected but no match: {match} {ocr_boxes}')
             return sort_boxes(detected_boxes)
+
+    def rapid_ocr(self, box, image, match, scale_factor, threshold):
+        result, _ = self.executor.ocr(image, use_det=True, use_cls=False, use_rec=True)
+        detected_boxes = []
+        ocr_boxes = None
+        # Process the results and create Box objects
+        if result is not None:
+            for res in result:
+                pos = res[0]
+                text = res[1]
+                confidence = res[2]
+                width, height = round(pos[2][0] - pos[0][0]), round(pos[2][1] - pos[0][1])
+                if width <= 0 or height <= 0:
+                    logger.error(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
+                    continue
+                detected_box = self.get_box(box, confidence, height, pos, scale_factor, text, threshold, width)
+                if detected_box:
+                    detected_boxes.append(detected_box)
+        ocr_boxes = detected_boxes
+        if match is not None:
+            detected_boxes = find_boxes_by_name(detected_boxes, match)
+        return detected_boxes, ocr_boxes
+
+    def paddle_ocr(self, box, image, match, scale_factor, threshold):
+        result = self.executor.ocr.ocr(image, det=True,
+                                       rec=True,
+                                       cls=False)
+        detected_boxes = []
+        ocr_boxes = None
+        # Process the results and create Box objects
+        if result:
+            for idx in range(len(result)):
+                r = result[idx]
+                for res in r:
+                    pos = res[0]
+                    text = res[1][0]
+                    confidence = res[1][1]
+                    width, height = round(pos[2][0] - pos[0][0]), round(pos[2][1] - pos[0][1])
+                    if width <= 0 or height <= 0:
+                        logger.error(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
+                        continue
+                    detected_box = self.get_box(box, confidence, height, pos, scale_factor, text, threshold, width)
+                    if detected_box:
+                        detected_boxes.append(detected_box)
+        ocr_boxes = detected_boxes
+        if match is not None:
+            detected_boxes = find_boxes_by_name(detected_boxes, match)
+        return detected_boxes, ocr_boxes
+
+    def get_box(self, box, confidence, height, pos, scale_factor, text, threshold, width):
+        detected_box = None
+        if confidence >= threshold:
+            detected_box = Box(pos[0][0], pos[0][1], width,
+                               height,
+                               confidence, text)
+            scale_box(detected_box, scale_factor)
+            if box is not None:
+                detected_box.x += box.x
+                detected_box.y += box.y
+        return detected_box
 
     def wait_click_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box=None, name=None,
                        match: str | List[str] | Pattern[str] | List[Pattern[str]] | None = None, threshold=0,
