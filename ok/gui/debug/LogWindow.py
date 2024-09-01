@@ -105,14 +105,17 @@ level_severity = {v: k for k, v in log_levels.items()}
 
 
 class LogWindow(QWidget):
-    def __init__(self, config):
+    def __init__(self, config=None, floating=True):
         super().__init__()
-        self.setWindowTitle('Log Viewer')
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.floating = floating
+        if floating:
+            self.setWindowTitle('Log Viewer')
+            self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+            self.setAttribute(Qt.WA_TranslucentBackground)
 
         self.config = config
-        self.setGeometry(self.config['x'], self.config['y'], self.config['width'], self.config['height'])
+        if config:
+            self.setGeometry(self.config['x'], self.config['y'], self.config['width'], self.config['height'])
 
         self.old_pos = None
 
@@ -122,34 +125,40 @@ class LogWindow(QWidget):
 
         # Widgets
         self.log_list = QListView()
-        self.log_list.setStyleSheet("background:rgba(0,0,0,60);")
+        if floating:
+            self.log_list.setStyleSheet("background:rgba(0,0,0,60);")
         self.log_list.setSelectionMode(QAbstractItemView.NoSelection)
         self.log_list.setItemDelegate(ColorDelegate())
 
         self.level_filter = QComboBox()
         self.level_filter.addItems(["ALL", "DEBUG", "INFO", "WARNING", "ERROR"])
-        self.level_filter.setCurrentText(self.config.get('level'))
+        if self.config:
+            self.level_filter.setCurrentText(self.config.get('level'))
+        else:
+            self.level_filter.setCurrentText("ALL")
         self.level_filter.currentIndexChanged.connect(self.filter_logs)
 
         self.keyword_filter = QLineEdit()
         self.keyword_filter.setPlaceholderText("Filter by keyword")
-        if keyword := self.config.get('keyword'):
-            self.keyword_filter.setText(keyword)
+        if self.config:
+            if keyword := self.config.get('keyword'):
+                self.keyword_filter.setText(keyword)
         self.keyword_filter.textChanged.connect(self.filter_logs)
 
-        self.drag_button = QLabel(self.tr("Drag"))
-        self.drag_button.setStyleSheet('background:rgba(0,0,0,255)')
+        if floating:
+            self.drag_button = QLabel(self.tr("Drag"))
+            self.drag_button.setStyleSheet('background:rgba(0,0,0,255)')
 
-        self.close_button = QPushButton(self.tr("Close"))
-        self.close_button.clicked.connect(self.close)
+            self.close_button = QPushButton(self.tr("Close"))
+            self.close_button.clicked.connect(self.close)
 
-        # Adding widgets to layouts
-        self.filter_layout.addWidget(self.level_filter)
-        self.filter_layout.addWidget(self.keyword_filter, stretch=1)
-        self.filter_layout.addWidget(self.drag_button)
-        self.filter_layout.addWidget(self.close_button)
+            # Adding widgets to layouts
+            self.filter_layout.addWidget(self.level_filter)
+            self.filter_layout.addWidget(self.keyword_filter, stretch=1)
+            self.filter_layout.addWidget(self.drag_button)
+            self.filter_layout.addWidget(self.close_button)
 
-        self.layout.addLayout(self.filter_layout)
+            self.layout.addLayout(self.filter_layout)
         self.layout.addWidget(self.log_list)
 
         self.setLayout(self.layout)
@@ -162,7 +171,8 @@ class LogWindow(QWidget):
 
     def close(self):
         super().close()
-        self.config['show'] = False
+        if self.config:
+            self.config['show'] = False
 
     def add_log(self, level_no, message):
         # print('add_log', level_no, message)
@@ -172,22 +182,24 @@ class LogWindow(QWidget):
     def filter_logs(self):
         level = self.level_filter.currentText()
         keyword = self.keyword_filter.text()
-        self.config['keyword'] = keyword
-        self.config['level'] = level
+        if self.config:
+            self.config['keyword'] = keyword
+            self.config['level'] = level
         self.log_model.filter_logs(level, keyword)
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if self.floating and event.button() == Qt.LeftButton:
             self.old_pos = event.globalPos()
 
     def mouseMoveEvent(self, event):
-        if self.old_pos:
+        if self.floating and self.old_pos:
             delta = QPoint(event.globalPos() - self.old_pos)
             self.move(self.x() + delta.x(), self.y() + delta.y())
             self.old_pos = event.globalPos()
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.config['x'] = self.x()
-            self.config['y'] = self.y()
-            self.old_pos = None
+        if self.floating and event.button() == Qt.LeftButton:
+            if self.config:
+                self.config['x'] = self.x()
+                self.config['y'] = self.y()
+                self.old_pos = None

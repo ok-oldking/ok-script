@@ -1,11 +1,9 @@
 import gettext
-import os
 import sys
 
-from PySide6.QtCore import QSize, QCoreApplication, QTranslator, Qt
+from PySide6.QtCore import QSize, QCoreApplication, Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentTranslator, qconfig
 
 import ok
 from ok.analytics.Analytics import Analytics
@@ -16,8 +14,8 @@ from ok.gui.MessageWindow import MessageWindow
 from ok.gui.StartController import StartController
 from ok.gui.common.config import cfg, Language
 from ok.gui.i18n.GettextTranslator import get_translations
-from ok.gui.i18n.path import i18n_path
 from ok.gui.overlay.OverlayWindow import OverlayWindow
+from ok.gui.util.app import init_app_config
 from ok.logging.Logger import get_logger
 from ok.update.Updater import Updater
 
@@ -36,19 +34,17 @@ class App:
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
-        self.app = QApplication(sys.argv)
+        self.app, self.locale = init_app_config()
         communicate.quit.connect(self.app.quit)
-        self.app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
-        qconfig.theme = cfg.themeMode.value
+
+        # qconfig.theme = cfg.themeMode.value
 
         self.about = self.config.get('about')
         self.title = self.config.get('gui_title')
         self.version = self.config.get('version')
         self.overlay = self.config.get('debug')
-        self.locale = cfg.get(cfg.language).value
         logger.debug(f'locale name {self.locale.name()}')
-        translator = FluentTranslator(self.locale)
-        self.app.installTranslator(translator)
+
         self.loading_window = None
         self.overlay_window = None
         self.main_window = None
@@ -57,15 +53,6 @@ class App:
         if self.config.get('analytics'):
             self.fire_base_analytics = Analytics(self.config, self.exit_event)
 
-        translator = QTranslator(self.app)
-        full_path = os.path.join(i18n_path, f"{self.locale.name()}")
-        if translator.load(self.locale.name(), ":/i18n"):
-            translator.setParent(self.app)
-            self.app.installTranslator(translator)
-            QCoreApplication.installTranslator(translator)
-            logger.debug(f"translator install success {QCoreApplication.translate('MainWindow', 'Debug')}")
-        else:
-            logger.debug(f"No translation available for {self.locale}, falling back to English/default. {full_path}")
         if self.config.get('update'):
             self.updater = Updater(self.config, exit_event)
         else:
@@ -105,14 +92,6 @@ class App:
             from ok.gui.i18n.GettextTranslator import update_po_file
             folder = update_po_file(self.to_translate, locale.value.name())
         return folder
-
-    def center_window(self, window):
-        screen = self.app.primaryScreen()
-        size = screen.size()
-        # Calculate half the screen size
-        half_screen_width = size.width() / 2
-        half_screen_height = size.height() / 2
-        window.move(half_screen_width / 2, half_screen_height / 2)
 
     def show_message_window(self, title, message):
         message_window = MessageWindow(self.icon, title, message, exit_event=self.exit_event)
