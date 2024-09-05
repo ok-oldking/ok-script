@@ -6,8 +6,6 @@ import time
 import psutil
 import win32api
 import win32process
-from pycaw.api.audioclient import ISimpleAudioVolume
-from pycaw.utils import AudioUtilities
 from qfluentwidgets import FluentIcon
 from win32 import win32gui
 
@@ -261,6 +259,8 @@ def find_hwnd(title, exe_name, frame_width, frame_height, player_id=-1, class_na
 
 # Function to get the mute state
 def set_mute_state(hwnd, mute):
+    from pycaw.api.audioclient import ISimpleAudioVolume
+    from pycaw.utils import AudioUtilities
     _, pid = win32process.GetWindowThreadProcessId(hwnd)
     sessions = AudioUtilities.GetAllSessions()
     for session in sessions:

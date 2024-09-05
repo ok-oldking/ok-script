@@ -7,7 +7,7 @@ import os
 from ctypes import wintypes
 from typing import Union
 
-from ok.util.path import get_path_relative_to_exe
+from ok.util.path import get_relative_path
 
 # Define necessary constants and functions
 ERROR_ALREADY_EXISTS = 183
@@ -25,7 +25,7 @@ GetLastError.restype = DWORD
 
 
 def check_mutex():
-    path = get_path_relative_to_exe()
+    path = get_relative_path()
     # Try to create a named mutex
     path = hashlib.md5(path.encode()).hexdigest()
     mutex = CreateMutex(NULL, False, f"{path}")

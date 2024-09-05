@@ -73,6 +73,7 @@ class Handler:
                 scheduled_task = ScheduledTask(0, task)
             heapq.heappush(self.task_queue, scheduled_task)
             self.condition.notify_all()
+            return True
 
     def stop(self):
         with self.condition:

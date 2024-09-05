@@ -3,11 +3,11 @@ import sys
 from enum import Enum
 
 from PySide6.QtCore import QLocale
+
+from ok.util.path import get_relative_path
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
                             ConfigSerializer, Theme, EnumSerializer)
-
-from ok.util.path import get_path_relative_to_exe
 
 
 class Language(Enum):
@@ -52,4 +52,4 @@ class AppConfig(QConfig):
 
 
 cfg = AppConfig()
-qconfig.load(get_path_relative_to_exe('configs', f"ui_config.json"), cfg)
+qconfig.load(get_relative_path('configs', f"ui_config.json"), cfg)

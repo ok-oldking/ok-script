@@ -4,22 +4,21 @@ import sys
 import traceback
 from logging.handlers import TimedRotatingFileHandler
 
-import ok
-from ok.util.path import get_path_relative_to_exe, ensure_dir_for_file
+from ok.util.path import ensure_dir_for_file, get_relative_path
 
 
 class CommunicateHandler(logging.Handler):
     def __init__(self):
         super().__init__()
+        from ok.gui.Communicate import communicate
+        self.communicate = communicate
 
     def emit(self, record):
         log_message = self.format(record)
-        ok.gui.Communicate.communicate.log.emit(record.levelno, log_message)
+        self.communicate.log.emit(record.levelno, log_message)
 
 
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(threadName)s %(message)s')
-communicate_handler = CommunicateHandler()
-communicate_handler.setFormatter(formatter)
 
 
 def get_substring_from_last_dot_exclusive(s):
@@ -44,12 +43,16 @@ def log_exception_handler(exc_type, exc_value, exc_traceback):
         auto_helper_logger.error(f"Uncaught exception: {tb_text}")
 
 
-def config_logger(config):
+def config_logger(config=None, name='ok-script'):
+    if not config:
+        config = {'debug': True}
     if config.get('debug'):
         auto_helper_logger.setLevel(logging.DEBUG)
     else:
         auto_helper_logger.setLevel(logging.INFO)
 
+    communicate_handler = CommunicateHandler()
+    communicate_handler.setFormatter(formatter)
     auto_helper_logger.handlers = []
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
@@ -58,7 +61,7 @@ def config_logger(config):
     logging.getLogger().handlers = []
 
     if config.get('log_file'):
-        logger_file = get_path_relative_to_exe(config.get('log_file'))
+        logger_file = get_relative_path(os.path.join('logs', name + '.log'))
         ensure_dir_for_file(logger_file)
 
         # File handler with rotation
@@ -69,7 +72,7 @@ def config_logger(config):
         auto_helper_logger.addHandler(file_handler)
 
     if config.get('error_log_file'):
-        error_log_file = get_path_relative_to_exe(config.get('error_log_file'))
+        error_log_file = get_relative_path(os.path.join('logs', name + '_error.log'))
         ensure_dir_for_file(error_log_file)
 
         os.makedirs("logs", exist_ok=True)

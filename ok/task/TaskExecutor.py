@@ -13,6 +13,7 @@ from ok.logging.Logger import get_logger
 from ok.stats.StreamStats import StreamStats
 from ok.task.BaseTask import BaseTask
 from ok.task.TriggerTask import TriggerTask
+from ok.util.clazz import init_class_by_name
 
 logger = get_logger(__name__)
 
@@ -72,7 +73,7 @@ class TaskExecutor:
     def init_tasks(self, task_classes):
         tasks = []
         for task_class in task_classes:
-            task = task_class()
+            task = init_class_by_name(task_class[0], task_class[1])
             task.set_executor(self)
             tasks.append(task)
         return tasks

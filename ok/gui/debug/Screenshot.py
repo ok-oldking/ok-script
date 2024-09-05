@@ -13,7 +13,8 @@ import ok.gui
 from ok.feature.Box import Box
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
-from ok.util.path import get_path_relative_to_exe, find_first_existing_file, clear_folder, sanitize_filename
+from ok.util.path import find_first_existing_file, clear_folder, sanitize_filename, \
+    get_relative_path
 
 logger = get_logger(__name__)
 
@@ -33,10 +34,10 @@ class Screenshot(QObject):
         self.exit_event = exit_event
         communicate.draw_box.connect(self.draw_box)
         communicate.screenshot.connect(self.screenshot)
-        self.click_screenshot_folder = get_path_relative_to_exe(
+        self.click_screenshot_folder = get_relative_path(
             ok.gui.ok.config.get("click_screenshots_folder")) if ok.gui.ok.config.get(
             "click_screenshots_folder") else None
-        self.screenshot_folder = get_path_relative_to_exe(ok.gui.ok.config.get("screenshots_folder"))
+        self.screenshot_folder = get_relative_path(ok.gui.ok.config.get("screenshots_folder"))
         logger.debug(f"init Screenshot {self.screenshot_folder} {self.click_screenshot_folder}")
         if self.click_screenshot_folder is not None or self.screenshot_folder is not None:
             self.task_queue = queue.Queue()

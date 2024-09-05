@@ -3,7 +3,7 @@ import sys
 
 from PySide6.QtCore import Qt, QTranslator, QCoreApplication
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentTranslator, qconfig
+from qfluentwidgets import FluentTranslator, qconfig, InfoBar, InfoBarPosition
 
 from ok.gui.common.config import cfg
 from ok.gui.i18n.path import i18n_path
@@ -24,6 +24,7 @@ def init_app_config():
     app.installTranslator(translator)
     translator = QTranslator(app)
     full_path = os.path.join(i18n_path, f"{locale.name()}")
+
     if translator.load(locale.name(), ":/i18n"):
         translator.setParent(app)
         app.installTranslator(translator)
@@ -33,6 +34,23 @@ def init_app_config():
         logger.debug(f"No translation available for {locale}, falling back to English/default. {full_path}")
     qconfig.theme = cfg.themeMode.value
     return app, locale
+
+
+def show_info_bar(window, message, title=None, error=False):
+    bar = InfoBar.error if error else InfoBar.info
+    title = QCoreApplication.translate('app', title)
+    message = QCoreApplication.translate('app', message)
+    if title is None:
+        title = f"{QCoreApplication.translate('app', 'Error') if error else QCoreApplication.translate('app', 'Info')}:"
+    bar(
+        title=title,
+        content=message,
+        orient=Qt.Horizontal,
+        isClosable=True,
+        position=InfoBarPosition.TOP,
+        duration=5000,  # won't disappear automatically
+        parent=window
+    )
 
 
 def center_window(app, window):

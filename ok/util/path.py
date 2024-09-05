@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import sys
+import time
 
 
 def get_path_relative_to_exe(*files):
@@ -19,6 +20,20 @@ def get_path_relative_to_exe(*files):
 
     # Join the directory with the file paths
     path = os.path.join(the_dir, *files)
+
+    # Normalize the path
+    normalized_path = os.path.normpath(path)
+
+    return normalized_path
+
+
+def get_relative_path(*files):
+    for file in files:
+        if file is None:
+            return
+
+    # Join the directory with the file paths
+    path = os.path.join(os.getcwd(), *files)
 
     # Normalize the path
     normalized_path = os.path.normpath(path)
@@ -58,7 +73,7 @@ def ensure_dir_for_file(file_path):
     return ensure_dir(directory)
 
 
-def ensure_dir(directory):
+def ensure_dir(directory, clear=False):
     # Check if the directory is a file
     if os.path.isfile(directory):
         # If it is a file, delete it
@@ -68,8 +83,22 @@ def ensure_dir(directory):
     if directory and not os.path.exists(directory):
         # If the directory does not exist, create it (including any intermediate directories)
         os.makedirs(directory)
+    elif clear:
+        clear_folder(directory)
 
     return directory
+
+
+def delete_if_exists(file_path):
+    if os.path.exists(file_path):
+        shutil.rmtree(file_path, onerror=handle_remove_error)
+
+
+def handle_remove_error(func, path, exc_info):
+    print(f"Error removing {path}: {exc_info}")
+    os.chmod(path, 0o777)
+    time.sleep(1)
+    func(path)
 
 
 def sanitize_filename(filename):

@@ -17,7 +17,6 @@ from ok.gui.i18n.GettextTranslator import get_translations
 from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.gui.util.app import init_app_config
 from ok.logging.Logger import get_logger
-from ok.update.Updater import Updater
 
 logger = get_logger(__name__)
 
@@ -43,6 +42,7 @@ class App:
         self.title = self.config.get('gui_title')
         self.version = self.config.get('version')
         self.overlay = self.config.get('debug')
+        self.updater = None
         logger.debug(f'locale name {self.locale.name()}')
 
         self.loading_window = None
@@ -53,10 +53,6 @@ class App:
         if self.config.get('analytics'):
             self.fire_base_analytics = Analytics(self.config, self.exit_event)
 
-        if self.config.get('update'):
-            self.updater = Updater(self.config, exit_event)
-        else:
-            self.updater = None
         self.start_controller = StartController(self.config, exit_event)
         if self.config.get('debug'):
             self.to_translate = set()

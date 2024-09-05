@@ -181,6 +181,7 @@ class OK:
         self.exit_event.set()
         if self.app:
             self.app.quit()
+        sys.exit(9)
 
     def init_device_manager(self):
         if self.device_manager is None:

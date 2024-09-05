@@ -1,6 +1,6 @@
 import os
 
-from PySide6.QtCore import QObject, Signal, Qt, QCoreApplication
+from PySide6.QtCore import QObject, Signal, Qt
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow, InfoBar, InfoBarPosition
 
@@ -14,6 +14,7 @@ from ok.gui.start.StartTab import StartTab
 from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
 from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
 from ok.gui.util.Alert import alert_error
+from ok.gui.util.app import show_info_bar
 from ok.gui.widget.StartLoadingDialog import StartLoadingDialog
 from ok.logging.Logger import get_logger
 
@@ -125,20 +126,7 @@ class MainWindow(MSFluentWindow):
         self.tray.showMessage(title, message)
 
     def show_notification(self, message, title=None, error=False, tray=False):
-        bar = InfoBar.error if error else InfoBar.info
-        title = QCoreApplication.translate('app', title)
-        message = QCoreApplication.translate('app', message)
-        if title is None:
-            title = f"{self.tr('Error') if error else 'Info'}:"
-        bar(
-            title=title,
-            content=message,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=5000,  # won't disappear automatically
-            parent=self.window()
-        )
+        show_info_bar(self.window(), message, title, error)
 
         if tray:
             self.tray.showMessage(title, message, QSystemTrayIcon.Critical if error else QSystemTrayIcon.Information,

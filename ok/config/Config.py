@@ -1,7 +1,7 @@
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 from ok.util.json import read_json_file, write_json_file
-from ok.util.path import get_path_relative_to_exe
+from ok.util.path import get_relative_path
 
 logger = get_logger(__name__)
 
@@ -22,7 +22,7 @@ class Config(dict):
         self.validator = validator
         if folder is None:
             folder = self.config_folder
-        self.config_file = get_path_relative_to_exe(folder, f"{name}.json")
+        self.config_file = get_relative_path(folder, f"{name}.json")
 
         # Read the config file, if it exists, otherwise use default
         config = read_json_file(self.config_file)
