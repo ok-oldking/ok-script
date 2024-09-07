@@ -3,6 +3,7 @@ import subprocess
 import sys
 
 from ok.logging.Logger import get_logger
+from ok.util.path import delete_if_exists
 
 logger = get_logger(__name__)
 
@@ -116,18 +117,69 @@ def copy_python_exe():
     copy_python_files(os.path.dirname(python_exe), 'python')
 
 
+def modify_venv_cfg(name):
+    file_path = os.path.join('python', f'{name}_env', 'pyvenv.cfg')
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+
+    with open(file_path, 'w') as file:
+        for line in lines:
+            if line.startswith('home ='):
+                file.write('home = .\\python\n')
+            elif line.startswith('executable ='):
+                file.write('executable = .\\python\\python.exe\n')
+            elif line.startswith('command ='):
+                file.write('command = .\\python\\python.exe -m venv .\\python\\app_env\n')
+            else:
+                file.write(line)
+
+
 def create_venv(name):
     copy_python_exe()
     mini_python_exe = 'python\\python.exe'
     lenv_path = f'python\\{name}'
+    ok = False
     if os.path.exists(lenv_path):
         logger.info(f'venv already exists: {lenv_path}')
-    else:
+        try:
+            result = subprocess.run([os.path.join(lenv_path, 'Scripts', 'python.exe'), '--version'],
+                                    capture_output=True,
+                                    text=True)
+
+            # Get the output
+            output = result.stdout.strip() or result.stderr.strip()
+
+            # Check if the output starts with "Python" and ends with a version number
+            if output.startswith("Python") and output.split()[1].replace('.', '').isdigit():
+                logger.info(f'venv check ok : {output}')
+                ok = True
+            else:
+                logger.info(f'venv check error : {output}')
+                kill_exe(lenv_path)
+                delete_if_exists(lenv_path)
+        except Exception as e:
+            logger.error(f'venv check error : {e}')
+            kill_exe(lenv_path)
+            delete_if_exists(lenv_path)
+    if not ok:
         # Execute the command to create a virtual environment
         result = subprocess.run([mini_python_exe, '-m', 'venv', lenv_path], check=True, capture_output=True, text=True)
         logger.info(f"Virtual environment {name} created successfully.")
         logger.info(result.stdout)
+        modify_venv_cfg(name)
+        logger.info('modify venv.cfg done')
     return lenv_path
+
+
+def kill_exe(relative_path):
+    for proc in psutil.process_iter(['pid', 'name', 'exe']):
+        if proc.info['name'] == 'adb.exe' and os.path.normpath(proc.info['exe']).startswith(
+                os.path.abspath(relative_path)):
+            try:
+                logger.info(f'try kill the exe {proc.info}')
+                proc.kill()
+            except Exception as e:
+                logger.error(f'kill process error', e)
 
 
 if __name__ == '__main__':

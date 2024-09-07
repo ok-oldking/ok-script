@@ -10,10 +10,12 @@ import sys
 from functools import cmp_to_key
 
 import git
+from PySide6.QtCore import QCoreApplication
+
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
 from ok.gui.launcher.python_env import create_venv, delete_files
-from ok.gui.util.Alert import alert_error
+from ok.gui.util.Alert import alert_error, alert_info
 from ok.logging.LogTailer import LogTailer
 from ok.logging.Logger import get_logger
 from ok.util.Handler import Handler
@@ -31,14 +33,20 @@ class GitUpdater:
         self.config = app_config.get('git_update')
         self.version = app_config.get('version')
         self.debug = app_config.get('debug')
+        self.lts_ver = ""
         self.repo = None
         self.handler = Handler(exit_event, self.__class__.__name__)
         self.launcher_configs = []
         self.launcher_config = Config('launcher', {'profile_name': '', 'source': self.get_default_source(),
-                                                   'dependencies_installed': False, 'version': self.version})
+                                                   'dependencies_installed': False, 'app_version': self.version,
+                                                   'launcher_version': self.version})
         self.url = self.get_current_source()['git_url']
         self.launch_profiles = []
+        self.all_versions = []
         self.load_current_ver()
+        self.version_to_hash = {}
+        self.log_tailer = None
+        self.list_all_versions()
 
     def load_current_ver(self):
         path = os.path.join('repo', self.version)
@@ -54,70 +62,67 @@ class GitUpdater:
     def start_app(self):
         try:
             # Run pip install command
+            if not self.log_tailer:
+                self.log_tailer = LogTailer(os.path.join('logs', 'ok-script.log'), self.exit_event)
+                self.log_tailer.start()
 
-            new_ver = self.launcher_config['version']
+            new_ver = self.launcher_config['app_version']
             entry = self.get_current_profile()['entry']
             script_path = os.path.join('repo', new_ver, entry)
 
-            # startupinfo = subprocess.STARTUPINFO()
-            # startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
-            # cwd = os.getcwd()
             python_path = os.path.join('python', 'app_env', 'Scripts', 'pythonw.exe')
             # Launch the script detached from the current process
             logger.info(f'launching {python_path} {script_path}')
             process = subprocess.Popen(
                 [python_path, script_path],
-                # stderr=subprocess.PIPE,
-                # stdout=subprocess.PIPE,
-                # startupinfo=startupinfo,
                 creationflags=subprocess.CREATE_NEW_CONSOLE
             )
-
-            # subprocess.Popen(game_path, cwd=os.path.dirname(game_path), close_fds=True,
-            #                  creationflags=subprocess.CREATE_NEW_CONSOLE)
 
             # Get the process ID (PID)
             pid = process.pid
             logger.info(f"Process ID (PID): {pid}")
-
-            log_tailer = LogTailer(os.path.join('logs', 'ok-script.log'), self.exit_event)
-            log_tailer.start()
-            # Print the stdout and stderr in real-time
-            # while True:
-            #     output = process.stdout.readline() or process.stderr.readline()
-            #     if output == '' and process.poll() is not None:
-            #         break
-            #     if output:
-            #         logger.info(decode_and_clean(output.strip()))
-            #
-            # # Print any remaining stderr
-            # stderr = process.communicate()[1]
-            # if stderr:
-            #     logger.error(decode_and_clean(stderr.strip()))
-            #
-            # # Check if the process was successfully launched
-            # if process.poll() is None:
-            #     logger.info("Process successfully started.")
-            # else:
-            #     logger.error("Failed to launch the process.")
-            #
-            #     # Read the output and error streams
-            # stdout, stderr = process.communicate()
-            #
-            # # Print the output and error streams
-            # if stdout:
-            #     logger.info("Output:\n", stdout)
-            # if stderr:
-            #     logger.error("Errors:\n", stderr)
-            #
-            # # Check if the process was successfully launched
-            # if process.returncode == 0:
-            #     logger.info("Process returncode success.")
-            # else:
-            #     logger.error(f"Process returncode error. {process.returncode}")
         except Exception as e:
             logger.error(f"An error occurred: {e}")
+
+    def version_selection_changed(self, new_version):
+        self.handler.post(lambda: self.do_version_selection_changed(new_version), remove_existing=True,
+                          skip_if_running=False)
+
+    def do_version_selection_changed(self, new_version):
+        date = None
+        log = None
+        try:
+            self.init_repo()
+            if self.launcher_config.get('app_version') != new_version:
+                start_hash = self.version_to_hash[self.launcher_config.get('app_version')]
+                end_hash = self.version_to_hash[new_version]
+
+                logger.info(f'start fetching origin {new_version}')
+                # origin.fetch(start_hash, end_hash)
+                self.repo.git.fetch('origin', 'tag', new_version, f'--depth={10}')
+                # origin.fetch(refspec=f"tag:{new_version}", depth=10)
+                logger.info(f'done fetching origin')
+                log = QCoreApplication.translate('app', "Updates:") + "\n"
+
+                started = False
+
+                for commit in self.repo.iter_commits(rev=end_hash):
+                    logger.info(f'commit {commit.hexsha} {commit.message}')
+                    if commit.hexsha == start_hash:
+                        break
+                    if commit.hexsha == end_hash:
+                        date = format_date(commit.committed_datetime)
+                        started = True
+                    if started:
+                        log += commit.message.strip() + '\n'
+            else:
+                log = ""
+                # log = self.repo.git.log('--oneline', f'{start_hash}..{end_hash}')
+            logger.info(f'update log: {log}')
+        except Exception as e:
+            logger.error(f"version_selection_changed error occurred:", e)
+            alert_error("get version log error")
+        communicate.update_logs.emit(get_version_text(new_version == self.lts_ver, new_version, date, log))
 
     def install_package(self, package_name, app_env_path):
         try:
@@ -159,6 +164,11 @@ class GitUpdater:
         except Exception as e:
             logger.error(f"An error occurred: {e}")
 
+    def init_repo(self):
+        if not self.repo:
+            repo_path = get_relative_path(os.path.join('repo', self.launcher_config.get('launcher_version')))
+            self.repo = git.Repo(repo_path)
+
     def update_to_version(self, version):
         self.handler.post(lambda: self.do_update_to_version(version))
 
@@ -179,33 +189,38 @@ class GitUpdater:
         communicate.launcher_profiles.emit(launch_profiles)
         return launch_profiles
 
-    def install_dependencies(self):
-        app_env_path = create_venv('app_env')
+    def install_dependencies(self, env):
+        env_path = create_venv(env)
         profile = self.get_current_profile()
         logger.info(f'installing dependencies for {profile}')
         if profile:
-            for dependency in profile['install_dependencies']:
-                if not self.install_package(dependency, app_env_path):
+            for dependency in profile[f'install_dependencies']:
+                if not self.install_package(dependency, env_path):
                     logger.error(f'failed to install {dependency}')
                     return False
             delete_files()
             return True
 
     def run(self):
+        if self.all_versions and self.launcher_config['app_version'] not in self.all_versions:
+            alert_error(
+                QCoreApplication.translate('app', 'The current version {} must be updated').format(self.version))
+            return
+
         if self.handler.post(self.do_run, skip_if_running=True, remove_existing=True):
             communicate.update_running.emit(True)
 
     def do_run(self):
-        if not self.launcher_config.get('dependencies_installed'):
-            if not self.install_dependencies():
-                communicate.update_running.emit(False)
-                return False
-
         self.start_app()
         logger.info('start_app end')
 
     def do_update_to_version(self, version):
         try:
+            if self.version == version:
+                alert_info(QCoreApplication.translate('app', f'Already updated to version:') + version)
+                communicate.clone_version.emit(None)
+                communicate.update_running.emit(False)
+                return
             self.config['dependencies_installed'] = False
             path = os.path.join('repo', version)
             logger.info(f'start cloning repo {path}')
@@ -213,10 +228,10 @@ class GitUpdater:
             repo = git.Repo.clone_from(self.url, path, branch=version, depth=1)
             logger.info(f'clone repo success {path}')
             self.launch_profiles = self.read_launcher_config(path)
-            self.launcher_config['version'] = version
+            self.launcher_config['app_version'] = version
             self.launcher_config['dependencies_installed'] = False
             communicate.clone_version.emit(None)
-            communicate.update_running.emit(False)
+            self.do_run()
         except Exception as e:
             logger.error('do_update_to_version error', e)
             communicate.clone_version.emit(str(e))
@@ -224,6 +239,9 @@ class GitUpdater:
 
     def list_all_versions(self):
         if self.handler.post(self.do_list_all_versions, skip_if_running=True):
+            if not self.checked_dep:
+                self.install_dependencies('launcher_env')
+                self.checked_dep = True
             communicate.update_running.emit(True)
             communicate.versions.emit(None)
 
@@ -232,15 +250,25 @@ class GitUpdater:
             logger.info(f'start fetching remote version {self.url}')
             remote_refs = git.cmd.Git().ls_remote(self.url, tags=True)
 
+            lts_hash = ''
             # Parse the output to get tag names
-            tags = []
+            hash_to_ver = {}
             for line in remote_refs.splitlines():
-                if 'refs/tags/' in line:
-                    tag = line.split('refs/tags/')[1]
-                    if '^{}' not in tag and is_valid_version(tag):
-                        tags.append(tag)
-            tags = sorted(tags, key=cmp_to_key(is_newer_or_eq_version), reverse=True)
+                if line.endswith('^{}') and 'refs/tags/' in line:
+                    hash, tag = line[:-3].split('refs/tags/')
+                    hash = hash.strip()
+                    if tag == 'lts':
+                        lts_hash = hash
+                    elif is_valid_version(tag):
+                        hash_to_ver[hash] = tag
+                        self.version_to_hash[tag] = hash
+            self.lts_ver = hash_to_ver.get(lts_hash) or 'v0.0.0'
+            logger.info(f'lts hash: {lts_hash} lts_ver: {self.lts_ver}')
+            tags = sorted(list(filter(lambda x: is_newer_or_eq_version(x, self.lts_ver) >= 0, hash_to_ver.values())),
+                          key=cmp_to_key(is_newer_or_eq_version),
+                          reverse=True)
             logger.info(f'done fetching remote version size {len(tags)}')
+            self.all_versions = tags
             communicate.update_running.emit(False)
             communicate.versions.emit(tags)
         except Exception as e:
@@ -290,6 +318,10 @@ def move_file(src, dst_folder):
     shutil.move(src, dst)  # Move the file
 
 
+def format_date(date):
+    return date.strftime('%Y-%m-%d')
+
+
 def is_newer_or_eq_version(v1, v2):
     try:
         v1_parts = list(map(int, v1.lstrip('v').split('.')))
@@ -331,6 +363,19 @@ def decode_and_clean(byte_string):
     clean_string = ansi_escape.sub('', decoded_string)
 
     return clean_string
+
+
+def get_version_text(lts, version, date, logs):
+    if date and logs:
+        text = "<h3>{title}: {version}</h3>"
+        if lts:
+            title = QCoreApplication.translate('app', 'Stable Version')
+        else:
+            title = QCoreApplication.translate('app', 'Beta Version')
+        text = text.format(title=title, version=version)
+        text += "<p>{date}</p>".format(date=date)
+        text += "<p>{notes}</p>".format(notes=logs.replace('\n', "<br/>"))
+        return text
 
 
 if __name__ == '__main__':

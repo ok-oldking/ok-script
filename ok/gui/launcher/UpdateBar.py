@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QSpacerItem, QSizePolicy, QVBoxLayout
 from qfluentwidgets import PushButton, ComboBox
 
 from ok.gui.Communicate import communicate
@@ -15,17 +15,27 @@ class UpdateBar(QWidget):
         super().__init__()
         self.updater = updater
 
-        self.layout = QHBoxLayout()
-        self.layout.setSpacing(20)
+        self.layout = QVBoxLayout()
+
+        self.version_log_label = QLabel()
+        self.version_log_label.setWordWrap(True)
+        self.layout.addWidget(self.version_log_label)
+
+        self.hbox_layout = QHBoxLayout()
+        self.layout.addLayout(self.hbox_layout)
+
+        communicate.update_logs.connect(self.update_logs)
+        self.hbox_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        self.hbox_layout.setSpacing(20)
         self.version_label = QLabel(self.tr("Current Version: ") + config.get('version'))
-        self.layout.addWidget(self.version_label)
+        self.hbox_layout.addWidget(self.version_label)
         communicate.versions.connect(self.update_versions)
         communicate.clone_version.connect(self.clone_version)
         communicate.update_running.connect(self.update_running)
         self.update_source_box = QHBoxLayout()
         self.update_source_box.setSpacing(6)
 
-        self.layout.addLayout(self.update_source_box, stretch=0)
+        self.hbox_layout.addLayout(self.update_source_box, stretch=0)
         self.source_label = QLabel(self.tr("Update Source:"))
         self.update_source_box.addWidget(self.source_label, stretch=0)
 
@@ -36,25 +46,31 @@ class UpdateBar(QWidget):
         source_names = [source['name'] for source in sources]
         self.update_sources.addItems(source_names)
         if self.updater.launcher_config.get('source') in source_names:
-            self.update_sources.setText(self.updater.launcher_config.get('source'))
+            self.update_sources.setCurrentText(self.updater.launcher_config.get('source'))
         else:
-            self.update_sources.setText(source_names[0])
+            self.update_sources.setCurrentText(source_names[0])
         self.update_sources.currentTextChanged.connect(self.updater.update_source)
 
         self.check_update_button = PushButton(self.tr("Check for Update"))
-        self.layout.addWidget(self.check_update_button)
+        self.hbox_layout.addWidget(self.check_update_button)
         self.check_update_button.clicked.connect(self.updater.list_all_versions)
 
         self.version_list = ComboBox()
-        self.layout.addWidget(self.version_list)
+        self.hbox_layout.addWidget(self.version_list)
+        self.version_list.currentTextChanged.connect(self.updater.version_selection_changed)
 
         self.update_button = PushButton(self.tr("Update"))
         self.update_button.clicked.connect(self.update_clicked)
-        self.layout.addWidget(self.update_button)
+        self.hbox_layout.addWidget(self.update_button)
 
         self.setLayout(self.layout)
 
-        self.updater.list_all_versions()
+    def update_logs(self, logs):
+        if logs:
+            self.version_log_label.setText(logs)
+        else:
+            self.version_log_label.setText("")
+        self.version_label.setVisible(logs is not None)
 
     def update_clicked(self):
         self.updater.update_to_version(self.version_list.currentText())

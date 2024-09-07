@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QSpacerItem, QSizePolicy
 from qfluentwidgets import PushButton, ComboBox
 
 from ok.gui.Communicate import communicate
@@ -19,9 +19,10 @@ class RunBar(QWidget):
 
         self.layout = QHBoxLayout()
 
+        self.layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+
         self.profile_layout = QHBoxLayout()
         self.profile_layout.setSpacing(6)
-
         self.layout.addLayout(self.profile_layout, stretch=0)
         self.profile_label = QLabel(self.tr("Choose Profile:"))
         self.profile_layout.addWidget(self.profile_label, stretch=0)
@@ -34,14 +35,13 @@ class RunBar(QWidget):
 
         self.update_profile(None)
 
-        self.run_button = PushButton(self.tr("Run"))
+        self.run_button = PushButton(self.tr("Start"))
         self.run_button.clicked.connect(self.updater.run)
         self.layout.addWidget(self.run_button, alignment=Qt.AlignRight, stretch=0)
 
         self.setLayout(self.layout)
 
         communicate.update_running.connect(self.update_running)
-        self.updater.list_all_versions()
 
     def update_profile(self, profiles):
         profile_names = [profile['name'] for profile in self.updater.launch_profiles]
