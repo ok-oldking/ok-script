@@ -1,6 +1,7 @@
 from PySide6.QtCore import QCoreApplication
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QVBoxLayout
+from qfluentwidgets import SplitTitleBar
 
 from ok.gui.Communicate import communicate
 from ok.gui.common.config import isWin11
@@ -10,8 +11,6 @@ from ok.gui.launcher.RunBar import RunBar
 from ok.gui.launcher.UpdateBar import UpdateBar
 from ok.gui.util.app import show_info_bar
 from ok.logging.Logger import get_logger
-from ok.update.GitUpdater import GitUpdater
-from qfluentwidgets import SplitTitleBar
 
 logger = get_logger(__name__)
 
@@ -23,12 +22,10 @@ else:
 
 class LauncherWindow(Window):
 
-    def __init__(self, config, exit_event):
+    def __init__(self, config, updater, exit_event):
         super().__init__()
         self.exit_event = exit_event
-
-        self.updater = GitUpdater(config, exit_event)
-
+        self.updater = updater
         self.setTitleBar(SplitTitleBar(self))
         self.titleBar.raise_()
 

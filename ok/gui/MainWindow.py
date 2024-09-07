@@ -1,6 +1,6 @@
 import os
 
-from PySide6.QtCore import QObject, Signal, Qt
+from PySide6.QtCore import QObject, Signal, Qt, QEvent
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow, InfoBar, InfoBarPosition
 
@@ -96,6 +96,11 @@ class MainWindow(MSFluentWindow):
             self.main_window_config['last_version'] = version
             self.switchTo(self.about_tab)
         logger.info('main window __init__ done')
+
+    def showEvent(self, event):
+        if event.type() == QEvent.Show:
+            logger.info("Window has fully displayed")
+        super().showEvent(event)
 
     def starting_emulator(self, done, error, seconds_left):
         if error:

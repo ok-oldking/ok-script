@@ -36,6 +36,7 @@ class RunBar(QWidget):
         self.update_profile(None)
 
         self.run_button = PushButton(self.tr("Start"))
+        self.run_button.setEnabled(False)
         self.run_button.clicked.connect(self.updater.run)
         self.layout.addWidget(self.run_button, alignment=Qt.AlignRight, stretch=0)
 

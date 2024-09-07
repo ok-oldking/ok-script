@@ -14,10 +14,10 @@ from PySide6.QtCore import QCoreApplication
 
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
-from ok.gui.launcher.python_env import create_venv, delete_files
 from ok.gui.util.Alert import alert_error, alert_info
 from ok.logging.LogTailer import LogTailer
 from ok.logging.Logger import get_logger
+from ok.update.python_env import create_venv, delete_files
 from ok.util.Handler import Handler
 from ok.util.path import delete_if_exists, get_relative_path
 
@@ -38,19 +38,35 @@ class GitUpdater:
         self.handler = Handler(exit_event, self.__class__.__name__)
         self.launcher_configs = []
         self.launcher_config = Config('launcher', {'profile_name': '', 'source': self.get_default_source(),
-                                                   'dependencies_installed': False, 'app_version': self.version,
+                                                   'app_dependencies_installed': False, 'app_version': self.version,
                                                    'launcher_version': self.version})
-        self.url = self.get_current_source()['git_url']
+        self.version = self.launcher_config.get('app_version')
+
         self.launch_profiles = []
         self.all_versions = []
         self.load_current_ver()
         self.version_to_hash = {}
         self.log_tailer = None
         self.list_all_versions()
+        self.yanked = False
+        self.outdated = False
+        self.starting_version = self.version
+        communicate.log.connect(self.log_handler)
+
+    @property
+    def url(self):
+        return self.get_current_source()['git_url']
 
     def load_current_ver(self):
         path = os.path.join('repo', self.version)
         self.launch_profiles = self.read_launcher_config(path)
+
+    def log_handler(self, lv, message):
+        if 'Window has fully displayed' in message:
+            logger.info(f'start success, exit launcher')
+            self.set_start_success()
+            self.exit_event.set()
+            sys.exit(0)
 
     def get_current_profile(self):
         return next((obj for obj in self.launch_profiles if obj['name'] == self.launcher_config.get('profile_name')),
@@ -58,15 +74,17 @@ class GitUpdater:
 
     def update_source(self, text):
         self.launcher_config['source'] = text
+        self.list_all_versions()
 
     def start_app(self):
         try:
-            # Run pip install command
-            if not self.log_tailer:
-                self.log_tailer = LogTailer(os.path.join('logs', 'ok-script.log'), self.exit_event)
-                self.log_tailer.start()
+            if self.yanked or self.outdated:
+                alert_error(
+                    QCoreApplication.translate('app', 'The current version {} must be updated').format(self.version))
+                communicate.update_running.emit(False)
+                return
 
-            new_ver = self.launcher_config['app_version']
+            new_ver = self.starting_version
             entry = self.get_current_profile()['entry']
             script_path = os.path.join('repo', new_ver, entry)
 
@@ -107,7 +125,6 @@ class GitUpdater:
                 started = False
 
                 for commit in self.repo.iter_commits(rev=end_hash):
-                    logger.info(f'commit {commit.hexsha} {commit.message}')
                     if commit.hexsha == start_hash:
                         break
                     if commit.hexsha == end_hash:
@@ -118,7 +135,7 @@ class GitUpdater:
             else:
                 log = ""
                 # log = self.repo.git.log('--oneline', f'{start_hash}..{end_hash}')
-            logger.info(f'update log: {log}')
+            # logger.info(f'update log: {log}')
         except Exception as e:
             logger.error(f"version_selection_changed error occurred:", e)
             alert_error("get version log error")
@@ -170,6 +187,7 @@ class GitUpdater:
             self.repo = git.Repo(repo_path)
 
     def update_to_version(self, version):
+        communicate.update_running.emit(True)
         self.handler.post(lambda: self.do_update_to_version(version))
 
     def read_launcher_config(self, path):
@@ -202,17 +220,21 @@ class GitUpdater:
             return True
 
     def run(self):
-        if self.all_versions and self.launcher_config['app_version'] not in self.all_versions:
-            alert_error(
-                QCoreApplication.translate('app', 'The current version {} must be updated').format(self.version))
-            return
-
         if self.handler.post(self.do_run, skip_if_running=True, remove_existing=True):
             communicate.update_running.emit(True)
 
     def do_run(self):
+        if not self.launcher_config['app_dependencies_installed']:
+            if not self.install_dependencies('app_env'):
+                alert_info(QCoreApplication.translate('app', f'Install dependencies Failed'))
+                communicate.update_running.emit(False)
+                return
         self.start_app()
         logger.info('start_app end')
+
+    def set_start_success(self):
+        self.launcher_config['app_version'] = self.starting_version
+        self.launcher_config['app_dependencies_installed'] = True
 
     def do_update_to_version(self, version):
         try:
@@ -221,15 +243,21 @@ class GitUpdater:
                 communicate.clone_version.emit(None)
                 communicate.update_running.emit(False)
                 return
-            self.config['dependencies_installed'] = False
             path = os.path.join('repo', version)
             logger.info(f'start cloning repo {path}')
-            delete_if_exists(path)
-            repo = git.Repo.clone_from(self.url, path, branch=version, depth=1)
+            repo = check_repo(path, self.url)
+            if repo is None:
+                delete_if_exists(path)
+                repo = git.Repo.clone_from(self.url, path, branch=version, depth=1)
+            else:
+                repo.git.fetch('origin', f'refs/tags/{version}:refs/tags/{version}', '--depth=1')
+                repo.git.checkout(version, force=True)
             logger.info(f'clone repo success {path}')
             self.launch_profiles = self.read_launcher_config(path)
-            self.launcher_config['app_version'] = version
-            self.launcher_config['dependencies_installed'] = False
+            self.launcher_config['app_dependencies_installed'] = False
+            self.starting_version = version
+            self.yanked = False
+            self.outdated = False
             communicate.clone_version.emit(None)
             self.do_run()
         except Exception as e:
@@ -239,14 +267,16 @@ class GitUpdater:
 
     def list_all_versions(self):
         if self.handler.post(self.do_list_all_versions, skip_if_running=True):
-            if not self.checked_dep:
-                self.install_dependencies('launcher_env')
-                self.checked_dep = True
             communicate.update_running.emit(True)
             communicate.versions.emit(None)
 
     def do_list_all_versions(self):
         try:
+            if not self.log_tailer:
+                self.log_tailer = LogTailer(os.path.join('logs', 'ok-script.log'), self.exit_event)
+                self.log_tailer.start()
+                logger.info('start log tailer')
+
             logger.info(f'start fetching remote version {self.url}')
             remote_refs = git.cmd.Git().ls_remote(self.url, tags=True)
 
@@ -260,11 +290,18 @@ class GitUpdater:
                     if tag == 'lts':
                         lts_hash = hash
                     elif is_valid_version(tag):
-                        hash_to_ver[hash] = tag
                         self.version_to_hash[tag] = hash
+                        hash_to_ver[hash] = tag
             self.lts_ver = hash_to_ver.get(lts_hash) or 'v0.0.0'
             logger.info(f'lts hash: {lts_hash} lts_ver: {self.lts_ver}')
-            tags = sorted(list(filter(lambda x: is_newer_or_eq_version(x, self.lts_ver) >= 0, hash_to_ver.values())),
+            if self.version not in self.version_to_hash:
+                logger.info('version yanked')
+                self.yanked = True
+            if is_newer_or_eq_version(self.version, self.lts_ver) < 0:
+                logger.info(f'version outdated {self.version} {self.lts_ver}')
+                self.outdated = True
+            tags = sorted(list(filter(lambda x: is_newer_or_eq_version(x, self.lts_ver) >= 0 and x != self.version,
+                                      hash_to_ver.values())),
                           key=cmp_to_key(is_newer_or_eq_version),
                           reverse=True)
             logger.info(f'done fetching remote version size {len(tags)}')
@@ -304,6 +341,21 @@ def is_valid_repo(path):
         return True
     except git.exc.InvalidGitRepositoryError:
         return False
+
+
+def check_repo(path, new_url):
+    try:
+        if os.path.isdir(path):
+            repo = git.Repo(path)
+            if not repo.bare:
+                origin = repo.remotes.origin
+                current_url = origin.url
+                if current_url != new_url:
+                    logger.info(f"Updating remote URL from {current_url} to {new_url}")
+                    origin.set_url(new_url)
+                return repo
+    except Exception as e:
+        logger.error(f'invalid repo path {path}', e)
 
 
 def move_file(src, dst_folder):

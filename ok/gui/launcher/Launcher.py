@@ -1,8 +1,10 @@
+import os
 import sys
 
 from ok.gui.launcher.LauncherWindow import LauncherWindow
 from ok.gui.util.app import init_app_config, center_window
 from ok.logging.Logger import get_logger, config_logger
+from ok.update.GitUpdater import GitUpdater
 from ok.util.exit_event import ExitEvent
 
 logger = get_logger(__name__)
@@ -16,12 +18,16 @@ class Launcher:
         self.config = config
         self.exit_event = ExitEvent()
 
+        self.updater = GitUpdater(config, self.exit_event)
+
     def start(self):
         try:
             config_logger(self.config, name='launcher')
+
+            logger.info(f'launcher start pid {os.getpid()}')
             self.app, self.locale = init_app_config()
 
-            w = LauncherWindow(self.config, self.exit_event)
+            w = LauncherWindow(self.config, self.updater, self.exit_event)
             center_window(self.app, w)
             w.show()
             self.app.exec_()

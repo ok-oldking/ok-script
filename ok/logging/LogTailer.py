@@ -1,7 +1,10 @@
 import logging
+import msvcrt
 import os
 import threading
 import time
+
+import win32file
 
 from ok.gui.Communicate import communicate
 
@@ -16,9 +19,27 @@ class LogTailer(threading.Thread):
         # Create the file if it doesn't exist
         if not os.path.exists(self.file_path):
             open(self.file_path, 'w').close()
+            # Get a handle using Win32 API, specifying the shared access
+        handle = win32file.CreateFile(
+            self.file_path,
+            win32file.GENERIC_READ,
+            win32file.FILE_SHARE_DELETE | win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE,
+            None,
+            win32file.OPEN_EXISTING,
+            0,
+            None
+        )
+
+        # Detach the handle
+        detached_handle = handle.Detach()
+
+        # Get a file descriptor associated with the handle
+        self.file_descriptor = msvcrt.open_osfhandle(detached_handle, os.O_RDONLY)
 
     def run(self):
-        with open(self.file_path, mode='r', encoding='utf-8') as file:
+
+        # Open the file descriptor
+        with open(self.file_descriptor, mode='r', encoding='utf-8') as file:
             # Move the pointer to the end of the file
             file.seek(0, os.SEEK_END)
 

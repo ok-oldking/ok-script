@@ -27,7 +27,7 @@ class UpdateBar(QWidget):
         communicate.update_logs.connect(self.update_logs)
         self.hbox_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
         self.hbox_layout.setSpacing(20)
-        self.version_label = QLabel(self.tr("Current Version: ") + config.get('version'))
+        self.version_label = QLabel(self.tr("Current Version: ") + self.updater.version)
         self.hbox_layout.addWidget(self.version_label)
         communicate.versions.connect(self.update_versions)
         communicate.clone_version.connect(self.clone_version)
@@ -41,7 +41,7 @@ class UpdateBar(QWidget):
 
         self.update_sources = ComboBox()
         self.update_source_box.addWidget(self.update_sources, stretch=0)
-        self.update_source_box.addSpacing(30)
+        self.update_source_box.addSpacing(10)
         sources = config.get('git_update').get('sources')
         source_names = [source['name'] for source in sources]
         self.update_sources.addItems(source_names)
@@ -56,12 +56,19 @@ class UpdateBar(QWidget):
         self.check_update_button.clicked.connect(self.updater.list_all_versions)
 
         self.version_list = ComboBox()
+        self.version_list.setVisible(False)
         self.hbox_layout.addWidget(self.version_list)
         self.version_list.currentTextChanged.connect(self.updater.version_selection_changed)
 
         self.update_button = PushButton(self.tr("Update"))
         self.update_button.clicked.connect(self.update_clicked)
         self.hbox_layout.addWidget(self.update_button)
+
+        self.update_button.setVisible(False)
+
+        self.is_newest = QLabel(self.tr("This is the newest version"))
+        self.is_newest.setVisible(False)
+        self.hbox_layout.addWidget(self.is_newest)
 
         self.setLayout(self.layout)
 
@@ -89,10 +96,13 @@ class UpdateBar(QWidget):
         self.version_list.setDisabled(running)
 
     def update_versions(self, versions):
-        if versions is None:  # fetch version error
+        if not versions:  # fetch version error
             self.version_list.clear()
         else:
             current_items = [self.version_list.itemText(i) for i in range(self.version_list.count())]
             if current_items != versions:
                 self.version_list.clear()
                 self.version_list.addItems(versions)
+        self.version_list.setVisible(versions is not None)
+        self.update_button.setVisible(versions is not None)
+        self.is_newest.setVisible(len(versions) == 0)

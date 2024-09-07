@@ -172,14 +172,14 @@ def create_venv(name):
 
 
 def kill_exe(relative_path):
-    for proc in psutil.process_iter(['pid', 'name', 'exe']):
-        if proc.info['name'] == 'adb.exe' and os.path.normpath(proc.info['exe']).startswith(
-                os.path.abspath(relative_path)):
-            try:
+    try:
+        for proc in psutil.process_iter(['pid', 'name', 'exe']):
+            if proc.info['name'] == 'adb.exe' and os.path.normpath(proc.info['exe']).startswith(
+                    os.path.abspath(relative_path)):
                 logger.info(f'try kill the exe {proc.info}')
                 proc.kill()
-            except Exception as e:
-                logger.error(f'kill process error', e)
+    except Exception as e:
+        logger.error(f'kill process error', e)
 
 
 if __name__ == '__main__':

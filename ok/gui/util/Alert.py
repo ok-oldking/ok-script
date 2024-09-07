@@ -2,6 +2,9 @@ from PySide6.QtWidgets import QMessageBox
 
 import ok
 from ok.gui.Communicate import communicate
+from ok.logging.Logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def show_alert(title, message):
@@ -26,4 +29,5 @@ def alert_info(message, tray=False):
 
 
 def alert_error(message, tray=False):
+    logger.error(message)
     communicate.notification.emit(None, message, True, tray)

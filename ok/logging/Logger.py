@@ -60,28 +60,26 @@ def config_logger(config=None, name='ok-script'):
     auto_helper_logger.addHandler(communicate_handler)
     logging.getLogger().handlers = []
 
-    if config.get('log_file'):
-        logger_file = get_relative_path(os.path.join('logs', name + '.log'))
-        ensure_dir_for_file(logger_file)
+    logger_file = get_relative_path(os.path.join('logs', name + '.log'))
+    ensure_dir_for_file(logger_file)
 
-        # File handler with rotation
-        file_handler = TimedRotatingFileHandler(logger_file, when="midnight", interval=1,
-                                                backupCount=7, encoding='utf-8')
-        file_handler.setFormatter(formatter)
-        file_handler.setLevel(logging.DEBUG)  # File handler level
-        auto_helper_logger.addHandler(file_handler)
+    # File handler with rotation
+    file_handler = TimedRotatingFileHandler(logger_file, when="midnight", interval=1,
+                                            backupCount=7, encoding='utf-8')
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.DEBUG)  # File handler level
+    auto_helper_logger.addHandler(file_handler)
 
-    if config.get('error_log_file'):
-        error_log_file = get_relative_path(os.path.join('logs', name + '_error.log'))
-        ensure_dir_for_file(error_log_file)
+    error_log_file = get_relative_path(os.path.join('logs', name + '_error.log'))
+    ensure_dir_for_file(error_log_file)
 
-        os.makedirs("logs", exist_ok=True)
-        # File handler with rotation
-        file_handler = TimedRotatingFileHandler(error_log_file, when="midnight", interval=1,
-                                                backupCount=7, encoding='utf-8')
-        file_handler.setFormatter(formatter)
-        file_handler.setLevel(logging.ERROR)  # File handler level
-        auto_helper_logger.addHandler(file_handler)
+    os.makedirs("logs", exist_ok=True)
+    # File handler with rotation
+    file_handler = TimedRotatingFileHandler(error_log_file, when="midnight", interval=1,
+                                            backupCount=7, encoding='utf-8')
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.ERROR)  # File handler level
+    auto_helper_logger.addHandler(file_handler)
 
     sys.excepthook = log_exception_handler
 
