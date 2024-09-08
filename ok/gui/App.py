@@ -17,6 +17,7 @@ from ok.gui.i18n.GettextTranslator import get_translations
 from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.gui.util.app import init_app_config
 from ok.logging.Logger import get_logger
+from ok.update.GitUpdater import GitUpdater
 
 logger = get_logger(__name__)
 
@@ -42,7 +43,9 @@ class App:
         self.title = self.config.get('gui_title')
         self.version = self.config.get('version')
         self.overlay = self.config.get('debug')
-        self.updater = None
+        if self.config.get('git_update'):
+            self.updater = GitUpdater(self.config, exit_event)
+            self.updater.update_launcher()
         logger.debug(f'locale name {self.locale.name()}')
 
         self.loading_window = None

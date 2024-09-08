@@ -1,3 +1,4 @@
+import argparse
 import importlib
 import json
 import locale
@@ -7,9 +8,11 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from functools import cmp_to_key
 
 import git
+import psutil
 from PySide6.QtCore import QCoreApplication
 
 from ok.config.Config import Config
@@ -19,7 +22,7 @@ from ok.logging.LogTailer import LogTailer
 from ok.logging.Logger import get_logger
 from ok.update.python_env import create_venv, delete_files
 from ok.util.Handler import Handler
-from ok.util.path import delete_if_exists, get_relative_path
+from ok.util.path import get_relative_path, delete_if_exists
 
 logger = get_logger(__name__)
 
@@ -30,43 +33,72 @@ class GitUpdater:
 
     def __init__(self, app_config, exit_event):
         self.exit_event = exit_event
+        self.app_config = app_config
         self.config = app_config.get('git_update')
-        self.version = app_config.get('version')
         self.debug = app_config.get('debug')
         self.lts_ver = ""
         self.repo = None
         self.handler = Handler(exit_event, self.__class__.__name__)
         self.launcher_configs = []
         self.launcher_config = Config('launcher', {'profile_name': '', 'source': self.get_default_source(),
-                                                   'app_dependencies_installed': False, 'app_version': self.version,
-                                                   'launcher_version': self.version})
-        self.version = self.launcher_config.get('app_version')
+                                                   'app_dependencies_installed': False,
+                                                   'app_version': app_config.get('version'),
+                                                   'launcher_version': app_config.get('version')})
 
         self.launch_profiles = []
         self.all_versions = []
         self.load_current_ver()
         self.version_to_hash = {}
         self.log_tailer = None
-        self.list_all_versions()
         self.yanked = False
         self.outdated = False
         self.starting_version = self.version
-        communicate.log.connect(self.log_handler)
 
     @property
     def url(self):
         return self.get_current_source()['git_url']
 
+    @property
+    def version(self):
+        return self.launcher_config.get('app_version')
+
+    def update_launcher(self):
+        if self.app_config.get('version') != self.launcher_config.get('launcher_version'):
+            logger.info(
+                f'need to update launcher version {self.launcher_config.get("launcher_version")} to {self.app_config.get("version")} ')
+            self.handler.post(self.do_update_launcher, 5)
+
+    def do_update_launcher(self):
+        # Create the parser
+        parser = argparse.ArgumentParser(description='Process some parameters.')
+
+        # Add the arguments
+        parser.add_argument('--parent_pid', type=int, help='Parent process ID')
+
+        # Parse the arguments
+        args = parser.parse_args()
+
+        logger.info(f'parent_pid {args.parent_pid}')
+        if args.parent_pid:
+            wait_for_pid(args.parent_pid)
+        python_folder = os.path.abspath(os.path.join('python', 'launcher_env'))
+        kill_process_by_path(python_folder)
+        if self.install_dependencies('launcher_env'):
+            logger.debug('update launcher_env dependencies success')
+            self.launcher_config['launcher_version'] = self.app_config.get('version')
+
     def load_current_ver(self):
         path = os.path.join('repo', self.version)
         self.launch_profiles = self.read_launcher_config(path)
 
-    def log_handler(self, lv, message):
+    def log_handler(self, level, message):
         if 'Window has fully displayed' in message:
             logger.info(f'start success, exit launcher')
             self.set_start_success()
             self.exit_event.set()
             sys.exit(0)
+        else:
+            communicate.log.emit(level, message)
 
     def get_current_profile(self):
         return next((obj for obj in self.launch_profiles if obj['name'] == self.launcher_config.get('profile_name')),
@@ -92,7 +124,7 @@ class GitUpdater:
             # Launch the script detached from the current process
             logger.info(f'launching {python_path} {script_path}')
             process = subprocess.Popen(
-                [python_path, script_path],
+                [python_path, script_path, f'--parent_pid={os.getpid()}'],
                 creationflags=subprocess.CREATE_NEW_CONSOLE
             )
 
@@ -184,7 +216,15 @@ class GitUpdater:
     def init_repo(self):
         if not self.repo:
             repo_path = get_relative_path(os.path.join('repo', self.launcher_config.get('launcher_version')))
-            self.repo = git.Repo(repo_path)
+            # check_and_take_ownership(repo_path)
+            try:
+                self.repo = git.Repo(repo_path)
+                logger.info(f"head log: {self.repo.head.commit}")
+            except Exception as e:
+                delete_if_exists(repo_path)
+                self.repo = git.Repo.clone_from(self.url, repo_path,
+                                                branch=self.launcher_config.get('launcher_version'), depth=1)
+                logger.error(f"Error reading ead log re clone", e)
 
     def update_to_version(self, version):
         communicate.update_running.emit(True)
@@ -213,6 +253,12 @@ class GitUpdater:
         logger.info(f'installing dependencies for {profile}')
         if profile:
             for dependency in profile[f'install_dependencies']:
+                if env == 'launcher_env':
+                    split_strings = dependency.split()
+                    dependency = next((s for s in split_strings if "ok-script" in s), None)
+                    if not dependency:
+                        continue
+                    logger.info(f'found ok-script version in launcher.json {dependency}')
                 if not self.install_package(dependency, env_path):
                     logger.error(f'failed to install {dependency}')
                     return False
@@ -243,6 +289,8 @@ class GitUpdater:
                 communicate.clone_version.emit(None)
                 communicate.update_running.emit(False)
                 return
+            python_folder = os.path.abspath(os.path.join('python', 'app_env'))
+            kill_process_by_path(python_folder)
             path = os.path.join('repo', version)
             logger.info(f'start cloning repo {path}')
             repo = check_repo(path, self.url)
@@ -273,7 +321,7 @@ class GitUpdater:
     def do_list_all_versions(self):
         try:
             if not self.log_tailer:
-                self.log_tailer = LogTailer(os.path.join('logs', 'ok-script.log'), self.exit_event)
+                self.log_tailer = LogTailer(os.path.join('logs', 'ok-script.log'), self.exit_event, self.log_handler)
                 self.log_tailer.start()
                 logger.info('start log tailer')
 
@@ -353,6 +401,7 @@ def check_repo(path, new_url):
                 if current_url != new_url:
                     logger.info(f"Updating remote URL from {current_url} to {new_url}")
                     origin.set_url(new_url)
+                logger.info(f'check_repo {path} {repo.head.commit}')
                 return repo
     except Exception as e:
         logger.error(f'invalid repo path {path}', e)
@@ -428,6 +477,30 @@ def get_version_text(lts, version, date, logs):
         text += "<p>{date}</p>".format(date=date)
         text += "<p>{notes}</p>".format(notes=logs.replace('\n', "<br/>"))
         return text
+
+
+def wait_for_pid(pid):
+    while True:
+        if not psutil.pid_exists(pid):
+            logger.info(f'Process {pid} has exited.')
+            break
+        time.sleep(1)
+
+
+def kill_process_by_path(exe_path):
+    # Iterate over all running processes
+    for proc in psutil.process_iter(['pid', 'exe']):
+        try:
+            # Check if the process executable path starts with the given path
+            if proc.info['exe'] and proc.info['exe'].startswith(exe_path):
+                # Terminate the process
+                proc.kill()
+                logger.info(f"Terminated process {proc.info['pid']} {proc.info['exe']} with executable {exe_path}")
+                # Wait for the process to terminate
+                proc.wait(timeout=5)
+                logger.info(f"Process {proc.info['pid']} terminated successfully")
+        except Exception as e:
+            logger.error(f"Failed to kill process {proc.info['pid']}: {e}")
 
 
 if __name__ == '__main__':

@@ -19,6 +19,7 @@ class Launcher:
         self.exit_event = ExitEvent()
 
         self.updater = GitUpdater(config, self.exit_event)
+        self.updater.list_all_versions()
 
     def start(self):
         try:

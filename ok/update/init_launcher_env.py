@@ -44,7 +44,7 @@ if __name__ == '__main__':
     replace_string_in_file('launcher.json', r'ok-script(?:==[\d.]+)?', full_version)
     try:
         lenv_python_exe = os.path.join(lenv_path, 'Scripts', 'python.exe')
-        params = [lenv_python_exe, "-m", "pip", "install", "PySide6-Fluent-Widgets>=1.5.5", '--no-deps',
+        params = [lenv_python_exe, "-m", "pip", "install", "PySide6-Fluent-Widgets==1.5.5", '--no-deps',
                   '--no-cache-dir']
         result = subprocess.run(params, check=True, capture_output=True, text=True)
         logger.info("install PySide6-Fluent-Widgets success")

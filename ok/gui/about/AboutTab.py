@@ -1,10 +1,8 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout
-from qfluentwidgets import PushButton, InfoBar, InfoBarPosition
+from PySide6.QtWidgets import QLabel
+from qfluentwidgets import InfoBar, InfoBarPosition
 
 import ok.gui
-from ok.gui.Communicate import communicate
-from ok.gui.about.VersionCard import VersionCard
 from ok.gui.widget.Tab import Tab
 from ok.logging.Logger import get_logger
 
@@ -14,9 +12,9 @@ logger = get_logger(__name__)
 class AboutTab(Tab):
     def __init__(self, icon, title, version, debug, about):
         super().__init__()
-        self.version_card = VersionCard(icon, title, version, debug, self)
+        # self.version_card = VersionCard(icon, title, version, debug, self)
         # Create a QTextEdit instance
-        self.addWidget(self.version_card)
+        # self.addWidget(self.version_card)
         about_label = QLabel()
         about_label.setText(about)
         about_label.setWordWrap(True)
@@ -24,43 +22,43 @@ class AboutTab(Tab):
 
         # Set the layout on the widget
         self.addWidget(about_label)
-        if ok.gui.app.updater is not None and ok.gui.app.updater.enabled():
-            self.download_latest_button = PushButton(self.tr('Download Release'))
-            self.download_latest_button.clicked.connect(self.download_latest)
-            self.download_latest_debug_button = PushButton(self.tr('Download Debug'))
-            self.download_latest_debug_button.clicked.connect(self.download_latest_debug)
-
-            self.latest_hbox = QHBoxLayout()
-            self.addLayout(self.latest_hbox)
-            self.latest_label = QLabel()
-            self.latest_label.setWordWrap(True)
-            self.latest_hbox.addWidget(self.latest_label, stretch=1)
-            self.download_latest_vbox = QVBoxLayout()
-            self.latest_hbox.addLayout(self.download_latest_vbox, stretch=0)
-            self.download_latest_vbox.addWidget(self.download_latest_button, stretch=0)
-            self.download_latest_vbox.addWidget(self.download_latest_debug_button, stretch=0)
-            self.download_latest_vbox.addStretch(1)
-
-            self.download_stable_button = PushButton(self.tr('Download Release'))
-            self.download_stable_button.clicked.connect(self.download_stable)
-            self.download_stable_debug_button = PushButton(self.tr('Download Debug'))
-            self.download_stable_debug_button.clicked.connect(self.download_stable_debug)
-            self.stable_hbox = QHBoxLayout()
-            self.stable_label = QLabel()
-            self.stable_label.setWordWrap(True)
-            self.addLayout(self.stable_hbox)
-            self.stable_hbox.addWidget(self.stable_label, stretch=1)
-
-            self.download_stable_vbox = QVBoxLayout()
-            self.stable_hbox.addLayout(self.download_stable_vbox, stretch=0)
-            self.download_stable_vbox.addWidget(self.download_stable_button, stretch=0)
-            self.download_stable_vbox.addWidget(self.download_stable_debug_button, stretch=0)
-            self.download_stable_vbox.addStretch(1)
-
-            communicate.download_update.connect(self.download_update)
-            communicate.check_update.connect(self.update_update)
-
-            self.update_update_buttons()
+        # if ok.gui.app.updater is not None and ok.gui.app.updater.enabled():
+        #     self.download_latest_button = PushButton(self.tr('Download Release'))
+        #     self.download_latest_button.clicked.connect(self.download_latest)
+        #     self.download_latest_debug_button = PushButton(self.tr('Download Debug'))
+        #     self.download_latest_debug_button.clicked.connect(self.download_latest_debug)
+        #
+        #     self.latest_hbox = QHBoxLayout()
+        #     self.addLayout(self.latest_hbox)
+        #     self.latest_label = QLabel()
+        #     self.latest_label.setWordWrap(True)
+        #     self.latest_hbox.addWidget(self.latest_label, stretch=1)
+        #     self.download_latest_vbox = QVBoxLayout()
+        #     self.latest_hbox.addLayout(self.download_latest_vbox, stretch=0)
+        #     self.download_latest_vbox.addWidget(self.download_latest_button, stretch=0)
+        #     self.download_latest_vbox.addWidget(self.download_latest_debug_button, stretch=0)
+        #     self.download_latest_vbox.addStretch(1)
+        #
+        #     self.download_stable_button = PushButton(self.tr('Download Release'))
+        #     self.download_stable_button.clicked.connect(self.download_stable)
+        #     self.download_stable_debug_button = PushButton(self.tr('Download Debug'))
+        #     self.download_stable_debug_button.clicked.connect(self.download_stable_debug)
+        #     self.stable_hbox = QHBoxLayout()
+        #     self.stable_label = QLabel()
+        #     self.stable_label.setWordWrap(True)
+        #     self.addLayout(self.stable_hbox)
+        #     self.stable_hbox.addWidget(self.stable_label, stretch=1)
+        #
+        #     self.download_stable_vbox = QVBoxLayout()
+        #     self.stable_hbox.addLayout(self.download_stable_vbox, stretch=0)
+        #     self.download_stable_vbox.addWidget(self.download_stable_button, stretch=0)
+        #     self.download_stable_vbox.addWidget(self.download_stable_debug_button, stretch=0)
+        #     self.download_stable_vbox.addStretch(1)
+        #
+        #     communicate.download_update.connect(self.download_update)
+        #     communicate.check_update.connect(self.update_update)
+        #
+        #     self.update_update_buttons()
 
     def update_update_buttons(self):
         if ok.gui.app.updater.latest_release:

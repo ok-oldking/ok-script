@@ -97,7 +97,7 @@ def delete_if_exists(file_path):
 def handle_remove_error(func, path, exc_info):
     print(f"Error removing {path}: {exc_info}")
     os.chmod(path, 0o777)
-    time.sleep(1)
+    time.sleep(0.1)
     func(path)
 
 

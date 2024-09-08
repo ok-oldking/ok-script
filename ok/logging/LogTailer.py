@@ -6,15 +6,14 @@ import time
 
 import win32file
 
-from ok.gui.Communicate import communicate
-
 
 class LogTailer(threading.Thread):
-    def __init__(self, file_path, exit_event):
+    def __init__(self, file_path, exit_event, listener):
         super().__init__()
         self.file_path = file_path
         self.stop_event = threading.Event()
         self.exit_event = exit_event
+        self.listener = listener
 
         # Create the file if it doesn't exist
         if not os.path.exists(self.file_path):
@@ -48,7 +47,7 @@ class LogTailer(threading.Thread):
                 if not line:
                     time.sleep(0.1)  # Sleep briefly to avoid busy-waiting
                     continue
-                communicate.log.emit(get_log_level_number(line), line)
+                self.listener(get_log_level_number(line), line)
 
     def stop(self):
         self.stop_event.set()
