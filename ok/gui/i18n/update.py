@@ -2,7 +2,7 @@ import os
 import subprocess
 
 # Directory to search
-directory = ".."
+directory = "..\\.."
 
 # Extension to match
 extension = ".py"

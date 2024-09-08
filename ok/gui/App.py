@@ -1,18 +1,16 @@
 import gettext
 import sys
 
-from PySide6.QtCore import QSize, QCoreApplication, Qt
+from PySide6.QtCore import QSize, QCoreApplication
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication
 
 import ok
 from ok.analytics.Analytics import Analytics
-from ok.gui import resources
 from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.gui.MessageWindow import MessageWindow
 from ok.gui.StartController import StartController
-from ok.gui.common.config import cfg, Language
+from ok.gui.common.config import Language
 from ok.gui.i18n.GettextTranslator import get_translations
 from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.gui.util.app import init_app_config
@@ -27,12 +25,6 @@ class App:
                  exit_event=None):
         super().__init__()
         self.config = config
-        logger.debug(
-            f'resources.qt_resource_name {resources.qt_resource_name} cfg.themeMode {cfg.themeMode.value}')
-        QApplication.setHighDpiScaleFactorRoundingPolicy(
-            Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
         self.app, self.locale = init_app_config()
         communicate.quit.connect(self.app.quit)

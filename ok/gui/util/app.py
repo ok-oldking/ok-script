@@ -1,18 +1,19 @@
-import os
 import sys
 
 from PySide6.QtCore import Qt, QTranslator, QCoreApplication
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentTranslator, qconfig, InfoBar, InfoBarPosition
 
+from ok.gui import resources
 from ok.gui.common.config import cfg
-from ok.gui.i18n.path import i18n_path
 from ok.logging.Logger import get_logger
 
 logger = get_logger(__name__)
 
 
 def init_app_config():
+    logger.debug(
+        f'resources.qt_resource_name {resources.qt_resource_name} cfg.themeMode {cfg.themeMode.value}')
     locale = cfg.get(cfg.language).value
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
@@ -23,15 +24,15 @@ def init_app_config():
     translator = FluentTranslator(locale)
     app.installTranslator(translator)
     translator = QTranslator(app)
-    full_path = os.path.join(i18n_path, f"{locale.name()}")
+    # full_path = os.path.join(i18n_path, f"{locale.name()}")
 
     if translator.load(locale.name(), ":/i18n"):
         translator.setParent(app)
         app.installTranslator(translator)
         QCoreApplication.installTranslator(translator)
-        logger.debug(f"translator install success {QCoreApplication.translate('MainWindow', 'Debug')}")
+        logger.info(f"translator install success {locale}, {QCoreApplication.translate('MainWindow', 'Debug')}")
     else:
-        logger.debug(f"No translation available for {locale}, falling back to English/default. {full_path}")
+        logger.info(f"No translation available for {locale}, falling back to English/default.")
     qconfig.theme = cfg.themeMode.value
     return app, locale
 
