@@ -14,13 +14,14 @@ from functools import cmp_to_key
 import git
 import psutil
 from PySide6.QtCore import QCoreApplication
+from PySide6.QtWidgets import QApplication
 
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error, alert_info
 from ok.logging.LogTailer import LogTailer
 from ok.logging.Logger import get_logger
-from ok.update.python_env import create_venv, delete_files
+from ok.update.python_env import create_venv
 from ok.util.Handler import Handler
 from ok.util.path import get_relative_path, delete_if_exists
 
@@ -94,13 +95,14 @@ class GitUpdater:
         self.launch_profiles = self.read_launcher_config(path)
 
     def log_handler(self, level, message):
+        communicate.log.emit(level, message)
+
+    def handle_log(self, level, message):
         if 'Window has fully displayed' in message:
             logger.info(f'start success, exit launcher')
             self.set_start_success()
             self.exit_event.set()
-            sys.exit(0)
-        else:
-            communicate.log.emit(level, message)
+            QApplication.quit()
 
     def get_current_profile(self):
         return next((obj for obj in self.launch_profiles if obj['name'] == self.launcher_config.get('profile_name')),
@@ -245,7 +247,6 @@ class GitUpdater:
                 if not self.install_package(dependency, env_path):
                     logger.error(f'failed to install {dependency}')
                     return False
-            delete_files()
             return True
 
     def run(self):
@@ -309,6 +310,7 @@ class GitUpdater:
     def do_list_all_versions(self):
         try:
             if not self.log_tailer:
+                communicate.log.connect(self.handle_log)
                 self.log_tailer = LogTailer(os.path.join('logs', 'ok-script.log'), self.exit_event, self.log_handler)
                 self.log_tailer.start()
                 logger.info('start log tailer')

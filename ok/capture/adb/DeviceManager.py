@@ -173,6 +173,7 @@ class DeviceManager:
                                     "nick": adb_device.prop.model or imei, "player_id": -1,
                                     "resolution": f'{width}x{height}'}
                     self.device_dict[imei] = phone_device
+        logger.debug(f'refresh_phones done')
 
     def refresh_emulators(self, current=False):
         if self.adb_capture_config is None:
@@ -317,6 +318,7 @@ class DeviceManager:
         self.handler.post(self.do_start, remove_existing=True, skip_if_running=True)
 
     def do_start(self):
+        logger.debug(f'do_start')
         preferred = self.get_preferred_device()
         if preferred is None:
             if self.device_dict:
