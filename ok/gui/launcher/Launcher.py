@@ -18,12 +18,15 @@ class Launcher:
         self.config = config
         self.exit_event = ExitEvent()
         config_logger(self.config, name='launcher')
-        self.app, self.locale = init_app_config()
-        self.updater = GitUpdater(config, self.exit_event)
-        self.updater.list_all_versions()
+        self.app = None
+        self.locale = None
+        self.updater = None
 
     def start(self):
         try:
+            self.app, self.locale = init_app_config()
+            self.updater = GitUpdater(self.config, self.exit_event)
+            self.updater.list_all_versions()
             logger.info(f'launcher start pid {os.getpid()} {self.locale}')
             w = LauncherWindow(self.config, self.updater, self.exit_event)
             center_window(self.app, w)

@@ -16,6 +16,7 @@ from ok.gui.overlay.OverlayWindow import OverlayWindow
 from ok.gui.util.app import init_app_config
 from ok.logging.Logger import get_logger
 from ok.update.GitUpdater import GitUpdater
+from ok.util.path import get_path_relative_to_exe
 
 logger = get_logger(__name__)
 
@@ -44,7 +45,7 @@ class App:
         self.overlay_window = None
         self.main_window = None
         self.exit_event = exit_event
-        self.icon = QIcon(self.config.get('gui_icon') or ":/icon/icon.ico")
+        self.icon = QIcon(get_path_relative_to_exe(config.get('gui_icon')) or ":/icon/icon.ico")
         if self.config.get('analytics'):
             self.fire_base_analytics = Analytics(self.config, self.exit_event)
 

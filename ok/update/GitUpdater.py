@@ -37,7 +37,6 @@ class GitUpdater:
         self.config = app_config.get('git_update')
         self.debug = app_config.get('debug')
         self.lts_ver = ""
-        self.repo = None
         self.handler = Handler(exit_event, self.__class__.__name__)
         self.launcher_configs = []
         self.launcher_config = Config('launcher', {'profile_name': '', 'source': self.get_default_source(),
@@ -86,6 +85,9 @@ class GitUpdater:
         if self.install_dependencies('launcher_env'):
             logger.debug('update launcher_env dependencies success')
             self.launcher_config['launcher_version'] = self.app_config.get('version')
+
+        copy_exe_files(os.path.join('repo', self.launcher_config['launcher_version']), os.getcwd())
+        clean_repo('repo', [self.app_config.get("version")])
 
     def load_current_ver(self):
         path = os.path.join('repo', self.version)
@@ -142,21 +144,15 @@ class GitUpdater:
         date = None
         log = None
         try:
-            self.init_repo()
             if self.launcher_config.get('app_version') != new_version:
                 start_hash = self.version_to_hash[self.launcher_config.get('app_version')]
                 end_hash = self.version_to_hash[new_version]
-
-                logger.info(f'start fetching origin {new_version}')
-                # origin.fetch(start_hash, end_hash)
-                self.repo.git.fetch('origin', 'tag', new_version, f'--depth={10}')
-                # origin.fetch(refspec=f"tag:{new_version}", depth=10)
-                logger.info(f'done fetching origin')
+                repo = self.check_out_version(new_version)
                 log = QCoreApplication.translate('app', "Updates:") + "\n"
 
                 started = False
 
-                for commit in self.repo.iter_commits(rev=end_hash):
+                for commit in repo.iter_commits(rev=end_hash):
                     if commit.hexsha == start_hash:
                         break
                     if commit.hexsha == end_hash:
@@ -166,8 +162,6 @@ class GitUpdater:
                         log += commit.message.strip() + '\n'
             else:
                 log = ""
-                # log = self.repo.git.log('--oneline', f'{start_hash}..{end_hash}')
-            # logger.info(f'update log: {log}')
         except Exception as e:
             logger.error(f"version_selection_changed error occurred:", e)
             alert_error("get version log error")
@@ -214,19 +208,6 @@ class GitUpdater:
                 return
         except Exception as e:
             logger.error(f"An error occurred: {e}")
-
-    def init_repo(self):
-        if not self.repo:
-            repo_path = get_relative_path(os.path.join('repo', self.launcher_config.get('launcher_version')))
-            # check_and_take_ownership(repo_path)
-            try:
-                self.repo = git.Repo(repo_path)
-                logger.info(f"head log: {self.repo.head.commit}")
-            except Exception as e:
-                delete_if_exists(repo_path)
-                self.repo = git.Repo.clone_from(self.url, repo_path,
-                                                branch=self.launcher_config.get('launcher_version'), depth=1)
-                logger.error(f"Error reading ead log re clone", e)
 
     def update_to_version(self, version):
         communicate.update_running.emit(True)
@@ -284,6 +265,20 @@ class GitUpdater:
         self.launcher_config['app_version'] = self.starting_version
         self.launcher_config['app_dependencies_installed'] = True
 
+    def check_out_version(self, version, depth=10):
+        path = os.path.join('repo', version)
+        logger.info(f'start cloning repo {path}')
+        repo = check_repo(path, self.url)
+        if repo is None:
+            delete_if_exists(path)
+            repo = git.Repo.clone_from(self.url, path, branch=version, depth=depth)
+        else:
+            repo.git.fetch('origin', f'refs/tags/{version}:refs/tags/{version}', '--depth=1')
+            repo.git.checkout(version, force=True)
+
+        logger.info(f'clone repo success {path}')
+        return repo
+
     def do_update_to_version(self, version):
         try:
             if self.version == version:
@@ -293,17 +288,8 @@ class GitUpdater:
                 return
             python_folder = os.path.abspath(os.path.join('python', 'app_env'))
             kill_process_by_path(python_folder)
-            path = os.path.join('repo', version)
-            logger.info(f'start cloning repo {path}')
-            repo = check_repo(path, self.url)
-            if repo is None:
-                delete_if_exists(path)
-                repo = git.Repo.clone_from(self.url, path, branch=version, depth=1)
-            else:
-                repo.git.fetch('origin', f'refs/tags/{version}:refs/tags/{version}', '--depth=1')
-                repo.git.checkout(version, force=True)
-            logger.info(f'clone repo success {path}')
-            self.launch_profiles = self.read_launcher_config(path)
+            repo = self.check_out_version(version)
+            self.launch_profiles = self.read_launcher_config(repo.working_tree_dir)
             self.launcher_config['app_dependencies_installed'] = False
             self.starting_version = version
             self.yanked = False
@@ -503,6 +489,46 @@ def kill_process_by_path(exe_path):
                 logger.info(f"Process {proc.info['pid']} terminated successfully")
         except Exception as e:
             logger.error(f"Failed to kill process {proc.info['pid']}: {e}")
+
+
+def clean_repo(repo_path, whitelist):
+    """
+    Walk through the top-level subfolders in the 'repo' folder and delete those not in the whitelist.
+
+    :param repo_path: Path to the 'repo' folder.
+    :param whitelist: Set of subfolder names to keep.
+    """
+    for subfolder in os.listdir(repo_path):
+        subfolder_path = os.path.join(repo_path, subfolder)
+        if os.path.isdir(subfolder_path) and subfolder not in whitelist:
+            # Delete the subfolder if it's not in the whitelist
+            delete_if_exists(subfolder_path)
+            logger.info(f'clean_repo Deleted subfolder: {subfolder_path}')
+
+    logger.info('clean_repo complete.')
+
+
+def copy_exe_files(folder1, folder2):
+    """
+    Copy all .exe files from folder1 to folder2, replacing existing files.
+
+    :param folder1: Source folder containing .exe files.
+    :param folder2: Destination folder where .exe files will be copied.
+    """
+    # Ensure the destination folder exists
+
+    # Iterate through the files in the source folder
+    try:
+        for file_name in os.listdir(folder1):
+            if file_name.endswith('.exe'):
+                source_file = os.path.join(folder1, file_name)
+                destination_file = os.path.join(folder2, file_name)
+                shutil.copy2(source_file, destination_file)
+                logger.info(f'Copied {source_file} to {destination_file}')
+    except Exception as e:
+        logger.error(f'copy_exe_files error', e)
+
+    logger.info(f'Copy exe complete. {folder1} -> {folder2}')
 
 
 if __name__ == '__main__':

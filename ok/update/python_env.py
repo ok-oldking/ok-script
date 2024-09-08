@@ -111,33 +111,36 @@ def copy_python_files(python_dir, destination_dir):
             print(f"not copying {python_dir} {file_name} because exists")
 
 
-def copy_python_exe():
+def copy_python_exe(dir):
     python_exe = get_base_python_exe()
     logger.info(f'get_base_python_exe {python_exe}')
-    copy_python_files(os.path.dirname(python_exe), 'python')
+    copy_python_files(os.path.dirname(python_exe), os.path.join(dir, 'python'))
 
 
-def modify_venv_cfg(name):
-    file_path = os.path.join('python', f'{name}_env', 'pyvenv.cfg')
+def modify_venv_cfg(env_dir):
+    python_dir = os.path.dirname(env_dir)
+    file_path = os.path.join(env_dir, 'pyvenv.cfg')
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
     with open(file_path, 'w') as file:
         for line in lines:
             if line.startswith('home ='):
-                file.write('home = .\\python\n')
+                file.write(f'home = {python_dir}\n')
             elif line.startswith('executable ='):
-                file.write('executable = .\\python\\python.exe\n')
+                file.write(f'executable = {os.path.join(python_dir, "python.exe")}\n')
             elif line.startswith('command ='):
-                file.write('command = .\\python\\python.exe -m venv .\\python\\app_env\n')
+                file.write(f'command = {os.path.join(python_dir, "python.exe")} -m venv {env_dir}')
             else:
                 file.write(line)
 
 
-def create_venv(name):
-    copy_python_exe()
-    mini_python_exe = 'python\\python.exe'
-    lenv_path = f'python\\{name}'
+def create_venv(name, dir=None):
+    if dir is None:
+        dir = os.getcwd()
+    copy_python_exe(dir)
+    mini_python_exe = os.path.join(dir, 'python', 'python.exe')
+    lenv_path = os.path.join(dir, 'python', name)
     ok = False
     if os.path.exists(lenv_path):
         logger.info(f'venv already exists: {lenv_path}')
@@ -160,14 +163,14 @@ def create_venv(name):
         except Exception as e:
             logger.error(f'venv check error : {e}')
             kill_exe(lenv_path)
-            delete_if_exists(lenv_path)
     if not ok:
+        delete_if_exists(lenv_path)
         # Execute the command to create a virtual environment
         result = subprocess.run([mini_python_exe, '-m', 'venv', lenv_path], check=True, capture_output=True, text=True)
-        logger.info(f"Virtual environment {name} created successfully.")
+        logger.info(f"Virtual environment {lenv_path} created successfully.")
         logger.info(result.stdout)
-        modify_venv_cfg(name)
-        logger.info('modify venv.cfg done')
+    modify_venv_cfg(env_dir=lenv_path)
+    logger.info('modify venv.cfg done')
     return lenv_path
 
 

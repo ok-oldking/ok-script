@@ -11,6 +11,7 @@ from ok.gui.launcher.RunBar import RunBar
 from ok.gui.launcher.UpdateBar import UpdateBar
 from ok.gui.util.app import show_info_bar
 from ok.logging.Logger import get_logger
+from ok.util.path import get_path_relative_to_exe
 
 logger = get_logger(__name__)
 
@@ -30,7 +31,7 @@ class LauncherWindow(Window):
         self.titleBar.raise_()
 
         self.setWindowTitle(QCoreApplication.translate('app', '{} Launcher').format(config.get('gui_title')))
-        self.icon = QIcon(config.get('gui_icon') or ":/icon/icon.ico")
+        self.icon = QIcon(get_path_relative_to_exe(config.get('gui_icon')) or ":/icon/icon.ico")
         self.setWindowIcon(self.icon)
         self.resize(1000, 650)
         self.layout = QVBoxLayout()
