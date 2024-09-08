@@ -177,10 +177,12 @@ class GitUpdater:
         try:
             # Run pip install command
             app_env_python_exe = os.path.join(app_env_path, 'Scripts', 'python.exe')
-            params = [app_env_python_exe, "-m", "pip", "install"] + package_name.split() + ['-i',
-                                                                                            self.get_current_source()[
-                                                                                                'pip_url'],
-                                                                                            '--no-cache-dir']
+            params = [app_env_python_exe, "-m", "pip", "install"] + package_name.split()
+            if '-i' not in package_name.split():
+                params += ['-i',
+                           self.get_current_source()[
+                               'pip_url']]
+            params += ['--no-cache-dir']
             logger.info(f'executing pip install with: {params}')
             process = subprocess.Popen(
                 params,
