@@ -75,7 +75,7 @@ class GitUpdater:
                 self.launcher_config['launcher_version'] = self.app_config.get('version')
 
             copy_exe_files(os.path.join('repo', self.launcher_config['launcher_version']), os.getcwd())
-            clean_repo('repo', [self.app_config.get("version")])
+        clean_repo('repo', [self.app_config.get("version")] + self.all_versions)
 
     def kill_launcher(self):
         # Create the parser
