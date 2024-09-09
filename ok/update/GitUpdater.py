@@ -72,7 +72,9 @@ class GitUpdater:
                 self.launcher_config['launcher_version'] = self.app_config.get('version')
 
             copy_exe_files(os.path.join('repo', self.launcher_config['launcher_version']), os.getcwd())
-        clean_repo('repo', self.app_config.get('version'))
+        delete_if_exists('_internal')
+        clean_repo('repo', [self.app_config.get('version'), self.launcher_config['launcher_version'],
+                            self.launcher_config['app_version']])
 
     def kill_launcher(self):
         try:

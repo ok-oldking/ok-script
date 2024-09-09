@@ -95,20 +95,33 @@ def get_base_python_exe():
 
 
 def copy_python_files(python_dir, destination_dir):
-    # Define the files to copy
-    files_to_copy = ['python.exe', 'python3.dll', 'python311.dll', 'pythonw.exe']
+    # Check if destination directory exists
+    if os.path.exists(destination_dir):
+        logger.info(f"Destination directory {destination_dir} already exists. Exiting without copying.")
+        return
 
     # Create the destination directory
     os.makedirs(destination_dir, exist_ok=True)
 
-    # Copy the files
-    for file_name in files_to_copy:
-        source_file = os.path.join(python_dir, file_name)
-        if os.path.exists(source_file) and not os.path.exists(os.path.join(destination_dir, file_name)):
-            shutil.copy(source_file, destination_dir)
-            logger.info(f"Copied {file_name} to {destination_dir}")
-        else:
-            logger.info(f"not copying {python_dir} {file_name} because exists")
+    # Define the patterns to copy
+    patterns_to_copy = ['*.exe', '*.dll', 'DLLs', 'Lib']
+
+    # Check top-level files
+    # Check top-level files
+    for file_name in os.listdir(python_dir):
+        file_path = os.path.join(python_dir, file_name)
+        if os.path.isfile(file_path) and any(fnmatch.fnmatch(file_name, pattern) for pattern in patterns_to_copy):
+            shutil.copy(file_path, destination_dir)
+            logger.info(f"Copied file {file_name} to {destination_dir}")
+
+    # Check top-level subfolders
+    for item in os.listdir(python_dir):
+        item_path = os.path.join(python_dir, item)
+        if os.path.isdir(item_path):
+            if any(fnmatch.fnmatch(item, pattern) for pattern in patterns_to_copy):
+                destination_path = os.path.join(destination_dir, item)
+                shutil.copytree(item_path, destination_path)
+                logger.info(f"Copied folder {item} to {destination_dir}")
 
 
 def copy_python_exe(dir):
