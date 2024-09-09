@@ -8,13 +8,11 @@ import re
 import shutil
 import subprocess
 import sys
-import time
 from functools import cmp_to_key
 
 import git
 import psutil
 from PySide6.QtCore import QCoreApplication
-from PySide6.QtWidgets import QApplication
 
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
@@ -63,32 +61,34 @@ class GitUpdater:
         return self.launcher_config.get('app_version')
 
     def update_launcher(self):
+        self.handler.post(self.do_update_launcher, 5)
+
+    def do_update_launcher(self):
+        logger.info(f'do_update_launcher')
+        self.set_start_success()
+        self.kill_launcher()
         if self.app_config.get('version') != self.launcher_config.get('launcher_version'):
             logger.info(
                 f'need to update launcher version {self.launcher_config.get("launcher_version")} to {self.app_config.get("version")} ')
-            self.handler.post(self.do_update_launcher, 5)
+            if self.install_dependencies('launcher_env'):
+                logger.debug('update launcher_env dependencies success')
+                self.launcher_config['launcher_version'] = self.app_config.get('version')
 
-    def do_update_launcher(self):
+            copy_exe_files(os.path.join('repo', self.launcher_config['launcher_version']), os.getcwd())
+            clean_repo('repo', [self.app_config.get("version")])
+
+    def kill_launcher(self):
         # Create the parser
         parser = argparse.ArgumentParser(description='Process some parameters.')
-
         # Add the arguments
         parser.add_argument('--parent_pid', type=int, help='Parent process ID')
-
         # Parse the arguments
         args = parser.parse_args()
-
         logger.info(f'parent_pid {args.parent_pid}')
         if args.parent_pid:
-            wait_for_pid(args.parent_pid)
+            wait_kill_pid(args.parent_pid)
         python_folder = os.path.abspath(os.path.join('python', 'launcher_env'))
         kill_process_by_path(python_folder)
-        if self.install_dependencies('launcher_env'):
-            logger.debug('update launcher_env dependencies success')
-            self.launcher_config['launcher_version'] = self.app_config.get('version')
-
-        copy_exe_files(os.path.join('repo', self.launcher_config['launcher_version']), os.getcwd())
-        clean_repo('repo', [self.app_config.get("version")])
 
     def load_current_ver(self):
         path = os.path.join('repo', self.version)
@@ -96,13 +96,6 @@ class GitUpdater:
 
     def log_handler(self, level, message):
         communicate.log.emit(level, message)
-
-    def handle_log(self, level, message):
-        if 'Window has fully displayed' in message:
-            logger.info(f'start success, exit launcher')
-            self.set_start_success()
-            self.exit_event.set()
-            QApplication.quit()
 
     def get_current_profile(self):
         return next((obj for obj in self.launch_profiles if obj['name'] == self.launcher_config.get('profile_name')),
@@ -119,6 +112,11 @@ class GitUpdater:
                     QCoreApplication.translate('app', 'The current version {} must be updated').format(self.version))
                 communicate.update_running.emit(False)
                 return
+
+            if not self.log_tailer:
+                self.log_tailer = LogTailer(os.path.join('logs', 'ok-script.log'), self.exit_event, self.log_handler)
+                self.log_tailer.start()
+                logger.info('start log tailer')
 
             new_ver = self.starting_version
             entry = self.get_current_profile()['entry']
@@ -179,6 +177,10 @@ class GitUpdater:
                            self.get_current_source()[
                                'pip_url']]
             params += ['--no-cache-dir']
+            params += ['--trusted-host', 'pypi.python.org', '--trusted-host', 'files.pythonhosted.org',
+                       '--trusted-host', 'pypi.org', '--trusted-host', 'files.pythonhosted.org', '--trusted-host',
+                       'files.pythonhosted.org', '--trusted-host', 'www.paddlepaddle.org.cn', '--trusted-host',
+                       'mirrors.cloud.tencent.com']
             logger.info(f'executing pip install with: {params}')
             process = subprocess.Popen(
                 params,
@@ -309,11 +311,6 @@ class GitUpdater:
 
     def do_list_all_versions(self):
         try:
-            if not self.log_tailer:
-                communicate.log.connect(self.handle_log)
-                self.log_tailer = LogTailer(os.path.join('logs', 'ok-script.log'), self.exit_event, self.log_handler)
-                self.log_tailer.start()
-                logger.info('start log tailer')
 
             logger.info(f'start fetching remote version {self.url}')
             remote_refs = git.cmd.Git().ls_remote(self.url, tags=True)
@@ -469,12 +466,11 @@ def get_version_text(lts, version, date, logs):
         return text
 
 
-def wait_for_pid(pid):
-    while True:
-        if not psutil.pid_exists(pid):
-            logger.info(f'Process {pid} has exited.')
-            break
-        time.sleep(1)
+def wait_kill_pid(pid):
+    process = psutil.Process(pid)
+    process.terminate()
+    process.wait(timeout=30)
+    logger.info(f'kill process {pid} exists {psutil.pid_exists(pid)}')
 
 
 def kill_process_by_path(exe_path):

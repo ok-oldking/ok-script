@@ -100,6 +100,7 @@ class MainWindow(MSFluentWindow):
     def showEvent(self, event):
         if event.type() == QEvent.Show:
             logger.info("Window has fully displayed")
+            ok.gui.app.updater.update_launcher()
         super().showEvent(event)
 
     def starting_emulator(self, done, error, seconds_left):

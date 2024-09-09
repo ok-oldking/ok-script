@@ -1,4 +1,5 @@
 import os.path
+import re
 import sys
 
 import git
@@ -44,6 +45,18 @@ if __name__ == "__main__":
         repo_dir = os.path.join(build_dir, 'repo', tag)
         build_repo = git.Repo.clone_from(url, repo_dir, branch=tag, depth=1)
         logger.info(f'Cloned repository to: {repo_dir}')
+
+        config_file = os.path.join(repo_dir, 'config.py')
+        # Read the content of the file
+        with open(config_file, 'r', encoding='utf-8') as file:
+            content = file.read()
+
+        # Replace the version string
+        new_content = re.sub(r'version = "v\d+\.\d+\.\d+"', f'version = "{tag}"', content)
+
+        # Write the updated content back to the file
+        with open(config_file, 'w', encoding='utf-8') as file:
+            file.write(new_content)
 
         delete_if_exists(os.path.join(repo_dir, '.git'))
         logger.info(f'Deleted .git directory in: {repo_dir}')
