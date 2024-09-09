@@ -188,7 +188,7 @@ class GitUpdater:
     def install_package(self, package_name, app_env_path):
         try:
             # Run pip install command
-            app_env_python_exe = os.path.join(app_env_path, 'Scripts', 'python.exe')
+            app_env_python_exe = os.path.join(app_env_path, 'Scripts', 'pythonw.exe')
             params = [app_env_python_exe, "-m", "pip", "install"] + package_name.split()
             if '-i' not in package_name.split():
                 params += ['-i',
