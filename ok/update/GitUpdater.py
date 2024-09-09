@@ -19,7 +19,7 @@ from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error, alert_info
 from ok.logging.LogTailer import LogTailer
 from ok.logging.Logger import get_logger
-from ok.update.python_env import create_venv, find_line_in_requirements
+from ok.update.python_env import create_venv
 from ok.util.Handler import Handler
 from ok.util.path import get_relative_path, delete_if_exists
 
@@ -159,6 +159,7 @@ class GitUpdater:
         log = None
         try:
             if self.launcher_config.get('app_version') != new_version:
+                last_log = ""
                 start_hash = self.version_to_hash.get(self.launcher_config.get('app_version'))
                 end_hash = self.version_to_hash[new_version]
                 repo = self.check_out_version(new_version)
@@ -173,7 +174,10 @@ class GitUpdater:
                         date = format_date(commit.committed_datetime)
                         started = True
                     if started:
-                        log += commit.message.strip() + '\n'
+                        if last_log != commit.message.strip():
+                            log += commit.message.strip() + '\n'
+                            last_log = commit.message.strip()
+                            logger.info(f'skip duplicate log {last_log}')
             else:
                 log = ""
         except Exception as e:
@@ -232,15 +236,10 @@ class GitUpdater:
         self.handler.post(lambda: self.do_update_to_version(version))
 
     def read_launcher_config(self, path):
-        full_version = find_line_in_requirements(get_file_in_path_or_cwd(path, 'requirements.txt'),
-                                                 'ok-script') or 'ok-script'
         launcher_json = get_file_in_path_or_cwd(path, 'launcher.json')
         with open(launcher_json, 'r', encoding='utf-8') as file:
             launch_profiles = json.load(file)
-        for profile in launch_profiles:
-            for i in range(len(profile['install_dependencies'])):
-                profile['install_dependencies'][i] = re.sub(r'ok-script(?:==[\d.]+)?', full_version,
-                                                            profile['install_dependencies'][i])
+
         if launch_profiles:
             logger.info(f'read launcher config success, {launch_profiles}')
             name = self.launcher_config.get('profile_name')
@@ -302,7 +301,8 @@ class GitUpdater:
         else:
             repo.git.fetch('origin', f'refs/tags/{version}:refs/tags/{version}', '--depth=1')
             repo.git.checkout(version, force=True)
-        fix_version_in_config(path, version)
+        fix_version_in_repo(path, version)
+
         logger.info(f'clone repo success {path}')
         return repo
 
@@ -572,8 +572,8 @@ def copy_exe_files(folder1, folder2):
     logger.info(f'Copy exe complete. {folder1} -> {folder2}')
 
 
-def fix_version_in_config(repo_dir, version):
-    config_file = os.path.join(repo_dir, 'config.py')
+def fix_version_in_repo(repo_dir, version):
+    config_file = get_file_in_path_or_cwd(repo_dir, 'config.py')
     # Read the content of the file
     with open(config_file, 'r', encoding='utf-8') as file:
         content = file.read()
@@ -581,6 +581,16 @@ def fix_version_in_config(repo_dir, version):
     new_content = re.sub(r'version = "v\d+\.\d+\.\d+"', f'version = "{version}"', content)
     # Write the updated content back to the file
     with open(config_file, 'w', encoding='utf-8') as file:
+        file.write(new_content)
+
+    launcher_json = get_file_in_path_or_cwd(repo_dir, 'launcher.json')
+
+    with open(launcher_json, 'r', encoding='utf-8') as file:
+        content = file.read()
+    # Replace the version string
+    new_content = re.sub(r'ok-script(?:==[\d.]+)?', f'ok-script=={version}', content)
+    # Write the updated content back to the file
+    with open(launcher_json, 'w', encoding='utf-8') as file:
         file.write(new_content)
 
 

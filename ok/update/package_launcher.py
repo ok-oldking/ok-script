@@ -5,7 +5,7 @@ import git
 
 from ok.config.Config import Config
 from ok.logging.Logger import config_logger, get_logger
-from ok.update.GitUpdater import copy_exe_files, fix_version_in_config
+from ok.update.GitUpdater import copy_exe_files, fix_version_in_repo
 from ok.update.init_launcher_env import create_launcher_env
 from ok.util.path import dir_checksum, delete_if_exists
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         build_repo = git.Repo.clone_from(url, repo_dir, branch=tag, depth=1)
         logger.info(f'Cloned repository to: {repo_dir}')
 
-        fix_version_in_config(repo_dir, tag)
+        fix_version_in_repo(repo_dir, tag)
 
         delete_if_exists(os.path.join(repo_dir, '.git'))
         logger.info(f'Deleted .git directory in: {repo_dir}')
