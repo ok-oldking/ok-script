@@ -40,7 +40,6 @@ def create_launcher_env(code_dir='.', build_dir='.'):
         sys.exit(1)
     logger.info(f'ok-script full_version: {full_version}')
     lenv_path = create_venv('launcher_env', os.path.join(build_dir))
-    replace_string_in_file(os.path.join(code_dir, 'launcher.json'), r'ok-script(?:==[\d.]+)?', full_version)
     try:
         lenv_python_exe = os.path.join(lenv_path, 'Scripts', 'python.exe')
         params = [lenv_python_exe, "-m", "pip", "install", "PySide6-Fluent-Widgets==1.5.5", '--no-deps',

@@ -19,7 +19,7 @@ from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error, alert_info
 from ok.logging.LogTailer import LogTailer
 from ok.logging.Logger import get_logger
-from ok.update.python_env import create_venv
+from ok.update.python_env import create_venv, find_line_in_requirements
 from ok.util.Handler import Handler
 from ok.util.path import get_relative_path, delete_if_exists
 
@@ -572,23 +572,25 @@ def copy_exe_files(folder1, folder2):
     logger.info(f'Copy exe complete. {folder1} -> {folder2}')
 
 
-def fix_version_in_repo(repo_dir, version):
+def fix_version_in_repo(repo_dir, tag):
     config_file = get_file_in_path_or_cwd(repo_dir, 'config.py')
     # Read the content of the file
     with open(config_file, 'r', encoding='utf-8') as file:
         content = file.read()
     # Replace the version string
-    new_content = re.sub(r'version = "v\d+\.\d+\.\d+"', f'version = "{version}"', content)
+    new_content = re.sub(r'version = "v\d+\.\d+\.\d+"', f'version = "{tag}"', content)
     # Write the updated content back to the file
     with open(config_file, 'w', encoding='utf-8') as file:
         file.write(new_content)
 
     launcher_json = get_file_in_path_or_cwd(repo_dir, 'launcher.json')
 
+    full_version = find_line_in_requirements(os.path.join(repo_dir, 'requirements.txt'), 'ok-script')
+
     with open(launcher_json, 'r', encoding='utf-8') as file:
         content = file.read()
     # Replace the version string
-    new_content = re.sub(r'ok-script(?:==[\d.]+)?', f'ok-script=={version}', content)
+    new_content = re.sub(r'ok-script(?:==[\d\.]+)?', full_version, content)
     # Write the updated content back to the file
     with open(launcher_json, 'w', encoding='utf-8') as file:
         file.write(new_content)
