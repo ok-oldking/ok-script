@@ -38,7 +38,7 @@ class App:
         self.overlay = self.config.get('debug')
         if self.config.get('git_update'):
             self.updater = GitUpdater(self.config, exit_event)
-            
+
         logger.debug(f'locale name {self.locale.name()}')
 
         self.loading_window = None

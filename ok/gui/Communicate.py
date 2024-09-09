@@ -24,7 +24,6 @@ class Communicate(QObject):
     quit = Signal()
     update_running = Signal(bool)
     versions = Signal(list)
-    clone_version = Signal(str)
     launcher_profiles = Signal(list)
     update_logs = Signal(str)
 

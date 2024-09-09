@@ -249,27 +249,27 @@
         <translation>正式版</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="122"/>
+        <location filename="../MainWindow.py" line="123"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="141"/>
+        <location filename="../MainWindow.py" line="142"/>
         <source>Please check whether the game window is selected correctly!</source>
         <translation>请检查游戏窗口是否正确选择</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="142"/>
+        <location filename="../MainWindow.py" line="143"/>
         <source>Capture Error</source>
         <translation>截图错误</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="154"/>
+        <location filename="../MainWindow.py" line="155"/>
         <source>Start Success.</source>
         <translation>启动成功</translation>
     </message>
     <message>
-        <location filename="../MainWindow.py" line="154"/>
+        <location filename="../MainWindow.py" line="155"/>
         <source>Pause Success.</source>
         <translation>暂停成功</translation>
     </message>
@@ -355,12 +355,17 @@
 <context>
     <name>RunBar</name>
     <message>
-        <location filename="../launcher/RunBar.py" line="27"/>
+        <location filename="../launcher/RunBar.py" line="24"/>
+        <source>Current Version: </source>
+        <translation>当前版本:</translation>
+    </message>
+    <message>
+        <location filename="../launcher/RunBar.py" line="31"/>
         <source>Choose Profile:</source>
         <translation>选择版本:</translation>
     </message>
     <message>
-        <location filename="../launcher/RunBar.py" line="38"/>
+        <location filename="../launcher/RunBar.py" line="42"/>
         <source>Start</source>
         <translation>启动</translation>
     </message>
@@ -796,27 +801,26 @@
 <context>
     <name>UpdateBar</name>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="30"/>
         <source>Current Version: </source>
-        <translation>当前版本</translation>
+        <translation type="vanished">当前版本</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="39"/>
+        <location filename="../launcher/UpdateBar.py" line="36"/>
         <source>Update Source:</source>
         <translation>更新源:</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="54"/>
+        <location filename="../launcher/UpdateBar.py" line="51"/>
         <source>Check for Update</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="63"/>
+        <location filename="../launcher/UpdateBar.py" line="60"/>
         <source>Update</source>
         <translation>更新</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="69"/>
+        <location filename="../launcher/UpdateBar.py" line="66"/>
         <source>This is the newest version</source>
         <translation>已经是最新版本</translation>
     </message>
@@ -887,18 +891,26 @@
 <context>
     <name>app</name>
     <message>
-        <location filename="../App.py" line="101"/>
-        <location filename="../App.py" line="107"/>
+        <source>China</source>
+        <translation type="vanished">国内</translation>
+    </message>
+    <message>
+        <source>Global</source>
+        <translation type="vanished">海外</translation>
+    </message>
+    <message>
+        <location filename="../App.py" line="94"/>
+        <location filename="../App.py" line="100"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../App.py" line="103"/>
+        <location filename="../App.py" line="96"/>
         <source>Another instance is already running</source>
         <translation>另一个实例已经在运行, 请手动结束另一个实例.</translation>
     </message>
     <message>
-        <location filename="../App.py" line="108"/>
+        <location filename="../App.py" line="101"/>
         <source>Install dir {path} must be an English path, move to another path.</source>
         <translation>安装目录{path}必须是英文目录，请移动到英文目录。</translation>
     </message>
@@ -924,37 +936,37 @@
         <translation type="vanished">游戏在后台时静音</translation>
     </message>
     <message>
-        <location filename="../launcher/LauncherWindow.py" line="32"/>
+        <location filename="../launcher/LauncherWindow.py" line="33"/>
         <source>{} Launcher</source>
         <translation>{} 启动器</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="115"/>
+        <location filename="../../update/GitUpdater.py" line="113"/>
         <source>The current version {} must be updated</source>
         <translation>当前版本{}必须更新</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="155"/>
+        <location filename="../../update/GitUpdater.py" line="164"/>
         <source>Updates:</source>
         <translation>更新内容:</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="277"/>
+        <location filename="../../update/GitUpdater.py" line="287"/>
         <source>Install dependencies Failed</source>
         <translation>安装依赖失败</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="290"/>
+        <location filename="../../update/GitUpdater.py" line="314"/>
         <source>Already updated to version:</source>
         <translation>已经更新到版本:</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="476"/>
+        <location filename="../../update/GitUpdater.py" line="491"/>
         <source>Stable Version</source>
         <translation>正式版</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="478"/>
+        <location filename="../../update/GitUpdater.py" line="493"/>
         <source>Beta Version</source>
         <translation>测试版</translation>
     </message>

@@ -14,7 +14,7 @@ from ok.feature.Box import Box, sort_boxes
 from ok.feature.Feature import Feature
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
-from ok.util.path import resource_path
+from ok.util.path import get_path_relative_to_exe
 
 logger = get_logger(__name__)
 
@@ -35,7 +35,7 @@ class FeatureSet:
             width (int): Scale images to this width.
             height (int): Scale images to this height.
         """
-        self.coco_json = resource_path(coco_json)
+        self.coco_json = get_path_relative_to_exe(coco_json)
         self.debug = debug
 
         logger.debug(f'Loading features from {self.coco_json}')

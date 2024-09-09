@@ -7,9 +7,9 @@ from ok.alas.platform_windows import execute
 from ok.capture.windows.BaseWindowsCaptureMethod import BaseWindowsCaptureMethod
 from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error
-from ok.interaction.PyDirectInteraction import is_admin
 from ok.logging.Logger import get_logger
 from ok.util.Handler import Handler
+from ok.util.win import is_admin
 
 logger = get_logger(__name__)
 

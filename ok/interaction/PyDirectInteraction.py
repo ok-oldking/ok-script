@@ -1,4 +1,3 @@
-import ctypes
 import time
 
 import pydirectinput
@@ -6,6 +5,7 @@ import pydirectinput
 from ok.capture.BaseCaptureMethod import BaseCaptureMethod
 from ok.interaction.BaseInteraction import BaseInteraction
 from ok.logging.Logger import get_logger
+from ok.util.win import is_admin
 
 logger = get_logger(__name__)
 
@@ -136,11 +136,3 @@ class PyDirectInteraction(BaseInteraction):
 
     def should_capture(self):
         return self.capture.clickable()
-
-
-def is_admin():
-    try:
-        # Only Windows users with admin privileges can read the C drive directly
-        return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-        return False

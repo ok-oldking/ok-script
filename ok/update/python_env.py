@@ -106,9 +106,9 @@ def copy_python_files(python_dir, destination_dir):
         source_file = os.path.join(python_dir, file_name)
         if os.path.exists(source_file) and not os.path.exists(os.path.join(destination_dir, file_name)):
             shutil.copy(source_file, destination_dir)
-            print(f"Copied {file_name} to {destination_dir}")
+            logger.info(f"Copied {file_name} to {destination_dir}")
         else:
-            print(f"not copying {python_dir} {file_name} because exists")
+            logger.info(f"not copying {python_dir} {file_name} because exists")
 
 
 def copy_python_exe(dir):
@@ -194,4 +194,4 @@ if __name__ == '__main__':
          'Qt6Designer.dll'
             , 'openvino_pytorch_frontend.dll', 'openvino_tensorflow_frontend.dll', 'NEWS.txt',
          'py_tensorflow_frontend.cp311-win_amd64.pyd', 'py_pytorch_frontend.cp311-win_amd64.pyd',
-         '*.exe'], 'adb.exe', 'python-launcher-lib')
+         '*.exe'], ['adb.exe', 't64.exe'], 'python-launcher-lib')

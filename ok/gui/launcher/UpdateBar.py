@@ -2,7 +2,6 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QSpacerItem, QSizePo
 from qfluentwidgets import PushButton, ComboBox
 
 from ok.gui.Communicate import communicate
-from ok.gui.util.Alert import alert_error
 from ok.logging.Logger import get_logger
 from ok.update.GitUpdater import GitUpdater
 
@@ -27,10 +26,8 @@ class UpdateBar(QWidget):
         communicate.update_logs.connect(self.update_logs)
         self.hbox_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
         self.hbox_layout.setSpacing(20)
-        self.version_label = QLabel(self.tr("Current Version: ") + self.updater.version)
-        self.hbox_layout.addWidget(self.version_label)
+
         communicate.versions.connect(self.update_versions)
-        communicate.clone_version.connect(self.clone_version)
         communicate.update_running.connect(self.update_running)
         self.update_source_box = QHBoxLayout()
         self.update_source_box.setSpacing(6)
@@ -77,17 +74,12 @@ class UpdateBar(QWidget):
             self.version_log_label.setText(logs)
         else:
             self.version_log_label.setText("")
-        self.version_label.setVisible(logs is not None)
+        self.version_log_label.setVisible(logs is not None)
 
     def update_clicked(self):
         self.updater.update_to_version(self.version_list.currentText())
         self.update_button.setDisabled(True)
         self.check_update_button.setDisabled(True)
-
-    def clone_version(self, error):
-        self.update_button.setDisabled(False)
-        if error:
-            alert_error(error)
 
     def update_running(self, running):
         self.update_button.setDisabled(running)
@@ -103,6 +95,6 @@ class UpdateBar(QWidget):
             if current_items != versions:
                 self.version_list.clear()
                 self.version_list.addItems(versions)
-        self.version_list.setVisible(versions is not None)
-        self.update_button.setVisible(versions is not None)
+        self.version_list.setVisible(len(versions) != 0)
+        self.update_button.setVisible(len(versions) != 0)
         self.is_newest.setVisible(len(versions) == 0)

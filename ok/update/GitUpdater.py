@@ -19,7 +19,7 @@ from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error, alert_info
 from ok.logging.LogTailer import LogTailer
 from ok.logging.Logger import get_logger
-from ok.update.python_env import create_venv
+from ok.update.python_env import create_venv, find_line_in_requirements
 from ok.util.Handler import Handler
 from ok.util.path import get_relative_path, delete_if_exists
 
@@ -50,15 +50,12 @@ class GitUpdater:
         self.log_tailer = None
         self.yanked = False
         self.outdated = False
-        self.starting_version = self.version
+        self.starting_version = self.launcher_config.get('app_version')
+        self.auto_started = False
 
     @property
     def url(self):
         return self.get_current_source()['git_url']
-
-    @property
-    def version(self):
-        return self.launcher_config.get('app_version')
 
     def update_launcher(self):
         self.handler.post(self.do_update_launcher, 5)
@@ -75,23 +72,26 @@ class GitUpdater:
                 self.launcher_config['launcher_version'] = self.app_config.get('version')
 
             copy_exe_files(os.path.join('repo', self.launcher_config['launcher_version']), os.getcwd())
-        clean_repo('repo', [self.app_config.get("version")] + self.all_versions)
+        clean_repo('repo', self.app_config.get('version'))
 
     def kill_launcher(self):
-        # Create the parser
-        parser = argparse.ArgumentParser(description='Process some parameters.')
-        # Add the arguments
-        parser.add_argument('--parent_pid', type=int, help='Parent process ID')
-        # Parse the arguments
-        args = parser.parse_args()
-        logger.info(f'parent_pid {args.parent_pid}')
-        if args.parent_pid:
-            wait_kill_pid(args.parent_pid)
+        try:
+            # Create the parser
+            parser = argparse.ArgumentParser(description='Process some parameters.')
+            # Add the arguments
+            parser.add_argument('--parent_pid', type=int, help='Parent process ID')
+            # Parse the arguments
+            args = parser.parse_args()
+            logger.info(f'parent_pid {args.parent_pid}')
+            if args.parent_pid:
+                wait_kill_pid(args.parent_pid)
+        except Exception as e:
+            logger.error('parse parent_pid error', e)
         python_folder = os.path.abspath(os.path.join('python', 'launcher_env'))
         kill_process_by_path(python_folder)
 
     def load_current_ver(self):
-        path = os.path.join('repo', self.version)
+        path = os.path.join('repo', self.launcher_config.get('app_version'))
         self.launch_profiles = self.read_launcher_config(path)
 
     def log_handler(self, level, message):
@@ -109,7 +109,8 @@ class GitUpdater:
         try:
             if self.yanked or self.outdated:
                 alert_error(
-                    QCoreApplication.translate('app', 'The current version {} must be updated').format(self.version))
+                    QCoreApplication.translate('app', 'The current version {} must be updated').format(
+                        self.launcher_config.get('app_version')))
                 communicate.update_running.emit(False)
                 return
 
@@ -120,7 +121,16 @@ class GitUpdater:
 
             new_ver = self.starting_version
             entry = self.get_current_profile()['entry']
+
             script_path = os.path.join('repo', new_ver, entry)
+
+            if not os.path.exists(script_path):
+                if os.path.isfile(entry):
+                    script_path = entry
+                else:
+                    logger.error(f'could not find {script_path}')
+                    alert_error(f'could not find {script_path}')
+                    return False
 
             python_path = os.path.join('python', 'app_env', 'Scripts', 'pythonw.exe')
             # Launch the script detached from the current process
@@ -133,8 +143,12 @@ class GitUpdater:
             # Get the process ID (PID)
             pid = process.pid
             logger.info(f"Process ID (PID): {pid}")
+            return True
         except Exception as e:
+            alert_error(f'Start App Error {str(e)}')
             logger.error(f"An error occurred: {e}")
+            communicate.update_running.emit(False)
+            return False
 
     def version_selection_changed(self, new_version):
         self.handler.post(lambda: self.do_version_selection_changed(new_version), remove_existing=True,
@@ -145,7 +159,7 @@ class GitUpdater:
         log = None
         try:
             if self.launcher_config.get('app_version') != new_version:
-                start_hash = self.version_to_hash[self.launcher_config.get('app_version')]
+                start_hash = self.version_to_hash.get(self.launcher_config.get('app_version'))
                 end_hash = self.version_to_hash[new_version]
                 repo = self.check_out_version(new_version)
                 log = QCoreApplication.translate('app', "Updates:") + "\n"
@@ -180,7 +194,7 @@ class GitUpdater:
             params += ['--trusted-host', 'pypi.python.org', '--trusted-host', 'files.pythonhosted.org',
                        '--trusted-host', 'pypi.org', '--trusted-host', 'files.pythonhosted.org', '--trusted-host',
                        'files.pythonhosted.org', '--trusted-host', 'www.paddlepaddle.org.cn', '--trusted-host',
-                       'mirrors.cloud.tencent.com']
+                       'mirrors.cloud.tencent.com', '--trusted-host', 'paddle-whl.bj.bcebos.com']
             logger.info(f'executing pip install with: {params}')
             process = subprocess.Popen(
                 params,
@@ -218,20 +232,29 @@ class GitUpdater:
         self.handler.post(lambda: self.do_update_to_version(version))
 
     def read_launcher_config(self, path):
-        launch_profiles = []
-        if os.path.exists(path):
-            with open(os.path.join(path, 'launcher.json'), 'r') as file:
-                launch_profiles = json.load(file)
-                logger.info(f'read launcher config success, {launch_profiles}')
-        name = self.launcher_config.get('profile_name')
-        if any(obj.get('name') == name for obj in launch_profiles):
-            self.launcher_config['profile_name'] = name
-        elif launch_profiles:
-            self.launcher_config['profile_name'] = launch_profiles[0]['name']
+        full_version = find_line_in_requirements(get_file_in_path_or_cwd(path, 'requirements.txt'),
+                                                 'ok-script') or 'ok-script'
+        launcher_json = get_file_in_path_or_cwd(path, 'launcher.json')
+        with open(launcher_json, 'r', encoding='utf-8') as file:
+            launch_profiles = json.load(file)
+        for profile in launch_profiles:
+            for i in range(len(profile['install_dependencies'])):
+                profile['install_dependencies'][i] = re.sub(r'ok-script(?:==[\d.]+)?', full_version,
+                                                            profile['install_dependencies'][i])
+        if launch_profiles:
+            logger.info(f'read launcher config success, {launch_profiles}')
+            name = self.launcher_config.get('profile_name')
+            if any(obj.get('name') == name for obj in launch_profiles):
+                self.launcher_config['profile_name'] = name
+            elif launch_profiles:
+                logger.info(f'set profile to default {name}')
+                self.launcher_config['profile_name'] = launch_profiles[0]['name']
+            else:
+                self.launcher_config['profile_name'] = ''
+            self.launch_profiles = launch_profiles
+            communicate.launcher_profiles.emit(launch_profiles)
         else:
-            self.launcher_config['profile_name'] = ''
-        self.launch_profiles = launch_profiles
-        communicate.launcher_profiles.emit(launch_profiles)
+            logger.error(f'read launcher config failed')
         return launch_profiles
 
     def install_dependencies(self, env):
@@ -257,6 +280,7 @@ class GitUpdater:
 
     def do_run(self):
         if not self.launcher_config['app_dependencies_installed']:
+            alert_info(QCoreApplication.translate('app', f'Start downloading'))
             if not self.install_dependencies('app_env'):
                 alert_info(QCoreApplication.translate('app', f'Install dependencies Failed'))
                 communicate.update_running.emit(False)
@@ -265,7 +289,7 @@ class GitUpdater:
         logger.info('start_app end')
 
     def set_start_success(self):
-        self.launcher_config['app_version'] = self.starting_version
+        self.launcher_config['app_version'] = self.app_config.get('version')
         self.launcher_config['app_dependencies_installed'] = True
 
     def check_out_version(self, version, depth=10):
@@ -278,15 +302,14 @@ class GitUpdater:
         else:
             repo.git.fetch('origin', f'refs/tags/{version}:refs/tags/{version}', '--depth=1')
             repo.git.checkout(version, force=True)
-
+        fix_version_in_config(path, version)
         logger.info(f'clone repo success {path}')
         return repo
 
     def do_update_to_version(self, version):
         try:
-            if self.version == version:
+            if self.launcher_config.get('app_version') == version:
                 alert_info(QCoreApplication.translate('app', f'Already updated to version:') + version)
-                communicate.clone_version.emit(None)
                 communicate.update_running.emit(False)
                 return
             python_folder = os.path.abspath(os.path.join('python', 'app_env'))
@@ -297,11 +320,9 @@ class GitUpdater:
             self.starting_version = version
             self.yanked = False
             self.outdated = False
-            communicate.clone_version.emit(None)
             self.do_run()
         except Exception as e:
             logger.error('do_update_to_version error', e)
-            communicate.clone_version.emit(str(e))
             communicate.update_running.emit(False)
 
     def list_all_versions(self):
@@ -329,25 +350,39 @@ class GitUpdater:
                         hash_to_ver[hash] = tag
             self.lts_ver = hash_to_ver.get(lts_hash) or 'v0.0.0'
             logger.info(f'lts hash: {lts_hash} lts_ver: {self.lts_ver}')
-            if self.version not in self.version_to_hash:
+            if self.launcher_config.get('app_version') not in self.version_to_hash:
                 logger.info('version yanked')
                 self.yanked = True
-            if is_newer_or_eq_version(self.version, self.lts_ver) < 0:
-                logger.info(f'version outdated {self.version} {self.lts_ver}')
+            if is_newer_or_eq_version(self.launcher_config.get('app_version'), self.lts_ver) < 0:
+                logger.info(f'version outdated {self.launcher_config.get("app_version")} {self.lts_ver}')
                 self.outdated = True
-            tags = sorted(list(filter(lambda x: is_newer_or_eq_version(x, self.lts_ver) >= 0 and x != self.version,
-                                      hash_to_ver.values())),
-                          key=cmp_to_key(is_newer_or_eq_version),
-                          reverse=True)
+            tags = sorted(list(filter(
+                lambda x: is_newer_or_eq_version(x, self.lts_ver) >= 0 and x != self.launcher_config.get('app_version'),
+                hash_to_ver.values())),
+                key=cmp_to_key(is_newer_or_eq_version),
+                reverse=True)
             logger.info(f'done fetching remote version size {len(tags)}')
             self.all_versions = tags
-            communicate.update_running.emit(False)
-            communicate.versions.emit(tags)
+            if not self.auto_start():
+                communicate.update_running.emit(False)
+                communicate.versions.emit(tags)
         except Exception as e:
             logger.error('fetch remote version list error', e)
             alert_error('Fetch remote version list error!')
             communicate.update_running.emit(False)
             communicate.versions.emit(None)
+
+    def change_profile(self, profile_name):
+        if self.launcher_config['profile_name'] != profile_name:
+            self.launcher_config['profile_name'] = profile_name
+            self.launcher_config['app_dependencies_installed'] = False
+            logger.info(f'profile changed {profile_name}')
+
+    def auto_start(self):
+        if self.launcher_config['app_dependencies_installed'] and not self.all_versions and not self.auto_started:
+            self.auto_started = True
+            return self.start_app()
+        self.auto_started = True
 
     def get_sources(self):
         return self.config['sources']
@@ -363,6 +398,14 @@ class GitUpdater:
         for source in self.config['sources']:
             if source['name'] == self.launcher_config['source']:
                 return source
+
+
+def get_file_in_path_or_cwd(path, file):
+    if os.path.exists(os.path.join(path, file)):
+        return os.path.join(path, file)
+    elif os.path.exists(file):
+        return file
+    raise FileNotFoundError(f'{path} {file} not found')
 
 
 def is_valid_version(tag):
@@ -501,7 +544,7 @@ def clean_repo(repo_path, whitelist):
         if os.path.isdir(subfolder_path) and subfolder not in whitelist:
             # Delete the subfolder if it's not in the whitelist
             delete_if_exists(subfolder_path)
-            logger.info(f'clean_repo Deleted subfolder: {subfolder_path}')
+            logger.info(f'clean_repo Deleted subfolder: {subfolder_path} {whitelist}')
 
     logger.info('clean_repo complete.')
 
@@ -527,6 +570,18 @@ def copy_exe_files(folder1, folder2):
         logger.error(f'copy_exe_files error', e)
 
     logger.info(f'Copy exe complete. {folder1} -> {folder2}')
+
+
+def fix_version_in_config(repo_dir, version):
+    config_file = os.path.join(repo_dir, 'config.py')
+    # Read the content of the file
+    with open(config_file, 'r', encoding='utf-8') as file:
+        content = file.read()
+    # Replace the version string
+    new_content = re.sub(r'version = "v\d+\.\d+\.\d+"', f'version = "{version}"', content)
+    # Write the updated content back to the file
+    with open(config_file, 'w', encoding='utf-8') as file:
+        file.write(new_content)
 
 
 if __name__ == '__main__':

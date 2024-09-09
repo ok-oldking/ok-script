@@ -1,12 +1,11 @@
 import os.path
-import re
 import sys
 
 import git
 
 from ok.config.Config import Config
 from ok.logging.Logger import config_logger, get_logger
-from ok.update.GitUpdater import copy_exe_files
+from ok.update.GitUpdater import copy_exe_files, fix_version_in_config
 from ok.update.init_launcher_env import create_launcher_env
 from ok.util.path import dir_checksum, delete_if_exists
 
@@ -46,17 +45,7 @@ if __name__ == "__main__":
         build_repo = git.Repo.clone_from(url, repo_dir, branch=tag, depth=1)
         logger.info(f'Cloned repository to: {repo_dir}')
 
-        config_file = os.path.join(repo_dir, 'config.py')
-        # Read the content of the file
-        with open(config_file, 'r', encoding='utf-8') as file:
-            content = file.read()
-
-        # Replace the version string
-        new_content = re.sub(r'version = "v\d+\.\d+\.\d+"', f'version = "{tag}"', content)
-
-        # Write the updated content back to the file
-        with open(config_file, 'w', encoding='utf-8') as file:
-            file.write(new_content)
+        fix_version_in_config(repo_dir, tag)
 
         delete_if_exists(os.path.join(repo_dir, '.git'))
         logger.info(f'Deleted .git directory in: {repo_dir}')
