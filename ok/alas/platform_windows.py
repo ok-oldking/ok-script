@@ -54,8 +54,9 @@ def get_emulator_exe(instance: EmulatorInstance):
 def execute(game_path: str):
     if os.path.exists(game_path):
         try:
-            subprocess.Popen(game_path, cwd=os.path.dirname(game_path), close_fds=True,
-                             creationflags=subprocess.CREATE_NEW_CONSOLE)
+            subprocess.Popen(game_path, cwd=os.path.dirname(game_path),
+                             creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
+                             close_fds=True)
             return True
         except Exception as e:
             logger.error('execute error', e)

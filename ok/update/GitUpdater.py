@@ -137,7 +137,8 @@ class GitUpdater:
             logger.info(f'launching {python_path} {script_path}')
             process = subprocess.Popen(
                 [python_path, script_path, f'--parent_pid={os.getpid()}'],
-                creationflags=subprocess.CREATE_NEW_CONSOLE
+                creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
+                close_fds=True
             )
 
             # Get the process ID (PID)
@@ -188,7 +189,7 @@ class GitUpdater:
     def install_package(self, package_name, app_env_path):
         try:
             # Run pip install command
-            app_env_python_exe = os.path.join(app_env_path, 'Scripts', 'pythonw.exe')
+            app_env_python_exe = os.path.join(app_env_path, 'Scripts', 'python.exe')
             params = [app_env_python_exe, "-m", "pip", "install"] + package_name.split()
             if '-i' not in package_name.split():
                 params += ['-i',
@@ -204,7 +205,8 @@ class GitUpdater:
                 params,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW
             )
 
             # Print the stdout and stderr in real-time
