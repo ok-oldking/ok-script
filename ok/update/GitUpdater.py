@@ -114,6 +114,7 @@ class GitUpdater:
                     QCoreApplication.translate('app', 'The current version {} must be updated').format(
                         self.launcher_config.get('app_version')))
                 communicate.update_running.emit(False)
+                logger.error(f'yanked {self.yanked} or outdated {self.outdated}')
                 return
 
             if not self.log_tailer:
@@ -357,9 +358,13 @@ class GitUpdater:
             if self.launcher_config.get('app_version') not in self.version_to_hash:
                 logger.info('version yanked')
                 self.yanked = True
+            else:
+                self.yanked = False
             if is_newer_or_eq_version(self.launcher_config.get('app_version'), self.lts_ver) < 0:
                 logger.info(f'version outdated {self.launcher_config.get("app_version")} {self.lts_ver}')
                 self.outdated = True
+            else:
+                self.yanked = False
             tags = sorted(list(filter(
                 lambda x: is_newer_or_eq_version(x, self.lts_ver) >= 0 and x != self.launcher_config.get('app_version'),
                 hash_to_ver.values())),

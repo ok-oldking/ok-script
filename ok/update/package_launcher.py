@@ -1,4 +1,5 @@
 import os.path
+import shutil
 import sys
 
 import git
@@ -32,10 +33,19 @@ if __name__ == "__main__":
 
         logger.info(f'Tag: {tag}')
         logger.info(f'Profile: {profile}')
-
         build_dir = os.path.join(os.getcwd(), 'dist')
         delete_if_exists(build_dir)
         logger.info(f'Build directory: {build_dir}')
+
+        mini_python = os.path.join(os.getcwd(), 'mini_python')
+        if os.path.isdir(mini_python):
+            python_repo = git.Repo(mini_python)
+            origin = python_repo.remotes.origin
+            origin.pull()
+        else:
+            build_repo = git.Repo.clone_from('https://github.com/ok-oldking/mini_python', mini_python,
+                                             depth=1)
+        shutil.copytree(os.path.join(mini_python, 'Python_3.11.9'), os.path.join(build_dir, 'python'))
 
         current_repo = git.Repo(os.getcwd())
         url = current_repo.remote('origin').url

@@ -124,12 +124,6 @@ def copy_python_files(python_dir, destination_dir):
                 logger.info(f"Copied folder {item} to {destination_dir}")
 
 
-def copy_python_exe(dir):
-    python_exe = get_base_python_exe()
-    logger.info(f'get_base_python_exe {python_exe}')
-    copy_python_files(os.path.dirname(python_exe), os.path.join(dir, 'python'))
-
-
 def modify_venv_cfg(env_dir):
     python_dir = os.path.dirname(env_dir)
     file_path = os.path.join(env_dir, 'pyvenv.cfg')
@@ -151,7 +145,6 @@ def modify_venv_cfg(env_dir):
 def create_venv(name, dir=None):
     if dir is None:
         dir = os.getcwd()
-    copy_python_exe(dir)
     mini_python_exe = os.path.join(dir, 'python', 'python.exe')
     lenv_path = os.path.join(dir, 'python', name)
     ok = False
