@@ -287,6 +287,7 @@ class GitUpdater:
     def do_clear_dependencies():
         try:
             app_python_folder = os.path.abspath(os.path.join('python', 'app_env'))
+            kill_process_by_path(app_python_folder)
             delete_if_exists(app_python_folder)
             alert_info(QCoreApplication.translate('app', f'Delete dependencies success!'))
         except Exception as e:

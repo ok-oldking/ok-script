@@ -69,7 +69,7 @@ def find_line_in_requirements(file_path, search_term, encodings=['utf-16', 'utf-
                     if search_term in line:
                         return line.strip()
             return None
-        except (FileNotFoundError, UnicodeDecodeError) as e:
+        except Exception as e:
             print(f"Error with encoding {encoding}: {e}")
     return None
 
