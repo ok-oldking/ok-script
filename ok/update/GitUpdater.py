@@ -418,7 +418,7 @@ class GitUpdater:
         if 'cn' in locale.getdefaultlocale()[0].lower():
             for source in self.config['sources']:
                 if source['name'] == 'China':
-                    return source
+                    return source['name']
         return self.config['sources'][0]['name']
 
     def get_current_source(self):
