@@ -4,9 +4,8 @@
 <context>
     <name>@default</name>
     <message>
-        <location filename="../../update/Updater.py" line="97"/>
         <source>Version Update</source>
-        <translation>更新版本</translation>
+        <translation type="vanished">更新版本</translation>
     </message>
 </context>
 <context>
@@ -355,19 +354,29 @@
 <context>
     <name>RunBar</name>
     <message>
-        <location filename="../launcher/RunBar.py" line="24"/>
         <source> Current Version: </source>
-        <translation> 当前版本:</translation>
+        <translation type="vanished"> 当前版本:</translation>
     </message>
     <message>
-        <location filename="../launcher/RunBar.py" line="31"/>
+        <location filename="../launcher/RunBar.py" line="25"/>
+        <source>Launcher </source>
+        <translation>启动器</translation>
+    </message>
+    <message>
+        <location filename="../launcher/RunBar.py" line="35"/>
         <source>Choose Profile:</source>
         <translation>选择版本:</translation>
     </message>
     <message>
-        <location filename="../launcher/RunBar.py" line="42"/>
+        <location filename="../launcher/RunBar.py" line="44"/>
+        <location filename="../launcher/RunBar.py" line="79"/>
         <source>Start</source>
         <translation>启动</translation>
+    </message>
+    <message>
+        <location filename="../launcher/RunBar.py" line="81"/>
+        <source>Download Dependencies and Start</source>
+        <translation>下载依赖并启动</translation>
     </message>
 </context>
 <context>
@@ -805,24 +814,35 @@
         <translation type="vanished">当前版本</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="36"/>
+        <location filename="../launcher/UpdateBar.py" line="30"/>
+        <source>Delete Downloaded Dependencies</source>
+        <translation>删除已下载依赖</translation>
+    </message>
+    <message>
+        <location filename="../launcher/UpdateBar.py" line="41"/>
         <source>Update Source:</source>
         <translation>更新源:</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="51"/>
+        <location filename="../launcher/UpdateBar.py" line="56"/>
         <source>Check for Update</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="60"/>
+        <location filename="../launcher/UpdateBar.py" line="65"/>
+        <location filename="../launcher/UpdateBar.py" line="79"/>
         <source>Update</source>
-        <translation>更新</translation>
+        <translation>更新版本</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="66"/>
+        <location filename="../launcher/UpdateBar.py" line="71"/>
         <source>This is the newest version</source>
         <translation>已经是最新版本</translation>
+    </message>
+    <message>
+        <location filename="../launcher/UpdateBar.py" line="81"/>
+        <source>Downgrade</source>
+        <translation>降级版本</translation>
     </message>
 </context>
 <context>
@@ -941,32 +961,42 @@
         <translation>{} 启动器</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="113"/>
+        <location filename="../../update/GitUpdater.py" line="115"/>
         <source>The current version {} must be updated</source>
         <translation>当前版本{}必须更新</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="164"/>
+        <location filename="../../update/GitUpdater.py" line="171"/>
         <source>Updates:</source>
         <translation>更新内容:</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="287"/>
+        <location filename="../../update/GitUpdater.py" line="291"/>
+        <source>Delete dependencies success!</source>
+        <translation>删除依赖成功</translation>
+    </message>
+    <message>
+        <location filename="../../update/GitUpdater.py" line="303"/>
+        <source>Start downloading</source>
+        <translation>开始下载依赖</translation>
+    </message>
+    <message>
+        <location filename="../../update/GitUpdater.py" line="305"/>
         <source>Install dependencies Failed</source>
         <translation>安装依赖失败</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="314"/>
+        <location filename="../../update/GitUpdater.py" line="334"/>
         <source>Already updated to version:</source>
         <translation>已经更新到版本:</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="491"/>
+        <location filename="../../update/GitUpdater.py" line="534"/>
         <source>Stable Version</source>
         <translation>正式版</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="493"/>
+        <location filename="../../update/GitUpdater.py" line="536"/>
         <source>Beta Version</source>
         <translation>测试版</translation>
     </message>

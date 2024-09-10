@@ -27,9 +27,14 @@ class UpdateBar(QWidget):
         self.hbox_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
         self.hbox_layout.setSpacing(20)
 
+        self.delete_dependencies_button = PushButton(self.tr("Delete Downloaded Dependencies"))
+        self.delete_dependencies_button.clicked.connect(self.updater.clear_dependencies)
+        self.hbox_layout.addWidget(self.delete_dependencies_button)
+
         communicate.versions.connect(self.update_versions)
         communicate.update_running.connect(self.update_running)
         self.update_source_box = QHBoxLayout()
+
         self.update_source_box.setSpacing(6)
 
         self.hbox_layout.addLayout(self.update_source_box, stretch=0)
@@ -93,6 +98,7 @@ class UpdateBar(QWidget):
         self.check_update_button.setDisabled(running)
         self.update_sources.setDisabled(running)
         self.version_list.setDisabled(running)
+        self.delete_dependencies_button.setDisabled(running)
 
     def update_versions(self, versions):
         if not versions:  # fetch version error

@@ -283,7 +283,8 @@ class GitUpdater:
         if self.handler.post(self.do_clear_dependencies, skip_if_running=True, remove_existing=True):
             communicate.update_running.emit(True)
 
-    def do_clear_dependencies(self):
+    @staticmethod
+    def do_clear_dependencies():
         try:
             app_python_folder = os.path.abspath(os.path.join('python', 'app_env'))
             delete_if_exists(app_python_folder)
