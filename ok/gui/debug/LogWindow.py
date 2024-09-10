@@ -168,6 +168,7 @@ class LogWindow(QWidget):
 
         communicate.log.connect(self.add_log)
         self.filter_logs()
+        self.black_list_logs = ['A new release of pip', 'does not currently take into account all the packages']
 
     def close(self):
         super().close()
@@ -175,7 +176,9 @@ class LogWindow(QWidget):
             self.config['show'] = False
 
     def add_log(self, level_no, message):
-        # print('add_log', level_no, message)
+        for log in self.black_list_logs:  # filter out pip update message
+            if log in message:
+                return
         self.log_model.add_log(log_levels.get(level_no, 'DEBUG'), message)
         self.log_list.scrollToBottom()
 

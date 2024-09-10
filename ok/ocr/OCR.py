@@ -14,6 +14,7 @@ class OCR:
     executor = None
     ocr_default_threshold = 0.8
     ocr_target_height = 0
+    ocr_lib = ""
 
     def ocr(self, x=0, y=0, to_x=1, to_y=1, match: str | List[str] | Pattern[str] | List[Pattern[str]] | None = None,
             width=0, height=0, box: Box = None, name=None,

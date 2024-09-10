@@ -22,7 +22,10 @@ class RunBar(QWidget):
 
         self.layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
-        self.version_label = QLabel(self.tr("Current Version: ") + self.updater.launcher_config.get('app_version'))
+        self.version_label = QLabel(self.tr("Launcher ") + self.updater.launcher_config.get(
+            'launcher_version') + "   " +
+                                    self.updater.app_config.get("gui_title") + " " + self.updater.launcher_config.get(
+            'app_version'))
         self.layout.addWidget(self.version_label)
 
         self.profile_layout = QHBoxLayout()
@@ -38,8 +41,6 @@ class RunBar(QWidget):
 
         communicate.launcher_profiles.connect(self.update_profile)
 
-        self.update_profile(None)
-
         self.run_button = PushButton(self.tr("Start"))
         self.run_button.setEnabled(False)
         self.run_button.clicked.connect(self.start_clicked)
@@ -48,6 +49,7 @@ class RunBar(QWidget):
         self.setLayout(self.layout)
 
         communicate.update_running.connect(self.update_running)
+        self.update_profile(None)
 
     def start_clicked(self):
         self.updater.run()
@@ -56,9 +58,27 @@ class RunBar(QWidget):
         self.updater.change_profile(self.profiles.currentText())
 
     def update_profile(self, profiles):
-        profile_names = [profile['name'] for profile in self.updater.launch_profiles]
-        self.profiles.addItems(profile_names)
-        self.profiles.setText(self.updater.launcher_config.get('profile_name'))
+        if not profiles:
+            profiles = self.updater.launch_profiles
+        profile_names = [profile['name'] for profile in profiles]
+
+        # Check if the current profiles are different from the new profiles
+        current_profiles = [self.profiles.itemText(i) for i in range(self.profiles.count())]
+
+        if profile_names != current_profiles:
+            self.profiles.clear()
+            self.profiles.addItems(profile_names)
+
+        # Update the text of the profiles
+        current_profile_name = self.updater.launcher_config.get('profile_name')
+
+        if self.profiles.currentText() != current_profile_name:
+            self.profiles.setCurrentText(current_profile_name)
+
+        if self.updater.launcher_config['app_dependencies_installed']:
+            self.run_button.setText(self.tr('Start'))
+        else:
+            self.run_button.setText(self.tr('Download Dependencies and Start'))
         if not self.profile_connected:
             self.profile_connected = True
             self.profiles.currentTextChanged.connect(self.profile_changed_clicked)

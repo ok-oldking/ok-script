@@ -10,7 +10,6 @@ import subprocess
 import sys
 from functools import cmp_to_key
 
-import git
 import psutil
 from PySide6.QtCore import QCoreApplication
 
@@ -31,6 +30,7 @@ repo_path = get_relative_path(os.path.join('update', "repo"))
 class GitUpdater:
 
     def __init__(self, app_config, exit_event):
+        add_to_path(os.path.join(os.getcwd(), 'python', 'git', 'bin'))
         self.exit_event = exit_event
         self.app_config = app_config
         self.config = app_config.get('git_update')
@@ -58,7 +58,7 @@ class GitUpdater:
         return self.get_current_source()['git_url']
 
     def update_launcher(self):
-        self.handler.post(self.do_update_launcher, 5)
+        self.handler.post(self.do_update_launcher, 1)
 
     def do_update_launcher(self):
         logger.info(f'do_update_launcher')
@@ -104,8 +104,9 @@ class GitUpdater:
                     None)
 
     def update_source(self, text):
-        self.launcher_config['source'] = text
-        self.list_all_versions()
+        if text and text != self.launcher_config.get('source'):
+            self.launcher_config['source'] = text
+            self.list_all_versions()
 
     def start_app(self):
         try:
@@ -135,12 +136,12 @@ class GitUpdater:
                     alert_error(f'could not find {script_path}')
                     return False
 
-            python_path = os.path.join('python', 'app_env', 'Scripts', 'pythonw.exe')
+            python_path = os.path.join('python', 'app_env', 'Scripts', 'python.exe')
             # Launch the script detached from the current process
             logger.info(f'launching {python_path} {script_path}')
             process = subprocess.Popen(
                 [python_path, script_path, f'--parent_pid={os.getpid()}'],
-                creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
+                creationflags=subprocess.CREATE_NO_WINDOW,
                 close_fds=True
             )
 
@@ -278,6 +279,20 @@ class GitUpdater:
                     return False
             return True
 
+    def clear_dependencies(self):
+        if self.handler.post(self.do_clear_dependencies, skip_if_running=True, remove_existing=True):
+            communicate.update_running.emit(True)
+
+    def do_clear_dependencies(self):
+        try:
+            app_python_folder = os.path.abspath(os.path.join('python', 'app_env'))
+            delete_if_exists(app_python_folder)
+            alert_info(QCoreApplication.translate('app', f'Delete dependencies success!'))
+        except Exception as e:
+            logger.error(f"failed to clear dependencies. ", e)
+            alert_error(QCoreApplication.translate('app', 'Failed to clear dependencies. {}'.format(str(e))))
+        communicate.update_running.emit(False)
+
     def run(self):
         if self.handler.post(self.do_run, skip_if_running=True, remove_existing=True):
             communicate.update_running.emit(True)
@@ -302,6 +317,7 @@ class GitUpdater:
         repo = check_repo(path, self.url)
         if repo is None:
             delete_if_exists(path)
+            import git
             repo = git.Repo.clone_from(self.url, path, branch=version, depth=depth)
         else:
             repo.git.fetch('origin', f'refs/tags/{version}:refs/tags/{version}', '--depth=1')
@@ -337,8 +353,8 @@ class GitUpdater:
 
     def do_list_all_versions(self):
         try:
-
             logger.info(f'start fetching remote version {self.url}')
+            import git
             remote_refs = git.cmd.Git().ls_remote(self.url, tags=True)
 
             lts_hash = ''
@@ -382,10 +398,11 @@ class GitUpdater:
             communicate.versions.emit(None)
 
     def change_profile(self, profile_name):
-        if self.launcher_config['profile_name'] != profile_name:
+        if self.launcher_config['profile_name'] != profile_name and profile_name:
             self.launcher_config['profile_name'] = profile_name
             self.launcher_config['app_dependencies_installed'] = False
             logger.info(f'profile changed {profile_name}')
+            communicate.launcher_profiles.emit(self.launch_profiles)
 
     def auto_start(self):
         if self.launcher_config['app_dependencies_installed'] and not self.all_versions and not self.auto_started:
@@ -404,6 +421,7 @@ class GitUpdater:
         return self.config['sources'][0]['name']
 
     def get_current_source(self):
+        logger.info(f'get_current_source {self.launcher_config.get("sources")} {self.config["sources"]}')
         for source in self.config['sources']:
             if source['name'] == self.launcher_config['source']:
                 return source
@@ -423,6 +441,7 @@ def is_valid_version(tag):
 
 
 def is_valid_repo(path):
+    import git
     try:
         _ = git.Repo(path).git_dir
         return True
@@ -433,6 +452,7 @@ def is_valid_repo(path):
 def check_repo(path, new_url):
     try:
         if os.path.isdir(path):
+            import git
             repo = git.Repo(path)
             if not repo.bare:
                 origin = repo.remotes.origin
@@ -605,5 +625,10 @@ def fix_version_in_repo(repo_dir, tag):
         file.write(new_content)
 
 
-if __name__ == '__main__':
-    print(get_updater_exe_local())
+def add_to_path(folder_path):
+    current_path = os.environ.get('PATH', '')
+    if folder_path not in current_path:
+        os.environ['PATH'] = folder_path + os.pathsep + current_path
+        logger.info(f"Added {folder_path} to PATH for the current script.")
+    else:
+        logger.info(f"{folder_path} is already in the PATH for the current script.")

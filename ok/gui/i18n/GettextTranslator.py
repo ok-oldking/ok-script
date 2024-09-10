@@ -1,7 +1,7 @@
 import gettext
 import os
 
-from ok.util.path import ensure_dir_for_file, resource_path
+from ok.util.path import ensure_dir_for_file, resource_path, get_path_relative_to_exe
 
 
 def __get_root():
@@ -66,5 +66,5 @@ def convert_to_mo_files():
 
 def get_translations(language):
     gettext.textdomain('ok')
-    dir_i18n = resource_path('i18n')
+    dir_i18n = get_path_relative_to_exe('i18n')
     return gettext.translation('ok', dir_i18n, languages=[language])

@@ -3,7 +3,7 @@ from qfluentwidgets import PushButton, ComboBox
 
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
-from ok.update.GitUpdater import GitUpdater
+from ok.update.GitUpdater import GitUpdater, is_newer_or_eq_version
 
 logger = get_logger(__name__)
 
@@ -55,7 +55,7 @@ class UpdateBar(QWidget):
         self.version_list = ComboBox()
         self.version_list.setVisible(False)
         self.hbox_layout.addWidget(self.version_list)
-        self.version_list.currentTextChanged.connect(self.updater.version_selection_changed)
+        self.version_list.currentTextChanged.connect(self.version_selection_changed)
 
         self.update_button = PushButton(self.tr("Update"))
         self.update_button.clicked.connect(self.update_clicked)
@@ -68,6 +68,13 @@ class UpdateBar(QWidget):
         self.hbox_layout.addWidget(self.is_newest)
 
         self.setLayout(self.layout)
+
+    def version_selection_changed(self, text):
+        if is_newer_or_eq_version(text, self.updater.launcher_config.get('app_version')) >= 0:
+            self.update_button.setText(self.tr("Update"))
+        else:
+            self.update_button.setText(self.tr("Downgrade"))
+        self.updater.version_selection_changed(text)
 
     def update_logs(self, logs):
         if logs:

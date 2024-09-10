@@ -356,8 +356,8 @@
     <name>RunBar</name>
     <message>
         <location filename="../launcher/RunBar.py" line="24"/>
-        <source>Current Version: </source>
-        <translation>当前版本:</translation>
+        <source> Current Version: </source>
+        <translation> 当前版本:</translation>
     </message>
     <message>
         <location filename="../launcher/RunBar.py" line="31"/>

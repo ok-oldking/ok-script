@@ -21,6 +21,7 @@ class Launcher:
         self.app = None
         self.locale = None
         self.updater = None
+        logger.info(f'Launcher__init__ app_config = {config}')
 
     def start(self):
         try:

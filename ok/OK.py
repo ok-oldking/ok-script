@@ -143,7 +143,8 @@ class OK:
                     return False
                 from rapidocr_openvino import RapidOCR
                 self.ocr = RapidOCR()
-
+            from ok.ocr.OCR import OCR
+            OCR.ocr_lib = self.config.get('ocr').get('lib')
             self.task_executor.ocr = self.ocr
 
         if not check_mutex():
