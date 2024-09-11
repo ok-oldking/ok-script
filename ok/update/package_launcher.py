@@ -36,10 +36,8 @@ if __name__ == "__main__":
     try:
         # Get the folder path from the command line arguments
         tag = sys.argv[1]
-        profile = sys.argv[2]
 
         logger.info(f'Tag: {tag}')
-        logger.info(f'Profile: {profile}')
         build_dir = os.path.join(os.getcwd(), 'dist')
         delete_if_exists(build_dir)
         logger.info(f'Build directory: {build_dir}')
@@ -54,7 +52,7 @@ if __name__ == "__main__":
                                              depth=1)
         python_dir = os.path.join(build_dir, 'python')
         python_src = os.path.join(mini_python, 'Python_3.11.9')
-        
+
         shutil.copytree(python_src, python_dir)
 
         logger.info(f'copied {python_src} to {python_dir}')
@@ -80,10 +78,11 @@ if __name__ == "__main__":
 
         copy_exe_files(repo_dir, build_dir)
 
-        create_launcher_env(repo_dir, build_dir)
+        if not create_launcher_env(repo_dir, build_dir):
+            sys.exit(1)
 
         config = Config('launcher', {
-            'profile_name': profile,
+            'profile_index': 0,
             'app_dependencies_installed': False,
             'app_version': tag,
             'launcher_version': tag

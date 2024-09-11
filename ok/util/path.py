@@ -94,6 +94,14 @@ def delete_if_exists(file_path):
         shutil.rmtree(file_path, onerror=handle_remove_error)
 
 
+def delete_folders_starts_with(path, starts_with):
+    if os.path.isdir(path):
+        for folder_name in os.listdir(path):
+            folder_path = os.path.join(path, folder_name)
+            if os.path.isdir(folder_path) and folder_name.startswith(starts_with):
+                shutil.rmtree(folder_path, onerror=handle_remove_error)
+
+
 def handle_remove_error(func, path, exc_info):
     print(f"Error removing {path}: {exc_info}")
     os.chmod(path, 0o777)
@@ -183,3 +191,17 @@ def find_folder_with_file(root_folder, target_file):
             return folder
 
     return None
+
+
+def get_folder_size(folder_path):
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(folder_path):
+        for filename in filenames:
+            file_path = os.path.join(dirpath, filename)
+            if os.path.isfile(file_path):
+                total_size += os.path.getsize(file_path)
+    return total_size  # Convert bytes to MB
+
+
+if __name__ == '__main__':
+    print(get_folder_size(r"C:\Users\ok\Downloads\ok-ww\python\app_env"))

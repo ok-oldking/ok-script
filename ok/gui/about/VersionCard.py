@@ -5,6 +5,7 @@ from qfluentwidgets import SettingCard, PushButton, ProgressBar, InfoBar, InfoBa
 import ok
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
+from ok.update.GitUpdater import convert_size
 
 logger = get_logger(__name__)
 
@@ -43,22 +44,13 @@ class VersionCard(SettingCard):
             self.show_update_dialog()
         self.update_buttons(percent, progress)
 
-    def update_buttons(self, percent, progress):
-        if ok.gui.app.updater.downloading:
-            self.downloading_text.show()
-            self.downloading_text.setText(
-                self.tr('Downloading {progress} {percent}%').format(progress=progress, percent=format(percent, '.1f')))
-            self.download_bar.show()
-            self.download_bar.setValue(percent)
-        else:
-            self.downloading_text.hide()
-            self.download_bar.hide()
-            self.download_bar.setValue(0)
-        if ok.gui.app.updater.to_update:
-            self.update_button.setText(
-                self.tr('Update to {version} {type}').format(version=ok.gui.app.updater.to_update.get('version'),
-                                                             type=self.get_type()))
-        self.update_button.setVisible(ok.gui.app.updater.to_update is not None)
+    def update_buttons(self, percent, downloaded, total):
+        self.downloading_text.show()
+        self.downloading_text.setText(
+            self.tr('Downloading {progress} {percent}%').format(
+                progress=convert_size(downloaded) + '/' + convert_size(
+                    total), percent=format(percent, '.1f')))
+        self.download_bar.setValue(percent)
 
     def get_type(self, debug=None):
         if debug is None and ok.gui.app.updater.to_update is not None:

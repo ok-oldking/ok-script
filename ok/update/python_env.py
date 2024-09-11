@@ -61,7 +61,7 @@ def delete_files(
                         print(f"Error deleting {file_path}", e)
 
 
-def find_line_in_requirements(file_path, search_term, encodings=['utf-16', 'utf-8', 'ISO-8859-1', 'cp1252']):
+def find_line_in_requirements(file_path, search_term, encodings=['utf-8', 'utf-16', 'ISO-8859-1', 'cp1252']):
     for encoding in encodings:
         try:
             with open(file_path, 'r', encoding=encoding) as file:
@@ -142,11 +142,17 @@ def modify_venv_cfg(env_dir):
                 file.write(line)
 
 
+def get_env_path(name, dir=None):
+    if dir is None:
+        dir = os.getcwd()
+    return os.path.join(dir, 'python', name)
+
+
 def create_venv(name, dir=None):
     if dir is None:
         dir = os.getcwd()
     mini_python_exe = os.path.join(dir, 'python', 'python.exe')
-    lenv_path = os.path.join(dir, 'python', name)
+    lenv_path = get_env_path(name, dir)
     ok = False
     if os.path.exists(lenv_path):
         logger.info(f'venv already exists: {lenv_path}')

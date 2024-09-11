@@ -37,7 +37,7 @@ def create_launcher_env(code_dir='.', build_dir='.'):
     full_version = find_line_in_requirements(os.path.join(code_dir, 'requirements.txt'), 'ok-script')
     if not full_version:
         logger.error('Could not find ok-script version in requirements.txt')
-        sys.exit(1)
+        return
     logger.info(f'ok-script full_version: {full_version}')
     lenv_path = create_venv('launcher_env', os.path.join(build_dir))
     try:
@@ -55,9 +55,9 @@ def create_launcher_env(code_dir='.', build_dir='.'):
         logger.info("install ok-script success")
         logger.info(result.stdout)
         delete_files(root_dir=lenv_path)
+        return True
     except Exception as e:
         logger.error("An error occurred while creating the virtual environment.", e)
-        sys.exit(1)
 
 
 # python -m ok.gui.launcher.init_lenv

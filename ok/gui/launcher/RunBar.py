@@ -22,10 +22,7 @@ class RunBar(QWidget):
 
         self.layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
-        self.version_label = QLabel(self.tr("Launcher ") + self.updater.launcher_config.get(
-            'launcher_version') + "   " +
-                                    self.updater.app_config.get("gui_title") + " " + self.updater.launcher_config.get(
-            'app_version'))
+        self.version_label = QLabel()
         self.layout.addWidget(self.version_label)
 
         self.profile_layout = QHBoxLayout()
@@ -50,12 +47,23 @@ class RunBar(QWidget):
 
         communicate.update_running.connect(self.update_running)
         self.update_profile(None)
+        self.update_version_label()
+
+    def update_version_label(self):
+        text = self.tr("Launcher ") + self.updater.launcher_config.get(
+            'launcher_version') + "    " + self.updater.app_config.get(
+            "gui_title") + " " + self.updater.launcher_config.get(
+            'app_version')
+        if self.updater.cuda_version:
+            text = "Cuda: " + self.updater.cuda_version + "    " + text
+        self.version_label.setText(text)
 
     def start_clicked(self):
         self.updater.run()
 
     def profile_changed_clicked(self):
-        self.updater.change_profile(self.profiles.currentText())
+        if self.profiles.currentText():
+            self.updater.change_profile(self.profiles.currentIndex())
 
     def update_profile(self, profiles):
         if not profiles:
@@ -70,10 +78,10 @@ class RunBar(QWidget):
             self.profiles.addItems(profile_names)
 
         # Update the text of the profiles
-        current_profile_name = self.updater.launcher_config.get('profile_name')
+        current_profile_index = self.updater.launcher_config.get('profile_index')
 
-        if self.profiles.currentText() != current_profile_name:
-            self.profiles.setCurrentText(current_profile_name)
+        if self.profiles.currentIndex() != current_profile_index:
+            self.profiles.setCurrentIndex(current_profile_index)
 
         if self.updater.launcher_config['app_dependencies_installed']:
             self.run_button.setText(self.tr('Start'))
@@ -85,4 +93,4 @@ class RunBar(QWidget):
 
     def update_running(self, running):
         self.profiles.setDisabled(running)
-        self.run_button.setEnabled(True if not running and self.updater.launcher_config.get('profile_name') else False)
+        self.run_button.setEnabled(True if not running and self.profiles.currentText() else False)

@@ -26,6 +26,8 @@ class Communicate(QObject):
     versions = Signal(list)
     launcher_profiles = Signal(list)
     update_logs = Signal(str)
+    update_download_percent = Signal(bool, str, str, float)
+    cuda_version = Signal(str)
 
     def emit_draw_box(self, key: str = None, boxes=None, color=None, frame=None):
         self.draw_box.emit(key, boxes, color, frame)

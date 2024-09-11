@@ -2,7 +2,6 @@ import argparse
 import importlib
 import json
 import locale
-import math
 import os
 import re
 import shutil
@@ -16,11 +15,13 @@ from PySide6.QtCore import QCoreApplication
 from ok.config.Config import Config
 from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error, alert_info
+from ok.gui.util.pip_util import parse_package_names, clean_packages
 from ok.logging.LogTailer import LogTailer
 from ok.logging.Logger import get_logger
-from ok.update.python_env import create_venv, find_line_in_requirements
+from ok.update.DownloadMonitor import DownloadMonitor
+from ok.update.python_env import create_venv, find_line_in_requirements, get_env_path
 from ok.util.Handler import Handler
-from ok.util.path import get_relative_path, delete_if_exists
+from ok.util.path import get_relative_path, delete_if_exists, delete_folders_starts_with
 
 logger = get_logger(__name__)
 
@@ -36,22 +37,25 @@ class GitUpdater:
         self.config = app_config.get('git_update')
         self.debug = app_config.get('debug')
         self.lts_ver = ""
-        self.handler = Handler(exit_event, self.__class__.__name__)
-        self.launcher_configs = []
-        self.launcher_config = Config('launcher', {'profile_name': '', 'source': self.get_default_source(),
+
+        self.cuda_version = None
+        self.launch_profiles = []
+        self.all_versions = []
+        self.launcher_config = Config('launcher', {'profile_index': 0, 'source_index': self.get_default_source(),
                                                    'app_dependencies_installed': False,
                                                    'app_version': app_config.get('version'),
                                                    'launcher_version': app_config.get('version')})
 
-        self.launch_profiles = []
-        self.all_versions = []
+        self.starting_version = self.launcher_config.get('app_version')
         self.load_current_ver()
         self.version_to_hash = {}
         self.log_tailer = None
         self.yanked = False
         self.outdated = False
-        self.starting_version = self.launcher_config.get('app_version')
         self.auto_started = False
+        self.download_monitor = None
+        self.handler = Handler(exit_event, self.__class__.__name__)
+        self.launcher_configs = []
 
     @property
     def url(self):
@@ -73,6 +77,7 @@ class GitUpdater:
 
             copy_exe_files(os.path.join('repo', self.launcher_config['launcher_version']), os.getcwd())
         delete_if_exists('_internal')
+        delete_if_exists('updates')
         clean_repo('repo', [self.app_config.get('version'), self.launcher_config['launcher_version'],
                             self.launcher_config['app_version']])
 
@@ -94,18 +99,17 @@ class GitUpdater:
 
     def load_current_ver(self):
         path = os.path.join('repo', self.launcher_config.get('app_version'))
-        self.launch_profiles = self.read_launcher_config(path)
+        self.read_launcher_config(path)
 
     def log_handler(self, level, message):
         communicate.log.emit(level, message)
 
     def get_current_profile(self):
-        return next((obj for obj in self.launch_profiles if obj['name'] == self.launcher_config.get('profile_name')),
-                    None)
+        return self.launch_profiles[self.launcher_config['profile_index']]
 
-    def update_source(self, text):
-        if text and text != self.launcher_config.get('source'):
-            self.launcher_config['source'] = text
+    def update_source(self, index):
+        if self.launcher_config['source_index'] != index:
+            self.launcher_config['source_index'] = index
             self.list_all_versions()
 
     def start_app(self):
@@ -182,7 +186,6 @@ class GitUpdater:
                         if last_log != commit.message.strip():
                             log += commit.message.strip() + '\n'
                             last_log = commit.message.strip()
-                            logger.info(f'skip duplicate log {last_log}')
             else:
                 log = ""
         except Exception as e:
@@ -248,32 +251,49 @@ class GitUpdater:
 
         if launch_profiles:
             logger.info(f'read launcher config success, {launch_profiles}')
-            name = self.launcher_config.get('profile_name')
-            if any(obj.get('name') == name for obj in launch_profiles):
-                self.launcher_config['profile_name'] = name
-            elif launch_profiles:
-                logger.info(f'set profile to default {name}')
-                self.launcher_config['profile_name'] = launch_profiles[0]['name']
-            else:
-                self.launcher_config['profile_name'] = ''
-            self.launch_profiles = launch_profiles
-            communicate.launcher_profiles.emit(launch_profiles)
+            validated = []
+            my_cuda = 'No'
+            for profile in launch_profiles:
+                if requires_cuda := profile.get('requires_cuda'):
+                    if my_cuda == 'No':
+                        my_cuda = get_cuda_version()
+                    if not my_cuda or is_newer_or_eq_version(my_cuda, requires_cuda) < 0:
+                        continue
+                validated.append(profile)
+            self.launch_profiles = validated
+            self.cuda_version = my_cuda or "No"
+            communicate.cuda_version.emit(self.cuda_version)
+            communicate.launcher_profiles.emit(self.launch_profiles)
         else:
             logger.error(f'read launcher config failed')
-        return launch_profiles
 
     def install_dependencies(self, env):
         env_path = create_venv(env)
+        app_env_python_exe = os.path.join(env_path, 'Scripts', 'python.exe')
+        pip_command = [app_env_python_exe, "-m", "pip"]
         profile = self.get_current_profile()
-        logger.info(f'installing dependencies for {profile}')
+        logger.info(f'installing dependencies for {profile.get("profile_name")}')
         if profile:
-            for dependency in profile[f'install_dependencies']:
+            to_install = []
+            to_check = []
+            for dependency in profile['install_dependencies']:
                 if env == 'launcher_env':
                     split_strings = dependency.split()
                     dependency = next((s for s in split_strings if "ok-script" in s), None)
                     if not dependency:
                         continue
                     logger.info(f'found ok-script version in launcher.json {dependency}')
+                to_install.append(dependency)
+                to_check += parse_package_names(dependency)
+            delete_folders_starts_with(os.path.join(env_path, 'Lib', 'site-packages'), '~')
+            clean_packages(to_check, pip_command)
+            if target_size := self.get_current_profile().get('target_size'):
+                if not self.download_monitor:
+                    self.download_monitor = DownloadMonitor(get_env_path('app_env'), target_size, self.exit_event)
+                else:
+                    self.download_monitor.target_size = target_size
+                self.download_monitor.start_monitoring()
+            for dependency in to_install:
                 if not self.install_package(dependency, env_path):
                     logger.error(f'failed to install {dependency}')
                     return False
@@ -305,7 +325,9 @@ class GitUpdater:
             if not self.install_dependencies('app_env'):
                 alert_info(QCoreApplication.translate('app', f'Install dependencies Failed'))
                 communicate.update_running.emit(False)
+                self.download_monitor.stop_monitoring()
                 return
+            self.download_monitor.stop_monitoring()
         self.start_app()
         logger.info('start_app end')
 
@@ -338,7 +360,7 @@ class GitUpdater:
             python_folder = os.path.abspath(os.path.join('python', 'app_env'))
             kill_process_by_path(python_folder)
             repo = self.check_out_version(version)
-            self.launch_profiles = self.read_launcher_config(repo.working_tree_dir)
+            self.read_launcher_config(repo.working_tree_dir)
             self.launcher_config['app_dependencies_installed'] = False
             self.starting_version = version
             self.yanked = False
@@ -399,12 +421,11 @@ class GitUpdater:
             communicate.update_running.emit(False)
             communicate.versions.emit(None)
 
-    def change_profile(self, profile_name):
-        if self.launcher_config['profile_name'] != profile_name and profile_name:
-            self.launcher_config['profile_name'] = profile_name
+    def change_profile(self, index):
+        if self.launcher_config['profile_index'] != index:
+            self.launcher_config['profile_index'] = index
             self.launcher_config['app_dependencies_installed'] = False
-            logger.info(f'profile changed {profile_name}')
-            communicate.launcher_profiles.emit(self.launch_profiles)
+            logger.info(f'profile changed {index}')
 
     def auto_start(self):
         if self.launcher_config['app_dependencies_installed'] and not self.all_versions and not self.auto_started:
@@ -417,16 +438,14 @@ class GitUpdater:
 
     def get_default_source(self):
         if 'cn' in locale.getdefaultlocale()[0].lower():
-            for source in self.config['sources']:
-                if source['name'] == 'China':
-                    return source['name']
-        return self.config['sources'][0]['name']
+            for i in range(len(self.config['sources'])):
+                if self.config['sources'][i]['name'] == 'China':
+                    return i
+        return 0
 
     def get_current_source(self):
         logger.info(f'get_current_source {self.launcher_config.get("sources")} {self.config["sources"]}')
-        for source in self.config['sources']:
-            if source['name'] == self.launcher_config['source']:
-                return source
+        return self.config['sources'][self.launcher_config['source_index']]
 
 
 def get_file_in_path_or_cwd(path, file):
@@ -504,16 +523,6 @@ def get_updater_exe_local():
         pass
     # Return the dir. We assume that the data files are on a normal dir on the fs.
     return str(path.parent) + '.exe'
-
-
-def convert_size(size_bytes):
-    if size_bytes == 0:
-        return "0B"
-    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-    i = int(math.floor(math.log(size_bytes, 1024)))
-    p = math.pow(1024, i)
-    s = round(size_bytes / p, 2)
-    return f"{s} {size_name[i]}"
 
 
 def decode_and_clean(byte_string):
@@ -634,3 +643,20 @@ def add_to_path(folder_path):
         logger.info(f"Added {folder_path} to PATH for the current script.")
     else:
         logger.info(f"{folder_path} is already in the PATH for the current script.")
+
+
+def get_cuda_version():
+    try:
+        # Run the nvidia-smi command
+        output = subprocess.check_output(['nvidia-smi'], stderr=subprocess.STDOUT, universal_newlines=True)
+
+        # Use regular expression to find the CUDA version
+        match = re.search(r'CUDA Version: (\d+\.\d+)', output)
+        if match:
+            logger.info(f'CUDA Version is found {match.group(1)}')
+            return match.group(1)
+        else:
+            return None
+    except Exception as e:
+        logger.error(f"get_cuda_version Error occurred:", e)
+        return None

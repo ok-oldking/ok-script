@@ -5,18 +5,18 @@
     <name>@default</name>
     <message>
         <source>Version Update</source>
-        <translation type="vanished">更新版本</translation>
+        <translation>更新版本</translation>
     </message>
 </context>
 <context>
     <name>AboutTab</name>
     <message>
         <source>Download Release</source>
-        <translation type="vanished">下载正式版</translation>
+        <translation>下载正式版</translation>
     </message>
     <message>
         <source>Download Debug</source>
-        <translation type="vanished">下载开发版</translation>
+        <translation>下载开发版</translation>
     </message>
     <message>
         <location filename="../about/AboutTab.py" line="97"/>
@@ -56,15 +56,15 @@
     <name>AppConfigWidget</name>
     <message>
         <source>Theme</source>
-        <translation type="vanished">主题</translation>
+        <translation>主题</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="vanished">深色</translation>
+        <translation>深色</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="vanished">浅色</translation>
+        <translation>浅色</translation>
     </message>
 </context>
 <context>
@@ -177,10 +177,18 @@
     </message>
 </context>
 <context>
+    <name>DownloadBar</name>
+    <message>
+        <location filename="../launcher/DownloadBar.py" line="41"/>
+        <source>Installing {progress} {percent}%</source>
+        <translation>安装中 {progress} {percent}%</translation>
+    </message>
+</context>
+<context>
     <name>GlobalConfigCard</name>
     <message>
         <source>Reset Config</source>
-        <translation type="vanished">重置配置</translation>
+        <translation>重置配置</translation>
     </message>
 </context>
 <context>
@@ -336,45 +344,45 @@
     <name>OneTimeTaskTab</name>
     <message>
         <source>Choose Window</source>
-        <translation type="vanished">选择窗口</translation>
+        <translation>选择窗口</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation type="vanished">信息</translation>
+        <translation>信息</translation>
     </message>
     <message>
         <source>Value</source>
-        <translation type="vanished">值</translation>
+        <translation>值</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="vanished">运行中</translation>
+        <translation>运行中</translation>
     </message>
 </context>
 <context>
     <name>RunBar</name>
     <message>
         <source> Current Version: </source>
-        <translation type="vanished"> 当前版本:</translation>
+        <translation> 当前版本:</translation>
     </message>
     <message>
-        <location filename="../launcher/RunBar.py" line="25"/>
+        <location filename="../launcher/RunBar.py" line="53"/>
         <source>Launcher </source>
         <translation>启动器</translation>
     </message>
     <message>
-        <location filename="../launcher/RunBar.py" line="35"/>
+        <location filename="../launcher/RunBar.py" line="32"/>
         <source>Choose Profile:</source>
         <translation>选择版本:</translation>
     </message>
     <message>
-        <location filename="../launcher/RunBar.py" line="44"/>
-        <location filename="../launcher/RunBar.py" line="79"/>
+        <location filename="../launcher/RunBar.py" line="41"/>
+        <location filename="../launcher/RunBar.py" line="87"/>
         <source>Start</source>
         <translation>启动</translation>
     </message>
     <message>
-        <location filename="../launcher/RunBar.py" line="81"/>
+        <location filename="../launcher/RunBar.py" line="89"/>
         <source>Download Dependencies and Start</source>
         <translation>下载依赖并启动</translation>
     </message>
@@ -408,7 +416,7 @@
     <name>SettingTab</name>
     <message>
         <source>Settings</source>
-        <translation type="vanished">设置</translation>
+        <translation>设置</translation>
     </message>
     <message>
         <location filename="../settings/SettingTab.py" line="18"/>
@@ -458,31 +466,31 @@
     </message>
     <message>
         <source>Set your preferred language for UI</source>
-        <translation type="vanished">设置UI的首选语言</translation>
+        <translation>设置UI的首选语言</translation>
     </message>
     <message>
         <source>About</source>
-        <translation type="vanished">关于</translation>
+        <translation>关于</translation>
     </message>
     <message>
         <source>Open help page</source>
-        <translation type="vanished">打开帮助页面</translation>
+        <translation>打开帮助页面</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="vanished">帮助</translation>
+        <translation>帮助</translation>
     </message>
     <message>
         <source>Discover new features and learn useful tips about PyQt-Fluent-Widgets</source>
-        <translation type="vanished">发现新功能并学习有关PyQt-Fluent-Widgets的有用提示</translation>
+        <translation>发现新功能并学习有关PyQt-Fluent-Widgets的有用提示</translation>
     </message>
     <message>
         <source>Check update</source>
-        <translation type="vanished">检查更新</translation>
+        <translation>检查更新</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="vanished">版本</translation>
+        <translation>版本</translation>
     </message>
     <message>
         <location filename="../settings/SettingTab.py" line="79"/>
@@ -638,7 +646,7 @@
     </message>
     <message>
         <source>Game resolution {resolution} is not supported</source>
-        <translation type="vanished">不支持当前分辨率{resolution}</translation>
+        <translation>不支持当前分辨率{resolution}</translation>
     </message>
     <message>
         <location filename="../StartController.py" line="122"/>
@@ -652,7 +660,7 @@
     </message>
     <message>
         <source>, check if game windows is minimized, resized or out of screen.</source>
-        <translation type="vanished">, 确认游戏窗口是否被拉伸,隐藏,或者在屏幕外.</translation>
+        <translation>, 确认游戏窗口是否被拉伸,隐藏,或者在屏幕外.</translation>
     </message>
     <message>
         <location filename="../StartController.py" line="132"/>
@@ -747,18 +755,18 @@
     </message>
     <message>
         <source>Error</source>
-        <translation type="vanished">错误</translation>
+        <translation>错误</translation>
     </message>
     <message>
         <source>Game window is not connected, please select the game window and capture method.</source>
-        <translation type="vanished">游戏窗口未连接，请选择游戏窗口和截图方式。</translation>
+        <translation>游戏窗口未连接，请选择游戏窗口和截图方式。</translation>
     </message>
 </context>
 <context>
     <name>TaskCard</name>
     <message>
         <source>Reset Config</source>
-        <translation type="vanished">重置配置</translation>
+        <translation>重置配置</translation>
     </message>
     <message>
         <location filename="../tasks/TaskCard.py" line="25"/>
@@ -811,36 +819,35 @@
     <name>UpdateBar</name>
     <message>
         <source>Current Version: </source>
-        <translation type="vanished">当前版本</translation>
+        <translation>当前版本</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="30"/>
         <source>Delete Downloaded Dependencies</source>
         <translation>删除已下载依赖</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="41"/>
+        <location filename="../launcher/UpdateBar.py" line="42"/>
         <source>Update Source:</source>
         <translation>更新源:</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="56"/>
+        <location filename="../launcher/UpdateBar.py" line="55"/>
         <source>Check for Update</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="65"/>
-        <location filename="../launcher/UpdateBar.py" line="79"/>
+        <location filename="../launcher/UpdateBar.py" line="64"/>
+        <location filename="../launcher/UpdateBar.py" line="82"/>
         <source>Update</source>
         <translation>更新版本</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="71"/>
+        <location filename="../launcher/UpdateBar.py" line="70"/>
         <source>This is the newest version</source>
         <translation>已经是最新版本</translation>
     </message>
     <message>
-        <location filename="../launcher/UpdateBar.py" line="81"/>
+        <location filename="../launcher/UpdateBar.py" line="84"/>
         <source>Downgrade</source>
         <translation>降级版本</translation>
     </message>
@@ -848,7 +855,7 @@
 <context>
     <name>VersionCard</name>
     <message>
-        <location filename="../about/VersionCard.py" line="29"/>
+        <location filename="../about/VersionCard.py" line="30"/>
         <source>Check for updates</source>
         <translation>检查新版本</translation>
     </message>
@@ -858,52 +865,51 @@
         <translation>下载中: {progress} {percent}%</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="59"/>
         <source>Update to {version} {type}</source>
         <translation>更新到{version}{type}</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="66"/>
+        <location filename="../about/VersionCard.py" line="58"/>
         <source>Debug</source>
         <translation>开发版</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="68"/>
+        <location filename="../about/VersionCard.py" line="60"/>
         <source>Release</source>
         <translation>正式版</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="70"/>
+        <location filename="../about/VersionCard.py" line="62"/>
         <source>Update Now</source>
         <translation>现在更新</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="71"/>
+        <location filename="../about/VersionCard.py" line="63"/>
         <source>Are you sure you want to update to {version} {type}?</source>
         <translation>确定更新到{version}{type}吗？</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="88"/>
+        <location filename="../about/VersionCard.py" line="80"/>
         <source>Info</source>
         <translation>信息</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="91"/>
+        <location filename="../about/VersionCard.py" line="83"/>
         <source>Found new version!</source>
         <translation>发现新版本</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="94"/>
+        <location filename="../about/VersionCard.py" line="86"/>
         <source>Check for update error!</source>
         <translation>检查更新错误</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="98"/>
+        <location filename="../about/VersionCard.py" line="90"/>
         <source>This is the newest version!</source>
         <translation>目前已经是最新版本！</translation>
     </message>
     <message>
-        <location filename="../about/VersionCard.py" line="111"/>
+        <location filename="../about/VersionCard.py" line="103"/>
         <source>Checking for updates</source>
         <translation>检查更新</translation>
     </message>
@@ -912,11 +918,11 @@
     <name>app</name>
     <message>
         <source>China</source>
-        <translation type="vanished">国内</translation>
+        <translation>国内</translation>
     </message>
     <message>
         <source>Global</source>
-        <translation type="vanished">海外</translation>
+        <translation>海外</translation>
     </message>
     <message>
         <location filename="../App.py" line="94"/>
@@ -936,11 +942,11 @@
     </message>
     <message>
         <source>Paused because game window is minimized or out of screen!</source>
-        <translation type="vanished">已暂停：游戏窗口最小化或者部分在屏幕外！</translation>
+        <translation>已暂停：游戏窗口最小化或者部分在屏幕外！</translation>
     </message>
     <message>
         <source>Paused because game exited</source>
-        <translation type="vanished">已暂停：游戏已经退出！</translation>
+        <translation>已暂停：游戏已经退出！</translation>
     </message>
     <message>
         <location filename="../../task/TaskExecutor.py" line="305"/>
@@ -949,54 +955,54 @@
     </message>
     <message>
         <source>Game Sound</source>
-        <translation type="vanished">游戏声音</translation>
+        <translation>游戏声音</translation>
     </message>
     <message>
         <source>Mute Game while in Background</source>
-        <translation type="vanished">游戏在后台时静音</translation>
+        <translation>游戏在后台时静音</translation>
     </message>
     <message>
-        <location filename="../launcher/LauncherWindow.py" line="33"/>
+        <location filename="../launcher/LauncherWindow.py" line="34"/>
         <source>{} Launcher</source>
         <translation>{} 启动器</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="115"/>
+        <location filename="../../update/GitUpdater.py" line="119"/>
         <source>The current version {} must be updated</source>
         <translation>当前版本{}必须更新</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="171"/>
+        <location filename="../../update/GitUpdater.py" line="175"/>
         <source>Updates:</source>
         <translation>更新内容:</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="291"/>
+        <location filename="../../update/GitUpdater.py" line="312"/>
         <source>Delete dependencies success!</source>
         <translation>删除依赖成功</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="303"/>
+        <location filename="../../update/GitUpdater.py" line="324"/>
         <source>Start downloading</source>
         <translation>开始下载依赖</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="305"/>
+        <location filename="../../update/GitUpdater.py" line="326"/>
         <source>Install dependencies Failed</source>
         <translation>安装依赖失败</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="334"/>
+        <location filename="../../update/GitUpdater.py" line="357"/>
         <source>Already updated to version:</source>
         <translation>已经更新到版本:</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="534"/>
+        <location filename="../../update/GitUpdater.py" line="544"/>
         <source>Stable Version</source>
         <translation>正式版</translation>
     </message>
     <message>
-        <location filename="../../update/GitUpdater.py" line="536"/>
+        <location filename="../../update/GitUpdater.py" line="546"/>
         <source>Beta Version</source>
         <translation>测试版</translation>
     </message>

@@ -1,3 +1,4 @@
+from PySide6.QtCore import QCoreApplication
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QSpacerItem, QSizePolicy, QVBoxLayout
 from qfluentwidgets import PushButton, ComboBox
 
@@ -27,9 +28,9 @@ class UpdateBar(QWidget):
         self.hbox_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
         self.hbox_layout.setSpacing(20)
 
-        self.delete_dependencies_button = PushButton(self.tr("Delete Downloaded Dependencies"))
-        self.delete_dependencies_button.clicked.connect(self.updater.clear_dependencies)
-        self.hbox_layout.addWidget(self.delete_dependencies_button)
+        # self.delete_dependencies_button = PushButton(self.tr("Delete Downloaded Dependencies"))
+        # self.delete_dependencies_button.clicked.connect(self.updater.clear_dependencies)
+        # self.hbox_layout.addWidget(self.delete_dependencies_button)
 
         communicate.versions.connect(self.update_versions)
         communicate.update_running.connect(self.update_running)
@@ -45,13 +46,11 @@ class UpdateBar(QWidget):
         self.update_source_box.addWidget(self.update_sources, stretch=0)
         self.update_source_box.addSpacing(10)
         sources = config.get('git_update').get('sources')
-        source_names = [source['name'] for source in sources]
+        source_names = [QCoreApplication.translate('app', source['name']) for source in sources]
         self.update_sources.addItems(source_names)
-        if self.updater.launcher_config.get('source') in source_names:
-            self.update_sources.setCurrentText(self.updater.launcher_config.get('source'))
-        else:
-            self.update_sources.setCurrentText(source_names[0])
-        self.update_sources.currentTextChanged.connect(self.updater.update_source)
+        self.update_sources.setCurrentIndex(self.updater.launcher_config.get('source_index'))
+
+        self.update_sources.currentTextChanged.connect(self.update_source)
 
         self.check_update_button = PushButton(self.tr("Check for Update"))
         self.hbox_layout.addWidget(self.check_update_button)
@@ -73,6 +72,10 @@ class UpdateBar(QWidget):
         self.hbox_layout.addWidget(self.is_newest)
 
         self.setLayout(self.layout)
+
+    def update_source(self):
+        if self.update_sources.currentText():
+            self.updater.update_source(self.update_sources.currentIndex())
 
     def version_selection_changed(self, text):
         if is_newer_or_eq_version(text, self.updater.launcher_config.get('app_version')) >= 0:
@@ -98,7 +101,7 @@ class UpdateBar(QWidget):
         self.check_update_button.setDisabled(running)
         self.update_sources.setDisabled(running)
         self.version_list.setDisabled(running)
-        self.delete_dependencies_button.setDisabled(running)
+        # self.delete_dependencies_button.setDisabled(running)
 
     def update_versions(self, versions):
         if not versions:  # fetch version error
