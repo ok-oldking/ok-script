@@ -42,19 +42,19 @@ class FeatureSet:
         self.coco_json = []
         self.labelme_json_path = []
         self.debug = debug
-        # ´¦Àícoco_json
+        # å¤„ç†coco_json
         if coco_json:
             self.coco_json = [get_path_relative_to_exe(p) for p in coco_json] if isinstance(coco_json, list) else [
                 get_path_relative_to_exe(coco_json)]
 
-        # ´¦Àílabelme_json_path
+        # å¤„ç†labelme_json_path
         if labelme_json_path:
             self.labelme_json_path = [get_path_relative_to_exe(p) for p in labelme_json_path] if isinstance(
                 labelme_json_path, list) else [get_path_relative_to_exe(labelme_json_path)]
 
         self.images_path = get_path_relative_to_exe(images_path) if images_path else None
 
-        # ÈÕÖ¾¼ÇÂ¼
+        # æ—¥å¿—è®°å½•
         logger.debug(f'Loading features from {self.coco_json}')
         logger.debug(f'Loading features from labelme json path {self.labelme_json_path}')
         logger.debug(f'Appending features from images path {self.images_path}')
@@ -98,26 +98,26 @@ class FeatureSet:
         for coco_json_item in self.coco_json:
             feature_dict_item, box_dict_item, compressed, load_success = read_from_json(coco_json_item, self.width,
                                                                                         self.height)
-            # ºÏ²¢½á¹ûµ½self.feature_dictºÍself.box_dict
+            # åˆå¹¶ç»“æœåˆ°self.feature_dictå’Œself.box_dict
             self.feature_dict.update(feature_dict_item)
             self.box_dict.update(box_dict_item)
             if self.debug and not compressed:
                 from ok.feature.CompressCoco import compress_coco
                 logger.info(f'coco not compressed, try to compress the COCO dataset')
                 compress_coco(coco_json_item)
-                # ÖØĞÂ¶ÁÈ¡Ñ¹ËõºóµÄÎÄ¼ş
+                # é‡æ–°è¯»å–å‹ç¼©åçš„æ–‡ä»¶
                 feature_dict_item, box_dict_item, compressed, load_success = read_from_json(coco_json_item, self.width,
                                                                                             self.height)
                 self.feature_dict.update(feature_dict_item)
                 self.box_dict.update(box_dict_item)
-            # È·¶¨load_success×´Ì¬
+            # ç¡®å®šload_successçŠ¶æ€
             if load_success:
                 self.load_success = True
         for labelme_json_path_item in self.labelme_json_path:
             feature_dict_item, box_dict_item, compressed, load_success, point_dict_item = read_from_lableme_json_path(
                 labelme_json_path_item, self.width,
                 self.height)
-            # ºÏ²¢½á¹ûµ½self.feature_dictºÍself.box_dict
+            # åˆå¹¶ç»“æœåˆ°self.feature_dictå’Œself.box_dict
             self.feature_dict.update(feature_dict_item)
             self.box_dict.update(box_dict_item)
             self.point_dict.update(point_dict_item)
@@ -125,14 +125,14 @@ class FeatureSet:
                 from ok.feature.CompressCoco import compress_labelme
                 logger.info(f'coco not compressed, try to compress the lebelme dataset')
                 compress_labelme(labelme_json_path_item)
-                # ÖØĞÂ¶ÁÈ¡Ñ¹ËõºóµÄÎÄ¼ş
+                # é‡æ–°è¯»å–å‹ç¼©åçš„æ–‡ä»¶
                 feature_dict_item, box_dict_item, compressed, load_success, point_dict_item = read_from_lableme_json_path(
                     labelme_json_path_item, self.width,
                     self.height)
                 self.feature_dict.update(feature_dict_item)
                 self.box_dict.update(box_dict_item)
                 self.point_dict.update(point_dict_item)
-            # È·¶¨load_success×´Ì¬
+            # ç¡®å®šload_successçŠ¶æ€
             if load_success:
                 self.load_success = True
 

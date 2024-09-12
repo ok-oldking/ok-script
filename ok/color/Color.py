@@ -247,23 +247,23 @@ def rgb_to_gray(rgb):
 
 
 def find_color_rgb(image, rgb: list, x, y):
-    color_bgr = image[y, x]  # »ñÈ¡ BGR ÑÕÉ«Öµ
+    color_bgr = image[y, x]  # è·å– BGR é¢œè‰²å€¼
     color_rgb = cv2.cvtColor(np.uint8([[color_bgr]]), cv2.COLOR_BGR2RGB)[0][0]  # RGB
-    # ¼ì²éÑÕÉ«ÊÇ·ñÔÚ·¶Î§ÄÚ
+    # æ£€æŸ¥é¢œè‰²æ˜¯å¦åœ¨èŒƒå›´å†…
     return np.all(rgb == color_rgb)
 
 
 def find_color_rgb_range(image, lower_rgb: list, upper_rgb: list, x, y):
-    color_bgr = image[y, x]  # »ñÈ¡ BGR ÑÕÉ«Öµ
+    color_bgr = image[y, x]  # è·å– BGR é¢œè‰²å€¼
     color_rgb = cv2.cvtColor(np.uint8([[color_bgr]]), cv2.COLOR_BGR2RGB)[0][0]  # RGB
-    # ¶¨ÒåÑÕÉ«·¶Î§£¨ÀıÈç£¬ºìÉ«£©
+    # å®šä¹‰é¢œè‰²èŒƒå›´ï¼ˆä¾‹å¦‚ï¼Œçº¢è‰²ï¼‰
     lower_rgb_tmp = np.array(lower_rgb)
     upper_rgb_tmp = np.array(upper_rgb)
 
-    # ½«ÑÕÉ«×ª»»Îª NumPy Êı×éÒÔ½øĞĞ±È½Ï
+    # å°†é¢œè‰²è½¬æ¢ä¸º NumPy æ•°ç»„ä»¥è¿›è¡Œæ¯”è¾ƒ
     color_rgb_np = np.array(color_rgb)
 
-    # ¼ì²éÑÕÉ«ÊÇ·ñÔÚ·¶Î§ÄÚ
+    # æ£€æŸ¥é¢œè‰²æ˜¯å¦åœ¨èŒƒå›´å†…
     return lower_rgb_tmp.all() <= color_rgb_np.all() <= upper_rgb_tmp.all()
 
 
