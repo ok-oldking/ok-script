@@ -2,6 +2,7 @@ import json
 import math
 import os
 import threading
+from pathlib import Path
 from typing import Dict
 from typing import List
 
@@ -12,6 +13,7 @@ from PIL import Image
 from ok.color.Color import rgb_to_gray
 from ok.feature.Box import Box, sort_boxes
 from ok.feature.Feature import Feature
+from ok.feature.Point import Point
 from ok.gui.Communicate import communicate
 from ok.logging.Logger import get_logger
 from ok.util.path import get_path_relative_to_exe
@@ -23,10 +25,12 @@ class FeatureSet:
     # Category_name to OpenCV Mat
     feature_dict: Dict[str, Feature] = {}
     box_dict: Dict[str, Box] = {}
+    point_dict: Dict[str, Point] = {}
     load_success = False
 
-    def __init__(self, debug, coco_json: str, default_horizontal_variance=0,
-                 default_vertical_variance=0, default_threshold=0.95) -> None:
+    def __init__(self, debug, coco_json: str | list = None, labelme_json_path: str | list = None,
+                 default_horizontal_variance=0,
+                 default_vertical_variance=0, default_threshold=0.95, images_path: str = None) -> None:
         """
         Initialize the FeatureSet by loading images and annotations from a COCO dataset.
 
@@ -35,10 +39,25 @@ class FeatureSet:
             width (int): Scale images to this width.
             height (int): Scale images to this height.
         """
-        self.coco_json = get_path_relative_to_exe(coco_json)
+        self.coco_json = []
+        self.labelme_json_path = []
         self.debug = debug
+        # 处理coco_json
+        if coco_json:
+            self.coco_json = [get_path_relative_to_exe(p) for p in coco_json] if isinstance(coco_json, list) else [
+                get_path_relative_to_exe(coco_json)]
 
+        # 处理labelme_json_path
+        if labelme_json_path:
+            self.labelme_json_path = [get_path_relative_to_exe(p) for p in labelme_json_path] if isinstance(
+                labelme_json_path, list) else [get_path_relative_to_exe(labelme_json_path)]
+
+        self.images_path = get_path_relative_to_exe(images_path) if images_path else None
+
+        # 日志记录
         logger.debug(f'Loading features from {self.coco_json}')
+        logger.debug(f'Loading features from labelme json path {self.labelme_json_path}')
+        logger.debug(f'Appending features from images path {self.images_path}')
 
         # Process images and annotations
         self.width = 0
@@ -76,15 +95,86 @@ class FeatureSet:
             width (int): Target width for scaling images.
             height (int): Target height for scaling images.
         """
-        self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
-                                                                                         self.height)
-        if self.debug and not compressed:
-            from ok.feature.CompressCoco import compress_coco
-            logger.info(f'coco not compressed try to compress the COCO dataset')
-            compress_coco(self.coco_json)
-            self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
-                                                                                             self.height)
+        for coco_json_item in self.coco_json:
+            feature_dict_item, box_dict_item, compressed, load_success = read_from_json(coco_json_item, self.width,
+                                                                                        self.height)
+            # 合并结果到self.feature_dict和self.box_dict
+            self.feature_dict.update(feature_dict_item)
+            self.box_dict.update(box_dict_item)
+            if self.debug and not compressed:
+                from ok.feature.CompressCoco import compress_coco
+                logger.info(f'coco not compressed, try to compress the COCO dataset')
+                compress_coco(coco_json_item)
+                # 重新读取压缩后的文件
+                feature_dict_item, box_dict_item, compressed, load_success = read_from_json(coco_json_item, self.width,
+                                                                                            self.height)
+                self.feature_dict.update(feature_dict_item)
+                self.box_dict.update(box_dict_item)
+            # 确定load_success状态
+            if load_success:
+                self.load_success = True
+        for labelme_json_path_item in self.labelme_json_path:
+            feature_dict_item, box_dict_item, compressed, load_success, point_dict_item = read_from_lableme_json_path(
+                labelme_json_path_item, self.width,
+                self.height)
+            # 合并结果到self.feature_dict和self.box_dict
+            self.feature_dict.update(feature_dict_item)
+            self.box_dict.update(box_dict_item)
+            self.point_dict.update(point_dict_item)
+            if self.debug and not compressed:
+                from ok.feature.CompressCoco import compress_labelme
+                logger.info(f'coco not compressed, try to compress the lebelme dataset')
+                compress_labelme(labelme_json_path_item)
+                # 重新读取压缩后的文件
+                feature_dict_item, box_dict_item, compressed, load_success, point_dict_item = read_from_lableme_json_path(
+                    labelme_json_path_item, self.width,
+                    self.height)
+                self.feature_dict.update(feature_dict_item)
+                self.box_dict.update(box_dict_item)
+                self.point_dict.update(point_dict_item)
+            # 确定load_success状态
+            if load_success:
+                self.load_success = True
+
+        # self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
+        #                                                                                  self.height)
+        # if self.debug and not compressed:
+        #     from ok.feature.CompressCoco import compress_coco
+        #     logger.info(f'coco not compressed try to compress the COCO dataset')
+        #     compress_coco(self.coco_json)
+        #     self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
+        #                                                                                      self.height)
+        self.append_images()
         return self.load_success
+
+    def append_images(self):
+        """
+        Append images from the images_path to the feature_dict.
+        This function loads all PNG, JPG, JPEG, BMP, and GIF
+        images from a specified folder and its subfolders.
+        It returns a dictionary with keys as image names (including subfolder paths)
+        and values as the loaded image arrays
+        """
+        if not self.images_path:
+            return
+        self.feature_dict |= self.load_images_from_folder(self.images_path)
+
+    @staticmethod
+    def load_images_from_folder(folder):
+        img_map = {}
+        for root, dirs, files in os.walk(folder):
+            for file in files:
+                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+                    file_path = Path(root) / file
+                    img_name = str(file_path.stem)
+                    if root != folder:
+                        img_name = str(Path(root).relative_to(folder)) + '/' + img_name
+                    img = cv2.imread(str(file_path))
+                    if img is not None:
+                        img_map[img_name] = Feature(img)
+                        logger.debug(f"loaded image {img_name}")
+
+        return img_map
 
     def get_box_by_name(self, mat, category_name: str) -> Box:
         self.check_size(mat)
@@ -291,7 +381,7 @@ def read_from_json(coco_json, width=-1, height=-1):
             image = cv2.resize(image, (w, h))
 
             logger.debug(
-                f"loaded {category_name} resized width {width} / original_width:{original_width},scale_x:{width / original_width}")
+                f"loaded {category_name} resized ({w}x{h}) {width} original_width:{original_width},scale_x:{width / original_width}")
             if category_name in feature_dict:
                 raise ValueError(f"Multiple boxes found for category {category_name}")
             if not category_name.startswith('box_'):
@@ -299,6 +389,78 @@ def read_from_json(coco_json, width=-1, height=-1):
             box_dict[category_name] = Box(x, y, image.shape[1], image.shape[0], name=category_name)
 
     return feature_dict, box_dict, ok_compressed, load_success
+
+
+def read_from_lableme_json_path(lableme_json_path, width=-1, height=-1):
+    feature_dict = {}
+    box_dict = {}
+    point_dict = {}
+    ok_compressed = None
+    load_success = True
+    for root, dirs, files in os.walk(lableme_json_path):
+        for file in files:
+            if not file.endswith('.json'):
+                continue
+            logger.info(f"load lableme images {file}")
+            json_file = str(os.path.join(root, file))
+            with open(json_file, 'r') as file:
+                data = json.load(file)
+            # coco_folder = os.path.dirname(coco_json)
+
+            if 'imagePath' not in data:
+                continue
+            file_name = data['imagePath']
+            image_path = str(os.path.join(root, file_name))
+            # Load and scale the image
+            if ok_compressed is None:
+                image = Image.open(image_path)
+                ok_compressed = 'ok_compressed' in image.info.keys()
+            whole_image = cv2.imread(image_path)
+            if whole_image is None:
+                load_success = False
+                logger.error(f'Could not read image {image_path}')
+                continue
+            _, original_width = whole_image.shape[:2]
+            image_height, image_width = whole_image.shape[:2]
+            for shape in data['shapes']:
+                if shape['shape_type'] == "point":
+                    points = shape["points"]
+                    x, y = points[0]
+                    x, y = round(x), round(y)
+                    category_name = shape["label"]
+                    h, w, _ = image.shape
+                    x, y, scale = adjust_point(x, y, width, height, image_width, image_height,
+                                               hcenter='hcenter' in category_name)
+                    point_dict[category_name] = Point(x, y, name=category_name)
+                elif shape['shape_type'] == "rectangle":
+                    points = shape["points"]
+                    x, y = points[0]
+                    x1, y1 = points[1]
+                    x, y = round(x), round(y)
+                    x1, y1 = round(x1), round(y1)
+                    w, h = x1 - x, y1 - y
+                    # Crop the image to the bounding box
+                    image = whole_image[round(y):round(y + h), round(x):round(x + w), :3]
+                    h, w, _ = image.shape
+                    # Calculate the scaled bounding box
+
+                    # Store in featureDict using the category name
+                    category_name = shape["label"]
+
+                    x, y, w, h, scale = adjust_coordinates(x, y, w, h, width, height, image_width, image_height,
+                                                           hcenter='hcenter' in category_name)
+
+                    image = cv2.resize(image, (w, h))
+
+                    logger.debug(
+                        f"loaded {category_name} resized ({w}x{h}) original_width:{original_width},scale_x:{width / original_width}")
+                    if category_name in feature_dict:
+                        raise ValueError(f"Multiple boxes found for category {category_name}")
+                    if not category_name.startswith('box_'):
+                        feature_dict[category_name] = Feature(image, x, y, scale)
+                    box_dict[category_name] = Box(x, y, image.shape[1], image.shape[0], name=category_name)
+
+    return feature_dict, box_dict, ok_compressed, load_success, point_dict
 
 
 def adjust_coordinates(x, y, w, h, screen_width, screen_height, image_width, image_height, hcenter=False):
@@ -323,6 +485,29 @@ def adjust_coordinates(x, y, w, h, screen_width, screen_height, image_width, ima
     # logger.debug(f'scaled images {scale_x}, {scale_y} to {screen_width}x{screen_height} {x}, {y}, {w}, {h}')
 
     return x, y, w, h, scale
+
+
+def adjust_point(x, y, screen_width, screen_height, image_width, image_height, hcenter=False):
+    # logger.debug(f'scaling images {screen_width}x{screen_height} {image_width}x{image_height} {x}, {y}, {w}, {h}')
+    if screen_width != -1 and screen_height != -1 and (screen_width != image_width or screen_height != image_height):
+        scale_x, scale_y = screen_width / image_width, screen_height / image_height
+    else:
+        scale_x, scale_y = 1, 1
+
+    scale = min(scale_x, scale_y)
+
+    if scale_x > scale_y:
+        y = round(y * scale)
+        x = scale_by_anchor(x, image_width, screen_width, scale, hcenter=hcenter)
+    elif scale_x < scale_y:
+        x = round(x * scale)
+        y = scale_by_anchor(y, image_height, screen_height, scale, hcenter=hcenter)
+    else:
+        x, y = round(x * scale), round(y * scale)
+
+    # logger.debug(f'scaled images {scale_x}, {scale_y} to {screen_width}x{screen_height} {x}, {y}, {w}, {h}')
+
+    return x, y, scale
 
 
 def scale_by_anchor(x, image_width, screen_width, scale, hcenter=False):

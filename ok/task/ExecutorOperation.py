@@ -1,10 +1,11 @@
 import time
 from typing import List
 
-from ok.color.Color import calculate_color_percentage
+from ok.color.Color import calculate_color_percentage, find_color_rgb
 from ok.config.ConfigOption import ConfigOption
 from ok.feature.Box import Box, find_box_by_name, relative_box
 from ok.feature.FeatureSet import adjust_coordinates
+from ok.feature.Point import Point
 from ok.gui.Communicate import communicate
 
 
@@ -306,6 +307,9 @@ class ExecutorOperation:
         box.confidence = percentage
         self.draw_boxes(box.name, box)
         return percentage
+
+    def find_color_rgb(self, rgb: list, point: Point):
+        return find_color_rgb(self.frame, rgb, point.x, point.y)
 
     def adb_shell(self, *args, **kwargs):
         return self.executor.device_manager.shell(*args, **kwargs)

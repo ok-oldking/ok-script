@@ -246,6 +246,27 @@ def rgb_to_gray(rgb):
     return 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]
 
 
+def find_color_rgb(image, rgb: list, x, y):
+    color_bgr = image[y, x]  # 获取 BGR 颜色值
+    color_rgb = cv2.cvtColor(np.uint8([[color_bgr]]), cv2.COLOR_BGR2RGB)[0][0]  # RGB
+    # 检查颜色是否在范围内
+    return np.all(rgb == color_rgb)
+
+
+def find_color_rgb_range(image, lower_rgb: list, upper_rgb: list, x, y):
+    color_bgr = image[y, x]  # 获取 BGR 颜色值
+    color_rgb = cv2.cvtColor(np.uint8([[color_bgr]]), cv2.COLOR_BGR2RGB)[0][0]  # RGB
+    # 定义颜色范围（例如，红色）
+    lower_rgb_tmp = np.array(lower_rgb)
+    upper_rgb_tmp = np.array(upper_rgb)
+
+    # 将颜色转换为 NumPy 数组以进行比较
+    color_rgb_np = np.array(color_rgb)
+
+    # 检查颜色是否在范围内
+    return lower_rgb_tmp.all() <= color_rgb_np.all() <= upper_rgb_tmp.all()
+
+
 if __name__ == '__main__':
     file = 'C:\\Users\\ok\Downloads\\ok-baijing (2)\\screenshots\\1.png'
     exists = os.path.exists(file)
