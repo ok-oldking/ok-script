@@ -107,9 +107,13 @@ class OK:
 
         template_matching = self.config.get('template_matching')
         if template_matching is not None:
-            coco_feature_json = self.config.get('template_matching').get('coco_feature_json')
+            coco_feature_json = template_matching.get('coco_feature_json')
+            lableme_feature_json = template_matching.get('lableme_feature_json_path')
+            images_path = template_matching.get('images_path')
             from ok.feature.FeatureSet import FeatureSet
             self.feature_set = FeatureSet(self.debug, coco_feature_json,
+                                          labelme_json_path=lableme_feature_json,
+                                          images_path=images_path,
                                           default_horizontal_variance=template_matching.get(
                                               'default_horizontal_variance', 0),
                                           default_vertical_variance=template_matching.get('default_vertical_variance',
