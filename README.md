@@ -1,7 +1,10 @@
 # ok-script
 
-类似于AirScript, 使用Python
-暂时没有源码和文档, 将来有空整理了就会开源
+
+## 文档 
+
+[https://github.com/ok-oldking/ok-script-boilerplate](https://github.com/ok-oldking/ok-script-boilerplate)
+开发者群: 938132715
 
 ## 优势
 
@@ -12,12 +15,12 @@
 5. 支持Python3.7以上版本
 6. 学习成本低, 自定义函数少, 也可以直接使用opencv, RapidOCR等api
 
-## 文档
-
-[https://github.com/ok-oldking/ok-script-boilerplate](https://github.com/ok-oldking/ok-script-boilerplate)
 
 ## 目前项目：
 
 * 鸣潮 [ok-ww](https://github.com/ok-oldking/ok-wuthering-waves)
 * 原神 [https://github.com/ok-oldking/ok-genshin-impact](https://github.com/ok-oldking/ok-genshin-impact)
 * 少前2 [https://github.com/ok-oldking/ok-gf2](https://github.com/ok-oldking/ok-gf2)
+* 星铁 [https://github.com/Shasnow/ok-starrailassistant](https://github.com/Shasnow/ok-starrailassistant)
+* 星铁 [https://github.com/Shasnow/ok-starrailassistant](https://github.com/Shasnow/ok-starrailassistant)
+* 星痕共鸣 [https://github.com/Sanheiii/ok-star-resonance](https://github.com/Sanheiii/ok-star-resonance)
