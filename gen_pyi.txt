@@ -1,0 +1,2 @@
+generate a pyi file for this pyx file, generate doc for each function:
+为这个pyx生成一个pyi文件, 生成每个方法的doc:

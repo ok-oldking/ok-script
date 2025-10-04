@@ -1,0 +1,76 @@
+Tab,
+LauncherWindow,
+ToolBar,
+RoundCornerContainer,
+#view {
+    background-color: transparent;
+}
+
+QScrollArea {
+    border: none;
+}
+
+
+ToolBar>CaptionLabel {
+    color: white;
+}
+
+Card {
+    background-color: transparent;
+    color: white;
+}
+
+TitleLabel,
+StrongBodyLabel {
+    color: white;
+}
+
+Card>#card {
+    border: 1px solid rgb(36, 36, 36);
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.1795);
+}
+
+Card>#card QLabel {
+    font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC';
+    color: white;
+}
+
+Card>#card InfoBadge {
+    font-size: 11px;
+}
+
+EmptyCard>#card {
+    border: 1px solid rgb(36, 36, 36);
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.1795);
+}
+
+EmptyCard>#card {
+    border: 1px solid rgb(36, 36, 36);
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.1795);
+}
+
+#sourceWidget {
+    background-color: rgba(255, 255, 255, 0.09);
+    border-top: 1px solid rgb(36, 36, 36);
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+#titleLabel {
+    color: white;
+    font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC';
+    font-weight: bold;
+}
+
+#contentLabel {
+    color: rgb(208, 208, 208);
+    font: 12px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC';
+}
+
+#viewTitleLabel {
+    color: white;
+    font: 20px "Segoe UI SemiBold", "Microsoft YaHei", 'PingFang SC';
+}

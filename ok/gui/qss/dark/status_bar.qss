@@ -1,0 +1,23 @@
+StatusBar {
+    background-color: --ThemeColorDark1;
+    border: none;
+    border-radius: 7px;
+}
+
+QLabel {
+    color: black;
+    background-color: transparent;
+    font-family: 'Segoe UI', 'Microsoft YaHei', 'PingFang SC';
+    border: none;
+}
+
+QLabel#titleLabel {
+    color: white;
+    font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC';
+    font-weight: bold;
+}
+
+QLabel#contentLabel {
+    color: rgb(208, 208, 208);
+    font: 12px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC';
+}
