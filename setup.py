@@ -21,7 +21,7 @@ except Exception as e:
     latest_version = "0.0.0"
 VERSION_NUM = obtainer.version_add_one(latest_version, add_patch=True)
 print(f'latest_version is {latest_version} new version is {VERSION_NUM}')
-
+#VERSION_NUM = "1.0.0"
 # Check if the build command includes --inplace
 if '--inplace' in sys.argv:
     compiler_directives = {
