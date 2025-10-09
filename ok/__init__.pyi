@@ -1,32 +1,9 @@
 # mymodule.pyi
 
-from __future__ import annotations
-import argparse
-import base64
-import ctypes
-import glob
-import hashlib
-import heapq
-import importlib
-import inspect
-import json
-import locale
+
 import logging
-import math
-import os
-import platform
 import queue
-import random
-import re
-import shutil
-import statistics
-import subprocess
-import sys
 import threading
-import time
-import traceback
-import uuid
-from ctypes import wintypes
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import IntEnum
@@ -860,7 +837,7 @@ class Box:
         ...
 
     def find_closest_box(self, direction: str, boxes: List[Box], condition: Optional[Callable[[Box], bool]] = None) -> \
-    Optional[Box]:
+            Optional[Box]:
         """
         在给定方向上查找最近的框。
 
@@ -1041,7 +1018,7 @@ def get_mask_in_color_range(image: Frame, color_range: ColorRange) -> Tuple[Fram
 
 
 def get_connected_area_by_color(image: Frame, color_range: ColorRange, connectivity: int = 4, gray_range: int = 0) -> \
-Tuple[int, Frame, Frame, Frame]:
+        Tuple[int, Frame, Frame, Frame]:
     """
     查找指定颜色范围内的连通区域。
 
@@ -1642,7 +1619,7 @@ class BaseTask:
         ...
 
     def find_boxes(self, boxes: List[Box], match: Optional[Any] = None, boundary: Optional[Union[Box, str]] = None) -> \
-    List[Box]:
+            List[Box]:
         """
         在给定的边界内筛选和/或按名称匹配框。
         """
@@ -1701,7 +1678,7 @@ class TaskExecutor:
         ...
 
     def check_frame_and_resolution(self, supported_ratio: str, min_size: Tuple[int, int], time_out: float = 8.0) -> \
-    Tuple[bool, str]:
+            Tuple[bool, str]:
         """
         检查捕获的帧和分辨率是否符合要求。
         """
@@ -1869,7 +1846,7 @@ class ExecutorOperation:
                    frame_box: Optional[Any] = None) -> None: ...
 
     def click_box_if_name_match(self, boxes: List[Box], names: Any, relative_x: float = 0.5, relative_y: float = 0.5) -> \
-    Optional[Box]: ...
+            Optional[Box]: ...
 
     def box_of_screen(self, x: float, y: float, to_x: float = 1.0, to_y: float = 1.0, width: float = 0.0,
                       height: float = 0.0, name: Optional[str] = None, hcenter: bool = False,
