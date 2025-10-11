@@ -7196,7 +7196,8 @@ class MainWindow(MSFluentWindow):
         self.shown = False
 
         communicate.restart_admin.connect(self.restart_admin)
-        communicate.copyright.connect(self.show_update_copyright)
+        if config.get('show_update_copyright'):
+            communicate.copyright.connect(self.show_update_copyright)
         qconfig.themeChanged.disconnect(self._updateBackgroundColor)
 
         self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Capture'))
