@@ -1,2 +1,1 @@
-generate a pyi file for this pyx file, generate doc for each function:
-为这个pyx生成一个pyi文件, 生成每个方法的doc:
+generate a pyi file for this pyx file, for code hint in pycharm, generate doc for all the function including what the function does and what each param does, in Chinese and English, keep the inheritance relations. Only generate for the Box, BaseTask class and it's parent and related class:

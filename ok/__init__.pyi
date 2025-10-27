@@ -1,2242 +1,1731 @@
-# mymodule.pyi
-
-
-import logging
-import queue
-import threading
-from dataclasses import dataclass, field
-from datetime import datetime
-from enum import IntEnum
-from functools import cmp_to_key
-from logging.handlers import TimedRotatingFileHandler, QueueListener, QueueHandler
-from typing import (
-    Dict, List, Optional, Union, Any, Tuple, Callable, Set, Pattern,
-    Type, overload, TypeVar
-)
-
-import cv2
+from typing import Any, Callable, Dict, List, Optional, Union
 import numpy as np
-import psutil
-import pyappify
-import pydirectinput
-import requests
-import win32api
-import win32gui
-import win32process
-import win32ui
-from PIL import Image
-from PySide6.QtCore import QCoreApplication, Qt, QEvent, QSize, QLocale
-from PySide6.QtGui import QIcon, QScreen
-from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
-from qfluentwidgets import FluentIcon, NavigationItemPosition, MSFluentWindow
-
-# Type Aliases for clarity
-Frame = np.ndarray
-ColorRange = Dict[str, Tuple[int, int]]
-T = TypeVar('T')
-
-
-class Logger:
-    """
-    一个简单的日志记录器包装类，用于在日志消息前附加模块名称。
-    """
-    logger: logging.Logger
-    name: str
-
-    def __init__(self, name: str):
-        """
-        初始化 Logger.
-
-        Args:
-            name (str): 日志记录器的名称，通常是模块名。
-        """
-        ...
-
-    def debug(self, message: Any) -> None:
-        """
-        记录一个 DEBUG 级别的日志消息。
-
-        Args:
-            message (Any): 要记录的消息对象。
-        """
-        ...
-
-    def info(self, message: Any) -> None:
-        """
-        记录一个 INFO 级别的日志消息。
-
-        Args:
-            message (Any): 要记录的消息对象。
-        """
-        ...
-
-    def warning(self, message: Any) -> None:
-        """
-        记录一个 WARNING 级别的日志消息。
-
-        Args:
-            message (Any): 要记录的消息对象。
-        """
-        ...
-
-    def error(self, message: Any, exception: Optional[Exception] = None) -> None:
-        """
-        记录一个 ERROR 级别的日志消息，可以选择性地包含异常信息。
-
-        Args:
-            message (Any): 要记录的消息对象。
-            exception (Optional[Exception]): 要一起记录的异常对象。
-        """
-        ...
-
-    def critical(self, message: Any) -> None:
-        """
-        记录一个 CRITICAL 级别的日志消息。
-
-        Args:
-            message (Any): 要记录的消息对象。
-        """
-        ...
-
-    @staticmethod
-    def call_stack() -> str:
-        """
-        获取并返回当前Python调用栈的字符串表示形式。
-
-        Returns:
-            str: 格式化后的调用栈字符串。
-        """
-        ...
-
-    @staticmethod
-    def get_logger(name: str) -> Logger:
-        """
-        获取一个 Logger 实例。
-
-        Args:
-            name (str): 日志记录器的名称。
-
-        Returns:
-            Logger: 一个新的 Logger 实例。
-        """
-        ...
-
-    @staticmethod
-    def exception_to_str(exception: Exception) -> str:
-        """
-        将异常及其堆栈跟踪转换为字符串。
-
-        Args:
-            exception (Exception): 要转换的异常对象。
-
-        Returns:
-            str: 格式化后的异常信息字符串。
-        """
-        ...
-
-
-class InfoFilter(logging.Filter):
-    """
-    一个日志过滤器，只允许级别低于 ERROR 的记录通过。
-    """
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        """
-        确定是否应记录指定的日志记录。
-
-        Args:
-            record (logging.LogRecord): 日志记录对象。
-
-        Returns:
-            bool: 如果记录级别低于 ERROR 则返回 True，否则返回 False。
-        """
-        ...
-
-
-def config_logger(config: Optional[dict] = None, name: str = 'ok-script') -> None:
-    """
-    配置应用程序的全局日志系统。
-
-    设置日志级别、处理器（标准输出、标准错误、文件、GUI通信）和未捕获异常的钩子。
-
-    Args:
-        config (Optional[dict]): 包含日志配置的字典，例如 `{'debug': True}`。
-        name (str): 用于日志文件名的基础名称。
-    """
-    ...
-
-
-class SafeFileHandler(TimedRotatingFileHandler):
-    """
-    TimedRotatingFileHandler 的一个安全版本，用于处理流已关闭时可能发生的错误。
-    """
-
-    def emit(self, record: logging.LogRecord) -> None:
-        """
-        发出一个日志记录。
-
-        Args:
-            record (logging.LogRecord): 要发出的日志记录。
-        """
-        ...
-
-
-def init_class_by_name(module_name: str, class_name: str, *args, **kwargs) -> Any:
-    """
-    通过模块名和类名动态导入并实例化一个类。
-
-    Args:
-        module_name (str): 包含该类的模块的名称。
-        class_name (str): 要实例化的类的名称。
-        *args: 传递给类构造函数的位置参数。
-        **kwargs: 传递给类构造函数的关键字参数。
-
-    Returns:
-        Any: 所请求类的实例。
-    """
-    ...
-
-
-class ExitEvent(threading.Event):
-    """
-    threading.Event 的扩展，用于在设置事件时通知绑定的队列和可停止对象。
-    """
-    queues: Set[queue.Queue]
-    to_stops: Set[Any]
-
-    def bind_queue(self, queue_instance: queue.Queue) -> None:
-        """
-        将一个队列绑定到此事件。当事件被设置时，`None` 将被放入队列中。
-
-        Args:
-            queue_instance (queue.Queue): 要绑定的队列。
-        """
-        ...
-
-    def bind_stop(self, to_stop: Any) -> None:
-        """
-        将一个具有 `stop()` 方法的对象绑定到此事件。当事件被设置时，将调用其 `stop()` 方法。
-
-        Args:
-            to_stop (Any): 要绑定的可停止对象。
-        """
-        ...
-
-    def set(self) -> None:
-        """
-        设置内部标志为 true，并通知所有绑定的队列和可停止对象。
-        """
-        ...
-
-
-@dataclass(order=True)
-class ScheduledTask:
-    """
-    表示一个计划在特定时间执行的任务的数据类。
-    """
-    execute_at: float
-    task: Callable = field(compare=False)
-
-
-class Handler:
-    """
-    一个处理程序类，在专用线程中按顺序和计划执行任务。
-    """
-    task_queue: List[ScheduledTask]
-    executing: Optional[Callable]
-    condition: threading.Condition
-    exit_event: ExitEvent
-    name: Optional[str]
-    thread: threading.Thread
-
-    def __init__(self, event: ExitEvent, name: Optional[str] = None):
-        """
-        初始化 Handler.
-
-        Args:
-            event (ExitEvent): 用于发出退出信号的退出事件。
-            name (Optional[str]): 处理程序线程的名称。
-        """
-        ...
-
-    def post(self, task: Callable, delay: int | float = 0, remove_existing: bool = False,
-             skip_if_running: bool = False) -> bool | None:
-        """
-        将一个任务发布到处理程序队列中执行。
-
-        Args:
-            task (Callable): 要执行的任务函数。
-            delay (int | float): 执行任务前的延迟时间（秒）。
-            remove_existing (bool): 是否移除队列中已存在的相同任务。
-            skip_if_running (bool): 如果相同的任务当前正在执行，是否跳过添加。
-
-        Returns:
-            bool | None: 如果成功发布则返回 True，如果处理程序已退出则返回 None。
-        """
-        ...
-
-    def stop(self) -> None:
-        """
-        停止处理程序线程，清空任务队列。
-        """
-        ...
-
-
-def read_json_file(file_path: str) -> Optional[dict]:
-    """
-    从文件中读取并解析 JSON 数据。
-
-    Args:
-        file_path (str): JSON 文件的路径。
-
-    Returns:
-        Optional[dict]: 如果成功则返回解析后的字典，如果文件不存在或解析失败则返回 None。
-    """
-    ...
-
-
-def write_json_file(file_path: str, data: Any) -> bool:
-    """
-    将数据以 JSON 格式写入文件。
-
-    Args:
-        file_path (str): 要写入的文件的路径。
-        data (Any): 要序列化为 JSON 的数据。
-
-    Returns:
-        bool: 如果写入成功则返回 True。
-    """
-    ...
-
-
-def is_admin() -> bool:
-    """
-    检查当前用户是否具有管理员权限 (仅限 Windows)。
-
-    Returns:
-        bool: 如果用户是管理员则返回 True，否则返回 False。
-    """
-    ...
-
-
-@overload
-def get_first_item(lst: None, default: T = None) -> T | None: ...
-
-
-@overload
-def get_first_item(lst: list[T], default: Any = None) -> T | Any: ...
-
-
-def get_first_item(lst: Optional[list], default: Any = None) -> Any:
-    """
-    安全地获取列表的第一个项目。
-
-    Args:
-        lst (Optional[list]): 输入列表。
-        default (Any): 如果列表为空或为 None，则返回的默认值。
-
-    Returns:
-        Any: 列表的第一个项目或默认值。
-    """
-    ...
-
-
-def safe_get(lst: list, idx: int, default: Any = None) -> Any:
-    """
-    安全地通过索引从列表中获取项目。
-
-    Args:
-        lst (list): 输入列表。
-        idx (int): 项目的索引。
-        default (Any): 如果索引超出范围，则返回的默认值。
-
-    Returns:
-        Any: 列表中的项目或默认值。
-    """
-    ...
-
-
-def find_index_in_list(my_list: list, target_string: str, default_index: int = -1) -> int:
-    """
-    在列表中查找目标字符串的索引。
-
-    Args:
-        my_list (list): 要搜索的列表。
-        target_string (str): 要查找的字符串。
-        default_index (int): 如果未找到目标，则返回的索引。
-
-    Returns:
-        int: 目标字符串的索引或默认索引。
-    """
-    ...
-
-
-def get_path_relative_to_exe(*files: str) -> str | None:
-    """
-    获取相对于可执行文件或主脚本目录的路径。
-
-    Args:
-        *files (str): 要连接到基础目录的路径段。
-
-    Returns:
-        str | None: 规范化的绝对路径，如果任何输入为 None 则返回 None。
-    """
-    ...
-
-
-def get_relative_path(*files: str) -> str | None:
-    """
-    获取相对于当前工作目录的路径。
-
-    Args:
-        *files (str): 要连接到当前工作目录的路径段。
-
-    Returns:
-        str | None: 规范化的绝对路径，如果任何输入为 None 则返回 None。
-    """
-    ...
-
-
-def install_path_isascii() -> Tuple[bool, str]:
-    """
-    检查安装路径是否只包含 ASCII 字符。
-
-    Returns:
-        Tuple[bool, str]: 一个元组，其中包含一个布尔值（如果路径是 ASCII 则为 True）和路径本身。
-    """
-    ...
-
-
-def resource_path(relative_path: str) -> str:
-    """
-    获取资源的绝对路径，适用于开发环境和 PyInstaller 打包。
-
-    Args:
-        relative_path (str): 相对于项目根目录的资源路径。
-
-    Returns:
-        str: 资源的绝对路径。
-    """
-    ...
-
-
-def ensure_dir_for_file(file_path: str) -> str:
-    """
-    确保文件路径所在的目录存在。
-
-    Args:
-        file_path (str): 文件的完整路径。
-
-    Returns:
-        str: 目录的路径。
-    """
-    ...
-
-
-def ensure_dir(directory: str, clear: bool = False) -> str:
-    """
-    确保指定的目录存在。
-
-    Args:
-        directory (str): 目录的路径。
-        clear (bool): 如果为 True，则在创建前清空目录中的所有内容。
-
-    Returns:
-        str: 目录的路径。
-    """
-    ...
-
-
-def delete_if_exists(file_path: str) -> None:
-    """
-    如果路径存在，则删除文件或目录。
-
-    Args:
-        file_path (str): 要删除的文件或目录的路径。
-    """
-    ...
-
-
-def delete_folders_starts_with(path: str, starts_with: str) -> None:
-    """
-    删除指定路径下所有以给定前缀开头的文件夹。
-
-    Args:
-        path (str): 要搜索文件夹的父目录。
-        starts_with (str): 文件夹名称的前缀。
-    """
-    ...
-
-
-def sanitize_filename(filename: str) -> str:
-    """
-    从文件名中移除无效字符。
-
-    Args:
-        filename (str): 要清理的文件名。
-
-    Returns:
-        str: 清理后的文件名。
-    """
-    ...
-
-
-def clear_folder(folder_path: str) -> None:
-    """
-    删除文件夹内的所有文件和子文件夹。
-
-    Args:
-        folder_path (str): 要清空的文件夹的路径。
-    """
-    ...
-
-
-def find_first_existing_file(filenames: List[str], directory: str) -> Optional[str]:
-    """
-    在指定目录中查找列表中第一个存在的文件。
-
-    Args:
-        filenames (List[str]): 要检查的文件名列表。
-        directory (str): 要搜索的目录。
-
-    Returns:
-        Optional[str]: 找到的第一个文件的完整路径，如果都未找到则返回 None。
-    """
-    ...
-
-
-def get_path_in_package(base: str, file: str) -> str:
-    """
-    获取相对于 Python 包内文件的路径。
-
-    Args:
-        base (str): 包内的参考文件路径 (例如 `__file__`)。
-        file (str): 相对于参考文件的目标文件名。
-
-    Returns:
-        str: 目标文件的绝对路径。
-    """
-    ...
-
-
-def dir_checksum(directory: str, excludes: Optional[List[str]] = None) -> str:
-    """
-    计算目录内容的 MD5 校验和。
-
-    Args:
-        directory (str): 要计算校验和的目录。
-        excludes (Optional[List[str]]): 要从计算中排除的文件名列表。
-
-    Returns:
-        str: MD5 校验和的十六进制摘要。
-    """
-    ...
-
-
-def find_folder_with_file(root_folder: str, target_file: str) -> Optional[str]:
-    """
-    在根文件夹及其子文件夹中查找包含目标文件的文件夹。
-
-    Args:
-        root_folder (str): 开始搜索的根目录。
-        target_file (str): 要查找的文件的名称。
-
-    Returns:
-        Optional[str]: 包含目标文件的文件夹的路径，如果未找到则返回 None。
-    """
-    ...
-
-
-def get_folder_size(folder_path: str) -> int:
-    """
-    计算文件夹的总大小（以字节为单位）。
-
-    Args:
-        folder_path (str): 文件夹的路径。
-
-    Returns:
-        int: 文件夹中所有文件的总大小（字节）。
-    """
-    ...
-
-
-def run_in_new_thread(func: Callable) -> threading.Thread:
-    """
-    在新线程中运行一个函数。
-
-    Args:
-        func (Callable): 要在背景线程中执行的函数。
-
-    Returns:
-        threading.Thread: 已启动的线程对象。
-    """
-    ...
-
-
-def check_mutex() -> bool:
-    """
-    检查此应用程序的另一个实例是否已在运行 (仅限 Windows)。
-
-    使用基于当前工作目录的命名互斥锁。如果已存在互斥锁，则会等待并可能尝试终止现有进程。
-
-    Returns:
-        bool: 如果可以继续运行（无冲突或冲突已解决），则返回 True。
-    """
-    ...
-
-
-def restart_as_admin() -> None:
-    """
-    如果当前未以管理员权限运行，则以管理员权限重新启动应用程序 (仅限 Windows)。
-    """
-    ...
-
-
-def all_pids() -> List[int]:
-    """
-    获取系统上所有正在运行的进程的 PID 列表 (仅限 Windows)。
-
-    Returns:
-        List[int]: 所有进程 ID 的列表。
-    """
-    ...
-
-
-def ratio_text_to_number(supported_ratio: str) -> float:
-    """
-    将 "宽:高" 格式的宽高比字符串转换为浮点数。
-
-    Args:
-        supported_ratio (str): 例如 "16:9" 格式的字符串。
-
-    Returns:
-        float: 宽高比的浮点表示。
-    """
-    ...
-
-
-def data_to_base64(data: Union[Dict, List[Dict]]) -> str:
-    """
-    将字典或字典列表序列化为 base64 编码的字符串。
-
-    Args:
-        data (Union[Dict, List[Dict]]): 要序列化的数据。
-
-    Returns:
-        str: base64 编码的字符串。
-    """
-    ...
-
-
-def base64_to_data(base64_str: str) -> Union[Dict, List[Dict]]:
-    """
-    将 base64 编码的字符串反序列化回字典或字典列表。
-
-    Args:
-        base64_str (str): base64 编码的字符串。
-
-    Returns:
-        Union[Dict, List[Dict]]: 反序列化后的数据。
-    """
-    ...
-
-
-def get_readable_file_size(file_path: str) -> str:
-    """
-    以人类可读的格式计算文件的大小。
-
-    Args:
-        file_path (str): 文件的路径。
-
-    Returns:
-        str: 可读的文件大小 (例如, "1.23 MB")。
-    """
-    ...
-
-
-def bytes_to_readable_size(size_bytes: int) -> str:
-    """
-    将字节数转换为人类可读的格式。
-
-    Args:
-        size_bytes (int): 以字节为单位的大小。
-
-    Returns:
-        str: 可读的大小字符串。
-    """
-    ...
-
-
-def execute(game_cmd: str) -> bool | None:
-    """
-    执行一个外部命令，通常用于启动游戏。
-
-    Args:
-        game_cmd (str): 要执行的命令字符串。
-
-    Returns:
-        bool | None: 如果成功启动进程则返回 True，否则返回 None。
-    """
-    ...
-
-
-def get_path(input_string: str) -> str:
-    """
-    从可能包含参数的输入字符串中提取可执行文件路径。
-
-    Args:
-        input_string (str): 包含路径和可选参数的字符串。
-
-    Returns:
-        str: 提取的路径部分。
-    """
-    ...
-
+import cv2
 
 class Box:
     """
-    表示一个具有位置、尺寸、置信度和名称的矩形框。
+    A class representing a bounding box with coordinates, dimensions, confidence, and name.
+
+    表示边界框的类，包含坐标、尺寸、置信度和名称。
     """
     x: int
     y: int
     width: int
     height: int
     confidence: float
-    name: Any
+    name: Optional[Any]
 
-    def __init__(self, x: float | int, y: float | int, width: float | int = 0, height: float | int = 0,
-                 confidence: float = 1.0, name: Optional[Any] = None, to_x: int = -1, to_y: int = -1):
+    def __init__(self, x: Union[int, float], y: Union[int, float], width: Union[int, float] = 0,
+                 height: Union[int, float] = 0, confidence: float = 1.0, name: Optional[Any] = None, to_x: int = -1,
+                 to_y: int = -1) -> None:
         """
-        初始化 Box.
+        Initializes a Box instance.
 
-        Args:
-            _x (float | int): 左上角的 x 坐标。
-            _y (float | int): 左上角的 y 坐标。
-            width (float | int): 框的宽度。
-            height (float | int): 框的高度。
-            confidence (float): 与此框相关的置信度分数。
-            name (Optional[Any]): 框的可选名称或标识符。
-            to_x (int): 如果提供，则用于计算宽度的右下角 x 坐标。
-            to_y (int): 如果提供，则用于计算高度的右下角 y 坐标。
+        初始化 Box 实例。
+
+        :param x: The x-coordinate of the top-left corner. 左上角的 x 坐标。
+        :param y: The y-coordinate of the top-left corner. 左上角的 y 坐标。
+        :param width: The width of the box (alternative to to_x). 框的宽度（to_x 的替代）。
+        :param height: The height of the box (alternative to to_y). 框的高度（to_y 的替代）。
+        :param confidence: The confidence score of the detection. 检测的置信度分数。
+        :param name: Optional name or label for the box. 可选的框名称或标签。
+        :param to_x: The x-coordinate of the bottom-right corner (alternative to width). 右下角的 x 坐标（width 的替代）。
+        :param to_y: The y-coordinate of the bottom-right corner (alternative to height). 右下角的 y 坐标（height 的替代）。
         """
         ...
 
-    def __eq__(self, other: object) -> bool: ...
+    def __eq__(self, other: Any) -> bool:
+        """
+        Checks if two Box instances are equal.
 
-    def __repr__(self) -> str: ...
+        检查两个 Box 实例是否相等。
 
-    def __str__(self) -> str: ...
+        :param other: The other Box instance to compare. 要比较的另一个 Box 实例。
+        :return: True if equal, False otherwise. 如果相等返回 True，否则返回 False。
+        """
+        ...
 
     def area(self) -> int:
         """
+        Calculates the area of the box.
+
         计算框的面积。
 
-        Returns:
-            int: 框的面积 (宽 * 高)。
+        :return: The area (width * height). 面积（宽度 * 高度）。
         """
         ...
 
-    def in_boundary(self, boxes: List[Box]) -> List[Box]:
+    def in_boundary(self, boxes: List["Box"]) -> List["Box"]:
         """
-        查找完全位于此框边界内的框。
+        Finds boxes that are completely within this box's boundary.
 
-        Args:
-            boxes (List[Box]): 要检查的框列表。
+        查找完全在此框边界内的框。
 
-        Returns:
-            List[Box]: 位于此框内的框列表。
-        """
-        ...
-
-    def scale(self, width_ratio: float, height_ratio: Optional[float] = None) -> Box:
-        """
-        按给定的宽度和高度比例缩放框，保持中心点不变。
-
-        Args:
-            width_ratio (float): 宽度的缩放比例。
-            height_ratio (Optional[float]): 高度的缩放比例。如果为 None，则默认为 width_ratio。
-
-        Returns:
-            Box: 一个具有缩放尺寸和位置的新 Box 对象。
+        :param boxes: List of boxes to check. 要检查的框列表。
+        :return: List of boxes within the boundary. 在边界内的框列表。
         """
         ...
 
-    def closest_distance(self, other: Box) -> float:
+    def __repr__(self) -> str:
         """
-        计算此框与另一个框之间的最近边缘距离。
+        Returns a string representation of the Box for debugging.
 
-        Args:
-            other (Box): 要计算距离的另一个框。
+        返回 Box 的字符串表示，用于调试。
 
-        Returns:
-            float: 两个框之间的最短距离。如果它们相交，则距离为 0。
+        :return: String representation. 字符串表示。
         """
         ...
 
-    def center_distance(self, other: Box) -> float:
+    def __str__(self) -> str:
         """
-        计算此框与另一个框中心点之间的欧几里得距离。
+        Returns a detailed string representation of the Box.
 
-        Args:
-           other (Box): 要计算距离的另一个框。
+        返回 Box 的详细字符串表示。
 
-        Returns:
-            float: 两个框中心点之间的距离。
+        :return: Detailed string. 详细字符串。
         """
         ...
 
-    def relative_with_variance(self, relative_x: float = 0.5, relative_y: float = 0.5) -> Tuple[int, int]:
+    def scale(self, width_ratio: float, height_ratio: Optional[float] = None) -> "Box":
         """
-        计算框内带有随机微小变化的相对坐标。
+        Scales the box by given ratios, keeping the center the same.
 
-        Args:
-            relative_x (float): 框内相对的 x 位置 (0.0 到 1.0)。
-            relative_y (float): 框内相对的 y 位置 (0.0 到 1.0)。
+        通过给定比率缩放框，保持中心不变。
 
-        Returns:
-            Tuple[int, int]: 计算出的 (x, y) 坐标。
+        :param width_ratio: Ratio to scale the width. 宽度缩放比率。
+        :param height_ratio: Ratio to scale the height (defaults to width_ratio). 高度缩放比率（默认为宽度比率）。
+        :return: New scaled Box. 新的缩放框。
+        """
+        ...
+
+    def closest_distance(self, other: "Box") -> float:
+        """
+        Calculates the closest distance between two boxes.
+
+        计算两个框之间的最近距离。
+
+        :param other: The other Box. 另一个框。
+        :return: The distance. 距离。
+        """
+        ...
+
+    def center_distance(self, other: "Box") -> float:
+        """
+        Calculates the Euclidean distance between centers of two boxes.
+
+        计算两个框中心之间的欧几里得距离。
+
+        :param other: The other Box. 另一个框。
+        :return: The distance. 距离。
+        """
+        ...
+
+    def relative_with_variance(self, relative_x: float = 0.5, relative_y: float = 0.5) -> tuple[int, int]:
+        """
+        Gets a point relative to the box with random variance.
+
+        获取相对于框的点，带有随机方差。
+
+        :param relative_x: Relative x position (0-1). 相对 x 位置（0-1）。
+        :param relative_y: Relative y position (0-1). 相对 y 位置（0-1）。
+        :return: (x, y) coordinates. (x, y) 坐标。
         """
         ...
 
     def copy(self, x_offset: int = 0, y_offset: int = 0, width_offset: int = 0, height_offset: int = 0,
-             name: Optional[Any] = None) -> Box:
+             name: Optional[Any] = None) -> "Box":
         """
-        创建此框的一个副本，可以带有偏移量。
+        Creates a copy of the box with offsets.
 
-        Args:
-            x_offset (int): x 坐标的偏移量。
-            y_offset (int): y 坐标的偏移量。
-            width_offset (int): 宽度的偏移量。
-            height_offset (int): 高度的偏移量。
-            name (Optional[Any]): 新框的名称。如果为 None，则使用原始名称。
+        创建框的副本，带有偏移。
 
-        Returns:
-            Box: 一个新的 Box 实例。
-        """
-        ...
-
-    def crop_frame(self, frame: Frame) -> Frame:
-        """
-        使用此框的尺寸从图像帧中裁剪出一个区域。
-
-        Args:
-            frame (Frame): 要裁剪的图像 (numpy 数组)。
-
-        Returns:
-            Frame: 裁剪后的图像区域。
+        :param x_offset: Offset for x. x 偏移。
+        :param y_offset: Offset for y. y 偏移。
+        :param width_offset: Offset for width. 宽度偏移。
+        :param height_offset: Offset for height. 高度偏移。
+        :param name: New name (defaults to original). 新名称（默认为原名称）。
+        :return: New Box. 新框。
         """
         ...
 
-    def center(self) -> Tuple[int, int]:
+    def crop_frame(self, frame: np.ndarray) -> np.ndarray:
         """
-        计算框的中心点坐标。
+        Crops the frame to this box's area.
 
-        Returns:
-            Tuple[int, int]: (x, y) 中心坐标。
-        """
-        ...
+        将帧裁剪到此框的区域。
 
-    def find_closest_box(self, direction: str, boxes: List[Box], condition: Optional[Callable[[Box], bool]] = None) -> \
-            Optional[Box]:
-        """
-        在给定方向上查找最近的框。
-
-        Args:
-            direction (str): 搜索方向 ('up', 'down', 'left', 'right', 'all')。
-            boxes (List[Box]): 要搜索的框列表。
-            condition (Optional[Callable[[Box], bool]]): 用于筛选候选框的可选函数。
-
-        Returns:
-            Optional[Box]: 找到的最近的框，如果未找到则返回 None。
+        :param frame: The image frame. 图像帧。
+        :return: Cropped frame. 裁剪后的帧。
         """
         ...
 
-
-def find_highest_confidence_box(boxes: List[Box]) -> Optional[Box]:
-    """
-    从列表中查找置信度最高的框。
-
-    Args:
-        boxes (List[Box]): 要搜索的框列表。
-
-    Returns:
-        Optional[Box]: 置信度最高的框，如果列表为空则返回 None。
-    """
-    ...
-
-
-def sort_boxes(boxes: List[Box]) -> List[Box]:
-    """
-    根据阅读顺序（从上到下，从左到右）对框进行排序。
-
-    Args:
-        boxes (List[Box]): 要排序的框列表。
-
-    Returns:
-        List[Box]: 排序后的框列表。
-    """
-    ...
-
-
-def find_box_by_name(boxes: List[Box], names: Union[str, Pattern[str], List[Union[str, Pattern[str]]]]) -> Optional[
-    Box]:
-    """
-    通过名称在框列表中查找框。
-
-    Args:
-        boxes (List[Box]): 要搜索的框列表。
-        names (Union[str, Pattern, List[Union[str, Pattern]]]): 要匹配的单个名称/模式或名称/模式列表。
-
-    Returns:
-        Optional[Box]: 找到的第一个匹配的框，如果未找到则返回 None。
-    """
-    ...
-
-
-def get_bounding_box(boxes: List[Box]) -> Box:
-    """
-    计算完全包围列表中所有框的最小边界框。
-
-    Args:
-        boxes (List[Box]): 要包围的框列表。
-
-    Returns:
-        Box: 包含所有输入框的边界框。
-    """
-    ...
-
-
-def find_boxes_within_boundary(boxes: List[Box], boundary_box: Box, sort: bool = True) -> List[Box]:
-    """
-    查找所有完全位于给定边界框内的框。
-
-    Args:
-        boxes (List[Box]): 要筛选的框列表。
-        boundary_box (Box): 边界框。
-        sort (bool): 是否对结果进行排序。
-
-    Returns:
-        List[Box]: 位于边界内的框列表。
-    """
-    ...
-
-
-def average_width(boxes: List[Box]) -> int:
-    """
-    计算框列表的平均宽度。
-
-    Args:
-        boxes (List[Box]): 框列表。
-
-    Returns:
-        int: 平均宽度。
-    """
-    ...
-
-
-def crop_image(image: Frame, box: Optional[Box] = None) -> Frame:
-    """
-    如果提供了框，则从图像中裁剪一个区域。
-
-    Args:
-        image (Frame): 原始图像。
-        box (Optional[Box]): 用于裁剪的框。
-
-    Returns:
-        Frame: 裁剪后的图像或原始图像。
-    """
-    ...
-
-
-def relative_box(frame_width: int, frame_height: int, x: float, y: float, to_x: float = 1, to_y: float = 1,
-                 width: float = 0, height: float = 0, name: Optional[Any] = None, confidence: float = 1.0) -> Box:
-    """
-    根据相对坐标和尺寸创建 Box。
-
-    Args:
-        frame_width (int): 参照系的总宽度。
-        frame_height (int): 参照系的总高度。
-        x (float): 相对 x 坐标 (0 到 1)。
-        y (float): 相对 y 坐标 (0 到 1)。
-        to_x (float): 相对右下角 x 坐标。
-        to_y (float): 相对右下角 y 坐标。
-        width (float): 相对宽度。
-        height (float): 相对高度。
-        name (Optional[Any]): 框的名称。
-        confidence (float): 框的置信度。
-
-    Returns:
-        Box: 创建的 Box 对象。
-    """
-    ...
-
-
-def find_boxes_by_name(boxes: List[Box], names: Union[str, Pattern[str], List[Union[str, Pattern[str]]]]) -> List[Box]:
-    """
-    通过名称或模式在框列表中查找所有匹配的框。
-
-    Args:
-        boxes (List[Box]): 要搜索的框列表。
-        names (Union[str, Pattern, List[Union[str, Pattern]]]): 要匹配的单个名称/模式或名称/模式列表。
-
-    Returns:
-        List[Box]: 所有匹配框的列表。
-    """
-    ...
-
-
-def is_close_to_pure_color(image: Frame, max_colors: int = 5000, percent: float = 0.97) -> bool:
-    """
-    检查图像是否主要由单一颜色构成。
-
-    Args:
-        image (Frame): 要检查的图像。
-        max_colors (int): 提前退出的不同颜色数量阈值。
-        percent (float): 构成单一颜色的像素百分比阈值。
-
-    Returns:
-        bool: 如果图像接近纯色则返回 True。
-    """
-
-
-_ok_logger: logging.Logger
-...
-
-
-def get_mask_in_color_range(image: Frame, color_range: ColorRange) -> Tuple[Frame, int]:
-    """
-    在图像中为指定的颜色范围创建掩码。
-
-    Args:
-        image (Frame): 输入图像。
-        color_range (ColorRange): 颜色范围字典。
-
-    Returns:
-        Tuple[Frame, int]: 掩码图像和掩码中的非零像素数。
-    """
-    ...
-
-
-def get_connected_area_by_color(image: Frame, color_range: ColorRange, connectivity: int = 4, gray_range: int = 0) -> \
-        Tuple[int, Frame, Frame, Frame]:
-    """
-    查找指定颜色范围内的连通区域。
-
-    Args:
-        image (Frame): 输入图像。
-        color_range (ColorRange): 颜色范围字典。
-        connectivity (int): 连通性 (4 或 8)。
-        gray_range (int): 用于筛选灰色区域的附加范围。
-
-    Returns:
-        Tuple[int, Frame, Frame, Frame]: 标签数量、统计信息、标签和质心。
-    """
-    ...
-
-
-def color_range_to_bound(color_range: ColorRange) -> Tuple[Frame, Frame]:
-    """
-    将颜色范围字典转换为 numpy 格式的下界和上界。
-
-    Args:
-        color_range (ColorRange): 颜色范围字典。
-
-    Returns:
-        Tuple[Frame, Frame]: 下界和上界 numpy 数组。
-    """
-    ...
-
-
-def calculate_colorfulness(image: Frame, box: Optional[Box] = None) -> float:
-    """
-    计算图像或图像区域的色彩丰富度。
-
-    Args:
-        image (Frame): 输入图像。
-        box (Optional[Box]): 要计算的特定区域。
-
-    Returns:
-        float: 色彩丰富度分数。
-    """
-    ...
-
-
-def get_saturation(image: Frame, box: Optional[Box] = None) -> float:
-    """
-    计算图像或图像区域的平均饱和度。
-
-    Args:
-        image (Frame): 输入图像。
-        box (Optional[Box]): 要计算的特定区域。
-
-    Returns:
-        float: 平均饱和度值 (0 到 1)。
-    """
-    ...
-
-
-def find_color_rectangles(image: Frame, color_range: ColorRange, min_width: int, min_height: int, max_width: int = -1,
-                          max_height: int = -1, threshold: float = 0.95, box: Optional[Box] = None) -> List[Box]:
-    """
-    查找图像中与指定颜色范围和尺寸约束匹配的矩形。
-
-    Args:
-        image (Frame): 输入图像。
-        color_range (ColorRange): 颜色范围字典。
-        min_width (int): 最小宽度。
-        min_height (int): 最小高度。
-        max_width (int): 最大宽度。
-        max_height (int): 最大高度。
-        threshold (float): 矩形内颜色匹配的百分比阈值。
-        box (Optional[Box]): 要搜索的特定区域。
-
-    Returns:
-        List[Box]: 找到的矩形框列表。
-    """
-    ...
-
-
-def is_pure_black(frame: Frame) -> bool:
-    """
-    检查图像帧是否完全是黑色的。
-
-    Args:
-        frame (Frame): 输入图像。
-
-    Returns:
-        bool: 如果图像是纯黑色则返回 True。
-    """
-    ...
-
-
-def calculate_color_percentage(image: Frame, color_ranges: ColorRange, box: Optional[Box] = None) -> float:
-    """
-    计算图像区域中特定颜色范围的像素百分比。
-
-    Args:
-        image (Frame): 输入图像。
-        color_ranges (ColorRange): 颜色范围字典。
-        box (Optional[Box]): 要计算的特定区域。
-
-    Returns:
-        float: 颜色所占的百分比 (0 到 1)。
-    """
-    ...
-
-
-def rgb_to_gray(rgb: Tuple[int, int, int]) -> float:
-    """
-    将 RGB 颜色值转换为灰度值。
-
-    Args:
-        rgb (Tuple[int, int, int]): RGB 元组。
-
-    Returns:
-        float: 灰度值。
-    """
-    ...
-
-
-def create_non_black_mask(image: Frame) -> Frame:
-    """
-    创建一个识别图像中非黑色像素的二进制掩码。
-
-    Args:
-        image (Frame): 输入图像 (BGR 或灰度)。
-
-    Returns:
-        Frame: 二进制掩码 (非黑色为 255，黑色为 0)。
-    """
-    ...
-
-
-class CommunicateHandler(logging.Handler):
-    """
-    一个日志处理器，通过 `communicate` 信号系统将日志消息发送到 GUI。
-    """
-
-    def __init__(self):
+    def center(self) -> tuple[float, float]:
         """
-        初始化 CommunicateHandler。
+        Gets the center coordinates of the box.
+
+        获取框的中心坐标。
+
+        :return: (x, y) center. (x, y) 中心。
         """
         ...
 
-    def emit(self, record: logging.LogRecord) -> None:
+    def find_closest_box(self, direction: str, boxes: List["Box"],
+                         condition: Optional[Callable[["Box"], bool]] = None) -> Optional["Box"]:
         """
-        发出一个日志记录，将其格式化并通过信号发送。
+        Finds the closest box in a given direction.
 
-        Args:
-            record (logging.LogRecord): 日志记录。
+        在给定方向查找最近的框。
+
+        :param direction: Direction ('up', 'down', 'left', 'right', 'all'). 方向（'up', 'down', 'left', 'right', 'all'）。
+        :param boxes: List of boxes to search. 要搜索的框列表。
+        :param condition: Optional condition function. 可选条件函数。
+        :return: Closest Box or None. 最近的框或 None。
         """
         ...
 
-
-class App:
+class ExecutorOperation:
     """
-    主应用程序类，管理 GUI、配置、认证和全局状态。
+    Base class for operations in the task executor.
+
+    任务执行器中操作的基类。
     """
-    config: Dict[str, Any]
-    global_config: Any  # GlobalConfig
-    app: QApplication
-    ok_config: Any  # Config
-    auth_config: Any  # Config
-    locale: QLocale
-    overlay: Any
-    start_controller: Any  # StartController
-    loading_window: Any
-    overlay_window: Any  # OverlayWindow
-    main_window: Any  # MainWindow
-    exit_event: ExitEvent
-    icon: QIcon
-    fire_base_analytics: Any  # Analytics
-    to_translate: Set[str]
-    po_translation: Any
-    updater: Any  # GitUpdater
-    about: str
-    title: str
-    version: str
-    debug: bool
+    last_click_time: float
+    _executor: "TaskExecutor"
 
-    def __init__(self, config: Dict[str, Any], task_executor: Any, exit_event: Optional[ExitEvent] = None):
+    def __init__(self, executor: "TaskExecutor") -> None:
         """
-        初始化 App。
+        Initializes the ExecutorOperation.
 
-        Args:
-            config (Dict[str, Any]): 应用程序配置。
-            task_executor (Any): TaskExecutor 实例。
-            exit_event (Optional[ExitEvent]): 退出事件。
+        初始化 ExecutorOperation。
+
+        :param executor: The task executor instance. 任务执行器实例。
         """
         ...
 
-    def check_auth(self, key: Optional[str] = None, uid: str = "") -> Tuple[bool, Any]:
+    def exit_is_set(self) -> bool:
         """
-        检查用户认证。
+        Checks if the exit event is set.
 
-        Args:
-            key (Optional[str]): 要验证的激活码。如果为 None，则使用已保存的密钥。
-            uid (str): 用户 ID。
+        检查退出事件是否设置。
 
-        Returns:
-            Tuple[bool, Any]: 一个元组，包含认证是否成功和来自服务器的响应。
+        :return: True if set, False otherwise. 如果设置返回 True，否则 False。
         """
         ...
 
-    def trial(self) -> Tuple[bool, Any]:
+    def get_task_by_class(self, cls: type) -> Optional["BaseTask"]:
         """
-        请求试用期。
+        Gets a task by its class.
 
-        Returns:
-            Tuple[bool, Any]: 一个元组，包含试用请求是否成功和来自服务器的响应。
+        通过类获取任务。
+
+        :param cls: The task class. 任务类。
+        :return: The task instance or None. 任务实例或 None。
         """
         ...
 
-    def quit(self) -> None:
+    def box_in_horizontal_center(self, box: Optional["Box"], off_percent: float = 0.02) -> bool:
         """
-        退出应用程序。
+        Checks if a box is in the horizontal center.
+
+        检查框是否在水平中心。
+
+        :param box: The box to check. 要检查的框。
+        :param off_percent: Offset percentage tolerance. 偏移百分比容差。
+        :return: True if centered, False otherwise. 如果居中返回 True，否则 False。
         """
         ...
 
-    def tr(self, key: str) -> str:
+    def clipboard(self) -> str:
         """
-        翻译给定的键字符串。
+        Gets the clipboard content.
 
-        Args:
-            key (str): 要翻译的文本键。
+        获取剪贴板内容。
 
-        Returns:
-            str: 翻译后的文本。
+        :return: Clipboard text. 剪贴板文本。
         """
         ...
 
-    def request(self, path: str, params: dict) -> Any:
+    def is_scene(self, the_scene: type) -> bool:
         """
-        向认证服务器发送请求。
+        Checks if the current scene matches the given type.
 
-        Args:
-            path (str): API 端点路径。
-            params (dict): 请求参数。
+        检查当前场景是否匹配给定类型。
 
-        Returns:
-            Any: 来自服务器的响应。
+        :param the_scene: The scene class. 场景类。
+        :return: True if matches, False otherwise. 如果匹配返回 True，否则 False。
         """
         ...
 
-    def gen_tr_po_files(self) -> str:
+    def reset_scene(self) -> None:
         """
-        为收集到的待翻译字符串生成 .po 翻译文件。
+        Resets the current scene.
 
-        Returns:
-            str: 生成 .po 文件的文件夹路径。
+        重置当前场景。
         """
         ...
 
-    def show_message_window(self, title: str, message: str) -> None:
+    def click(self, x: Union[int, "Box", List["Box"]] = -1, y: int = -1, move_back: bool = False,
+              name: Optional[str] = None, interval: int = -1, move: bool = True, down_time: float = 0.01,
+              after_sleep: float = 0, key: str = 'left') -> bool:
         """
-        显示一个简单的消息窗口。
+        Performs a click action.
 
-        Args:
-            title (str): 窗口标题。
-            message (str): 要显示的消息。
+        执行点击动作。
+
+        :param x: X coordinate or Box/List[Box]. x 坐标或 Box/List[Box]。
+        :param y: Y coordinate. y 坐标。
+        :param move_back: Move back after click. 点击后移回。
+        :param name: Name for logging. 日志名称。
+        :param interval: Click interval check. 点击间隔检查。
+        :param move: Move mouse before click. 点击前移动鼠标。
+        :param down_time: Mouse down time. 鼠标按下时间。
+        :param after_sleep: Sleep after click. 点击后睡眠。
+        :param key: Mouse button ('left', 'middle', 'right'). 鼠标按钮（'left', 'middle', 'right'）。
+        :return: True if successful. 如果成功返回 True。
         """
         ...
 
-    def show_already_running_error(self) -> None:
+    def back(self, after_sleep: float = 0) -> None:
         """
-        显示一个错误消息，指示另一个实例已在运行。
+        Sends a back key event.
+
+        发送返回键事件。
+
+        :param after_sleep: Sleep after back. 返回后睡眠。
         """
         ...
 
-    def show_path_ascii_error(self, path: str) -> None:
+    def middle_click(self, x: Union[int, "Box", List["Box"]] = -1, y: int = -1, move_back: bool = False,
+                     down_time: float = 0.01) -> bool:
         """
-        显示一个错误消息，指示安装路径必须为 ASCII。
+        Performs a middle click.
 
-        Args:
-            path (str): 无效的路径。
+        执行中键点击。
+
+        :param x: X coordinate or Box/List[Box]. x 坐标或 Box/List[Box]。
+        :param y: Y coordinate. y 坐标。
+        :param move_back: Move back after click. 点击后移回。
+        :param down_time: Mouse down time. 鼠标按下时间。
+        :return: True if successful. 如果成功返回 True。
         """
         ...
 
-    def update_overlay(self, visible: bool, x: int, y: int, window_width: int, window_height: int, width: int,
-                       height: int, scaling: float) -> None:
+    def right_click(self, x: Union[int, "Box", List["Box"]] = -1, y: int = -1, move_back: bool = False,
+                    down_time: float = 0.01) -> bool:
         """
-        更新叠加窗口的位置和可见性。
+        Performs a right click.
+
+        执行右键点击。
+
+        :param x: X coordinate or Box/List[Box]. x 坐标或 Box/List[Box]。
+        :param y: Y coordinate. y 坐标。
+        :param move_back: Move back after click. 点击后移回。
+        :param down_time: Mouse down time. 鼠标按下时间。
+        :return: True if successful. 如果成功返回 True。
         """
         ...
 
-    def show_main_window(self) -> None:
+    def mouse_down(self, x: int = -1, y: int = -1, name: Optional[str] = None, key: str = "left") -> None:
         """
-        检查认证并显示主应用程序窗口。
+        Presses the mouse button down.
+
+        按下鼠标按钮。
+
+        :param x: X coordinate. x 坐标。
+        :param y: Y coordinate. y 坐标。
+        :param name: Name for logging. 日志名称。
+        :param key: Mouse button. 鼠标按钮。
         """
         ...
 
-    def do_show_main(self) -> None:
+    def mouse_up(self, name: Optional[str] = None, key: str = "left") -> None:
         """
-        实际创建并显示主窗口的内部方法。
+        Releases the mouse button.
+
+        释放鼠标按钮。
+
+        :param name: Name for logging. 日志名称。
+        :param key: Mouse button. 鼠标按钮。
         """
         ...
 
-    def exec(self) -> None:
+    def swipe_relative(self, from_x: float, from_y: float, to_x: float, to_y: float, duration: float = 0.5,
+                       settle_time: float = 0) -> None:
         """
-        进入 Qt 应用程序的主事件循环。
+        Performs a relative swipe.
+
+        执行相对滑动。
+
+        :param from_x: Start relative X. 起始相对 X。
+        :param from_y: Start relative Y. 起始相对 Y。
+        :param to_x: End relative X. 结束相对 X。
+        :param to_y: End relative Y. 结束相对 Y。
+        :param duration: Duration in seconds. 持续时间（秒）。
+        :param settle_time: Settle time after swipe. 滑动后稳定时间。
         """
         ...
 
+    def input_text(self, text: str) -> None:
+        """
+        Inputs text.
 
-def get_my_id() -> str:
+        输入文本。
+
+        :param text: Text to input. 要输入的文本。
+        """
+        ...
+
+    def ensure_in_front(self) -> None:
+        """
+        Ensures the window is in front.
+
+        确保窗口在前台。
+        """
+        ...
+
+    def scroll_relative(self, x: float, y: float, count: int) -> None:
+        """
+        Performs relative scroll.
+
+        执行相对滚动。
+
+        :param x: Relative X. 相对 X。
+        :param y: Relative Y. 相对 Y。
+        :param count: Scroll count. 滚动计数。
+        """
+        ...
+
+    def scroll(self, x: int, y: int, count: int) -> None:
+        """
+        Performs scroll at position.
+
+        在位置执行滚动。
+
+        :param x: X coordinate. x 坐标。
+        :param y: Y coordinate. y 坐标。
+        :param count: Scroll count. 滚动计数。
+        """
+        ...
+
+    def swipe(self, from_x: int, from_y: int, to_x: int, to_y: int, duration: float = 0.5, after_sleep: float = 0.1,
+              settle_time: float = 0) -> None:
+        """
+        Performs swipe gesture.
+
+        执行滑动手势。
+
+        :param from_x: Start X. 起始 X。
+        :param from_y: Start Y. 起始 Y。
+        :param to_x: End X. 结束 X。
+        :param to_y: End Y. 结束 Y。
+        :param duration: Duration. 持续时间。
+        :param after_sleep: Sleep after. 后睡眠。
+        :param settle_time: Settle time. 稳定时间。
+        """
+        ...
+
+    def screenshot(self, name: Optional[str] = None, frame: Optional[np.ndarray] = None, show_box: bool = False,
+                   frame_box: Optional["Box"] = None) -> None:
+        """
+        Takes a screenshot.
+
+        拍摄截图。
+
+        :param name: Screenshot name. 截图名称。
+        :param frame: Frame to save. 要保存的帧。
+        :param show_box: Show box. 显示框。
+        :param frame_box: Frame box. 帧框。
+        """
+        ...
+
+    def click_box(self, box: Union["Box", List["Box"], str] = None, relative_x: float = 0.5, relative_y: float = 0.5,
+                  raise_if_not_found: bool = False, move_back: bool = False, down_time: float = 0.01,
+                  after_sleep: float = 1) -> bool:
+        """
+        Clicks on a box.
+
+        点击框。
+
+        :param box: Box or name. 框或名称。
+        :param relative_x: Relative X in box. 框内相对 X。
+        :param relative_y: Relative Y in box. 框内相对 Y。
+        :param raise_if_not_found: Raise if not found. 未找到时抛出异常。
+        :param move_back: Move back after. 点击后移回。
+        :param down_time: Down time. 按下时间。
+        :param after_sleep: Sleep after. 后睡眠。
+        :return: True if clicked. 如果点击返回 True。
+        """
+        ...
+
+    def wait_scene(self, scene_type: Optional[type] = None, time_out: float = 0, pre_action: Optional[Callable] = None,
+                   post_action: Optional[Callable] = None) -> Any:
+        """
+        Waits for a scene.
+
+        等待场景。
+
+        :param scene_type: Scene type. 场景类型。
+        :param time_out: Timeout. 超时。
+        :param pre_action: Pre action. 前动作。
+        :param post_action: Post action. 后动作。
+        :return: Result. 结果。
+        """
+        ...
+
+    def sleep(self, timeout: float) -> bool:
+        """
+        Sleeps for a duration.
+
+        睡眠一段时间。
+
+        :param timeout: Sleep time. 睡眠时间。
+        :return: Always True. 总是 True。
+        """
+        ...
+
+    def send_key(self, key: Union[str, int], down_time: float = 0.02, interval: int = -1,
+                 after_sleep: float = 0) -> bool:
+        """
+        Sends a key event.
+
+        发送键事件。
+
+        :param key: Key to send. 要发送的键。
+        :param down_time: Down time. 按下时间。
+        :param interval: Interval check. 间隔检查。
+        :param after_sleep: Sleep after. 后睡眠。
+        :return: True if sent. 如果发送返回 True。
+        """
+        ...
+
+    def get_global_config(self, option: "ConfigOption") -> Config:
+        """
+        Gets global config.
+
+        获取全局配置。
+
+        :param option: Config option. 配置选项。
+        :return: Config. 配置。
+        """
+        ...
+
+    def get_global_config_desc(self, option: "ConfigOption") -> Dict[str, str]:
+        """
+        Gets global config descriptions.
+
+        获取全局配置描述。
+
+        :param option: Config option. 配置选项。
+        :return: Descriptions. 描述。
+        """
+        ...
+
+    def send_key_down(self, key: Union[str, int]) -> None:
+        """
+        Sends key down.
+
+        发送键按下。
+
+        :param key: Key. 键。
+        """
+        ...
+
+    def send_key_up(self, key: Union[str, int]) -> None:
+        """
+        Sends key up.
+
+        发送键抬起。
+
+        :param key: Key. 键。
+        """
+        ...
+
+    def wait_until(self, condition: Callable[[], Any], time_out: float = 0, pre_action: Optional[Callable] = None,
+                   post_action: Optional[Callable] = None, settle_time: float = -1,
+                   raise_if_not_found: bool = False) -> Any:
+        """
+        Waits until condition is true.
+
+        等待直到条件为真。
+
+        :param condition: Condition function. 条件函数。
+        :param time_out: Timeout. 超时。
+        :param pre_action: Pre action. 前动作。
+        :param post_action: Post action. 后动作。
+        :param settle_time: Settle time. 稳定时间。
+        :param raise_if_not_found: Raise if not found. 未找到抛出异常。
+        :return: Result. 结果。
+        """
+        ...
+
+    def wait_click_box(self, condition: Callable[[], List["Box"]], time_out: float = 0,
+                       pre_action: Optional[Callable] = None, post_action: Optional[Callable] = None,
+                       raise_if_not_found: bool = False) -> List["Box"]:
+        """
+        Waits and clicks on box.
+
+        等待并点击框。
+
+        :param condition: Condition. 条件。
+        :param time_out: Timeout. 超时。
+        :param pre_action: Pre action. 前动作。
+        :param post_action: Post action. 后动作。
+        :param raise_if_not_found: Raise if not found. 未找到抛出异常。
+        :return: Boxes. 框。
+        """
+        ...
+
+    def next_frame(self) -> np.ndarray:
+        """
+        Gets next frame.
+
+        获取下一帧。
+
+        :return: Frame. 帧。
+        """
+        ...
+
+    def adb_ui_dump(self) -> Optional[str]:
+        """
+        Dumps ADB UI.
+
+        转储 ADB UI。
+
+        :return: XML content or None. XML 内容或 None。
+        """
+        ...
+
+    @property
+    def frame(self) -> np.ndarray:
+        """
+        Gets current frame.
+
+        获取当前帧。
+
+        :return: Frame. 帧。
+        """
+        ...
+
+    @staticmethod
+    def draw_boxes(feature_name: Optional[str] = None, boxes: Optional[List["Box"]] = None, color: str = "red",
+                   debug: bool = True) -> None:
+        """
+        Draws boxes.
+
+        绘制框。
+
+        :param feature_name: Feature name. 特征名称。
+        :param boxes: Boxes to draw. 要绘制的框。
+        :param color: Color. 颜色。
+        :param debug: Debug mode. 调试模式。
+        """
+        ...
+
+    def clear_box(self) -> None:
+        """
+        Clears boxes.
+
+        清除框。
+        """
+        ...
+
+    def calculate_color_percentage(self, color: Dict[str, tuple[int, int]], box: Union["Box", str]) -> float:
+        """
+        Calculates color percentage in box.
+
+        计算框中颜色百分比。
+
+        :param color: Color range. 颜色范围。
+        :param box: Box or name. 框或名称。
+        :return: Percentage. 百分比。
+        """
+        ...
+
+    def adb_shell(self, *args: Any, **kwargs: Any) -> Optional[str]:
+        """
+        Executes ADB shell command.
+
+        执行 ADB shell 命令。
+
+        :param args: Arguments. 参数。
+        :param kwargs: Keyword arguments. 关键字参数。
+        :return: Output or None. 输出或 None。
+        """
+        ...
+
+class FindFeature(ExecutorOperation):
     """
-    生成一个基于 MAC 地址的唯一 ID。
+    Class for finding features in images.
 
-    Returns:
-        str: 8 个字符的哈希 ID。
+    在图像中查找特征的类。
     """
-    ...
 
-
-def get_my_id_with_cwd() -> str:
-    """
-    生成一个基于 MAC 地址和当前工作目录的唯一 ID。
-
-    Returns:
-        str: 8 个字符的哈希 ID。
-    """
-    ...
-
-
-class Response:
-    """
-    表示来自认证服务器的响应的数据类。
-    """
-    code: int
-    message: str
-    data: Any
-
-
-def r(path: str, params: dict) -> Response:
-    """
-    向认证服务器发送一个 msgpack 编码和加密的请求。
-
-    Args:
-        path (str): API 端点。
-        params (dict): 请求参数。
-
-    Returns:
-        Response: 包含响应数据的 Response 对象。
-    """
-    ...
-
-
-class OK:
-    """
-    应用程序的主要入口点和协调器类。
-    """
-    app: App
-    exit_event: ExitEvent
-
-    def __init__(self, config: dict):
+    def __init__(self, executor: "TaskExecutor") -> None:
         """
-        初始化 OK 应用程序。
+        Initializes FindFeature.
 
-        Args:
-            config (dict): 主应用程序配置。
+        初始化 FindFeature。
+
+        :param executor: Executor. 执行器。
         """
         ...
 
-    def start(self) -> None:
+    def find_feature(self, feature_name: Optional[str] = None, horizontal_variance: float = 0,
+                     vertical_variance: float = 0, threshold: float = 0, use_gray_scale: bool = False, x: int = -1,
+                     y: int = -1, to_x: int = -1, to_y: int = -1, width: int = -1, height: int = -1,
+                     box: Optional[Union["Box", str]] = None, canny_lower: int = 0, canny_higher: int = 0,
+                     frame_processor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+                     template: Optional[np.ndarray] = None, match_method: int = cv2.TM_CCOEFF_NORMED,
+                     screenshot: bool = False, mask_function: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+                     frame: Optional[np.ndarray] = None) -> List["Box"]:
         """
-        启动应用程序，可以带 GUI，也可以不带。
+        Finds features in frame.
+
+        在帧中查找特征。
+
+        :param feature_name: Feature name. 特征名称。
+        :param horizontal_variance: Horizontal variance. 水平方差。
+        :param vertical_variance: Vertical variance. 垂直方差。
+        :param threshold: Threshold. 阈值。
+        :param use_gray_scale: Use grayscale. 使用灰度。
+        :param x: X start. X 开始。
+        :param y: Y start. Y 开始。
+        :param to_x: X end. X 结束。
+        :param to_y: Y end. Y 结束。
+        :param width: Width. 宽度。
+        :param height: Height. 高度。
+        :param box: Box. 框。
+        :param canny_lower: Canny lower. Canny 下限。
+        :param canny_higher: Canny higher. Canny 上限。
+        :param frame_processor: Frame processor. 帧处理器。
+        :param template: Template. 模板。
+        :param match_method: Match method. 匹配方法。
+        :param screenshot: Screenshot. 截图。
+        :param mask_function: Mask function. 掩码函数。
+        :param frame: Frame. 帧。
+        :return: Boxes. 框列表。
         """
         ...
 
-    def do_init(self) -> bool:
+    def get_feature_by_name(self, name: str) -> Optional["Feature"]:
         """
-        执行核心初始化任务，如设置特征集和任务执行器。
+        Gets feature by name.
 
-        Returns:
-            bool: 如果初始化成功则返回 True。
-        """
-        ...
+        通过名称获取特征。
 
-    def quit(self) -> None:
-        """
-        干净地关闭应用程序。
+        :param name: Name. 名称。
+        :return: Feature or None. 特征或 None。
         """
         ...
 
+    def get_box_by_name(self, name: str) -> Optional["Box"]:
+        """
+        Gets box by name.
 
-class BaseScene:
+        通过名称获取框。
+
+        :param name: Name. 名称。
+        :return: Box or None. 框或 None。
+        """
+        ...
+
+    def find_feature_and_set(self, features: Union[str, List[str]], horizontal_variance: float = 0,
+                             vertical_variance: float = 0, threshold: float = 0) -> bool:
+        """
+        Finds and sets features.
+
+        查找并设置特征。
+
+        :param features: Features. 特征。
+        :param horizontal_variance: Horizontal variance. 水平方差。
+        :param vertical_variance: Vertical variance. 垂直方差。
+        :param threshold: Threshold. 阈值。
+        :return: True if all found. 如果全部找到返回 True。
+        """
+        ...
+
+    def wait_feature(self, feature: str, horizontal_variance: float = 0, vertical_variance: float = 0,
+                     threshold: float = 0, time_out: float = 0, pre_action: Optional[Callable] = None,
+                     post_action: Optional[Callable] = None, use_gray_scale: bool = False, box: Optional["Box"] = None,
+                     raise_if_not_found: bool = False, canny_lower: int = 0, canny_higher: int = 0,
+                     settle_time: float = -1, frame_processor: Optional[Callable[[np.ndarray], np.ndarray]] = None) -> \
+    Optional["Box"]:
+        """
+        Waits for feature.
+
+        等待特征。
+
+        :param feature: Feature. 特征。
+        :param horizontal_variance: Horizontal variance. 水平方差。
+        :param vertical_variance: Vertical variance. 垂直方差。
+        :param threshold: Threshold. 阈值。
+        :param time_out: Timeout. 超时。
+        :param pre_action: Pre action. 前动作。
+        :param post_action: Post action. 后动作。
+        :param use_gray_scale: Use grayscale. 使用灰度。
+        :param box: Box. 框。
+        :param raise_if_not_found: Raise if not found. 未找到抛出异常。
+        :param canny_lower: Canny lower. Canny 下限。
+        :param canny_higher: Canny higher. Canny 上限。
+        :param settle_time: Settle time. 稳定时间。
+        :param frame_processor: Frame processor. 帧处理器。
+        :return: Box or None. 框或 None。
+        """
+        ...
+
+    def wait_click_feature(self, feature: str, horizontal_variance: float = 0, vertical_variance: float = 0,
+                           threshold: float = 0, relative_x: float = 0.5, relative_y: float = 0.5, time_out: float = 0,
+                           pre_action: Optional[Callable] = None, post_action: Optional[Callable] = None,
+                           box: Optional["Box"] = None, raise_if_not_found: bool = True, use_gray_scale: bool = False,
+                           canny_lower: int = 0, canny_higher: int = 0, click_after_delay: float = 0,
+                           settle_time: float = -1, after_sleep: float = 0) -> bool:
+        """
+        Waits and clicks feature.
+
+        等待并点击特征。
+
+        :param feature: Feature. 特征。
+        :param horizontal_variance: Horizontal variance. 水平方差。
+        :param vertical_variance: Vertical variance. 垂直方差。
+        :param threshold: Threshold. 阈值。
+        :param relative_x: Relative X. 相对 X。
+        :param relative_y: Relative Y. 相对 Y。
+        :param time_out: Timeout. 超时。
+        :param pre_action: Pre action. 前动作。
+        :param post_action: Post action. 后动作。
+        :param box: Box. 框。
+        :param raise_if_not_found: Raise if not found. 未找到抛出异常。
+        :param use_gray_scale: Use grayscale. 使用灰度。
+        :param canny_lower: Canny lower. Canny 下限。
+        :param canny_higher: Canny higher. Canny 上限。
+        :param click_after_delay: Delay after click. 点击后延迟。
+        :param settle_time: Settle time. 稳定时间。
+        :param after_sleep: Sleep after. 后睡眠。
+        :return: True if clicked. 如果点击返回 True。
+        """
+        ...
+
+    def find_one(self, feature_name: Optional[str] = None, horizontal_variance: float = 0, vertical_variance: float = 0,
+                 threshold: float = 0, use_gray_scale: bool = False, box: Optional["Box"] = None, canny_lower: int = 0,
+                 canny_higher: int = 0, frame_processor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+                 template: Optional[np.ndarray] = None,
+                 mask_function: Optional[Callable[[np.ndarray], np.ndarray]] = None, frame: Optional[np.ndarray] = None,
+                 match_method: int = cv2.TM_CCOEFF_NORMED, screenshot: bool = False) -> Optional["Box"]:
+        """
+        Finds one feature.
+
+        查找一个特征。
+
+        :param feature_name: Feature name. 特征名称。
+        :param horizontal_variance: Horizontal variance. 水平方差。
+        :param vertical_variance: Vertical variance. 垂直方差。
+        :param threshold: Threshold. 阈值。
+        :param use_gray_scale: Use grayscale. 使用灰度。
+        :param box: Box. 框。
+        :param canny_lower: Canny lower. Canny 下限。
+        :param canny_higher: Canny higher. Canny 上限。
+        :param frame_processor: Frame processor. 帧处理器。
+        :param template: Template. 模板。
+        :param mask_function: Mask function. 掩码函数。
+        :param frame: Frame. 帧。
+        :param match_method: Match method. 匹配方法。
+        :param screenshot: Screenshot. 截图。
+        :return: Box or None. 框或 None。
+        """
+        ...
+
+    def on_feature(self, boxes: List["Box"]) -> None:
+        """
+        Callback on feature found.
+
+        找到特征的回调。
+
+        :param boxes: Boxes. 框。
+        """
+        ...
+
+    def feature_exists(self, feature_name: str) -> bool:
+        """
+        Checks if feature exists.
+
+        检查特征是否存在。
+
+        :param feature_name: Feature name. 特征名称。
+        :return: True if exists. 如果存在返回 True。
+        """
+        ...
+
+    def find_best_match_in_box(self, box: "Box", to_find: List[str], threshold: float, use_gray_scale: bool = False,
+                               canny_lower: int = 0, canny_higher: int = 0,
+                               frame_processor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+                               mask_function: Optional[Callable[[np.ndarray], np.ndarray]] = None) -> Optional["Box"]:
+        """
+        Finds best match in box.
+
+        在框中查找最佳匹配。
+
+        :param box: Box. 框。
+        :param to_find: To find. 要查找。
+        :param threshold: Threshold. 阈值。
+        :param use_gray_scale: Use grayscale. 使用灰度。
+        :param canny_lower: Canny lower. Canny 下限。
+        :param canny_higher: Canny higher. Canny 上限。
+        :param frame_processor: Frame processor. 帧处理器。
+        :param mask_function: Mask function. 掩码函数。
+        :return: Best box or None. 最佳框或 None。
+        """
+        ...
+
+    def find_first_match_in_box(self, box: "Box", to_find: List[str], threshold: float, use_gray_scale: bool = False,
+                                canny_lower: int = 0, canny_higher: int = 0,
+                                frame_processor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+                                mask_function: Optional[Callable[[np.ndarray], np.ndarray]] = None) -> Optional["Box"]:
+        """
+        Finds first match in box.
+
+        在框中查找第一个匹配。
+
+        :param box: Box. 框。
+        :param to_find: To find. 要查找。
+        :param threshold: Threshold. 阈值。
+        :param use_gray_scale: Use grayscale. 使用灰度。
+        :param canny_lower: Canny lower. Canny 下限。
+        :param canny_higher: Canny higher. Canny 上限。
+        :param frame_processor: Frame processor. 帧处理器。
+        :param mask_function: Mask function. 掩码函数。
+        :return: First box or None. 第一个框或 None。
+        """
+        ...
+
+class OCR(FindFeature):
     """
-    场景识别的基类。
-    """
+    Optical Character Recognition class.
 
-    def reset(self) -> None:
+    光学字符识别类。
+    """
+    ocr_default_threshold: float
+
+    def __init__(self, executor: "TaskExecutor") -> None:
         """
-        重置场景识别状态。
+        Initializes OCR.
+
+        初始化 OCR。
+
+        :param executor: Executor. 执行器。
         """
         ...
 
+    def ocr(self, x: float = 0, y: float = 0, to_x: float = 1, to_y: float = 1,
+            match: Optional[Union[str, List[str], "re.Pattern", List["re.Pattern"]]] = None, width: int = 0,
+            height: int = 0, box: Optional[Union["Box", str]] = None, name: Optional[str] = None, threshold: float = 0,
+            frame: Optional[np.ndarray] = None, target_height: int = 0, use_grayscale: bool = False, log: bool = False,
+            frame_processor: Optional[Callable[[np.ndarray], np.ndarray]] = None, lib: str = 'default') -> List["Box"]:
+        """
+        Performs OCR on region.
 
-class BaseTask:
+        在区域执行 OCR。
+
+        :param x: Relative X start. 相对 X 开始。
+        :param y: Relative Y start. 相对 Y 开始。
+        :param to_x: Relative X end. 相对 X 结束。
+        :param to_y: Relative Y end. 相对 Y 结束。
+        :param match: Match pattern. 匹配模式。
+        :param width: Width. 宽度。
+        :param height: Height. 高度。
+        :param box: Box. 框。
+        :param name: Name. 名称。
+        :param threshold: Threshold. 阈值。
+        :param frame: Frame. 帧。
+        :param target_height: Target height. 目标高度。
+        :param use_grayscale: Use grayscale. 使用灰度。
+        :param log: Log results. 日志结果。
+        :param frame_processor: Frame processor. 帧处理器。
+        :param lib: OCR library. OCR 库。
+        :return: Boxes. 框列表。
+        """
+        ...
+
+    def wait_click_ocr(self, x: float = 0, y: float = 0, to_x: float = 1, to_y: float = 1, width: int = 0,
+                       height: int = 0, box: Optional["Box"] = None, name: Optional[str] = None,
+                       match: Optional[Any] = None, threshold: float = 0, frame: Optional[np.ndarray] = None,
+                       target_height: int = 0, time_out: int = 0, raise_if_not_found: bool = False,
+                       recheck_time: float = 0, after_sleep: float = 0, post_action: Optional[Callable] = None,
+                       log: bool = False, settle_time: float = -1, lib: str = "default") -> Optional[List["Box"]]:
+        """
+        Waits and clicks OCR result.
+
+        等待并点击 OCR 结果。
+
+        :param x: X start. X 开始。
+        :param y: Y start. Y 开始。
+        :param to_x: X end. X 结束。
+        :param to_y: Y end. Y 结束。
+        :param width: Width. 宽度。
+        :param height: Height. 高度。
+        :param box: Box. 框。
+        :param name: Name. 名称。
+        :param match: Match. 匹配。
+        :param threshold: Threshold. 阈值。
+        :param frame: Frame. 帧。
+        :param target_height: Target height. 目标高度。
+        :param time_out: Timeout. 超时。
+        :param raise_if_not_found: Raise if not found. 未找到抛出异常。
+        :param recheck_time: Recheck time. 重新检查时间。
+        :param after_sleep: Sleep after. 后睡眠。
+        :param post_action: Post action. 后动作。
+        :param log: Log. 日志。
+        :param settle_time: Settle time. 稳定时间。
+        :param lib: Library. 库。
+        :return: Boxes or None. 框或 None。
+        """
+        ...
+
+    def wait_ocr(self, x: float = 0, y: float = 0, to_x: float = 1, to_y: float = 1, width: int = 0, height: int = 0,
+                 name: Optional[str] = None, box: Optional["Box"] = None, match: Optional[Any] = None,
+                 threshold: float = 0, frame: Optional[np.ndarray] = None, target_height: int = 0, time_out: int = 0,
+                 post_action: Optional[Callable] = None, raise_if_not_found: bool = False, log: bool = False,
+                 settle_time: float = -1, lib: str = "default") -> Optional[List["Box"]]:
+        """
+        Waits for OCR result.
+
+        等待 OCR 结果。
+
+        :param x: X start. X 开始。
+        :param y: Y start. Y 开始。
+        :param to_x: X end. X 结束。
+        :param to_y: Y end. Y 结束。
+        :param width: Width. 宽度。
+        :param height: Height. 高度。
+        :param name: Name. 名称。
+        :param box: Box. 框。
+        :param match: Match. 匹配。
+        :param threshold: Threshold. 阈值。
+        :param frame: Frame. 帧。
+        :param target_height: Target height. 目标高度。
+        :param time_out: Timeout. 超时。
+        :param post_action: Post action. 后动作。
+        :param raise_if_not_found: Raise if not found. 未找到抛出异常。
+        :param log: Log. 日志。
+        :param settle_time: Settle time. 稳定时间。
+        :param lib: Library. 库。
+        :return: Boxes or None. 框或 None。
+        """
+        ...
+
+class BaseTask(OCR):
     """
-    所有任务的基类，提供通用功能如配置、日志、状态管理等。
+    Base class for tasks.
+
+    任务的基类。
     """
     name: str
     description: str
+    _enabled: bool
     config: Config
     info: Dict[str, Any]
     default_config: Dict[str, Any]
     config_description: Dict[str, str]
     config_type: Dict[str, Any]
+    _paused: bool
+    lock: threading.Lock
+    _handler: Optional["Handler"]
     running: bool
     exit_after_task: bool
+    trigger_interval: int
+    last_trigger_time: float
     start_time: float
-    icon: Any
+    icon: Optional[Any]
+    supported_languages: List[str]
 
-    def __init__(self, executor: Optional[TaskExecutor] = None):
+    def __init__(self, executor: Optional["TaskExecutor"] = None) -> None:
         """
-        初始化 BaseTask.
+        Initializes BaseTask.
 
-        Args:
-            executor (Optional[TaskExecutor]): TaskExecutor 实例。
+        初始化 BaseTask。
+
+        :param executor: Executor. 执行器。
         """
         ...
 
-    def run_task_by_class(self, cls: type) -> None:
+    def run_task_by_class(self, cls: type["BaseTask"]) -> None:
         """
-        运行另一个由其类指定的任务。
+        Runs task by class.
 
-        Args:
-            cls (type): 要运行的任务的类。
-        """
-        ...
+        通过类运行任务。
 
-    def post_init(self) -> None:
-        """
-        在任务完全初始化后调用的钩子。
-        """
-        ...
-
-    def create_shortcut(self) -> None:
-        """
-        为此任务创建桌面快捷方式。
+        :param cls: Task class. 任务类。
         """
         ...
 
     def tr(self, message: str) -> str:
         """
-        翻译给定的消息字符串。
+        Translates message.
 
-        Args:
-            message (str): 要翻译的文本键。
+        翻译消息。
 
-        Returns:
-            str: 翻译后的文本。
+        :param message: Message. 消息。
+        :return: Translated message. 翻译后的消息。
         """
         ...
 
     def should_trigger(self) -> bool:
         """
-        检查此任务是否应该被触发（基于时间间隔）。
+        Checks if should trigger.
 
-        Returns:
-            bool: 如果任务应该触发则返回 True。
+        检查是否应触发。
+
+        :return: True if should. 如果应返回 True。
         """
         ...
 
     def is_custom(self) -> bool:
         """
-        检查任务是否为用户自定义任务。
+        Checks if custom task.
 
-        Returns:
-            bool: 如果是自定义任务则为 True。
+        检查是否自定义任务。
+
+        :return: True if custom. 如果自定义返回 True。
+        """
+        ...
+
+    def add_first_run_alert(self, first_run_alert: str) -> None:
+        """
+        Adds first run alert.
+
+        添加首次运行警报。
+
+        :param first_run_alert: Alert message. 警报消息。
+        """
+        ...
+
+    def add_exit_after_config(self) -> None:
+        """
+        Adds exit after config.
+
+        添加退出后配置。
         """
         ...
 
     def get_status(self) -> str:
         """
-        获取任务的当前状态。
+        Gets task status.
 
-        Returns:
-            str: 状态字符串 (例如, "Running", "Paused")。
+        获取任务状态。
+
+        :return: Status string. 状态字符串。
         """
         ...
 
     def enable(self) -> None:
         """
-        启用此任务以供执行。
-        """
-        ...
+        Enables task.
 
-    @property
-    def handler(self) -> Handler:
-        """
-        获取与此任务关联的 Handler 实例。
+        启用任务。
         """
         ...
 
     def pause(self) -> None:
         """
-        暂停此任务的执行。
+        Pauses task.
+
+        暂停任务。
         """
         ...
 
     def unpause(self) -> None:
         """
-        取消暂停此任务。
+        Unpauses task.
+
+        取消暂停任务。
         """
         ...
 
     @property
     def paused(self) -> bool:
         """
-        检查任务是否已暂停。
+        Checks if paused.
+
+        检查是否暂停。
+
+        :return: True if paused. 如果暂停返回 True。
         """
         ...
 
     def log_info(self, message: str, notify: bool = False) -> None:
         """
-        记录一条信息级日志并更新任务信息。
+        Logs info.
+
+        日志信息。
+
+        :param message: Message. 消息。
+        :param notify: Notify. 通知。
         """
         ...
 
     def log_debug(self, message: str, notify: bool = False) -> None:
         """
-        记录一条调试级日志。
+        Logs debug.
+
+        日志调试。
+
+        :param message: Message. 消息。
+        :param notify: Notify. 通知。
         """
         ...
 
     def log_error(self, message: str, exception: Optional[Exception] = None, notify: bool = False) -> None:
         """
-        记录一条错误级日志并更新任务信息。
+        Logs error.
+
+        日志错误。
+
+        :param message: Message. 消息。
+        :param exception: Exception. 异常。
+        :param notify: Notify. 通知。
         """
         ...
 
     def go_to_tab(self, tab: str) -> None:
         """
-        请求 GUI 导航到指定的选项卡。
+        Goes to tab.
+
+        转到标签。
+
+        :param tab: Tab name. 标签名称。
         """
         ...
 
     def notification(self, message: str, title: Optional[str] = None, error: bool = False, tray: bool = False,
                      show_tab: Optional[str] = None) -> None:
         """
-        显示一个通知。
+        Shows notification.
+
+        显示通知。
+
+        :param message: Message. 消息。
+        :param title: Title. 标题。
+        :param error: Error flag. 错误标志。
+        :param tray: Tray. 托盘。
+        :param show_tab: Show tab. 显示标签。
         """
         ...
 
     @property
     def enabled(self) -> bool:
         """
-        检查任务是否已启用。
+        Checks if enabled.
+
+        检查是否启用。
+
+        :return: True if enabled. 如果启用返回 True。
         """
         ...
 
-    def info_clear(self) -> None: ...
+    def info_clear(self) -> None:
+        """
+        Clears info.
 
-    def info_incr(self, key: str, inc: int = 1) -> None: ...
+        清除信息。
+        """
+        ...
 
-    def info_add_to_list(self, key: str, item: Any) -> None: ...
+    def info_incr(self, key: str, inc: int = 1) -> None:
+        """
+        Increments info value.
 
-    def info_set(self, key: str, value: Any) -> None: ...
+        递增信息值。
 
-    def info_get(self, key: str, default: Any = None) -> Any: ...
+        :param key: Key. 键。
+        :param inc: Increment. 增量。
+        """
+        ...
 
-    def info_add(self, key: str, count: int = 1) -> None: ...
+    def info_add_to_list(self, key: str, item: Union[Any, List[Any]]) -> None:
+        """
+        Adds to info list.
+
+        添加到信息列表。
+
+        :param key: Key. 键。
+        :param item: Item. 项目。
+        """
+        ...
+
+    def info_set(self, key: str, value: Any) -> None:
+        """
+        Sets info value.
+
+        设置信息值。
+
+        :param key: Key. 键。
+        :param value: Value. 值。
+        """
+        ...
+
+    def info_get(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Gets info value.
+
+        获取信息值。
+
+        :param args: Args. 参数。
+        :param kwargs: Kwargs. 关键字参数。
+        :return: Value. 值。
+        """
+        ...
+
+    def info_add(self, key: str, count: int = 1) -> None:
+        """
+        Adds to info.
+
+        添加到信息。
+
+        :param key: Key. 键。
+        :param count: Count. 计数。
+        """
+        ...
 
     def load_config(self) -> None:
         """
-        加载任务的配置文件。
+        Loads config.
+
+        加载配置。
+        """
+        ...
+
+    def validate_config(self, key: str, value: Any) -> Optional[str]:
+        """
+        Validates config.
+
+        验证配置。
+
+        :param key: Key. 键。
+        :param value: Value. 值。
+        :return: Message or None. 消息或 None。
         """
         ...
 
     def disable(self) -> None:
         """
-        禁用此任务。
+        Disables task.
+
+        禁用任务。
         """
         ...
 
     @property
-    def hwnd_title(self) -> str: ...
-
-    def run(self) -> Any:
+    def hwnd_title(self) -> str:
         """
-        任务的主要执行逻辑。应由子类重写。
+        Gets HWND title.
+
+        获取 HWND 标题。
+
+        :return: Title. 标题。
+        """
+        ...
+
+    def run(self) -> None:
+        """
+        Runs the task.
+
+        运行任务。
         """
         ...
 
     def trigger(self) -> bool:
         """
-        触发任务的逻辑，如果适用。应由子类重写。
+        Triggers the task.
+
+        触发任务。
+
+        :return: True if triggered. 如果触发返回 True。
         """
         ...
 
-    def on_destroy(self) -> None: ...
-
-    def on_create(self) -> None: ...
-
-    def set_executor(self, executor: TaskExecutor) -> None:
+    def on_destroy(self) -> None:
         """
-        设置任务执行器并加载配置。
+        On destroy callback.
+
+        销毁回调。
         """
         ...
 
-    def find_boxes(self, boxes: List[Box], match: Optional[Any] = None, boundary: Optional[Union[Box, str]] = None) -> \
-            List[Box]:
+    def on_create(self) -> None:
         """
-        在给定的边界内筛选和/或按名称匹配框。
+        On create callback.
+
+        创建回调。
         """
         ...
 
+    def set_executor(self, executor: "TaskExecutor") -> None:
+        """
+        Sets executor.
 
-class TaskDisabledException(Exception): ...
+        设置执行器。
 
+        :param executor: Executor. 执行器。
+        """
+        ...
 
-class CannotFindException(Exception): ...
+    def find_boxes(self, boxes: List["Box"], match: Optional[Any] = None,
+                   boundary: Optional[Union["Box", str]] = None) -> List["Box"]:
+        """
+        Finds boxes with match and boundary.
 
+        使用匹配和边界查找框。
 
-class FinishedException(Exception): ...
+        :param boxes: Boxes. 框。
+        :param match: Match. 匹配。
+        :param boundary: Boundary. 边界。
+        :return: Filtered boxes. 过滤后的框。
+        """
+        ...
 
+class TriggerTask(BaseTask):
+    """
+    Trigger task class.
 
-class WaitFailedException(Exception): ...
+    触发任务类。
+    """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Initializes TriggerTask.
 
+        初始化 TriggerTask。
+        """
+        ...
+
+    def on_create(self) -> None:
+        """
+        On create.
+
+        创建时。
+        """
+        ...
+
+    def get_status(self) -> str:
+        """
+        Gets status.
+
+        获取状态。
+
+        :return: Status. 状态。
+        """
+        ...
+
+    def enable(self) -> None:
+        """
+        Enables.
+
+        启用。
+        """
+        ...
+
+    def disable(self) -> None:
+        """
+        Disables.
+
+        禁用。
+        """
+        ...
 
 class TaskExecutor:
     """
-    在专用线程中管理和执行任务的主类。
+    Task executor class.
+
+    任务执行器类。
     """
-    device_manager: DeviceManager
-    feature_set: FeatureSet
-    exit_event: ExitEvent
+    _frame: Optional[np.ndarray]
+    paused: bool
+    pause_start: float
+    pause_end_time: float
+    _last_frame_time: float
+    wait_until_timeout: float
+    device_manager: "DeviceManager"
+    feature_set: Optional["FeatureSet"]
+    wait_until_settle_time: float
+    wait_scene_timeout: float
+    exit_event: threading.Event
+    debug_mode: bool
     debug: bool
-    global_config: Any  # GlobalConfig
+    global_config: "GlobalConfig"
+    _ocr_lib: Dict[str, Any]
     ocr_target_height: int
-    current_task: Optional[BaseTask]
-    trigger_tasks: List[TriggerTask]
-    onetime_tasks: List[BaseTask]
-    scene: Optional[BaseScene]
+    current_task: Optional["BaseTask"]
+    config_folder: str
+    trigger_task_index: int
+    trigger_tasks: List["TriggerTask"]
+    onetime_tasks: List["BaseTask"]
+    thread: Optional[threading.Thread]
+    locale: "QLocale"
+    scene: Optional["BaseScene"]
+    text_fix: Dict[str, str]
+    ocr_po_translation: Any
     config: Dict[str, Any]
+    basic_options: Config
+    lock: threading.Lock
 
-    def __init__(self, device_manager: Any, wait_until_timeout: int = 10, wait_until_settle_time: int = -1,
-                 exit_event: Optional[ExitEvent] = None, feature_set: Optional[Any] = None,
-                 ocr_lib: Optional[Any] = None, config_folder: Optional[str] = None, debug: bool = False,
-                 global_config: Optional[Any] = None, ocr_target_height: int = 0, config: Optional[dict] = None): ...
+    def __init__(self, device_manager: "DeviceManager", wait_until_timeout: float = 10,
+                 wait_until_settle_time: float = -1, exit_event: Optional[threading.Event] = None,
+                 feature_set: Optional["FeatureSet"] = None, ocr_lib: Optional[Dict[str, Any]] = None,
+                 config_folder: Optional[str] = None, debug: bool = False,
+                 global_config: Optional["GlobalConfig"] = None, ocr_target_height: int = 0,
+                 config: Optional[Dict[str, Any]] = None) -> None:
+        """
+        Initializes TaskExecutor.
+
+        初始化 TaskExecutor。
+
+        :param device_manager: Device manager. 设备管理器。
+        :param wait_until_timeout: Wait timeout. 等待超时。
+        :param wait_until_settle_time: Settle time. 稳定时间。
+        :param exit_event: Exit event. 退出事件。
+        :param feature_set: Feature set. 特征集。
+        :param ocr_lib: OCR lib. OCR 库。
+        :param config_folder: Config folder. 配置文件夹。
+        :param debug: Debug mode. 调试模式。
+        :param global_config: Global config. 全局配置。
+        :param ocr_target_height: OCR target height. OCR 目标高度。
+        :param config: Config. 配置。
+        """
+        ...
 
     @property
-    def interaction(self) -> BaseInteraction: ...
+    def interaction(self) -> "BaseInteraction":
+        """
+        Gets interaction.
+
+        获取交互。
+
+        :return: Interaction. 交互。
+        """
+        ...
 
     @property
-    def method(self) -> BaseCaptureMethod: ...
+    def method(self) -> "BaseCaptureMethod":
+        """
+        Gets method.
+
+        获取方法。
+
+        :return: Method. 方法。
+        """
+        ...
 
     def ocr_lib(self, name: str = "default") -> Any:
         """
-        获取指定名称的 OCR 库实例。
+        Gets OCR lib.
+
+        获取 OCR 库。
+
+        :param name: Name. 名称。
+        :return: Lib. 库。
         """
         ...
 
-    def nullable_frame(self) -> Optional[Frame]:
+    def nullable_frame(self) -> Optional[np.ndarray]:
         """
-        获取当前帧，如果不存在则返回 None，不会触发新的捕获。
+        Gets nullable frame.
+
+        获取可为空帧。
+
+        :return: Frame or None. 帧或 None。
         """
         ...
 
-    def check_frame_and_resolution(self, supported_ratio: str, min_size: Tuple[int, int], time_out: float = 8.0) -> \
-            Tuple[bool, str]:
+    def check_frame_and_resolution(self, supported_ratio: Optional[str], min_size: Optional[tuple[int, int]],
+                                   time_out: float = 8.0) -> tuple[bool, str]:
         """
-        检查捕获的帧和分辨率是否符合要求。
+        Checks frame and resolution.
+
+        检查帧和分辨率。
+
+        :param supported_ratio: Supported ratio. 支持比率。
+        :param min_size: Min size. 最小尺寸。
+        :param time_out: Timeout. 超时。
+        :return: (Valid, Resolution str). (有效, 分辨率字符串)。
         """
         ...
 
     def can_capture(self) -> bool:
         """
-        检查是否可以捕获帧。
+        Checks if can capture.
+
+        检查是否可以捕获。
+
+        :return: True if can. 如果可以返回 True。
         """
         ...
 
-    def next_frame(self) -> Frame:
+    def next_frame(self) -> np.ndarray:
         """
-        捕获并返回下一帧。
+        Gets next frame.
+
+        获取下一帧。
+
+        :return: Frame. 帧。
         """
         ...
 
     def is_executor_thread(self) -> bool:
         """
-        检查当前线程是否是任务执行器线程。
+        Checks if executor thread.
+
+        检查是否执行器线程。
+
+        :return: True if is. 如果是返回 True。
         """
         ...
 
-    def connected(self) -> bool | None:
+    def connected(self) -> bool:
         """
-        检查设备是否已连接。
+        Checks if connected.
+
+        检查是否连接。
+
+        :return: True if connected. 如果连接返回 True。
         """
         ...
 
     @property
-    def frame(self) -> Frame:
+    def frame(self) -> np.ndarray:
         """
-        获取最新的捕获帧，如果需要会触发新的捕获。
-        """
-        ...
+        Gets frame.
 
-    def check_enabled(self, check_pause: bool = True) -> None:
-        """
-        检查当前任务是否已启用，如果不是则抛出 TaskDisabledException。
+        获取帧。
+
+        :return: Frame. 帧。
         """
         ...
 
     def sleep(self, timeout: float) -> None:
         """
-        暂停执行指定的秒数，同时检查退出事件。
+        Sleeps.
+
+        睡眠。
+
+        :param timeout: Timeout. 超时。
         """
         ...
 
-    def pause(self, task: Optional[BaseTask] = None) -> bool | None:
+    def pause(self, task: Optional["BaseTask"] = None) -> bool:
         """
-        暂停执行器或指定的当前任务。
+        Pauses.
+
+        暂停。
+
+        :param task: Task. 任务。
+        :return: True if paused. 如果暂停返回 True。
         """
         ...
 
     def stop_current_task(self) -> None:
         """
-        停止并禁用当前正在运行的任务。
+        Stops current task.
+
+        停止当前任务。
         """
         ...
 
     def start(self) -> None:
         """
-        开始或恢复任务执行循环。
+        Starts.
+
+        开始。
         """
         ...
 
-    def wait_condition(self, condition: Callable, time_out: int = 0, pre_action: Optional[Callable] = None,
-                       post_action: Optional[Callable] = None, settle_time: int = -1,
+    def wait_condition(self, condition: Callable[[], Any], time_out: float = 0, pre_action: Optional[Callable] = None,
+                       post_action: Optional[Callable] = None, settle_time: float = -1,
                        raise_if_not_found: bool = False) -> Any:
         """
-        等待直到条件为真。
+        Waits condition.
+
+        等待条件。
+
+        :param condition: Condition. 条件。
+        :param time_out: Timeout. 超时。
+        :param pre_action: Pre action. 前动作。
+        :param post_action: Post action. 后动作。
+        :param settle_time: Settle time. 稳定时间。
+        :param raise_if_not_found: Raise if not found. 未找到抛出异常。
+        :return: Result. 结果。
         """
         ...
 
     def reset_scene(self, check_enabled: bool = True) -> None:
         """
-        重置场景状态，强制在下一次操作前重新捕获帧。
+        Resets scene.
+
+        重置场景。
+
+        :param check_enabled: Check enabled. 检查启用。
+        """
+        ...
+
+    def active_trigger_task_count(self) -> int:
+        """
+        Gets active trigger count.
+
+        获取活跃触发计数。
+
+        :return: Count. 计数。
+        """
+        ...
+
+    def execute(self) -> None:
+        """
+        Executes tasks.
+
+        执行任务。
         """
         ...
 
     def stop(self) -> None:
         """
-        停止任务执行器。
+        Stops.
+
+        停止。
         """
         ...
 
-    def wait_until_done(self) -> None: ...
+    def wait_until_done(self) -> None:
+        """
+        Waits until done.
 
-    def get_all_tasks(self) -> List[BaseTask]: ...
+        等待直到完成。
+        """
+        ...
 
-    def get_task_by_class_name(self, class_name: str) -> Optional[BaseTask]: ...
+    def get_all_tasks(self) -> List["BaseTask"]:
+        """
+        Gets all tasks.
 
-    def get_task_by_class(self, cls: type) -> Optional[BaseTask]: ...
+        获取所有任务。
 
+        :return: Tasks. 任务列表。
+        """
+        ...
 
-def list_or_obj_to_str(val: Any) -> str | None: ...
+    def get_task_by_class_name(self, class_name: str) -> Optional["BaseTask"]:
+        """
+        Gets task by class name.
 
+        通过类名获取任务。
 
-def create_shortcut(exe_path: Optional[str] = None, shortcut_name_post: Optional[str] = None,
-                    description: Optional[str] = None, target_path: Optional[str] = None,
-                    arguments: Optional[str] = None) -> str | bool: ...
+        :param class_name: Class name. 类名。
+        :return: Task or None. 任务或 None。
+        """
+        ...
 
+    def get_task_by_class(self, cls: type["BaseTask"]) -> Optional["BaseTask"]:
+        """
+        Gets task by class.
 
-class ExecutorOperation:
-    """
-    提供高级操作的基类，供任务使用。
-    """
-    _executor: TaskExecutor
-    logger: Logger
+        通过类获取任务。
 
-    def __init__(self, executor: TaskExecutor) -> None: ...
-
-    def exit_is_set(self) -> bool: ...
-
-    def get_task_by_class(self, cls: type) -> Optional[BaseTask]: ...
-
-    def box_in_horizontal_center(self, box: Box, off_percent: float = 0.02) -> bool: ...
-
-    @property
-    def executor(self) -> TaskExecutor: ...
-
-    @property
-    def debug(self) -> bool: ...
-
-    def clipboard(self) -> str: ...
-
-    def is_scene(self, the_scene: type) -> bool: ...
-
-    def reset_scene(self) -> None: ...
-
-    def click(self, x: Union[int, Box, List[Box]] = -1, y: int = -1, move_back: bool = False,
-              name: Optional[str] = None, interval: int = -1, move: bool = True, down_time: float = 0.01,
-              after_sleep: float = 0, key: str = 'left') -> Any: ...
-
-    def back(self, *args, **kwargs) -> Any: ...
-
-    def middle_click(self, *args, **kwargs) -> Any: ...
-
-    def right_click(self, *args, **kwargs) -> Any: ...
-
-    def check_interval(self, interval: float) -> bool: ...
-
-    def is_adb(self) -> bool: ...
-
-    def mouse_down(self, x: int = -1, y: int = -1, name: Optional[str] = None, key: str = "left") -> None: ...
-
-    def mouse_up(self, name: Optional[str] = None, key: str = "left") -> None: ...
-
-    def swipe_relative(self, from_x: float, from_y: float, to_x: float, to_y: float, duration: float = 0.5,
-                       settle_time: float = 0) -> None: ...
-
-    def input_text(self, text: str) -> None: ...
-
-    @property
-    def hwnd(self) -> Optional[HwndWindow]: ...
-
-    def scroll_relative(self, x: float, y: float, count: int) -> None: ...
-
-    def scroll(self, x: int, y: int, count: int) -> None: ...
-
-    def swipe(self, from_x: int, from_y: int, to_x: int, to_y: int, duration: float = 0.5, after_sleep: float = 0.1,
-              settle_time: float = 0) -> None: ...
-
-    def screenshot(self, name: Optional[str] = None, frame: Optional[np.ndarray] = None, show_box: bool = False,
-                   frame_box: Optional[Any] = None) -> None: ...
-
-    def click_box_if_name_match(self, boxes: List[Box], names: Any, relative_x: float = 0.5, relative_y: float = 0.5) -> \
-            Optional[Box]: ...
-
-    def box_of_screen(self, x: float, y: float, to_x: float = 1.0, to_y: float = 1.0, width: float = 0.0,
-                      height: float = 0.0, name: Optional[str] = None, hcenter: bool = False,
-                      confidence: float = 1.0) -> Box: ...
-
-    def out_of_ratio(self) -> bool: ...
-
-    def ensure_in_front(self) -> None: ...
-
-    def box_of_screen_scaled(self, original_screen_width: int, original_screen_height: int, x_original: int,
-                             y_original: int, to_x: int = 0, to_y: int = 0, width_original: int = 0,
-                             height_original: int = 0, name: Optional[str] = None, hcenter: bool = False,
-                             confidence: float = 1.0) -> Box: ...
-
-    def height_of_screen(self, percent: float) -> int: ...
-
-    @property
-    def screen_width(self) -> int: ...
-
-    @property
-    def screen_height(self) -> int: ...
-
-    def width_of_screen(self, percent: float) -> int: ...
-
-    def click_relative(self, x: float, y: float, move_back: bool = False, hcenter: bool = False, move: bool = True,
-                       after_sleep: float = 0, name: Optional[str] = None, interval: int = -1, down_time: float = 0.02,
-                       key: str = "left") -> None: ...
-
-    def middle_click_relative(self, x: float, y: float, move_back: bool = False, down_time: float = 0.01) -> None: ...
-
-    @property
-    def height(self) -> int: ...
-
-    @property
-    def width(self) -> int: ...
-
-    def move_relative(self, x: float, y: float) -> None: ...
-
-    def move(self, x: int, y: int) -> None: ...
-
-    def click_box(self, box: Union[Box, List[Box], str, None] = None, relative_x: float = 0.5, relative_y: float = 0.5,
-                  raise_if_not_found: bool = False, move_back: bool = False, down_time: float = 0.01,
-                  after_sleep: float = 1) -> None: ...
-
-    def wait_scene(self, scene_type: Optional[type] = None, time_out: int = 0, pre_action: Optional[Callable] = None,
-                   post_action: Optional[Callable] = None) -> Any: ...
-
-    def sleep(self, timeout: float) -> bool: ...
-
-    def send_key(self, key: Any, down_time: float = 0.02, interval: int = -1, after_sleep: float = 0) -> bool: ...
-
-    def get_global_config(self, option: Any) -> Any: ...
-
-    def get_global_config_desc(self, option: Any) -> Any: ...
-
-    def send_key_down(self, key: Any) -> None: ...
-
-    def send_key_up(self, key: Any) -> None: ...
-
-    def wait_until(self, condition: Callable, time_out: int = 0, pre_action: Optional[Callable] = None,
-                   post_action: Optional[Callable] = None, settle_time: int = -1,
-                   raise_if_not_found: bool = False) -> Any: ...
-
-    def wait_click_box(self, condition: Callable, time_out: int = 0, pre_action: Optional[Callable] = None,
-                       post_action: Optional[Callable] = None, raise_if_not_found: bool = False) -> Any: ...
-
-    def next_frame(self) -> np.ndarray: ...
-
-    def adb_ui_dump(self) -> Optional[str]: ...
-
-    @property
-    def frame(self) -> np.ndarray: ...
-
-    @staticmethod
-    def draw_boxes(feature_name: Optional[str] = None, boxes: Optional[List[Box]] = None, color: str = "red",
-                   debug: bool = True) -> None: ...
-
-    def clear_box(self) -> None: ...
-
-    def calculate_color_percentage(self, color: Any, box: Union[Box, str]) -> float: ...
-
-    def adb_shell(self, *args, **kwargs) -> Any: ...
-
-
-class TriggerTask(BaseTask): ...
-
-
-class FindFeature(ExecutorOperation):
-    """
-    提供基于模板匹配查找特征功能的操作类。
-    """
-
-    def find_feature(self, feature_name: Optional[str] = None, horizontal_variance: float = 0,
-                     vertical_variance: float = 0, threshold: float = 0, use_gray_scale: bool = False, x: int = -1,
-                     y: int = -1, to_x: int = -1, to_y: int = -1, width: int = -1, height: int = -1,
-                     box: Optional[Box] = None, canny_lower: int = 0, canny_higher: int = 0,
-                     frame_processor: Optional[Callable] = None, template: Optional[np.ndarray] = None,
-                     match_method: int = ..., screenshot: bool = False, mask_function: Optional[Callable] = None,
-                     frame: Optional[np.ndarray] = None) -> List[Box]: ...
-
-    def get_feature_by_name(self, name: str) -> Optional[Feature]: ...
-
-    def get_box_by_name(self, name: Union[Box, str]) -> Box: ...
-
-    def find_feature_and_set(self, features: Union[str, List[str]], horizontal_variance: float = 0,
-                             vertical_variance: float = 0, threshold: float = 0) -> bool: ...
-
-    def wait_feature(self, feature: str, horizontal_variance: float = 0, vertical_variance: float = 0,
-                     threshold: float = 0, time_out: int = 0, pre_action: Optional[Callable] = None,
-                     post_action: Optional[Callable] = None, use_gray_scale: bool = False, box: Optional[Box] = None,
-                     raise_if_not_found: bool = False, canny_lower: int = 0, canny_higher: int = 0,
-                     settle_time: int = -1, frame_processor: Optional[Callable] = None) -> Any: ...
-
-    def wait_click_feature(self, feature: str, horizontal_variance: float = 0, vertical_variance: float = 0,
-                           threshold: float = 0, relative_x: float = 0.5, relative_y: float = 0.5, time_out: int = 0,
-                           pre_action: Optional[Callable] = None, post_action: Optional[Callable] = None,
-                           box: Optional[Box] = None, raise_if_not_found: bool = True, use_gray_scale: bool = False,
-                           canny_lower: int = 0, canny_higher: int = 0, click_after_delay: float = 0,
-                           settle_time: int = -1, after_sleep: float = 0) -> bool: ...
-
-    def find_one(self, feature_name: Optional[str] = None, horizontal_variance: float = 0, vertical_variance: float = 0,
-                 threshold: float = 0, use_gray_scale: bool = False, box: Optional[Box] = None, canny_lower: int = 0,
-                 canny_higher: int = 0, frame_processor: Optional[Callable] = None,
-                 template: Optional[np.ndarray] = None, mask_function: Optional[Callable] = None,
-                 frame: Optional[np.ndarray] = None, match_method: int = ..., screenshot: bool = False) -> Optional[
-        Box]: ...
-
-    def on_feature(self, boxes: List[Box]) -> None: ...
-
-    def feature_exists(self, feature_name: str) -> bool: ...
-
-    def find_best_match_in_box(self, box: Box, to_find: List[str], threshold: float, use_gray_scale: bool = False,
-                               canny_lower: int = 0, canny_higher: int = 0, frame_processor: Optional[Callable] = None,
-                               mask_function: Optional[Callable] = None) -> Optional[Box]: ...
-
-    def find_first_match_in_box(self, box: Box, to_find: List[str], threshold: float, use_gray_scale: bool = False,
-                                canny_lower: int = 0, canny_higher: int = 0, frame_processor: Optional[Callable] = None,
-                                mask_function: Optional[Callable] = None) -> Optional[Box]: ...
-
-
-class OCR(FindFeature):
-    """
-    提供光学字符识别（OCR）功能的操作类。
-    """
-    ocr_default_threshold: float
-
-    def ocr(self, x: float = 0, y: float = 0, to_x: float = 1, to_y: float = 1, match: Optional[Any] = None,
-            width: int = 0, height: int = 0, box: Optional[Box] = None, name: Optional[str] = None,
-            threshold: float = 0, frame: Optional[np.ndarray] = None, target_height: int = 0,
-            use_grayscale: bool = False, log: bool = False, frame_processor: Optional[Callable] = None,
-            lib: str = 'default') -> List[Box]: ...
-
-    def add_text_fix(self, fix: Dict[str, str]) -> None: ...
-
-    def wait_click_ocr(self, x: float = 0, y: float = 0, to_x: float = 1, to_y: float = 1, width: int = 0,
-                       height: int = 0, box: Optional[Box] = None, name: Optional[str] = None,
-                       match: Optional[Any] = None, threshold: float = 0, frame: Optional[np.ndarray] = None,
-                       target_height: int = 0, time_out: int = 0, raise_if_not_found: bool = False,
-                       recheck_time: int = 0, after_sleep: float = 0, post_action: Optional[Callable] = None,
-                       log: bool = False, settle_time: int = -1, lib: str = "default") -> Any: ...
-
-    def wait_ocr(self, x: float = 0, y: float = 0, to_x: float = 1, to_y: float = 1, width: int = 0, height: int = 0,
-                 name: Optional[str] = None, box: Optional[Box] = None, match: Optional[Any] = None,
-                 threshold: float = 0, frame: Optional[np.ndarray] = None, target_height: int = 0, time_out: int = 0,
-                 post_action: Optional[Callable] = None, raise_if_not_found: bool = False, log: bool = False,
-                 settle_time: int = -1, lib: str = "default") -> Any: ...
-
-
-class CaptureException(Exception): ...
-
-
-class BaseCaptureMethod:
-    """
-    所有屏幕捕获方法的基类。
-    """
-
-    def close(self) -> None: ...
-
-    @property
-    def width(self) -> int: ...
-
-    @property
-    def height(self) -> int: ...
-
-    def get_name(self) -> str: ...
-
-    def get_frame(self) -> Optional[np.ndarray]: ...
-
-
-class HwndWindow: ...
-
-
-class BaseWindowsCaptureMethod(BaseCaptureMethod): ...
-
-
-class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod): ...
-
-
-class BitBltCaptureMethod(BaseWindowsCaptureMethod): ...
-
-
-class DesktopDuplicationCaptureMethod(BaseWindowsCaptureMethod): ...
-
-
-class ADBCaptureMethod(BaseCaptureMethod): ...
-
-
-class ImageCaptureMethod(BaseCaptureMethod): ...
-
-
-class NemuIpcCaptureMethod(BaseCaptureMethod): ...
-
-
-class DeviceManager:
-    """
-    管理设备连接（Windows 窗口或 ADB 设备）、捕获和交互方法。
-    """
-
-    def __init__(self, app_config: dict, exit_event: Optional[ExitEvent] = None,
-                 global_config: Optional[Any] = None) -> None: ...
-
-    def stop_hwnd(self) -> None: ...
-
-    def select_hwnd(self, exe: str, hwnd: int) -> None: ...
-
-    def refresh(self) -> None: ...
-
-    @property
-    def adb(self) -> Any: ...
-
-    def adb_connect(self, addr: str, try_connect: bool = True) -> Any | None: ...
-
-    def get_devices(self) -> List[dict]: ...
-
-    def get_resolution(self, device: Optional[Any] = None) -> Tuple[int, int]: ...
-
-    def set_preferred_device(self, imei: Optional[str] = None, index: int = -1) -> None: ...
-
-    def adb_ui_dump(self) -> str | None: ...
-
-    def get_preferred_device(self) -> dict | None: ...
-
-    def get_preferred_capture(self) -> str: ...
-
-    def set_hwnd_name(self, hwnd_name: str) -> None: ...
-
-    def set_capture(self, capture: str) -> None: ...
-
-    def get_hwnd_name(self) -> str | None: ...
-
-    def start(self) -> None: ...
-
-    @property
-    def device(self) -> Any | None: ...
-
-    def adb_kill_server(self) -> None: ...
-
-    @property
-    def width(self) -> int: ...
-
-    @property
-    def height(self) -> int: ...
-
-    def shell(self, *args, **kwargs) -> Any: ...
-
-
-class FeatureSet: ...
-
-
-# interaction.py
-class BaseInteraction:
-    def __init__(self, capture: BaseCaptureMethod) -> None: ...
-
-    def should_capture(self) -> bool: ...
-
-    def send_key(self, key: Any, down_time: float = 0.02) -> None: ...
-
-    def send_key_down(self, key: Any) -> None: ...
-
-    def send_key_up(self, key: Any) -> None: ...
-
-    def move(self, x: int, y: int) -> None: ...
-
-    def swipe(self, from_x: int, from_y: int, to_x: int, to_y: int, duration: float,
-              settle_time: float = 0) -> None: ...
-
-    def click(self, x: int = -1, y: int = -1, move_back: bool = False, name: Optional[str] = None, move: bool = True,
-              down_time: float = 0.05, key: str = "left") -> None: ...
-
-    def on_run(self) -> None: ...
-
-    def input_text(self, text: str) -> None: ...
-
-    def back(self, after_sleep: float = 0) -> None: ...
-
-    def scroll(self, x: int, y: int, scroll_amount: int) -> None: ...
-
-    def on_destroy(self) -> None: ...
-
-
-class PyDirectInteraction(BaseInteraction): ...
-
-
-class PynputInteraction(BaseInteraction): ...
-
-
-class PostMessageInteraction(BaseInteraction): ...
-
-
-class DoNothingInteraction(BaseInteraction): ...
-
-
-class ADBInteraction(BaseInteraction): ...
-
-
-class GenshinInteraction(BaseInteraction): ...
-
-
-class ForegroundPostMessageInteraction(GenshinInteraction): ...
-
-
-class Config(dict):
-    """
-    一个字典子类，用于处理 JSON 格式的配置文件，支持默认值和自动保存。
-    """
-    config_folder: str
-
-    def __init__(self, name: str, default: dict, folder: Optional[str] = None,
-                 validator: Optional[Callable] = None): ...
-
-    def save_file(self) -> None: ...
-
-    def get_default(self, key: str) -> Any: ...
-
-    def reset_to_default(self) -> None: ...
-
-    def __setitem__(self, key: str, value: Any) -> None: ...
-
-    def has_user_config(self) -> bool: ...
-
-
-class ConfigOption:
-    """
-    定义一个全局配置选项及其元数据。
-    """
-
-    def __init__(self, name: str, default: Optional[dict] = None, description: str = "",
-                 config_description: Optional[dict] = None, config_type: Optional[dict] = None,
-                 validator: Optional[Callable] = None, icon: Any = ...): ...
-
-
-basic_options: ConfigOption
-
-
-class GlobalConfig:
-    def __init__(self, config_options: List[ConfigOption]) -> None: ...
-
-    def get_config(self, option: Union[str, ConfigOption]) -> Config: ...
-
-
-class Feature:
-    """
-    表示模板匹配中使用的特征。
-    """
-    mat: np.ndarray
-    scaling: float
-    x: int
-    y: int
-    mask: Optional[np.ndarray]
-
-    def __init__(self, mat: np.ndarray, x: int = 0, y: int = 0, scaling: float = 1) -> None: ...
-
-    @property
-    def width(self) -> int: ...
-
-    @property
-    def height(self) -> int: ...
-
-
-class MainWindow(MSFluentWindow):
-    def __init__(self, app: App, config: dict, ok_config: Config, icon: QIcon, title: str, version: str,
-                 debug: bool = False, about: Optional[str] = None, exit_event: Optional[ExitEvent] = None,
-                 global_config: Optional[GlobalConfig] = None) -> None: ...
-
-
-class DiagnosisTask(BaseTask):
-    """
-    用于性能测试和诊断的任务。
-    """
-
-    def __init__(self, *args, **kwargs) -> None: ...
-
-    def run(self) -> None: ...
+        :param cls: Class. 类。
+        :return: Task or None. 任务或 None。
+        """
+        ...
