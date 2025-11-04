@@ -33,8 +33,7 @@ mklink /d "C:\path\to\your-project\ok" "C:\path\to\ok-script\ok"
 ## 文档和示例代码
 
 * [游戏自动化入门](docs/intro_to_automation/README.md)
-* 模板项目,
-  可以fork后开始你的项目: [https://github.com/ok-oldking/ok-script-boilerplate](https://github.com/ok-oldking/ok-script-boilerplate)
+* [快速开始](docs/quick_start/README.md)
 * 开发者群: 938132715
 * pip [https://pypi.org/project/ok-script](https://pypi.org/project/ok-script)
 
@@ -42,7 +41,8 @@ mklink /d "C:\path\to\your-project\ok" "C:\path\to\ok-script\ok"
 ## 使用ok-script的项目：
 
 * 鸣潮 [https://github.com/ok-oldking/ok-wuthering-wave](https://github.com/ok-oldking/ok-wuthering-waves)
-* 原神 [https://github.com/ok-oldking/ok-genshin-impact](https://github.com/ok-oldking/ok-genshin-impact)
+* 原神(不在维护,
+  但是后台过剧情可用) [https://github.com/ok-oldking/ok-genshin-impact](https://github.com/ok-oldking/ok-genshin-impact)
 * 少前2 [https://github.com/ok-oldking/ok-gf2](https://github.com/ok-oldking/ok-gf2)
 * 星铁 [https://github.com/Shasnow/ok-starrailassistant](https://github.com/Shasnow/ok-starrailassistant)
 * 星痕共鸣 [https://github.com/Sanheiii/ok-star-resonance](https://github.com/Sanheiii/ok-star-resonance)
