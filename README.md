@@ -7,10 +7,10 @@
 
 1. 纯Python实现, 免费开源, 依赖库均为开源方案
 2. 支持pip install任何第三方库, 可以方便整合yolo等框架
-3. 一套代码即可支持Windows安卓模拟器/ADB连接的虚拟机, Windows客户端游戏, 安卓系统直接运行(开发中)
+3. 一套代码即可支持Windows安卓模拟器/ADB连接的虚拟机, Windows客户端游戏
 4. 自适应分辨率
-5. 使用coco管理图片匹配素材
-6. 可用Rust写的exe打包, 支持通过Pip/Git国内镜像在线增量更新. 在线安装包仅3M
+5. 使用coco管理图片匹配素材, 仅需一个分辨率下的截图就, 支持不同分辨率自适应
+6. 可打包离线/在线安装setup.exe, 支持通过Pip/Git国内镜像在线增量更新. 在线安装包仅3M
 7. 支持Github Action一键构建
 8. 支持多语言国际化
 
@@ -32,7 +32,9 @@ mklink /d "C:\path\to\your-project\ok" "C:\path\to\ok-script\ok"
 
 ## 文档和示例代码
 
-* [https://github.com/ok-oldking/ok-script-boilerplate](https://github.com/ok-oldking/ok-script-boilerplate)
+* [游戏自动化入门](docs/intro_to_automation/README.md)
+* 模板项目,
+  可以fork后开始你的项目: [https://github.com/ok-oldking/ok-script-boilerplate](https://github.com/ok-oldking/ok-script-boilerplate)
 * 开发者群: 938132715
 * pip [https://pypi.org/project/ok-script](https://pypi.org/project/ok-script)
 
