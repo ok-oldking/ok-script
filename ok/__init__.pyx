@@ -3608,14 +3608,19 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         if self.start_or_stop():
             frame = self.last_frame
             self.last_frame = None
-            if frame is None:
+            while self.last_frame is None:
+                if self.exit_event.is_set():
+                    return None
                 if time.time() - self.last_frame_time > 10:
                     logger.warning(f'no frame for 10 sec, try to restart')
                     self.close()
                     self.last_frame_time = time.time()
-                    return self.do_get_frame()
-                else:
-                    return None
+                    if not self.start_or_stop():
+                        time.sleep(1)
+                    continue
+                time.sleep(0.003)
+            frame = self.last_frame
+            self.last_frame = None
             latency = time.time() - self.last_frame_time
 
             frame = self.crop_image(frame)
