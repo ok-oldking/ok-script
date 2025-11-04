@@ -3604,42 +3604,37 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
     cpdef object do_get_frame(self):
         cdef object frame
-        cdef double latency
-        cdef double start_wait
+        cdef double latency, now, start_wait
         if self.start_or_stop():
             frame = self.last_frame
-            self.last_frame = None
             if frame is None:
-                if time.time() - self.last_frame_time > 10:
-                    logger.warning(f'no frame for 10 sec, try to restart')
+                now = time.time()
+                if now - self.last_frame_time > 10:
+                    logger.warning('no frame for 10 sec, try to restart')
                     self.close()
                     self.last_frame_time = time.time()
                     return self.do_get_frame()
-                else:
-                    start_wait = time.time()
-                    while self.last_frame is None and (time.time() - start_wait) < 1.0:
-                        if self.frame_pool is None:
-                            return None
-                        time.sleep(0.003)
-                    frame = self.last_frame
-                    self.last_frame = None
-                    if frame is None:
+                start_wait = now
+                while self.last_frame is None and (time.time() - start_wait) < 1.0:
+                    if self.frame_pool is None:
                         return None
+                    time.sleep(0.003)
+                frame = self.last_frame
+            if frame is None:
+                return None
+            self.last_frame = None
             latency = time.time() - self.last_frame_time
-
+            if latency > 2:
+                logger.warning(f"latency too large return None frame: {latency}")
+                return None
             frame = self.crop_image(frame)
-
             if frame is not None:
                 new_height, new_width = frame.shape[:2]
                 if new_width <= 0 or new_height <= 0:
                     logger.warning(f"get_frame size <=0 {new_width}x{new_height}")
-                    frame = None
-            if latency > 2:
-                logger.warning(f"latency too large return None frame: {latency}")
-                return None
-            else:
-                # logger.debug(f'frame latency: {latency}')
-                return frame
+                    return None
+            
+            return frame
 
     def reset_framepool(self, size, reset_device=False):
         logger.info(f'reset_framepool')
