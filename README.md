@@ -34,6 +34,8 @@ mklink /d "C:\path\to\your-project\ok" "C:\path\to\ok-script\ok"
 
 * [游戏自动化入门](docs/intro_to_automation/README.md)
 * [快速开始](docs/quick_start/README.md)
+* [进阶使用](docs/after_quick_start/README.md)
+* [API文档](docs/api_doc/README.md)
 * 开发者群: 938132715
 * pip [https://pypi.org/project/ok-script](https://pypi.org/project/ok-script)
 
