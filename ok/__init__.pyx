@@ -3605,29 +3605,33 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     cpdef object do_get_frame(self):
         cdef object frame
         cdef double latency
+        cdef double start_wait
         if self.start_or_stop():
             frame = self.last_frame
             self.last_frame = None
-            while self.last_frame is None:
-                if self.exit_event.is_set():
-                    return None
+            if frame is None:
                 if time.time() - self.last_frame_time > 10:
                     logger.warning(f'no frame for 10 sec, try to restart')
                     self.close()
                     self.last_frame_time = time.time()
-                    if not self.start_or_stop():
-                        time.sleep(1)
-                    continue
-                time.sleep(0.003)
-            frame = self.last_frame
-            self.last_frame = None
+                    return self.do_get_frame()
+                else:
+                    start_wait = time.time()
+                    while self.last_frame is None and (time.time() - start_wait) < 1.0:
+                        if self.frame_pool is None:
+                            return None
+                        time.sleep(0.003)
+                    frame = self.last_frame
+                    self.last_frame = None
+                    if frame is None:
+                        return None
             latency = time.time() - self.last_frame_time
 
             frame = self.crop_image(frame)
 
             if frame is not None:
                 new_height, new_width = frame.shape[:2]
-                if new_width <= 0 or new_width <= 0:
+                if new_width <= 0 or new_height <= 0:
                     logger.warning(f"get_frame size <=0 {new_width}x{new_height}")
                     frame = None
             if latency > 2:
