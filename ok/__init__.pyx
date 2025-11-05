@@ -1455,6 +1455,7 @@ cdef class Response:
     cdef public str message
     cdef public object data
 
+
 ## OK.pyx
 
 
@@ -2148,7 +2149,8 @@ cdef class TaskExecutor:
                 if to_sleep > 1:
                     to_sleep = 1
                 time.sleep(to_sleep)
-            time.sleep(0.1)
+            else:
+                time.sleep(0.1)
 
     def pause(self, task=None):
         if task is not None:
@@ -3604,33 +3606,37 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
     cpdef object do_get_frame(self):
         cdef object frame
-        cdef double latency
+        cdef double latency, now, start_wait
         if self.start_or_stop():
             frame = self.last_frame
-            self.last_frame = None
             if frame is None:
-                if time.time() - self.last_frame_time > 10:
-                    logger.warning(f'no frame for 10 sec, try to restart')
+                now = time.time()
+                if now - self.last_frame_time > 10:
+                    logger.warning('no frame for 10 sec, try to restart')
                     self.close()
                     self.last_frame_time = time.time()
                     return self.do_get_frame()
-                else:
-                    return None
+                start_wait = now
+                while self.last_frame is None and (time.time() - start_wait) < 1.0:
+                    if self.frame_pool is None:
+                        return None
+                    time.sleep(0.003)
+                frame = self.last_frame
+            if frame is None:
+                return None
+            self.last_frame = None
             latency = time.time() - self.last_frame_time
-
-            frame = self.crop_image(frame)
-
-            if frame is not None:
-                new_height, new_width = frame.shape[:2]
-                if new_width <= 0 or new_width <= 0:
-                    logger.warning(f"get_frame size <=0 {new_width}x{new_height}")
-                    frame = None
             if latency > 2:
                 logger.warning(f"latency too large return None frame: {latency}")
                 return None
-            else:
-                # logger.debug(f'frame latency: {latency}')
-                return frame
+            frame = self.crop_image(frame)
+            if frame is not None:
+                new_height, new_width = frame.shape[:2]
+                if new_width <= 0 or new_height <= 0:
+                    logger.warning(f"get_frame size <=0 {new_width}x{new_height}")
+                    return None
+
+            return frame
 
     def reset_framepool(self, size, reset_device=False):
         logger.info(f'reset_framepool')
@@ -4753,13 +4759,9 @@ class DeviceManager:
         else:
             self.hwnd_window.update_window(title, exe, frame_width, frame_height, player_id, hwnd_class)
 
-    def use_windows_capture(self, override_config=None, require_bg=False, use_bit_blt_only=False,
-                            bit_blt_render_full=False):
-        if not override_config:
-            override_config = self.windows_capture_config
-        self.capture_method = update_capture_method(override_config, self.capture_method, self.hwnd_window,
-                                                    require_bg, use_bit_blt_only=use_bit_blt_only,
-                                                    bit_blt_render_full=bit_blt_render_full, exit_event=self.exit_event)
+    def use_windows_capture(self):
+        self.capture_method = update_capture_method(self.windows_capture_config, self.capture_method, self.hwnd_window,
+                                                    exit_event=self.exit_event)
         if self.capture_method is None:
             logger.error(f'cant find a usable windows capture')
         else:
@@ -4779,8 +4781,7 @@ class DeviceManager:
         if preferred['device'] == 'windows':
             self.ensure_hwnd(self.windows_capture_config.get('title'), self.windows_capture_config.get('exe'),
                              hwnd_class=self.windows_capture_config.get('hwnd_class'))
-            self.use_windows_capture(self.windows_capture_config,
-                                     bit_blt_render_full=self.windows_capture_config.get('bit_blt_render_full'))
+            self.use_windows_capture()
             if not isinstance(self.interaction, self.win_interaction_class):
                 self.interaction = self.win_interaction_class(self.capture_method, self.hwnd_window)
             preferred['connected'] = self.capture_method is not None and self.capture_method.connected()
@@ -4789,8 +4790,7 @@ class DeviceManager:
             if self.config.get('capture') == "windows":
                 self.ensure_hwnd(None, preferred.get('full_path'), width, height, preferred['player_id'])
                 logger.info(f'do_start use windows capture {self.hwnd_window.title}')
-                self.use_windows_capture({'can_bit_blt': True}, require_bg=True, use_bit_blt_only=True,
-                                         bit_blt_render_full=False)
+                self.use_windows_capture()
             else:
                 if self.config.get('capture') == 'ipc':
                     if not isinstance(self.capture_method, NemuIpcCaptureMethod):
@@ -5048,33 +5048,44 @@ def deep_get(d, keys, default=None):
         return d
     return deep_get(d.get(keys[0]), keys[1:], default)
 
-def update_capture_method(config, capture_method, hwnd, require_bg=False, use_bit_blt_only=False,
-                          bit_blt_render_full=False, exit_event=None):
-    try:
-        if config.get('can_bit_blt'):  # slow try win graphics first
-            global render_full
-            render_full = config.get('bit_blt_render_full', False)
-            if not render_full:
-                hdr_enabled, swap_enabled = read_game_gpu_pref(hwnd.exe_full_path)
-                if swap_enabled == True or (swap_enabled is None and read_global_gpu_pref()[1] == True):
-                    render_full = True
-                else:
-                    render_full = False
-                logger.info(f'render_full swap_enabled {swap_enabled} render_full {render_full}')
-            target_method = BitBltCaptureMethod
-            capture_method = get_capture(capture_method, target_method, hwnd, exit_event)
-            return capture_method
-        if use_bit_blt_only:
-            return None
-        if win_graphic := get_win_graphics_capture(capture_method, hwnd, exit_event):
-            return win_graphic
+def update_capture_method(config, capture_method, hwnd, exit_event=None):
+    """
+    Updates the capture method based on a prioritized list from the config.
 
-        # if not require_bg:
-        #     target_method = DesktopDuplicationCaptureMethod
-        #     capture_method = get_capture(capture_method, target_method, hwnd, exit_event)
-        #     return capture_method
+    It iterates through the capture methods specified in config['capture_method']
+    and attempts to initialize each one. The first successful method is returned.
+    """
+    try:
+        method_preferences = config.get('capture_method', [])
+
+        for method_name in method_preferences:
+            if method_name == 'WGC':
+                if win_graphic := get_win_graphics_capture(capture_method, hwnd, exit_event):
+                    logger.info(f'use WGC capture')
+                    return win_graphic
+            elif method_name == 'BitBlt_RenderFull':
+                global render_full
+                render_full = True
+                if bitblt_capture := get_capture(capture_method, BitBltCaptureMethod, hwnd, exit_event):
+                    logger.info(f'use BitBlt_RenderFull capture')
+                    return bitblt_capture
+            elif method_name == 'BitBlt':
+                global render_full
+                hdr_enabled, swap_enabled = read_game_gpu_pref(hwnd.exe_full_path)
+                render_full = swap_enabled is True or \
+                              (swap_enabled is None and read_global_gpu_pref()[1] is True)
+                logger.info(f'use BitBlt capture swap_enabled: {swap_enabled}, render_full: {render_full}')
+
+                if bitblt_capture := get_capture(capture_method, BitBltCaptureMethod, hwnd, exit_event):
+                    return bitblt_capture
+            elif method_name == 'DXGI':
+                if dxgi_capture := get_capture(capture_method, DesktopDuplicationCaptureMethod, hwnd, exit_event):
+                    return dxgi_capture
+
+        return None  # Return None if no capture method was successful
     except Exception as e:
-        logger.error(f'update_capture_method exception, return None: ', e)
+        logger.error(f'update_capture_method exception, return None: {e}')
+        return None
 
 def get_win_graphics_capture(capture_method, hwnd, exit_event):
     if windows_graphics_available():
@@ -6128,6 +6139,7 @@ class PyDirectInteraction(BaseInteraction):
     def on_run(self):
         self.hwnd_window.bring_to_front()
 
+
 class PynputInteraction(BaseInteraction):
 
     def __init__(self, capture: BaseCaptureMethod, hwnd_window):
@@ -6305,6 +6317,7 @@ class PynputInteraction(BaseInteraction):
 
     def on_run(self):
         self.hwnd_window.bring_to_front()
+
 
 # can interact with background windows, some games support it, like wuthering waves
 class PostMessageInteraction(BaseInteraction):
