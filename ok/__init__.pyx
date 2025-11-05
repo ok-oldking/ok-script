@@ -1455,6 +1455,7 @@ cdef class Response:
     cdef public str message
     cdef public object data
 
+
 ## OK.pyx
 
 
@@ -2148,7 +2149,8 @@ cdef class TaskExecutor:
                 if to_sleep > 1:
                     to_sleep = 1
                 time.sleep(to_sleep)
-            time.sleep(0.1)
+            else:
+                time.sleep(0.1)
 
     def pause(self, task=None):
         if task is not None:
@@ -3633,7 +3635,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 if new_width <= 0 or new_height <= 0:
                     logger.warning(f"get_frame size <=0 {new_width}x{new_height}")
                     return None
-            
+
             return frame
 
     def reset_framepool(self, size, reset_device=False):
@@ -6132,6 +6134,7 @@ class PyDirectInteraction(BaseInteraction):
     def on_run(self):
         self.hwnd_window.bring_to_front()
 
+
 class PynputInteraction(BaseInteraction):
 
     def __init__(self, capture: BaseCaptureMethod, hwnd_window):
@@ -6309,6 +6312,7 @@ class PynputInteraction(BaseInteraction):
 
     def on_run(self):
         self.hwnd_window.bring_to_front()
+
 
 # can interact with background windows, some games support it, like wuthering waves
 class PostMessageInteraction(BaseInteraction):
