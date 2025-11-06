@@ -2090,7 +2090,7 @@ cdef class TaskExecutor:
                     height, width = frame.shape[:2]
                     if height <= 0 or width <= 0:
                         logger.warning(f"captured wrong size frame: {width}x{height}")
-                    self._frame = frame.copy()
+                    self._frame = frame
                     self._last_frame_time = time.time()
                     return self._frame
             self.sleep(1)
@@ -3431,9 +3431,14 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         self.rtdevice = None
         self.dxdevice = None
         self.immediatedc = None
+        self.exit_event = hwnd_window.app_exit_event
         self.start_or_stop()
 
     cdef frame_arrived_callback(self, x, y):
+        if self.exit_event.is_set():
+            logger.warning('frame_arrived_callback exit_event.is_set() return')
+            self.close()
+            return
         cdef object next_frame
         try:
             self.last_frame_time = time.time()
@@ -3449,7 +3454,6 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
     cdef object convert_dx_frame(self, frame):
         if not frame:
-            # logger.warning('convert_dx_frame self.last_dx_frame is none')
             return None
         cdef bint need_reset_framepool = False
         if frame.ContentSize.Width != self.last_size.Width or frame.ContentSize.Height != self.last_size.Height:
@@ -3524,7 +3528,15 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         return self.hwnd_window is not None and self.hwnd_window.exists and self.frame_pool is not None
 
     def start_or_stop(self, capture_cursor=False):
-        if self.hwnd_window.hwnd and self.hwnd_window.exists and self.frame_pool is None:
+        if self.exit_event.is_set():
+            logger.warning('start_or_stop exit_event.is_set() return')
+            self.close()
+            return False
+        elif not self.hwnd_window.exists and self.frame_pool is not None:
+            logger.warning('start_or_stop not self.hwnd_window.exists')
+            self.close()
+            return False
+        elif self.hwnd_window.hwnd and self.hwnd_window.exists and self.frame_pool is None:
             try:
                 from ok.capture.windows import d3d11
                 from ok.rotypes import IInspectable
@@ -3565,9 +3577,6 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             except Exception as e:
                 logger.error(f'start_or_stop failed: {self.hwnd_window}', exception=e)
                 return False
-        elif not self.hwnd_window.exists and self.frame_pool is not None:
-            self.close()
-            return False
         return self.hwnd_window.exists
 
     def create_device(self):
