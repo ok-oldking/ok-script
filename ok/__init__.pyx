@@ -3672,8 +3672,8 @@ WINDOWS_BUILD_NUMBER = int(platform.version().split(".")[-1]) if sys.platform ==
 
 def windows_graphics_available():
     logger.info(
-        f"check available WINDOWS_BUILD_NUMBER:{WINDOWS_BUILD_NUMBER} >= {WGC_MIN_BUILD} {WINDOWS_BUILD_NUMBER >= WGC_MIN_BUILD}")
-    if WINDOWS_BUILD_NUMBER >= WGC_MIN_BUILD:
+        f"check available WINDOWS_BUILD_NUMBER:{WINDOWS_BUILD_NUMBER} >= {WGC_NO_BORDER_MIN_BUILD} {WINDOWS_BUILD_NUMBER >= WGC_NO_BORDER_MIN_BUILD}")
+    if WINDOWS_BUILD_NUMBER >= WGC_NO_BORDER_MIN_BUILD:
         try:
             from ok.rotypes import idldsl
             from ok.rotypes.roapi import GetActivationFactory
