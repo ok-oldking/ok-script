@@ -3422,15 +3422,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
     def __init__(self, hwnd_window: HwndWindow):
         super().__init__(hwnd_window)
-        self.last_frame = None
         self.last_frame_time = time.time()
-        self.frame_pool = None
-        self.item = None
-        self.session = None
-        self.cputex = None
-        self.rtdevice = None
-        self.dxdevice = None
-        self.immediatedc = None
         self.exit_event = hwnd_window.app_exit_event
         self.start_or_stop()
 
@@ -3475,29 +3467,22 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         try:
             from ok.capture.windows import d3d11
             from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDxgiInterfaceAccess
-            from ok.rotypes.roapi import GetActivationFactory
             tex = frame.Surface.astype(IDirect3DDxgiInterfaceAccess).GetInterface(
                 d3d11.ID3D11Texture2D.GUID).astype(d3d11.ID3D11Texture2D)
+
             desc = tex.GetDesc()
-            desc2 = d3d11.D3D11_TEXTURE2D_DESC()
-            desc2.Width = desc.Width
-            desc2.Height = desc.Height
-            desc2.MipLevels = desc.MipLevels
-            desc2.ArraySize = desc.ArraySize
-            desc2.Format = desc.Format
-            desc2.SampleDesc = desc.SampleDesc
-            desc2.Usage = d3d11.D3D11_USAGE_STAGING
-            desc2.CPUAccessFlags = d3d11.D3D11_CPU_ACCESS_READ
-            desc2.BindFlags = 0
-            desc2.MiscFlags = 0
-            cputex = self.dxdevice.CreateTexture2D(ctypes.byref(desc2), None)
+            desc.Usage = d3d11.D3D11_USAGE_STAGING
+            desc.CPUAccessFlags = d3d11.D3D11_CPU_ACCESS_READ
+            desc.BindFlags = 0
+            desc.MiscFlags = 0
+
+            cputex = self.dxdevice.CreateTexture2D(ctypes.byref(desc), None)
             self.immediatedc.CopyResource(cputex, tex)
             mapinfo = self.immediatedc.Map(cputex, 0, d3d11.D3D11_MAP_READ, 0)
             img = np.ctypeslib.as_array(ctypes.cast(mapinfo.pData, PBYTE),
                                         (desc.Height, mapinfo.RowPitch // 4, 4))[
                   :, :desc.Width].copy()
             self.immediatedc.Unmap(cputex, 0)
-            # logger.debug(f'frame latency {(time.time() - start):.3f} {(time.time() - dx_time):.3f}')
             return img
         except OSError as e:
             if e.winerror == d3d11.DXGI_ERROR_DEVICE_REMOVED or e.winerror == d3d11.DXGI_ERROR_DEVICE_RESET:
@@ -3544,9 +3529,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 from ok.rotypes.Windows.Graphics.Capture import Direct3D11CaptureFramePool, IGraphicsCaptureItemInterop, \
                     IGraphicsCaptureItem, GraphicsCaptureItem
                 from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
-                from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDevice, \
-                    CreateDirect3D11DeviceFromDXGIDevice, \
-                    IDirect3DDxgiInterfaceAccess
+                from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDevice
                 from ok.rotypes.roapi import GetActivationFactory
                 logger.info('init windows capture')
                 interop = GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(
@@ -3603,7 +3586,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             self.frame_pool.Close()
             self.frame_pool = None
         if self.session is not None:
-            self.session.Close()  # E_UNEXPECTED ???
+            self.session.Close()
             self.session = None
         self.item = None
         if self.rtdevice:
@@ -3657,31 +3640,14 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
     def crop_image(self, frame):
         if frame is not None:
-            x, y = get_crop_point(frame.shape[1], frame.shape[0], self.hwnd_window.width, self.hwnd_window.height)
-            if x > 0 or y > 0:
-                frame = self.crop_image_border_title(frame, x, y)
+            border, title_height = get_crop_point(frame.shape[1], frame.shape[0], self.hwnd_window.width,
+                                                  self.hwnd_window.height)
+            if border > 0 or title_height > 0:
+                height, width = frame.shape[:2]
+                x2 = width - border
+                y2 = height - border
+                return frame[title_height:y2, border:x2]
         return frame
-
-    def crop_image_border_title(self, image, border, title_height):
-        # Load the image
-        # Image dimensions
-        height, width = image.shape[:2]
-
-        # Calculate the coordinates for the bottom-right corner
-        x2 = width - border
-        y2 = height - border
-
-        # Crop the image
-        cropped_image = image[title_height:y2, border:x2]
-
-        # print(f"cropped image: {title_height}-{y2}, {border}-{x2} {cropped_image.shape}")
-        #
-        # cv2.imshow('Image Window', cropped_image)
-        #
-        # # Wait for any key to be pressed before closing the window
-        # cv2.waitKey(0)
-
-        return cropped_image
 
 WINDOWS_BUILD_NUMBER = int(platform.version().split(".")[-1]) if sys.platform == "win32" else -1
 
