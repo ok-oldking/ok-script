@@ -16,7 +16,7 @@
 
 ### 使用
 
-* 需要使用python 3.12
+* 目前仅支持Python 3.12
 * 使用pip
 ```commandline
 pip install ok-script
@@ -33,8 +33,20 @@ mklink /d "C:\path\to\your-project\ok" "C:\path\to\ok-script\ok"
 ## 文档和示例代码
 
 * [游戏自动化入门](docs/intro_to_automation/README.md)
+  - [1、基本原理：计算机如何“玩”游戏](docs/intro_to_automation/README.md#一基本原理计算机如何玩游戏)
+    - [核心循环：三步走](docs/intro_to_automation/README.md#核心循环三步走)
+    - [图像分析：从像素到决策](docs/intro_to_automation/README.md#图像分析从像素到决策)
+        - [传统图色算法 (OpenCV 库)](docs/intro_to_automation/README.md#1-传统图色算法-opencv-库)
+        - [神经网络推理 (Inference)](docs/intro_to_automation/README.md#2-神经网络推理-inference)
+    - [2、编程语言选择](docs/intro_to_automation/README.md#二编程语言选择)
+        - [常用库概览](docs/intro_to_automation/README.md#常用库概览)
+    - [3、开发工具](docs/intro_to_automation/README.md#三开发工具)
 * [快速开始](docs/quick_start/README.md)
 * [进阶使用](docs/after_quick_start/README.md)
+  - [1. 模板匹配 (Template Matching)](docs/after_quick_start/README.md#1-模板匹配-template-matching)
+  - [2. 多语言国际化 (i18n)](docs/after_quick_start/README.md#2-多语言国际化-i18n)
+  - [3. 自动化测试](docs/after_quick_start/README.md#3-自动化测试)
+  - [4. 使用 GitHub Action 自动化打包与发布](docs/after_quick_start/README.md#4-使用-github-action-自动化打包与发布)
 * [API文档](docs/api_doc/README.md)
 * 开发者群: 938132715
 * pip [https://pypi.org/project/ok-script](https://pypi.org/project/ok-script)
