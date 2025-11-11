@@ -14,19 +14,15 @@
 7. 支持Github Action一键构建
 8. 支持多语言国际化
 
-### 使用
+### 使用 目前仅支持Python 3.12
 
-* 目前仅支持Python 3.12
-* 使用pip
+* pip使用
 ```commandline
 pip install ok-script
 ```
-* 或者本地编译源码使用
+* 或者本地编译源码使用,  链接目录到你项目的ok文件夹下
 ```commandline
 in_place_build.bat
-```
-* 链接目录到你项目的ok文件夹下
-```commandline
 mklink /d "C:\path\to\your-project\ok" "C:\path\to\ok-script\ok"
 ```
 
