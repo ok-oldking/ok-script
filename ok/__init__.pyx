@@ -7236,7 +7236,7 @@ class MainWindow(MSFluentWindow):
                 if self.first_task_tab is None:
                     self.first_task_tab = group_tab
                 logger.debug(f"add grouped_task_tabs {group_name} len {len(tasks_in_group)}")
-                self.addSubInterface(group_tab, group_icon, self.tr(group_name))
+                self.addSubInterface(group_tab, group_icon, og.app.tr(group_name))
                 self.grouped_task_tabs.append(group_tab)
 
         if len(og.executor.trigger_tasks) > 0:
