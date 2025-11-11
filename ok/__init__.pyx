@@ -7230,7 +7230,7 @@ class MainWindow(MSFluentWindow):
                 logger.debug(f"add default onetime_tab len {len(standalone_tasks)}")
                 self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('Tasks'))
 
-            for group_name, tasks_in_group in sorted(groups.items()):
+            for group_name, tasks_in_group in groups.items():
                 group_tab = OneTimeTaskTab(tasks=tasks_in_group)
                 group_icon = tasks_in_group[0].group_icon
                 if self.first_task_tab is None:
