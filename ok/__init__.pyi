@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Optional, Union
+import threading
+from typing import Any, Callable, Dict, List, Optional, Union, Tuple
 import numpy as np
 import cv2
 
@@ -1727,5 +1728,273 @@ class TaskExecutor:
 
         :param cls: Class. 类。
         :return: Task or None. 任务或 None。
+        """
+        ...
+
+
+class OkGlobals:
+    # Instance attributes initialized in __init__
+    app: Any
+    executor: Any
+    device_manager: Any
+    handler: Any
+    auth_uid: Optional[str]
+    auth_rd: Optional[str]
+    auth_expire: int
+    trial_expire: int
+    my_app: Any
+    dpi_scaling: float
+    ok: Any
+    config: Any
+    task_manager: Any
+    app_path: str
+    use_dml: bool
+    global_config: Any
+
+    def __init__(self) -> None: ...
+
+    def set_use_dml(self) -> None:
+        """
+        Sets self.use_dml based on global_config 'Basic Options'.
+
+        Logic:
+        1. Checks 'Use DirectML' config option ('Auto' or 'Yes').
+        2. If 'Auto': checks if NV free GPU memory > 3000 MiB.
+        3. Validates if Windows build number >= 18362.
+        """
+        ...
+
+    def get_trial_expire_util_str(self) -> str:
+        """
+        Converts self.trial_expire timestamp to a formatted string: '%Y-%m-%d %H:%M:%S'.
+        """
+        ...
+
+    def get_expire_util_str(self) -> str:
+        """
+        Converts self.auth_expire timestamp to a formatted string: '%Y-%m-%d %H:%M:%S'.
+        """
+        ...
+
+    def set_dpi_scaling(self, window: Any) -> None:
+        """
+        Sets self.dpi_scaling based on the screen associated with the provided window handle.
+
+        Args:
+            window: A UI window object (likely PySide/PyQt) containing a windowHandle().
+        """
+        ...
+
+
+og: OkGlobals
+
+
+class Config(Dict[str, Any]):
+    """
+    A dictionary-like object for managing configuration that persists to a JSON file.
+    """
+
+    # Class attribute specifying the default folder for config files.
+    config_folder: str
+
+    # --- Instance Attributes ---
+    default: Dict[str, Any]
+    validator: Optional[Callable[[str, Any], Tuple[bool, str]]]
+    config_file: str
+
+    def __init__(self, name: str, default: Dict[str, Any], folder: Optional[str] = ...,
+                 validator: Optional[Callable[[str, Any], Tuple[bool, str]]] = ...) -> None:
+        """
+        Initialize the Config object.
+
+        Loads configuration from a JSON file. If the file doesn't exist or is invalid,
+        it falls back to the provided default configuration and creates the file.
+
+        Args:
+            name: Name of the config file (without .json extension).
+            default: A dictionary containing default configuration values.
+            folder: Optional folder where the config file is stored.
+            validator: Optional function to validate key-value pairs during setup and modification.
+                       The function should accept (key, value) and return (is_valid, message).
+        """
+        ...
+
+    def save_file(self) -> None:
+        """
+        Save the current configuration state to its associated JSON file.
+        This is called automatically on most modifications.
+        """
+        ...
+
+    def get_default(self, key: str) -> Any:
+        """
+        Get a value from the original default configuration dictionary.
+
+        Args:
+            key: The key to look up in the default config.
+        """
+        ...
+
+    def reset_to_default(self) -> None:
+        """
+        Reset the entire configuration to the default values and save the file.
+        """
+        ...
+
+    # --- Overridden dict methods that trigger a file save ---
+
+    def pop(self, key: str, default: Any = ...) -> Any:
+        """
+        Remove and return a value from the configuration, then save the file.
+
+        Args:
+            key: The key to remove.
+            default: The value to return if the key does not exist.
+        """
+        ...
+
+    def popitem(self) -> Tuple[str, Any]:
+        """
+        Remove and return the last key-value pair, then save the file.
+        """
+        ...
+
+    def clear(self) -> None:
+        """
+        Clear all items from the configuration and save the empty state to the file.
+        """
+        ...
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        """
+        Set a configuration value. If the value is different from the existing one
+        and passes validation, the change is saved to the file.
+        """
+        ...
+
+    # --- Other methods ---
+
+    def __getitem__(self, key: str) -> Any:
+        """
+        Retrieve a configuration value by its key.
+        """
+        ...
+
+    def has_user_config(self) -> bool:
+        """
+        Check if the configuration contains any user-defined keys (i.e., keys that
+        do not start with an underscore).
+        """
+        ...
+
+    def validate(self, key: str, value: Any) -> bool:
+        """
+        Validate a key-value pair using the configured validator function.
+
+        Args:
+            key: The key to validate.
+            value: The value to validate.
+
+        Returns:
+            True if the pair is valid or if no validator is set, False otherwise.
+        """
+        ...
+
+    def verify_config(self, current: Dict[str, Any], default_config: Dict[str, Any]) -> bool:
+        """
+        Verify the loaded configuration against the default configuration.
+        - Removes keys from 'current' that are not in 'default_config'.
+        - Adds missing keys from 'default_config' to 'current'.
+        - Ensures values have the correct type, falling back to default if not.
+        - Validates existing values, falling back to default if invalid.
+
+        Args:
+            current: The configuration dictionary loaded from the file.
+            default_config: The default configuration to compare against.
+
+        Returns:
+            True if the configuration was modified during verification, False otherwise.
+        """
+        ...
+
+class Logger:
+    """
+    A Cython wrapper class for logging messages.
+    It prefixes messages with the logger's name.
+    """
+
+    # --- C-level attributes (exposed to Python) ---
+    logger: Any  # The underlying Python logger object (e.g., from logging module).
+    name: str  # The short name of the logger, derived from the full name.
+
+    def __init__(self, name: str) -> None:
+        """
+        Initializes the Logger with a given name.
+
+        Args:
+            name: The full name for the logger (e.g., 'module.submodule.class').
+                  The short name will be extracted from this.
+        """
+        ...
+
+    # --- Logging methods ---
+
+    def debug(self, message: Any) -> None:
+        """Logs a message with the DEBUG level."""
+        ...
+
+    def info(self, message: Any) -> None:
+        """Logs a message with the INFO level."""
+        ...
+
+    def warning(self, message: Any) -> None:
+        """Logs a message with the WARNING level."""
+        ...
+
+    def error(self, message: Any, exception: Optional[Exception] = ...) -> None:
+        """
+        Logs a message with the ERROR level.
+        If an exception is provided, its traceback is appended to the message.
+
+        Args:
+            message: The error message to log.
+            exception: An optional Exception object to format and include.
+        """
+        ...
+
+    def critical(self, message: Any) -> None:
+        """Logs a message with the CRITICAL level."""
+        ...
+
+    # --- Static methods ---
+
+    @staticmethod
+    def call_stack() -> str:
+        """Returns a formatted string of the current call stack."""
+        ...
+
+    @staticmethod
+    def get_logger(name: str) -> 'Logger':
+        """
+        Factory method to create a new Logger instance.
+
+        Args:
+            name: The name for the new logger.
+
+        Returns:
+            A new instance of the Logger class.
+        """
+        ...
+
+    @staticmethod
+    def exception_to_str(exception: Exception) -> str:
+        """
+        Converts an exception object into a formatted traceback string.
+
+        Args:
+            exception: The exception to format.
+
+        Returns:
+            A string containing the formatted traceback.
         """
         ...
