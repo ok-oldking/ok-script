@@ -6442,8 +6442,15 @@ class PostMessageInteraction(BaseInteraction):
 
     def mouse_down(self, x=-1, y=-1, name=None, key="left"):
         long_position = self.update_mouse_pos(x, y)
-        action = win32con.WM_LBUTTONDOWN if key == "left" else win32con.WM_RBUTTONDOWN
-        btn = win32con.MK_LBUTTON if key == "left" else win32con.MK_RBUTTON
+        if key == "left":
+            action = win32con.WM_LBUTTONDOWN
+            btn = win32con.MK_LBUTTON
+        elif key == "middle":
+            action = win32con.WM_MBUTTONDOWN
+            btn = win32con.MK_MBUTTON
+        else:
+            action = win32con.WM_RBUTTONDOWN
+            btn = win32con.MK_RBUTTON
         self.post(action, btn, long_position)
 
     def update_mouse_pos(self, x, y, activate=True):
@@ -6456,7 +6463,12 @@ class PostMessageInteraction(BaseInteraction):
         return win32api.MAKELONG(x, y)
 
     def mouse_up(self, key="left"):
-        action = win32con.WM_LBUTTONUP if key == "left" else win32con.WM_RBUTTONUP
+        if key == "left":
+            action = win32con.WM_LBUTTONUP
+        elif key == "middle":
+            action = win32con.WM_MBUTTONUP
+        else:
+            action = win32con.WM_RBUTTONUP
         self.post(action, 0,
                   win32api.MAKELONG(self.mouse_pos[0], self.mouse_pos[1]))
 
@@ -6483,6 +6495,7 @@ vk_key_dict = {
     'ALT': win32con.VK_MENU,
     'LALT': win32con.VK_LMENU,
     'CONTROL': win32con.VK_CONTROL,
+    'LCONTROL': win32con.VK_LCONTROL,
     'SHIFT': win32con.VK_SHIFT,
     'LSHIFT': win32con.VK_LSHIFT,
     'TAB': win32con.VK_TAB,
