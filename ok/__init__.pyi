@@ -2,6 +2,8 @@ import threading
 from typing import Any, Callable, Dict, List, Optional, Union, Tuple
 import numpy as np
 import cv2
+from qfluentwidgets import FluentIcon
+
 
 class Box:
     """
@@ -1037,6 +1039,8 @@ class BaseTask(OCR):
     start_time: float
     icon: Optional[Any]
     supported_languages: List[str]
+    group_name: str
+    group_icon: FluentIcon
 
     def __init__(self, executor: Optional["TaskExecutor"] = None) -> None:
         """

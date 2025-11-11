@@ -1659,6 +1659,8 @@ cdef class BaseTask(OCR):
     cdef public double start_time
     cdef public object icon
     cdef public list supported_languages
+    cdef public str group_name
+    cdef public object group_icon
 
     def __init__(self, executor=None):
         super().__init__(executor)
@@ -1681,6 +1683,8 @@ cdef class BaseTask(OCR):
         self.last_trigger_time = 0
         self.start_time = 0
         self.icon = None
+        self.group_name = None
+        self.group_icon = FluentIcon.SYNC
         self.first_run_alert = None
         self.show_create_shortcut = False
 
@@ -7205,11 +7209,36 @@ class MainWindow(MSFluentWindow):
 
         self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Capture'))
 
-        if len(og.executor.onetime_tasks) > 0:
+        self.first_task_tab = None
+        self.grouped_task_tabs = []
+        if og.executor.onetime_tasks:
             from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
-            self.onetime_tab = OneTimeTaskTab()
-            self.first_task_tab = self.onetime_tab
-            self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('Tasks'))
+            from collections import defaultdict
+
+            groups = defaultdict(list)
+            standalone_tasks = []
+            for task in og.executor.onetime_tasks:
+                if task.group_name:
+                    groups[task.group_name].append(task)
+                else:
+                    standalone_tasks.append(task)
+
+            if standalone_tasks:
+                self.onetime_tab = OneTimeTaskTab(tasks=standalone_tasks)
+                if self.first_task_tab is None:
+                    self.first_task_tab = self.onetime_tab
+                logger.debug(f"add default onetime_tab len {len(standalone_tasks)}")
+                self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('Tasks'))
+
+            for group_name, tasks_in_group in sorted(groups.items()):
+                group_tab = OneTimeTaskTab(tasks=tasks_in_group)
+                group_icon = tasks_in_group[0].group_icon
+                if self.first_task_tab is None:
+                    self.first_task_tab = group_tab
+                logger.debug(f"add grouped_task_tabs {group_name} len {len(tasks_in_group)}")
+                self.addSubInterface(group_tab, group_icon, self.tr(group_name))
+                self.grouped_task_tabs.append(group_tab)
+
         if len(og.executor.trigger_tasks) > 0:
             from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
             self.trigger_tab = TriggerTaskTab()
@@ -7239,7 +7268,6 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.setting_tab, FluentIcon.SETTING, self.tr('Settings'),
                              position=NavigationItemPosition.BOTTOM)
 
-        # Styling the tabs and content if needed, for example:
         dev = self.tr('Debug')
         profile = config.get('profile', "")
         self.setWindowTitle(f'{title} {version} {profile} {dev if debug else ""}')
@@ -7248,14 +7276,12 @@ class MainWindow(MSFluentWindow):
         communicate.tab.connect(self.navigate_tab)
         communicate.task_done.connect(self.activateWindow)
         communicate.must_update.connect(self.must_update)
-        # Create a context menu for the tray
         menu = QMenu()
         exit_action = menu.addAction(self.tr("Exit"))
         exit_action.triggered.connect(self.tray_quit)
 
         self.tray = QSystemTrayIcon(icon, parent=self)
 
-        # Set the context menu and show the tray icon
         self.tray.setContextMenu(menu)
         self.tray.activated.connect(self.on_tray_icon_activated)
         self.tray.show()
