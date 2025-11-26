@@ -21,16 +21,13 @@ logger = Logger.get_logger(__name__)
 
 class StartCard(SettingCard):
     show_choose_hwnd = Signal()
+    hotkey_changed = Signal()
 
     def __init__(self, exit_event):
         super().__init__(og.config.get('gui_icon'), og.app.title, og.app.version)
+        self.basic_options = og.executor.basic_options
 
-        # while (item := self.hBoxLayout.takeAt(0)) is not None:
-        #     if item.widget() and item.widget():
-        #         item.widget().setParent(None)
-        # self.hBoxLayout.setSpacing(8)
         self.iconLabel.setFixedSize(30, 30)
-        # self.hBoxLayout.addWidget(self.iconLabel)
         self.hBoxLayout.setAlignment(Qt.AlignVCenter)
         self.status_bar = StatusBar("test")
         self.status_bar.clicked.connect(self.status_clicked)
@@ -56,6 +53,8 @@ class StartCard(SettingCard):
         self.start_button = PushButton(FluentIcon.PLAY, self.tr("Start"), self)
         self.hBoxLayout.addWidget(self.start_button, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(6)
+
+        self.hotkey_changed.connect(self.update_status)
         self.update_status()
         self.start_button.clicked.connect(self.clicked)
         communicate.executor_paused.connect(self.update_status)
@@ -63,8 +62,9 @@ class StartCard(SettingCard):
         communicate.task.connect(self.update_task)
 
         self.handler = Handler(exit_event, "StartCard")
-        self.handler.post(self.bind_hot_keys)
+        self.current_hotkey = "UNINIT"
         self.handler.post(self.check_hotkey, 0.1)
+        logger.debug('basic_options.start/stop: {}'.format(self.basic_options.get('Start/Stop')))
 
     @staticmethod
     def capture():
@@ -94,13 +94,6 @@ class StartCard(SettingCard):
 
     @staticmethod
     def export_logs():
-        """
-            Creates a zip file named "app-log.zip" in the user's Downloads folder.
-
-            The zip file will contain the 'screenshots' and 'logs' folders from the
-            current working directory. If the zip file already exists, it will be
-            overwritten. After creation, Windows Explorer is opened to show the file.
-            """
         app_name = og.config.get('gui_title')
         downloads_path = Path.home() / "Downloads"
         zip_path = downloads_path / f"{app_name}-log.zip"
@@ -121,16 +114,19 @@ class StartCard(SettingCard):
         self.update_status()
 
     def update_status(self):
+        hotkey = self.basic_options.get('Start/Stop')
+        suffix = f'({hotkey})' if hotkey and hotkey != 'None' else ''
+
         if og.executor.paused:
             device = og.device_manager.get_preferred_device()
             if device and not device['connected'] and device.get('full_path'):
-                self.start_button.setText(self.tr("Start Game") + '(F9)')
+                self.start_button.setText(self.tr("Start Game") + suffix)
             else:
-                self.start_button.setText(self.tr("Start") + '(F9)')
+                self.start_button.setText(self.tr("Start") + suffix)
             self.start_button.setIcon(FluentIcon.PLAY)
             self.status_bar.hide()
         else:
-            self.start_button.setText(self.tr("Pause") + '(F9)')
+            self.start_button.setText(self.tr("Pause") + suffix)
             self.start_button.setIcon(FluentIcon.PAUSE)
             if not og.executor.connected():
                 self.status_bar.setTitle(self.tr("Game Window Disconnected"))
@@ -159,22 +155,27 @@ class StartCard(SettingCard):
             self.status_bar.show()
 
     def check_hotkey(self):
-        # Example event type, you should use the appropriate QEvent.Type for your case
-        msg = wintypes.MSG()
+        new_hotkey = self.basic_options.get('Start/Stop')
+        if new_hotkey != self.current_hotkey:
+            self.rebind_hotkey(new_hotkey)
+            self.current_hotkey = new_hotkey
+            self.hotkey_changed.emit()
 
-        # PeekMessageW is used to check for a hotkey press
+        msg = wintypes.MSG()
         if windll.user32.PeekMessageW(byref(msg), None, 0, 0, 1):
             if msg.message == 0x0312:  # WM_HOTKEY
                 logger.debug(f'hotkey pressed {msg}')
                 if msg.wParam == 999:
                     self.clicked()
 
-        # Repost the check_hotkey method to be called after 100 ms
         self.handler.post(self.check_hotkey, 0.1)
 
-    def bind_hot_keys(self):
-        VK_F9 = 0x78
+    def rebind_hotkey(self, hotkey):
+        windll.user32.UnregisterHotKey(None, 999)
+        vk_map = {'F9': 0x78, 'F10': 0x79, 'F11': 0x7A, 'F12': 0x7B}
 
-        if not windll.user32.RegisterHotKey(None, 999, 0, VK_F9):
-            logger.error("start card Failed to register hotkey for VK_F9")
-        logger.debug('start card bind_hot_keys')
+        if hotkey and hotkey != 'None' and hotkey in vk_map:
+            if not windll.user32.RegisterHotKey(None, 999, 0, vk_map[hotkey]):
+                logger.error(f"Failed to register hotkey {hotkey}")
+        else:
+            logger.debug(f"Hotkey disabled or invalid: {hotkey}")

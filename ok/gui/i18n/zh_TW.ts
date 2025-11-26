@@ -1190,5 +1190,13 @@
         <source>Beta Version</source>
         <translation>測試版</translation>
     </message>
+    <message>
+        <source>Start/Stop</source>
+        <translation>開始/停止</translation>
+    </message>
+    <message>
+        <source>HotKey</source>
+        <translation>快捷鍵</translation>
+    </message>
 </context>
 </TS>

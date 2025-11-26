@@ -1175,6 +1175,18 @@
         <translation>创建venv失败.</translation>
     </message>
     <message>
+        <source>Start/Stop</source>
+        <translation>开始/停止</translation>
+    </message>
+    <message>
+        <source>HotKey</source>
+        <translation>快捷键</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message>
         <source>Stable Version</source>
         <translation>稳定版</translation>
     </message>

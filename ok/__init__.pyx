@@ -1935,8 +1935,8 @@ cdef class TaskExecutor:
     cdef public object scene
     cdef public dict text_fix
     cdef public object ocr_po_translation
-    cdef public object config
-    cdef object basic_options, lock
+    cdef public object config, basic_options
+    cdef object lock
 
     def __init__(self, device_manager,
                  wait_until_timeout=10, wait_until_settle_time=-1,
@@ -5594,8 +5594,11 @@ basic_options = ConfigOption('Basic Options', {
     'Exit App when Game Exits': False,
     'Use DirectML': 'Yes',
     'Trigger Interval': 1,
-}, config_type={'Use DirectML': {'type': "drop_down", 'options': ['Auto', 'Yes', 'No']}}
+    'Start/Stop': 'F9',
+}, config_type={'Use DirectML': {'type': "drop_down", 'options': ['Auto', 'Yes', 'No']},
+                'Start/Stop': {'type': "drop_down", 'options': ['None', 'F9', 'F10', 'F11', 'F12']}}
                              , config_description={'Use DirectML': 'Use GPU to Improve Performance',
+                                                   'Start/Stop': 'HotKey',
                                                    'Trigger Interval': 'Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)'},
                              icon=FluentIcon.GAME)
 
