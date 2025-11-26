@@ -11,6 +11,7 @@ class LabelAndDoubleSpinBox(ConfigLabelAndWidget):
         self.spin_box = DoubleSpinBox()
         self.update_value()
         self.spin_box.valueChanged.connect(self.value_changed)
+        self.spin_box.setFixedWidth(180)
         self.add_widget(self.spin_box)
 
     def update_value(self):
