@@ -3011,7 +3011,6 @@ cdef class OCR(FindFeature):
             box = self.get_box_by_name(box)
         if self.executor.paused:
             self.executor.sleep(1)
-        frame_height, frame_width = self.executor.frame.shape[0], self.executor.frame.shape[1]
         if threshold == 0:
             threshold = self.ocr_default_threshold
         start = time.time()
@@ -3020,6 +3019,7 @@ cdef class OCR(FindFeature):
             image = frame
         else:
             image = self.executor.frame
+        frame_height, frame_width = image.shape[0], image.shape[1]
         if image is None:
             raise Exception("ocr no frame")
         else:
