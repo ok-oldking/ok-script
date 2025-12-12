@@ -6332,12 +6332,18 @@ class PostMessageInteraction(BaseInteraction):
         if activate:
             self.try_activate()
         vk_code = self.get_key_by_str(key)
-        self.post(win32con.WM_KEYDOWN, vk_code, self.lparam)
+        lparam = self.make_lparam(vk_code)
+        self.post(win32con.WM_KEYDOWN, vk_code, lparam)
 
     def send_key_up(self, key):
         # logger.debug(f'send_key_up {key}')
         vk_code = self.get_key_by_str(key)
-        self.post(win32con.WM_KEYUP, vk_code, self.lparam)
+        lparam = self.make_lparam(vk_code)
+        self.post(win32con.WM_KEYUP, vk_code, lparam)
+
+    def make_lparam(self, vk_code):
+        scan_code = win32api.MapVirtualKey(vk_code, 0)
+        return (scan_code << 16) | 1
 
     def get_key_by_str(self, key):
         key = str(key)
