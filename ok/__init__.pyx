@@ -734,15 +734,25 @@ def bytes_to_readable_size(size_bytes):
 
 def execute(game_cmd: str):
     if game_cmd:
-        game_path = get_path(game_cmd)
-        if os.path.exists(game_path):
+        if '://' in game_cmd:
             try:
-                logger.info(f'try execute {game_cmd}')
-                subprocess.Popen(['start', '', '/b', game_cmd], cwd=os.path.dirname(game_path), shell=True,
-                                 creationflags=0x00000008)  # detached process
+                logger.info(f'try execute url {game_cmd}')
+                os.startfile(game_cmd)
                 return True
             except Exception as e:
                 logger.error('execute error', e)
+        else:
+            game_path = get_path(game_cmd)
+            if os.path.exists(game_path):
+                try:
+                    logger.info(f'try execute {game_cmd}')
+                    subprocess.Popen(['start', '', '/b', game_cmd], cwd=os.path.dirname(game_path), shell=True,
+                                     creationflags=0x00000008)  # detached process
+                    return True
+                except Exception as e:
+                    logger.error('execute error', e)
+            else:
+                logger.error(f'execute error path not exist {game_cmd}')
 
 def get_path(input_string):
     """
@@ -4870,10 +4880,16 @@ class DeviceManager:
                 'device') == 'windows' and self.windows_capture_config:
             if path == "none":
                 path = None
-            if self.windows_capture_config.get(
+            if calculate := self.windows_capture_config.get(
                     'calculate_pc_exe_path'):
-                path = self.windows_capture_config.get('calculate_pc_exe_path')(path)
+                if isinstance(calculate, str):
+                    path = calculate
+                else:
+                    path = self.windows_capture_config.get('calculate_pc_exe_path')(path)
                 logger.info(f'calculate_pc_exe_path {path}')
+                if '://' in path:
+                    logger.info(f'path is a url skip checking {path}')
+                    return path
             if os.path.exists(path):
                 return path
         elif emulator := device.get('emulator'):
