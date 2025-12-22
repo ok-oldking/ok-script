@@ -3813,7 +3813,7 @@ cdef class HwndWindow:
     cdef public str title, exe_full_path, hwnd_class, _hwnd_title
     cdef public int hwnd, player_id, window_width, window_height, x, y, width, height, frame_width, frame_height, real_width, real_height, real_x_offset, real_y_offset
     cdef public bint visible, exists, pos_valid, to_handle_mute
-    cdef public double scaling, frame_aspect_ratio
+    cdef public double scaling, frame_aspect_ratio, last_mute_check
     cdef public list monitors_bounds, exe_names
     cdef public list visible_monitors
 
@@ -3848,6 +3848,8 @@ cdef class HwndWindow:
         self.real_y_offset = 0
         self.scaling = 1.0
         self.frame_aspect_ratio = 0
+        self.last_mute_check = 0
+
         self.hwnd_class = hwnd_class
         self.pos_valid = False
         self._hwnd_title = ""
@@ -3985,8 +3987,11 @@ cdef class HwndWindow:
                     for visible_monitor in self.visible_monitors:
                         visible_monitor.on_visible(visible)
                     changed = True
-                if changed:
+
+                if changed or (time.time() - self.last_mute_check > 2):
                     self.handle_mute()
+                    self.last_mute_check = time.time()
+
                 if (window_width != self.window_width or window_height != self.window_height or
                     x != self.x or y != self.y or width != self.width or height != self.height or scaling != self.scaling) and (
                         (x >= -1 and y >= -1) or self.visible):
@@ -4008,10 +4013,10 @@ cdef class HwndWindow:
     def handle_mute(self, mute=None):
         if mute is None:
             mute = self.mute_option.get('Mute Game while in Background')
-        logger.info(
-            f'handle_mute hwnd:{self.hwnd} mute:{mute} self.to_handle_mute:{self.to_handle_mute} visible:{self.visible}')
         if self.hwnd and self.to_handle_mute and mute:
             set_mute_state(self.hwnd, 0 if self.visible else 1)
+            logger.info(
+                f'handle_mute hwnd:{self.hwnd} mute:{mute} self.to_handle_mute:{self.to_handle_mute} visible:{self.visible}')
 
     def frame_ratio(self, size):
         if self.frame_width > 0 and self.width > 0:
