@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import base64
 import ctypes
 import glob
@@ -7,7 +8,6 @@ import heapq
 import importlib
 import inspect
 import json
-import locale
 import logging
 import math
 import os
@@ -2540,7 +2540,11 @@ cdef class ExecutorOperation:
 
     def is_adb(self):
         if device := self._executor.device_manager.get_preferred_device():
-            return device.get('device') != 'windows'
+            return device.get('device') == 'adb' or device.get('device') == 'emulator'
+
+    def is_browser(self):
+        if device := self._executor.device_manager.get_preferred_device():
+            return device.get('device') == 'browser'
 
     def mouse_down(self, x=-1, y=-1, name=None, key="left"):
         frame = self.executor.nullable_frame()
@@ -4316,6 +4320,154 @@ cdef try_delete_dc(dc):
         except win32ui.error:
             pass
 
+cdef class BrowserCaptureMethod(BaseCaptureMethod):
+    name = "Browser Capture"
+    description = "Capture from Browser using Playwright Screenshot"
+    cdef public object playwright, browser, page, config, loop, loop_thread, latest_frame
+
+    def __init__(self, config, exit_event):
+        super().__init__()
+        self.config = config
+        self.exit_event = exit_event
+        self._size = config.get('resolution', (1280, 720))
+        logger.info(f'BrowserCaptureMethod init {self._size}')
+        self.playwright = None
+        self.browser = None
+        self.page = None
+        self.latest_frame = None
+        self.loop = asyncio.new_event_loop()
+        self.loop_thread = threading.Thread(target=self._start_loop, daemon=True, name="PlaywrightLoop")
+        self.loop_thread.start()
+
+    def _start_loop(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
+
+    def run_in_loop(self, coro):
+        if self.loop.is_running():
+            future = asyncio.run_coroutine_threadsafe(coro, self.loop)
+            try:
+                return future.result()
+            except Exception as e:
+                logger.error(f"Playwright execution error: {e}")
+        return None
+
+    async def _start_browser_async(self):
+        from playwright.async_api import async_playwright
+        self.playwright = await async_playwright().start()
+
+        width, height = self._size
+        args = [
+            f"--window-size={width},{height}",
+            "--force-device-scale-factor=1",
+            "--high-dpi-support=1",
+            "--disable-infobars",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+            "--disable-features=CalculateNativeWinOcclusion",
+            "--force-color-profile=srgb"
+        ]
+
+        user_data_dir = os.path.join('cache', 'playwright')
+
+        channels = ['msedge', 'chrome', 'chromium']
+        for channel in channels:
+            try:
+                logger.info(f'Attempting to launch persistent context with channel: {channel}')
+                self.browser = await self.playwright.chromium.launch_persistent_context(
+                    user_data_dir=user_data_dir,
+                    channel=channel,
+                    headless=False,
+                    args=args,
+                    viewport={'width': width, 'height': height},
+                    device_scale_factor=1
+                )
+                logger.info(f'Successfully launched {channel}')
+                break
+            except Exception as e:
+                logger.warning(f"Failed to launch {channel}: {e}")
+
+        if self.browser is None:
+            raise Exception("Failed to launch system browser.")
+
+        await self.browser.add_init_script("""
+                    Object.defineProperty(document, 'visibilityState', {
+                        get: () => 'visible'
+                    });
+                    Object.defineProperty(document, 'hidden', {
+                        get: () => false
+                    });
+                    window.addEventListener('visibilitychange', evt => {
+                        evt.stopImmediatePropagation();
+                    }, true);
+                """)
+
+        self.page = self.browser.pages[0]
+        if url := self.config.get('url'):
+            await self.page.goto(url)
+
+        logger.info(f'start browser {width, height} {url}')
+
+    async def _close_async(self):
+        if self.page:
+            await self.page.close()
+        if self.browser:
+            await self.browser.close()
+        if self.playwright:
+            await self.playwright.stop()
+
+    def start_browser(self):
+        if self.page is not None and not self.page.is_closed():
+            return
+        self.run_in_loop(self._start_browser_async())
+
+    def close(self):
+        logger.info(f'close browser')
+        if self.loop.is_running():
+            self.run_in_loop(self._close_async())
+            self.loop.call_soon_threadsafe(self.loop.stop)
+
+        self.browser = None
+        self.playwright = None
+        self.page = None
+        self.latest_frame = None
+        if self.loop_thread.is_alive():
+            self.loop_thread.join(timeout=1)
+
+    async def _force_screenshot(self):
+        try:
+            if self.page:
+                png_bytes = await self.page.screenshot()
+                image_data = np.frombuffer(png_bytes, dtype=np.uint8)
+                frame = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
+                if frame is not None:
+                    self.latest_frame = frame
+                return frame
+        except Exception as e:
+            logger.error(f"Force screenshot failed: {e}")
+        return None
+
+    cpdef object do_get_frame(self):
+        if self.exit_event.is_set():
+            return None
+
+        if self.connected():
+            return self.run_in_loop(self._force_screenshot())
+
+        if self.page is not None and self.page.is_closed():
+            self.page = None
+            self.browser = None
+            if og.executor:
+                og.executor.pause()
+            communicate.notification.emit('Paused because game exited', None, True, True, "start")
+
+        return None
+
+    def connected(self):
+        connected = self.page is not None and not self.page.is_closed()
+        return connected
+
 cdef class ADBCaptureMethod(BaseCaptureMethod):
     name = "ADB command line Capture"
     description = "use the adb screencap command, slow but works when in background/minimized, takes 300ms per frame"
@@ -4401,12 +4553,14 @@ class DeviceManager:
         self.supported_ratio = parse_ratio(supported_resolution.get('ratio'))
         self.windows_capture_config = app_config.get('windows')
         self.adb_capture_config = app_config.get('adb')
+        self.browser_config = app_config.get('browser')
         self.debug = app_config.get('debug')
         self.interaction = None
         self.device_dict = {}
         self.exit_event = exit_event
         self.resolution_dict = {}
-        default_capture = 'windows' if app_config.get('windows') else 'adb'
+        default_capture = 'windows' if app_config.get('windows') else (
+            'browser' if app_config.get('browser') else 'adb')
         self.config = Config("devices",
                              {"preferred": "", "pc_full_path": "", 'capture': default_capture, 'selected_exe': '',
                               'selected_hwnd': 0})
@@ -4484,7 +4638,6 @@ class DeviceManager:
         logger.error('try kill adb server', e)
         import psutil
         for proc in psutil.process_iter():
-            # Check whether the process name matches
             if proc.name() == 'adb.exe' or proc.name() == 'adb':
                 logger.info(f'kill adb by process name {proc.cmdline()}')
                 try:
@@ -4548,9 +4701,28 @@ class DeviceManager:
                 pc_device["resolution"] = f"{width}x{height}"
             self.device_dict['pc'] = pc_device
 
+    def update_browser_device(self):
+        if self.browser_config:
+            width, height = self.browser_config.get('resolution', (1280, 720))
+            nick = self.browser_config.get('nick', 'Browser')
+            connected = False
+            if isinstance(self.capture_method, BrowserCaptureMethod):
+                connected = self.capture_method.connected()
+            self.device_dict['browser'] = {
+                "address": self.browser_config.get('url'),
+                "imei": 'browser',
+                "device": "browser",
+                "nick": nick,
+                "width": width,
+                "height": height,
+                "connected": connected,
+                "resolution": f"{width}x{height}"
+            }
+
     def do_refresh(self, current=False):
         try:
             self.update_pc_device()
+            self.update_browser_device()
             self.refresh_emulators(current)
             self.refresh_phones(current)
         except Exception as e:
@@ -4665,12 +4837,12 @@ class DeviceManager:
         logger.debug(f'preferred device: {preferred}')
 
     def shell_device(self, device, *args, **kwargs):
-        kwargs.setdefault('timeout', 5)
-        try:
-            return device.shell(*args, **kwargs)
-        except Exception as e:
-            logger.error(f"adb shell error maybe offline {device}", e)
-            return None
+        device = self.device
+        logger.debug(f'adb shell {device} {args} {kwargs}')
+        if device is not None:
+            return self.shell_device(device, *args, **kwargs)
+        else:
+            raise Exception('Device is none')
 
     def adb_get_imei(self, device):
         return (self.shell_device(device, "settings get secure android_id") or
@@ -4698,7 +4870,7 @@ class DeviceManager:
                 dump_output = self.shell_device(device, ["uiautomator", "dump"], encoding='utf-8')
                 match = re.search(r"/sdcard/.*\.xml", dump_output)
                 if match:
-                    dump_file_path = match.group(0)  # Get the file path from the regex
+                    dump_file_path = match.group(0)
                     logger.debug(f"Dumped UI file at: {dump_file_path}")
                     xml_content = None
                     local_file_path = os.path.join('temp', 'window_dump.xml')
@@ -4779,6 +4951,18 @@ class DeviceManager:
             if not isinstance(self.interaction, self.win_interaction_class):
                 self.interaction = self.win_interaction_class(self.capture_method, self.hwnd_window)
             preferred['connected'] = self.capture_method is not None and self.capture_method.connected()
+        elif preferred['device'] == 'browser':
+            if not isinstance(self.capture_method, BrowserCaptureMethod):
+                if self.capture_method is not None:
+                    self.capture_method.close()
+                self.capture_method = BrowserCaptureMethod(self.browser_config, self.exit_event)
+            if not isinstance(self.interaction, BrowserInteraction):
+                self.interaction = BrowserInteraction(self.capture_method)
+
+            if not self.capture_method.connected():
+                self.capture_method.start_browser()
+
+            preferred['connected'] = self.capture_method.connected()
         else:
             width, height = self.get_resolution()
             if self.config.get('capture') == "windows":
@@ -4859,8 +5043,6 @@ class DeviceManager:
         pass
 
     def shell(self, *args, **kwargs):
-        # Set default timeout to 5 if not provided
-
         device = self.device
         logger.debug(f'adb shell {device} {args} {kwargs}')
         if device is not None:
@@ -4869,7 +5051,8 @@ class DeviceManager:
             raise Exception('Device is none')
 
     def device_connected(self):
-        if self.get_preferred_device()['device'] == 'windows':
+        preferred = self.get_preferred_device()
+        if preferred['device'] == 'windows' or preferred['device'] == 'browser':
             return True
         elif self.device is not None:
             try:
@@ -6546,6 +6729,137 @@ vk_key_dict = {
 class DoNothingInteraction(BaseInteraction):
     pass
 
+
+class BrowserInteraction(BaseInteraction):
+    def __init__(self, capture):
+        super().__init__(capture)
+        # We don't access self.page directly for calls, we go through capture.run_in_loop
+        self.key_map = {
+            "esc": "Escape",
+            "return": "Enter",
+            "enter": "Enter",
+            "space": "Space",
+            "backspace": "Backspace",
+            "tab": "Tab",
+            "left": "ArrowLeft",
+            "right": "ArrowRight",
+            "up": "ArrowUp",
+            "down": "ArrowDown",
+            "win": "Meta",
+            "command": "Meta"
+        }
+
+    def _map_key(self, key):
+        key_str = str(key).lower()
+        if len(key_str) == 1:
+            return key_str
+        return self.key_map.get(key_str, key_str.title())
+
+    def _run_action(self, action_coro):
+        """Helper to run action on the capture's loop."""
+        if hasattr(self.capture, 'run_in_loop'):
+            self.capture.run_in_loop(action_coro)
+
+    def send_key(self, key, down_time=0.02):
+        mapped_key = self._map_key(key)
+        logger.debug(f'BrowserInteraction send_key {key}')
+        async def _act():
+            await self.capture.page.keyboard.press(mapped_key, delay=down_time * 1000)
+        self._run_action(_act())
+
+    def send_key_down(self, key):
+        mapped_key = self._map_key(key)
+        async def _act():
+            await self.capture.page.keyboard.down(mapped_key)
+        self._run_action(_act())
+
+    def send_key_up(self, key):
+        mapped_key = self._map_key(key)
+        async def _act():
+            await self.capture.page.keyboard.up(mapped_key)
+        self._run_action(_act())
+
+    def mouse_down(self, x=-1, y=-1, name=None, key="left"):
+        button = "left"
+        if key == "right":
+            button = "right"
+        elif key == "middle":
+            button = "middle"
+
+        async def _act():
+            if x != -1 and y != -1:
+                await self.capture.page.mouse.move(x, y)
+            await self.capture.page.mouse.down(button=button)
+        self._run_action(_act())
+
+    def mouse_up(self, key="left"):
+        button = "left"
+        if key == "right":
+            button = "right"
+        elif key == "middle":
+            button = "middle"
+
+        async def _act():
+            await self.capture.page.mouse.up(button=button)
+        self._run_action(_act())
+
+    def move(self, x, y):
+        async def _act():
+            await self.capture.page.mouse.move(x, y)
+        self._run_action(_act())
+
+    def scroll(self, x, y, scroll_amount):
+        pixel_amount = scroll_amount * 100 * -1
+        async def _act():
+            if x != -1 and y != -1:
+                await self.capture.page.mouse.move(x, y)
+            await self.capture.page.mouse.wheel(0, pixel_amount)
+        self._run_action(_act())
+        time.sleep(0.02)
+
+    def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01, move=True, key="left"):
+        # BaseInteraction logic skipped as we need specific async handling
+        button = "left"
+        if key == "right":
+            button = "right"
+        elif key == "middle":
+            button = "middle"
+
+        async def _act():
+            if x != -1 and y != -1:
+                await self.capture.page.mouse.click(x, y, button=button, delay=down_time * 1000)
+            else:
+                await self.capture.page.mouse.down(button=button)
+                await asyncio.sleep(down_time)
+                await self.capture.page.mouse.up(button=button)
+        self._run_action(_act())
+
+    def input_text(self, text):
+        async def _act():
+            await self.capture.page.keyboard.type(text)
+        self._run_action(_act())
+
+    def swipe(self, x1, y1, x2, y2, duration, after_sleep=0.1, settle_time=0):
+        async def _act():
+            await self.capture.page.mouse.move(x1, y1)
+            await self.capture.page.mouse.down()
+
+            steps = max(int(duration / 20), 5)
+            dx = (x2 - x1) / steps
+            dy = (y2 - y1) / steps
+
+            for i in range(steps):
+                await self.capture.page.mouse.move(x1 + dx * i, y1 + dy * i)
+                await asyncio.sleep(duration / 1000 / steps)
+
+            await self.capture.page.mouse.move(x2, y2)
+            if settle_time > 0:
+                await asyncio.sleep(settle_time)
+            await self.capture.page.mouse.up()
+
+        self._run_action(_act())
+        if after_sleep > 0:
+            time.sleep(after_sleep)
 
 class ADBInteraction(BaseInteraction):
 

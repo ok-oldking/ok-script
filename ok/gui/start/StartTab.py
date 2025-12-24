@@ -113,6 +113,8 @@ class StartTab(Tab):
                 method = self.tr("PC")
             elif device.get('emulator'):
                 method = self.tr("Emulator")
+            elif device['device'] == "browser":
+                method = self.tr("Browser")
             else:
                 method = self.tr("Android")
             connected = self.tr("Connected") if device['connected'] else self.tr("Disconnected")

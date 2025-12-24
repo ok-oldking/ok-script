@@ -2,7 +2,7 @@ import time
 
 from PySide6.QtCore import QObject
 
-from ok import BaseWindowsCaptureMethod, og, read_game_gpu_pref, read_global_gpu_pref
+from ok import BaseWindowsCaptureMethod, og, read_game_gpu_pref, read_global_gpu_pref, BrowserCaptureMethod
 from ok import Handler
 from ok import Logger
 from ok import execute
@@ -122,6 +122,10 @@ class StartController(QObject):
             if not og.device_manager.device_connected():
                 logger.error(f'Emulator is not connected {og.device_manager.device}')
                 return self.tr("Emulator is not connected, start the emulator first!")
+            if isinstance(og.device_manager.capture_method,
+                          BrowserCaptureMethod) and not og.device_manager.capture_method.connected():
+                logger.info(f"start browser")
+                og.device_manager.capture_method.start_browser()
             if not og.device_manager.capture_method.connected():
                 logger.error(f'Game window is not connected {og.device_manager.capture_method}')
                 return self.tr("Game window is not connected, please select the game window and capture method.")
@@ -168,4 +172,3 @@ class StartController(QObject):
                 logger.error(f'time out try_capture_a_frame')
                 return None
             time.sleep(0.1)
-
