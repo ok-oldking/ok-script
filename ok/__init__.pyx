@@ -2340,18 +2340,24 @@ cdef class TaskExecutor:
                     communicate.screenshot.emit(self.frame, name, True, None)
                 self.current_task = None
                 communicate.task.emit(None)
-
-        logger.debug(f'exit_event is set, destroy all tasks')
-        for task in self.onetime_tasks:
-            task.on_destroy()
-        for task in self.trigger_tasks:
-            task.on_destroy()
-        if self.interaction:
-            self.interaction.on_destroy()
+        self.destory()
 
     def stop(self):
         logger.info('stop')
         self.exit_event.set()
+
+    def destory(self):
+        logger.info(f'Executor destory')
+        for task in self.onetime_tasks:
+            task.on_destroy()
+        self.onetime_tasks = []
+        for task in self.trigger_tasks:
+            task.on_destroy()
+        self.trigger_tasks = []
+        if self.interaction:
+            self.interaction.on_destroy()
+        if self.method:
+            self.method.close()
 
     def wait_until_done(self):
         self.thread.join()
@@ -4391,31 +4397,70 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
         if self.browser is None:
             raise Exception("Failed to launch system browser.")
 
-        await self.browser.add_init_script("""
-                    Object.defineProperty(document, 'visibilityState', {
-                        get: () => 'visible'
-                    });
-                    Object.defineProperty(document, 'hidden', {
-                        get: () => false
-                    });
-                    window.addEventListener('visibilitychange', evt => {
-                        evt.stopImmediatePropagation();
-                    }, true);
-                """)
+        # Wait briefly for browser to restore previous session/tabs
+        await asyncio.sleep(0.1)
 
-        self.page = self.browser.pages[0]
-        if url := self.config.get('url'):
-            await self.page.goto(url)
+        self.page = None
+        url = self.config.get('url')
 
-        logger.info(f'start browser {width, height} {url}')
+        # Cleanup "about:blank" immediately if it exists alongside other restored pages
+        if len(self.browser.pages) > 1:
+            for p in self.browser.pages:
+                if p.url == "about:blank":
+                    try:
+                        await p.close()
+                    except:
+                        pass
+
+        # Try to find an existing page with the same URL to reuse
+        if url:
+            for p in self.browser.pages:
+                logger.debug(f'BrowserCaptureMethod checking page: {p.url}')
+                if p.url.rstrip('/') == url.rstrip('/'):
+                    self.page = p
+                    logger.info(f'Reusing existing page with URL: {p.url}')
+                    break
+
+        # If no matching page found, use the first available or create new
+        if self.page is None:
+            if self.browser.pages:
+                self.page = self.browser.pages[0]
+            else:
+                self.page = await self.browser.new_page()
+
+            if url:
+                await self.page.goto(url)
+
+        await self.page.bring_to_front()
+        await self.page.set_viewport_size({'width': width, 'height': height})
+
+        # Close all other pages to ensure only one tab remains
+        for p in self.browser.pages:
+            if p != self.page:
+                try:
+                    await p.close()
+                except:
+                    pass
+
+        logger.info(f'BrowserCaptureMethod start browser {width, height} {url}')
 
     async def _close_async(self):
+        logger.info(f'BrowserCaptureMethod _close_async')
         if self.page:
-            await self.page.close()
+            try:
+                await self.page.close()
+            except:
+                pass
         if self.browser:
-            await self.browser.close()
+            try:
+                await self.browser.close()
+            except:
+                pass
         if self.playwright:
-            await self.playwright.stop()
+            try:
+                await self.playwright.stop()
+            except:
+                pass
 
     def start_browser(self):
         if self.page is not None and not self.page.is_closed():
@@ -4423,10 +4468,17 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
         self.run_in_loop(self._start_browser_async())
 
     def close(self):
-        logger.info(f'close browser')
+        logger.info(f'BrowserCaptureMethod close browser')
         if self.loop.is_running():
             self.run_in_loop(self._close_async())
             self.loop.call_soon_threadsafe(self.loop.stop)
+        else:
+            try:
+                if not self.loop.is_closed():
+                    self.loop.run_until_complete(self._close_async())
+            except Exception as e:
+                logger.warning(f"Failed to run _close_async in stopped loop: {e}")
+            logger.info(f'BrowserCaptureMethod close not loop.is_running')
 
         self.browser = None
         self.playwright = None
@@ -4450,6 +4502,8 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
 
     cpdef object do_get_frame(self):
         if self.exit_event.is_set():
+            logger.info(f'BrowserCaptureMethod self.exit_event.is_set()')
+            self.close()
             return None
 
         if self.connected():
@@ -7837,6 +7891,7 @@ class MainWindow(MSFluentWindow):
             if not self.do_not_quit:
                 pyappify.kill_pyappify()
                 self.exit_event.set()
+                og.executor.destory()
             event.accept()
             if not self.do_not_quit:
                 QApplication.instance().exit()
