@@ -53,8 +53,18 @@ class Screenshot(QObject):
             else:
                 logger.debug("load default font")
                 self.pil_font = ImageFont.load_default(30)
-            clear_folder(self.click_screenshot_folder)
-            clear_folder(self.screenshot_folder)
+
+            limit = 300 * 1024 * 1024
+
+            if get_folder_size(self.click_screenshot_folder) > limit:
+                clear_folder(self.click_screenshot_folder)
+            else:
+                remove_old_files(self.click_screenshot_folder, 7)
+
+            if get_folder_size(self.screenshot_folder) > limit:
+                clear_folder(self.screenshot_folder)
+            else:
+                remove_old_files(self.screenshot_folder, 7)
         else:
             self.task_queue = None
 
@@ -170,6 +180,30 @@ class Screenshot(QObject):
         if len(frame.shape) == 2:
             frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
         return Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+
+def get_folder_size(folder):
+    total = 0
+    if folder and os.path.exists(folder):
+        for dirpath, _, filenames in os.walk(folder):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                if not os.path.islink(fp):
+                    total += os.path.getsize(fp)
+    return total
+
+
+def remove_old_files(folder, days):
+    if folder and os.path.exists(folder):
+        cutoff = time.time() - (days * 86400)
+        for dirpath, _, filenames in os.walk(folder):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                try:
+                    if os.path.getmtime(fp) < cutoff:
+                        os.remove(fp)
+                except OSError:
+                    pass
 
 
 def get_current_time_formatted():
