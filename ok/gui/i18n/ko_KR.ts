@@ -633,8 +633,8 @@
         <translation>에뮬레이터가 연결되지 않았습니다. 먼저 에뮬레이터를 시작하세요!</translation>
     </message>
     <message>
-        <source>Game window is not connected, please select the game window and capture method.</source>
-        <translation>게임 창이 연결되지 않았습니다. 게임 창과 캡처 방법을 선택하세요.</translation>
+        <source>{} is not connected, please select the game window.</source>
+        <translation>{}게임 창이 연결되지 않았습니다. 게임 창과 캡처 방법을 선택하세요.</translation>
     </message>
     <message>
         <source>Windows night light is enabled, please turn it off first.</source>

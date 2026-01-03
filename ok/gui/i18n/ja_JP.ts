@@ -632,8 +632,8 @@
         <translation>エミュレータが接続されていません。まずエミュレータを起動してください！</translation>
     </message>
     <message>
-        <source>Game window is not connected, please select the game window and capture method.</source>
-        <translation>ゲームウィンドウが接続されていません。ゲームウィンドウとキャプチャ方法を選択してください。</translation>
+        <source>{} is not connected, please select the game window.</source>
+        <translation>{}が接続されていません。ゲームウィンドウとキャプチャ方法を選択してください。</translation>
     </message>
     <message>
         <source>Windows night light is enabled, please turn it off first.</source>

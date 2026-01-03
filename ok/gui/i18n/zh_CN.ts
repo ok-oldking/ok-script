@@ -624,8 +624,8 @@
         <translation>模拟器未连接, 请先启动!</translation>
     </message>
     <message>
-        <source>Game window is not connected, please select the game window and capture method.</source>
-        <translation>游戏窗口未连接，请选择游戏窗口和截图方式。</translation>
+        <source>{} is not connected, please select the game window.</source>
+        <translation>{}未连接，请选择正确的游戏窗口。</translation>
     </message>
     <message>
         <source>Windows night light is enabled, please turn it off first.</source>

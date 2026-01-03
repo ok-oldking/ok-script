@@ -633,8 +633,8 @@
         <translation>El emulador no está conectado, ¡inicia el emulador primero!</translation>
     </message>
     <message>
-        <source>Game window is not connected, please select the game window and capture method.</source>
-        <translation>La ventana del juego no está conectada, por favor, selecciona la ventana del juego y el método de captura.</translation>
+        <source>{} is not connected, please select the game window.</source>
+        <translation>{} no está conectada, por favor, selecciona la ventana del juego y el método de captura.</translation>
     </message>
     <message>
         <source>Windows night light is enabled, please turn it off first.</source>

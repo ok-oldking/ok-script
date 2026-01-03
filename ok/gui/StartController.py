@@ -115,6 +115,9 @@ class StartController(QObject):
     def check_device_error(self):
         try:
             device = og.device_manager.get_preferred_device()
+            error_msg = self.tr("{} is not connected, please select the game window.").format(
+                device['nick'])
+            logger.debug(f'test check_device_error msg: {error_msg}')
             if not device:
                 return self.tr('No game selected!')
             if og.device_manager.capture_method is None:
@@ -128,7 +131,7 @@ class StartController(QObject):
                 og.device_manager.capture_method.start_browser()
             if not og.device_manager.capture_method.connected():
                 logger.error(f'Game window is not connected {og.device_manager.capture_method}')
-                return self.tr("Game window is not connected, please select the game window and capture method.")
+                return error_msg
             if isinstance(og.device_manager.capture_method, BaseWindowsCaptureMethod):
                 if self.config.get('windows', {}).get('check_hdr', False):
                     path = og.device_manager.get_exe_path(device)

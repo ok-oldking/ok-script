@@ -632,8 +632,8 @@
         <translation>模擬器未連線，請先啟動！</translation>
     </message>
     <message>
-        <source>Game window is not connected, please select the game window and capture method.</source>
-        <translation>遊戲視窗未連線，請選取遊戲視窗和截圖方式。</translation>
+        <source>{} is not connected, please select the game window.</source>
+        <translation>{} 未連線，請選取遊戲視窗。</translation>
     </message>
     <message>
         <source>Windows night light is enabled, please turn it off first.</source>

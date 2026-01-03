@@ -4025,8 +4025,8 @@ cdef class HwndWindow:
             mute = self.mute_option.get('Mute Game while in Background')
         if self.hwnd and self.to_handle_mute and mute:
             set_mute_state(self.hwnd, 0 if self.visible else 1)
-            logger.info(
-                f'handle_mute hwnd:{self.hwnd} mute:{mute} self.to_handle_mute:{self.to_handle_mute} visible:{self.visible}')
+            # logger.debug(
+            #     f'handle_mute hwnd:{self.hwnd} mute:{mute} self.to_handle_mute:{self.to_handle_mute} visible:{self.visible}')
 
     def frame_ratio(self, size):
         if self.frame_width > 0 and self.width > 0:
