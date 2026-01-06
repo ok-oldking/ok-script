@@ -1,8 +1,171 @@
 import threading
-from typing import Any, Callable, Dict, List, Optional, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Union, Tuple, Pattern
 import numpy as np
 import cv2
 from qfluentwidgets import FluentIcon
+from dataclasses import dataclass
+
+class TaskDisabledException(Exception):
+    """
+    Exception raised when a task is disabled.
+
+    当任务被禁用时抛出的异常。
+    """
+    ...
+
+
+def find_boxes_by_name(boxes: List["Box"], names: Union[str, List[str], Pattern[str], List[Pattern[str]]]) -> List["Box"]:
+    """
+    Finds boxes that match the given names or patterns.
+
+    通过名称或模式查找匹配的框。
+
+    :param boxes: List of boxes to search. 要搜索的框列表。
+    :param names: Name or list of names/patterns to match. 要匹配的名称 or 名称/模式列表。
+    :return: List of matching boxes. 匹配的框列表。
+    """
+    ...
+
+
+def is_close_to_pure_color(image: np.ndarray, max_colors: int = 5000, percent: float = 0.97) -> bool:
+    """
+    Checks if the image is close to a single pure color.
+
+    检查图像是否接近单一纯色。
+
+    :param image: Input image. 输入图像。
+    :param max_colors: Maximum number of unique colors allowed before returning False. 返回 False 前允许的最大唯一颜色数。
+    :param percent: Minimum percentage of the dominant color to be considered pure. 认为纯色的主导颜色最小百分比。
+    :return: True if close to pure color. 如果接近纯色返回 True。
+    """
+    ...
+
+
+def get_mask_in_color_range(image: np.ndarray, color_range: Dict[str, tuple[int, int]]) -> tuple[np.ndarray, int]:
+    """
+    Creates a mask for pixels within the specified color range.
+
+    为指定颜色范围内的像素创建掩码。
+
+    :param image: Input image. 输入图像。
+    :param color_range: Color range dictionary. 颜色范围字典。
+    :return: (mask, pixel_count) tuple. (掩码, 像素计数) 元组。
+    """
+    ...
+
+
+def get_connected_area_by_color(image: np.ndarray, color_range: Dict[str, tuple[int, int]], connectivity: int = 4,
+                                gray_range: int = 0) -> tuple[int, np.ndarray, np.ndarray]:
+    """
+    Finds connected areas of a specific color.
+
+    查找特定颜色的连通区域。
+
+    :param image: Input image. 输入图像。
+    :param color_range: Color range dictionary. 颜色范围字典。
+    :param connectivity: Connectivity (4 or 8). 连通性 (4 或 8)。
+    :param gray_range: Grayscale check range. 灰度检查范围。
+    :return: (num_labels, stats, labels) tuple. (标签数, 统计信息, 标签) 元组。
+    """
+    ...
+
+
+def color_range_to_bound(color_range: Dict[str, tuple[int, int]]) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Converts a color range dictionary to lower and upper bounds for OpenCV.
+
+    将颜色范围字典转换为 OpenCV 的上下限。
+
+    :param color_range: Color range dictionary. 颜色范围字典。
+    :return: (lower_bound, upper_bound) tuple. (下限, 上限) 元组。
+    """
+    ...
+
+
+def calculate_colorfulness(image: np.ndarray, box: Optional["Box"] = None) -> float:
+    """
+    Calculates the colorfulness of an image or a region.
+
+    计算图像或区域的色彩丰富度。
+
+    :param image: Input image. 输入图像。
+    :param box: Optional ROI. 可选 ROI。
+    :return: Colorfulness value (0-1 approx). 色彩丰富度值（约 0-1）。
+    """
+    ...
+
+
+def get_saturation(image: np.ndarray, box: Optional["Box"] = None) -> float:
+    """
+    Calculates the average saturation of an image or a region.
+
+    计算图像或区域的平均饱和度。
+
+    :param image: Input image. 输入图像。
+    :param box: Optional ROI. 可选 ROI。
+    :return: Average saturation (0-1). 平均饱和度 (0-1)。
+    """
+    ...
+
+
+def is_pure_black(frame: np.ndarray) -> bool:
+    """
+    Checks if the frame is completely black.
+
+    检查帧是否完全为黑色。
+
+    :param frame: The image frame. 图像帧。
+    :return: True if pure black. 如果是全黑返回 True。
+    """
+    ...
+
+
+def calculate_color_percentage(image: np.ndarray, color_ranges: Dict[str, tuple[int, int]],
+                               box: Optional["Box"] = None) -> float:
+    """
+    Calculates the percentage of pixels within specified color ranges.
+
+    计算指定颜色范围内像素的百分比。
+
+    :param image: Input image. 输入图像。
+    :param color_ranges: Color range dictionary. 颜色范围字典。
+    :param box: Optional ROI. 可选 ROI。
+    :return: Percentage (0-1). 百分比 (0-1)。
+    """
+    ...
+
+
+def rgb_to_gray(rgb: Union[tuple, list, np.ndarray]) -> float:
+    """
+    Converts RGB color to grayscale value.
+
+    将 RGB 颜色转换为灰度值。
+
+    :param rgb: RGB values (tuple or list). RGB 值（元组或列表）。
+    :return: Grayscale value. 灰度值。
+    """
+    ...
+
+
+def find_color_rectangles(image: np.ndarray, color_range: Dict[str, tuple[int, int]], min_width: int, min_height: int,
+                          max_width: int = -1, max_height: int = -1, threshold: float = 0.95,
+                          box: Optional["Box"] = None) -> List["Box"]:
+    """
+    Finds rectangular regions of a specific color in the image.
+
+    在图像中查找特定颜色的矩形区域。
+
+    :param image: The image to search (OpenCV Mat). 要搜索的图像 (OpenCV Mat)。
+    :param color_range: Color range configuration. 颜色范围配置。
+    :param min_width: Minimum width of the rectangle. 矩形的最小宽度。
+    :param min_height: Minimum height of the rectangle. 矩形的最小高度。
+    :param max_width: Maximum width of the rectangle. 矩形的最大宽度。
+    :param max_height: Maximum height of the rectangle. 矩形的最大高度。
+    :param threshold: Color matching threshold. 颜色匹配阈值。
+    :param box: Optional region of interest. 可选的感兴趣区域。
+    :return: List of found Box instances. 找到的 Box 实例列表。
+    """
+    ...
 
 
 class Box:
@@ -186,6 +349,110 @@ class Box:
         """
         ...
 
+
+class Handler:
+    """
+    A class that handles task execution in a separate thread.
+
+    在独立线程中处理任务执行的类。
+    """
+    task_queue: List[Any]  # ScheduledTask objects
+    executing: Optional[Callable]
+    condition: threading.Condition
+    exit_event: "ExitEvent"
+    name: Optional[str]
+    thread: threading.Thread
+
+    def __init__(self, event: "ExitEvent", name: Optional[str] = None) -> None:
+        """
+        Initializes the Handler.
+
+        初始化 Handler。
+
+        :param event: Exit event. 退出事件。
+        :param name: Handler name. 名称。
+        """
+        ...
+
+    def post(self, task: Callable, delay: float = 0, remove_existing: bool = False, skip_if_running: bool = False) -> bool:
+        """
+        Posts a task to the handler's queue.
+
+        向处理器队列提交任务。
+
+        :param task: The task to execute. 要执行的任务。
+        :param delay: Delay before execution. 执行前的延迟（秒）。
+        :param remove_existing: Remove existing instances of the same task in queue. 移除队列中已有的相同任务。
+        :param skip_if_running: Skip if the task is already running. 如果任务正在运行则跳过。
+        :return: True if posted. 如果提交成功返回 True。
+        """
+        ...
+
+    def stop(self) -> None:
+        """
+        Stops the handler and clears the task queue.
+
+        停止处理器并清空任务队列。
+        """
+        ...
+
+class Feature:
+    """
+    A class representing a visual feature with its image data and coordinates.
+
+    表示视觉特征的类，包含图像数据和坐标。
+    """
+    mat: np.ndarray
+    x: int
+    y: int
+    scaling: float
+    mask: Optional[np.ndarray]
+
+    def __init__(self, mat: np.ndarray, x: int = 0, y: int = 0, scaling: float = 1) -> None:
+        """
+        Initializes a Feature instance.
+
+        初始化 Feature 实例。
+
+        :param mat: The image data (OpenCV Mat). 图像数据 (OpenCV Mat)。
+        :param x: The x-coordinate. x 坐标。
+        :param y: The y-coordinate. y 坐标。
+        :param scaling: The scaling factor. 缩放因子。
+        """
+        ...
+
+    @property
+    def width(self) -> int:
+        """
+        Gets the width of the feature.
+
+        获取特征的宽度。
+
+        :return: Width in pixels. 宽度（像素）。
+        """
+        ...
+
+    @property
+    def height(self) -> int:
+        """
+        Gets the height of the feature.
+
+        获取特征的高度。
+
+        :return: Height in pixels. 高度（像素）。
+        """
+        ...
+
+    def __str__(self) -> str:
+        """
+        Returns a string representation of the Feature.
+
+        返回 Feature 的字符串表示。
+
+        :return: String representation. 字符串表示。
+        """
+        ...
+
 class ExecutorOperation:
     """
     Base class for operations in the task executor.
@@ -194,6 +461,7 @@ class ExecutorOperation:
     """
     last_click_time: float
     _executor: "TaskExecutor"
+    logger: "Logger"
 
     def __init__(self, executor: "TaskExecutor") -> None:
         """
@@ -202,6 +470,39 @@ class ExecutorOperation:
         初始化 ExecutorOperation。
 
         :param executor: The task executor instance. 任务执行器实例。
+        """
+        ...
+
+    @property
+    def executor(self) -> "TaskExecutor":
+        """
+        Gets the task executor.
+
+        获取任务执行器。
+
+        :return: TaskExecutor instance. TaskExecutor 实例。
+        """
+        ...
+
+    @property
+    def debug(self) -> bool:
+        """
+        Checks if debug mode is enabled.
+
+        检查是否启用调试模式。
+
+        :return: True if debug enabled. 如果启用调试返回 True。
+        """
+        ...
+
+    @property
+    def hwnd(self) -> Any:
+        """
+        Gets the window handle (HWND) of the target window.
+
+        获取目标窗口的窗口句柄 (HWND)。
+
+        :return: Window handle. 窗口句柄。
         """
         ...
 
@@ -234,7 +535,7 @@ class ExecutorOperation:
 
         :param box: The box to check. 要检查的框。
         :param off_percent: Offset percentage tolerance. 偏移百分比容差。
-        :return: True if centered, False otherwise. 如果居中返回 True，否则 False。
+        :return: True if centered, False otherwise. 如果居中返回 True，否则返回 False。
         """
         ...
 
@@ -255,7 +556,7 @@ class ExecutorOperation:
         检查当前场景是否匹配给定类型。
 
         :param the_scene: The scene class. 场景类。
-        :return: True if matches, False otherwise. 如果匹配返回 True，否则 False。
+        :return: True if matches, False otherwise. 如果匹配返回 True，否则返回 False。
         """
         ...
 
@@ -271,12 +572,12 @@ class ExecutorOperation:
               name: Optional[str] = None, interval: int = -1, move: bool = True, down_time: float = 0.01,
               after_sleep: float = 0, key: str = 'left') -> bool:
         """
-        Performs a click action.
+        Performs a click action. If x or y is between 0 and 1, it will be treated as relative coordinates and automatically proxy to `click_relative`.
 
-        执行点击动作。
+        执行点击动作。如果 x 或 y 在 0 到 1 之间，将被视为相对坐标并自动代理到 `click_relative`。
 
-        :param x: X coordinate or Box/List[Box]. x 坐标或 Box/List[Box]。
-        :param y: Y coordinate. y 坐标。
+        :param x: X coordinate, Box, List[Box], or relative coordinate (0-1). x 坐标、Box、Box列表或相对坐标 (0-1)。
+        :param y: Y coordinate or relative coordinate (0-1). y 坐标或相对坐标 (0-1)。
         :param move_back: Move back after click. 点击后移回。
         :param name: Name for logging. 日志名称。
         :param interval: Click interval check. 点击间隔检查。
@@ -301,12 +602,12 @@ class ExecutorOperation:
     def middle_click(self, x: Union[int, "Box", List["Box"]] = -1, y: int = -1, move_back: bool = False,
                      down_time: float = 0.01) -> bool:
         """
-        Performs a middle click.
+        Performs a middle click. Support relative coordinates (0-1).
 
-        执行中键点击。
+        执行中键点击。支持相对坐标 (0-1)。
 
-        :param x: X coordinate or Box/List[Box]. x 坐标或 Box/List[Box]。
-        :param y: Y coordinate. y 坐标。
+        :param x: X coordinate, Box, List[Box], or relative coordinate (0-1). x 坐标、Box、Box列表或相对坐标 (0-1)。
+        :param y: Y coordinate or relative coordinate (0-1). y 坐标或相对坐标 (0-1)。
         :param move_back: Move back after click. 点击后移回。
         :param down_time: Mouse down time. 鼠标按下时间。
         :return: True if successful. 如果成功返回 True。
@@ -316,15 +617,46 @@ class ExecutorOperation:
     def right_click(self, x: Union[int, "Box", List["Box"]] = -1, y: int = -1, move_back: bool = False,
                     down_time: float = 0.01) -> bool:
         """
-        Performs a right click.
+        Performs a right click. Support relative coordinates (0-1).
 
-        执行右键点击。
+        执行右键点击。支持相对坐标 (0-1)。
 
-        :param x: X coordinate or Box/List[Box]. x 坐标或 Box/List[Box]。
-        :param y: Y coordinate. y 坐标。
+        :param x: X coordinate, Box, List[Box], or relative coordinate (0-1). x 坐标、Box、Box列表或相对坐标 (0-1)。
+        :param y: Y coordinate or relative coordinate (0-1). y 坐标或相对坐标 (0-1)。
         :param move_back: Move back after click. 点击后移回。
         :param down_time: Mouse down time. 鼠标按下时间。
         :return: True if successful. 如果成功返回 True。
+        """
+        ...
+
+    def check_interval(self, interval: float) -> bool:
+        """
+        Checks if the time since the last action is greater than the interval.
+
+        检查自上次操作以来的时间是否大于间隔。
+
+        :param interval: Time interval in seconds. 时间间隔（秒）。
+        :return: True if the interval has passed. 如果间隔已过返回 True。
+        """
+        ...
+
+    def is_adb(self) -> bool:
+        """
+        Checks if the current device is an ADB/emulator device.
+
+        检查当前设备是否为 ADB/模拟器设备。
+
+        :return: True if ADB/emulator. 如果是 ADB/模拟器返回 True。
+        """
+        ...
+
+    def is_browser(self) -> bool:
+        """
+        Checks if the current device is a browser.
+
+        检查当前设备是否为浏览器。
+
+        :return: True if browser. 如果是浏览器返回 True。
         """
         ...
 
@@ -424,6 +756,31 @@ class ExecutorOperation:
         :param duration: Duration. 持续时间。
         :param after_sleep: Sleep after. 后睡眠。
         :param settle_time: Settle time. 稳定时间。
+        """
+        ...
+
+    def click_box_if_name_match(self, boxes: List["Box"], names: Union[str, List[str]], relative_x: float = 0.5,
+                                relative_y: float = 0.5) -> Optional["Box"]:
+        """
+        Clicks on a box from a list if its name matches.
+
+        如果名称匹配，则从列表中点击一个框。
+
+        :param boxes: List of boxes. 框列表。
+        :param names: Name or list of names to match. 要匹配的名称或名称列表。
+        :param relative_x: Relative X in box. 框内相对 X。
+        :param relative_y: Relative Y in box. 框内相对 Y。
+        :return: The matched Box or None. 匹配的框或 None。
+        """
+        ...
+
+    def out_of_ratio(self) -> bool:
+        """
+        Checks if the current screen ratio differs from the supported ratio.
+
+        检查当前屏幕比例是否与支持的比例不同。
+
+        :return: True if out of ratio. 如果比例不符返回 True。
         """
         ...
 
@@ -609,6 +966,50 @@ class ExecutorOperation:
         """
         ...
 
+    @property
+    def screen_width(self) -> int:
+        """
+        Gets the width of the captured frame.
+
+        获取捕获帧的宽度。
+
+        :return: Frame width in pixels. 捕获帧宽度（像素）。
+        """
+        ...
+
+    @property
+    def screen_height(self) -> int:
+        """
+        Gets the height of the captured frame.
+
+        获取捕获帧的高度。
+
+        :return: Frame height in pixels. 捕获帧高度（像素）。
+        """
+        ...
+
+    @property
+    def width(self) -> int:
+        """
+        Gets the width of the captured frame.
+
+        获取捕获帧的宽度。
+
+        :return: Frame width in pixels. 捕获帧宽度（像素）。
+        """
+        ...
+
+    @property
+    def height(self) -> int:
+        """
+        Gets the height of the captured frame.
+
+        获取捕获帧的高度。
+
+        :return: Frame height in pixels. 捕获帧高度（像素）。
+        """
+        ...
+
     @staticmethod
     def draw_boxes(feature_name: Optional[str] = None, boxes: Optional[List["Box"]] = None, color: str = "red",
                    debug: bool = True) -> None:
@@ -653,6 +1054,129 @@ class ExecutorOperation:
         :param args: Arguments. 参数。
         :param kwargs: Keyword arguments. 关键字参数。
         :return: Output or None. 输出或 None。
+        """
+        ...
+
+    def box_of_screen(self, x: float, y: float, to_x: float = 1.0, to_y: float = 1.0, width: float = 0.0,
+                      height: float = 0.0, name: Optional[str] = None, hcenter: bool = False,
+                      confidence: float = 1.0) -> "Box":
+        """
+        Calculates a box on the screen using relative coordinates.
+
+        使用相对坐标计算屏幕上的框。
+
+        :param x: Starting relative x-coordinate (0-1). 起始相对 x 坐标 (0-1)。
+        :param y: Starting relative y-coordinate (0-1). 起始相对 y 坐标 (0-1)。
+        :param to_x: Ending relative x-coordinate (0-1). 结束相对 x 坐标 (0-1)。
+        :param to_y: Ending relative y-coordinate (0-1). 结束相对 y 坐标 (0-1)。
+        :param width: Relative width (0-1). 相对宽度 (0-1)。
+        :param height: Relative height (0-1). 相对高度 (0-1)。
+        :param name: Optional name for the box. 可选的框名称。
+        :param hcenter: Whether to center horizontally. 是否水平居中。
+        :param confidence: The confidence score. 置信度分数。
+        :return: A Box instance. 一个 Box 实例。
+        """
+        ...
+
+    def box_of_screen_scaled(self, original_screen_width: int, original_screen_height: int, x_original: float,
+                             y_original: float, to_x: float = 0, to_y: float = 0, width_original: float = 0,
+                             height_original: float = 0, name: Optional[str] = None, hcenter: bool = False,
+                             confidence: float = 1.0) -> "Box":
+        """
+        Calculates a box on the screen scaled from an original resolution.
+
+        从原始分辨率缩放计算屏幕上的框。
+
+        :param original_screen_width: Original screen width. 原始屏幕宽度。
+        :param original_screen_height: Original screen height. 原始屏幕高度。
+        :param x_original: Original x-coordinate. 原始 x 坐标。
+        :param y_original: Original y-coordinate. 原始 y 坐标。
+        :param to_x: Original ending x-coordinate. 原始结束 x 坐标。
+        :param to_y: Original ending y-coordinate. 原始结束 y 坐标。
+        :param width_original: Original width. 原始宽度。
+        :param height_original: Original height. 原始高度。
+        :param name: Optional name for the box. 可选的框名称。
+        :param hcenter: Whether to center horizontally. 是否水平居中。
+        :param confidence: The confidence score. 置信度分数。
+        :return: A Box instance. 一个 Box 实例。
+        """
+        ...
+
+    def width_of_screen(self, percent: float) -> int:
+        """
+        Calculates width based on screen percentage.
+
+        根据屏幕百分比计算宽度。
+
+        :param percent: Percentage of the screen width (0-1). 屏幕宽度的百分比 (0-1)。
+        :return: Calculated width in pixels. 计算出的宽度（像素）。
+        """
+        ...
+
+    def height_of_screen(self, percent: float) -> int:
+        """
+        Calculates height based on screen percentage.
+
+        根据屏幕百分比计算高度。
+
+        :param percent: Percentage of the screen height (0-1). 屏幕高度的百分比 (0-1)。
+        :return: Calculated height in pixels. 计算出的高度（像素）。
+        """
+        ...
+
+    def move(self, x: int, y: int) -> None:
+        """
+        Moves the mouse to the specified coordinates.
+
+        将鼠标移动到指定坐标。
+
+        :param x: X coordinate. x 坐标。
+        :param y: Y coordinate. y 坐标。
+        """
+        ...
+
+    def move_relative(self, x: float, y: float) -> None:
+        """
+        Moves the mouse using relative coordinates.
+
+        使用相对坐标移动鼠标。
+
+        :param x: Relative x-coordinate (0-1). 相对 x 坐标 (0-1)。
+        :param y: Relative y-coordinate (0-1). 相对 y 坐标 (0-1)。
+        """
+        ...
+
+    def middle_click_relative(self, x: float, y: float, move_back: bool = False, down_time: float = 0.01) -> None:
+        """
+        Performs a middle click using relative coordinates.
+
+        使用相对坐标执行中键点击。
+
+        :param x: Relative x-coordinate (0-1). 相对 x 坐标 (0-1)。
+        :param y: Relative y-coordinate (0-1). 相对 y 坐标 (0-1)。
+        :param move_back: Move back after click. 点击后移回。
+        :param down_time: Mouse down time. 鼠标按下时间。
+        """
+        ...
+
+    def click_relative(self, x: float, y: float, move_back: bool = False, hcenter: bool = False, move: bool = True,
+                       after_sleep: float = 0, name: Optional[str] = None, interval: int = -1,
+                       down_time: float = 0.02, key: str = "left") -> None:
+        """
+        Performs a click using relative coordinates.
+
+        使用相对坐标执行点击。
+
+        :param x: Relative x-coordinate (0-1). 相对 x 坐标 (0-1)。
+        :param y: Relative y-coordinate (0-1). 相对 y 坐标 (0-1)。
+        :param move_back: Move back after click. 点击后移回。
+        :param hcenter: Horizontal centering. 水平居中。
+        :param move: Move mouse. 移动鼠标。
+        :param after_sleep: Sleep after click. 点击后睡眠。
+        :param name: Logging name. 日志名称。
+        :param interval: Interval check. 间隔检查。
+        :param down_time: Mouse down time. 鼠标按下时间。
+        :param key: Mouse button. 鼠标按钮。
         """
         ...
 
@@ -919,7 +1443,7 @@ class OCR(FindFeature):
         ...
 
     def ocr(self, x: float = 0, y: float = 0, to_x: float = 1, to_y: float = 1,
-            match: Optional[Union[str, List[str], "re.Pattern", List["re.Pattern"]]] = None, width: int = 0,
+            match: Optional[Union[str, List[str], Pattern[str], List[Pattern[str]]]] = None, width: int = 0,
             height: int = 0, box: Optional[Union["Box", str]] = None, name: Optional[str] = None, threshold: float = 0,
             frame: Optional[np.ndarray] = None, target_height: int = 0, use_grayscale: bool = False, log: bool = False,
             frame_processor: Optional[Callable[[np.ndarray], np.ndarray]] = None, lib: str = 'default') -> List["Box"]:
@@ -1015,6 +1539,16 @@ class OCR(FindFeature):
         """
         ...
 
+    def add_text_fix(self, fix: Dict[str, str]) -> None:
+        """
+        Adds text fixes to the text_fix dictionary for OCR result correction.
+
+        添加文本修正字典，用于纠正 OCR 识别结果。
+
+        :param fix: A dictionary mapping incorrect OCR text to correct text. 映射错误 OCR 文本到正确文本的字典。
+        """
+        ...
+
 class BaseTask(OCR):
     """
     Base class for tasks.
@@ -1041,6 +1575,8 @@ class BaseTask(OCR):
     supported_languages: List[str]
     group_name: str
     group_icon: FluentIcon
+    first_run_alert: Optional[str]
+    show_create_shortcut: bool
 
     def __init__(self, executor: Optional["TaskExecutor"] = None) -> None:
         """
@@ -1049,6 +1585,22 @@ class BaseTask(OCR):
         初始化 BaseTask。
 
         :param executor: Executor. 执行器。
+        """
+        ...
+
+    def post_init(self) -> None:
+        """
+        Post-initialization callback.
+
+        初始化后的回调。
+        """
+        ...
+
+    def create_shortcut(self) -> None:
+        """
+        Creates a shortcut for the task on the desktop.
+
+        在桌面创建任务快捷方式。
         """
         ...
 
@@ -1126,6 +1678,17 @@ class BaseTask(OCR):
         Enables task.
 
         启用任务。
+        """
+        ...
+
+    @property
+    def handler(self) -> "Handler":
+        """
+        Gets the event handler for this task.
+
+        获取此任务的事件处理器。
+
+        :return: Handler instance. Handler 实例。
         """
         ...
 
@@ -2002,3 +2565,40 @@ class Logger:
             A string containing the formatted traceback.
         """
         ...
+
+
+class ExitEvent(threading.Event):
+    """
+    An extension of threading.Event that can bind queues and objects to be stopped.
+
+    增强型的线程事件，可以绑定队列和需要停止的对象。
+    """
+    queues: set
+    to_stops: set
+
+    def bind_queue(self, queue: Any) -> None:
+        """
+        Binds a queue to this event.
+
+        绑定队列。
+        """
+        ...
+
+    def bind_stop(self, to_stop: Any) -> None:
+        """
+        Binds an object with a stop() method to this event.
+
+        绑定具有 stop() 方法的对象。
+        """
+        ...
+
+
+@dataclass(order=True)
+class ScheduledTask:
+    """
+    A task scheduled to run at a specific time.
+
+    安排在特定时间运行的任务。
+    """
+    execute_at: float
+    task: Optional[Callable]
