@@ -1,3 +1,4 @@
+# __init__.pyx
 import argparse
 import asyncio
 import base64

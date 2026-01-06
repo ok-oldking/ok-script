@@ -1,3 +1,4 @@
+# __init__.pyi
 import threading
 from typing import Any, Callable, Dict, List, Optional, Union, Tuple, Pattern
 import numpy as np
@@ -2295,6 +2296,719 @@ class TaskExecutor:
 
         :param cls: Class. 类。
         :return: Task or None. 任务或 None。
+        """
+        ...
+
+
+class BaseCaptureMethod:
+    """
+    Base class for capture methods.
+
+    捕获方法的基类。
+    """
+    name: str
+    description: str
+    _size: Tuple[int, int]
+    exit_event: Optional[threading.Event]
+
+    def __init__(self) -> None:
+        """
+        Initializes BaseCaptureMethod.
+
+        初始化 BaseCaptureMethod。
+        """
+        ...
+
+    def close(self) -> None:
+        """
+        Closes the capture method.
+
+        关闭捕获方法。
+        """
+        ...
+
+    @property
+    def width(self) -> int:
+        """
+        Gets width.
+
+        获取宽度。
+
+        :return: Width. 宽度。
+        """
+        ...
+
+    @property
+    def height(self) -> int:
+        """
+        Gets height.
+
+        获取高度。
+
+        :return: Height. 高度。
+        """
+        ...
+
+    def get_name(self) -> str:
+        """
+        Gets name.
+
+        获取名称。
+
+        :return: Name. 名称。
+        """
+        ...
+
+    def measure_if_0(self) -> None:
+        """
+        Measures size if 0.
+
+        如果为 0 则测量尺寸。
+        """
+        ...
+
+    def get_frame(self) -> Optional[np.ndarray]:
+        """
+        Gets frame.
+
+        获取帧。
+
+        :return: Frame or None. 帧或 None。
+        """
+        ...
+
+    def do_get_frame(self) -> Optional[np.ndarray]:
+        """
+        Internal get frame method.
+
+        内部获取帧方法。
+
+        :return: Frame or None. 帧或 None。
+        """
+        ...
+
+    def draw_rectangle(self) -> None:
+        """
+        Draws rectangle.
+
+        绘制矩形。
+        """
+        ...
+
+    def clickable(self) -> Any:
+        """
+        Checks if clickable.
+
+        检查是否可点击。
+
+        :return: Clickable status. 可点击状态。
+        """
+        ...
+
+    def connected(self) -> Any:
+        """
+        Checks if connected.
+
+        检查是否连接。
+
+        :return: Connected status. 连接状态。
+        """
+        ...
+
+
+class DeviceManager:
+    """
+    Device manager class.
+
+    设备管理器类。
+    """
+    _device: Optional[Any]
+    _adb: Optional[Any]
+    executor: Optional[TaskExecutor]
+    capture_method: Optional[BaseCaptureMethod]
+    global_config: Optional[GlobalConfig]
+    _adb_lock: threading.Lock
+    packages: Optional[List[str]]
+    supported_ratio: Optional[float]
+    windows_capture_config: Optional[Dict[str, Any]]
+    adb_capture_config: Optional[Dict[str, Any]]
+    browser_config: Optional[Dict[str, Any]]
+    debug: bool
+    interaction: Optional[BaseInteraction]
+    device_dict: Dict[str, Any]
+    exit_event: Optional[threading.Event]
+    resolution_dict: Dict[str, Tuple[int, int]]
+    config: Config
+    handler: Handler
+    hwnd_window: Optional[Any]
+    win_interaction_class: Any
+
+    def __init__(self, app_config: Dict[str, Any], exit_event: Optional[threading.Event] = None,
+                 global_config: Optional[GlobalConfig] = None) -> None:
+        """
+        Initializes DeviceManager.
+
+        初始化 DeviceManager。
+
+        :param app_config: App config. 应用配置。
+        :param exit_event: Exit event. 退出事件。
+        :param global_config: Global config. 全局配置。
+        """
+        ...
+
+    def stop_hwnd(self) -> None:
+        """
+        Stops HWND window.
+
+        停止 HWND 窗口。
+        """
+        ...
+
+    def select_hwnd(self, exe: str, hwnd: int) -> None:
+        """
+        Selects HWND.
+
+        选择 HWND。
+
+        :param exe: Executable. 可执行文件。
+        :param hwnd: HWND. 句柄。
+        """
+        ...
+
+    def refresh(self) -> None:
+        """
+        Refreshes devices.
+
+        刷新设备。
+        """
+        ...
+
+    @property
+    def adb(self) -> Any:
+        """
+        Gets ADB client.
+
+        获取 ADB 客户端。
+
+        :return: ADB client. ADB 客户端。
+        """
+        ...
+
+    def try_kill_adb(self, e: Optional[Exception] = None) -> None:
+        """
+        Tries to kill ADB server.
+
+        尝试杀死 ADB 服务器。
+
+        :param e: Exception. 异常。
+        """
+        ...
+
+    def adb_connect(self, addr: str, try_connect: bool = True) -> Optional[Any]:
+        """
+        Connects to ADB device.
+
+        连接到 ADB 设备。
+
+        :param addr: Address. 地址。
+        :param try_connect: Try connect. 尝试连接。
+        :return: Device or None. 设备或 None。
+        """
+        ...
+
+    def get_devices(self) -> List[Any]:
+        """
+        Gets devices list.
+
+        获取设备列表。
+
+        :return: Devices. 设备列表。
+        """
+        ...
+
+    def update_pc_device(self) -> None:
+        """
+        Updates PC device info.
+
+        更新 PC 设备信息。
+        """
+        ...
+
+    def update_browser_device(self) -> None:
+        """
+        Updates browser device info.
+
+        更新浏览器设备信息。
+        """
+        ...
+
+    def do_refresh(self, current: bool = False) -> None:
+        """
+        Performs refresh.
+
+        执行刷新。
+
+        :param current: Refresh current only. 仅刷新当前。
+        """
+        ...
+
+    def refresh_phones(self, current: bool = False) -> None:
+        """
+        Refreshes phones.
+
+        刷新手机。
+
+        :param current: Refresh current only. 仅刷新当前。
+        """
+        ...
+
+    def refresh_emulators(self, current: bool = False) -> None:
+        """
+        Refreshes emulators.
+
+        刷新模拟器。
+
+        :param current: Refresh current only. 仅刷新当前。
+        """
+        ...
+
+    def get_resolution(self, device: Optional[Any] = None) -> Tuple[int, int]:
+        """
+        Gets device resolution.
+
+        获取设备分辨率。
+
+        :param device: Device. 设备。
+        :return: (Width, Height). (宽度, 高度)。
+        """
+        ...
+
+    def set_preferred_device(self, imei: Optional[str] = None, index: int = -1) -> None:
+        """
+        Sets preferred device.
+
+        设置首选设备。
+
+        :param imei: IMEI. IMEI。
+        :param index: Index. 索引。
+        """
+        ...
+
+    def shell_device(self, device: Any, *args: Any, **kwargs: Any) -> Any:
+        """
+        Executes shell on specific device.
+
+        在特定设备上执行 shell。
+
+        :param device: Device. 设备。
+        :param args: Args. 参数。
+        :param kwargs: Kwargs. 关键字参数。
+        :return: Result. 结果。
+        """
+        ...
+
+    def adb_get_imei(self, device: Any) -> Optional[str]:
+        """
+        Gets device IMEI.
+
+        获取设备 IMEI。
+
+        :param device: Device. 设备。
+        :return: IMEI or None. IMEI 或 None。
+        """
+        ...
+
+    def do_screencap(self, device: Any) -> Optional[np.ndarray]:
+        """
+        Captures screen.
+
+        捕获屏幕。
+
+        :param device: Device. 设备。
+        :return: Frame or None. 帧或 None。
+        """
+        ...
+
+    def adb_ui_dump(self) -> Optional[str]:
+        """
+        Dumps UI.
+
+        转储 UI。
+
+        :return: XML content or None. XML 内容或 None。
+        """
+        ...
+
+    def get_preferred_device(self) -> Optional[Dict[str, Any]]:
+        """
+        Gets preferred device.
+
+        获取首选设备。
+
+        :return: Device info. 设备信息。
+        """
+        ...
+
+    def get_preferred_capture(self) -> Optional[str]:
+        """
+        Gets preferred capture method.
+
+        获取首选捕获方法。
+
+        :return: Capture method. 捕获方法。
+        """
+        ...
+
+    def set_hwnd_name(self, hwnd_name: str) -> None:
+        """
+        Sets HWND name.
+
+        设置 HWND 名称。
+
+        :param hwnd_name: HWND name. HWND 名称。
+        """
+        ...
+
+    def set_capture(self, capture: str) -> None:
+        """
+        Sets capture method.
+
+        设置捕获方法。
+
+        :param capture: Capture method. 捕获方法。
+        """
+        ...
+
+    def get_hwnd_name(self) -> Optional[str]:
+        """
+        Gets HWND name.
+
+        获取 HWND 名称。
+
+        :return: HWND name. HWND 名称。
+        """
+        ...
+
+    def ensure_hwnd(self, title: Optional[str], exe: Optional[str], frame_width: int = 0, frame_height: int = 0,
+                    player_id: int = -1, hwnd_class: Optional[str] = None) -> None:
+        """
+        Ensures HWND window exists.
+
+        确保 HWND 窗口存在。
+
+        :param title: Title. 标题。
+        :param exe: Executable. 可执行文件。
+        :param frame_width: Frame width. 帧宽度。
+        :param frame_height: Frame height. 帧高度。
+        :param player_id: Player ID. 播放器 ID。
+        :param hwnd_class: HWND class. HWND 类。
+        """
+        ...
+
+    def use_windows_capture(self) -> None:
+        """
+        Uses Windows capture.
+
+        使用 Windows 捕获。
+        """
+        ...
+
+    def start(self) -> None:
+        """
+        Starts device manager.
+
+        启动设备管理器。
+        """
+        ...
+
+    def do_start(self) -> None:
+        """
+        Internal start method.
+
+        内部启动方法。
+        """
+        ...
+
+    def update_resolution_for_hwnd(self) -> None:
+        """
+        Updates resolution for HWND.
+
+        更新 HWND 分辨率。
+        """
+        ...
+
+    @property
+    def device(self) -> Optional[Any]:
+        """
+        Gets current device.
+
+        获取当前设备。
+
+        :return: Device or None. 设备或 None。
+        """
+        ...
+
+    def adb_kill_server(self) -> None:
+        """
+        Kills ADB server.
+
+        杀死 ADB 服务器。
+        """
+        ...
+
+    @property
+    def width(self) -> int:
+        """
+        Gets width.
+
+        获取宽度。
+
+        :return: Width. 宽度。
+        """
+        ...
+
+    @property
+    def height(self) -> int:
+        """
+        Gets height.
+
+        获取高度。
+
+        :return: Height. 高度。
+        """
+        ...
+
+    def update_device_list(self) -> None:
+        """
+        Updates device list.
+
+        更新设备列表。
+        """
+        ...
+
+    def shell(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Executes shell command.
+
+        执行 shell 命令。
+
+        :param args: Args. 参数。
+        :param kwargs: Kwargs. 关键字参数。
+        :return: Result. 结果。
+        """
+        ...
+
+    def device_connected(self) -> bool:
+        """
+        Checks if device connected.
+
+        检查设备是否连接。
+
+        :return: True if connected. 如果连接返回 True。
+        """
+        ...
+
+    def get_exe_path(self, device: Dict[str, Any]) -> Optional[str]:
+        """
+        Gets executable path.
+
+        获取可执行文件路径。
+
+        :param device: Device info. 设备信息。
+        :return: Path or None. 路径或 None。
+        """
+        ...
+
+    def adb_check_installed(self, packages: Union[str, List[str]]) -> Optional[str]:
+        """
+        Checks if packages installed via ADB.
+
+        检查是否通过 ADB 安装了包。
+
+        :param packages: Packages. 包。
+        :return: Installed package name or None. 已安装包名或 None。
+        """
+        ...
+
+    def adb_check_in_front(self, packages: Union[str, List[str]]) -> bool:
+        """
+        Checks if package is in front via ADB.
+
+        检查包是否通过 ADB 在前台。
+
+        :param packages: Packages. 包。
+        :return: True if in front. 如果在前台返回 True。
+        """
+        ...
+
+    def adb_start_package(self, package: str) -> None:
+        """
+        Starts package via ADB.
+
+        通过 ADB 启动包。
+
+        :param package: Package name. 包名。
+        """
+        ...
+
+    def adb_ensure_in_front(self) -> Any:
+        """
+        Ensures package is in front via ADB.
+
+        通过 ADB 确保包在前台。
+
+        :return: Status. 状态。
+        """
+        ...
+
+
+class BaseInteraction:
+    """
+    Base class for interactions.
+
+    交互的基类。
+    """
+    capture: BaseCaptureMethod
+
+    def __init__(self, capture: BaseCaptureMethod) -> None:
+        """
+        Initializes BaseInteraction.
+
+        初始化 BaseInteraction。
+
+        :param capture: Capture method. 捕获方法。
+        """
+        ...
+
+    def should_capture(self) -> bool:
+        """
+        Checks if should capture.
+
+        检查是否应捕获。
+
+        :return: True if should. 如果应返回 True。
+        """
+        ...
+
+    def send_key(self, key: str, down_time: float = 0.02) -> None:
+        """
+        Sends key.
+
+        发送键。
+
+        :param key: Key. 键。
+        :param down_time: Down time. 按下时间。
+        """
+        ...
+
+    def send_key_down(self, key: str) -> None:
+        """
+        Sends key down.
+
+        发送键按下。
+
+        :param key: Key. 键。
+        """
+        ...
+
+    def send_key_up(self, key: str) -> None:
+        """
+        Sends key up.
+
+        发送键抬起。
+
+        :param key: Key. 键。
+        """
+        ...
+
+    def move(self, x: int, y: int) -> None:
+        """
+        Moves mouse.
+
+        移动鼠标。
+
+        :param x: X.
+        :param y: Y.
+        """
+        ...
+
+    def swipe(self, from_x: int, from_y: int, to_x: int, to_y: int, duration: float, settle_time: float = 0) -> None:
+        """
+        Swipes.
+
+        滑动。
+
+        :param from_x: Start X. 起始 X。
+        :param from_y: Start Y. 起始 Y。
+        :param to_x: End X. 结束 X。
+        :param to_y: End Y. 结束 Y。
+        :param duration: Duration. 持续时间。
+        :param settle_time: Settle time. 稳定时间。
+        """
+        ...
+
+    def click(self, x: int = -1, y: int = -1, move_back: bool = False, name: Optional[str] = None, move: bool = True,
+              down_time: float = 0.05, key: str = "left") -> None:
+        """
+        Clicks.
+
+        点击。
+
+        :param x: X.
+        :param y: Y.
+        :param move_back: Move back. 移回。
+        :param name: Name. 名称。
+        :param move: Move. 移动。
+        :param down_time: Down time. 按下时间。
+        :param key: Button. 按钮。
+        """
+        ...
+
+    def on_run(self) -> None:
+        """
+        On run callback.
+
+        运行回调。
+        """
+        ...
+
+    def input_text(self, text: str) -> None:
+        """
+        Inputs text.
+
+        输入文本。
+
+        :param text: Text. 文本。
+        """
+        ...
+
+    def back(self, after_sleep: float = 0) -> None:
+        """
+        Back action.
+
+        返回动作。
+
+        :param after_sleep: Sleep after. 后睡眠。
+        """
+        ...
+
+    def scroll(self, x: int, y: int, scroll_amount: int) -> None:
+        """
+        Scrolls.
+
+        滚动。
+
+        :param x: X.
+        :param y: Y.
+        :param scroll_amount: Amount. 数量。
+        """
+        ...
+
+    def on_destroy(self) -> None:
+        """
+        On destroy callback.
+
+        销毁回调。
         """
         ...
 
