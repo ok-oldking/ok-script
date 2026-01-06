@@ -1113,7 +1113,7 @@ cdef is_close_to_pure_color(object image, int max_colors=5000, float percent=0.9
     percentage = (dominant_count / total_pixels)
     return percentage > percent
 
-def get_mask_in_color_range(object image, dict color_range):
+cpdef tuple get_mask_in_color_range(object image, dict color_range):
     cdef object lower_bound, upper_bound, mask
     cdef int pixel_count
 
