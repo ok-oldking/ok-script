@@ -661,6 +661,16 @@ class ExecutorOperation:
         """
         ...
 
+    def start_device(self) -> bool:
+        """
+        Start the game if closed.
+
+        如果游戏退出则尝试启动游戏.
+
+        :return: True if success。
+        """
+        ...
+
     def mouse_down(self, x: int = -1, y: int = -1, name: Optional[str] = None, key: str = "left") -> None:
         """
         Presses the mouse button down.

@@ -1292,7 +1292,7 @@ class CommunicateHandler(logging.Handler):
 
 
 cdef class App:
-    cdef public object global_config, app, ok_config, auth_config, locale, overlay, start_controller, loading_window, overlay_window, main_window, exit_event, icon, fire_base_analytics, to_translate, po_translation, updater
+    cdef public object global_config, app, ok_config, auth_config, locale, overlay, start_controller, loading_window, overlay_window, main_window, exit_event, icon, fire_base_analytics, to_translate, po_translation, updater, timer
     cdef public dict config
     cdef public str about, title, version
     cdef bint debug
@@ -1445,6 +1445,19 @@ cdef class App:
 
     def exec(self):
         logger.info('app.exec()')
+        import signal
+        from PySide6.QtCore import QTimer
+
+        def handle_sigint(signum, frame):
+            logger.info("SIGINT received, quitting")
+            self.quit()
+
+        signal.signal(signal.SIGINT, handle_sigint)
+
+        self.timer = QTimer()
+        self.timer.start(1000)
+        self.timer.timeout.connect(lambda: None)
+
         sys.exit(self.app.exec())
 
 def get_my_id():
@@ -2494,6 +2507,9 @@ cdef class ExecutorOperation:
     @property
     def debug(self):
         return self.executor.debug
+
+    def start_device(self):
+        og.app.start_controller.start_device()
 
     def clipboard(self):
         from ok.third_party.paperclip import paste
@@ -3986,12 +4002,13 @@ cdef class HwndWindow:
                     if pos_valid != self.pos_valid:
                         self.pos_valid = pos_valid
                 else:
-                    if self.device_manager.executor is not None and self.device_manager.executor.pause():
-                        if self.global_config.get_config('Basic Options').get('Exit App when Game Exits'):
-                            alert_info('Auto exit because game exited', True)
-                            communicate.quit.emit()
-                        else:
-                            communicate.notification.emit('Paused because game exited', None, True, True, "start")
+                    if self.global_config.get_config('Basic Options').get('Exit App when Game Exits') and self.device_manager.executor is not None and self.device_manager.executor.pause():
+                        alert_info('Auto exit because game exited', True)
+                        communicate.quit.emit()
+                    else:
+                        device = self.device_manager.get_preferred_device()
+                        device['connected'] = False
+                        communicate.notification.emit('Game Exited', None, True, True, None)
                     self.hwnd = 0
                 if visible != self.visible:
                     self.visible = visible
