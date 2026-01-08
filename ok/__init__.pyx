@@ -3968,6 +3968,7 @@ cdef class HwndWindow:
     def do_update_window_size(self):
         try:
             changed = False
+            exists = False
             visible, x, y, window_width, window_height, width, height, scaling = self.visible, self.x, self.y, self.window_width, self.window_height, self.width, self.height, self.scaling
             if self.hwnd == 0:
                 name, self.hwnd, self.exe_full_path, self.real_x_offset, self.real_y_offset, self.real_width, self.real_height = find_hwnd(
@@ -3979,10 +3980,10 @@ cdef class HwndWindow:
                     logger.info(
                         f'do_update_window_size find_hwnd {self.hwnd} {self.exe_full_path} {win32gui.GetClassName(self.hwnd)} real:{self.real_x_offset},{self.real_y_offset},{self.real_width},{self.real_height}')
                     changed = True
-                self.exists = self.hwnd > 0
+                exists = self.hwnd > 0                
             if self.hwnd > 0:
-                self.exists = win32gui.IsWindow(self.hwnd)
-                if self.exists:
+                exists = win32gui.IsWindow(self.hwnd)
+                if exists:
                     visible = self.is_foreground()
                     x, y, window_width, window_height, width, height, scaling = get_window_bounds(
                         self.hwnd)
@@ -4005,9 +4006,7 @@ cdef class HwndWindow:
                     if self.global_config.get_config('Basic Options').get('Exit App when Game Exits') and self.device_manager.executor is not None and self.device_manager.executor.pause():
                         alert_info('Auto exit because game exited', True)
                         communicate.quit.emit()
-                    else:
-                        device = self.device_manager.get_preferred_device()
-                        device['connected'] = False
+                    else:                        
                         communicate.notification.emit('Game Exited', None, True, True, None)
                     self.hwnd = 0
                 if visible != self.visible:
@@ -4025,9 +4024,17 @@ cdef class HwndWindow:
                         (x >= -1 and y >= -1) or self.visible):
                     self.x, self.y, self.window_width, self.window_height, self.width, self.height, self.scaling = x, y, window_width, window_height, width, height, scaling
                     changed = True
+                if self.exists != exists:
+                    self.exists = exists
+                    changed = True
                 if changed:
+                    device = self.device_manager.get_preferred_device()
+                    if device and device['connected'] != self.exists:
+                        logger.info(f"hwnd changed,connected:{self.exists}")
+                        device['connected'] = self.exists
+                        communicate.adb_devices.emit(True)
                     logger.info(
-                        f"do_update_window_size changed,visible:{self.visible} x:{self.x} y:{self.y} window:{self.width}x{self.height} self.window:{self.window_width}x{self.window_height} real:{self.real_width}x{self.real_height}")
+                        f"do_update_window_size changed,visible:{self.visible},exists:{self.exists} x:{self.x} y:{self.y} window:{self.width}x{self.height} self.window:{self.window_width}x{self.window_height} real:{self.real_width}x{self.real_height}")
                     communicate.window.emit(self.visible, self.x + self.real_x_offset, self.y + self.real_y_offset,
                                             self.window_width, self.window_height,
                                             self.width,
@@ -7605,7 +7612,6 @@ class MainWindow(MSFluentWindow):
         self.ok_config = ok_config
         self.basic_global_config = og.executor.global_config.get_config(basic_options)
         self.main_window_config = Config('main_window', {'last_version': 'v0.0.0'})
-        self.original_layout = None
         self.exit_event = exit_event
         from ok.gui.start.StartTab import StartTab
         self.start_tab = StartTab(config, exit_event)
@@ -7710,9 +7716,6 @@ class MainWindow(MSFluentWindow):
         communicate.global_config.connect(self.goto_global_config)
 
         logger.info('main window __init__ done')
-
-    def setMicaEffectEnabled(self, isEnabled: bool):
-        pass
 
     def restart_admin(self):
         w = MessageBox(QCoreApplication.translate("app", "Alert"),
