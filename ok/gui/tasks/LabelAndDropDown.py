@@ -37,4 +37,6 @@ class LabelAndDropDown(ConfigLabelAndWidget):
         self.update_config(option)
 
     def update_value(self):
-        self.combo_box.setText(og.app.tr(self.config.get(self.key)))
+        tr = og.app.tr(self.config.get(self.key))
+        self.combo_box.setText(tr)
+        self.combo_box.setCurrentIndex(find_index_in_list(self.tr_options, tr, -1))
