@@ -1524,20 +1524,20 @@ class OK:
         try:
             import ctypes
             # Set DPI Awareness (Windows 10 and 8)
-            errorCode = ctypes.windll.shcore.SetProcessDpiAwareness(1)
+            errorCode = ctypes.windll.shcore.SetProcessDpiAwareness(2)
             logger.info(f'SetProcessDpiAwareness {errorCode}')
             if self.debug:
                 import win32api
                 win32api.SetConsoleCtrlHandler(self.console_handler, True)
-            self.config = config
-            self.init_device_manager()
-            from ok.gui.debug.Screenshot import Screenshot
-            self.screenshot = Screenshot(self.exit_event)
-            self.do_init()
         except Exception as e:
             logger.error(f'__init__ error', e)
             self.quit()
-            raise e
+            raise e        
+        self.config = config
+        self.init_device_manager()
+        from ok.gui.debug.Screenshot import Screenshot
+        self.screenshot = Screenshot(self.exit_event)
+        self.do_init()
 
     @property
     def app(self):
