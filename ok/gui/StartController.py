@@ -88,6 +88,7 @@ class StartController(QObject):
             if error:
                 communicate.starting_emulator.emit(True, error, 0)
                 return False
+        communicate.starting_emulator.emit(True, None, 0)
         return True
 
     def check_resolution(self):
