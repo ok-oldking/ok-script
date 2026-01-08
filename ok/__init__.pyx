@@ -7738,8 +7738,8 @@ class MainWindow(MSFluentWindow):
             logger.info(
                 f'main window on_tray_icon_activated QSystemTrayIcon.ActivationReason.DoubleClick self.isVisible():{self.isVisible()}')
             self.showNormal()
-            self.raise_()  # Raise the window to the top of the stacking order
-            self.activateWindow()  # Give the window focus
+            self.raise_()
+            self.activateWindow()
 
     def _onThemeChangedFinished(self):
         pass
@@ -7863,7 +7863,7 @@ class MainWindow(MSFluentWindow):
             orient=Qt.Horizontal,
             isClosable=True,
             position=InfoBarPosition.TOP,
-            duration=5000,  # won't disappear automatically
+            duration=5000,
             parent=self.window()
         )
         self.tray.showMessage(title, message)
@@ -7906,7 +7906,7 @@ class MainWindow(MSFluentWindow):
             logger.info(f"Window closed exit_event.is not set {self.do_not_quit}")
             to_tray = self.basic_global_config.get('Minimize Window to System Tray when Closing')
             if to_tray:
-                event.ignore()  # Prevent the window from closing
+                event.ignore()
                 self.hide()
                 return
             if not self.do_not_quit:
