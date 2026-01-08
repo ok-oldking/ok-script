@@ -16,7 +16,9 @@ class LabelAndSwitchButton(ConfigLabelAndWidget):
         self.add_widget(self.switch_button)
 
     def update_value(self):
-        self.switch_button.setChecked(self.config.get(self.key))
+        value = self.config.get(self.key)
+        if self.switch_button.isChecked() != value:
+            self.switch_button.setChecked(value)
 
     def check_changed(self, checked):
         self.update_config(checked)
