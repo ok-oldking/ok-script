@@ -15,10 +15,8 @@ from get_pypi_latest_version import GetPyPiLatestVersion
 MODULE_NAME = "ok-script"
 
 obtainer = GetPyPiLatestVersion()
-try:
-    latest_version = obtainer(MODULE_NAME)
-except Exception as e:
-    latest_version = "0.0.0"
+latest_version = obtainer(MODULE_NAME)
+
 VERSION_NUM = obtainer.version_add_one(latest_version, add_patch=True)
 print(f'latest_version is {latest_version} new version is {VERSION_NUM}')
 #VERSION_NUM = "1.0.0"
