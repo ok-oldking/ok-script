@@ -4916,7 +4916,6 @@ class DeviceManager:
         logger.debug(f'preferred device: {preferred}')
 
     def shell_device(self, device, *args, **kwargs):
-        device = self.device
         logger.debug(f'adb shell {device} {args} {kwargs}')
         if device is not None:
             return device.shell(*args, **kwargs)
