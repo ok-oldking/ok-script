@@ -4919,7 +4919,7 @@ class DeviceManager:
         device = self.device
         logger.debug(f'adb shell {device} {args} {kwargs}')
         if device is not None:
-            return self.shell_device(device, *args, **kwargs)
+            return device.shell(*args, **kwargs)
         else:
             raise Exception('Device is none')
 
