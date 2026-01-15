@@ -1363,7 +1363,8 @@ cdef class App:
 
     def quit(self):
         self.exit_event.set()
-        self.app.quit()
+        from PySide6.QtCore import QMetaObject, Qt
+        QMetaObject.invokeMethod(self.app, "quit", Qt.QueuedConnection)
 
     def tr(self, key):
         if not key:
@@ -1650,6 +1651,8 @@ class OK:
     def quit(self):
         logger.info('quit app')
         self.exit_event.set()
+        if self._app:
+            self._app.quit()
 
     def init_device_manager(self):
         if self.device_manager is None:
