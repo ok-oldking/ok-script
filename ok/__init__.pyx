@@ -6267,6 +6267,11 @@ class PyDirectInteraction(BaseInteraction):
     def __init__(self, capture: BaseCaptureMethod, hwnd_window):
         super().__init__(capture)
         pydirectinput.FAILSAFE = False
+
+        import ctypes
+        if hasattr(pydirectinput, 'SendInput'):
+            pydirectinput.SendInput.argtypes = [ctypes.c_uint, ctypes.c_void_p, ctypes.c_int]
+
         self.hwnd_window = hwnd_window
         self.check_clickable = True
         if not is_admin():
@@ -6300,15 +6305,12 @@ class PyDirectInteraction(BaseInteraction):
             sign = 1
         else:
             sign = 0
-        # abs_x, abs_y = self.capture.get_abs_cords(x, y)
-        # click_pos = win32api.MAKELONG(x, y)
         logger.debug(f'pydirect do_scroll {x}, {y}, {scroll_amount}')
         self.move(x, y)
         time.sleep(0.001)
         for i in range(abs(scroll_amount)):
             mouse.wheel(sign)
             time.sleep(0.001)
-        # mouse.wheel(scroll_amount)
         time.sleep(0.02)
 
     def send_key_up(self, key):
@@ -6325,35 +6327,27 @@ class PyDirectInteraction(BaseInteraction):
         mouse.move(x, y)
 
     def swipe(self, x1, y1, x2, y2, duration, after_sleep=0.1, settle_time=0):
-        # Convert coordinates to integers
         x1, y1 = self.capture.get_abs_cords(x1, y1)
         x2, y2 = self.capture.get_abs_cords(x2, y2)
 
-        # Move the mouse to the start point (x1, y1)
         pydirectinput.moveTo(x1, y1)
-        time.sleep(0.1)  # Pause for a moment
+        time.sleep(0.1)
 
-        # Press the left mouse button down
         pydirectinput.mouseDown()
 
-        # Calculate the relative movement (dx, dy)
         dx = x2 - x1
         dy = y2 - y1
 
-        # Calculate the number of steps
-        steps = int(duration / 100)  # 100 steps per second
+        steps = int(duration / 100)
 
-        # Calculate the step size
         step_dx = dx / steps
         step_dy = dy / steps
 
-        # Move the mouse to the end point (x2, y2) in small steps
         for i in range(steps):
             pydirectinput.moveTo(x1 + int(i * step_dx), y1 + int(i * step_dy))
-            time.sleep(0.01)  # Sleep for 10ms
+            time.sleep(0.01)
         if after_sleep > 0:
             time.sleep(after_sleep)
-        # Release the left mouse button
         pydirectinput.mouseUp()
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01, move=False, key="left"):
@@ -6361,8 +6355,6 @@ class PyDirectInteraction(BaseInteraction):
         if not self.clickable():
             logger.info(f"window in background, not clickable")
             return
-        # Convert the x, y position to lParam
-        # lParam = win32api.MAKELONG(x, y)
         current_x, current_y = -1, -1
         if move_back:
             current_x, current_y = pydirectinput.position()
