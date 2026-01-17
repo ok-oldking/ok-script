@@ -1963,7 +1963,8 @@ cdef class TaskExecutor:
     cdef public dict text_fix
     cdef public object ocr_po_translation
     cdef public object config, basic_options
-    cdef object lock
+    cdef object lock, _frame_lock
+    cdef double _last_reset_time, frame_tolerance
 
     def __init__(self, device_manager,
                  wait_until_timeout=10, wait_until_settle_time=-1,
@@ -2004,6 +2005,9 @@ cdef class TaskExecutor:
         self.onetime_tasks = []
         self.thread = None
         self.lock = threading.Lock()
+        self._frame_lock = threading.RLock()
+        self._last_reset_time = 0
+        self.frame_tolerance = 0.005
 
     cdef load_tr(self):
         locale_name = self.locale.name()
@@ -2114,18 +2118,34 @@ cdef class TaskExecutor:
 
     def next_frame(self):
         self.reset_scene()
-        while not self.exit_event.is_set():
-            if self.can_capture():
-                frame = self.method.get_frame()
-                if frame is not None:
-                    height, width = frame.shape[:2]
-                    if height <= 0 or width <= 0:
-                        logger.warning(f"captured wrong size frame: {width}x{height}")
-                    self._frame = frame
-                    self._last_frame_time = time.time()
+        self._frame_lock.acquire()
+        try:
+            # 双重检查：是否在等待锁期间，已经有其他线程抓到了足够新鲜的图（包含容差）
+            if self._frame is not None and self._last_frame_time + self.frame_tolerance >= self._last_reset_time:
+                return self._frame
+
+            if self.scene:
+                self.scene.reset()
+            while not self.exit_event.is_set():
+                if self._frame is not None and self._last_frame_time + self.frame_tolerance >= self._last_reset_time:
                     return self._frame
-            self.sleep(1)
-            logger.error("got no frame!")
+                if self.can_capture():
+                    frame = self.method.get_frame()
+                    if frame is not None:
+                        height, width = frame.shape[:2]
+                        if height <= 0 or width <= 0:
+                            logger.warning(f"captured wrong size frame: {width}x{height}")
+                        self._frame = frame
+                        self._last_frame_time = time.time()
+                        return frame
+                self._frame_lock.release()
+                try:
+                    self.sleep(1)
+                    logger.error("got no frame!")
+                finally:
+                    self._frame_lock.acquire()
+        finally:
+            self._frame_lock.release()
         raise FinishedException()
 
     def is_executor_thread(self):
@@ -2141,9 +2161,12 @@ cdef class TaskExecutor:
         if self.exit_event.is_set():
             logger.info("frame Exit event set. Exiting early.")
             sys.exit(0)
-        if self._frame is None:
-            self.next_frame()
-        return self._frame
+        
+        cdef object f = self._frame
+        # 核心：检查画面是否足够“新鲜”（判断时引入容差，避免微小的时间竞争导致重复抓图）
+        if f is None or self._last_frame_time + self.frame_tolerance < self._last_reset_time:
+            f = self.next_frame()
+        return f
 
     cpdef check_enabled(self, check_pause=True):
         if check_pause and self.paused:
@@ -2250,9 +2273,8 @@ cdef class TaskExecutor:
     def reset_scene(self, check_enabled=True):
         if check_enabled:
             self.check_enabled()
-        self._frame = None
-        if self.scene:
-            self.scene.reset()
+        # 不再物理清空，仅标记当前时间为“必须刷新的时间点”
+        self._last_reset_time = time.time()
 
     cdef tuple next_task(self):
         if self.exit_event.is_set():
