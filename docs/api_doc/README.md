@@ -67,6 +67,8 @@
         - [log\_error](#log_error)
     - [其他 (Other)](#其他-other)
         - [is\_adb](#is_adb)
+        - [sleep_check](#sleep_check)
+
 
 ---
 
@@ -1113,3 +1115,34 @@ def is_adb(self) -> bool
       self.log_info("当前为PC模式，将使用ESC键。")
       self.send_key('esc')
   ```
+
+<a name="sleep_check"></a>
+
+### sleep_check
+
+```python
+def sleep_check(self)
+```
+
+当脚本调用sleep方法时, 也包括含有after_sleep参数的方法调用时，如果设置了 `sleep_check_interval`，会定期调用此方法。
+这允许任务在等待期间执行一些检查或后台逻辑。
+
+**注意**: 若要启用此功能，可以在任务初始化（`__init__`）时将 `self.sleep_check_interval` 设置为一个大于 0 的浮点数（秒）。
+
+- **相关属性:**
+    - `sleep_check_interval` (float): 调用 `sleep_check` 的时间间隔（秒）。默认为 -1（禁用）。
+
+- **调用例子 (Calling Example):**
+  ```python
+  def __init__(self, executor=None):
+      super().__init__(executor)
+      # 每 5 秒检查一次
+      self.sleep_check_interval = 5
+
+  def sleep_check(self):
+      # 检查是否有突发情况，例如断线重连弹窗
+      if self.find_one("reconnect_dialog_title"):
+          self.log_info("检测到断线重连弹窗，尝试重连...")
+          self.click("confirm_reconnect_button")
+  ```
+

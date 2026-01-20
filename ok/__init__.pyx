@@ -1688,6 +1688,9 @@ cdef class BaseTask(OCR):
     cdef public list supported_languages
     cdef public str group_name
     cdef public object group_icon
+    cdef public double sleep_check_interval
+    cdef public double last_sleep_check_time
+    cdef public bint in_sleep_check
 
     def __init__(self, executor=None):
         super().__init__(executor)
@@ -1714,6 +1717,9 @@ cdef class BaseTask(OCR):
         self.group_icon = FluentIcon.SYNC
         self.first_run_alert = None
         self.show_create_shortcut = False
+        self.sleep_check_interval = -1
+        self.last_sleep_check_time = 0
+        self.in_sleep_check = False
 
     def run_task_by_class(self, cls):
         task = self.get_task_by_class(cls)
@@ -1736,6 +1742,9 @@ cdef class BaseTask(OCR):
         if path:
             path2 = create_shortcut(None, f' {self.name} exit_after', arguments=f"-t {index} -e")
             subprocess.Popen(r'explorer /select,"{}"'.format(path))
+
+    def sleep_check(self):
+        pass
 
     def tr(self, message):
         return og.app.tr(message)
@@ -2167,8 +2176,23 @@ cdef class TaskExecutor:
             return
         self.pause_end_time = time.time() + timeout
         cdef double to_sleep = 0
+        cdef BaseTask task
         while True:
             self.check_enabled(check_pause=False)
+            if self.current_task is not None and isinstance(self.current_task, BaseTask):
+                task = <BaseTask>self.current_task
+                if task.sleep_check_interval >= 0:
+                    if not task.in_sleep_check and time.time() - task.last_sleep_check_time > task.sleep_check_interval:
+                        task.last_sleep_check_time = time.time()
+                        task.in_sleep_check = True
+                        try:                  
+                            self.next_frame()          
+                            task.sleep_check()
+                            self.reset_scene()
+                        except Exception as e:
+                            logger.error(f"sleep_check error {task}", e)
+                        finally:
+                            task.in_sleep_check = False
             if self.exit_event.is_set():
                 logger.info("sleep Exit event set. Exiting early.")
                 sys.exit(0)
@@ -2177,8 +2201,8 @@ cdef class TaskExecutor:
                 to_sleep = self.pause_end_time - time.time()
                 if to_sleep <= 0:
                     return
-                if to_sleep > 1:
-                    to_sleep = 1
+                if to_sleep > 0.01:
+                    to_sleep = 0.01
                 time.sleep(to_sleep)
             else:
                 time.sleep(0.1)

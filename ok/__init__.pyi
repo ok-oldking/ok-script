@@ -1588,6 +1588,9 @@ class BaseTask(OCR):
     group_icon: FluentIcon
     first_run_alert: Optional[str]
     show_create_shortcut: bool
+    sleep_check_interval: float
+    last_sleep_check_time: float
+    in_sleep_check: bool
 
     def __init__(self, executor: Optional["TaskExecutor"] = None) -> None:
         """
@@ -1612,6 +1615,14 @@ class BaseTask(OCR):
         Creates a shortcut for the task on the desktop.
 
         在桌面创建任务快捷方式。
+        """
+        ...
+
+    def sleep_check(self) -> None:
+        """
+        Called periodically during sleep if sleep_check_interval is set.
+
+        如果设置了 sleep_check_interval，则在睡眠期间定期调用。
         """
         ...
 
