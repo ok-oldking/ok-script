@@ -2191,6 +2191,7 @@ cdef class TaskExecutor:
                             self.reset_scene()
                         except Exception as e:
                             logger.error(f"sleep_check error {task}", e)
+                            raise
                         finally:
                             task.in_sleep_check = False
             if self.exit_event.is_set():
