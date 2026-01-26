@@ -20,7 +20,7 @@ logger = Logger.get_logger(__name__)
 
 class Screenshot(QObject):
 
-    def __init__(self, exit_event):
+    def __init__(self, exit_event, debug):
         super().__init__()
         self.queue = []
         self.time_to_expire = 4
@@ -31,6 +31,7 @@ class Screenshot(QObject):
             "blue": QColor(60, 60, 255)
         }
         self.exit_event = exit_event
+        self.debug = debug
         communicate.draw_box.connect(self.draw_box)
         communicate.clear_box.connect(self.clear_box)
         communicate.screenshot.connect(self.screenshot)
@@ -61,9 +62,11 @@ class Screenshot(QObject):
             else:
                 remove_old_files(self.click_screenshot_folder, 7)
 
-            if get_folder_size(self.screenshot_folder) > limit:
+            if self.debug or get_folder_size(self.screenshot_folder) > limit:
+                logger.info(f'clear {self.screenshot_folder}')
                 clear_folder(self.screenshot_folder)
             else:
+                logger.info(f'remove_old_files {self.screenshot_folder}')
                 remove_old_files(self.screenshot_folder, 7)
         else:
             self.task_queue = None
@@ -194,17 +197,20 @@ def get_folder_size(folder):
 
 
 def remove_old_files(folder, days):
-    if folder and os.path.exists(folder):
-        cutoff = time.time() - (days * 86400)
-        for dirpath, _, filenames in os.walk(folder):
-            for f in filenames:
-                fp = os.path.join(dirpath, f)
-                try:
-                    if os.path.getmtime(fp) < cutoff:
-                        os.remove(fp)
-                except OSError:
-                    pass
-
+    if folder:
+        if os.path.exists(folder):
+            cutoff = time.time() - (days * 86400)
+            for dirpath, _, filenames in os.walk(folder):
+                for f in filenames:
+                    fp = os.path.join(dirpath, f)
+                    try:
+                        if os.path.getmtime(fp) < cutoff:
+                            os.remove(fp)
+                    except OSError:
+                        pass
+        else:
+            logger.info('mkdirs {}'.format(folder))
+            os.makedirs(folder)
 
 def get_current_time_formatted():
     now = datetime.now()
