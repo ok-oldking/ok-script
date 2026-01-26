@@ -20,11 +20,19 @@
 ```commandline
 pip install ok-script
 ```
-* 本地编译源码使用,
+* 本地编译源码使用
 ```commandline
 pip install -r requirements.txt # 安装编译ok-script所需的的依赖
 mklink /d "C:\path\to\your-project\ok" "C:\path\to\ok-script\ok" #Windows CMD 创建软链接到你的项目中
 in_place_build.bat #如修改__init__.pyx 需要编译Cython代码
+```
+
+* 编译国际化文件
+```commandline
+cd ok\gui\i18n
+.\release.cmd
+cd ok\gui
+.\qrc.cmd
 ```
 
 ## 文档和示例代码

@@ -470,23 +470,35 @@ def clear_folder(folder_path):
 
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
+        logger.info(f'makedirs {folder_path}')
         return
 
     # Check if the path is a folder
     if not os.path.isdir(folder_path):
-        print(f"The path {folder_path} is not a folder.")
+        logger.error(f"The path {folder_path} is not a folder.")
         return
 
     # Delete all files in the folder
-    for filename in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, filename)
+    try:
+        shutil.rmtree(folder_path)
+    except OSError as e:
+        # Retry mechanism: Windows sometimes locks the folder briefly
+        logger.error(f"Error removing tree: {e}. Retrying in 1s...")
+        time.sleep(1)
         try:
-            if os.path.isfile(file_path):
-                os.remove(file_path)  # remove the file
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)  # remove dir and all contains
-        except Exception as e:
-            print(f"Failed to delete {file_path}. Reason: {e}")
+            shutil.rmtree(folder_path)
+        except Exception as e2:
+            logger.error(f"Failed to delete folder: {e2}")
+            # If we can't delete the folder, fall back to the old method 
+            # (clearing contents manually) only as a last resort.
+            return 
+
+    # 4. Recreate the empty folder
+    try:
+        os.makedirs(folder_path)
+        logger.info(f"Successfully cleared (recreated) {folder_path}")
+    except Exception as e:
+        logger.error(f"Deleted folder but failed to recreate it: {e}")
 
 def find_first_existing_file(filenames, directory):
     for filename in filenames:
@@ -1537,7 +1549,7 @@ class OK:
         self.config = config
         self.init_device_manager()
         from ok.gui.debug.Screenshot import Screenshot
-        self.screenshot = Screenshot(self.exit_event)
+        self.screenshot = Screenshot(self.exit_event, self.debug)
         self.do_init()
 
     @property
@@ -5905,6 +5917,7 @@ basic_options = ConfigOption('Basic Options', {
     'Use DirectML': 'Yes',
     'Trigger Interval': 1,
     'Start/Stop': 'F9',
+    'Kill Launcher after Start': False
 }, config_type={'Use DirectML': {'type': "drop_down", 'options': ['Auto', 'Yes', 'No']},
                 'Start/Stop': {'type': "drop_down", 'options': ['None', 'F9', 'F10', 'F11', 'F12']}}
                              , config_description={'Use DirectML': 'Use GPU to Improve Performance',
@@ -7815,6 +7828,9 @@ class MainWindow(MSFluentWindow):
                                  [update_pyappify.get('zip_url')], self.exit_event)
             logger.info(f"Window has fully displayed {args}")
             communicate.start_success.emit()
+            if self.basic_global_config.get('Kill Launcher after Start'):
+                logger.info(f'MainWindow showEvent Kill Launcher after Start')
+                pyappify.kill_pyappify()
             if self.version != self.main_window_config.get('last_version'):
                 self.main_window_config['last_version'] = self.version
                 if not self.config.get('auth'):

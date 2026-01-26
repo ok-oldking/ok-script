@@ -1194,5 +1194,9 @@
         <source>Beta Version</source>
         <translation>测试版</translation>
     </message>
+    <message>
+        <source>Kill Launcher after Start</source>
+        <translation>启动后关闭启动器</translation>
+    </message>
 </context>
 </TS>

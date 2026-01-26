@@ -1191,5 +1191,9 @@
         <source>Beta Version</source>
         <translation>Versión Beta</translation>
     </message>
+    <message>
+        <source>Kill Launcher after Start</source>
+        <translation>Cerrar el lanzador después de iniciar</translation>
+    </message>
 </context>
 </TS>

@@ -1198,5 +1198,9 @@
         <source>HotKey</source>
         <translation>快捷鍵</translation>
     </message>
+    <message>
+        <source>Kill Launcher after Start</source>
+        <translation>啟動後關閉啟動器</translation>
+    </message>
 </context>
 </TS>
