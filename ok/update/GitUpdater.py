@@ -10,7 +10,7 @@ import sys
 import threading  # Added for real-time stream reading
 from functools import cmp_to_key
 
-from ok import Logger, get_path_relative_to_exe
+from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
 bundled_git = os.path.join(os.getcwd(), 'python', 'git', 'bin', 'git.exe')

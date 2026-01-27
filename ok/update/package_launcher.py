@@ -6,10 +6,10 @@ import sys
 import git
 
 from ok import Config
-from ok import config_logger, Logger
-from ok import dir_checksum, delete_if_exists
 from ok.update.GitUpdater import copy_exe_files, remove_ok_requirements
 from ok.update.init_launcher_env import create_repo_venv
+from ok.util.file import dir_checksum, delete_if_exists
+from ok.util.logger import Logger, config_logger
 
 logger = Logger.get_logger(__name__)
 

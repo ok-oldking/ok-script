@@ -2,7 +2,8 @@ import gettext
 import os
 import re
 
-from ok import ensure_dir_for_file, get_path_relative_to_exe, delete_if_exists, get_language_fallbacks
+from ok.util.file import ensure_dir_for_file, get_path_relative_to_exe, delete_if_exists
+from ok.util.i18n import get_language_fallbacks
 
 
 def __get_root():

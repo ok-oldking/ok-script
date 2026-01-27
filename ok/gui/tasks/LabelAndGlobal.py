@@ -1,6 +1,6 @@
 from qfluentwidgets import SpinBox, PushButton
 
-from ok import communicate
+from ok.gui.Communicate import communicate
 from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 

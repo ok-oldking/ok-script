@@ -27,11 +27,6 @@ class TaskCard(ConfigCard):
             self.enable_button.checkedChanged.connect(self.check_changed)
             self.addWidget(self.enable_button)
 
-        if self.task.is_custom():
-            self.delete_button = PushButton(FluentIcon.DELETE, self.tr("Delete"), self)
-            self.delete_button.clicked.connect(self.delete_task)
-            self.addWidget(self.delete_button)
-
         self.update_buttons(self.task)
 
         communicate.task.connect(self.update_buttons)

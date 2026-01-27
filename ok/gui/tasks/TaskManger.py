@@ -3,18 +3,20 @@ import glob
 import hashlib
 import os.path
 
-from ok import Logger, BaseTask, TriggerTask, og
+from ok.task.task import BaseTask, TriggerTask
+from ok.util.clazz import init_class_by_name
+from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
 
 class TaskManager:
-    def __init__(self, task_executor, trigger_tasks=[], onetime_tasks=[], scene=None):
+    def __init__(self, task_executor, app, trigger_tasks=[], onetime_tasks=[], scene=None):
         self.task_executor = task_executor
+        self.app = app
         self.task_folder = os.path.join("user_scripts", "tasks")
         self.has_custom = os.path.exists(self.task_folder)
         self.task_map = dict()
-        from ok import init_class_by_name
         self.scene = init_class_by_name(scene[0], scene[1]) if scene else None
         self.task_executor.trigger_tasks = self.init_tasks(trigger_tasks)
         self.task_executor.onetime_tasks = self.init_tasks(onetime_tasks)
@@ -27,18 +29,14 @@ class TaskManager:
 
     def init_tasks(self, task_classes):
         tasks = []
-        from ok import init_class_by_name
         for task_class in task_classes:
-            task = init_class_by_name(task_class[0], task_class[1], executor=self.task_executor)
+            task = init_class_by_name(task_class[0], task_class[1], executor=self.task_executor, app=self.app)
             from ok.gui.common.config import cfg
             if len(task.supported_languages) == 0 or cfg.get(cfg.language).value.name() in task.supported_languages:
                 task.set_executor(self)
                 task.scene = self.scene
                 tasks.append(task)
         return tasks
-
-    def is_custom(self, task):
-        return task in self.task_map
 
     def load_user_tasks(self):
         if os.path.exists('user_scripts'):

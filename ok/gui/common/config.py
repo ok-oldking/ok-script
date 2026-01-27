@@ -7,7 +7,7 @@ from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, Boo
                             OptionsValidator, RangeConfigItem, RangeValidator,
                             ConfigSerializer)
 
-from ok import get_relative_path
+from ok.util.file import get_relative_path
 
 
 class Language(Enum):

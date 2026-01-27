@@ -2,13 +2,12 @@ import time
 
 from PySide6.QtCore import QObject
 
-from ok import BaseWindowsCaptureMethod, og, read_game_gpu_pref, read_global_gpu_pref, BrowserCaptureMethod
-from ok import Handler
+from ok import Handler, og
 from ok import Logger
-from ok import execute
-from ok import is_admin
+from ok.device.capture import BaseWindowsCaptureMethod, BrowserCaptureMethod
 from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error
+from ok.util.process import is_admin, execute, read_game_gpu_pref, read_global_gpu_pref
 
 logger = Logger.get_logger(__name__)
 

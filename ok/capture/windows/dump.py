@@ -3,7 +3,7 @@ import sys
 import threading
 import traceback
 
-from ok import get_relative_path
+from ok.util.file import get_relative_path
 
 
 def get_thread_name(thread_id):
@@ -28,4 +28,3 @@ def dump_threads():
 
     with open(output_file, "w", encoding='utf-8') as f:
         f.write("\n\n".join(thread_dumps))
-

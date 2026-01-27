@@ -11,7 +11,7 @@ from PySide6.QtGui import QColor
 
 from ok import Box, og
 from ok import Logger
-from ok import find_first_existing_file, clear_folder, sanitize_filename, \
+from ok.util.file import find_first_existing_file, clear_folder, sanitize_filename, \
     get_relative_path
 from ok.gui.Communicate import communicate
 
@@ -211,6 +211,7 @@ def remove_old_files(folder, days):
         else:
             logger.info('mkdirs {}'.format(folder))
             os.makedirs(folder)
+
 
 def get_current_time_formatted():
     now = datetime.now()

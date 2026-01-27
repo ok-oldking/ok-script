@@ -1,7 +1,7 @@
 from PySide6.QtCore import QObject, Signal, Qt
 
-from ok import HwndWindow
 from ok import Logger
+from ok.device.capture import HwndWindow
 from ok.gui.debug.FrameWidget import FrameWidget
 
 logger = Logger.get_logger(__name__)

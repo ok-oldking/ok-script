@@ -1657,16 +1657,6 @@ class BaseTask(OCR):
         """
         ...
 
-    def is_custom(self) -> bool:
-        """
-        Checks if custom task.
-
-        检查是否自定义任务。
-
-        :return: True if custom. 如果自定义返回 True。
-        """
-        ...
-
     def add_first_run_alert(self, first_run_alert: str) -> None:
         """
         Adds first run alert.

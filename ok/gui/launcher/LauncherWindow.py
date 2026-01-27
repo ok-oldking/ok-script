@@ -4,11 +4,11 @@ from PySide6.QtWidgets import QVBoxLayout
 from qfluentwidgets import SplitTitleBar
 
 from ok import Logger
-from ok import get_path_relative_to_exe
 from ok.gui.common.style_sheet import StyleSheet
 from ok.gui.launcher.RunBar import RunBar
 from ok.gui.launcher.UpdateBar import UpdateBar
 from ok.gui.widget.BaseWindow import BaseWindow
+from ok.util.file import get_path_relative_to_exe
 
 logger = Logger.get_logger(__name__)
 

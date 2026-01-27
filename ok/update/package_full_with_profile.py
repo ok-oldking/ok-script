@@ -3,9 +3,8 @@ import os.path
 import subprocess
 import sys
 
-from ok import config_logger, Logger
-from ok import delete_if_exists
-from ok.update.init_launcher_env import create_app_env
+from ok.util.file import delete_if_exists
+from ok.util.logger import Logger, config_logger
 
 logger = Logger.get_logger(__name__)
 

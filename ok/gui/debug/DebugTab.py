@@ -8,9 +8,7 @@ from _ctypes import byref
 from qfluentwidgets import PushButton, FlowLayout, ComboBox, SearchLineEdit, TextEdit
 
 from ok import Config, og
-from ok import DoNothingInteraction
 from ok import Handler
-from ok import ImageCaptureMethod
 from ok import Logger
 from ok.capture.windows.dump import dump_threads
 from ok.gui.i18n.GettextTranslator import convert_to_mo_files

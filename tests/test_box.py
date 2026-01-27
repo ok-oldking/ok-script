@@ -1,7 +1,7 @@
 import unittest
 
-from ok import Box, sort_boxes
 from ok import Logger
+from ok.feature.Box import Box, sort_boxes
 
 logger = Logger.get_logger(__name__)
 

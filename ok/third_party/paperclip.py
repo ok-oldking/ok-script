@@ -55,6 +55,8 @@ import warnings
 
 from ctypes import c_size_t, sizeof, c_wchar_p, get_errno, c_wchar
 
+from PySide6.QtWidgets import QApplication
+
 _IS_RUNNING_PYTHON_2 = sys.version_info[0] == 2  # type: bool
 
 # For paste(): Python 3 uses str, Python 2 uses unicode.
@@ -137,15 +139,6 @@ def init_osx_pyobjc_clipboard():
 
 
 def init_qt_clipboard():
-    global QApplication
-    # $DISPLAY should exist
-
-    # Try to import from qtpy, but if that fails try PyQt5
-    try:
-        from qtpy.QtWidgets import QApplication
-    except:
-        from PyQt5.QtWidgets import QApplication
-
     app = QApplication.instance()
     if app is None:
         app = QApplication([])

@@ -1,7 +1,7 @@
 import os.path
 import sys
 
-from ok import dir_checksum, delete_if_exists
+from ok.util.file import delete_if_exists, dir_checksum
 
 
 def write_checksum_to_file(folder_path):
