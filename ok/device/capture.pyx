@@ -1,4 +1,4 @@
-## Capture.pyx
+## capture.pyx
 import asyncio
 import ctypes
 import json
@@ -25,15 +25,73 @@ from ok.util.collection import deep_get
 from ok.util.color import is_close_to_pure_color
 from ok.util.logger import Logger
 from ok.util.process import read_game_gpu_pref, read_global_gpu_pref
-from ok.util.window import WINDOWS_BUILD_NUMBER, WGC_NO_BORDER_MIN_BUILD, is_blank, show_title_bar, get_window_bounds, \
+from ok.util.window import WINDOWS_BUILD_NUMBER, WGC_NO_BORDER_MIN_BUILD, show_title_bar, get_window_bounds, \
     resize_window, get_exe_by_hwnd, windows_graphics_available, find_display, is_foreground_window
 
 logger = Logger.get_logger(__name__)
 
-# This is an undocumented nFlag value for PrintWindow
 PW_CLIENT_ONLY = 1 << 0
 cdef int PW_RENDERFULLCONTENT = 0x00000002
 PBYTE = ctypes.POINTER(ctypes.c_ubyte)
+cdef int BGRA_CHANNEL_COUNT = 4
+
+cdef try_delete_dc(dc):
+    if dc is not None:
+        try:
+            dc.DeleteDC()
+            return True
+        except win32ui.error:
+            pass
+
+cdef object capture_by_bitblt(object context, int hwnd, int width, int height, int x, int y, bint render_full_content):
+    if hwnd <= 0 or width <= 0 or height <= 0:
+        logger.error(f'capture_by_bitblt invalid params: hwnd={hwnd}, w={width}, h={height}')
+        return None
+
+    cdef object image = None
+
+    try:
+        if context.last_hwnd != hwnd or context.last_height != height or context.last_width != width:
+            if context.last_hwnd > 0:
+                try_delete_dc(context.dc_object)
+                try_delete_dc(context.compatible_dc)
+                if context.window_dc:
+                    win32gui.ReleaseDC(context.last_hwnd, context.window_dc)
+                if context.bitmap:
+                    win32gui.DeleteObject(context.bitmap.GetHandle())
+                context.window_dc = None
+                context.dc_object = None
+                context.compatible_dc = None
+                context.bitmap = None
+
+            context.window_dc = win32gui.GetWindowDC(hwnd)
+            context.dc_object = win32ui.CreateDCFromHandle(context.window_dc)
+            context.compatible_dc = context.dc_object.CreateCompatibleDC()
+            context.bitmap = win32ui.CreateBitmap()
+            context.bitmap.CreateCompatibleBitmap(context.dc_object, width, height)
+            context.last_hwnd = hwnd
+            context.last_width = width
+            context.last_height = height
+
+        if render_full_content:
+            ctypes.windll.user32.PrintWindow(hwnd, context.dc_object.GetSafeHdc(), PW_RENDERFULLCONTENT)
+
+        context.compatible_dc.SelectObject(context.bitmap)
+        context.compatible_dc.BitBlt(
+            (0, 0),
+            (width, height),
+            context.dc_object,
+            (x, y),
+            win32con.SRCCOPY,
+        )
+        image = np.frombuffer(context.bitmap.GetBitmapBits(True), dtype=np.uint8)
+    except Exception as e:
+        logger.error(f'capture_by_bitblt exception: {e}')
+        context.last_hwnd = 0
+        return None
+    
+    image.shape = (height, width, BGRA_CHANNEL_COUNT)
+    return image
 
 cdef class BaseCaptureMethod:
     name = "None"
@@ -46,7 +104,6 @@ cdef class BaseCaptureMethod:
         self.exit_event = None
 
     def close(self):
-        # Some capture methods don't need an initialization process
         pass
 
     @property
@@ -97,7 +154,7 @@ cdef class BaseCaptureMethod:
 cdef class BaseWindowsCaptureMethod(BaseCaptureMethod):
     cdef public object _hwnd_window
 
-    def __init__(self, hwnd_window: HwndWindow):
+    def __init__(self, object hwnd_window):
         super().__init__()
         self._hwnd_window = hwnd_window
 
@@ -139,7 +196,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     cdef object evtoken
     cdef object last_size
 
-    def __init__(self, hwnd_window: HwndWindow):
+    def __init__(self, object hwnd_window):
         super().__init__(hwnd_window)
         self.last_frame_time = time.time()
         self.exit_event = hwnd_window.app_exit_event
@@ -381,8 +438,8 @@ cdef class BitBltCaptureMethod(BaseWindowsCaptureMethod):
             + "\nThe smaller the selected region, the more efficient it is. "
     )
 
-    cdef object dc_object, bitmap, window_dc, compatible_dc
-    cdef int last_hwnd, last_width, last_height
+    cdef public object dc_object, bitmap, window_dc, compatible_dc
+    cdef public int last_hwnd, last_width, last_height
 
     def __init__(self, hwnd_window: HwndWindow):
         super().__init__(hwnd_window)
@@ -402,9 +459,11 @@ cdef class BitBltCaptureMethod(BaseWindowsCaptureMethod):
         else:
             x, y = get_crop_point(self.hwnd_window.window_width, self.hwnd_window.window_height,
                                   self.hwnd_window.width, self.hwnd_window.height)
-        return self.bit_blt_capture_frame(x,
-                                          y,
-                                          render_full)
+        
+        cdef int width = self.hwnd_window.real_width or self.hwnd_window.width
+        cdef int height = self.hwnd_window.real_height or self.hwnd_window.height
+        
+        return capture_by_bitblt(self, self.hwnd_window.hwnd, width, height, x, y, render_full)
 
     def get_name(self):
         return f'BitBlt_{render_full}'
@@ -427,68 +486,6 @@ cdef class BitBltCaptureMethod(BaseWindowsCaptureMethod):
                 return False
             else:
                 return True
-
-    cdef object bit_blt_capture_frame(self, int border, int title_height,
-                                      bint _render_full_content=False):
-        cdef int hwnd = self.hwnd_window.hwnd
-        if hwnd <= 0:
-            return None
-
-        cdef int width = self.hwnd_window.real_width or self.hwnd_window.width
-        cdef int height = self.hwnd_window.real_height or self.hwnd_window.height
-
-        if width <= 0 or height <= 0:
-            return None
-        cdef object image
-        image = None
-
-        cdef int x, y
-        x = border
-        y = title_height
-
-        try:
-            if self.last_hwnd != hwnd or self.last_height != height or self.last_width != width:
-                if self.last_hwnd > 0:
-                    try_delete_dc(self.dc_object)
-                    try_delete_dc(self.compatible_dc)
-                    win32gui.ReleaseDC(hwnd, self.window_dc)
-                    win32gui.DeleteObject(self.bitmap.GetHandle())
-                self.window_dc = win32gui.GetWindowDC(hwnd)
-                self.dc_object = win32ui.CreateDCFromHandle(self.window_dc)
-                self.compatible_dc = self.dc_object.CreateCompatibleDC()
-                self.bitmap = win32ui.CreateBitmap()
-                self.bitmap.CreateCompatibleBitmap(self.dc_object, width, height)
-                self.last_hwnd = hwnd
-                self.last_width = width
-                self.last_height = height
-
-            # Causes a 10-15x performance drop. But allows recording hardware accelerated windows
-            if _render_full_content:
-                ctypes.windll.user32.PrintWindow(hwnd, self.dc_object.GetSafeHdc(), PW_RENDERFULLCONTENT)
-
-            # On Windows there is a shadow around the windows that we need to account for.
-            # left_bounds, top_bounds = 3, 0
-
-            self.compatible_dc.SelectObject(self.bitmap)
-            self.compatible_dc.BitBlt(
-                (0, 0),
-                (width, height),
-                self.dc_object,
-                (x, y),
-                win32con.SRCCOPY,
-            )
-            image = np.frombuffer(self.bitmap.GetBitmapBits(True), dtype=np.uint8)
-        except:
-            # Invalid handle or the window was closed while it was being manipulated
-            return None
-
-        if is_blank(image):
-            image = None
-        else:
-            image.shape = (height, width, BGRA_CHANNEL_COUNT)
-
-        # Cleanup DC and handle
-        return image
 
 cdef class HwndWindow:
     cdef public object app_exit_event, stop_event, mute_option, thread, device_manager, global_config
@@ -705,8 +702,6 @@ cdef class HwndWindow:
             mute = self.mute_option.get('Mute Game while in Background')
         if self.hwnd and self.to_handle_mute and mute:
             set_mute_state(self.hwnd, 0 if self.visible else 1)
-            # logger.debug(
-            #     f'handle_mute hwnd:{self.hwnd} mute:{mute} self.to_handle_mute:{self.to_handle_mute} visible:{self.visible}')
 
     def frame_ratio(self, size):
         if self.frame_width > 0 and self.width > 0:
@@ -743,7 +738,6 @@ def is_window_in_screen_bounds(window_left, window_top, window_width, window_hei
     for monitor_rect in monitors_bounds:
         monitor_left, monitor_top, monitor_right, monitor_bottom = monitor_rect
 
-        # Check if the window is within the monitor bounds
         if (window_left >= monitor_left and window_top >= monitor_top and
                 window_right <= monitor_right and window_bottom <= monitor_bottom):
             return True
@@ -770,7 +764,6 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
                 elif not re.search(title, text):
                     return True
             name, full_path, cmdline = get_exe_by_hwnd(hwnd)
-            # logger.debug(f'find_hwnd {name, full_path, cmdline} exe_names:{exe_names}')
             if not name:
                 return True
             if exe_names:
@@ -813,7 +806,7 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
         real_height = 0
         if frame_aspect_ratio != 0:
             real_width, real_height = biggest[2], biggest[3]
-            matching_child = enum_child_windows(biggest, frame_aspect_ratio)
+            matching_child = enum_child_windows(biggest, frame_aspect_ratio, frame_width, frame_height)
             if matching_child is not None:
                 x_offset, y_offset, real_width, real_height = matching_child
             logger.info(
@@ -833,7 +826,6 @@ def get_mute_state(hwnd):
             return volume.GetMute()
     return 0
 
-# Function to get the mute state
 def set_mute_state(hwnd, mute):
     from pycaw.api.audioclient import ISimpleAudioVolume
     from pycaw.utils import AudioUtilities
@@ -842,7 +834,7 @@ def set_mute_state(hwnd, mute):
     for session in sessions:
         if session.Process and session.Process.pid == pid:
             volume = session._ctl.QueryInterface(ISimpleAudioVolume)
-            volume.SetMute(mute, None)  # 0 to unmute, 1 to mute
+            volume.SetMute(mute, None)
             break
 
 def get_player_id_from_cmdline(cmdline):
@@ -853,12 +845,11 @@ def get_player_id_from_cmdline(cmdline):
     for i in range(len(cmdline)):
         if i != 0:
             value = re.search(r'index=(\d+)', cmdline[i])
-            # Return the value if it exists, otherwise return None
             if value is not None:
                 return int(value.group(1))
     return 0
 
-def enum_child_windows(biggest, frame_aspect_ratio):
+def enum_child_windows(biggest, frame_aspect_ratio, frame_width, frame_height):
     ratio_match = []
 
     def child_callback(hwnd, _):
@@ -867,29 +858,29 @@ def enum_child_windows(biggest, frame_aspect_ratio):
         rect = win32gui.GetWindowRect(hwnd)
         parent_rect = win32gui.GetWindowRect(parent)
         real_width = rect[2] - rect[0]
-        real_height = rect[3] - rect[1]
-        logger.info(f'find_hwnd child_callback {visible} {biggest[0]} {parent_rect} {rect} {real_width} {real_height}')
+        real_height = rect[3] - rect[1]        
         if visible:
             ratio = real_width / real_height
             difference = abs(ratio - frame_aspect_ratio)
             support = difference <= 0.01 * frame_aspect_ratio
             percent = (real_width * real_height) / (biggest[2] * biggest[3])
-            if support and percent >= 0.7:
-                x_offset = rect[0] - biggest[4]
-                y_offset = rect[1] - biggest[5]
+            x_offset = rect[0] - biggest[4]
+            y_offset = rect[1] - biggest[5]
+            child_class = win32gui.GetClassName(hwnd)
+            if support and percent >= 0.7 or (frame_width == real_width and real_width >= frame_width ) or (frame_height == real_height and real_height>= frame_height):
                 ratio_match.append((difference, (x_offset, y_offset, real_width, real_height)))
+            logger.info(f'find_hwnd child_callback {child_class} {visible} {parent_rect} {rect} {real_width} {real_height} support:{support}')
         return True
 
     win32gui.EnumChildWindows(biggest[0], child_callback, None)
 
     if len(ratio_match) > 0:
-        ratio_match.sort(key=lambda x: x[0])  # Sort by the difference in aspect ratio
+        ratio_match.sort(key=lambda x: x[0])
         logger.debug(f'ratio_match sorted {ratio_match}')
-        return ratio_match[0][1]  # Return the window with the closest ratio
+        return ratio_match[0][1]
 
     return None
 
-# orignal https://github.com/Toufool/AutoSplit/blob/master/src/capture_method/DesktopDuplicationCaptureMethod.py
 cdef class DesktopDuplicationCaptureMethod(BaseWindowsCaptureMethod):
     name = "Direct3D Desktop Duplication"
     short_description = "slower, bound to display"
@@ -935,17 +926,7 @@ cdef class DesktopDuplicationCaptureMethod(BaseWindowsCaptureMethod):
         if self.desktop_duplication is not None:
             self.desktop_duplication.stop()
 
-cdef int BGRA_CHANNEL_COUNT
-BGRA_CHANNEL_COUNT = 4
-"""How many channels in a BGRA image"""
-
 def update_capture_method(config, capture_method, hwnd, exit_event=None):
-    """
-    Updates the capture method based on a prioritized list from the config.
-
-    It iterates through the capture methods specified in config['capture_method']
-    and attempts to initialize each one. The first successful method is returned.
-    """
     try:
         method_preferences = config.get('capture_method', [])
 
@@ -973,7 +954,7 @@ def update_capture_method(config, capture_method, hwnd, exit_event=None):
                 if dxgi_capture := get_capture(capture_method, DesktopDuplicationCaptureMethod, hwnd, exit_event):
                     return dxgi_capture
 
-        return None  # Return None if no capture method was successful
+        return None
     except Exception as e:
         logger.error(f'update_capture_method exception, return None: {e}')
         return None
@@ -1010,52 +991,52 @@ class ColorChannel(IntEnum):
 
 
 def decimal(value: float):
-    # Using ljust instead of :2f because of python float rounding errors
     return f"{int(value * 100) / 100}".ljust(4, "0")
 
 def is_digit(value: str | int | None):
-    """Checks if `value` is a single-digit string from 0-9."""
     if value is None:
         return False
     try:
-        return 0 <= int(value) <= 9  # noqa: PLR2004
+        return 0 <= int(value) <= 9
     except (ValueError, TypeError):
         return False
 
 def is_valid_hwnd(hwnd: int):
-    """Validate the hwnd points to a valid window and not the desktop or whatever window obtained with `""`."""
     if not hwnd:
         return False
     if sys.platform == "win32":
         return bool(win32gui.IsWindow(hwnd) and win32gui.GetWindowText(hwnd))
     return True
 
-cdef try_delete_dc(dc):
-    if dc is not None:
-        try:
-            dc.DeleteDC()
-            return True
-        except win32ui.error:
-            pass
-
 cdef class BrowserCaptureMethod(BaseCaptureMethod):
     name = "Browser Capture"
-    description = "Capture from Browser using Playwright Screenshot"
+    description = "Capture from Browser using Playwright and Windows Graphics Capture"
     cdef public object playwright, browser, page, config, loop, loop_thread, latest_frame
+    cdef public object wgc_capture
+    cdef public int hwnd, x_offset, y_offset, last_width, last_height, last_hwnd
 
     def __init__(self, config, exit_event):
         super().__init__()
         self.config = config
         self.exit_event = exit_event
-        self._size = config.get('resolution', (1280, 720))
+        res = config.get('resolution', (1280, 720))
+        self._size = (res[0], res[1])
         logger.info(f'BrowserCaptureMethod init {self._size}')
         self.playwright = None
         self.browser = None
         self.page = None
         self.latest_frame = None
+        self.wgc_capture = None
         self.loop = asyncio.new_event_loop()
         self.loop_thread = threading.Thread(target=self._start_loop, daemon=True, name="PlaywrightLoop")
         self.loop_thread.start()
+        
+        self.hwnd = 0
+        self.x_offset = 0
+        self.y_offset = 0
+        self.last_width = 0
+        self.last_height = 0
+        self.last_hwnd = 0
 
     def _start_loop(self):
         asyncio.set_event_loop(self.loop)
@@ -1109,13 +1090,11 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
         if self.browser is None:
             raise Exception("Failed to launch system browser.")
 
-        # Wait briefly for browser to restore previous session/tabs
         await asyncio.sleep(0.1)
 
         self.page = None
         url = self.config.get('url')
 
-        # Cleanup "about:blank" immediately if it exists alongside other restored pages
         if len(self.browser.pages) > 1:
             for p in self.browser.pages:
                 if p.url == "about:blank":
@@ -1124,7 +1103,6 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
                     except:
                         pass
 
-        # Try to find an existing page with the same URL to reuse
         if url:
             for p in self.browser.pages:
                 logger.debug(f'BrowserCaptureMethod checking page: {p.url}')
@@ -1133,7 +1111,6 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
                     logger.info(f'Reusing existing page with URL: {p.url}')
                     break
 
-        # If no matching page found, use the first available or create new
         if self.page is None:
             if self.browser.pages:
                 self.page = self.browser.pages[0]
@@ -1146,7 +1123,6 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
         await self.page.bring_to_front()
         await self.page.set_viewport_size({'width': width, 'height': height})
 
-        # Close all other pages to ensure only one tab remains
         for p in self.browser.pages:
             if p != self.page:
                 try:
@@ -1155,6 +1131,22 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
                     pass
 
         logger.info(f'BrowserCaptureMethod start browser {width, height} {url}')
+
+        target_title = await self.page.title()
+
+        if target_title:
+             target_title = re.compile(target_title)
+             
+        for _ in range(10):
+            res = find_hwnd(target_title, ['chrome.exe', 'msedge.exe', 'chromium.exe'], width, height)
+            if res[1] > 0:
+                self.hwnd = res[1]
+                self.x_offset = res[3]
+                self.y_offset = res[4]
+                logger.info(f"Browser window {target_title} found:  {res[1]} offsets: {self.x_offset},{self.y_offset}")
+                self.wgc_capture = BrowserWGC(self)
+                break
+            await asyncio.sleep(0.5)
 
     async def _close_async(self):
         logger.info(f'BrowserCaptureMethod _close_async')
@@ -1175,12 +1167,18 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
                 pass
 
     def start_browser(self):
+        if not windows_graphics_available():
+            raise CaptureException("Windows Graphics Capture is not supported on this system.")
         if self.page is not None and not self.page.is_closed():
             return
         self.run_in_loop(self._start_browser_async())
 
     def close(self):
         logger.info(f'BrowserCaptureMethod close browser')
+        if self.wgc_capture:
+            self.wgc_capture.close()
+            self.wgc_capture = None
+
         if self.loop.is_running():
             self.run_in_loop(self._close_async())
             self.loop.call_soon_threadsafe(self.loop.stop)
@@ -1198,19 +1196,9 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
         self.latest_frame = None
         if self.loop_thread.is_alive():
             self.loop_thread.join(timeout=1)
-
-    async def _force_screenshot(self):
-        try:
-            if self.page:
-                png_bytes = await self.page.screenshot()
-                image_data = np.frombuffer(png_bytes, dtype=np.uint8)
-                frame = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
-                if frame is not None:
-                    self.latest_frame = frame
-                return frame
-        except Exception as e:
-            logger.error(f"Force screenshot failed: {e}")
-        return None
+            
+        self.hwnd = 0
+        self.last_hwnd = 0
 
     cpdef object do_get_frame(self):
         if self.exit_event.is_set():
@@ -1218,19 +1206,79 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
             self.close()
             return None
 
-        if self.connected():
-            return self.run_in_loop(self._force_screenshot())
+        if self.page is None or self.page.is_closed():
+             if self.loop.is_running() and self.page is None:
+                 pass
+             elif self.page is not None:
+                logger.warning('BrowserCaptureMethod page closed')
+                self.page = None
+                self.browser = None
+                communicate.notification.emit('Paused because browser exited', None, True, True, "start")
+             return None
 
-        if self.page is not None and self.page.is_closed():
-            self.page = None
-            self.browser = None
-            communicate.notification.emit('Paused because game exited', None, True, True, "start")
-
+        if self.wgc_capture:
+            return self.wgc_capture.do_get_frame()
+        
         return None
 
     def connected(self):
         connected = self.page is not None and not self.page.is_closed()
         return connected
+
+class BrowserWindowAdapter:
+    def __init__(self, capture):
+        self.capture = capture
+        
+    @property
+    def hwnd(self):
+        return self.capture.hwnd
+        
+    @property
+    def exists(self):
+        return self.capture.connected() and self.capture.hwnd > 0
+        
+    @property
+    def app_exit_event(self):
+        return self.capture.exit_event
+        
+    @property
+    def width(self):
+        return self.capture.width
+        
+    @property
+    def height(self):
+        return self.capture.height
+        
+    def get_abs_cords(self, x, y):
+        try:
+            rect = win32gui.GetWindowRect(self.capture.hwnd)
+            return rect[0] + self.capture.x_offset + x, rect[1] + self.capture.y_offset + y
+        except:
+            return x, y
+
+cdef class BrowserWGC(WindowsGraphicsCaptureMethod):
+    cdef BrowserCaptureMethod browser_method
+    
+    def __init__(self, BrowserCaptureMethod browser_method):
+        self.browser_method = browser_method
+        super().__init__(BrowserWindowAdapter(browser_method))
+
+    def crop_image(self, frame):
+        if frame is None:
+             return None
+        cdef int x = self.browser_method.x_offset
+        cdef int y = self.browser_method.y_offset
+        cdef int w = self.browser_method.width
+        cdef int h = self.browser_method.height
+        
+        fh, fw = frame.shape[:2]
+        if x < 0 or y < 0 or x + w > fw or y + h > fh:
+            x = max(0, x)
+            y = max(0, y)
+            w = min(w, fw - x)
+            h = min(h, fh - y)
+            
+        return frame[y:y+h, x:x+w]
 
 cdef class ADBCaptureMethod(BaseCaptureMethod):
     name = "ADB command line Capture"
@@ -1278,7 +1326,7 @@ cdef class ImageCaptureMethod(BaseCaptureMethod):
     def set_images(self, images):
         self.images = list(reversed(images))
         self.index = 0
-        self.get_frame()  # fill size
+        self.get_frame()
 
     def get_abs_cords(self, x, y):
         return x, y
@@ -1289,7 +1337,6 @@ cdef class ImageCaptureMethod(BaseCaptureMethod):
             image_path = self.images[self.index]
             if image_path:
                 frame = cv2.imdecode(np.fromfile(image_path, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
-                # Update index for next call
                 if self.index < len(self.images) - 1:
                     self.index += 1
                 return frame
@@ -1332,21 +1379,10 @@ cdef class NemuIpcCaptureMethod(BaseCaptureMethod):
         return os.path.dirname(os.path.dirname(self.emulator.path))
 
     def check_mumu_app_keep_alive_400(self):
-        """
-        Check app_keep_alive from emulator config if version >= 4.0
-
-        Args:
-            file: E:/ProgramFiles/MuMuPlayer-12.0/vms/MuMuPlayer-12.0-1/config/customer_config.json
-
-        Returns:
-            bool: If success to read file
-        """
         file = os.path.abspath(os.path.join(
             self.base_folder(),
             f'vms/MuMuPlayer-12.0-{self.emulator.player_id}/configs/customer_config.json'))
 
-        # with E:\ProgramFiles\MuMuPlayer-12.0\shell\MuMuPlayer.exe
-        # config is E:\ProgramFiles\MuMuPlayer-12.0\vms\MuMuPlayer-12.0-1\config\customer_config.json
         try:
             with open(file, mode='r', encoding='utf-8') as f:
                 s = f.read()
@@ -1355,9 +1391,7 @@ cdef class NemuIpcCaptureMethod(BaseCaptureMethod):
             logger.warning(f'Failed to check check_mumu_app_keep_alive, file {file} not exists')
             return False
         value = deep_get(data, keys='customer.app_keptlive', default=None)
-        # logger.info(f'customer.app_keptlive {value}')
         if str(value).lower() == 'true':
-            # https://mumu.163.com/help/20230802/35047_1102450.html
             logger.error('Please turn off enable background keep alive in MuMuPlayer settings')
             raise Exception('Please turn off enable background keep alive in MuMuPlayer settings')
         return True
