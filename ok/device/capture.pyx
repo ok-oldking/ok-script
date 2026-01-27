@@ -7,6 +7,7 @@ import re
 import sys
 import threading
 import time
+import winreg
 from enum import IntEnum
 
 import cv2
@@ -24,7 +25,7 @@ from ok.util.GlobalConfig import basic_options
 from ok.util.collection import deep_get
 from ok.util.color import is_close_to_pure_color
 from ok.util.logger import Logger
-from ok.util.process import read_game_gpu_pref, read_global_gpu_pref
+from ok.util.process import read_global_gpu_pref, read_game_gpu_pref
 from ok.util.window import WINDOWS_BUILD_NUMBER, WGC_NO_BORDER_MIN_BUILD, show_title_bar, get_window_bounds, \
     resize_window, get_exe_by_hwnd, windows_graphics_available, find_display, is_foreground_window
 
@@ -180,6 +181,19 @@ cdef get_crop_point(int frame_width, int frame_height, int target_width, int tar
     cdef int y = (frame_height - target_height) - x
     return x, y
 
+cdef parse_reg_flag(value, flag_name):
+    if not value or not isinstance(value, str): return None
+    parts = value.split(';')
+    for part in parts:
+        kv = part.split('=')
+        if len(kv) == 2 and kv[0].strip() == flag_name:
+            try:
+                v = int(kv[1])
+                return v % 2 != 0
+            except:
+                pass
+    return None
+
 cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     name = "Windows Graphics Capture"
     description = "fast, most compatible, capped at 60fps"
@@ -320,6 +334,11 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 delegate = TypedEventHandler(GraphicsCaptureItem, IInspectable).delegate(
                     self.close)
                 self.evtoken = item.add_Closed(delegate)
+                
+                hdr, _ = read_game_gpu_pref(self.hwnd_window.exe_full_path)
+                if hdr:
+                    logger.info(f'Auto HDR enabled for {self.hwnd_window.exe_full_path}, capture mapped to SDR')
+
                 self.frame_pool = Direct3D11CaptureFramePool.CreateFreeThreaded(self.rtdevice,
                                                                                 DirectXPixelFormat.B8G8R8A8UIntNormalized,
                                                                                 1, item.Size)

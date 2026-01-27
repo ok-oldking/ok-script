@@ -10,7 +10,10 @@ import sys
 import threading  # Added for real-time stream reading
 from functools import cmp_to_key
 
+from ok.update.inline_ok_requirements import remove_ok_requirements
+from ok.util.file import get_path_relative_to_exe, delete_if_exists
 from ok.util.logger import Logger
+from ok.util.process import kill_exe
 
 logger = Logger.get_logger(__name__)
 bundled_git = os.path.join(os.getcwd(), 'python', 'git', 'bin', 'git.exe')
@@ -42,8 +45,7 @@ from PySide6.QtCore import QCoreApplication
 
 from ok import Config
 from ok import Handler
-from ok import delete_if_exists
-from ok import og, kill_exe
+from ok import og
 from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error, alert_info
 from ok.update.init_launcher_env import create_repo_venv
@@ -557,16 +559,6 @@ def copy_folder_with_exclusions(source_folder, destination_folder, exclude_folde
                 shutil.copy2(source_file, destination_file)
 
 
-def get_file_in_path_or_cwd(path, file):
-    if os.path.exists(os.path.join(path, file)):
-        return os.path.join(path, file)
-    elif os.path.exists(file):
-        return file
-    elif os.path.exists(os.path.join('src', file)):
-        return os.path.join('src', file)
-    raise FileNotFoundError(f'{path} {file} not found')
-
-
 def is_valid_version(tag):
     pattern = r'^v\d+\.\d+\.\d+$'
     return bool(re.match(pattern, tag))
@@ -743,19 +735,3 @@ def copy_exe_files(folder1, folder2):
     logger.info(f'Copy exe complete. {folder1} -> {folder2}')
 
 
-def remove_ok_requirements(repo_dir, tag):
-    config_file = get_file_in_path_or_cwd(repo_dir, 'config.py')
-    with open(config_file, 'r', encoding='utf-8') as file:
-        content = file.read()
-    new_content = re.sub(r'version = ".+"', f'version = "{tag}"', content)
-    with open(config_file, 'w', encoding='utf-8') as file:
-        file.write(new_content)
-
-    if os.path.exists(os.path.join(repo_dir, 'ok')):
-        logger.info('ok-script is bundled with source code, skip downloading')
-    file_path = os.path.join(repo_dir, 'requirements.txt')
-    with open(file_path, 'r', encoding='utf-8') as file:
-        lines = file.readlines()
-    filtered_lines = [line for line in lines if 'ok-script' not in line]
-    with open(file_path, 'w', encoding='utf-8') as file:
-        file.writelines(filtered_lines)

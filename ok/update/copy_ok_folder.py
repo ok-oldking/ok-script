@@ -36,6 +36,15 @@ def find_and_copy_site_package():
     return 1  # Exit with status code 1 (error)
 
 
+def get_file_in_path_or_cwd(path, file):
+    if os.path.exists(os.path.join(path, file)):
+        return os.path.join(path, file)
+    elif os.path.exists(file):
+        return file
+    elif os.path.exists(os.path.join('src', file)):
+        return os.path.join('src', file)
+    raise FileNotFoundError(f'{path} {file} not found')
+
 if __name__ == "__main__":
     exit_code = find_and_copy_site_package()
     sys.exit(exit_code)

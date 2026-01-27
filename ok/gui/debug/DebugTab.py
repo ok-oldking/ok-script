@@ -11,6 +11,8 @@ from ok import Config, og
 from ok import Handler
 from ok import Logger
 from ok.capture.windows.dump import dump_threads
+from ok.device.capture import ImageCaptureMethod
+from ok.device.intercation import DoNothingInteraction
 from ok.gui.i18n.GettextTranslator import convert_to_mo_files
 from ok.gui.util.Alert import alert_info, alert_error
 from ok.gui.widget.Tab import Tab

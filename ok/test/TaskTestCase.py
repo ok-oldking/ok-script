@@ -26,7 +26,7 @@ class TaskTestCase(unittest.TestCase):
         TaskTestCase.logger = logger
         logger.info(f'set up cls start {cls}')
         from ok import og
-        cls.task = cls.task_class(og.executor)
+        cls.task = cls.task_class(og.executor, None)
         from ok.test import ok
         cls.task.feature_set = ok.feature_set
         cls.task.set_executor(ok.task_executor)

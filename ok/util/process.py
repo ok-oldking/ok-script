@@ -1,3 +1,4 @@
+# process.py
 import argparse
 import ctypes
 import glob
@@ -365,20 +366,21 @@ def can_enable_hdr():
         value, reg_type = winreg.QueryValueEx(key, value_name)
         winreg.CloseKey(key)  # Close the key *after* reading
 
-        if reg_type != winreg.REG_SZ:
-            logger.error(f"Warning: Expected REG_SZ, but got REG_TYPE {reg_type}. Returning None.")
-            return None, None
+        # FIX: Allow REG_DWORD (4) as well as REG_SZ (1)
+        if reg_type != winreg.REG_SZ and reg_type != winreg.REG_DWORD:
+            logger.error(f"Warning: Expected REG_SZ or REG_DWORD, but got REG_TYPE {reg_type}. Returning None.")
+            return False # FIX: Return boolean False, not tuple (None, None)
 
         logger.debug(f'check global AutoHDROptOutApplicable {value}')
         return value == 1 or value == "1"
 
     except FileNotFoundError:
         # Key or value not found
-        logger.error(f"Key '{key_path}' or value '{value_name}' not found.")
-        return None, None
+        # logger.error(f"Key '{key_path}' or value '{value_name}' not found.")
+        return False # FIX: Return boolean
     except Exception as e:
         logger.error(f"Error reading DirectX User GPU Preferences: {e}")
-        return None, None
+        return False # FIX: Return boolean
 
 
 def read_game_gpu_pref(game_executable_path):
@@ -414,7 +416,7 @@ def read_game_gpu_pref(game_executable_path):
 
             if reg_type != winreg.REG_SZ:
                 logger.error(f"Warning: Expected REG_SZ, but got REG_TYPE {reg_type}. Returning None.")
-                return None
+                return None, None # Consistent return
 
             hdr_enabled = parse_reg_value(value, 'AutoHDREnable')
             swipe_enabled = parse_reg_value(value, 'SwapEffectUpgradeEnable')
