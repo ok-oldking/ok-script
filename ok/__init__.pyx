@@ -10,6 +10,11 @@ import uuid
 from datetime import datetime
 
 import pyappify
+
+# Fix for PySide6 KeyError: 'PATH'
+if "PATH" not in os.environ:
+    os.environ["PATH"] = ""
+
 from PySide6.QtCore import QCoreApplication
 from PySide6.QtGui import QIcon
 from ok.device.DeviceManager import DeviceManager
