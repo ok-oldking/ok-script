@@ -1,4 +1,3 @@
-## FeatureSet
 import json
 import math
 import os
@@ -25,15 +24,18 @@ cdef class FeatureSet:
     cdef bint debug, load_success
     cdef dict feature_dict, box_dict
     cdef object lock, feature_processor
+    cdef list hcenter_features
 
     def __init__(self, debug, coco_json: str, default_horizontal_variance,
-                 default_vertical_variance, default_threshold=0.95, feature_processor=None) -> None:
+                 default_vertical_variance, default_threshold=0.95, feature_processor=None,
+                 hcenter_features: list = None) -> None:
         self.coco_json = get_path_relative_to_exe(coco_json)
         self.debug = debug
         self.feature_dict = {}
         self.box_dict = {}
         self.load_success = False
         self.feature_processor = feature_processor
+        self.hcenter_features = hcenter_features if hcenter_features is not None else []
 
         logger.debug(f'Loading features from {self.coco_json}')
 
@@ -66,12 +68,14 @@ cdef class FeatureSet:
 
     cdef bint process_data(self):
         self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
-                                                                                         self.height)
+                                                                                         self.height,
+                                                                                         self.hcenter_features)
         if self.debug and not compressed:
             logger.info(f'coco not compressed try to compress the COCO dataset')
             compress_coco(self.coco_json)
             self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
-                                                                                             self.height)
+                                                                                             self.height,
+                                                                                             self.hcenter_features)
         if self.feature_processor:
             logger.info('process features with feature_processor')
             for feature in self.feature_dict:
@@ -236,7 +240,7 @@ cdef class FeatureSet:
                                          template=template, mask_function=mask_function, match_method=match_method,
                                          screenshot=screenshot)
 
-def read_from_json(coco_json, width=-1, height=-1):
+def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None):
     feature_dict = {}
     box_dict = {}
     ok_compressed = None
@@ -275,8 +279,10 @@ def read_from_json(coco_json, width=-1, height=-1):
 
             category_name = category_map[category_id]
 
+            is_hcenter = 'hcenter' in category_name or (hcenter_features and category_name in hcenter_features)
+
             x, y, w, h, scale = adjust_coordinates(x, y, w, h, width, height, image_width, image_height,
-                                                   hcenter='hcenter' in category_name)
+                                                   hcenter=is_hcenter)
 
             image = cv2.resize(image, (w, h))
 
