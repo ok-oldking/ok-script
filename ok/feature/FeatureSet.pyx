@@ -84,7 +84,6 @@ cdef class FeatureSet:
         self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
                                                                                          self.height)
         if self.debug and not compressed:
-            from ok.feature.CompressCoco import compress_coco
             logger.info(f'coco not compressed try to compress the COCO dataset')
             compress_coco(self.coco_json)
             self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
