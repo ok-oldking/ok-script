@@ -28,14 +28,6 @@ cdef class FeatureSet:
 
     def __init__(self, debug, coco_json: str, default_horizontal_variance,
                  default_vertical_variance, default_threshold=0.95, feature_processor=None) -> None:
-        """
-        Initialize the FeatureSet by loading images and annotations from a COCO dataset.
-
-        Args:
-            coco_json (str): Directory containing the JSON file and images.
-            width (int): Scale images to this width.
-            height (int): Scale images to this height.
-        """
         self.coco_json = get_path_relative_to_exe(coco_json)
         self.debug = debug
         self.feature_dict = {}
@@ -45,7 +37,6 @@ cdef class FeatureSet:
 
         logger.debug(f'Loading features from {self.coco_json}')
 
-        # Process images and annotations
         self.width = 0
         self.height = 0
         if default_threshold == 0:
@@ -74,13 +65,6 @@ cdef class FeatureSet:
         return self.load_success
 
     cdef bint process_data(self):
-        """
-        Process the images and annotations from the COCO dataset.
-
-        Args:
-            width (int): Target width for scaling images.
-            height (int): Target height for scaling images.
-        """
         self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
                                                                                          self.height)
         if self.debug and not compressed:
@@ -99,22 +83,12 @@ cdef class FeatureSet:
         return self.box_dict.get(category_name)
 
     cdef save_images(self, str target_folder):
-        """
-        Save all images in the featureDict to the specified folder.
-
-        Args:
-            target_folder (str): The folder where images will be saved.
-        """
-        # Ensure the target folder exists
         os.makedirs(target_folder, exist_ok=True)
 
-        # Iterate through the featureDict and save each image
         for category_name, image in self.feature_dict.items():
-            # Construct the filename
             file_name = f"{category_name}.jpg"
             file_path = os.path.join(target_folder, file_name)
 
-            # Save the image
             cv2.imwrite(file_path, image.mat)
 
     cpdef object get_feature_by_name(self, mat, name):
@@ -126,20 +100,6 @@ cdef class FeatureSet:
                          to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0, canny_higher=0,
                          frame_processor=None, template=None, mask_function=None, match_method=cv2.TM_CCOEFF_NORMED,
                          screenshot=False):
-        """
-        Find a feature within a given variance.
-
-        Args:
-            mat (np.ndarray): The image in which to find the feature.
-            category_name (str): The category name of the feature to find.
-            horizontal_variance (float): Allowed horizontal variance as a percentage of width.
-            vertical_variance (float): Allowed vertical variance as a percentage of height.
-            threshold (float): Allowed confidence threshold for the feature.
-            use_gray_scale (bool): If True, convert image to grayscale before finding the feature.
-
-        Returns:
-            List[Box]: A list of boxes where the feature is found.
-        """
         self.check_size(mat)
 
         if threshold == 0:
@@ -175,10 +135,8 @@ cdef class FeatureSet:
             search_y1 = 0
             search_y2, search_x2 = mat.shape[:2]
         else:
-            # Define search area using variance
             x_offset = self.width * horizontal_variance
             y_offset = self.height * vertical_variance
-            # if the feature was scaled increase the search area by 1px each direction
             if feature.scaling != 1:
                 if horizontal_variance == 0:
                     x_offset = 1
@@ -193,7 +151,6 @@ cdef class FeatureSet:
 
         search_area = mat[search_y1:search_y2, search_x1:search_x2, :3]
 
-        # Crop the search area from the image
         feature_height, feature_width = template.shape[:2]
         if use_gray_scale:
             search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
@@ -233,11 +190,10 @@ cdef class FeatureSet:
             communicate.screenshot.emit(search_area, "search_area", False, box)
             communicate.screenshot.emit(template, "template", False, None)
 
-        # Define a threshold for acceptable matches
         locations = filter_and_sort_matches(result, threshold, feature_width, feature_height)
         boxes = []
 
-        for loc in locations:  # Iterate through found locations
+        for loc in locations:
             x, y = loc[0][0] + search_x1, loc[0][1] + search_y1
             confidence = 1.0 if math.isinf(loc[1]) and loc[1] > 0 else loc[1]
             boxes.append(Box(x, y, feature_width, feature_height, confidence, category_name))
@@ -256,20 +212,6 @@ cdef class FeatureSet:
                      to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0, canny_higher=0,
                      frame_processor=None, template=None, mask_function=None, match_method=cv2.TM_CCOEFF_NORMED,
                      screenshot=False):
-        """
-        Find a feature within a given variance.
-
-        Args:
-            mat (np.ndarray): The image in which to find the feature.
-            category_name (str): The category name of the feature to find.
-            horizontal_variance (float): Allowed horizontal variance as a percentage of width.
-            vertical_variance (float): Allowed vertical variance as a percentage of height.
-            threshold (float): Allowed confidence threshold for the feature.
-            use_gray_scale (bool): If True, convert image to grayscale before finding the feature.
-
-        Returns:
-            List[Box]: A list of boxes where the feature is found.
-        """
         if type(category_name) is list:
             results = []
             for cn in category_name:
@@ -303,14 +245,10 @@ def read_from_json(coco_json, width=-1, height=-1):
     coco_folder = os.path.dirname(coco_json)
     logger.info(f"read_from_json {coco_folder} {coco_json}")
 
-    # Create a map from image ID to file name
     image_map = {image['id']: image['file_name'] for image in data['images']}
-
-    # Create a map from category ID to category name
     category_map = {category['id']: category['name'] for category in data['categories']}
 
     for image_id, file_name in image_map.items():
-        # Load and scale the image
         image_path = str(os.path.join(coco_folder, file_name))
         if ok_compressed is None:
             with Image.open(image_path) as img:
@@ -330,14 +268,11 @@ def read_from_json(coco_json, width=-1, height=-1):
             bbox = annotation['bbox']
             x, y, w, h = bbox
 
-            # Crop the image to the bounding box
             image = whole_image[round(y):round(y + h), round(x):round(x + w), :3]
 
             x, y = round(x), round(y)
             h, w, _ = image.shape
-            # Calculate the scaled bounding box
 
-            # Store in featureDict using the category name
             category_name = category_map[category_id]
 
             x, y, w, h, scale = adjust_coordinates(x, y, w, h, width, height, image_width, image_height,
@@ -349,7 +284,6 @@ def read_from_json(coco_json, width=-1, height=-1):
                 f"loaded {category_name} resized width {width} / original_width:{original_width},scale_x:{width / original_width}")
             if category_name in feature_dict:
                 raise ValueError(f"Multiple boxes found for category {category_name}")
-            # if not category_name.startswith('box_'):
             feature_dict[category_name] = Feature(image, x, y, scale)
             box_dict[category_name] = Box(x, y, image.shape[1], image.shape[0], name=category_name)
 
@@ -363,67 +297,45 @@ def load_json(coco_json):
         return data
 
 def un_fk_label_studio_path(path):
-    # Check if the path is an absolute path
     if os.path.isabs(path):
-        # Check if the path contains the "images" folder
         match = re.search(r'\\(images\\.*\.(jpg|png)$)', path)
         if match:
-            # Extract the "images\\*.jpg" part
             return match.group(1).replace("images\\", "images/")
     return path
 
 def adjust_coordinates(x, y, w, h, screen_width, screen_height, image_width, image_height, hcenter=False):
-    # logger.debug(f'scaling images {screen_width}x{screen_height} {image_width}x{image_height} {x}, {y}, {w}, {h}')
     if screen_width != -1 and screen_height != -1 and (screen_width != image_width or screen_height != image_height):
-        scale_x, scale_y = screen_width / image_width, screen_height / image_height
+        scale_x = screen_width / image_width
+        scale_y = screen_height / image_height
+        scale = min(scale_x, scale_y)
     else:
-        scale_x, scale_y = 1, 1
+        scale = 1
 
-    scale = min(scale_x, scale_y)
     w, h = round(w * scale), round(h * scale)
-
-    if scale_x > scale_y:
-        y = round(y * scale)
-        x = scale_by_anchor(x, image_width, screen_width, scale, hcenter=hcenter)
-    elif scale_x < scale_y:
-        x = round(x * scale)
-        y = scale_by_anchor(y, image_height, screen_height, scale, hcenter=hcenter)
-    else:
-        x, y = round(x * scale), round(y * scale)
-
-    # logger.debug(f'scaled images {scale_x}, {scale_y} to {screen_width}x{screen_height} {x}, {y}, {w}, {h}')
+    x = scale_by_anchor(x, image_width, screen_width, scale, hcenter=hcenter)
+    y = scale_by_anchor(y, image_height, screen_height, scale, hcenter=False)
 
     return x, y, w, h, scale
 
 def scale_by_anchor(x, image_width, screen_width, scale, hcenter=False):
-    if (x + image_width) / 2 > screen_width * 0.5:
-        if hcenter:
-            x = round(screen_width * 0.5 + (x - image_width * 0.5) * scale)
-        else:
-            x = screen_width - round((image_width - x) * scale)
-    else:
-        if hcenter:
-            x = round(screen_width * 0.5 - (image_width * 0.5 - x) * scale)
-        else:
-            x = round(x * scale)
-    return x
+    if hcenter:
+        return round(screen_width * 0.5 + (x - image_width * 0.5) * scale)
+    if x > image_width / 2:
+        return screen_width - round((image_width - x) * scale)
+    return round(x * scale)
 
 def replace_extension(filename):
     if filename.endswith('.jpg'):
         return filename[:-4] + '.png', True
 
 def filter_and_sort_matches(result, threshold, w, h):
-    # Find all matches above the confidence threshold
     loc = np.where(result >= threshold)
-    matches = list(zip(*loc[::-1]))  # Convert to (x, y) coordinates
+    matches = list(zip(*loc[::-1]))
 
-    # Get the match confidence scores
     confidences = result[result >= threshold]
 
-    # Combine the coordinates and confidences, and sort by confidence in descending order
     matches_with_confidence = sorted(zip(matches, confidences), key=lambda x: x[1], reverse=True)
 
-    # List to store selected matches
     selected_matches = []
 
     def is_overlapping(match, selected):
@@ -433,7 +345,6 @@ def filter_and_sort_matches(result, threshold, w, h):
                 return True
         return False
 
-    # Select non-overlapping matches
     for match, confidence in matches_with_confidence:
         if not is_overlapping(match, selected_matches):
             selected_matches.append((match, confidence))
@@ -455,37 +366,31 @@ def compress_coco(coco_json) -> None:
 
         feature = feature_dict.get(category_map[category_id])
         if feature:
-            # Load and scale the image
             image_path = image_map[image_id]
             image_features = image_dict.get(image_path, [])
             image_features.append(feature)
             image_dict[image_path] = image_features
 
-    # Loop through the image_dict and write all the image_feature associated with it in a new PNG
     i = 0
     renamed_path = {}
     for relative_path, features in image_dict.items():
         image_path = str(os.path.join(coco_folder, relative_path))
         background = None
         for feature in features:
-            # Create a white background
             if background is None:
                 if not os.path.exists(image_path):
                     raise ValueError(f'{image_path} not exists')
                 original_image = cv2.imread(image_path)
                 background = np.full_like(original_image,
-                                          255)  # Create white background with the same shape as original_image
+                                          255)
 
-            # Paste the feature onto the background
             x, y = feature.x, feature.y
             h, w = feature.mat.shape[:2]
             background[y:y + h, x:x + w] = feature.mat
 
-        # Save the image with metadata
         if background is None:
             logger.error(f'no feature in {image_path}')
             raise ValueError(f'no feature in {image_path}')
-            # Save the image with metadata
 
         new_path_relative = replace_extension(i, relative_path)
         new_path_relative = new_path_relative.replace('\\', '/')
@@ -512,19 +417,16 @@ def replace_extension(i, file_name):
 
 def save_image_with_metadata(image, image_path, new_path):
     try:
-        # Convert OpenCV image (numpy array) to PIL Image
         pil_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
 
         metadata = PngInfo()
 
-        # Add metadata
         metadata.add_text('ok_compressed', '1')
         metadata.add_text("Author", "ok_compress")
         metadata.add_text("Description", "This is a sample image")
 
         if os.path.normpath(image_path) != os.path.normpath(new_path):
             os.remove(image_path)
-        # Save the image with metadata
         pil_image.save(new_path, 'PNG', optimize=True, pnginfo=metadata)
         return image_path
     except Exception as e:
