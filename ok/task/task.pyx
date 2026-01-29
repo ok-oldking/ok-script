@@ -1,4 +1,3 @@
-## Task.pyx
 import re
 import subprocess
 import threading
@@ -73,12 +72,12 @@ cdef class ExecutorOperation:
         self.executor.reset_scene()
 
     def click(self, x: int | Box | List[Box] = -1, y=-1, move_back=False, name=None, interval=-1, move=True,
-              down_time=0.01, after_sleep=0, key='left'):
+              down_time=0.01, after_sleep=0, key='left', hcenter=False, vcenter=False):
         if isinstance(x, Box) or isinstance(x, list):
             return self.click_box(x, move_back=move_back, down_time=down_time, after_sleep=after_sleep)
         elif 0 < x < 1 or 0 < y < 1:
             return self.click_relative(x, y, move_back=move_back, move=move, interval=interval, after_sleep=after_sleep,
-                                       name=name, down_time=down_time, key=key)
+                                       name=name, down_time=down_time, key=key, hcenter=hcenter, vcenter=vcenter)
         if not self.check_interval(interval):
             self.executor.reset_scene()
             return False
@@ -204,7 +203,7 @@ cdef class ExecutorOperation:
             return to_click
 
     def box_of_screen(self, x, y, to_x= 1.0, to_y=1.0, width = 0.0, height = 0.0, name=None,
-                      hcenter=False, confidence=1.0):
+                      hcenter=False, vcenter=False, confidence=1.0):
         if name is None:
             name = f"{x} {y} {width} {height}"
         if self.out_of_ratio():
@@ -215,7 +214,7 @@ cdef class ExecutorOperation:
                                              to_x=to_x * should_width,
                                              to_y=to_y * self.height, width_original=width * should_width,
                                              height_original=self.height * height,
-                                             name=name, hcenter=hcenter, confidence=confidence)
+                                             name=name, hcenter=hcenter, vcenter=vcenter, confidence=confidence)
         else:
             return relative_box(self.executor.method.width, self.executor.method.height, x, y,
                                 to_x=to_x, to_y=to_y, width=width, height=height, name=name, confidence=confidence)
@@ -229,14 +228,14 @@ cdef class ExecutorOperation:
 
     def box_of_screen_scaled(self, original_screen_width, original_screen_height, x_original, y_original,
                              to_x = 0, to_y = 0, width_original=0, height_original=0,
-                             name=None, hcenter=False, confidence=1.0):
+                             name=None, hcenter=False, vcenter=False, confidence=1.0):
         if width_original == 0:
             width_original = to_x - x_original
         if height_original == 0:
             height_original = to_y - y_original
         x, y, w, h, scale = adjust_coordinates(x_original, y_original, width_original, height_original,
                                                self.screen_width, self.screen_height, original_screen_width,
-                                               original_screen_height, hcenter=hcenter)
+                                               original_screen_height, hcenter=hcenter, vcenter=vcenter)
         return Box(x, y, w, h, name=name, confidence=confidence)
 
     def height_of_screen(self, percent):
@@ -253,14 +252,15 @@ cdef class ExecutorOperation:
     def width_of_screen(self, percent):
         return int(percent * self.executor.method.width)
 
-    def click_relative(self, x, y, move_back=False, hcenter=False, move=True, after_sleep=0, name=None, interval=-1,
+    def click_relative(self, x, y, move_back=False, hcenter=False, vcenter=False, move=True, after_sleep=0, name=None,
+                       interval=-1,
                        down_time=0.02,
                        key="left"):
         if self.out_of_ratio():
             should_width = self.executor.device_manager.supported_ratio * self.height
             x, y, w, h, scale = adjust_coordinates(x * should_width, y * self.height, 0, 0,
                                                    self.screen_width, self.screen_height, should_width,
-                                                   self.height, hcenter=hcenter)
+                                                   self.height, hcenter=hcenter, vcenter=vcenter)
         else:
             x, y = int(self.width * x), int(self.height * y)
         self.click(x, y, move_back, name=name, move=move, down_time=down_time, after_sleep=after_sleep,

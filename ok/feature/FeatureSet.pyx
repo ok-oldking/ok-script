@@ -24,11 +24,11 @@ cdef class FeatureSet:
     cdef bint debug, load_success
     cdef dict feature_dict, box_dict
     cdef object lock, feature_processor
-    cdef list hcenter_features
+    cdef list hcenter_features, vcenter_features
 
     def __init__(self, debug, coco_json: str, default_horizontal_variance,
                  default_vertical_variance, default_threshold=0.95, feature_processor=None,
-                 hcenter_features: list = None) -> None:
+                 hcenter_features: list = None, vcenter_features: list = None) -> None:
         self.coco_json = get_path_relative_to_exe(coco_json)
         self.debug = debug
         self.feature_dict = {}
@@ -36,6 +36,7 @@ cdef class FeatureSet:
         self.load_success = False
         self.feature_processor = feature_processor
         self.hcenter_features = hcenter_features if hcenter_features is not None else []
+        self.vcenter_features = vcenter_features if vcenter_features is not None else []
 
         logger.debug(f'Loading features from {self.coco_json}')
 
@@ -69,13 +70,15 @@ cdef class FeatureSet:
     cdef bint process_data(self):
         self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
                                                                                          self.height,
-                                                                                         self.hcenter_features)
+                                                                                         self.hcenter_features,
+                                                                                         self.vcenter_features)
         if self.debug and not compressed:
             logger.info(f'coco not compressed try to compress the COCO dataset')
             compress_coco(self.coco_json)
             self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
                                                                                              self.height,
-                                                                                             self.hcenter_features)
+                                                                                             self.hcenter_features,
+                                                                                             self.vcenter_features)
         if self.feature_processor:
             logger.info('process features with feature_processor')
             for feature in self.feature_dict:
@@ -240,7 +243,7 @@ cdef class FeatureSet:
                                          template=template, mask_function=mask_function, match_method=match_method,
                                          screenshot=screenshot)
 
-def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None):
+def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcenter_features=None):
     feature_dict = {}
     box_dict = {}
     ok_compressed = None
@@ -280,9 +283,10 @@ def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None):
             category_name = category_map[category_id]
 
             is_hcenter = 'hcenter' in category_name or (hcenter_features and category_name in hcenter_features)
+            is_vcenter = 'vcenter' in category_name or (vcenter_features and category_name in vcenter_features)
 
             x, y, w, h, scale = adjust_coordinates(x, y, w, h, width, height, image_width, image_height,
-                                                   hcenter=is_hcenter)
+                                                   hcenter=is_hcenter, vcenter=is_vcenter)
 
             image = cv2.resize(image, (w, h))
 
@@ -309,7 +313,8 @@ def un_fk_label_studio_path(path):
             return match.group(1).replace("images\\", "images/")
     return path
 
-def adjust_coordinates(x, y, w, h, screen_width, screen_height, image_width, image_height, hcenter=False):
+def adjust_coordinates(x, y, w, h, screen_width, screen_height, image_width, image_height, hcenter=False,
+                       vcenter=False):
     if screen_width != -1 and screen_height != -1 and (screen_width != image_width or screen_height != image_height):
         scale_x = screen_width / image_width
         scale_y = screen_height / image_height
@@ -318,17 +323,17 @@ def adjust_coordinates(x, y, w, h, screen_width, screen_height, image_width, ima
         scale = 1
 
     w, h = round(w * scale), round(h * scale)
-    x = scale_by_anchor(x, image_width, screen_width, scale, hcenter=hcenter)
-    y = scale_by_anchor(y, image_height, screen_height, scale, hcenter=False)
+    x = scale_by_anchor(x, image_width, screen_width, scale, center=hcenter)
+    y = scale_by_anchor(y, image_height, screen_height, scale, center=vcenter)
 
     return x, y, w, h, scale
 
-def scale_by_anchor(x, image_width, screen_width, scale, hcenter=False):
-    if hcenter:
-        return round(screen_width * 0.5 + (x - image_width * 0.5) * scale)
-    if x > image_width / 2:
-        return screen_width - round((image_width - x) * scale)
-    return round(x * scale)
+def scale_by_anchor(val, image_dim, screen_dim, scale, center=False):
+    if center:
+        return round(screen_dim * 0.5 + (val - image_dim * 0.5) * scale)
+    if val > image_dim / 2:
+        return screen_dim - round((image_dim - val) * scale)
+    return round(val * scale)
 
 def replace_extension(filename):
     if filename.endswith('.jpg'):
