@@ -16,6 +16,7 @@ from ok.util.file import delete_if_exists
 from ok.util.handler import Handler
 from ok.util.logger import Logger
 from ok.util.process import kill_exe
+from ok.util.window import windows_graphics_available
 
 logger = Logger.get_logger(__name__)
 
@@ -187,7 +188,7 @@ class DeviceManager:
             self.device_dict['pc'] = pc_device
 
     def update_browser_device(self):
-        if self.browser_config:
+        if self.browser_config and windows_graphics_available():
             width, height = self.browser_config.get('resolution', (1280, 720))
             nick = self.browser_config.get('nick', 'Browser')
             connected = False

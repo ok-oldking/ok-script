@@ -4,8 +4,6 @@ import re
 import subprocess
 
 from ok import Logger
-from ok.update.python_env import delete_files, \
-    create_venv
 
 logger = Logger.get_logger(__name__)
 
