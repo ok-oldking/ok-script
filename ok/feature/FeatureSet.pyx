@@ -243,7 +243,7 @@ cdef class FeatureSet:
                                          template=template, mask_function=mask_function, match_method=match_method,
                                          screenshot=screenshot)
 
-def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcenter_features=None):
+def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcenter_features=None, adjust=True):
     feature_dict = {}
     box_dict = {}
     ok_compressed = None
@@ -285,10 +285,13 @@ def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcente
             is_hcenter = 'hcenter' in category_name or (hcenter_features and category_name in hcenter_features)
             is_vcenter = 'vcenter' in category_name or (vcenter_features and category_name in vcenter_features)
 
-            x, y, w, h, scale = adjust_coordinates(x, y, w, h, width, height, image_width, image_height,
-                                                   hcenter=is_hcenter, vcenter=is_vcenter)
+            if adjust:
+                x, y, w, h, scale = adjust_coordinates(x, y, w, h, width, height, image_width, image_height,
+                                                       hcenter=is_hcenter, vcenter=is_vcenter)
 
-            image = cv2.resize(image, (w, h))
+                image = cv2.resize(image, (w, h))
+            else:
+                scale = 1
 
             logger.debug(
                 f"loaded {category_name} resized width {width} / original_width:{original_width},scale_x:{width / original_width}")
@@ -417,7 +420,7 @@ def compress_copy_coco(coco_json, target_folder, image_folder) -> str:
     return target_coco_json
 
 def compress_coco(coco_json) -> None:
-    feature_dict, *_ = read_from_json(coco_json)
+    feature_dict, *_ = read_from_json(coco_json, adjust=False)
     image_dict = {}
     data = load_json(coco_json)
 
