@@ -377,6 +377,45 @@ def filter_and_sort_matches(result, threshold, w, h):
 
     return selected_matches
 
+def compress_copy_coco(coco_json, target_folder, image_folder) -> str:
+    import shutil
+    
+    os.makedirs(target_folder, exist_ok=True)
+    target_image_folder = os.path.join(target_folder, 'images')
+    os.makedirs(target_image_folder, exist_ok=True)
+    
+    data = load_json(coco_json)
+    
+    for image_info in data['images']:
+        image_filename = os.path.basename(image_info['file_name'])
+        
+        source_image_path = os.path.join(image_folder, image_filename)
+        
+        new_relative_path = f"images/{image_filename}"
+        
+        target_image_path = os.path.join(target_folder, new_relative_path)
+        if os.path.exists(source_image_path):
+            shutil.copy2(source_image_path, target_image_path)
+            logger.info(f'Copied image: {source_image_path} -> {target_image_path}')
+        else:
+            logger.warning(f'Source image not found: {source_image_path}')
+            
+        image_info['file_name'] = new_relative_path
+    
+    for annotation in data['annotations']:
+        bbox = annotation['bbox']
+        annotation['bbox'] = [round(bbox[0]), round(bbox[1]), round(bbox[2]), round(bbox[3])]
+    
+    target_coco_json = os.path.join(target_folder, os.path.basename(coco_json))
+    with open(target_coco_json, 'w') as json_file:
+        json.dump(data, json_file, indent=4)
+    
+    logger.info(f'Copied COCO JSON to: {target_coco_json}')
+    
+    compress_coco(target_coco_json)
+    
+    return target_coco_json
+
 def compress_coco(coco_json) -> None:
     feature_dict, *_ = read_from_json(coco_json)
     image_dict = {}
