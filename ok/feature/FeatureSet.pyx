@@ -318,40 +318,25 @@ def un_fk_label_studio_path(path):
 
 def adjust_coordinates(x, y, w, h, screen_width, screen_height, image_width, image_height, hcenter=False,
                        vcenter=False):
-    # logger.debug(f'scaling images {screen_width}x{screen_height} {image_width}x{image_height} {x}, {y}, {w}, {h}')
     if screen_width != -1 and screen_height != -1 and (screen_width != image_width or screen_height != image_height):
-        scale_x, scale_y = screen_width / image_width, screen_height / image_height
+        scale_x = screen_width / image_width
+        scale_y = screen_height / image_height
+        scale = min(scale_x, scale_y)
     else:
-        scale_x, scale_y = 1, 1
+        scale = 1
 
-    scale = min(scale_x, scale_y)
     w, h = round(w * scale), round(h * scale)
-
-    if scale_x > scale_y:
-        y = round(y * scale)
-        x = scale_by_anchor(x, image_width, screen_width, scale, hcenter=hcenter)
-    elif scale_x < scale_y:
-        x = round(x * scale)
-        y = scale_by_anchor(y, image_height, screen_height, scale, hcenter=vcenter)
-    else:
-        x, y = round(x * scale), round(y * scale)
-
-    # logger.debug(f'scaled images {scale_x}, {scale_y} to {screen_width}x{screen_height} {x}, {y}, {w}, {h}')
+    x = scale_by_anchor(x, image_width, screen_width, scale, center=hcenter)
+    y = scale_by_anchor(y, image_height, screen_height, scale, center=vcenter)
 
     return x, y, w, h, scale
 
-def scale_by_anchor(x, image_width, screen_width, scale, hcenter=False):
-    if (x + image_width) / 2 > screen_width * 0.5:
-        if hcenter:
-            x = round(screen_width * 0.5 + (x - image_width * 0.5) * scale)
-        else:
-            x = screen_width - round((image_width - x) * scale)
-    else:
-        if hcenter:
-            x = round(screen_width * 0.5 - (image_width * 0.5 - x) * scale)
-        else:
-            x = round(x * scale)
-    return x
+def scale_by_anchor(val, image_dim, screen_dim, scale, center=False):
+    if center:
+        return round(screen_dim * 0.5 + (val - image_dim * 0.5) * scale)
+    if val > image_dim / 2:
+        return screen_dim - round((image_dim - val) * scale)
+    return round(val * scale)
 
 def replace_extension(filename):
     if filename.endswith('.jpg'):
