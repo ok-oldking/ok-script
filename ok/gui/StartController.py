@@ -1,4 +1,6 @@
 import time
+import subprocess
+import os
 
 from PySide6.QtCore import QObject
 
@@ -7,6 +9,7 @@ from ok import Logger
 from ok.device.capture import BaseWindowsCaptureMethod, BrowserCaptureMethod
 from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error
+from ok.util.GlobalConfig import basic_options
 from ok.util.process import is_admin, execute, read_game_gpu_pref, read_global_gpu_pref
 
 logger = Logger.get_logger(__name__)
@@ -62,7 +65,17 @@ class StartController(QObject):
             path = og.device_manager.get_exe_path(device)
             if path:
                 logger.info(f"starting game {path}")
-                if not execute(path):
+                launch_with_dx11 = og.executor.global_config.get_config(basic_options).get('Launch with DX11')
+
+                if launch_with_dx11:
+                    logger.info(f"Start with DX11: {path} -dx11")
+                    try:
+                        subprocess.Popen([path, '-dx11'], cwd=os.path.dirname(path), creationflags=0x00000008)
+                    except Exception as e:
+                        logger.error(f"Error launching with DX11: {e}")
+                        communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
+                        return False
+                elif not execute(path):
                     communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
                     return False
                 wait_until = time.time() + self.start_timeout
