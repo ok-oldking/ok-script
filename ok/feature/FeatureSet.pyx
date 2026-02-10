@@ -1,7 +1,11 @@
+# FeatureSet.pyx
+import glob
 import json
 import math
 import os
 import re
+import shutil
+import subprocess
 import threading
 
 import cv2
@@ -296,6 +300,10 @@ def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcente
             logger.debug(
                 f"loaded {category_name} resized width {width} / original_width:{original_width},scale_x:{width / original_width}")
             if category_name in feature_dict:
+                existing_box = box_dict[category_name]
+                if existing_box.x == x and existing_box.y == y and existing_box.width == image.shape[
+                    1] and existing_box.height == image.shape[0]:
+                    continue
                 raise ValueError(f"Multiple boxes found for category {category_name}")
             feature_dict[category_name] = Feature(image, x, y, scale)
             box_dict[category_name] = Box(x, y, image.shape[1], image.shape[0], name=category_name)
@@ -365,43 +373,88 @@ def filter_and_sort_matches(result, threshold, w, h):
 
     return selected_matches
 
+def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder):
+    classes_path = os.path.join(x_anylabeling_folder, "classes.txt")
+    output_dir = os.path.join(x_anylabeling_folder, "coco_output")
+
+    # Clean start to prevent stale data
+    if os.path.exists(classes_path):
+        os.remove(classes_path)
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+
+    labels = set()
+    json_files = glob.glob(os.path.join(x_anylabeling_folder, "*.json"))
+    if not json_files:
+        raise ValueError(f"No JSON files found in {x_anylabeling_folder}")
+
+    for jf in json_files:
+        with open(jf, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            for shape in data.get('shapes', []):
+                labels.add(shape['label'])
+
+    sorted_labels = sorted(list(labels))
+
+    print(f'sorted_labels {sorted_labels}')
+
+    with open(classes_path, 'w', encoding='utf-8') as f:
+        f.write("\n".join(sorted_labels))
+
+    cmd = [
+        "xanylabeling", "convert",
+        "--task", "xlabel2coco",
+        "--mode", "detect",
+        "--images", x_anylabeling_folder,
+        "--labels", x_anylabeling_folder,
+        "--output", output_dir,
+        "--classes", classes_path
+    ]
+    subprocess.check_call(cmd)
+
+    generated_jsons = glob.glob(os.path.join(output_dir, "**", "*.json"), recursive=True)
+    if not generated_jsons:
+        raise FileNotFoundError("COCO conversion failed, no JSON found in output directory.")
+
+    compress_copy_coco(generated_jsons[0], target_folder, x_anylabeling_folder)
+
 def compress_copy_coco(coco_json, target_folder, image_folder) -> str:
     import shutil
-    
+
     os.makedirs(target_folder, exist_ok=True)
     target_image_folder = os.path.join(target_folder, 'images')
     os.makedirs(target_image_folder, exist_ok=True)
-    
+
     data = load_json(coco_json)
-    
+
     for image_info in data['images']:
         image_filename = os.path.basename(image_info['file_name'])
-        
+
         source_image_path = os.path.join(image_folder, image_filename)
-        
+
         new_relative_path = f"images/{image_filename}"
-        
+
         target_image_path = os.path.join(target_folder, new_relative_path)
         if os.path.exists(source_image_path):
             shutil.copy2(source_image_path, target_image_path)
             logger.info(f'Copied image: {source_image_path} -> {target_image_path}')
         else:
             logger.warning(f'Source image not found: {source_image_path}')
-            
+
         image_info['file_name'] = new_relative_path
-    
+
     for annotation in data['annotations']:
         bbox = annotation['bbox']
         annotation['bbox'] = [round(bbox[0]), round(bbox[1]), round(bbox[2]), round(bbox[3])]
-    
+
     target_coco_json = os.path.join(target_folder, os.path.basename(coco_json))
     with open(target_coco_json, 'w') as json_file:
         json.dump(data, json_file, indent=4)
-    
+
     logger.info(f'Copied COCO JSON to: {target_coco_json}')
-    
+
     compress_coco(target_coco_json)
-    
+
     return target_coco_json
 
 def compress_coco(coco_json) -> None:
@@ -426,7 +479,11 @@ def compress_coco(coco_json) -> None:
 
     i = 0
     renamed_path = {}
-    for relative_path, features in image_dict.items():
+
+    sorted_image_paths = sorted(image_dict.keys(), key=lambda p: os.path.getmtime(os.path.join(coco_folder, p)))
+
+    for relative_path in sorted_image_paths:
+        features = image_dict[relative_path]
         image_path = str(os.path.join(coco_folder, relative_path))
         background = None
         for feature in features:
