@@ -1,4 +1,4 @@
-## capture.pyx
+# capture.pyx
 import asyncio
 import ctypes
 import json
@@ -90,7 +90,7 @@ cdef object capture_by_bitblt(object context, int hwnd, int width, int height, i
         logger.error(f'capture_by_bitblt exception: {e}')
         context.last_hwnd = 0
         return None
-    
+
     image.shape = (height, width, BGRA_CHANNEL_COUNT)
     return image
 
@@ -334,7 +334,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 delegate = TypedEventHandler(GraphicsCaptureItem, IInspectable).delegate(
                     self.close)
                 self.evtoken = item.add_Closed(delegate)
-                
+
                 hdr, _ = read_game_gpu_pref(self.hwnd_window.exe_full_path)
                 if hdr:
                     logger.info(f'Auto HDR enabled for {self.hwnd_window.exe_full_path}, capture mapped to SDR')
@@ -444,7 +444,6 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 return frame[title_height:y2, border:x2]
         return frame
 
-
 cdef bint render_full
 render_full = False
 
@@ -478,10 +477,10 @@ cdef class BitBltCaptureMethod(BaseWindowsCaptureMethod):
         else:
             x, y = get_crop_point(self.hwnd_window.window_width, self.hwnd_window.window_height,
                                   self.hwnd_window.width, self.hwnd_window.height)
-        
+
         cdef int width = self.hwnd_window.real_width or self.hwnd_window.width
         cdef int height = self.hwnd_window.real_height or self.hwnd_window.height
-        
+
         return capture_by_bitblt(self, self.hwnd_window.hwnd, width, height, x, y, render_full)
 
     def get_name(self):
@@ -651,7 +650,7 @@ cdef class HwndWindow:
                     logger.info(
                         f'do_update_window_size find_hwnd {self.hwnd} {self.exe_full_path} {win32gui.GetClassName(self.hwnd)} real:{self.real_x_offset},{self.real_y_offset},{self.real_width},{self.real_height}')
                     changed = True
-                exists = self.hwnd > 0                
+                exists = self.hwnd > 0
             if self.hwnd > 0:
                 exists = win32gui.IsWindow(self.hwnd)
                 if exists:
@@ -674,10 +673,11 @@ cdef class HwndWindow:
                     if pos_valid != self.pos_valid:
                         self.pos_valid = pos_valid
                 else:
-                    if self.global_config.get_config('Basic Options').get('Exit App when Game Exits') and self.device_manager.executor is not None and self.device_manager.executor.pause():
+                    if self.global_config.get_config('Basic Options').get(
+                            'Exit App when Game Exits') and self.device_manager.executor is not None and self.device_manager.executor.pause():
                         alert_info('Auto exit because game exited', True)
                         communicate.quit.emit()
-                    else:                        
+                    else:
                         communicate.notification.emit('Game Exited', None, True, True, None)
                     self.hwnd = 0
                 if visible != self.visible:
@@ -877,7 +877,7 @@ def enum_child_windows(biggest, frame_aspect_ratio, frame_width, frame_height):
         rect = win32gui.GetWindowRect(hwnd)
         parent_rect = win32gui.GetWindowRect(parent)
         real_width = rect[2] - rect[0]
-        real_height = rect[3] - rect[1]        
+        real_height = rect[3] - rect[1]
         if visible:
             ratio = real_width / real_height
             difference = abs(ratio - frame_aspect_ratio)
@@ -886,9 +886,11 @@ def enum_child_windows(biggest, frame_aspect_ratio, frame_width, frame_height):
             x_offset = rect[0] - biggest[4]
             y_offset = rect[1] - biggest[5]
             child_class = win32gui.GetClassName(hwnd)
-            if support and percent >= 0.7 or (frame_width == real_width and real_width >= frame_width ) or (frame_height == real_height and real_height>= frame_height):
+            if support and percent >= 0.7 or (frame_width == real_width and real_width >= frame_width) or (
+                    frame_height == real_height and real_height >= frame_height):
                 ratio_match.append((difference, (x_offset, y_offset, real_width, real_height)))
-            logger.info(f'find_hwnd child_callback {child_class} {visible} {parent_rect} {rect} {real_width} {real_height} support:{support}')
+            logger.info(
+                f'find_hwnd child_callback {child_class} {visible} {parent_rect} {rect} {real_width} {real_height} support:{support}')
         return True
 
     win32gui.EnumChildWindows(biggest[0], child_callback, None)
@@ -995,7 +997,6 @@ def get_capture(capture_method, target_method, hwnd, exit_event):
     return capture_method
 
 
-
 class ImageShape(IntEnum):
     Y = 0
     X = 1
@@ -1033,6 +1034,7 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
     cdef public object playwright, browser, page, config, loop, loop_thread, latest_frame
     cdef public object wgc_capture
     cdef public int hwnd, x_offset, y_offset, last_width, last_height, last_hwnd
+    cdef public str exe_full_path
 
     def __init__(self, config, exit_event):
         super().__init__()
@@ -1049,13 +1051,14 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
         self.loop = asyncio.new_event_loop()
         self.loop_thread = threading.Thread(target=self._start_loop, daemon=True, name="PlaywrightLoop")
         self.loop_thread.start()
-        
+
         self.hwnd = 0
         self.x_offset = 0
         self.y_offset = 0
         self.last_width = 0
         self.last_height = 0
         self.last_hwnd = 0
+        self.exe_full_path = None
 
     def _start_loop(self):
         asyncio.set_event_loop(self.loop)
@@ -1154,12 +1157,13 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
         target_title = await self.page.title()
 
         if target_title:
-             target_title = re.compile(target_title)
-             
+            target_title = re.compile(target_title)
+
         for _ in range(10):
             res = find_hwnd(target_title, ['chrome.exe', 'msedge.exe', 'chromium.exe'], width, height)
             if res[1] > 0:
                 self.hwnd = res[1]
+                self.exe_full_path = res[2]
                 self.x_offset = res[3]
                 self.y_offset = res[4]
                 logger.info(f"Browser window {target_title} found:  {res[1]} offsets: {self.x_offset},{self.y_offset}")
@@ -1215,7 +1219,7 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
         self.latest_frame = None
         if self.loop_thread.is_alive():
             self.loop_thread.join(timeout=1)
-            
+
         self.hwnd = 0
         self.last_hwnd = 0
 
@@ -1226,48 +1230,53 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
             return None
 
         if self.page is None or self.page.is_closed():
-             if self.loop.is_running() and self.page is None:
-                 pass
-             elif self.page is not None:
+            if self.loop.is_running() and self.page is None:
+                pass
+            elif self.page is not None:
                 logger.warning('BrowserCaptureMethod page closed')
                 self.page = None
                 self.browser = None
                 communicate.notification.emit('Paused because browser exited', None, True, True, "start")
-             return None
+            return None
 
         if self.wgc_capture:
             return self.wgc_capture.do_get_frame()
-        
+
         return None
 
     def connected(self):
         connected = self.page is not None and not self.page.is_closed()
         return connected
 
+
 class BrowserWindowAdapter:
     def __init__(self, capture):
         self.capture = capture
-        
+
     @property
     def hwnd(self):
         return self.capture.hwnd
-        
+
     @property
     def exists(self):
         return self.capture.connected() and self.capture.hwnd > 0
-        
+
     @property
     def app_exit_event(self):
         return self.capture.exit_event
-        
+
     @property
     def width(self):
         return self.capture.width
-        
+
     @property
     def height(self):
         return self.capture.height
-        
+
+    @property
+    def exe_full_path(self):
+        return self.capture.exe_full_path
+
     def get_abs_cords(self, x, y):
         try:
             rect = win32gui.GetWindowRect(self.capture.hwnd)
@@ -1275,29 +1284,30 @@ class BrowserWindowAdapter:
         except:
             return x, y
 
+
 cdef class BrowserWGC(WindowsGraphicsCaptureMethod):
     cdef BrowserCaptureMethod browser_method
-    
+
     def __init__(self, BrowserCaptureMethod browser_method):
         self.browser_method = browser_method
         super().__init__(BrowserWindowAdapter(browser_method))
 
     def crop_image(self, frame):
         if frame is None:
-             return None
+            return None
         cdef int x = self.browser_method.x_offset
         cdef int y = self.browser_method.y_offset
         cdef int w = self.browser_method.width
         cdef int h = self.browser_method.height
-        
+
         fh, fw = frame.shape[:2]
         if x < 0 or y < 0 or x + w > fw or y + h > fh:
             x = max(0, x)
             y = max(0, y)
             w = min(w, fw - x)
             h = min(h, fh - y)
-            
-        return frame[y:y+h, x:x+w]
+
+        return frame[y:y + h, x:x + w]
 
 cdef class ADBCaptureMethod(BaseCaptureMethod):
     name = "ADB command line Capture"
@@ -1433,7 +1443,6 @@ cdef class NemuIpcCaptureMethod(BaseCaptureMethod):
 
     def connected(self):
         return True
-
 
 cdef bint compare_path_safe(str str1, str str2):
     if str1 is None and str2 is None:
