@@ -416,7 +416,25 @@ def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder):
     if not generated_jsons:
         raise FileNotFoundError("COCO conversion failed, no JSON found in output directory.")
 
-    compress_copy_coco(generated_jsons[0], target_folder, x_anylabeling_folder)
+    coco_json_path = generated_jsons[0]
+    with open(coco_json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    seen = set()
+    new_annotations = []
+    for annotation in data['annotations']:
+        key = (annotation['category_id'], tuple(annotation['bbox']))
+        if key in seen:
+            continue
+        seen.add(key)
+        new_annotations.append(annotation)
+
+    data['annotations'] = new_annotations
+    
+    with open(coco_json_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=4)
+
+    compress_copy_coco(coco_json_path, target_folder, x_anylabeling_folder)
 
 def compress_copy_coco(coco_json, target_folder, image_folder) -> str:
     import shutil
@@ -458,67 +476,196 @@ def compress_copy_coco(coco_json, target_folder, image_folder) -> str:
     return target_coco_json
 
 def compress_coco(coco_json) -> None:
-    feature_dict, *_ = read_from_json(coco_json, adjust=False)
-    image_dict = {}
     data = load_json(coco_json)
-
     coco_folder = os.path.dirname(coco_json)
-    image_map = {image['id']: image['file_name'] for image in data['images']}
-    category_map = {category['id']: category['name'] for category in data['categories']}
 
-    for annotation in data['annotations']:
-        image_id = annotation['image_id']
-        category_id = annotation['category_id']
+    # Collect all existing image paths to potentially delete later
+    old_files = set()
+    for img in data['images']:
+        path = os.path.join(coco_folder, img['file_name'])
+        old_files.add(os.path.normpath(path))
 
-        feature = feature_dict.get(category_map[category_id])
-        if feature:
-            image_path = image_map[image_id]
-            image_features = image_dict.get(image_path, [])
-            image_features.append(feature)
-            image_dict[image_path] = image_features
+    image_ids = []
+    image_rects = {}
 
-    i = 0
-    renamed_path = {}
+    for ann in data['annotations']:
+        img_id = ann['image_id']
+        if img_id not in image_rects:
+            image_rects[img_id] = []
+            image_ids.append(img_id)
 
-    sorted_image_paths = sorted(image_dict.keys(), key=lambda p: os.path.getmtime(os.path.join(coco_folder, p)))
+        x, y, w, h = ann['bbox']
+        r_x1, r_y1 = round(x), round(y)
+        r_x2, r_y2 = round(x + w), round(y + h)
+        image_rects[img_id].append((r_x1, r_y1, r_x2, r_y2))
 
-    for relative_path in sorted_image_paths:
-        features = image_dict[relative_path]
-        image_path = str(os.path.join(coco_folder, relative_path))
-        background = None
-        for feature in features:
-            if background is None:
-                if not os.path.exists(image_path):
-                    raise ValueError(f'{image_path} not exists')
-                original_image = cv2.imread(image_path)
-                background = np.full_like(original_image,
-                                          255)
+    # Filter out images that have no annotations
+    valid_image_ids = set(image_ids)
+    data['images'] = [img for img in data['images'] if img['id'] in valid_image_ids]
 
-            x, y = feature.x, feature.y
-            h, w = feature.mat.shape[:2]
-            background[y:y + h, x:x + w] = feature.mat
+    if not data['images'] or not image_ids:
+        return
 
-        if background is None:
-            logger.error(f'no feature in {image_path}')
-            raise ValueError(f'no feature in {image_path}')
+    image_info_map = {img['id']: img for img in data['images']}
 
-        new_path_relative = replace_extension(i, relative_path)
-        new_path_relative = new_path_relative.replace('\\', '/')
-        renamed_path[relative_path] = new_path_relative
-        logger.debug(f'renamed_path {relative_path} {new_path_relative}')
+    # Group images by resolution to prevent scaling issues in read_from_json
+    dims_to_img_ids = {} # (w, h) -> [img_ids]
+    
+    for img_id in image_ids:
+        img_info = image_info_map[img_id]
+        img_path = os.path.join(coco_folder, img_info['file_name'])
+        # We need to read image dimensions. efficiently?
+        # cv2.imread might be slow if many images.
+        # But we previously read them all anyway or relied on one.
+        # Let's read.
+        
+        # Optimization: cache dims if possible or just read.
+        # Check if 'width' and 'height' are in coco json image info?
+        # COCO standard has width/height.
+        
+        w = img_info.get('width')
+        h = img_info.get('height')
+        
+        if w is None or h is None:
+            # Fallback to reading file
+            tmp_img = cv2.imread(img_path)
+            if tmp_img is not None:
+                h, w = tmp_img.shape[:2]
+                img_info['width'] = w
+                img_info['height'] = h
+            else:
+                logger.error(f"Cannot read image for dimensions: {img_path}")
+                continue
+                
+        dims = (w, h)
+        if dims not in dims_to_img_ids:
+            dims_to_img_ids[dims] = []
+        dims_to_img_ids[dims].append(img_id)
 
-        new_path_absolute = replace_extension(i, image_path)
-        save_image_with_metadata(background, image_path, new_path_absolute)
-        i += 1
+    new_files = []
+    
+    # Process each resolution group separately
+    page_global_index = 0
+    
+    for dims, group_img_ids in dims_to_img_ids.items():
+        W, H = dims
+        
+        # Packing logic for this group
+        pages = []
+        for img_id in group_img_ids:
+            current_rects = image_rects[img_id]
+            assigned_page = None
 
-    for image in data['images']:
-        if renamed := renamed_path.get(image['file_name']):
-            image['file_name'] = renamed
-        else:
-            raise ValueError(f'{image["file_name"]} does not contain any annotation')
+            for page in pages:
+                conflict = False
+                for c_rect in current_rects:
+                    c_x1, c_y1, c_x2, c_y2 = c_rect
+                    for p_rect in page['occupancy']:
+                        p_x1, p_y1, p_x2, p_y2 = p_rect
+                        if (c_x1 < p_x2 and c_x2 > p_x1 and
+                                c_y1 < p_y2 and c_y2 > p_y1):
+                            conflict = True
+                            break
+                    if conflict:
+                        break
 
-    with open(coco_json, 'w') as json_file:
-        json.dump(data, json_file, indent=4)
+                if not conflict:
+                    assigned_page = page
+                    break
+
+            if assigned_page is None:
+                assigned_page = {'image_ids': [], 'occupancy': []}
+                pages.append(assigned_page)
+
+            assigned_page['image_ids'].append(img_id)
+            assigned_page['occupancy'].extend(current_rects)
+
+        # Generate pages for this group
+        for page in pages:
+            canvas = np.full((H, W, 3), 255, dtype=np.uint8)
+            
+            # Use the first image in the page to determine directory? 
+            # Or just use the folder of the first image in group.
+            first_id = page['image_ids'][0]
+            first_img_info = image_info_map[first_id]
+            img_dir_rel = os.path.dirname(first_img_info['file_name'])
+
+            for img_id in page['image_ids']:
+                img_info = image_info_map[img_id]
+                src_path = os.path.join(coco_folder, img_info['file_name'])
+                src_img = cv2.imread(src_path)
+
+                if src_img is None:
+                    continue
+
+                anns = image_rects.get(img_id, [])
+                for (r_x1, r_y1, r_x2, r_y2) in anns:
+                    r_x1_c = max(0, r_x1);
+                    r_y1_c = max(0, r_y1)
+                    r_x2_c = min(W, r_x2);
+                    r_y2_c = min(H, r_y2)
+
+                    if r_x2_c > r_x1_c and r_y2_c > r_y1_c:
+                        roi = src_img[r_y1_c:r_y2_c, r_x1_c:r_x2_c]
+                        canvas[r_y1_c:r_y2_c, r_x1_c:r_x2_c] = roi
+            
+            new_fname = f"{page_global_index}.png"
+            temp_fname = f"temp_packed_{page_global_index}.png"
+            page_global_index += 1
+
+            save_path_abs = os.path.join(coco_folder, img_dir_rel, temp_fname)
+            final_path_abs = os.path.join(coco_folder, img_dir_rel, new_fname)
+
+            os.makedirs(os.path.dirname(save_path_abs), exist_ok=True)
+            save_image_with_metadata(canvas, save_path_abs, save_path_abs)
+
+            new_rel_path = os.path.join(img_dir_rel, new_fname).replace('\\', '/')
+
+            new_files.append({
+                'temp_abs': save_path_abs,
+                'final_abs': final_path_abs,
+                'final_rel': new_rel_path,
+                'image_ids': page['image_ids']
+            })
+
+    for item in new_files:
+        for img_id in item['image_ids']:
+            image_info_map[img_id]['file_name'] = item['final_rel']
+
+    with open(coco_json, 'w') as f:
+        json.dump(data, f, indent=4)
+
+    temp_paths = set(os.path.normpath(item['temp_abs']) for item in new_files)
+    
+    for item in new_files:
+        if os.path.exists(item['temp_abs']):
+            if os.path.exists(item['final_abs']):
+                # If we are overwriting a file that is in old_files, remove it from old_files so we don't try to delete it again or consider it gone?
+                # Actually, old_files check is mainly to delete things that are NOT in new set.
+                os.remove(item['final_abs'])
+            os.rename(item['temp_abs'], item['final_abs'])
+
+    # Delete old files that are no longer needed
+    # (i.e. files that were in the original list but are not part of the new temporary files being created)
+    # Note: final files (post-rename) are what we want to keep.
+    # The packing generates files 0.png, 1.png etc.
+    # If old file was 'foo.jpg' and is not used, it is deleted.
+    # If old file was '0.png' and is reused/overwritten, we need to be careful.
+    
+    # We already renamed temp to final.
+    # The safe logic is: delete anything in old_files that is NOT one of the current final files.
+    
+    final_files = set(os.path.normpath(item['final_abs']) for item in new_files)
+    
+    for old_path in old_files:
+        # If the old path is one of the new files we just created/renamed, don't delete it.
+        if old_path in final_files: 
+            continue
+        if os.path.exists(old_path):
+            try:
+                os.remove(old_path)
+            except Exception as e:
+                logger.warning(f"Failed to remove {old_path}: {e}")
 
 def replace_extension(i, file_name):
     folder_name = os.path.dirname(file_name)
