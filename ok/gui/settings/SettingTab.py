@@ -1,7 +1,7 @@
 # coding:utf-8
 from qfluentwidgets import FluentIcon as FIF
-from qfluentwidgets import InfoBar
-from qfluentwidgets import (SettingCardGroup, ComboBoxSettingCard)
+from qfluentwidgets import InfoBar, setTheme
+from qfluentwidgets import (SettingCardGroup, ComboBoxSettingCard, OptionsSettingCard)
 
 from ok import og
 from ok.gui.common.config import cfg
@@ -26,6 +26,17 @@ class SettingTab(Tab):
             texts=['简体中文', '繁體中文', 'English', "Español", "日本語", "한국인", self.tr('Use system setting')],
             parent=self.basic_group
         )
+        self.themeCard = OptionsSettingCard(
+            cfg.themeMode,
+            FIF.BRUSH,
+            self.tr('Application Theme'),
+            self.tr("Change the appearance of the application"),
+            texts=[
+                self.tr('Light'), self.tr('Dark'),
+                self.tr('Use system setting')
+            ],
+            parent=self.basic_group
+        )
         self.config_groups = []
         self.__initWidget()
 
@@ -35,7 +46,7 @@ class SettingTab(Tab):
         self.__connectSignalToSlot()
 
     def __initLayout(self):
-        # self.personalGroup.addSettingCard(self.themeCard)
+        self.basic_group.addSettingCard(self.themeCard)
         self.basic_group.addSettingCard(self.languageCard)
 
     def goto_config(self, key):
@@ -70,5 +81,4 @@ class SettingTab(Tab):
         """ connect signal to slot """
         cfg.appRestartSig.connect(self.__showRestartTooltip)
 
-        # personalization
-        # self.themeCard.optionChanged.connect(lambda ci: setTheme(cfg.get(ci)))
+        self.themeCard.optionChanged.connect(lambda ci: setTheme(cfg.get(ci)))

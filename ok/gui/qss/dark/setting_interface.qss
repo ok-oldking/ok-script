@@ -1,11 +1,11 @@
 SettingTab, #scrollWidget {
-    background-color: rgb(39, 39, 39);
+    background-color: transparent;
 }
 
 
 QScrollArea {
     border: none;
-    background-color: rgb(39, 39, 39);
+    background-color: transparent;
 }
 
 

@@ -5,7 +5,7 @@ from enum import Enum
 from PySide6.QtCore import QLocale
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
-                            ConfigSerializer)
+                            ConfigSerializer, Theme, EnumSerializer)
 
 from ok.util.file import get_relative_path
 
@@ -51,8 +51,8 @@ class AppConfig(QConfig):
 
     # software update
     checkUpdateAtStartUp = ConfigItem("Update", "CheckUpdateAtStartUp", True, BoolValidator())
-    # themeMode = OptionsConfigItem(
-    #     "QFluentWidgets", "ThemeMode", Theme.DARK, OptionsValidator(Theme), EnumSerializer(Theme))
+    themeMode = OptionsConfigItem(
+        "QFluentWidgets", "ThemeMode", Theme.DARK, OptionsValidator(Theme), EnumSerializer(Theme))
 
 
 cfg = AppConfig()

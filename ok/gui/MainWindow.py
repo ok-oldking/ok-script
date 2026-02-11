@@ -47,7 +47,7 @@ class MainWindow(MSFluentWindow):
         communicate.restart_admin.connect(self.restart_admin)
         if config.get('show_update_copyright'):
             communicate.copyright.connect(self.show_update_copyright)
-        qconfig.themeChanged.disconnect(self._updateBackgroundColor)
+
 
         self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Capture'))
 
@@ -161,8 +161,7 @@ class MainWindow(MSFluentWindow):
             self.raise_()
             self.activateWindow()
 
-    def _onThemeChangedFinished(self):
-        pass
+
 
     def goto_global_config(self, key):
         self.switchTo(self.setting_tab)

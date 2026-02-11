@@ -28,9 +28,14 @@ StrongBodyLabel {
 }
 
 Card > #card {
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 10px;
-    background-color: rgba(0, 0, 0, 0.024);
+    background-color: rgba(255, 255, 255, 0.5); /* Slightly more opaque background */
+}
+
+Card > #card:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 Card > #card QLabel {

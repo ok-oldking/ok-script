@@ -1,4 +1,4 @@
-SettingInterface, #scrollWidget {
+SettingTab, #scrollWidget {
     background-color: transparent;
 }
 

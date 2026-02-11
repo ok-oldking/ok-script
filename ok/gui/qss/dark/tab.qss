@@ -26,9 +26,14 @@ StrongBodyLabel {
 }
 
 Card>#card {
-    border: 1px solid rgb(36, 36, 36);
+    border: 1px solid rgba(255, 255, 255, 0.08); /* More subtle, semi-transparent border */
     border-radius: 10px;
-    background-color: rgba(0, 0, 0, 0.1795);
+    background-color: rgba(255, 255, 255, 0.05); /* Based on Fluent design material */
+}
+
+Card>#card:hover {
+    background-color: rgba(255, 255, 255, 0.08); /* Slightly lighter on hover */
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 Card>#card QLabel {
@@ -46,11 +51,7 @@ EmptyCard>#card {
     background-color: rgba(0, 0, 0, 0.1795);
 }
 
-EmptyCard>#card {
-    border: 1px solid rgb(36, 36, 36);
-    border-radius: 10px;
-    background-color: rgba(0, 0, 0, 0.1795);
-}
+
 
 #sourceWidget {
     background-color: rgba(255, 255, 255, 0.09);
