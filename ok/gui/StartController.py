@@ -62,7 +62,10 @@ class StartController(QObject):
             path = og.device_manager.get_exe_path(device)
             if path:
                 logger.info(f"starting game {path}")
-                if not execute(path):
+                args = None
+                if og.global_config.get_config('Launch with DX11').get('Launch with DX11'):
+                    args = "-dx11 -d3d11 -force-d3d11"
+                if not execute(path, arguments=args):
                     communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
                     return False
                 wait_until = time.time() + self.start_timeout

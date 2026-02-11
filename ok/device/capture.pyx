@@ -7,7 +7,6 @@ import re
 import sys
 import threading
 import time
-import winreg
 from enum import IntEnum
 
 import cv2

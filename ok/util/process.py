@@ -138,7 +138,7 @@ def get_path(input_string):
         return input_string
 
 
-def execute(game_cmd: str):
+def execute(game_cmd: str, arguments=None):
     if game_cmd:
         if '://' in game_cmd:
             try:
@@ -151,8 +151,11 @@ def execute(game_cmd: str):
             game_path = get_path(game_cmd)
             if os.path.exists(game_path):
                 try:
-                    logger.info(f'try execute {game_cmd}')
-                    subprocess.Popen(['start', '', '/b', game_cmd], cwd=os.path.dirname(game_path), shell=True,
+                    logger.info(f'try execute {game_cmd} {arguments}')
+                    cmd = f'start "" /b "{game_cmd}"'
+                    if arguments:
+                        cmd += f" {arguments}"
+                    subprocess.Popen(cmd, cwd=os.path.dirname(game_path), shell=True,
                                      creationflags=0x00000008)  # detached process
                     return True
                 except Exception as e:
