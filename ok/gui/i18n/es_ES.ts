@@ -480,11 +480,11 @@
         <translation>Configuración de la app</translation>
     </message>
     <message>
-        <source>Application theme</source>
+        <source>Application Theme</source>
         <translation>Tema de la aplicación</translation>
     </message>
     <message>
-        <source>Change the appearance of your application</source>
+        <source>Change the appearance of the application</source>
         <translation>Cambiar la apariencia de tu aplicación</translation>
     </message>
     <message>
@@ -1018,6 +1018,10 @@
     <message>
         <source>Use DirectML</source>
         <translation>Usar DirectML</translation>
+    </message>
+    <message>
+        <source>Launch with DX11</source>
+        <translation>Iniciar con DX11</translation>
     </message>
     <message>
         <source>Auto Resize Game Window</source>

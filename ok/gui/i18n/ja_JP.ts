@@ -479,11 +479,11 @@
         <translation>アプリ設定</translation>
     </message>
     <message>
-        <source>Application theme</source>
+        <source>Application Theme</source>
         <translation>アプリのテーマ</translation>
     </message>
     <message>
-        <source>Change the appearance of your application</source>
+        <source>Change the appearance of the application</source>
         <translation>アプリケーションの外観を変更</translation>
     </message>
     <message>
@@ -1017,6 +1017,10 @@
     <message>
         <source>Use DirectML</source>
         <translation>DirectMLを使用</translation>
+    </message>
+    <message>
+        <source>Launch with DX11</source>
+        <translation>DX11で起動</translation>
     </message>
     <message>
         <source>Auto Resize Game Window</source>

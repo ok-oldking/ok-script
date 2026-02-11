@@ -480,11 +480,11 @@
         <translation>앱 설정</translation>
     </message>
     <message>
-        <source>Application theme</source>
+        <source>Application Theme</source>
         <translation>애플리케이션 테마</translation>
     </message>
     <message>
-        <source>Change the appearance of your application</source>
+        <source>Change the appearance of the application</source>
         <translation>애플리케이션의 모양 변경</translation>
     </message>
     <message>
@@ -1018,6 +1018,10 @@
     <message>
         <source>Use DirectML</source>
         <translation>DirectML 사용</translation>
+    </message>
+    <message>
+        <source>Launch with DX11</source>
+        <translation>DX11로 시작</translation>
     </message>
     <message>
         <source>Auto Resize Game Window</source>

@@ -479,11 +479,11 @@
         <translation>軟體設定</translation>
     </message>
     <message>
-        <source>Application theme</source>
+        <source>Application Theme</source>
         <translation>應用程式主題</translation>
     </message>
     <message>
-        <source>Change the appearance of your application</source>
+        <source>Change the appearance of the application</source>
         <translation>變更應用程式的外觀</translation>
     </message>
     <message>
@@ -1017,6 +1017,10 @@
     <message>
         <source>Use DirectML</source>
         <translation>使用 DirectML</translation>
+    </message>
+    <message>
+        <source>Launch with DX11</source>
+        <translation>使用 DX11 啟動</translation>
     </message>
     <message>
         <source>Auto Resize Game Window</source>
