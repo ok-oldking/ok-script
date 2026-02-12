@@ -73,7 +73,14 @@ class Screenshot(QObject):
 
     def screenshot(self, frame, name, show_box, frame_box):
         if self.screenshot_folder is not None and frame is not None:
-            self.add_task(frame, self.screenshot_folder, name, show_box, frame_box)
+            folder = self.screenshot_folder
+            if name and ('/' in name or '\\' in name):
+                name = name.replace('\\', '/')
+                sub, name = name.rsplit('/', 1)
+                folder = os.path.join(folder, sub)
+                if not os.path.exists(folder):
+                    os.makedirs(folder, exist_ok=True)
+            self.add_task(frame, folder, name, show_box, frame_box)
 
     def clear_box(self):
         self.ui_dict.clear()
