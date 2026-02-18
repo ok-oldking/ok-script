@@ -24,7 +24,7 @@ from ok.util.GlobalConfig import basic_options
 from ok.util.collection import deep_get
 from ok.util.color import is_close_to_pure_color
 from ok.util.logger import Logger
-from ok.util.process import read_global_gpu_pref, read_game_gpu_pref
+from ok.util.process import read_global_gpu_pref, read_game_gpu_pref, is_hdr_enabled
 from ok.util.window import WINDOWS_BUILD_NUMBER, WGC_NO_BORDER_MIN_BUILD, show_title_bar, get_window_bounds, \
     resize_window, get_exe_by_hwnd, windows_graphics_available, find_display, is_foreground_window
 
@@ -1077,6 +1077,12 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
         self.playwright = await async_playwright().start()
 
         width, height = self._size
+
+        hdr_enabled = is_hdr_enabled()
+        logger.info(f'BrowserCaptureMethod HDR check: {hdr_enabled}')
+
+        disable_features = ["CalculateNativeWinOcclusion"]
+
         args = [
             f"--window-size={width},{height}",
             "--force-device-scale-factor=1",
@@ -1085,9 +1091,14 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
             "--disable-background-timer-throttling",
             "--disable-backgrounding-occluded-windows",
             "--disable-renderer-backgrounding",
-            "--disable-features=CalculateNativeWinOcclusion",
-            "--force-color-profile=srgb"
         ]
+
+        if hdr_enabled:
+            disable_features.extend(["HardwareMediaKeyHandling", "OverlayFullscreenVideoStrategy", "VideoOverlay"])
+            args.append("--disable-direct-composition-video-overlays")
+            args.append("--disable-accelerated-video-decode")
+
+        args.append(f"--disable-features={','.join(disable_features)}")
 
         user_data_dir = os.path.join('cache', 'playwright')
 

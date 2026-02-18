@@ -600,3 +600,98 @@ def create_shortcut(exe_path=None, shortcut_name_post=None, description=None, ta
 def prevent_sleeping(yes=True):
     # Prevent the system from sleeping
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000002 if yes else 0x80000000)
+
+
+def is_hdr_enabled():
+    # Constant definitions
+    QDC_ONLY_ACTIVE_PATHS = 0x00000002
+    DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO = 9
+    ERROR_SUCCESS = 0
+
+    # Structure definitions
+    class LUID(ctypes.Structure):
+        _fields_ = [("LowPart", wintypes.DWORD), ("HighPart", wintypes.LONG)]
+
+    class DISPLAYCONFIG_PATH_SOURCE_INFO(ctypes.Structure):
+        _fields_ = [
+            ("adapterId", LUID),
+            ("id", wintypes.UINT),
+            ("modeInfoIdx", wintypes.UINT),
+            ("statusFlags", wintypes.UINT),
+        ]
+
+    class DISPLAYCONFIG_PATH_TARGET_INFO(ctypes.Structure):
+        _fields_ = [
+            ("adapterId", LUID),
+            ("id", wintypes.UINT),
+            ("modeInfoIdx", wintypes.UINT),
+            ("outputTechnology", wintypes.UINT),
+            ("rotation", wintypes.UINT),
+            ("scaling", wintypes.UINT),
+            # Correctly define Rational as 2 UINTs to prevent padding issues
+            ("refreshRateNumerator", wintypes.UINT),
+            ("refreshRateDenominator", wintypes.UINT),
+            ("scanLineOrdering", wintypes.UINT),
+            ("targetAvailable", wintypes.BOOL),
+            ("statusFlags", wintypes.UINT),
+        ]
+
+    class DISPLAYCONFIG_PATH_INFO(ctypes.Structure):
+        _fields_ = [
+            ("sourceInfo", DISPLAYCONFIG_PATH_SOURCE_INFO),
+            ("targetInfo", DISPLAYCONFIG_PATH_TARGET_INFO),
+            ("flags", wintypes.UINT),
+        ]
+
+    class DISPLAYCONFIG_DEVICE_INFO_HEADER(ctypes.Structure):
+        _fields_ = [
+            ("type", wintypes.UINT),
+            ("size", wintypes.UINT),
+            ("adapterId", LUID),
+            ("id", wintypes.UINT),
+        ]
+
+    class DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO(ctypes.Structure):
+        _fields_ = [
+            ("header", DISPLAYCONFIG_DEVICE_INFO_HEADER),
+            ("value", wintypes.UINT),
+            ("colorEncoding", wintypes.UINT),
+            ("bitsPerColorChannel", wintypes.UINT),
+        ]
+
+    # Load User32 DLL
+    user32 = ctypes.windll.user32
+
+    # Get buffer sizes
+    num_path = wintypes.UINT()
+    num_mode = wintypes.UINT()
+
+    if user32.GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, ctypes.byref(num_path),
+                                          ctypes.byref(num_mode)) != ERROR_SUCCESS:
+        return False
+
+    # Allocate buffers
+    paths = (DISPLAYCONFIG_PATH_INFO * num_path.value)()
+    modes = (ctypes.c_void_p * num_mode.value)()  # Modes info not used here, generic buffer is fine
+
+    # Query active paths
+    if user32.QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ctypes.byref(num_path), paths, ctypes.byref(num_mode), modes,
+                                 None) != ERROR_SUCCESS:
+        return False
+
+    # Check each active path
+    for i in range(num_path.value):
+        info = DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO()
+        info.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO
+        info.header.size = ctypes.sizeof(DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO)
+
+        # Target ID must be used for Advanced Color Info
+        info.header.adapterId = paths[i].targetInfo.adapterId
+        info.header.id = paths[i].targetInfo.id
+
+        if user32.DisplayConfigGetDeviceInfo(ctypes.byref(info)) == ERROR_SUCCESS:
+            # Mask 0x1 = Supported, Mask 0x2 = Enabled
+            if (info.value & 0x2) == 0x2:
+                return True
+
+    return False
