@@ -602,6 +602,10 @@ def prevent_sleeping(yes=True):
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000002 if yes else 0x80000000)
 
 
+import ctypes
+from ctypes import wintypes
+
+
 def is_hdr_enabled():
     # Constant definitions
     QDC_ONLY_ACTIVE_PATHS = 0x00000002
@@ -628,7 +632,6 @@ def is_hdr_enabled():
             ("outputTechnology", wintypes.UINT),
             ("rotation", wintypes.UINT),
             ("scaling", wintypes.UINT),
-            # Correctly define Rational as 2 UINTs to prevent padding issues
             ("refreshRateNumerator", wintypes.UINT),
             ("refreshRateDenominator", wintypes.UINT),
             ("scanLineOrdering", wintypes.UINT),
@@ -642,6 +645,19 @@ def is_hdr_enabled():
             ("targetInfo", DISPLAYCONFIG_PATH_TARGET_INFO),
             ("flags", wintypes.UINT),
         ]
+
+    # --- FIX START: Define the missing structure ---
+    # DISPLAYCONFIG_MODE_INFO contains a union of ~48 bytes.
+    # The total struct size is 64 bytes. We use a byte array to reserve the union space safe/easy.
+    class DISPLAYCONFIG_MODE_INFO(ctypes.Structure):
+        _fields_ = [
+            ("infoType", wintypes.UINT),
+            ("id", wintypes.UINT),
+            ("adapterId", LUID),
+            ("modeInfo", ctypes.c_byte * 48)  # Reserve space for the union (Target/Source/Desktop modes)
+        ]
+
+    # --- FIX END ---
 
     class DISPLAYCONFIG_DEVICE_INFO_HEADER(ctypes.Structure):
         _fields_ = [
@@ -672,7 +688,9 @@ def is_hdr_enabled():
 
     # Allocate buffers
     paths = (DISPLAYCONFIG_PATH_INFO * num_path.value)()
-    modes = (ctypes.c_void_p * num_mode.value)()  # Modes info not used here, generic buffer is fine
+
+    # --- FIX: Allocate the correct structure type ---
+    modes = (DISPLAYCONFIG_MODE_INFO * num_mode.value)()
 
     # Query active paths
     if user32.QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ctypes.byref(num_path), paths, ctypes.byref(num_mode), modes,

@@ -334,10 +334,6 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                     self.close)
                 self.evtoken = item.add_Closed(delegate)
 
-                hdr, _ = read_game_gpu_pref(self.hwnd_window.exe_full_path)
-                if hdr:
-                    logger.info(f'Auto HDR enabled for {self.hwnd_window.exe_full_path}, capture mapped to SDR')
-
                 self.frame_pool = Direct3D11CaptureFramePool.CreateFreeThreaded(self.rtdevice,
                                                                                 DirectXPixelFormat.B8G8R8A8UIntNormalized,
                                                                                 1, item.Size)
