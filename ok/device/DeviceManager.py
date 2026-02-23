@@ -170,12 +170,7 @@ class DeviceManager:
                                                                    class_name=self.windows_capture_config.get(
                                                                        'hwnd_class'),
                                                                    selected_hwnd=self.config.get('selected_hwnd'))
-            exe = self.windows_capture_config.get('exe')
-            if isinstance(exe, list) and len(exe) > 0:
-                exe_nick = exe[0]
-            else:
-                exe_nick = exe
-            nick = name or exe_nick
+            nick = name or self.windows_capture_config.get('exe')
             pc_device = {"address": "", "imei": 'pc', "device": "windows",
                          "model": "", "nick": nick, "width": width,
                          "height": height,
