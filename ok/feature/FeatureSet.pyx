@@ -62,7 +62,7 @@ cdef class FeatureSet:
     cpdef bint check_size(self, object frame):
         with self.lock:
             height, width = frame.shape[:2]
-            if self.width != width or self.height != height and height > 0 and width > 0:
+            if (self.width != width or self.height != height) and height > 0 and width > 0:
                 logger.info(f"FeatureSet: Width and height changed from {self.width}x{self.height} to {width}x{height}")
                 self.width = width
                 self.height = height

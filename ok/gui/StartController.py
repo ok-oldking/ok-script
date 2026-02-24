@@ -126,7 +126,7 @@ class StartController(QObject):
             device = og.device_manager.get_preferred_device()
             error_msg = self.tr("{} is not connected, please select the game window.").format(
                 device['nick'])
-            logger.debug(f'test check_device_error msg: {error_msg}')
+            logger.info(f'test check_device_error msg: {error_msg}')
             if not device:
                 return self.tr('No game selected!')
             if og.device_manager.capture_method is None:
@@ -156,13 +156,22 @@ class StartController(QObject):
                     return self.tr(f'Window is minimized or out of screen, and don\'t use full-screen exclusive mode!')
             frame = self.try_capture_a_frame()
             if frame is None:
+                logger.error(f'check_device_error: try_capture_a_frame returned None')
                 return self.tr('Capture failed, please check game window')
-            if og.executor.feature_set is not None and not og.executor.feature_set.check_size(frame):
-                return self.tr(
-                    'Image resource load failed, please try install again.(Don\'t put the app in Downloads folder)')
+            logger.info(f'check_device_error: capturing frame {frame.shape[1], frame.shape[0]}')
+            if og.executor.feature_set is not None:
+                logger.info(f'check_device_error: checking feature_set size')
+                if not og.executor.feature_set.check_size(frame):
+                    logger.error(f'check_device_error: feature_set check_size failed')
+                    return self.tr(
+                        'Image resource load failed, please try install again.(Don\'t put the app in Downloads folder)')
+            else:
+                logger.info(f'check_device_error: feature_set is None')
 
+            logger.info(f'check_device_error: checking resolution')
             resolution_error = self.check_resolution()
             if resolution_error:
+                logger.error(f'check_device_error: resolution_error: {resolution_error}')
                 return resolution_error
 
             if device and device['device'] == "adb" and self.config.get('adb'):
@@ -180,6 +189,7 @@ class StartController(QObject):
             frame = og.device_manager.capture_method.get_frame()
             if frame is not None:
                 return frame
+            logger.info(f'try_capture_a_frame: frame is None, retrying...')
             if time.time() - start > 5:
                 logger.error(f'time out try_capture_a_frame')
                 return None
