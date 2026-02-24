@@ -43,6 +43,27 @@ cdef try_delete_dc(dc):
         except win32ui.error:
             pass
 
+cdef clean_up_bitblt(object context):
+    try_delete_dc(context.dc_object)
+    try_delete_dc(context.compatible_dc)
+    if context.window_dc and context.last_hwnd > 0:
+        try:
+            win32gui.ReleaseDC(context.last_hwnd, context.window_dc)
+        except Exception:
+            pass
+    if context.bitmap:
+        try:
+            win32gui.DeleteObject(context.bitmap.GetHandle())
+        except Exception:
+            pass
+    context.window_dc = None
+    context.dc_object = None
+    context.compatible_dc = None
+    context.bitmap = None
+    context.last_hwnd = 0
+    context.last_width = 0
+    context.last_height = 0
+
 cdef object capture_by_bitblt(object context, int hwnd, int width, int height, int x, int y, bint render_full_content):
     if hwnd <= 0 or width <= 0 or height <= 0:
         logger.error(f'capture_by_bitblt invalid params: hwnd={hwnd}, w={width}, h={height}')
@@ -53,23 +74,15 @@ cdef object capture_by_bitblt(object context, int hwnd, int width, int height, i
     try:
         if context.last_hwnd != hwnd or context.last_height != height or context.last_width != width:
             if context.last_hwnd > 0:
-                try_delete_dc(context.dc_object)
-                try_delete_dc(context.compatible_dc)
-                if context.window_dc:
-                    win32gui.ReleaseDC(context.last_hwnd, context.window_dc)
-                if context.bitmap:
-                    win32gui.DeleteObject(context.bitmap.GetHandle())
-                context.window_dc = None
-                context.dc_object = None
-                context.compatible_dc = None
-                context.bitmap = None
+                clean_up_bitblt(context)
+
+            context.last_hwnd = hwnd
 
             context.window_dc = win32gui.GetWindowDC(hwnd)
             context.dc_object = win32ui.CreateDCFromHandle(context.window_dc)
             context.compatible_dc = context.dc_object.CreateCompatibleDC()
             context.bitmap = win32ui.CreateBitmap()
             context.bitmap.CreateCompatibleBitmap(context.dc_object, width, height)
-            context.last_hwnd = hwnd
             context.last_width = width
             context.last_height = height
 
@@ -87,7 +100,7 @@ cdef object capture_by_bitblt(object context, int hwnd, int width, int height, i
         image = np.frombuffer(context.bitmap.GetBitmapBits(True), dtype=np.uint8)
     except Exception as e:
         logger.error(f'capture_by_bitblt exception: {e}')
-        context.last_hwnd = 0
+        clean_up_bitblt(context)
         return None
 
     image.shape = (height, width, BGRA_CHANNEL_COUNT)
@@ -208,30 +221,34 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     cdef object immediatedc
     cdef object evtoken
     cdef object last_size
+    cdef public object lock
 
     def __init__(self, object hwnd_window):
         super().__init__(hwnd_window)
+        self.lock = threading.RLock()
         self.last_frame_time = time.time()
         self.exit_event = hwnd_window.app_exit_event
         self.start_or_stop()
 
     cdef frame_arrived_callback(self, x, y):
-        if self.exit_event.is_set():
-            logger.warning('frame_arrived_callback exit_event.is_set() return')
-            self.close()
-            return
         cdef object next_frame
-        try:
-            self.last_frame_time = time.time()
-            next_frame = self.frame_pool.TryGetNextFrame()
-            if next_frame is not None:
-                self.last_frame = self.convert_dx_frame(next_frame)
-            else:
-                logger.warning('frame_arrived_callback TryGetNextFrame returned None')
-        except Exception as e:
-            logger.error(f"TryGetNextFrame error {e}")
-            self.close()
-            return
+        with self.lock:
+            if self.exit_event.is_set():
+                logger.warning('frame_arrived_callback exit_event.is_set() return')
+                self.close()
+                return
+            try:
+                self.last_frame_time = time.time()
+                if self.frame_pool is not None:
+                    next_frame = self.frame_pool.TryGetNextFrame()
+                    if next_frame is not None:
+                        self.last_frame = self.convert_dx_frame(next_frame)
+                    else:
+                        logger.warning('frame_arrived_callback TryGetNextFrame returned None')
+            except Exception as e:
+                logger.error(f"TryGetNextFrame error {e}")
+                self.close()
+                return
 
     cdef object convert_dx_frame(self, frame):
         if not frame:
@@ -244,7 +261,8 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         if need_reset_framepool:
             logger.info('need_reset_framepool')
             self.reset_framepool(frame.ContentSize)
-            return
+            return None
+
         cdef bint need_reset_device = False
 
         cdef object tex = None
@@ -287,7 +305,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 cputex.Release()
         if need_reset_framepool:
             self.reset_framepool(frame.ContentSize, need_reset_device)
-            return self.get_frame()
+            return None
 
     @property
     def hwnd_window(self):
@@ -302,55 +320,57 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         return self.hwnd_window is not None and self.hwnd_window.exists and self.frame_pool is not None
 
     def start_or_stop(self, capture_cursor=False):
-        if self.exit_event.is_set():
-            logger.warning('start_or_stop exit_event.is_set() return')
-            self.close()
-            return False
-        elif not self.hwnd_window.exists and self.frame_pool is not None:
-            logger.warning('start_or_stop not self.hwnd_window.exists')
-            self.close()
-            return False
-        elif self.hwnd_window.hwnd and self.hwnd_window.exists and self.frame_pool is None:
-            try:
-                from ok.capture.windows import d3d11
-                from ok.rotypes import IInspectable
-                from ok.rotypes.Windows.Foundation import TypedEventHandler
-                from ok.rotypes.Windows.Graphics.Capture import Direct3D11CaptureFramePool, IGraphicsCaptureItemInterop, \
-                    IGraphicsCaptureItem, GraphicsCaptureItem
-                from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
-                from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDevice
-                from ok.rotypes.roapi import GetActivationFactory
-                logger.info('init windows capture')
-                interop = GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(
-                    IGraphicsCaptureItemInterop)
-                self.rtdevice = IDirect3DDevice()
-                self.dxdevice = d3d11.ID3D11Device()
-                self.immediatedc = d3d11.ID3D11DeviceContext()
-                self.create_device()
-                item = interop.CreateForWindow(self.hwnd_window.hwnd, IGraphicsCaptureItem.GUID)
-                self.item = item
-                self.last_size = item.Size
-                delegate = TypedEventHandler(GraphicsCaptureItem, IInspectable).delegate(
-                    self.close)
-                self.evtoken = item.add_Closed(delegate)
-
-                self.frame_pool = Direct3D11CaptureFramePool.CreateFreeThreaded(self.rtdevice,
-                                                                                DirectXPixelFormat.B8G8R8A8UIntNormalized,
-                                                                                1, item.Size)
-                self.session = self.frame_pool.CreateCaptureSession(item)
-                pool = self.frame_pool
-                pool.add_FrameArrived(
-                    TypedEventHandler(Direct3D11CaptureFramePool, IInspectable).delegate(
-                        self.frame_arrived_callback))
-                self.session.IsCursorCaptureEnabled = capture_cursor
-                if WINDOWS_BUILD_NUMBER >= WGC_NO_BORDER_MIN_BUILD:
-                    self.session.IsBorderRequired = False
-                self.session.StartCapture()
-                return True
-            except Exception as e:
-                logger.error(f'start_or_stop failed: {self.hwnd_window}', exception=e)
+        with self.lock:
+            if self.exit_event.is_set():
+                logger.warning('start_or_stop exit_event.is_set() return')
+                self.close()
                 return False
-        return self.hwnd_window.exists
+            elif not self.hwnd_window.exists and self.frame_pool is not None:
+                logger.warning('start_or_stop not self.hwnd_window.exists')
+                self.close()
+                return False
+            elif self.hwnd_window.hwnd and self.hwnd_window.exists and self.frame_pool is None:
+                try:
+                    from ok.capture.windows import d3d11
+                    from ok.rotypes import IInspectable
+                    from ok.rotypes.Windows.Foundation import TypedEventHandler
+                    from ok.rotypes.Windows.Graphics.Capture import Direct3D11CaptureFramePool, \
+                        IGraphicsCaptureItemInterop, \
+                        IGraphicsCaptureItem, GraphicsCaptureItem
+                    from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
+                    from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDevice
+                    from ok.rotypes.roapi import GetActivationFactory
+                    logger.info('init windows capture')
+                    interop = GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(
+                        IGraphicsCaptureItemInterop)
+                    self.rtdevice = IDirect3DDevice()
+                    self.dxdevice = d3d11.ID3D11Device()
+                    self.immediatedc = d3d11.ID3D11DeviceContext()
+                    self.create_device()
+                    item = interop.CreateForWindow(self.hwnd_window.hwnd, IGraphicsCaptureItem.GUID)
+                    self.item = item
+                    self.last_size = item.Size
+                    delegate = TypedEventHandler(GraphicsCaptureItem, IInspectable).delegate(
+                        self.close)
+                    self.evtoken = item.add_Closed(delegate)
+
+                    self.frame_pool = Direct3D11CaptureFramePool.CreateFreeThreaded(self.rtdevice,
+                                                                                    DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                                                                                    1, item.Size)
+                    self.session = self.frame_pool.CreateCaptureSession(item)
+                    pool = self.frame_pool
+                    pool.add_FrameArrived(
+                        TypedEventHandler(Direct3D11CaptureFramePool, IInspectable).delegate(
+                            self.frame_arrived_callback))
+                    self.session.IsCursorCaptureEnabled = capture_cursor
+                    if WINDOWS_BUILD_NUMBER >= WGC_NO_BORDER_MIN_BUILD:
+                        self.session.IsBorderRequired = False
+                    self.session.StartCapture()
+                    return True
+                except Exception as e:
+                    logger.error(f'start_or_stop failed: {self.hwnd_window}', exception=e)
+                    return False
+            return self.hwnd_window.exists
 
     def create_device(self):
         from ok.capture.windows import d3d11
@@ -371,26 +391,33 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         self.evtoken = None
 
     def close(self):
-        logger.info('destroy windows capture')
-        if self.frame_pool is not None:
-            self.frame_pool.Close()
-            self.frame_pool = None
-        if self.session is not None:
-            self.session.Close()
-            self.session = None
-        self.item = None
-        if self.rtdevice:
-            self.rtdevice.Release()
-        if self.dxdevice:
-            self.dxdevice.Release()
-        if self.cputex:
-            self.cputex.Release()
+        with self.lock:
+            logger.info('destroy windows capture')
+            if self.frame_pool is not None:
+                self.frame_pool.Close()
+                self.frame_pool = None
+            if self.session is not None:
+                self.session.Close()
+                self.session = None
+            self.item = None
+            if self.rtdevice:
+                self.rtdevice.Release()
+                self.rtdevice = None
+            if self.dxdevice:
+                self.dxdevice.Release()
+                self.dxdevice = None
+            if self.cputex:
+                self.cputex.Release()
+                self.cputex = None
 
     cpdef object do_get_frame(self):
-        cdef object frame
+        cdef object frame = None
         cdef double latency, now, start_wait
         if self.start_or_stop():
-            frame = self.last_frame
+            with self.lock:
+                frame = self.last_frame
+                self.last_frame = None
+
             if frame is None:
                 now = time.time()
                 if now - self.last_frame_time > 10:
@@ -399,14 +426,18 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                     self.last_frame_time = time.time()
                     return self.do_get_frame()
                 start_wait = now
-                while self.last_frame is None and (time.time() - start_wait) < 1.0:
-                    if self.frame_pool is None:
-                        return None
-                    time.sleep(0.003)
-                frame = self.last_frame
+                while frame is None and (time.time() - start_wait) < 1.0:
+                    with self.lock:
+                        if self.frame_pool is None:
+                            return None
+                        frame = self.last_frame
+                        self.last_frame = None
+                    if frame is None:
+                        time.sleep(0.003)
+
             if frame is None:
                 return None
-            self.last_frame = None
+
             latency = time.time() - self.last_frame_time
             if latency > 2:
                 logger.warning(f"latency too large return None frame: {latency}")
@@ -451,7 +482,7 @@ cdef class BitBltCaptureMethod(BaseWindowsCaptureMethod):
             + "\nThe smaller the selected region, the more efficient it is. "
     )
 
-    cdef public object dc_object, bitmap, window_dc, compatible_dc
+    cdef public object dc_object, bitmap, window_dc, compatible_dc, lock
     cdef public int last_hwnd, last_width, last_height
 
     def __init__(self, hwnd_window: HwndWindow):
@@ -463,20 +494,23 @@ cdef class BitBltCaptureMethod(BaseWindowsCaptureMethod):
         self.last_hwnd = 0
         self.last_width = 0
         self.last_height = 0
+        self.lock = threading.Lock()
 
     cpdef object do_get_frame(self):
-        cdef int x, y
-        if self.hwnd_window.real_x_offset != 0 or self.hwnd_window.real_y_offset != 0:
-            x = self.hwnd_window.real_x_offset
-            y = self.hwnd_window.real_y_offset
-        else:
-            x, y = get_crop_point(self.hwnd_window.window_width, self.hwnd_window.window_height,
-                                  self.hwnd_window.width, self.hwnd_window.height)
+        cdef int x, y, width, height
+        with self.lock:
 
-        cdef int width = self.hwnd_window.real_width or self.hwnd_window.width
-        cdef int height = self.hwnd_window.real_height or self.hwnd_window.height
+            if self.hwnd_window.real_x_offset != 0 or self.hwnd_window.real_y_offset != 0:
+                x = self.hwnd_window.real_x_offset
+                y = self.hwnd_window.real_y_offset
+            else:
+                x, y = get_crop_point(self.hwnd_window.window_width, self.hwnd_window.window_height,
+                                      self.hwnd_window.width, self.hwnd_window.height)
 
-        return capture_by_bitblt(self, self.hwnd_window.hwnd, width, height, x, y, render_full)
+            width = self.hwnd_window.real_width or self.hwnd_window.width
+            height = self.hwnd_window.real_height or self.hwnd_window.height
+
+            return capture_by_bitblt(self, self.hwnd_window.hwnd, width, height, x, y, render_full)
 
     def get_name(self):
         return f'BitBlt_{render_full}'
