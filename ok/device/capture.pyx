@@ -862,26 +862,33 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
     return None, 0, None, 0, 0, 0, 0
 
 def get_mute_state(hwnd):
-    from pycaw.api.audioclient import ISimpleAudioVolume
-    from pycaw.utils import AudioUtilities
-    _, pid = win32process.GetWindowThreadProcessId(hwnd)
-    sessions = AudioUtilities.GetAllSessions()
-    for session in sessions:
-        if session.Process and session.Process.pid == pid:
-            volume = session._ctl.QueryInterface(ISimpleAudioVolume)
-            return volume.GetMute()
-    return 0
+    try:
+        from pycaw.api.audioclient import ISimpleAudioVolume
+        from pycaw.utils import AudioUtilities
+        _, pid = win32process.GetWindowThreadProcessId(hwnd)
+        sessions = AudioUtilities.GetAllSessions()
+        for session in sessions:
+            if session.Process and session.Process.pid == pid:
+                volume = session._ctl.QueryInterface(ISimpleAudioVolume)
+                return volume.GetMute()
+        return 0
+    except Exception as e:
+        logger.warning(f"get_mute_state exception: {e}")
+        return 0
 
 def set_mute_state(hwnd, mute):
-    from pycaw.api.audioclient import ISimpleAudioVolume
-    from pycaw.utils import AudioUtilities
-    _, pid = win32process.GetWindowThreadProcessId(hwnd)
-    sessions = AudioUtilities.GetAllSessions()
-    for session in sessions:
-        if session.Process and session.Process.pid == pid:
-            volume = session._ctl.QueryInterface(ISimpleAudioVolume)
-            volume.SetMute(mute, None)
-            break
+    try:
+        from pycaw.api.audioclient import ISimpleAudioVolume
+        from pycaw.utils import AudioUtilities
+        _, pid = win32process.GetWindowThreadProcessId(hwnd)
+        sessions = AudioUtilities.GetAllSessions()
+        for session in sessions:
+            if session.Process and session.Process.pid == pid:
+                volume = session._ctl.QueryInterface(ISimpleAudioVolume)
+                volume.SetMute(mute, None)
+                break
+    except Exception as e:
+        logger.warning(f"No default audio endpoint, skip mute. Exception: {e}")
 
 def get_player_id_from_cmdline(cmdline):
     for i in range(len(cmdline)):
