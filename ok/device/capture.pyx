@@ -235,7 +235,6 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         with self.lock:
             if self.exit_event.is_set():
                 logger.warning('frame_arrived_callback exit_event.is_set() return')
-                self.close()
                 return
             try:
                 self.last_frame_time = time.time()
@@ -247,7 +246,6 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                         logger.warning('frame_arrived_callback TryGetNextFrame returned None')
             except Exception as e:
                 logger.error(f"TryGetNextFrame error {e}")
-                self.close()
                 return
 
     cdef object convert_dx_frame(self, frame):

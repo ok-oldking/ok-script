@@ -450,14 +450,14 @@ cdef class TaskExecutor:
                     communicate.screenshot.emit(self.frame, name, True, None)
                 self.current_task = None
                 communicate.task.emit(None)
-        self.destory()
+        self.destroy()
 
     def stop(self):
         logger.info('stop')
         self.exit_event.set()
 
-    def destory(self):
-        logger.info(f'Executor destory')
+    def destroy(self):
+        logger.info(f'Executor destroy')
         for task in self.onetime_tasks:
             task.on_destroy()
         self.onetime_tasks = []
@@ -466,8 +466,6 @@ cdef class TaskExecutor:
         self.trigger_tasks = []
         if self.interaction:
             self.interaction.on_destroy()
-        if self.method:
-            self.method.close()
 
     def wait_until_done(self):
         self.thread.join()

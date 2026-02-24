@@ -48,7 +48,6 @@ class MainWindow(MSFluentWindow):
         if config.get('show_update_copyright'):
             communicate.copyright.connect(self.show_update_copyright)
 
-
         self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Capture'))
 
         self.first_task_tab = None
@@ -160,8 +159,6 @@ class MainWindow(MSFluentWindow):
             self.showNormal()
             self.raise_()
             self.activateWindow()
-
-
 
     def goto_global_config(self, key):
         self.switchTo(self.setting_tab)
@@ -332,9 +329,9 @@ class MainWindow(MSFluentWindow):
                 self.hide()
                 return
             if not self.do_not_quit:
-                pyappify.kill_pyappify()
                 self.exit_event.set()
-                self.executor.destory()
+                self.executor.destroy()
             event.accept()
             if not self.do_not_quit:
+                pyappify.kill_pyappify()
                 QApplication.instance().exit()
