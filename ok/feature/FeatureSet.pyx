@@ -377,7 +377,6 @@ def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder):
     classes_path = os.path.join(x_anylabeling_folder, "classes.txt")
     output_dir = os.path.join(x_anylabeling_folder, "coco_output")
 
-    # Clean start to prevent stale data
     if os.path.exists(classes_path):
         os.remove(classes_path)
     if os.path.exists(output_dir):
@@ -478,8 +477,8 @@ def compress_copy_coco(coco_json, target_folder, image_folder) -> str:
 def compress_coco(coco_json) -> None:
     data = load_json(coco_json)
     coco_folder = os.path.dirname(coco_json)
+    category_map = {cat['id']: cat['name'] for cat in data.get('categories', [])}
 
-    # Collect all existing image paths to potentially delete later
     old_files = set()
     for img in data['images']:
         path = os.path.join(coco_folder, img['file_name'])
@@ -497,9 +496,9 @@ def compress_coco(coco_json) -> None:
         x, y, w, h = ann['bbox']
         r_x1, r_y1 = round(x), round(y)
         r_x2, r_y2 = round(x + w), round(y + h)
-        image_rects[img_id].append((r_x1, r_y1, r_x2, r_y2))
+        cat_name = category_map.get(ann['category_id'], "")
+        image_rects[img_id].append((r_x1, r_y1, r_x2, r_y2, cat_name))
 
-    # Filter out images that have no annotations
     valid_image_ids = set(image_ids)
     data['images'] = [img for img in data['images'] if img['id'] in valid_image_ids]
 
@@ -508,26 +507,16 @@ def compress_coco(coco_json) -> None:
 
     image_info_map = {img['id']: img for img in data['images']}
 
-    # Group images by resolution to prevent scaling issues in read_from_json
-    dims_to_img_ids = {} # (w, h) -> [img_ids]
+    dims_to_img_ids = {}
     
     for img_id in image_ids:
         img_info = image_info_map[img_id]
         img_path = os.path.join(coco_folder, img_info['file_name'])
-        # We need to read image dimensions. efficiently?
-        # cv2.imread might be slow if many images.
-        # But we previously read them all anyway or relied on one.
-        # Let's read.
-        
-        # Optimization: cache dims if possible or just read.
-        # Check if 'width' and 'height' are in coco json image info?
-        # COCO standard has width/height.
         
         w = img_info.get('width')
         h = img_info.get('height')
         
         if w is None or h is None:
-            # Fallback to reading file
             tmp_img = cv2.imread(img_path)
             if tmp_img is not None:
                 h, w = tmp_img.shape[:2]
@@ -543,14 +532,10 @@ def compress_coco(coco_json) -> None:
         dims_to_img_ids[dims].append(img_id)
 
     new_files = []
-    
-    # Process each resolution group separately
     page_global_index = 0
     
     for dims, group_img_ids in dims_to_img_ids.items():
         W, H = dims
-        
-        # Packing logic for this group
         pages = []
         for img_id in group_img_ids:
             current_rects = image_rects[img_id]
@@ -559,9 +544,9 @@ def compress_coco(coco_json) -> None:
             for page in pages:
                 conflict = False
                 for c_rect in current_rects:
-                    c_x1, c_y1, c_x2, c_y2 = c_rect
+                    c_x1, c_y1, c_x2, c_y2 = c_rect[:4]
                     for p_rect in page['occupancy']:
-                        p_x1, p_y1, p_x2, p_y2 = p_rect
+                        p_x1, p_y1, p_x2, p_y2 = p_rect[:4]
                         if (c_x1 < p_x2 and c_x2 > p_x1 and
                                 c_y1 < p_y2 and c_y2 > p_y1):
                             conflict = True
@@ -580,12 +565,8 @@ def compress_coco(coco_json) -> None:
             assigned_page['image_ids'].append(img_id)
             assigned_page['occupancy'].extend(current_rects)
 
-        # Generate pages for this group
         for page in pages:
             canvas = np.full((H, W, 3), 255, dtype=np.uint8)
-            
-            # Use the first image in the page to determine directory? 
-            # Or just use the folder of the first image in group.
             first_id = page['image_ids'][0]
             first_img_info = image_info_map[first_id]
             img_dir_rel = os.path.dirname(first_img_info['file_name'])
@@ -599,10 +580,12 @@ def compress_coco(coco_json) -> None:
                     continue
 
                 anns = image_rects.get(img_id, [])
-                for (r_x1, r_y1, r_x2, r_y2) in anns:
-                    r_x1_c = max(0, r_x1);
+                for (r_x1, r_y1, r_x2, r_y2, cat_name) in anns:
+                    if cat_name.startswith('box_'):
+                        continue
+                    r_x1_c = max(0, r_x1)
                     r_y1_c = max(0, r_y1)
-                    r_x2_c = min(W, r_x2);
+                    r_x2_c = min(W, r_x2)
                     r_y2_c = min(H, r_y2)
 
                     if r_x2_c > r_x1_c and r_y2_c > r_y1_c:
@@ -635,30 +618,15 @@ def compress_coco(coco_json) -> None:
     with open(coco_json, 'w') as f:
         json.dump(data, f, indent=4)
 
-    temp_paths = set(os.path.normpath(item['temp_abs']) for item in new_files)
-    
     for item in new_files:
         if os.path.exists(item['temp_abs']):
             if os.path.exists(item['final_abs']):
-                # If we are overwriting a file that is in old_files, remove it from old_files so we don't try to delete it again or consider it gone?
-                # Actually, old_files check is mainly to delete things that are NOT in new set.
                 os.remove(item['final_abs'])
             os.rename(item['temp_abs'], item['final_abs'])
 
-    # Delete old files that are no longer needed
-    # (i.e. files that were in the original list but are not part of the new temporary files being created)
-    # Note: final files (post-rename) are what we want to keep.
-    # The packing generates files 0.png, 1.png etc.
-    # If old file was 'foo.jpg' and is not used, it is deleted.
-    # If old file was '0.png' and is reused/overwritten, we need to be careful.
-    
-    # We already renamed temp to final.
-    # The safe logic is: delete anything in old_files that is NOT one of the current final files.
-    
     final_files = set(os.path.normpath(item['final_abs']) for item in new_files)
     
     for old_path in old_files:
-        # If the old path is one of the new files we just created/renamed, don't delete it.
         if old_path in final_files: 
             continue
         if os.path.exists(old_path):
