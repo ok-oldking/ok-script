@@ -1,3 +1,4 @@
+# window.py
 import ctypes
 import platform
 import sys
@@ -39,10 +40,6 @@ def windows_graphics_available():
 
 
 def is_blank(image):
-    """
-    BitBlt can return a balnk buffer. Either because the target is unsupported,
-    or because there's two windows of the same name for the same executable.
-    """
     return not image.any()
 
 
@@ -51,19 +48,34 @@ def is_window_minimized(hWnd):
 
 
 def get_exe_by_hwnd(hwnd):
-    # Get the process ID associated with the window
     try:
         _, pid = win32process.GetWindowThreadProcessId(hwnd)
-
-        # Get the process name and executable path
         if pid > 0:
             process = psutil.Process(pid)
-            return process.name(), process.exe(), process.cmdline()
+
+            try:
+                name = process.name()
+            except psutil.AccessDenied as e:
+                name = ""
+
+            try:
+                exe = process.exe()
+            except psutil.AccessDenied as e:
+                exe = ""
+                logger.error("process.exe() AccessDenied", e)
+
+            try:
+                cmdline = process.cmdline()
+            except psutil.AccessDenied as e:
+                cmdline = ""
+                logger.error("process.cmdline() AccessDenied", e)
+
+            return name, exe, cmdline
         else:
-            return None, None, None
+            return "", "", ""
     except Exception as e:
         logger.error('get_exe_by_hwnd error', e)
-        return None, None, None
+        return "", "", ""
 
 
 def find_display(hmonitor, displays):
@@ -87,9 +99,8 @@ def get_window_bounds(hwnd):
         window_width = window_right - window_left
         window_height = window_bottom - window_top
         client_x, client_y = win32gui.ClientToScreen(hwnd, (client_x, client_y))
-        monitor = user32.MonitorFromWindow(hwnd, 2)  # 2 = MONITOR_DEFAULTTONEAREST
+        monitor = user32.MonitorFromWindow(hwnd, 2)
 
-        # Get the DPI
         dpiX = ctypes.c_uint()
         dpiY = ctypes.c_uint()
         ctypes.windll.shcore.GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, ctypes.byref(dpiX), ctypes.byref(dpiY))
@@ -105,23 +116,15 @@ def is_foreground_window(hwnd):
 
 def show_title_bar(hwnd):
     try:
-        # Get the current window styles
         current_style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
-        # Check if the title bar style is already present
         if current_style & win32con.WS_CAPTION:
             logger.info(f"Window '{hwnd}' already has a title bar.")
             return True
-        # Calculate the new style with WS_CAPTION added
         new_style = current_style | win32con.WS_CAPTION
-        # Optional: Remove styles that might conflict (e.g., WS_POPUP)
         new_style &= ~win32con.WS_POPUP
-        # new_style &= ~win32con.WS_BORDER
-        # Set the new window styles
         win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, new_style)
-        # Tell the window to redraw its non-client area
         win32gui.SetWindowPos(hwnd, None, 0, 0, 0, 0,
                               win32con.SWP_FRAMECHANGED | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
-        # Re-check the style to confirm the change
         updated_style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
         time.sleep(0.01)
         if updated_style & win32con.WS_CAPTION:
@@ -136,42 +139,26 @@ def show_title_bar(hwnd):
 
 
 def resize_window(hwnd, width, height):
-    """
-    Resizes the window with the given handle (hwnd) to the specified width and height,
-    and then centers it on the screen.
-    Returns True if successful, False otherwise.
-    """
     if not hwnd:
         logger.info("Invalid window handle provided.")
         return False
     try:
-        # --- Resize the window ---
-        # We'll resize first, as the GetWindowRect after this will give us the
-        # dimensions including the border after resizing.
-        # SetWindowPos Flags for resizing
         SWP_SHOWWINDOW = 0x0040
         SWP_NOZORDER = 0x0004
-        SWP_NOREPOSITION = 0x0002  # We are resizing, not repositioning yet
-        # Using the ctypes SetWindowPos as in your original function
+        SWP_NOREPOSITION = 0x0002
         user32.SetWindowPos(hwnd, None, 0, 0, width, height, SWP_SHOWWINDOW | SWP_NOZORDER | SWP_NOREPOSITION)
-        # Give the system a brief moment to apply the resize (optional, but can help)
         time.sleep(0.01)
-        # --- Center the window ---
-        # Get the *new* window dimensions after resizing
+
         left, top, right, bottom = win32gui.GetWindowRect(hwnd)
         window_width = right - left
         window_height = bottom - top
-        # Get the screen resolution
         screen_width = win32api.GetSystemMetrics(win32con.SM_CXSCREEN)
         screen_height = win32api.GetSystemMetrics(win32con.SM_CYSCREEN)
-        # Calculate the center position
+
         center_x = (screen_width - window_width) // 2
         center_y = (screen_height - window_height) // 2
-        # Set the window position (using SWP_NOSIZE as we're only moving)
-        # SetWindowPos Flags for centering
-        SWP_NOSIZE = 0x0001  # Don't change size (already resized)
-        # SWP_NOZORDER = 0x0004 # Already specified
-        # SWP_SHOWWINDOW = 0x0040 # Already specified
+        SWP_NOSIZE = 0x0001
+
         user32.SetWindowPos(hwnd, None, center_x, center_y, 0, 0,
                             SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW)
         time.sleep(0.01)
@@ -183,6 +170,5 @@ def resize_window(hwnd, width, height):
 
 
 def ratio_text_to_number(supported_ratio):
-    # Parse the supported ratio string
     supported_ratio_list = [int(i) for i in supported_ratio.split(':')]
     return supported_ratio_list[0] / supported_ratio_list[1]
