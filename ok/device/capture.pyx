@@ -222,16 +222,22 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     cdef object evtoken
     cdef object last_size
     cdef public object lock
+    cdef object d3d11
+    cdef object IDirect3DDxgiInterfaceAccess
+    cdef object frame_event
 
     def __init__(self, object hwnd_window):
         super().__init__(hwnd_window)
         self.lock = threading.RLock()
+        self.frame_event = threading.Event()
         self.last_frame_time = time.time()
         self.exit_event = hwnd_window.app_exit_event
+        self.cputex = None
         self.start_or_stop()
 
     cdef frame_arrived_callback(self, x, y):
         cdef object next_frame
+        cdef object old_frame
         with self.lock:
             if self.exit_event.is_set():
                 logger.warning('frame_arrived_callback exit_event.is_set() return')
@@ -241,7 +247,11 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 if self.frame_pool is not None:
                     next_frame = self.frame_pool.TryGetNextFrame()
                     if next_frame is not None:
-                        self.last_frame = self.convert_dx_frame(next_frame)
+                        old_frame = self.last_frame
+                        self.last_frame = next_frame
+                        self.frame_event.set()
+                        if old_frame is not None and hasattr(old_frame, 'Close'):
+                            old_frame.Close()
                     else:
                         logger.warning('frame_arrived_callback TryGetNextFrame returned None')
             except Exception as e:
@@ -262,35 +272,32 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             return None
 
         cdef bint need_reset_device = False
-
         cdef object tex = None
-
-        cdef object cputex = None
         cdef object desc = None
         cdef object mapinfo = None
         cdef object img = None
+
         try:
-            from ok.capture.windows import d3d11
-            from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDxgiInterfaceAccess
-            tex = frame.Surface.astype(IDirect3DDxgiInterfaceAccess).GetInterface(
-                d3d11.ID3D11Texture2D.GUID).astype(d3d11.ID3D11Texture2D)
+            tex = frame.Surface.astype(self.IDirect3DDxgiInterfaceAccess).GetInterface(
+                self.d3d11.ID3D11Texture2D.GUID).astype(self.d3d11.ID3D11Texture2D)
 
-            desc = tex.GetDesc()
-            desc.Usage = d3d11.D3D11_USAGE_STAGING
-            desc.CPUAccessFlags = d3d11.D3D11_CPU_ACCESS_READ
-            desc.BindFlags = 0
-            desc.MiscFlags = 0
+            if self.cputex is None:
+                desc = tex.GetDesc()
+                desc.Usage = self.d3d11.D3D11_USAGE_STAGING
+                desc.CPUAccessFlags = self.d3d11.D3D11_CPU_ACCESS_READ
+                desc.BindFlags = 0
+                desc.MiscFlags = 0
+                self.cputex = self.dxdevice.CreateTexture2D(ctypes.byref(desc), None)
 
-            cputex = self.dxdevice.CreateTexture2D(ctypes.byref(desc), None)
-            self.immediatedc.CopyResource(cputex, tex)
-            mapinfo = self.immediatedc.Map(cputex, 0, d3d11.D3D11_MAP_READ, 0)
+            self.immediatedc.CopyResource(self.cputex, tex)
+            mapinfo = self.immediatedc.Map(self.cputex, 0, self.d3d11.D3D11_MAP_READ, 0)
             img = np.ctypeslib.as_array(ctypes.cast(mapinfo.pData, PBYTE),
-                                        (desc.Height, mapinfo.RowPitch // 4, 4))[
-                  :, :desc.Width].copy()
-            self.immediatedc.Unmap(cputex, 0)
+                                        (self.last_size.Height, mapinfo.RowPitch // 4, 4))[
+                  :, :self.last_size.Width].copy()
+            self.immediatedc.Unmap(self.cputex, 0)
             return img
         except OSError as e:
-            if e.winerror == d3d11.DXGI_ERROR_DEVICE_REMOVED or e.winerror == d3d11.DXGI_ERROR_DEVICE_RESET:
+            if e.winerror == self.d3d11.DXGI_ERROR_DEVICE_REMOVED or e.winerror == self.d3d11.DXGI_ERROR_DEVICE_RESET:
                 need_reset_framepool = True
                 need_reset_device = True
                 logger.error('convert_dx_frame win error', e)
@@ -299,8 +306,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         finally:
             if tex is not None:
                 tex.Release()
-            if cputex is not None:
-                cputex.Release()
+
         if need_reset_framepool:
             self.reset_framepool(frame.ContentSize, need_reset_device)
             return None
@@ -336,14 +342,19 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                         IGraphicsCaptureItemInterop, \
                         IGraphicsCaptureItem, GraphicsCaptureItem
                     from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
-                    from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDevice
+                    from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDevice, \
+                        IDirect3DDxgiInterfaceAccess
                     from ok.rotypes.roapi import GetActivationFactory
+
+                    self.d3d11 = d3d11
+                    self.IDirect3DDxgiInterfaceAccess = IDirect3DDxgiInterfaceAccess
+
                     logger.info('init windows capture')
                     interop = GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(
                         IGraphicsCaptureItemInterop)
                     self.rtdevice = IDirect3DDevice()
-                    self.dxdevice = d3d11.ID3D11Device()
-                    self.immediatedc = d3d11.ID3D11DeviceContext()
+                    self.dxdevice = self.d3d11.ID3D11Device()
+                    self.immediatedc = self.d3d11.ID3D11DeviceContext()
                     self.create_device()
                     item = interop.CreateForWindow(self.hwnd_window.hwnd, IGraphicsCaptureItem.GUID)
                     self.item = item
@@ -371,16 +382,15 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             return self.hwnd_window.exists
 
     def create_device(self):
-        from ok.capture.windows import d3d11
         from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import CreateDirect3D11DeviceFromDXGIDevice
-        d3d11.D3D11CreateDevice(
+        self.d3d11.D3D11CreateDevice(
             None,
-            d3d11.D3D_DRIVER_TYPE_HARDWARE,
+            self.d3d11.D3D_DRIVER_TYPE_HARDWARE,
             None,
-            d3d11.D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+            self.d3d11.D3D11_CREATE_DEVICE_BGRA_SUPPORT,
             None,
             0,
-            d3d11.D3D11_SDK_VERSION,
+            self.d3d11.D3D11_SDK_VERSION,
             ctypes.byref(self.dxdevice),
             None,
             ctypes.byref(self.immediatedc)
@@ -409,29 +419,46 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 self.cputex = None
 
     cpdef object do_get_frame(self):
+        cdef object raw_frame = None
         cdef object frame = None
-        cdef double latency, now, start_wait
+        cdef double latency, now, start_wait, timeout_duration
+        cdef int new_height, new_width
+
         if self.start_or_stop():
             with self.lock:
-                frame = self.last_frame
+                raw_frame = self.last_frame
                 self.last_frame = None
+                self.frame_event.clear()
 
-            if frame is None:
+            if raw_frame is None:
                 now = time.time()
                 if now - self.last_frame_time > 10:
                     logger.warning('no frame for 10 sec, try to restart')
                     self.close()
                     self.last_frame_time = time.time()
                     return self.do_get_frame()
+
                 start_wait = now
-                while frame is None and (time.time() - start_wait) < 1.0:
+                while raw_frame is None:
+                    timeout_duration = 1.0 - (time.time() - start_wait)
+                    if timeout_duration <= 0:
+                        break
+
+                    self.frame_event.wait(timeout_duration)
+
                     with self.lock:
                         if self.frame_pool is None:
                             return None
-                        frame = self.last_frame
+                        raw_frame = self.last_frame
                         self.last_frame = None
-                    if frame is None:
-                        time.sleep(0.003)
+                        self.frame_event.clear()
+
+            if raw_frame is None:
+                return None
+
+            frame = self.convert_dx_frame(raw_frame)
+            if hasattr(raw_frame, 'Close'):
+                raw_frame.Close()
 
             if frame is None:
                 return None
@@ -442,7 +469,8 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 return None
             frame = self.crop_image(frame)
             if frame is not None:
-                new_height, new_width = frame.shape[:2]
+                new_height = frame.shape[0]
+                new_width = frame.shape[1]
                 if new_width <= 0 or new_height <= 0:
                     logger.warning(f"get_frame size <=0 {new_width}x{new_height}")
                     return None
@@ -452,17 +480,22 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     def reset_framepool(self, size, reset_device=False):
         logger.info(f'reset_framepool')
         from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
+        if self.cputex:
+            self.cputex.Release()
+            self.cputex = None
         if reset_device:
             self.create_device()
         self.frame_pool.Recreate(self.rtdevice,
                                  DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, size)
 
-    def crop_image(self, frame):
+    cpdef object crop_image(self, object frame):
+        cdef int border, title_height, height, width, x2, y2
         if frame is not None:
             border, title_height = get_crop_point(frame.shape[1], frame.shape[0], self.hwnd_window.width,
                                                   self.hwnd_window.height)
             if border > 0 or title_height > 0:
-                height, width = frame.shape[:2]
+                height = frame.shape[0]
+                width = frame.shape[1]
                 x2 = width - border
                 y2 = height - border
                 return frame[title_height:y2, border:x2]
