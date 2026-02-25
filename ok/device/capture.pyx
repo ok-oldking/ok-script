@@ -855,8 +855,14 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
             matching_child = enum_child_windows(biggest, frame_aspect_ratio, frame_width, frame_height)
             if matching_child is not None:
                 x_offset, y_offset, real_width, real_height = matching_child
-            logger.info(
-                f'find_hwnd {frame_width, frame_height} {biggest} {x_offset, y_offset, real_width, real_height}')
+            if real_width < 10 or real_height < 10:
+                logger.error(
+                    f'find_hwnd real_width, real_height too small return None {frame_width, frame_height} {biggest} {x_offset, y_offset, real_width, real_height}')
+                return None, 0, None, 0, 0, 0, 0
+            else:
+                logger.info(
+                    f'find_hwnd {frame_width, frame_height} {biggest} {x_offset, y_offset, real_width, real_height}')
+
         return biggest[6], biggest[0], biggest[1], x_offset, y_offset, real_width, real_height
 
     return None, 0, None, 0, 0, 0, 0
