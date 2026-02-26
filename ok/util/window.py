@@ -57,18 +57,19 @@ def get_exe_by_hwnd(hwnd):
                 name = process.name()
             except psutil.AccessDenied as e:
                 name = ""
+                logger.error("get_exe_by_hwnd process.name() AccessDenied", e)
 
             try:
                 exe = process.exe()
             except psutil.AccessDenied as e:
                 exe = ""
-                logger.error("process.exe() AccessDenied", e)
+                logger.error("get_exe_by_hwnd process.exe() AccessDenied", e)
 
             try:
                 cmdline = process.cmdline()
             except psutil.AccessDenied as e:
                 cmdline = ""
-                logger.error("process.cmdline() AccessDenied", e)
+                logger.error("get_exe_by_hwnd process.cmdline() AccessDenied", e)
 
             return name, exe, cmdline
         else:

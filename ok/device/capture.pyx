@@ -329,11 +329,12 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 logger.warning('start_or_stop exit_event.is_set() return')
                 self.close()
                 return False
-            elif not self.hwnd_window.exists and self.frame_pool is not None:
+            elif not self.hwnd_window.exists:
                 logger.warning('start_or_stop not self.hwnd_window.exists')
                 self.close()
-                return False
+                return True
             elif self.hwnd_window.hwnd and self.hwnd_window.exists and self.frame_pool is None:
+                logger.info('start_or_stop start WGC capture')
                 try:
                     from ok.capture.windows import d3d11
                     from ok.rotypes import IInspectable
@@ -349,7 +350,6 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                     self.d3d11 = d3d11
                     self.IDirect3DDxgiInterfaceAccess = IDirect3DDxgiInterfaceAccess
 
-                    logger.info('init windows capture')
                     interop = GetActivationFactory('Windows.Graphics.Capture.GraphicsCaptureItem').astype(
                         IGraphicsCaptureItemInterop)
                     self.rtdevice = IDirect3DDevice()
@@ -834,18 +834,18 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
             if selected_hwnd != selected_hwnd:
                 return True
         if win32gui.IsWindow(hwnd) and win32gui.IsWindowEnabled(hwnd) and win32gui.IsWindowVisible(hwnd):
-            text = None
+            text = win32gui.GetWindowText(hwnd)
             if title:
-                text = win32gui.GetWindowText(hwnd)
                 if isinstance(title, str):
                     if title != text:
                         return True
                 elif not re.search(title, text):
                     return True
             name, full_path, cmdline = get_exe_by_hwnd(hwnd)
-            if not name:
-                return True
+            logger.debug(f'find_hwnd name {name, full_path, cmdline}')
             if exe_names:
+                if not name:
+                    return True
                 match = False
                 for exe_name in exe_names:
                     if compare_path_safe(name, exe_name) or compare_path_safe(exe_name, full_path):
@@ -862,8 +862,6 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
             if class_name is not None:
                 if win32gui.GetClassName(hwnd) != class_name:
                     return True
-            if text is None:
-                text = win32gui.GetWindowText(hwnd)
             x, y, _, _, width, height, scaling = get_window_bounds(
                 hwnd)
             ret = (hwnd, full_path, width, height, x, y, text)
