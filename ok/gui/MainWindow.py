@@ -98,6 +98,10 @@ class MainWindow(MSFluentWindow):
             debug_tab = DebugTab(config, exit_event)
             self.addSubInterface(debug_tab, FluentIcon.DEVELOPER_TOOLS, self.tr('Debug'),
                                  position=NavigationItemPosition.BOTTOM)
+            from ok.gui.debug.RunCodeTab import RunCodeTab
+            run_code_tab = RunCodeTab(config, exit_event)
+            self.addSubInterface(run_code_tab, FluentIcon.COMMAND_PROMPT, self.tr('Run Code'),
+                                 position=NavigationItemPosition.BOTTOM)
 
         from ok.gui.about.AboutTab import AboutTab
         self.about_tab = AboutTab(config, self.app.updater)
