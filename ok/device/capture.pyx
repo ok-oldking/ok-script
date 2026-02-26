@@ -699,6 +699,9 @@ cdef class HwndWindow:
         return self.x + x, self.y + y
 
     def do_update_window_size(self):
+        if self.device_manager and getattr(self.device_manager, 'capture_method', None):
+            if isinstance(self.device_manager.capture_method, BrowserCaptureMethod):
+                return
         try:
             changed = False
             exists = False
@@ -834,7 +837,7 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
 
     def callback(hwnd, results):
         if selected_hwnd > 0:
-            if selected_hwnd != selected_hwnd:
+            if hwnd != selected_hwnd:
                 return True
         if win32gui.IsWindow(hwnd) and win32gui.IsWindowEnabled(hwnd) and win32gui.IsWindowVisible(hwnd):
             text = win32gui.GetWindowText(hwnd)
@@ -875,7 +878,7 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
     win32gui.EnumWindows(callback, results)
 
     if len(results) > 0:
-        logger.info(f'find_hwnd results {len(results)} {results}')
+        logger.debug(f'find_hwnd results {len(results)} {results}')
         biggest = None
         for result in results:
             if biggest is None or (result[2] * result[3]) > biggest[2] * biggest[3]:
@@ -894,8 +897,8 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
                     f'find_hwnd real_width, real_height too small return None {frame_width, frame_height} {biggest} {x_offset, y_offset, real_width, real_height}')
                 return None, 0, None, 0, 0, 0, 0
             else:
-                logger.info(
-                    f'find_hwnd {frame_width, frame_height} {biggest} {x_offset, y_offset, real_width, real_height}')
+                logger.debug(
+                    f'find_hwnd frame {frame_width, frame_height} {biggest} offset/size {x_offset, y_offset, real_width, real_height}')
 
         return biggest[6], biggest[0], biggest[1], x_offset, y_offset, real_width, real_height
 
@@ -1241,21 +1244,40 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
 
         logger.info(f'BrowserCaptureMethod start browser {width, height} {url}')
 
-        target_title = await self.page.title()
+        for _ in range(20):
+            target_title = await self.page.title()
+            if target_title:
+                title_pattern = re.compile(re.escape(target_title))
+                res = find_hwnd(title_pattern, ['chrome.exe', 'msedge.exe', 'chromium.exe'], width, height)
+                if res[1] > 0:
+                    self.hwnd = res[1]
+                    self.exe_full_path = res[2]
+                    self.x_offset = res[3]
+                    self.y_offset = res[4]
 
-        if target_title:
-            target_title = re.compile(target_title)
+                    real_w = res[5]
+                    real_h = res[6]
+                    if real_w > 0 and real_h > 0:
+                        if real_w != width or real_h != height:
+                            rect = win32gui.GetWindowRect(self.hwnd)
+                            w_width = rect[2] - rect[0]
+                            w_height = rect[3] - rect[1]
+                            resize_window(self.hwnd, w_width + (width - real_w), w_height + (height - real_h))
+                            await asyncio.sleep(0.5)
+                            res = find_hwnd(title_pattern, ['chrome.exe', 'msedge.exe', 'chromium.exe'], width, height)
+                            if res[1] > 0:
+                                self.hwnd = res[1]
+                                self.exe_full_path = res[2]
+                                self.x_offset = res[3]
+                                self.y_offset = res[4]
+                                real_w = res[5]
+                                real_h = res[6]
+                        self._size = (real_w, real_h)
 
-        for _ in range(10):
-            res = find_hwnd(target_title, ['chrome.exe', 'msedge.exe', 'chromium.exe'], width, height)
-            if res[1] > 0:
-                self.hwnd = res[1]
-                self.exe_full_path = res[2]
-                self.x_offset = res[3]
-                self.y_offset = res[4]
-                logger.info(f"Browser window {target_title} found:  {res[1]} offsets: {self.x_offset},{self.y_offset}")
-                self.wgc_capture = BrowserWGC(self)
-                break
+                    logger.info(
+                        f"Browser window '{target_title}' found: {self.hwnd} offsets: {self.x_offset},{self.y_offset} size: {self._size}")
+                    self.wgc_capture = BrowserWGC(self)
+                    break
             await asyncio.sleep(0.5)
 
     async def _close_async(self):
