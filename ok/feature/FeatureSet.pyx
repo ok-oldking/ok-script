@@ -19,6 +19,7 @@ from ok.gui.Communicate import communicate
 from ok.util.file import get_path_relative_to_exe
 from ok.util.logger import Logger
 
+from ok.util.clazz import generate_label_enum
 logger = Logger.get_logger(__name__)
 
 cdef class FeatureSet:
@@ -373,7 +374,8 @@ def filter_and_sort_matches(result, threshold, w, h):
 
     return selected_matches
 
-def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder):
+
+def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder, generate_label_enmu=None):
     classes_path = os.path.join(x_anylabeling_folder, "classes.txt")
     output_dir = os.path.join(x_anylabeling_folder, "coco_output")
 
@@ -433,9 +435,9 @@ def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder):
     with open(coco_json_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4)
 
-    compress_copy_coco(coco_json_path, target_folder, x_anylabeling_folder)
+    compress_copy_coco(coco_json_path, target_folder, x_anylabeling_folder, generate_label_enmu=generate_label_enmu)
 
-def compress_copy_coco(coco_json, target_folder, image_folder) -> str:
+def compress_copy_coco(coco_json, target_folder, image_folder, generate_label_enmu=None) -> str:
     import shutil
 
     os.makedirs(target_folder, exist_ok=True)
@@ -443,6 +445,9 @@ def compress_copy_coco(coco_json, target_folder, image_folder) -> str:
     os.makedirs(target_image_folder, exist_ok=True)
 
     data = load_json(coco_json)
+    if generate_label_enmu:
+        labels = [cat['name'] for cat in data.get('categories', [])]
+        generate_label_enum(generate_label_enmu, labels)
 
     for image_info in data['images']:
         image_filename = os.path.basename(image_info['file_name'])
