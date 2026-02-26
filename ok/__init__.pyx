@@ -30,6 +30,7 @@ from ok.util.handler import Handler, ExitEvent
 from ok.util.logger import config_logger, Logger
 from ok.util.process import check_mutex, get_first_gpu_free_memory_mib
 from ok.util.file import get_path_relative_to_exe, install_path_isascii
+from ok.util.window import windows_graphics_available
 from ok.device.intercation import DoNothingInteraction, BaseInteraction, BrowserInteraction, PostMessageInteraction, \
     GenshinInteraction, ForegroundPostMessageInteraction, PyDirectInteraction
 from ok.device.capture import ImageCaptureMethod, BaseCaptureMethod, BrowserCaptureMethod, ADBCaptureMethod, \
@@ -292,6 +293,19 @@ class OK:
         self._app = None
         self.debug = config['debug']
         self.global_config = GlobalConfig(config.get('global_configs'))
+        windows_config = config.get('windows')
+        if windows_config:
+            capture_methods = windows_config.get('capture_method', [])
+            available_methods = []
+            for method in capture_methods:
+                if method == 'WGC':
+                    if windows_graphics_available():
+                        available_methods.append(method)
+                else:
+                    available_methods.append(method)
+            if len(available_methods) > 1:
+                basic_options.default_config['Windows Capture'] = available_methods[0]
+                basic_options.config_type['Windows Capture'] = {'type': 'drop_down', 'options': available_methods}
         self.global_config.get_config(basic_options)
         og.global_config = self.global_config
         og.set_use_dml()

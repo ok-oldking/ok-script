@@ -1012,6 +1012,14 @@
         <translation>아니요</translation>
     </message>
     <message>
+        <source>Windows Capture</source>
+        <translation>Windows 캡처 방식</translation>
+    </message>
+    <message>
+        <source>Switch between different Windows capture methods</source>
+        <translation>다양한 Windows 캡처 방식 간에 전환</translation>
+    </message>
+    <message>
         <source>Basic Options</source>
         <translation>기본 옵션</translation>
     </message>

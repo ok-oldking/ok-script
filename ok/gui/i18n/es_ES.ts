@@ -1012,6 +1012,14 @@
         <translation>No</translation>
     </message>
     <message>
+        <source>Windows Capture</source>
+        <translation>Captura de Windows</translation>
+    </message>
+    <message>
+        <source>Switch between different Windows capture methods</source>
+        <translation>Cambiar entre diferentes métodos de captura de Windows</translation>
+    </message>
+    <message>
         <source>Basic Options</source>
         <translation>Opciones básicas</translation>
     </message>

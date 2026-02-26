@@ -619,7 +619,10 @@ cdef class HwndWindow:
         self.thread.start()
 
     def validate_mute_config(self, key, value):
-        if key == 'Mute Game while in Background' and self.hwnd:
+        if key == 'Windows Capture':
+            logger.info(f'config changed Windows Capture {value}')
+            self.device_manager.use_windows_capture()
+        elif key == 'Mute Game while in Background' and self.hwnd:
             logger.info(f'validate_mute_config {value}')
             if value:
                 self.handle_mute(value)
@@ -1018,9 +1021,11 @@ cdef class DesktopDuplicationCaptureMethod(BaseWindowsCaptureMethod):
         if self.desktop_duplication is not None:
             self.desktop_duplication.stop()
 
-def update_capture_method(config, capture_method, hwnd, exit_event=None):
+def update_capture_method(config, capture_method, hwnd, exit_event=None, selected_method=None):
     try:
         method_preferences = config.get('capture_method', [])
+        if selected_method and selected_method in method_preferences:
+            method_preferences = [selected_method] + [m for m in method_preferences if m != selected_method]
 
         for method_name in method_preferences:
             if method_name == 'WGC':

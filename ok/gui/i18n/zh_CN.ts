@@ -1003,6 +1003,14 @@
         <translation>否</translation>
     </message>
     <message>
+        <source>Windows Capture</source>
+        <translation>Windows 截图方式</translation>
+    </message>
+    <message>
+        <source>Switch between different Windows capture methods</source>
+        <translation>切换不同的 Windows 截图方式</translation>
+    </message>
+    <message>
         <source>Basic Options</source>
         <translation>基本设置</translation>
     </message>

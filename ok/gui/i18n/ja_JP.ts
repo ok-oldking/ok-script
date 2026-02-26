@@ -1011,6 +1011,14 @@
         <translation>いいえ</translation>
     </message>
     <message>
+        <source>Windows Capture</source>
+        <translation>Windows キャプチャ方式</translation>
+    </message>
+    <message>
+        <source>Switch between different Windows capture methods</source>
+        <translation>異なる Windows キャプチャ方式を切り替える</translation>
+    </message>
+    <message>
         <source>Basic Options</source>
         <translation>基本オプション</translation>
     </message>

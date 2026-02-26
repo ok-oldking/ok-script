@@ -411,12 +411,15 @@ class DeviceManager:
             self.hwnd_window.update_window(title, exe, frame_width, frame_height, player_id, hwnd_class)
 
     def use_windows_capture(self):
+        selected_method = self.global_config.get_config('Basic Options').get('Windows Capture')
         self.capture_method = update_capture_method(self.windows_capture_config, self.capture_method, self.hwnd_window,
-                                                    exit_event=self.exit_event)
+                                                    exit_event=self.exit_event, selected_method=selected_method)
         if self.capture_method is None:
             logger.error(f'cant find a usable windows capture')
         else:
             logger.info(f'capture method {type(self.capture_method)}')
+            if self.interaction:
+                self.interaction.capture = self.capture_method
 
     def start(self):
         self.handler.post(self.do_start, remove_existing=True, skip_if_running=True)
@@ -435,6 +438,8 @@ class DeviceManager:
             self.use_windows_capture()
             if not isinstance(self.interaction, self.win_interaction_class):
                 self.interaction = self.win_interaction_class(self.capture_method, self.hwnd_window)
+            elif self.interaction:
+                self.interaction.capture = self.capture_method
             preferred['connected'] = self.capture_method is not None and self.capture_method.connected()
         elif preferred['device'] == 'browser':
             if not isinstance(self.capture_method, BrowserCaptureMethod):
