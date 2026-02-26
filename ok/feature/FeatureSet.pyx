@@ -373,7 +373,7 @@ def filter_and_sort_matches(result, threshold, w, h):
 
     return selected_matches
 
-def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder):
+def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder,gen_label_enum="src.data.feature"):
     classes_path = os.path.join(x_anylabeling_folder, "classes.txt")
     output_dir = os.path.join(x_anylabeling_folder, "coco_output")
 
@@ -433,9 +433,9 @@ def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder):
     with open(coco_json_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4)
 
-    compress_copy_coco(coco_json_path, target_folder, x_anylabeling_folder)
+    compress_copy_coco(coco_json_path, target_folder, x_anylabeling_folder,gen_label_enum)
 
-def compress_copy_coco(coco_json, target_folder, image_folder) -> str:
+def compress_copy_coco(coco_json, target_folder, image_folder, gen_label_enum) -> str:
     import shutil
 
     os.makedirs(target_folder, exist_ok=True)
@@ -471,9 +471,72 @@ def compress_copy_coco(coco_json, target_folder, image_folder) -> str:
     logger.info(f'Copied COCO JSON to: {target_coco_json}')
 
     compress_coco(target_coco_json)
-
+    if gen_label_enum:
+        generate_label_enum(target_coco_json,gen_label_enum)
     return target_coco_json
+def normalize_field_name(name: str) -> str:
+    name = name.lower()
+    name = re.sub(r"[^0-9a-z]+", "_", name)
+    name = re.sub(r"_+", "_", name)
+    name = name.strip("_")
 
+    if not name:
+        name = "empty"
+
+    if keyword.iskeyword(name):
+        name += "_"
+
+    if name[0].isdigit():
+        name = "_" + name
+
+    return name
+
+
+def module_to_path(module_path: str) -> Path:
+    """
+    把 src.data.feature 转成 src/data/feature.py
+    """
+    return Path(*module_path.split(".")) .with_suffix(".py")
+
+
+def generate_label_enum(coco_json, gen_label_enum):
+    coco_json_path = Path(coco_json)
+    output_path = module_to_path(gen_label_enum)
+
+    if not coco_json_path.exists():
+        raise FileNotFoundError(f"找不到文件: {coco_json_path.resolve()}")
+
+    with coco_json_path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    categories = data.get("categories", [])
+
+    lines = [
+        "from enum import Enum\n\n",
+        "class FeatureList(str, Enum):\n",
+    ]
+
+    used_names = set()
+
+    for cat in categories:
+        raw_name = cat["name"]
+        enum_name = normalize_field_name(raw_name)
+
+        base_name = enum_name
+        index = 1
+        while enum_name in used_names:
+            enum_name = f"{base_name}_{index}"
+            index += 1
+
+        used_names.add(enum_name)
+        lines.append(f'    {enum_name} = "{raw_name}"\n')
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text("".join(lines), encoding="utf-8")
+
+    print(f"✅ 生成完成: {output_path.resolve()}")
+
+    
 def compress_coco(coco_json) -> None:
     data = load_json(coco_json)
     coco_folder = os.path.dirname(coco_json)
