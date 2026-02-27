@@ -236,8 +236,9 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         self.start_or_stop()
 
     cdef frame_arrived_callback(self, x, y):
-        cdef object next_frame
-        cdef object old_frame
+        cdef object next_frame = None
+        cdef object frame = None
+        
         with self.lock:
             if self.exit_event.is_set():
                 logger.warning('frame_arrived_callback exit_event.is_set() return')
@@ -246,17 +247,20 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 self.last_frame_time = time.time()
                 if self.frame_pool is not None:
                     next_frame = self.frame_pool.TryGetNextFrame()
-                    if next_frame is not None:
-                        old_frame = self.last_frame
-                        self.last_frame = next_frame
-                        self.frame_event.set()
-                        if old_frame is not None and hasattr(old_frame, 'Close'):
-                            old_frame.Close()
-                    else:
-                        logger.warning('frame_arrived_callback TryGetNextFrame returned None')
             except Exception as e:
                 logger.error(f"TryGetNextFrame error {e}")
                 return
+
+        # Always accept and process the new frame to guarantee lowest latency
+        if next_frame is not None:
+            frame = self.convert_dx_frame(next_frame)
+            if hasattr(next_frame, 'Close'):
+                next_frame.Close()
+            
+            if frame is not None:
+                with self.lock:
+                    self.last_frame = frame
+                    self.frame_event.set()
 
     cdef object convert_dx_frame(self, frame):
         if not frame or self.dxdevice is None or self.immediatedc is None:
@@ -422,46 +426,37 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 self.cputex = None
 
     cpdef object do_get_frame(self):
-        cdef object raw_frame = None
         cdef object frame = None
         cdef double latency, now, start_wait, timeout_duration
         cdef int new_height, new_width
 
         if self.start_or_stop():
+            now = time.time()
+            if now - self.last_frame_time > 10:
+                logger.warning('no frame for 10 sec, try to restart')
+                self.close()
+                self.last_frame_time = time.time()
+                return self.do_get_frame()
+
             with self.lock:
-                raw_frame = self.last_frame
-                self.last_frame = None
+                frame = self.last_frame
+                self.last_frame = None  # Pop the frame instantly so we don't get stuck on it next time
                 self.frame_event.clear()
 
-            if raw_frame is None:
-                now = time.time()
-                if now - self.last_frame_time > 10:
-                    logger.warning('no frame for 10 sec, try to restart')
-                    self.close()
-                    self.last_frame_time = time.time()
-                    return self.do_get_frame()
+            start_wait = time.time()
+            while frame is None:
+                timeout_duration = 1.0 - (time.time() - start_wait)
+                if timeout_duration <= 0:
+                    break
 
-                start_wait = now
-                while raw_frame is None:
-                    timeout_duration = 1.0 - (time.time() - start_wait)
-                    if timeout_duration <= 0:
-                        break
+                self.frame_event.wait(timeout_duration)
 
-                    self.frame_event.wait(timeout_duration)
-
-                    with self.lock:
-                        if self.frame_pool is None:
-                            return None
-                        raw_frame = self.last_frame
-                        self.last_frame = None
-                        self.frame_event.clear()
-
-            if raw_frame is None:
-                return None
-
-            frame = self.convert_dx_frame(raw_frame)
-            if hasattr(raw_frame, 'Close'):
-                raw_frame.Close()
+                with self.lock:
+                    if self.frame_pool is None:
+                        return None
+                    frame = self.last_frame
+                    self.last_frame = None  # Pop the frame
+                    self.frame_event.clear()
 
             if frame is None:
                 return None
@@ -470,6 +465,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             if latency > 2:
                 logger.warning(f"latency too large return None frame: {latency}")
                 return None
+                
             frame = self.crop_image(frame)
             if frame is not None:
                 new_height = frame.shape[0]
