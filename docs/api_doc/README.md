@@ -5,21 +5,27 @@
 - [Box](#box)
     - [Box.\_\_init\_\_](#box__init__)
     - [Box.area](#boxarea)
+    - [Box.in\_boundary](#boxin_boundary)
     - [Box.scale](#boxscale)
     - [Box.center](#boxcenter)
     - [Box.copy](#boxcopy)
     - [Box.crop\_frame](#boxcrop_frame)
     - [Box.center\_distance](#boxcenter_distance)
+    - [Box.closest\_distance](#boxclosest_distance)
+    - [Box.relative\_with\_variance](#boxrelative_with_variance)
     - [Box.find\_closest\_box](#boxfind_closest_box)
 - [BaseTask](#basetask)
     - [截图 (Screenshot)](#截图-screenshot)
         - [frame](#frame)
         - [next\_frame](#next_frame)
         - [screenshot](#screenshot)
+        - [adb\_ui\_dump](#adb_ui_dump)
     - [输入 (Input)](#输入-input)
         - [click](#click)
         - [click\_box](#click_box)
+        - [click\_box\_if\_name\_match](#click_box_if_name_match)
         - [click\_relative](#click_relative)
+        - [wait\_click\_box](#wait_click_box)
         - [right\_click](#right_click)
         - [middle\_click](#middle_click)
         - [swipe](#swipe)
@@ -39,6 +45,7 @@
         - [load\_config](#load_config)
         - [validate\_config](#validate_config)
         - [get\_global\_config](#get_global_config)
+        - [get\_global\_config\_desc](#get_global_config_desc)
     - [屏幕画图 (Screen drawing)](#屏幕画图-screen-drawing)
         - [draw\_boxes](#draw_boxes)
         - [clear\_box](#clear_box)
@@ -53,6 +60,11 @@
         - [wait\_feature](#wait_feature)
         - [wait\_click\_feature](#wait_click_feature)
         - [get\_box\_by\_name](#get_box_by_name)
+        - [get\_feature\_by\_name](#get_feature_by_name)
+        - [feature\_exists](#feature_exists)
+        - [find\_feature\_and\_set](#find_feature_and_set)
+        - [find\_best\_match\_in\_box](#find_best_match_in_box)
+        - [find\_first\_match\_in\_box](#find_first_match_in_box)
     - [找色 (Color finding)](#找色-color-finding)
         - [calculate\_color\_percentage](#calculate_color_percentage)
     - [显示信息 (Display information)](#显示信息-display-information)
@@ -61,13 +73,31 @@
         - [info\_get](#info_get)
         - [info\_incr](#info_incr)
         - [info\_add](#info_add)
+        - [info\_add\_to\_list](#info_add_to_list)
+        - [info\_clear](#info_clear)
     - [日志 (Logging)](#日志-logging)
         - [log\_info](#log_info)
         - [log\_debug](#log_debug)
         - [log\_error](#log_error)
     - [其他 (Other)](#其他-other)
         - [is\_adb](#is_adb)
+        - [is\_browser](#is_browser)
+        - [adb\_shell](#adb_shell)
+        - [ensure\_in_front](#ensure_in_front)
+        - [box\_of_screen](#box_of_screen)
+        - [box\_of_screen\_scaled](#box_of_screen_scaled)
+        - [screen\_width](#screen_width)
+        - [screen\_height](#screen_height)
+        - [width\_of_screen](#width_of_screen)
+        - [wait\_until](#wait_until)
+        - [wait\_scene](#wait_scene)
+        - [sleep](#sleep)
         - [sleep_check](#sleep_check)
+        - [run\_task\_by\_class](#run_task_by_class)
+        - [tr](#tr)
+        - [should\_trigger](#should_trigger)
+        - [go\_to\_tab](#go_to_tab)
+        - [find\_boxes](#find_boxes)
 
 
 ---
@@ -108,6 +138,21 @@ def area(self) -> int
 
 - **返回:**
     - `int`: 矩形的面积 (width * height)。
+
+<a name="boxin_boundary"></a>
+
+### Box.in\_boundary
+
+```python
+def in_boundary(self, boxes) -> list[Box]
+```
+
+返回一个列表，其中包含传入参数 `boxes` 中所有位于当前 `Box` 边界内的 `Box` 对象。
+
+- **参数:**
+    - `boxes` (list[Box]): 要检查的 `Box` 对象列表。
+- **返回:**
+    - `list[Box]`: 位于边界内的 `Box` 列表。
 
 <a name="boxscale"></a>
 
@@ -177,7 +222,7 @@ def crop_frame(self, frame)
 ### Box.center\_distance
 
 ```python
-def center_distance(self, other_box)
+def center_distance(self, other_box) -> float
 ```
 
 计算当前矩形与另一个矩形中心点之间的距离。
@@ -186,6 +231,37 @@ def center_distance(self, other_box)
     - `other_box` (Box): 另一个 `Box` 对象。
 - **返回:**
     - `float`: 两个矩形中心点之间的欧几里得距离。
+
+<a name="boxclosest_distance"></a>
+
+### Box.closest\_distance
+
+```python
+def closest_distance(self, Box other) -> float
+```
+
+计算两个矩形边界之间的最短距离。如果两个矩形相交，则距离为 0。
+
+- **参数:**
+    - `other` (Box): 另一个 `Box` 对象。
+- **返回:**
+    - `float`: 两个矩形之间的最短距离。
+
+<a name="boxrelative_with_variance"></a>
+
+### Box.relative\_with\_variance
+
+```python
+def relative_with_variance(self, relative_x=0.5, relative_y=0.5) -> tuple[int, int]
+```
+
+返回矩形内的一个坐标点。支持相对位置并带有微小的随机偏移，模拟真实的人工点击。
+
+- **参数:**
+    - `relative_x` (float): 相对 x 坐标 (0.0 - 1.0)。
+    - `relative_y` (float): 相对 y 坐标 (0.0 - 1.0)。
+- **返回:**
+    - `tuple[int, int]`: 计算出的 (x, y) 坐标。
 
 <a name="boxfind_closest_box"></a>
 
@@ -226,13 +302,6 @@ def frame(self)
 
 - **返回:**
     - `numpy.ndarray`: 当前的屏幕图像帧。
-- **调用例子 (Calling Example):**
-  ```python
-  # 获取当前帧并检查其尺寸
-  current_frame = self.frame
-  height, width, _ = current_frame.shape
-  self.log_info(f"当前屏幕分辨率为: {width}x{height}")
-  ```
 
 <a name="next_frame"></a>
 
@@ -246,13 +315,6 @@ def next_frame(self)
 
 - **返回:**
     - `numpy.ndarray`: 新捕获的屏幕图像帧。
-- **调用例子 (Calling Example):**
-  ```python
-  # 点击一个按钮后，立即获取新的屏幕内容以检查变化
-  self.click(100, 100)
-  new_frame = self.next_frame()
-  # ... 可以在 new_frame 上进行分析 ...
-  ```
 
 <a name="screenshot"></a>
 
@@ -269,13 +331,19 @@ def screenshot(self, name=None, frame=None, show_box=False, frame_box=None)
     - `frame` (numpy.ndarray, optional): 如果提供，则保存该帧，否则保存当前屏幕帧。
     - `show_box` (bool): 是否在截图上显示一个默认的框。
     - `frame_box` (Box, optional): 在截图上显示的特定 `Box` 区域。
-- **调用例子 (Calling Example):**
-  ```python
-  # 当找不到某个按钮时，截取当前屏幕用于分析
-  login_button = self.find_one("login_button")
-  if not login_button:
-      self.screenshot("login_page_error")
-  ```
+
+<a name="adb_ui_dump"></a>
+
+### adb\_ui\_dump
+
+```python
+def adb_ui_dump(self) -> str
+```
+
+通过 ADB 获取当前屏幕的 UI 层级结构 XML 字符串（仅限安卓/模拟器模式）。
+
+- **返回:**
+    - `str`: UI 结构的 XML 字符串。
 
 ### 输入 (Input)
 
@@ -285,7 +353,7 @@ def screenshot(self, name=None, frame=None, show_box=False, frame_box=None)
 
 ```python
 def click(self, x: int | Box | List[Box] = -1, y=-1, move_back=False, name=None, interval=-1, move=True, down_time=0.01,
-          after_sleep=0, key='left')
+          after_sleep=0, key='left', hcenter=False, vcenter=False)
 ```
 
 在指定坐标或 `Box` 位置执行鼠标点击。坐标可以是绝对坐标（整数），也可以是相对于屏幕宽高的相对坐标（0.0到1.0之间的小数）。如果只提供了
@@ -301,24 +369,9 @@ def click(self, x: int | Box | List[Box] = -1, y=-1, move_back=False, name=None,
     - `down_time` (float): 鼠标按下的持续时间（秒）。
     - `after_sleep` (float): 点击后等待的时间（秒）。
     - `key` (str): 要点击的鼠标按键 ('left', 'right', 'middle')。
+    - `hcenter`, `vcenter` (bool): 如果点击相对坐标且设为 True，则以屏幕中心为原点。
 - **返回:**
     - `bool`: 如果操作成功执行，返回 `True`。
-- **调用例子 (Calling Example):**
-  ```python
-  # 1. 点击绝对坐标 (100, 150)
-  self.click(100, 150)
-
-  # 2. 点击屏幕中心（相对坐标）
-  self.click(0.5, 0.5)
-
-  # 3. 查找一个名为 "login_button" 的特征并点击它
-  login_box = self.find_one("login_button")
-  if login_box:
-      self.click(login_box)
-
-  # 4. 点击后等待1秒
-  self.click(100, 150, after_sleep=1)
-  ```
 
 <a name="click_box"></a>
 
@@ -337,20 +390,27 @@ def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5,
     - `relative_y` (float): 相对于 `Box` 高度的 y 坐标比例 (0.0 - 1.0)。
     - `raise_if_not_found` (bool): 如果 `box` 为 `None` 是否抛出异常。
     - `after_sleep` (float): 点击后等待的时间（秒）。
-- **调用例子 (Calling Example):**
-  ```python
-  # 点击 "settings_icon" 的右上角
-  settings_box = self.find_one("settings_icon")
-  if settings_box:
-      self.click_box(settings_box, relative_x=0.9, relative_y=0.1)
-  ```
+
+<a name="click_box_if_name_match"></a>
+
+### click\_box\_if\_name\_match
+
+```python
+def click_box_if_name_match(self, boxes, names, relative_x=0.5, relative_y=0.5)
+```
+
+在 `Box` 列表中查找名称匹配的第一个 `Box` 并点击。
+
+- **参数:**
+    - `boxes` (list[Box]): `Box` 列表。
+    - `names` (str | list[str] | re.Pattern): 要匹配的名称或模式。
 
 <a name="click_relative"></a>
 
 ### click\_relative
 
 ```python
-def click_relative(self, x, y, move_back=False, hcenter=False, move=True, after_sleep=0, name=None, interval=-1,
+def click_relative(self, x, y, move_back=False, hcenter=False, vcenter=False, move=True, after_sleep=0, name=None, interval=-1,
                    down_time=0.02, key="left")
 ```
 
@@ -359,33 +419,29 @@ def click_relative(self, x, y, move_back=False, hcenter=False, move=True, after_
 - **参数:**
     - `x` (float): 相对于屏幕宽度的 x 坐标比例 (0.0 - 1.0)。
     - `y` (float): 相对于屏幕高度的 y 坐标比例 (0.0 - 1.0)。
-- **调用例子 (Calling Example):**
-  ```python
-  # 点击屏幕右下角区域
-  self.click_relative(0.95, 0.95)
-  ```
+
+<a name="wait_click_box"></a>
+
+### wait\_click\_box
+
+```python
+def wait_click_box(self, condition, time_out=0, pre_action=None, post_action=None, raise_if_not_found=False)
+```
+
+等待一个返回 `Box` 的条件函数成立，并点击该 `Box`。
+
+- **参数:**
+    - `condition` (callable): 返回 `Box` 或 `list[Box]` 的函数。
 
 <a name="right_click"></a>
 
 ### right\_click
 
 ```python
-def right_click(self, *args, **kwargs)```
+def right_click(self, *args, **kwargs)
+```
 
-
-执行鼠标右键点击。参数与
-`click`
-方法相同，但
-`key`
-固定为
-'right'。
-
-- ** 调用例子(Calling
-Example): **
-```python
-# 右键点击坐标 (200, 250)
-self.right_click(200, 250)
-  ```
+执行鼠标右键点击。参数与 `click` 方法相同，但 `key` 固定为 'right'。
 
 <a name="middle_click"></a>
 
@@ -396,12 +452,6 @@ def middle_click(self, *args, **kwargs)
 ```
 
 执行鼠标中键点击。参数与 `click` 方法相同，但 `key` 固定为 'middle'。
-
-- **调用例子 (Calling Example):**
-  ```python
-  # 中键点击屏幕中心
-  self.middle_click(0.5, 0.5)
-  ```
 
 <a name="swipe"></a>
 
@@ -416,32 +466,23 @@ def swipe(self, from_x, from_y, to_x, to_y, duration=0.5, after_sleep=0.1, settl
 - **参数:**
     - `from_x`, `from_y` (int): 滑动起点的绝对坐标。
     - `to_x`, `to_y` (int): 滑动终点的绝对坐标。
-    - `duration` (float): 滑动持续时间（毫秒）。
+    - `duration` (float): 滑动持续时间（秒）。
     - `after_sleep` (float): 滑动后等待的时间（秒）。
     - `settle_time` (float): 到达终点后，在松开手指前停留的时间（秒）。
-- **调用例子 (Calling Example):**
-  ```python
-  # 从 (200, 800) 滑动到 (200, 200) 来向上滚动列表
-  self.swipe(200, 800, 200, 200, duration=500)
-  ```
 
 <a name="swipe_relative"></a>
 
-### swipe\_relative```python
+### swipe\_relative
 
+```python
 def swipe_relative(self, from_x, from_y, to_x, to_y, duration=0.5, settle_time=0)
-
 ```
+
 在屏幕的相对位置之间执行滑动操作。
 
 - **参数:**
-  - `from_x`, `from_y` (float): 滑动起点的相对坐标 (0.0 - 1.0)。
-  - `to_x`, `to_y` (float): 滑动终点的相对坐标 (0.0 - 1.0)。
-- **调用例子 (Calling Example):**
-  ```python
-  # 从屏幕中心向上滑动半个屏幕
-  self.swipe_relative(0.5, 0.75, 0.5, 0.25)
-  ```
+    - `from_x`, `from_y` (float): 滑动起点的相对坐标 (0.0 - 1.0)。
+    - `to_x`, `to_y` (float): 滑动终点的相对坐标 (0.0 - 1.0)。
 
 <a name="input_text"></a>
 
@@ -455,12 +496,6 @@ def input_text(self, text)
 
 - **参数:**
     - `text` (str): 要输入的字符串。
-- **调用例子 (Calling Example):**
-  ```python
-  # 在输入框中输入用户名
-  self.click(username_field_box)
-  self.input_text("my_username")
-  ```
 
 <a name="send_key"></a>
 
@@ -474,18 +509,10 @@ def send_key(self, key, down_time=0.02, interval=-1, after_sleep=0)
 
 - **参数:**
     - `key` (str): 要发送的按键（例如 'a', 'enter', 'f1'）。
-    - `down_time` (float): 按键按下的持续时间（秒）。
-    - `interval` (float): 距离上次按键的最小时间间隔（秒）。
-    - `after_sleep` (float): 按键后等待的时间（秒）。
-- **调用例子 (Calling Example):**
-  ```python
-  # 发送 Enter 键确认操作
-  self.send_key('enter')
-  ```
 
 <a name="send_key_down"></a>
 
-### send\_key\_down
+### send_key_down
 
 ```python
 def send_key_down(self, key)
@@ -493,27 +520,15 @@ def send_key_down(self, key)
 
 模拟按下键盘按键（不释放）。
 
-- **调用例子 (Calling Example):**
-  ```python
-  # 按下 Shift 键
-  self.send_key_down('shift')
-  ```
-
 <a name="send_key_up"></a>
 
-### send\_key\_up
+### send_key_up
 
 ```python
 def send_key_up(self, key)
 ```
 
 模拟释放键盘按键。
-
-- **调用例子 (Calling Example):**
-  ```python
-  # 释放 Shift 键
-  self.send_key_up('shift')
-  ```
 
 <a name="scroll"></a>
 
@@ -528,11 +543,6 @@ def scroll(self, x, y, count)
 - **参数:**
     - `x`, `y` (int): 滚动的绝对坐标。
     - `count` (int): 滚动量，正数向上，负数向下。
-- **调用例子 (Calling Example):**
-  ```python
-  # 在坐标 (500, 500) 处向上滚动 5 个单位
-  self.scroll(500, 500, 5)
-  ```
 
 <a name="scroll_relative"></a>
 
@@ -546,11 +556,6 @@ def scroll_relative(self, x, y, count)
 
 - **参数:**
     - `x`, `y` (float): 滚动的相对坐标 (0.0 - 1.0)。
-- **调用例子 (Calling Example):**
-  ```python
-  # 在屏幕中心向下滚动 10 个单位
-  self.scroll_relative(0.5, 0.5, -10)
-  ```
 
 <a name="mouse_down"></a>
 
@@ -562,42 +567,25 @@ def mouse_down(self, x=-1, y=-1, name=None, key="left")
 
 在指定位置按下鼠标按键（不释放）。
 
-- **调用例子 (Calling Example):**
-  ```python
-  # 在 (100, 100) 按下鼠标左键，用于拖拽操作的开始
-  self.mouse_down(100, 100)
-  ```
-
 <a name="mouse_up"></a>
 
-### mouse\_up```python
+### mouse\_up
 
+```python
 def mouse_up(self, name=None, key="left")
-
 ```
-释放鼠标按键。
 
-- **调用例子 (Calling Example):**
-  ```python
-  # 移动到 (300, 300) 后释放鼠标左键，完成拖拽
-  self.move(300, 300)
-  self.mouse_up()
-  ```
+释放鼠标按键。
 
 <a name="move"></a>
 
-### move```python
+### move
 
+```python
 def move(self, x, y)
-
 ```
-将鼠标移动到指定的绝对坐标。
 
-- **调用例子 (Calling Example):**
-  ```python
-  # 将鼠标移动到 (500, 500)
-  self.move(500, 500)
-  ```
+将鼠标移动到指定的绝对坐标。
 
 <a name="move_relative"></a>
 
@@ -609,27 +597,15 @@ def move_relative(self, x, y)
 
 将鼠标移动到指定的相对坐标。
 
-- **调用例子 (Calling Example):**
-  ```python
-  # 将鼠标移动到屏幕的左上角
-  self.move_relative(0, 0)
-  ```
-
 <a name="back"></a>
 
 ### back
 
 ```python
-def back(self, after_sleep=0)
+def back(self, *args, **kwargs)
 ```
 
-模拟返回操作，通常是发送 'esc' 键（PC）或返回键（Android）。
-
-- **调用例子 (Calling Example):**
-  ```python
-  # 关闭一个弹窗
-  self.back(after_sleep=0.5)
-  ```
+模拟返回操作，通常是发送 'esc' 键（PC）或返回键（Android）。支持 `after_sleep` 参数。
 
 ### Config 相关
 
@@ -639,16 +615,15 @@ def back(self, after_sleep=0)
 
 ```python
 def load_config(self)
+```
 
+加载当前任务的配置文件。通常在任务初始化时自动调用。
 
-    ```加载当前任务的配置文件。通常在任务初始化时自动调用。
+<a name="validate_config"></a>
 
-< a
-name = "validate_config" > < / a >
 ### validate\_config
+
 ```python
-
-
 def validate_config(self, key, value)
 ```
 
@@ -656,14 +631,6 @@ def validate_config(self, key, value)
 
 - **返回:**
     - `str` 或 `None`: 如果验证失败，返回错误信息字符串；否则返回 `None`。
-- **调用例子 (Calling Example):**
-  ```python
-  # 在任务子类中实现
-  def validate_config(self, key, value):
-      if key == 'Retry Count' and not (0 < value <= 10):
-          return "Retry Count must be between 1 and 10."
-      return None
-  ```
 
 <a name="get_global_config"></a>
 
@@ -673,19 +640,20 @@ def validate_config(self, key, value)
 def get_global_config(self, option)
 ```
 
-获取一个全局配置对象。
+获取一个全局配置对象的值。
 
 - **参数:**
     - `option` (ConfigOption): 全局配置选项的定义。
-- **返回:**
-    - `Config`: 对应的全局 `Config` 对象。
-- **调用例子 (Calling Example):**
-  ```python
-  # 获取基本设置
-  basic_settings = self.get_global_config(basic_options)
-  if basic_settings.get('Mute Game while in Background'):
-      self.log_info("游戏将在后台静音。")
-  ```
+
+<a name="get_global_config_desc"></a>
+
+### get\_global\_config\_desc
+
+```python
+def get_global_config_desc(self, option) -> str
+```
+
+获取一个全局配置选项的描述。
 
 ### 屏幕画图 (Screen drawing)
 
@@ -700,16 +668,8 @@ def draw_boxes(feature_name=None, boxes=None, color="red", debug=True)
 在屏幕上绘制一个或多个 `Box`，用于调试。
 
 - **参数:**
-    - `feature_name` (str, optional): 绘制的特征名称。
+    - `feature_name` (str, optional): 绘制的图层名称。
     - `boxes` (list[Box] | Box): 要绘制的 `Box` 对象或列表。
-    - `color` (str): 绘制框的颜色。
-    - `debug` (bool): 是否仅在调试模式下绘制。
-- **调用例子 (Calling Example):**
-  ```python
-  # 找到所有按钮并用绿色框标出
-  all_buttons = self.find_feature("buttons")
-  self.draw_boxes("Found Buttons", all_buttons, color="green")
-  ```
 
 <a name="clear_box"></a>
 
@@ -719,13 +679,7 @@ def draw_boxes(feature_name=None, boxes=None, color="red", debug=True)
 def clear_box(self)
 ```
 
-清除屏幕上所有由 `draw_boxes` 绘制的框。
-
-- **调用例子 (Calling Example):**
-  ```python
-  # 进入新场景前清除旧的标记框
-  self.clear_box()
-  ```
+清除屏幕上由 `draw_boxes` 绘制的所有框。
 
 ### OCR
 
@@ -735,7 +689,7 @@ def clear_box(self)
 
 ```python
 def ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None, threshold=0, frame=None,
-        target_height=0, use_grayscale=False, log=False, lib='default')
+        target_height=0, use_grayscale=False, log=False, frame_processor=None, lib='default')
 ```
 
 对屏幕指定区域进行光学字符识别（OCR）。
@@ -748,13 +702,6 @@ def ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None,
     - `target_height` (int): 识别前将图像缩放到的目标高度，可以提高识别准确率。
 - **返回:**
     - `list[Box]`: 包含识别结果的 `Box` 对象列表，`Box.name` 为识别出的文本。
-- **调用例子 (Calling Example):**
-  ```python
-  # 识别屏幕上半部分所有包含 "确定" 或 "取消" 的文本
-  action_texts = self.ocr(to_y=0.5, match=["确定", "取消"])
-  for box in action_texts:
-      self.log_info(f"找到文本: {box.name} at {box.center()}")
-  ```
 
 <a name="wait_ocr"></a>
 
@@ -766,19 +713,8 @@ def wait_ocr(self, ..., time_out=0, raise_if_not_found=False, settle_time=-1)
 
 等待直到在指定区域内 OCR 识别到匹配的文本。参数与 `ocr` 类似。
 
-- **参数:**
-    - `time_out` (int): 等待的超时时间（秒）。
-    - `raise_if_not_found` (bool): 如果超时仍未找到，是否抛出异常。
-    - `settle_time` (float): 找到后额外等待的时间（秒），确保界面稳定。
 - **返回:**
     - `list[Box]` 或 `None`: 找到的文本 `Box` 列表，或在超时后返回 `None`。
-- **调用例子 (Calling Example):**
-  ```python
-  # 等待10秒，直到屏幕上出现 "加载完成"
-  loading_text = self.wait_ocr(match="加载完成", time_out=10)
-  if loading_text:
-      self.log_info("游戏加载完成！")
-  ```
 
 <a name="wait_click_ocr"></a>
 
@@ -788,15 +724,10 @@ def wait_ocr(self, ..., time_out=0, raise_if_not_found=False, settle_time=-1)
 def wait_click_ocr(self, ..., time_out=0, raise_if_not_found=False, after_sleep=0, settle_time=-1)
 ```
 
-等待直到 OCR 识别到匹配的文本，并点击第一个找到的结果。
+等待直到 OCR 识别到匹配的文本，并点击第一个找到的结果。参数与 `ocr` 类似。
 
 - **返回:**
     - `Box` 或 `None`: 被点击的 `Box` 对象，如果未找到则返回 `None`。
-- **调用例子 (Calling Example):**
-  ```python
-  # 等待并点击 "开始游戏" 按钮
-  self.wait_click_ocr(match="开始游戏", time_out=5, raise_if_not_found=True)
-  ```
 
 <a name="add_text_fix"></a>
 
@@ -810,11 +741,6 @@ def add_text_fix(self, fix)
 
 - **参数:**
     - `fix` (dict): 一个字典，键为错误文本，值为正确文本。
-- **调用例子 (Calling Example):**
-  ```python
-  # 将常见的 "lv1" OCR 错误修正为 "Lv1"
-  self.add_text_fix({"lv1": "Lv1", "g0ld": "gold"})
-  ```
 
 ### 找图 (Image finding)
 
@@ -829,18 +755,11 @@ def find_feature(self, feature_name=None, box=None, threshold=0, ...) -> List[Bo
 在指定区域内查找一个或多个图像特征。
 
 - **参数:**
-    - `feature_name` (str | list[str]): 要查找的特征名称（在 COCO 文件中定义）。
+    - `feature_name` (str | list[str]): 要查找的特征名称。
     - `box` (Box | str, optional): 在该 `Box` 区域内进行搜索。
     - `threshold` (float): 匹配的置信度阈值。
-    - `horizontal_variance`, `vertical_variance` (float): 在特征原始位置附近扩大的搜索范围比例。
 - **返回:**
     - `list[Box]`: 找到的所有匹配特征的 `Box` 对象列表。
-- **调用例子 (Calling Example):**
-  ```python
-  # 查找屏幕上所有的 "coin" 图标
-  coins = self.find_feature("coin", threshold=0.9)
-  self.log_info(f"找到了 {len(coins)} 个金币图标。")
-  ```
 
 <a name="find_one"></a>
 
@@ -854,13 +773,6 @@ def find_one(self, feature_name=None, ...) -> Box
 
 - **返回:**
     - `Box` 或 `None`: 找到的置信度最高的 `Box` 对象，如果未找到则返回 `None`。
-- **调用例子 (Calling Example):**
-  ```python
-  # 查找设置按钮
-  settings_button = self.find_one("settings_button")
-  if settings_button:
-      self.click(settings_button)
-  ```
 
 <a name="wait_feature"></a>
 
@@ -875,17 +787,8 @@ def wait_feature(self, feature, time_out=0, raise_if_not_found=False, settle_tim
 - **参数:**
     - `feature` (str): 要等待的特征名称。
     - `time_out` (int): 等待的超时时间（秒）。
-    - `raise_if_not_found` (bool): 超时后是否抛出异常。
-    - `settle_time` (float): 找到后额外等待的时间（秒）。
 - **返回:**
     - `Box` 或 `None`: 找到的 `Box` 对象。
-- **调用例子 (Calling Example):**
-  ```python
-  # 等待加载界面消失（通过查找主界面 logo）
-  main_menu_logo = self.wait_feature("main_menu_logo", time_out=30)
-  if not main_menu_logo:
-      self.log_error("加载超时！")
-  ```
 
 <a name="wait_click_feature"></a>
 
@@ -899,43 +802,88 @@ def wait_click_feature(self, feature, time_out=0, raise_if_not_found=True, after
 
 - **返回:**
     - `bool`: 如果成功找到并点击，返回 `True`。
-- **调用例子 (Calling Example):**
-  ```python
-  # 等待并点击 "跳过" 按钮
-  self.wait_click_feature("skip_button", time_out=5, raise_if_not_found=False, after_sleep=1)
-  ```
 
 <a name="get_box_by_name"></a>
 
 ### get\_box\_by\_name
 
 ```python
-def get_box_by_name(self, name)
+def get_box_by_name(self, name) -> Box
 ```
 
-根据名称获取一个预定义的 `Box`。名称可以是在 COCO 文件中定义的 `box_` 前缀的特征，也可以是 'left', 'right', 'top', '
-bottom' 等预设区域。
+根据名称获取一个预定义的 `Box`。名称可以是定义的特征名，也可以是内置预设区域。
 
-- **参数:**
-    - `name` (str): `Box` 的名称。
+- **可选预设名称:**
+    - `top`, `bottom`, `left`, `right`
+    - `top_left`, `top_right`, `bottom_left`, `bottom_right`
 - **返回:**
     - `Box`: 对应的 `Box` 对象。
-- **调用例子 (Calling Example):**
-  ```python
-  # 在屏幕右半部分查找敌人
-  right_half = self.get_box_by_name("right")
-  enemies = self.find_feature("enemy_icon", box=right_half)
-  ```
+
+<a name="get_feature_by_name"></a>
+
+### get\_feature\_by\_name
+
+```python
+def get_feature_by_name(self, name)
+```
+
+根据名称获取特性的详细定义和原始图像。
+
+<a name="feature_exists"></a>
+
+### feature\_exists
+
+```python
+def feature_exists(self, feature_name: str) -> bool
+```
+
+检查指定的特征名称是否在已加载的任务特征集中。
+
+<a name="find_feature_and_set"></a>
+
+### find\_feature\_and\_set
+
+```python
+def find_feature_and_set(self, features, threshold=0) -> bool
+```
+
+查找多个特征并将结果作为同名属性设置到当前任务对象中。
+
+- **参数:**
+    - `features` (str | list[str]): 要查找的特征名称。
+- **返回:**
+    - `bool`: 是否所有指定的特征都找到了。
+
+<a name="find_best_match_in_box"></a>
+
+### find\_best\_match\_in\_box
+
+```python
+def find_best_match_in_box(self, box, to_find, threshold) -> Box
+```
+
+在给定的 `Box` 内寻找 `to_find` 列表中置信度最高的一个特征。
+
+<a name="find_first_match_in_box"></a>
+
+### find\_first\_match\_in\_box
+
+```python
+def find_first_match_in_box(self, box, to_find, threshold) -> Box
+```
+
+在给定的 `Box` 内寻找 `to_find` 列表中第一个匹配的特征。
 
 ### 找色 (Color finding)
 
 <a name="calculate_color_percentage"></a>
 
-### calculate\_color\_percentage```python
+### calculate\_color\_percentage
 
-def calculate_color_percentage(self, color, box: Box | str)
-
+```python
+def calculate_color_percentage(self, color, box: Box | str) -> float
 ```
+
 计算指定 `Box` 区域内特定颜色的像素百分比。
 
 - **参数:**
@@ -943,17 +891,6 @@ def calculate_color_percentage(self, color, box: Box | str)
   - `box` (Box | str): 要计算的 `Box` 对象或其名称。
 - **返回:**
   - `float`: 颜色像素所占的百分比 (0.0 - 1.0)。
-- **调用例子 (Calling Example):**
-  ```python
-  # 定义红色范围
-  red_color = {'r': (200, 255), 'g': (0, 100), 'b': (0, 100)}
-  health_bar_box = self.find_one("health_bar")
-  if health_bar_box:
-      # 检查生命条中的红色（低血量）百分比
-      low_health_percentage = self.calculate_color_percentage(red_color, health_bar_box)
-      if low_health_percentage > 0.5:
-          self.log_info("血量危险！")
-  ```
 
 ### 显示信息 (Display information)
 
@@ -969,47 +906,28 @@ def notification(self, message, title=None, error=False, tray=False, show_tab=No
 
 - **参数:**
     - `message` (str): 通知内容。
-    - `title` (str, optional): 通知标题。
-    - `error` (bool): 是否为错误通知。
     - `tray` (bool): 是否同时显示系统托盘通知。
-- **调用例子 (Calling Example):**
-  ```python
-  # 任务完成后发送一个成功的托盘通知
-  self.notification("每日任务已完成", "任务成功", tray=True)
-  ```
+    - `show_tab` (str): 点击通知时跳转到的 UI 选项卡。
 
 <a name="info_set"></a>
 
 ### info\_set
 
 ```python
-def info_set(self, key, value)```
+def info_set(self, key, value)
+```
 
-
-在任务的监控信息中设置一个键值对。
-
-- ** 调用例子(Calling
-Example): **
-```python
-# 设置当前状态
-self.info_set("当前状态", "正在寻找副本入口")
-  ```
+在任务的监控信息中设置一个键值对（会显示在 UI 的任务卡片中）。
 
 <a name="info_get"></a>
 
 ### info\_get
 
 ```python
-def info_get(self, *args, **kwargs)
+def info_get(self, key, default=None)
 ```
 
 从任务的监控信息中获取一个值。
-
-- **调用例子 (Calling Example):**
-  ```python
-  # 获取已完成次数
-  completed_runs = self.info_get("已完成次数", 0)
-  ```
 
 <a name="info_incr"></a>
 
@@ -1019,13 +937,7 @@ def info_get(self, *args, **kwargs)
 def info_incr(self, key, inc=1)
 ```
 
-将任务监控信息中的一个数值增加指定的值。
-
-- **调用例子 (Calling Example):**
-  ```python
-  # 将金币计数器加100
-  self.info_incr("金币", 100)
-  ```
+增加监控信息中的数值。
 
 <a name="info_add"></a>
 
@@ -1036,6 +948,26 @@ def info_add(self, key, count=1)
 ```
 
 同 `info_incr`。
+
+<a name="info_add_to_list"></a>
+
+### info\_add\_to\_list
+
+```python
+def info_add_to_list(self, key, item)
+```
+
+将一个项添加到监控信息中的列表（如果键不存在则创建列表）。
+
+<a name="info_clear"></a>
+
+### info\_clear
+
+```python
+def info_clear(self)
+```
+
+清除当前任务的所有监控信息。
 
 ### 日志 (Logging)
 
@@ -1049,28 +981,15 @@ def log_info(self, message, notify=False)
 
 记录一条信息级别的日志。
 
-- **参数:**
-    - `message` (str): 日志内容。
-    - `notify` (bool): 是否同时通过 `notification` 显示通知。
-- **调用例子 (Calling Example):**
-  ```python
-  self.log_info("任务开始执行。")
-  ```
-
 <a name="log_debug"></a>
 
-### log\_debug```python
+### log\_debug
 
+```python
 def log_debug(self, message, notify=False)
-
 ```
-记录一条调试级别的日志。
 
-- **调用例子 (Calling Example):**
-  ```python
-  button_pos = self.find_one("some_button")
-  self.log_debug(f"按钮坐标: {button_pos}")
-  ```
+记录一条调试级别的日志。
 
 <a name="log_error"></a>
 
@@ -1082,16 +1001,6 @@ def log_error(self, message, exception=None, notify=False)
 
 记录一条错误级别的日志。
 
-- **参数:**
-    - `exception` (Exception, optional): 关联的异常对象。
-- **调用例子 (Calling Example):**
-  ```python
-  try:
-      # ... some operation that might fail ...
-  except Exception as e:
-      self.log_error("关键操作失败，任务终止。", e, notify=True)
-  ```
-
 ### 其他 (Other)
 
 <a name="is_adb"></a>
@@ -1102,47 +1011,183 @@ def log_error(self, message, exception=None, notify=False)
 def is_adb(self) -> bool
 ```
 
-判断当前是否正在通过 ADB 控制安卓设备。
+判断当前是否连接的是 ADB 设备（安卓/模拟器）。
 
-- **返回:**
-    - `bool`: 如果是安卓设备，返回 `True`；如果是 PC 窗口，返回 `False`。
-- **调用例子 (Calling Example):**
-  ```python
-  if self.is_adb():
-      self.log_info("当前为安卓模式，将使用返回键。")
-      self.back()
-  else:
-      self.log_info("当前为PC模式，将使用ESC键。")
-      self.send_key('esc')
-  ```
+<a name="is_browser"></a>
+
+### is\_browser
+
+```python
+def is_browser(self) -> bool
+```
+
+判断当前是否正在控制浏览器设备。
+
+<a name="adb_shell"></a>
+
+### adb\_shell
+
+```python
+def adb_shell(self, *args, **kwargs) -> str
+```
+
+执行一条 ADB shell 指令并返回输出字符串。
+
+<a name="ensure_in_front"></a>
+
+### ensure\_in\_front
+
+```python
+def ensure_in_front(self)
+```
+
+确保游戏窗口或 ADB 模拟器处于前台显示状态。
+
+<a name="box_of_screen"></a>
+
+### box\_of\_screen
+
+```python
+def box_of_screen(self, x, y, to_x=1.0, to_y=1.0, width=0.0, height=0.0, name=None, hcenter=False, vcenter=False) -> Box
+```
+
+根据相对比例创建一个相对于当前屏幕尺寸的 `Box` 对象。
+
+- **参数:**
+    - `x`, `y` (float): 相对于屏幕的相对坐标 (0.0 - 1.0)。
+
+<a name="box_of_screen_scaled"></a>
+
+### box\_of\_screen\_scaled
+
+```python
+def box_of_screen_scaled(self, original_screen_width, original_screen_height, x_original, ...) -> Box
+```
+
+根据原始参考屏幕的分辨率，将坐标缩放到当前屏幕分辨率并创建一个 `Box`。
+
+<a name="screen_width"></a>
+
+### screen\_width
+
+```python
+@property
+def screen_width(self) -> int
+```
+
+获取当前屏幕的像素宽度。
+
+<a name="screen_height"></a>
+
+### screen\_height
+
+```python
+@property
+def screen_height(self) -> int
+```
+
+获取当前屏幕的像素高度。
+
+<a name="width_of_screen"></a>
+
+### width\_of\_screen
+
+```python
+def width_of_screen(self, percent) -> int
+```
+
+根据传入的百分比计算并返回对应的屏幕像素宽度。
+
+<a name="wait_until"></a>
+
+### wait\_until
+
+```python
+def wait_until(self, condition, time_out=0, pre_action=None, post_action=None, settle_time=-1, raise_if_not_found=False)
+```
+
+等待直到 `condition` 函数返回一个真值（或非空值）。
+
+- **参数:**
+    - `condition` (callable): 无参数的可调用函数。
+    - `time_out` (int): 超时时间（秒），0 表示无限等待。
+
+<a name="wait_scene"></a>
+
+### wait\_scene
+
+```python
+def wait_scene(self, scene_type=None, time_out=0, pre_action=None, post_action=None)
+```
+
+等待当前场景变为指定的 `scene_type`。
+
+<a name="sleep"></a>
+
+### sleep
+
+```python
+def sleep(self, timeout)
+```
+
+让当前任务休眠指定秒数。休眠期间会处理脚本暂停和 `sleep_check`。
 
 <a name="sleep_check"></a>
 
-### sleep_check
+### sleep\_check
 
 ```python
 def sleep_check(self)
 ```
 
-当脚本调用sleep方法时, 也包括含有after_sleep参数的方法调用时，如果设置了 `sleep_check_interval`，会定期调用此方法。
-这允许任务在等待期间执行一些检查或后台逻辑。
+当脚本休眠时，若设置了 `sleep_check_interval`，会定期调用此方法执行背景检查逻辑。
 
-**注意**: 若要启用此功能，可以在任务初始化（`__init__`）时将 `self.sleep_check_interval` 设置为一个大于 0 的浮点数（秒）。
+<a name="run_task_by_class"></a>
 
-- **相关属性:**
-    - `sleep_check_interval` (float): 调用 `sleep_check` 的时间间隔（秒）。默认为 -1（禁用）。
+### run\_task\_by\_class
 
-- **调用例子 (Calling Example):**
-  ```python
-  def __init__(self, executor=None):
-      super().__init__(executor)
-      # 每 5 秒检查一次
-      self.sleep_check_interval = 5
+```python
+def run_task_by_class(self, cls)
+```
 
-  def sleep_check(self):
-      # 检查是否有突发情况，例如断线重连弹窗
-      if self.find_one("reconnect_dialog_title"):
-          self.log_info("检测到断线重连弹窗，尝试重连...")
-          self.click("confirm_reconnect_button")
-  ```
+在当前任务上下文中实例化并运行指定的另一个任务类。
 
+<a name="tr"></a>
+
+### tr
+
+```python
+def tr(self, message) -> str
+```
+
+翻译指定的字符串消息（使用应用级的 i18n 系统）。
+
+<a name="should_trigger"></a>
+
+### should\_trigger
+
+```python
+def should_trigger(self) -> bool
+```
+
+根据配置的 `trigger_interval` 判断当前是否应该触发任务执行。
+
+<a name="go_to_tab"></a>
+
+### go\_to\_tab
+
+```python
+def go_to_tab(self, tab)
+```
+
+通知 UI 界面跳转到指定的选项卡。
+
+<a name="find_boxes"></a>
+
+### find\_boxes
+
+```python
+def find_boxes(self, boxes, match=None, boundary=None) -> list[Box]
+```
+
+对 `Box` 列表进行过滤，支持名称匹配和边界筛选。
