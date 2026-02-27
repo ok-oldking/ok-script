@@ -259,7 +259,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 return
 
     cdef object convert_dx_frame(self, frame):
-        if not frame:
+        if not frame or self.dxdevice is None or self.immediatedc is None:
             return None
         cdef bint need_reset_framepool = False
         if frame.ContentSize.Width != self.last_size.Width or frame.ContentSize.Height != self.last_size.Height:
@@ -332,7 +332,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             elif not self.hwnd_window.exists:
                 logger.warning('start_or_stop not self.hwnd_window.exists')
                 self.close()
-                return True
+                return False
             elif self.hwnd_window.hwnd and self.hwnd_window.exists and self.frame_pool is None:
                 logger.info('start_or_stop start WGC capture')
                 try:
@@ -414,6 +414,9 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             if self.dxdevice:
                 self.dxdevice.Release()
                 self.dxdevice = None
+            if self.immediatedc:
+                self.immediatedc.Release()
+                self.immediatedc = None
             if self.cputex:
                 self.cputex.Release()
                 self.cputex = None
@@ -848,7 +851,7 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
                 elif not re.search(title, text):
                     return True
             name, full_path, cmdline = get_exe_by_hwnd(hwnd)
-            logger.debug(f'find_hwnd name {name, full_path, cmdline}')
+            # logger.debug(f'find_hwnd name {name, full_path, cmdline}')
             if exe_names:
                 if not name:
                     return True
