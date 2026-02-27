@@ -392,9 +392,9 @@ cdef class TaskExecutor:
                 self.reset_scene()
             try:
                 task.start_time = time.time()
-                if not is_trigger_task:
-                    task.running = True
-                    self.current_task = task
+                task.running = True
+                self.current_task = task
+                if not is_trigger_task:                    
                     communicate.task.emit(task)
                 if cycled or self._frame is None:
                     self.next_frame()
