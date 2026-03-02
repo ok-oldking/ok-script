@@ -76,7 +76,7 @@ class TaskTab(Tab):
             'Running') if (task is not None and task.enabled) else self.tr('Completed')
         self.task_info_container.titleLabel.setText(
             status + self.current_task_name)
-        if task is None:
+        if task is None or time.time() - task.start_time < 2:
             return
         if not self.task_info_table.isVisible():
             self.task_info_container.show()

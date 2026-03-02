@@ -29,7 +29,7 @@ class TaskTestCase(unittest.TestCase):
         cls.task = cls.task_class(og.executor, None)
         from ok.test import ok
         cls.task.feature_set = ok.feature_set
-        cls.task.set_executor(ok.task_executor)
+        cls.task.after_init(executor=ok.task_executor, scene=ok.task_executor.scene)
 
     @classmethod
     def tearDownClass(cls):

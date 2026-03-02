@@ -236,9 +236,9 @@ cdef class TaskExecutor:
 
         :param timeout: The total time to sleep in seconds.
         """
+        self.reset_scene(check_enabled=False)
         if timeout <= 0:
             return
-        self.reset_scene(check_enabled=False)
         if self.debug_mode:
             time.sleep(timeout)
             return
@@ -251,7 +251,6 @@ cdef class TaskExecutor:
                 task = self.current_task
                 if task.sleep_check_interval >= 0:
                     if not task.in_sleep_check and time.time() - task.last_sleep_check_time > task.sleep_check_interval:
-                        task.last_sleep_check_time = time.time()
                         task.in_sleep_check = True
                         try:
                             self.next_frame()
@@ -261,6 +260,7 @@ cdef class TaskExecutor:
                             logger.error(f"sleep_check error {task}", e)
                             raise
                         finally:
+                            task.last_sleep_check_time = time.time()
                             task.in_sleep_check = False
             if self.exit_event.is_set():
                 logger.info("sleep Exit event set. Exiting early.")
@@ -270,8 +270,8 @@ cdef class TaskExecutor:
                 to_sleep = self.pause_end_time - time.time()
                 if to_sleep <= 0:
                     return
-                if to_sleep > 0.01:
-                    to_sleep = 0.01
+                if to_sleep > 0.001:
+                    to_sleep = 0.001
                 time.sleep(to_sleep)
             else:
                 time.sleep(0.1)
@@ -394,7 +394,7 @@ cdef class TaskExecutor:
                 task.start_time = time.time()
                 task.running = True
                 self.current_task = task
-                if not is_trigger_task:                    
+                if not is_trigger_task:
                     communicate.task.emit(task)
                 if cycled or self._frame is None:
                     self.next_frame()

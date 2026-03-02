@@ -18,23 +18,22 @@ class TaskManager:
         self.has_custom = os.path.exists(self.task_folder)
         self.task_map = dict()
         self.scene = init_class_by_name(scene[0], scene[1]) if scene else None
+        self.task_executor.scene = self.scene
         self.task_executor.trigger_tasks = self.init_tasks(trigger_tasks)
         self.task_executor.onetime_tasks = self.init_tasks(onetime_tasks)
         for task in self.task_executor.trigger_tasks:
             task.post_init()
         for task in self.task_executor.onetime_tasks:
             task.post_init()
-        self.task_executor.scene = self.scene
         self.load_user_tasks()
 
     def init_tasks(self, task_classes):
         tasks = []
         for task_class in task_classes:
             task = init_class_by_name(task_class[0], task_class[1], executor=self.task_executor, app=self.app)
+            task.after_init(executor=self.task_executor, scene=self.scene)
             from ok.gui.common.config import cfg
             if len(task.supported_languages) == 0 or cfg.get(cfg.language).value.name() in task.supported_languages:
-                task.set_executor(self)
-                task.scene = self.scene
                 tasks.append(task)
         return tasks
 
@@ -44,6 +43,7 @@ class TaskManager:
             logger.info(f"Found tasks: {python_files}")
             for python_file in python_files:
                 instance = self.find_and_instantiate_class(python_file, BaseTask)
+                instance.after_init(executor=self.task_executor, scene=self.scene)
                 self.task_map[instance] = [python_file, calculate_md5(python_file)]
                 if isinstance(instance, TriggerTask):
                     self.task_executor.trigger_tasks.append(instance)

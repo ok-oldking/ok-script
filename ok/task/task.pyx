@@ -22,13 +22,15 @@ logger = Logger.get_logger(__name__)
 cdef class ExecutorOperation:
     cdef double last_click_time
     cdef public object _executor
-    cdef public object logger, _app
+    cdef public object logger, _app, scene
 
     def __init__(self, executor, app):
         self._executor = executor
         self._app = app
         self.logger = Logger.get_logger(self.__class__.__name__)
         self.last_click_time = 0
+        self.logger.debug(f'ExecutorOperation init {executor.scene}')
+        self.scene = executor.scene
 
     def exit_is_set(self):
         return self.executor.exit_event.is_set()
@@ -1139,7 +1141,13 @@ cdef class BaseTask(OCR):
     def on_create(self):
         pass
 
-    def set_executor(self, executor):
+    def after_init(self, executor=None, scene=None):
+        if executor:
+            self._executor = executor
+        if scene:
+            self.scene = scene
+        elif self._executor and hasattr(self._executor, 'scene'):
+            self.scene = self._executor.scene
         self.load_config()
         self.on_create()
 
