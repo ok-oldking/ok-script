@@ -514,8 +514,9 @@ class ScheduleTaskTab(Tab):
     refresh_failed = Signal(str)
     task_updated_signal = Signal(object)
     
-    def __init__(self):
+    def __init__(self, config=None):
         super().__init__()
+        self.config = config
         self.schedule_manager: Optional[WindowsScheduleManager] = None
         self.task_table: Optional[ScheduleTaskTable] = None
         self.refreshing = False
@@ -559,7 +560,7 @@ class ScheduleTaskTab(Tab):
 
     def setup_manager(self):
         """设置管理器"""
-        self.schedule_manager = WindowsScheduleManager()
+        self.schedule_manager = WindowsScheduleManager(config=self.config)
         self.schedule_manager.register_update_callback(self.on_task_updated)
         
         # 启动后台同步

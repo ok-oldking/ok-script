@@ -26,14 +26,16 @@ logger = logging.getLogger(__name__)
 
 class TriggerType(Enum):
     """任务触发类型"""
-    DAILY = "Daily"          # 每天
-    WEEKLY = "Weekly"        # 每周
-    MONTHLY = "Monthly"      # 每月
-    ONCE = "Once"           # 一次
+
+    DAILY = "Daily"  # 每天
+    WEEKLY = "Weekly"  # 每周
+    MONTHLY = "Monthly"  # 每月
+    ONCE = "Once"  # 一次
 
 
 class TaskStatus(Enum):
     """任务状态"""
+
     READY = "Ready"
     RUNNING = "Running"
     DISABLED = "Disabled"
@@ -43,20 +45,21 @@ class TaskStatus(Enum):
 @dataclass
 class ScheduleTaskInfo:
     """计划任务信息数据类"""
-    name: str                           # 任务名称
-    path: str = ""                      # 任务路径 (e.g., "\ok-ef\任务名")
-    enabled: bool = False               # 是否启用
-    status: str = "Unknown"             # 任务状态
-    trigger_type: str = ""              # 触发类型 (Daily/Weekly/Monthly/Once)
-    next_run_time: str = ""            # 下次运行时间
-    last_run_time: str = ""            # 最后运行时间
-    last_result: int = 0               # 最后执行结果代码
-    actions: str = ""                  # 操作描述
-    author: str = ""                   # 作者
-    created_time: str = ""             # 创建时间
-    description: str = ""              # 描述
-    xml_config: str = ""               # XML 配置
-    task_index: int = -1               # 对应的任务索引 (-1 表示自定义任务)
+
+    name: str  # 任务名称
+    path: str = ""  # 任务路径 (e.g., "\ok-ef\任务名")
+    enabled: bool = False  # 是否启用
+    status: str = "Unknown"  # 任务状态
+    trigger_type: str = ""  # 触发类型 (Daily/Weekly/Monthly/Once)
+    next_run_time: str = ""  # 下次运行时间
+    last_run_time: str = ""  # 最后运行时间
+    last_result: int = 0  # 最后执行结果代码
+    actions: str = ""  # 操作描述
+    author: str = ""  # 作者
+    created_time: str = ""  # 创建时间
+    description: str = ""  # 描述
+    xml_config: str = ""  # XML 配置
+    task_index: int = -1  # 对应的任务索引 (-1 表示自定义任务)
 
     def to_dict(self):
         """转换为字典"""
@@ -66,14 +69,15 @@ class ScheduleTaskInfo:
 class WindowsScheduleCache:
     """Windows 任务计划本地缓存管理"""
 
-    def __init__(self, cache_dir: str = None):
+    def __init__(self,config: Config = None):
         """
         初始化缓存
 
         Args:
             cache_dir: 缓存目录，默认使用 Config.config_folder
         """
-        default_cache_dir = cache_dir or Config.config_folder
+        self.config = config or Config()
+        default_cache_dir = self.config.get("config_folder","configs")
         self.cache_dir = Path(default_cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.cache_file = self.cache_dir / "schedule_tasks_cache.json"
@@ -89,8 +93,12 @@ class WindowsScheduleCache:
                 return
             legacy_cache_file = Path(".ok_cache") / "schedule_tasks_cache.json"
             if legacy_cache_file.exists():
-                self.cache_file.write_text(legacy_cache_file.read_text(encoding='utf-8'), encoding='utf-8')
-                logger.info(f"Migrated schedule cache from {legacy_cache_file} to {self.cache_file}")
+                self.cache_file.write_text(
+                    legacy_cache_file.read_text(encoding="utf-8"), encoding="utf-8"
+                )
+                logger.info(
+                    f"Migrated schedule cache from {legacy_cache_file} to {self.cache_file}"
+                )
         except Exception as e:
             logger.warning(f"Failed to migrate legacy schedule cache: {e}")
 
@@ -99,11 +107,10 @@ class WindowsScheduleCache:
         with self.lock:
             if self.cache_file.exists():
                 try:
-                    with open(self.cache_file, 'r', encoding='utf-8') as f:
+                    with open(self.cache_file, "r", encoding="utf-8") as f:
                         data = json.load(f)
                     self.cache = {
-                        name: ScheduleTaskInfo(**item)
-                        for name, item in data.items()
+                        name: ScheduleTaskInfo(**item) for name, item in data.items()
                     }
                     logger.info(f"Loaded {len(self.cache)} tasks from cache")
                 except Exception as e:
@@ -117,7 +124,7 @@ class WindowsScheduleCache:
         with self.lock:
             try:
                 data = {name: task.to_dict() for name, task in self.cache.items()}
-                with open(self.cache_file, 'w', encoding='utf-8') as f:
+                with open(self.cache_file, "w", encoding="utf-8") as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
                 logger.info(f"Saved {len(self.cache)} tasks to cache")
             except Exception as e:
@@ -156,7 +163,7 @@ class WindowsScheduleCache:
 class WindowsScheduleManager:
     """
     Windows 任务计划管理器
-    
+
     直接使用 Windows Task Scheduler API
     提供缓存、信号通知、实时更新等功能
     """
@@ -165,33 +172,45 @@ class WindowsScheduleManager:
     SCHEDULE_SERVICE = None
     SCHEDULE_FOLDER = None
 
-    def __init__(self, cache_dir: str = None):
+    def __init__(self, config: Config = None):
         """初始化管理器"""
         # 根路径基于当前工作目录的文件夹名称
-        current_folder_name = Path(os.getcwd()).name
+        self.config = config or Config("main", default={"gui_title": "ok-script"})
+        current_folder_name = self.config.get("gui_title", "ok-script")
         self.SCHEDULE_ROOT_PATH = f"\\{current_folder_name}"
-        
-        self.cache = WindowsScheduleCache(cache_dir)
+
+        self.cache = WindowsScheduleCache(config=self.config)
         self.lock = threading.RLock()
         self.running = False
         self.sync_thread: Optional[threading.Thread] = None
         self.update_callbacks: List[Callable] = []
-        
+
         self._init_com_service()
 
     def _init_com_service(self):
         """初始化 COM 服务"""
         try:
             import win32com.client
+
             self.SCHEDULE_SERVICE = win32com.client.Dispatch("Schedule.Service")
             self.SCHEDULE_SERVICE.Connect()
-            self.SCHEDULE_FOLDER = self.SCHEDULE_SERVICE.GetFolder(self.SCHEDULE_ROOT_PATH)
-            logger.info("Windows Task Scheduler COM service initialized")
+            try:
+                self.SCHEDULE_FOLDER = self.SCHEDULE_SERVICE.GetFolder(
+                    self.SCHEDULE_ROOT_PATH
+                )
+            except Exception:
+                # 首次启动任务目录可能不存在，保留 COM 服务可用，后续创建任务后再获取目录
+                self.SCHEDULE_FOLDER = None
+            logger.info(
+                f"Windows Task Scheduler COM service initialized, root={self.SCHEDULE_ROOT_PATH}"
+            )
         except ImportError:
             logger.warning("win32com not available, will use schtasks command")
             self.SCHEDULE_SERVICE = None
         except Exception as e:
-            logger.warning(f"Failed to initialize COM service: {e}, will use schtasks command")
+            logger.warning(
+                f"Failed to initialize COM service: {e}, will use schtasks command"
+            )
             self.SCHEDULE_SERVICE = None
 
     def is_com_available(self) -> bool:
@@ -222,17 +241,17 @@ class WindowsScheduleManager:
     def query_all_tasks(self, force_sync: bool = False) -> List[ScheduleTaskInfo]:
         """
         查询所有计划任务
-        
+
         Args:
             force_sync: 是否强制同步（忽略缓存）
-            
+
         Returns:
             任务列表
         """
         with self.lock:
             if not force_sync:
                 return self.cache.get_all()
-            
+
             tasks = []
             try:
                 if self.is_com_available():
@@ -243,11 +262,11 @@ class WindowsScheduleManager:
                 logger.error(f"Failed to query tasks: {e}")
                 # 降级到缓存
                 return self.cache.get_all()
-            
+
             # 更新缓存
             for task_info in tasks:
                 self.cache.add_or_update(task_info)
-            
+
             return tasks
 
     def _query_tasks_via_com(self) -> List[ScheduleTaskInfo]:
@@ -255,10 +274,16 @@ class WindowsScheduleManager:
         tasks = []
         try:
             import win32com.client
-            
+
             if not self.SCHEDULE_FOLDER:
-                return tasks
-            
+                try:
+                    self.SCHEDULE_FOLDER = self.SCHEDULE_SERVICE.GetFolder(
+                        self.SCHEDULE_ROOT_PATH
+                    )
+                except Exception:
+                    # 目录不存在时返回空列表，属于正常情况
+                    return tasks
+
             task_collection = self.SCHEDULE_FOLDER.GetTasks(0)
             for i in range(task_collection.Count):
                 task = task_collection.Item(i + 1)
@@ -267,7 +292,7 @@ class WindowsScheduleManager:
                 logger.debug(f"Queried task via COM: {task_info.name}")
         except Exception as e:
             logger.error(f"COM query failed: {e}")
-        
+
         return tasks
 
     def _parse_task_from_com(self, com_task) -> ScheduleTaskInfo:
@@ -275,28 +300,36 @@ class WindowsScheduleManager:
         try:
             name = com_task.Name
             enabled = com_task.Enabled
-            state = com_task.State  # 0=Unknown, 1=Disabled, 2=Queued, 3=Running, 4=Ready
-            state_map = {0: "Unknown", 1: "Disabled", 2: "Running", 3: "Running", 4: "Ready"}
-            
+            state = (
+                com_task.State
+            )  # 0=Unknown, 1=Disabled, 2=Queued, 3=Running, 4=Ready
+            state_map = {
+                0: "Unknown",
+                1: "Disabled",
+                2: "Running",
+                3: "Running",
+                4: "Ready",
+            }
+
             # 提取触发器信息
             trigger_type = ""
             if com_task.Definition.Triggers.Count > 0:
                 trigger = com_task.Definition.Triggers.Item(1)
                 trigger_type = trigger.Type.__str__()
-            
+
             # 提取操作信息
             actions_desc = ""
             if com_task.Definition.Actions.Count > 0:
                 action = com_task.Definition.Actions.Item(1)
                 actions_desc = f"{action.Path} {action.Arguments if hasattr(action, 'Arguments') else ''}"
-            
+
             # 获取 XML 配置
             xml_config = ""
             try:
                 xml_config = com_task.Xml
             except Exception as e:
                 logger.debug(f"Failed to get XML config for task {name}: {e}")
-            
+
             task_info = ScheduleTaskInfo(
                 name=name,
                 path=f"{self.SCHEDULE_ROOT_PATH}\\{name}",
@@ -307,9 +340,21 @@ class WindowsScheduleManager:
                 last_run_time=str(com_task.LastRunTime) if com_task.LastRunTime else "",
                 last_result=com_task.LastTaskResult,
                 actions=actions_desc,
-                author=com_task.Definition.RegistrationInfo.Author if hasattr(com_task.Definition.RegistrationInfo, 'Author') else "",
-                description=com_task.Definition.RegistrationInfo.Description if hasattr(com_task.Definition.RegistrationInfo, 'Description') else "",
-                created_time=str(com_task.Definition.RegistrationInfo.Date) if hasattr(com_task.Definition.RegistrationInfo, 'Date') else "",
+                author=(
+                    com_task.Definition.RegistrationInfo.Author
+                    if hasattr(com_task.Definition.RegistrationInfo, "Author")
+                    else ""
+                ),
+                description=(
+                    com_task.Definition.RegistrationInfo.Description
+                    if hasattr(com_task.Definition.RegistrationInfo, "Description")
+                    else ""
+                ),
+                created_time=(
+                    str(com_task.Definition.RegistrationInfo.Date)
+                    if hasattr(com_task.Definition.RegistrationInfo, "Date")
+                    else ""
+                ),
                 xml_config=xml_config,
             )
             return task_info
@@ -321,21 +366,42 @@ class WindowsScheduleManager:
         """通过 schtasks 命令查询任务（降级方案）"""
         tasks = []
         try:
+            # 查询目录下所有任务（/TN 需要具体任务名或通配符）
+            query_path = (
+                f"{self.SCHEDULE_ROOT_PATH}\\*"
+                if not self.SCHEDULE_ROOT_PATH.endswith("\\")
+                else f"{self.SCHEDULE_ROOT_PATH}*"
+            )
+
             # 使用 CSV 格式输出
-            cmd = ['schtasks', '/Query', '/TN', self.SCHEDULE_ROOT_PATH, '/Recurse', '/FO', 'CSV', '/V']
+            cmd = [
+                "schtasks",
+                "/Query",
+                "/TN",
+                query_path,
+                "/Recurse",
+                "/FO",
+                "CSV",
+                "/V",
+            ]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-            
+
             if result.returncode != 0:
+                # 首次启动目录不存在时常见，按空任务处理
+                if "cannot find" in (result.stderr or "").lower() or "找不到" in (
+                    result.stderr or ""
+                ):
+                    return tasks
                 logger.warning(f"schtasks query failed: {result.stderr}")
                 return tasks
-            
-            lines = result.stdout.strip().split('\n')
+
+            lines = result.stdout.strip().split("\n")
             if len(lines) < 2:
                 return tasks
-            
+
             # 解析 CSV 头
             headers = self._parse_csv_line(lines[0])
-            
+
             for line in lines[1:]:
                 if not line.strip():
                     continue
@@ -347,7 +413,7 @@ class WindowsScheduleManager:
                     logger.debug(f"Queried task via schtasks: {task_info.name}")
         except Exception as e:
             logger.error(f"schtasks query failed: {e}")
-        
+
         return tasks
 
     def _parse_csv_line(self, line: str) -> List[str]:
@@ -355,55 +421,70 @@ class WindowsScheduleManager:
         result = []
         current = ""
         in_quotes = False
-        
+
         for char in line:
             if char == '"':
                 in_quotes = not in_quotes
-            elif char == ',' and not in_quotes:
+            elif char == "," and not in_quotes:
                 result.append(current.strip())
                 current = ""
             else:
                 current += char
-        
+
         result.append(current.strip())
         return result
 
     def _parse_task_from_csv(self, task_dict: Dict[str, str]) -> ScheduleTaskInfo:
         """从 CSV 数据解析任务信息"""
-        name = task_dict.get('TaskName', '').split('\\')[-1]
-        
+        name = task_dict.get("TaskName", "").split("\\")[-1]
+
         # 尝试获取 XML 配置
         xml_config = ""
         try:
-            task_path = task_dict.get('TaskName', '')
+            task_path = task_dict.get("TaskName", "")
             if task_path:
                 result = subprocess.run(
-                    ['schtasks', '/Query', '/TN', task_path, '/XML'],
-                    capture_output=True, text=True, timeout=5
+                    ["schtasks", "/Query", "/TN", task_path, "/XML"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
                 )
                 if result.returncode == 0:
                     xml_config = result.stdout
         except Exception as e:
             logger.debug(f"Failed to get XML for task {name}: {e}")
-        
+
         task_info = ScheduleTaskInfo(
             name=name,
-            path=task_dict.get('TaskName', ''),
-            enabled=task_dict.get('Status', '') == 'Ready' or task_dict.get('Status', '') == 'Running',
-            status=task_dict.get('Status', 'Unknown'),
-            next_run_time=task_dict.get('Next Run Time', ''),
-            last_run_time=task_dict.get('Last Run Time', ''),
-            last_result=int(task_dict.get('Last Result', 0)) if task_dict.get('Last Result', '').isdigit() else 0,
-            author=task_dict.get('Author', ''),
-            description=task_dict.get('Description', ''),
+            path=task_dict.get("TaskName", ""),
+            enabled=task_dict.get("Status", "") == "Ready"
+            or task_dict.get("Status", "") == "Running",
+            status=task_dict.get("Status", "Unknown"),
+            next_run_time=task_dict.get("Next Run Time", ""),
+            last_run_time=task_dict.get("Last Run Time", ""),
+            last_result=(
+                int(task_dict.get("Last Result", 0))
+                if task_dict.get("Last Result", "").isdigit()
+                else 0
+            ),
+            author=task_dict.get("Author", ""),
+            description=task_dict.get("Description", ""),
             xml_config=xml_config,
         )
         return task_info
 
-    def create_task(self, task_name: str, task_index: int, trigger_type: TriggerType,
-                   timeout_hours: int = 0, start_hour: int = 9, start_minute: int = 0,
-                   auto_exit: bool = True,
-                   enabled: bool = True, description: str = "") -> bool:
+    def create_task(
+        self,
+        task_name: str,
+        task_index: int,
+        trigger_type: TriggerType,
+        timeout_hours: int = 0,
+        start_hour: int = 9,
+        start_minute: int = 0,
+        auto_exit: bool = True,
+        enabled: bool = True,
+        description: str = "",
+    ) -> bool:
         """
         创建计划任务
 
@@ -417,26 +498,40 @@ class WindowsScheduleManager:
             auto_exit: 执行完成后自动退出（追加 -e）
             enabled: 是否立即启用
             description: 任务描述
-            
+
         Returns:
             是否成功
         """
         with self.lock:
             try:
                 task_path = f"{self.SCHEDULE_ROOT_PATH}\\{task_name}"
-                
+
                 if self.is_com_available():
                     success = self._create_task_via_com(
-                        task_name, task_index, trigger_type, timeout_hours, start_hour, start_minute,
+                        task_name,
+                        task_index,
+                        trigger_type,
+                        timeout_hours,
+                        start_hour,
+                        start_minute,
                         auto_exit,
-                        enabled, description, task_path
+                        enabled,
+                        description,
+                        task_path,
                     )
                 else:
                     success = self._create_task_via_schtasks(
-                        task_name, task_index, trigger_type, enabled, task_path,
-                        timeout_hours, start_hour, start_minute, auto_exit
+                        task_name,
+                        task_index,
+                        trigger_type,
+                        enabled,
+                        task_path,
+                        timeout_hours,
+                        start_hour,
+                        start_minute,
+                        auto_exit,
                     )
-                
+
                 if success:
                     # 更新缓存
                     task_info = ScheduleTaskInfo(
@@ -451,39 +546,62 @@ class WindowsScheduleManager:
                     self.cache.add_or_update(task_info)
                     self._notify_update(task_info)
                     logger.info(f"Task created: {task_name}")
-                
+
                 return success
             except Exception as e:
                 logger.error(f"Failed to create task: {e}")
                 return False
 
-    def _create_task_via_com(self, task_name: str, task_index: int, trigger_type: TriggerType,
-                            timeout_hours: int, start_hour: int, start_minute: int,
-                            auto_exit: bool,
-                            enabled: bool, description: str,
-                            task_path: str) -> bool:
+    def _create_task_via_com(
+        self,
+        task_name: str,
+        task_index: int,
+        trigger_type: TriggerType,
+        timeout_hours: int,
+        start_hour: int,
+        start_minute: int,
+        auto_exit: bool,
+        enabled: bool,
+        description: str,
+        task_path: str,
+    ) -> bool:
         """通过 COM API 创建任务"""
         try:
             import win32com.client
-            
+
             # 检查 COM 服务是否可用
             if not self.is_com_available():
                 logger.warning("COM service not available, falling back to schtasks")
                 return self._create_task_via_schtasks(
-                    task_name, task_index, trigger_type, enabled, task_path,
-                    timeout_hours, start_hour, start_minute, auto_exit
+                    task_name,
+                    task_index,
+                    trigger_type,
+                    enabled,
+                    task_path,
+                    timeout_hours,
+                    start_hour,
+                    start_minute,
+                    auto_exit,
                 )
-            
+
             # 生成 XML 配置
-            xml_config = self._generate_task_xml(task_name, task_index, trigger_type, 
-                                               timeout_hours, description, start_hour, start_minute, auto_exit)
-            
+            xml_config = self._generate_task_xml(
+                task_name,
+                task_index,
+                trigger_type,
+                timeout_hours,
+                description,
+                start_hour,
+                start_minute,
+                auto_exit,
+            )
+
             # 确保已连接
             self.SCHEDULE_SERVICE.Connect()
-            
+
             # 获取根文件夹
             root_folder = self.SCHEDULE_SERVICE.GetFolder("\\")
-            
+
             # 确保 ok-ef 文件夹存在
             try:
                 self.SCHEDULE_SERVICE.GetFolder(self.SCHEDULE_ROOT_PATH)
@@ -492,60 +610,86 @@ class WindowsScheduleManager:
                     root_folder.CreateFolder(self.SCHEDULE_ROOT_PATH)
                 except Exception as e:
                     logger.warning(f"Failed to create schedule folder: {e}")
-            
+
             # 创建任务定义
             task_def = self.SCHEDULE_SERVICE.NewTask(0)
             task_def.XmlText = xml_config
-            
+
             # 注册新任务
             folder = self.SCHEDULE_SERVICE.GetFolder(self.SCHEDULE_ROOT_PATH)
             folder.RegisterTaskDefinition(task_name, task_def, 6, None, None, 3)
-            
+
             # 设置启用状态
             if not enabled:
                 self._disable_task_via_schtasks(task_name)
-            
+
             logger.info(f"Task created via COM: {task_name}")
             return True
         except Exception as e:
             logger.warning(f"COM task creation failed: {e}, falling back to schtasks")
             # 降级到 schtasks
             return self._create_task_via_schtasks(
-                task_name, task_index, trigger_type, enabled, task_path,
-                timeout_hours, start_hour, start_minute, auto_exit
+                task_name,
+                task_index,
+                trigger_type,
+                enabled,
+                task_path,
+                timeout_hours,
+                start_hour,
+                start_minute,
+                auto_exit,
             )
 
-    def _create_task_via_schtasks(self, task_name: str, task_index: int,
-                                 trigger_type: TriggerType, enabled: bool,
-                                 task_path: str, timeout_hours: int = 0,
-                                 start_hour: int = 9, start_minute: int = 0,
-                                 auto_exit: bool = True) -> bool:
+    def _create_task_via_schtasks(
+        self,
+        task_name: str,
+        task_index: int,
+        trigger_type: TriggerType,
+        enabled: bool,
+        task_path: str,
+        timeout_hours: int = 0,
+        start_hour: int = 9,
+        start_minute: int = 0,
+        auto_exit: bool = True,
+    ) -> bool:
         """通过 schtasks 命令创建任务（降级方案）"""
         try:
             xml_config = self._generate_task_xml(
-                task_name, task_index, trigger_type, timeout_hours, "", start_hour, start_minute, auto_exit
+                task_name,
+                task_index,
+                trigger_type,
+                timeout_hours,
+                "",
+                start_hour,
+                start_minute,
+                auto_exit,
             )
             xml_file = Path(f"temp_task_{task_name}.xml")
-            
+
             try:
                 # UTF-16 LE with BOM for Windows Task Scheduler
-                with open(xml_file, 'w', encoding='utf-16') as f:
+                with open(xml_file, "w", encoding="utf-16") as f:
                     f.write(xml_config)
-                
+
                 cmd = [
-                    'schtasks', '/Create', '/XML', str(xml_file),
-                    '/TN', task_path, '/F'
+                    "schtasks",
+                    "/Create",
+                    "/XML",
+                    str(xml_file),
+                    "/TN",
+                    task_path,
+                    "/F",
                 ]
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-                
+
                 if result.returncode != 0:
                     logger.error(f"schtasks create failed: {result.stderr}")
                     logger.debug(f"XML content:\n{xml_config}")
                     return False
-                
+
                 if not enabled:
                     self._disable_task_via_schtasks(task_name)
-                
+
                 return True
             finally:
                 if xml_file.exists():
@@ -559,10 +703,10 @@ class WindowsScheduleManager:
         with self.lock:
             try:
                 task_path = f"{self.SCHEDULE_ROOT_PATH}\\{task_name}"
-                
-                cmd = ['schtasks', '/Delete', '/TN', task_path, '/F']
+
+                cmd = ["schtasks", "/Delete", "/TN", task_path, "/F"]
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-                
+
                 if result.returncode == 0:
                     self.cache.remove(task_name)
                     logger.info(f"Task deleted: {task_name}")
@@ -579,9 +723,9 @@ class WindowsScheduleManager:
         with self.lock:
             try:
                 task_path = f"{self.SCHEDULE_ROOT_PATH}\\{task_name}"
-                cmd = ['schtasks', '/Change', '/ENABLE', '/TN', task_path]
+                cmd = ["schtasks", "/Change", "/ENABLE", "/TN", task_path]
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-                
+
                 if result.returncode == 0:
                     task_info = self.cache.get(task_name)
                     if task_info:
@@ -612,9 +756,9 @@ class WindowsScheduleManager:
         """通过 schtasks 禁用任务"""
         try:
             task_path = f"{self.SCHEDULE_ROOT_PATH}\\{task_name}"
-            cmd = ['schtasks', '/Change', '/DISABLE', '/TN', task_path]
+            cmd = ["schtasks", "/Change", "/DISABLE", "/TN", task_path]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-            
+
             if result.returncode == 0:
                 task_info = self.cache.get(task_name)
                 if task_info:
@@ -631,40 +775,49 @@ class WindowsScheduleManager:
             logger.error(f"Failed to disable task: {e}")
             return False
 
-    def _generate_task_xml(self, task_name: str, task_index: int, trigger_type: TriggerType,
-                          timeout_hours: int = 0, description: str = "",
-                          start_hour: int = 9, start_minute: int = 0,
-                          auto_exit: bool = True) -> str:
+    def _generate_task_xml(
+        self,
+        task_name: str,
+        task_index: int,
+        trigger_type: TriggerType,
+        timeout_hours: int = 0,
+        description: str = "",
+        start_hour: int = 9,
+        start_minute: int = 0,
+        auto_exit: bool = True,
+    ) -> str:
         """
         生成任务 XML 配置
-        
+
         UTF-16 编码（Windows 要求）
         最高权限运行（HighestAvailable）
         """
         import sys
+
         python_exe = str(Path(sys.executable).resolve())
         working_directory = os.getcwd()
-        
+
         # 获取当前登录用户名
-        current_user = os.environ.get('USERNAME', '')
+        current_user = os.environ.get("USERNAME", "")
         if not current_user:
             try:
                 import getpass
+
                 current_user = getpass.getuser()
             except Exception:
-                current_user = 'User'
-        
+                current_user = "User"
+
         # 构建命令行参数
         cmd_args = f"-t {task_index}"
         if auto_exit:
             cmd_args += " -e"
-        
+
         timeout_str = ""
         if timeout_hours > 0:
             timeout_str = f"PT{timeout_hours}H"
         else:
             timeout_str = "PT0S"  # 无限制
-        
+
         # 规范化开始时间
         try:
             start_hour = max(0, min(23, int(start_hour)))
@@ -676,7 +829,7 @@ class WindowsScheduleManager:
 
         # 构建触发器配置
         trigger_xml = self._get_trigger_xml(trigger_type, start_time)
-        
+
         xml_template = f"""<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
@@ -717,7 +870,9 @@ class WindowsScheduleManager:
 </Task>"""
         return xml_template
 
-    def _get_trigger_xml(self, trigger_type: TriggerType, start_time: str = "09:00:00") -> str:
+    def _get_trigger_xml(
+        self, trigger_type: TriggerType, start_time: str = "09:00:00"
+    ) -> str:
         """获取触发器 XML"""
         if trigger_type == TriggerType.DAILY:
             return f"""<CalendarTrigger>
@@ -773,17 +928,18 @@ class WindowsScheduleManager:
     def sync_tasks(self, force: bool = False):
         """
         同步任务列表（后台线程）
-        
+
         Args:
             force: 是否强制同步（忽略缓存）
         """
+
         def _sync():
             try:
                 self.query_all_tasks(force_sync=force)
                 logger.info("Task sync completed")
             except Exception as e:
                 logger.error(f"Task sync failed: {e}")
-        
+
         thread = threading.Thread(target=_sync, daemon=True)
         thread.start()
         return thread
@@ -791,15 +947,15 @@ class WindowsScheduleManager:
     def start_background_sync(self, interval: int = 60):
         """
         启动后台定期同步
-        
+
         Args:
             interval: 同步间隔（秒）
         """
         if self.running:
             return
-        
+
         self.running = True
-        
+
         def _background_sync():
             while self.running:
                 try:
@@ -807,8 +963,10 @@ class WindowsScheduleManager:
                     time.sleep(interval)
                 except Exception as e:
                     logger.error(f"Background sync error: {e}")
-        
-        self.sync_thread = threading.Thread(target=_background_sync, daemon=True, name="ScheduleSync")
+
+        self.sync_thread = threading.Thread(
+            target=_background_sync, daemon=True, name="ScheduleSync"
+        )
         self.sync_thread.start()
         logger.info("Background task sync started")
 
