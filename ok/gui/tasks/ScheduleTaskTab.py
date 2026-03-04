@@ -11,6 +11,7 @@ Schedule Task Tab - 计划任务管理界面
 """
 
 from typing import Optional, List
+import re
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QMessageBox, QTableWidgetItem
 from qfluentwidgets import PushButton, SwitchButton, FluentIcon, InfoBar, InfoBarPosition, TableWidget, MessageBoxBase, SubtitleLabel, ComboBox, SpinBox, CheckBox
@@ -20,6 +21,28 @@ from ok.gui.widget.Tab import Tab
 from ok.util.windows_schedule import WindowsScheduleManager, ScheduleTaskInfo, TriggerType
 
 logger = Logger.get_logger(__name__)
+
+
+def normalize_trigger_type(raw_type: str) -> TriggerType:
+    """将 COM/schtasks 的触发器类型统一为 TriggerType"""
+    value = (raw_type or "").strip()
+    lowered = value.lower()
+
+    if value in (TriggerType.DAILY.value, "2") or "daily" in lowered:
+        return TriggerType.DAILY
+    if value in (TriggerType.WEEKLY.value, "3") or "weekly" in lowered:
+        return TriggerType.WEEKLY
+    if value in (TriggerType.MONTHLY.value, "4", "5", "6") or "monthly" in lowered:
+        return TriggerType.MONTHLY
+    if value in (TriggerType.ONCE.value, "1") or "once" in lowered or "time" in lowered:
+        return TriggerType.ONCE
+
+    return TriggerType.DAILY
+
+
+def display_trigger_type(raw_type: str) -> str:
+    """用于 UI 展示的触发器文本"""
+    return normalize_trigger_type(raw_type).value
 
 
 class ScheduleTaskTable(TableWidget):
@@ -64,7 +87,7 @@ class ScheduleTaskTable(TableWidget):
         self.setItem(row, 1, status_item)
         
         # 触发类型
-        trigger_item = QTableWidgetItem(task_info.trigger_type)
+        trigger_item = QTableWidgetItem(display_trigger_type(task_info.trigger_type))
         self.setItem(row, 2, trigger_item)
         
         # 下次运行时间
@@ -90,7 +113,7 @@ class ScheduleTaskTable(TableWidget):
         actions_layout.setContentsMargins(0, 0, 0, 0)
         actions_layout.setSpacing(5)
         
-        view_btn = PushButton(self.tr("View"))
+        view_btn = PushButton(self.tr("Modify"))
         view_btn.clicked.connect(
             lambda: on_view(task_info.name) if on_view else None
         )
@@ -112,7 +135,7 @@ class ScheduleTaskTable(TableWidget):
             name_item = self.item(row, 0)
             if name_item and name_item.text() == task_info.name:
                 self.item(row, 1).setText(task_info.status)
-                self.item(row, 2).setText(task_info.trigger_type)
+                self.item(row, 2).setText(display_trigger_type(task_info.trigger_type))
                 self.item(row, 3).setText(task_info.next_run_time)
                 
                 # 更新开关状态
@@ -283,6 +306,199 @@ class CreateScheduleTaskDialog(MessageBoxBase):
         self.task_created.emit(task_name, task_index, trigger_type, timeout_hours, start_hour, start_minute, auto_exit)
 
 
+class ModifyScheduleTaskDialog(MessageBoxBase):
+    """修改计划任务对话框"""
+
+    task_modified = Signal(str, int, TriggerType, int, int, int, bool)
+    # task_name, task_index, trigger_type, timeout_hours, start_hour, start_minute, auto_exit
+
+    def __init__(self, task_info: ScheduleTaskInfo, parent=None):
+        super().__init__(parent)
+        self.task_info = task_info
+
+        self.titleLabel = SubtitleLabel(self.tr("Modify Schedule Task"), self)
+        self.viewLayout.setSpacing(12)
+        self.viewLayout.setContentsMargins(16, 12, 16, 12)
+
+        self.task_index, auto_exit_default = self._parse_args(task_info.actions)
+        timeout_default = self._parse_timeout(task_info.xml_config)
+        start_hour_default, start_minute_default = self._parse_start_time(task_info.next_run_time)
+
+        # 任务名称（显示，不可修改）
+        task_name_label = QLabel(self.tr("Task Name"))
+        task_name_label.setMinimumWidth(140)
+        task_name_display = QLabel(task_info.name)
+        task_name_display.setMinimumWidth(260)
+
+        # 任务索引（显示，不可修改）
+        task_index_label = QLabel(self.tr("Task Index (-t)"))
+        task_index_label.setMinimumWidth(140)
+        task_index_display = QLabel(str(self.task_index))
+        task_index_display.setMinimumWidth(260)
+
+        # 触发类型
+        trigger_label = QLabel(self.tr("Trigger Type"))
+        trigger_label.setMinimumWidth(140)
+        self.trigger_combo = ComboBox()
+        self.trigger_combo.addItems([
+            TriggerType.DAILY.value,
+            TriggerType.WEEKLY.value,
+            TriggerType.MONTHLY.value,
+            TriggerType.ONCE.value
+        ])
+        self.trigger_combo.setCurrentText(display_trigger_type(task_info.trigger_type))
+        self.trigger_combo.setFixedHeight(34)
+
+        # 开始时间（24小时制）
+        start_time_label = QLabel(self.tr("Start Time"))
+        start_time_label.setMinimumWidth(140)
+        self.start_hour_spin = SpinBox()
+        self.start_hour_spin.setRange(0, 23)
+        self.start_hour_spin.setValue(start_hour_default)
+        self.start_hour_spin.setFixedWidth(120)
+        self.start_hour_spin.setFixedHeight(34)
+
+        self.start_minute_spin = SpinBox()
+        self.start_minute_spin.setRange(0, 59)
+        self.start_minute_spin.setValue(start_minute_default)
+        self.start_minute_spin.setFixedWidth(120)
+        self.start_minute_spin.setFixedHeight(34)
+
+        start_time_input_layout = QHBoxLayout()
+        start_time_input_layout.setContentsMargins(0, 0, 0, 0)
+        start_time_input_layout.setSpacing(8)
+        start_time_input_layout.addWidget(QLabel(self.tr("Hour")), 0)
+        start_time_input_layout.addWidget(self.start_hour_spin, 0)
+        start_time_input_layout.addWidget(QLabel(":"), 0)
+        start_time_input_layout.addWidget(QLabel(self.tr("Minute")), 0)
+        start_time_input_layout.addWidget(self.start_minute_spin, 0)
+        start_time_input_layout.addWidget(QLabel(self.tr("24h")), 0)
+        start_time_input_layout.addStretch(1)
+
+        start_time_input_widget = QWidget()
+        start_time_input_widget.setLayout(start_time_input_layout)
+
+        # 超时限制
+        timeout_label = QLabel(self.tr("Timeout"))
+        timeout_label.setMinimumWidth(140)
+        self.timeout_spin = SpinBox()
+        self.timeout_spin.setMinimum(0)
+        self.timeout_spin.setMaximum(12)
+        self.timeout_spin.setValue(timeout_default)
+        self.timeout_spin.setFixedWidth(160)
+        self.timeout_spin.setFixedHeight(34)
+
+        timeout_input_layout = QHBoxLayout()
+        timeout_input_layout.setContentsMargins(0, 0, 0, 0)
+        timeout_input_layout.setSpacing(8)
+        timeout_input_layout.addWidget(self.timeout_spin, 0)
+        timeout_input_layout.addWidget(QLabel(self.tr("hours (0 = unlimited)")), 0)
+        timeout_input_layout.addStretch(1)
+
+        timeout_input_widget = QWidget()
+        timeout_input_widget.setLayout(timeout_input_layout)
+
+        # 启动参数选项
+        self.auto_exit_check = CheckBox(self.tr("Auto exit after task done (-e)"))
+        self.auto_exit_check.setChecked(auto_exit_default)
+
+        form_widget = QWidget()
+        form_layout = QGridLayout(form_widget)
+        form_layout.setContentsMargins(0, 0, 0, 0)
+        form_layout.setHorizontalSpacing(16)
+        form_layout.setVerticalSpacing(10)
+        form_layout.addWidget(task_name_label, 0, 0)
+        form_layout.addWidget(task_name_display, 0, 1)
+        form_layout.addWidget(task_index_label, 1, 0)
+        form_layout.addWidget(task_index_display, 1, 1)
+        form_layout.addWidget(trigger_label, 2, 0)
+        form_layout.addWidget(self.trigger_combo, 2, 1)
+        form_layout.addWidget(start_time_label, 3, 0)
+        form_layout.addWidget(start_time_input_widget, 3, 1)
+        form_layout.addWidget(timeout_label, 4, 0)
+        form_layout.addWidget(timeout_input_widget, 4, 1)
+        form_layout.addWidget(QLabel(self.tr("Startup Options")), 5, 0)
+        form_layout.addWidget(self.auto_exit_check, 5, 1)
+        form_layout.setColumnStretch(1, 1)
+
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addWidget(form_widget)
+
+        self.yesButton.setText(self.tr("Modify"))
+        self.cancelButton.setText(self.tr("Cancel"))
+        self.widget.setMinimumWidth(640)
+
+        self.yesButton.clicked.connect(self.on_modify)
+
+    def _parse_args(self, actions: str) -> tuple[int, bool]:
+        """从 Action 参数解析 -t 与 -e"""
+        args = actions or ""
+        task_index = 1
+        auto_exit = False
+
+        m = re.search(r"(?:^|\s)-t\s+(\d+)(?:\s|$)", args)
+        if m:
+            task_index = int(m.group(1))
+
+        if re.search(r"(?:^|\s)-e(?:\s|$)", args):
+            auto_exit = True
+
+        return task_index, auto_exit
+
+    def _parse_timeout(self, xml_config: str) -> int:
+        """从 XML 配置解析 ExecutionTimeLimit（超时时间）
+        
+        格式: PT{hours}H 或 PT0S (无限制)
+        返回: 超时小时数，0 表示无限制
+        """
+        if not xml_config:
+            logger.debug("XML config is empty")
+            return 0
+        
+        # 匹配 <ExecutionTimeLimit>PT5H</ExecutionTimeLimit> 或 PT0S
+        m = re.search(r"<ExecutionTimeLimit>PT(\d+)H</ExecutionTimeLimit>", xml_config)
+        if m:
+            timeout = int(m.group(1))
+            logger.debug(f"Parsed timeout from XML: {timeout} hours")
+            return timeout
+        
+        # PT0S 表示无限制
+        if "<ExecutionTimeLimit>PT0S</ExecutionTimeLimit>" in xml_config:
+            logger.debug("Timeout is unlimited (PT0S)")
+            return 0
+        
+        logger.debug(f"Could not parse timeout from XML, length: {len(xml_config)}")
+        return 0
+
+    def _parse_start_time(self, next_run_time: str) -> tuple[int, int]:
+        """从下一次运行时间解析小时和分钟"""
+        text = (next_run_time or "").strip()
+        m = re.search(r"(\d{1,2}):(\d{1,2})(?:\d{1,2})?", text)
+        if m:
+            hour = max(0, min(23, int(m.group(1))))
+            minute = max(0, min(59, int(m.group(2))))
+            return hour, minute
+        return 9, 0
+
+    def on_modify(self):
+        """提交修改"""
+        trigger_type = TriggerType(self.trigger_combo.currentText())
+        timeout_hours = self.timeout_spin.value()
+        start_hour = self.start_hour_spin.value()
+        start_minute = self.start_minute_spin.value()
+        auto_exit = self.auto_exit_check.isChecked()
+
+        self.task_modified.emit(
+            self.task_info.name,
+            self.task_index,
+            trigger_type,
+            timeout_hours,
+            start_hour,
+            start_minute,
+            auto_exit,
+        )
+
+
 class ScheduleTaskTab(Tab):
     """
     计划任务标签页
@@ -399,28 +615,51 @@ class ScheduleTaskTab(Tab):
         pass
 
     def on_task_view(self, task_name: str):
-        """查看任务详情"""
+        """打开修改任务弹窗"""
         try:
             task_info = self.schedule_manager.cache.get(task_name)
-            if task_info:
-                details = (
-                    f"Name: {task_info.name}\n"
-                    f"Path: {task_info.path}\n"
-                    f"Status: {task_info.status}\n"
-                    f"Enabled: {task_info.enabled}\n"
-                    f"Trigger Type: {task_info.trigger_type}\n"
-                    f"Next Run: {task_info.next_run_time}\n"
-                    f"Last Run: {task_info.last_run_time}\n"
-                    f"Description: {task_info.description}"
-                )
-                QMessageBox.information(
-                    self,
-                    self.tr("Task Details"),
-                    details
-                )
+            if not task_info:
+                self.show_error(self.tr("Task not found in cache"))
+                return
+
+            dialog = ModifyScheduleTaskDialog(task_info, self)
+            dialog.task_modified.connect(self.on_task_modified)
+            dialog.exec()
         except Exception as e:
-            logger.error(f"Failed to view task: {e}")
-            self.show_error(self.tr("Failed to view task") + f": {e}")
+            logger.error(f"Failed to open modify dialog: {e}")
+            self.show_error(self.tr("Failed to open modify dialog") + f": {e}")
+
+    def on_task_modified(self, task_name: str, task_index: int, trigger_type: TriggerType,
+                         timeout_hours: int, start_hour: int, start_minute: int,
+                         auto_exit: bool):
+        """处理任务修改"""
+        try:
+            current = self.schedule_manager.cache.get(task_name)
+            enabled = current.enabled if current else True
+
+            deleted = self.schedule_manager.delete_task(task_name)
+            if not deleted:
+                self.show_error(self.tr("Failed to modify task: cannot delete old task"))
+                return
+
+            success = self.schedule_manager.create_task(
+                task_name=task_name,
+                task_index=task_index,
+                trigger_type=trigger_type,
+                timeout_hours=timeout_hours,
+                start_hour=start_hour,
+                start_minute=start_minute,
+                auto_exit=auto_exit,
+                enabled=enabled
+            )
+            if success:
+                self.load_tasks()
+                self.show_success(self.tr("Task modified successfully"))
+            else:
+                self.show_error(self.tr("Failed to modify task"))
+        except Exception as e:
+            logger.error(f"Failed to modify task: {e}")
+            self.show_error(self.tr("Failed to modify task") + f": {e}")
 
     def on_task_updated(self, task_info: ScheduleTaskInfo):
         """任务更新回调"""
@@ -483,14 +722,22 @@ class ScheduleTaskTab(Tab):
 
     def on_task_deleted(self, task_name: str):
         """删除任务"""
-        reply = QMessageBox.question(
-            self, 
-            self.tr("Delete Task"),
-            self.tr("Are you sure you want to delete task") + f" '{task_name}'?",
-            QMessageBox.Yes | QMessageBox.No
-        )
+        from qfluentwidgets import BodyLabel
         
-        if reply == QMessageBox.Yes:
+        dialog = MessageBoxBase(self)
+        
+        # 手动创建并添加标题
+        title_label = SubtitleLabel(self.tr("Delete Task"), self)
+        dialog.viewLayout.addWidget(title_label)
+        
+        content = BodyLabel(self.tr("Are you sure you want to delete task") + f" '{task_name}'?")
+        content.setWordWrap(True)
+        dialog.viewLayout.addWidget(content)
+        
+        dialog.yesButton.setText(self.tr("Delete"))
+        dialog.cancelButton.setText(self.tr("Cancel"))
+        
+        if dialog.exec():
             try:
                 success = self.schedule_manager.delete_task(task_name)
                 if success:

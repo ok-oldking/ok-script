@@ -19,6 +19,7 @@ from dataclasses import dataclass, field, asdict
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
+from ok.util.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -70,14 +71,28 @@ class WindowsScheduleCache:
         初始化缓存
 
         Args:
-            cache_dir: 缓存目录，默认为 .ok_cache
+            cache_dir: 缓存目录，默认使用 Config.config_folder
         """
-        self.cache_dir = Path(cache_dir or ".ok_cache")
+        default_cache_dir = cache_dir or Config.config_folder
+        self.cache_dir = Path(default_cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.cache_file = self.cache_dir / "schedule_tasks_cache.json"
+        self._migrate_legacy_cache_if_needed()
         self.lock = threading.RLock()
         self.cache: Dict[str, ScheduleTaskInfo] = {}
         self.load_cache()
+
+    def _migrate_legacy_cache_if_needed(self):
+        """将旧版 .ok_cache 缓存迁移到 config_folder 下（仅首次）"""
+        try:
+            if self.cache_file.exists():
+                return
+            legacy_cache_file = Path(".ok_cache") / "schedule_tasks_cache.json"
+            if legacy_cache_file.exists():
+                self.cache_file.write_text(legacy_cache_file.read_text(encoding='utf-8'), encoding='utf-8')
+                logger.info(f"Migrated schedule cache from {legacy_cache_file} to {self.cache_file}")
+        except Exception as e:
+            logger.warning(f"Failed to migrate legacy schedule cache: {e}")
 
     def load_cache(self):
         """从文件加载缓存"""
@@ -273,6 +288,13 @@ class WindowsScheduleManager:
                 action = com_task.Definition.Actions.Item(1)
                 actions_desc = f"{action.Path} {action.Arguments if hasattr(action, 'Arguments') else ''}"
             
+            # 获取 XML 配置
+            xml_config = ""
+            try:
+                xml_config = com_task.Xml
+            except Exception as e:
+                logger.debug(f"Failed to get XML config for task {name}: {e}")
+            
             task_info = ScheduleTaskInfo(
                 name=name,
                 path=f"{self.SCHEDULE_ROOT_PATH}\\{name}",
@@ -286,6 +308,7 @@ class WindowsScheduleManager:
                 author=com_task.Definition.RegistrationInfo.Author if hasattr(com_task.Definition.RegistrationInfo, 'Author') else "",
                 description=com_task.Definition.RegistrationInfo.Description if hasattr(com_task.Definition.RegistrationInfo, 'Description') else "",
                 created_time=str(com_task.Definition.RegistrationInfo.Date) if hasattr(com_task.Definition.RegistrationInfo, 'Date') else "",
+                xml_config=xml_config,
             )
             return task_info
         except Exception as e:
@@ -347,6 +370,20 @@ class WindowsScheduleManager:
         """从 CSV 数据解析任务信息"""
         name = task_dict.get('TaskName', '').split('\\')[-1]
         
+        # 尝试获取 XML 配置
+        xml_config = ""
+        try:
+            task_path = task_dict.get('TaskName', '')
+            if task_path:
+                result = subprocess.run(
+                    ['schtasks', '/Query', '/TN', task_path, '/XML'],
+                    capture_output=True, text=True, timeout=5
+                )
+                if result.returncode == 0:
+                    xml_config = result.stdout
+        except Exception as e:
+            logger.debug(f"Failed to get XML for task {name}: {e}")
+        
         task_info = ScheduleTaskInfo(
             name=name,
             path=task_dict.get('TaskName', ''),
@@ -357,6 +394,7 @@ class WindowsScheduleManager:
             last_result=int(task_dict.get('Last Result', 0)) if task_dict.get('Last Result', '').isdigit() else 0,
             author=task_dict.get('Author', ''),
             description=task_dict.get('Description', ''),
+            xml_config=xml_config,
         )
         return task_info
 
