@@ -52,6 +52,7 @@ class MainWindow(MSFluentWindow):
 
         self.first_task_tab = None
         self.grouped_task_tabs = []
+        self.schedule_tab = None
         if self.executor.onetime_tasks:
             from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
             from collections import defaultdict
@@ -86,6 +87,11 @@ class MainWindow(MSFluentWindow):
             if self.first_task_tab is None:
                 self.first_task_tab = self.trigger_tab
             self.addSubInterface(self.trigger_tab, FluentIcon.ROBOT, self.tr('Triggers'))
+
+        # 添加计划任务Tab
+        from ok.gui.tasks.ScheduleTaskTab import ScheduleTaskTab
+        self.schedule_tab = ScheduleTaskTab()
+        self.addSubInterface(self.schedule_tab, FluentIcon.CALENDAR, self.tr('Schedule'))
 
         if custom_tabs := config.get('custom_tabs'):
             for tab in custom_tabs:
@@ -312,6 +318,8 @@ class MainWindow(MSFluentWindow):
             self.switchTo(self.onetime_tab)
         elif index == "trigger" and self.trigger_tab is not None:
             self.switchTo(self.trigger_tab)
+        elif index == "schedule" and self.schedule_tab is not None:
+            self.switchTo(self.schedule_tab)
         elif index == "about" and self.about_tab is not None:
             self.switchTo(self.about_tab)
 
