@@ -161,14 +161,16 @@ class WindowsScheduleManager:
     提供缓存、信号通知、实时更新等功能
     """
 
-    # 根路径常量
-    SCHEDULE_ROOT_PATH = r"\ok-ef"
     # COM 接口
     SCHEDULE_SERVICE = None
     SCHEDULE_FOLDER = None
 
     def __init__(self, cache_dir: str = None):
         """初始化管理器"""
+        # 根路径基于当前工作目录的文件夹名称
+        current_folder_name = Path(os.getcwd()).name
+        self.SCHEDULE_ROOT_PATH = f"\\{current_folder_name}"
+        
         self.cache = WindowsScheduleCache(cache_dir)
         self.lock = threading.RLock()
         self.running = False
@@ -526,7 +528,9 @@ class WindowsScheduleManager:
             xml_file = Path(f"temp_task_{task_name}.xml")
             
             try:
-                xml_file.write_text(xml_config, encoding='utf-16-le')
+                # UTF-16 LE with BOM for Windows Task Scheduler
+                with open(xml_file, 'w', encoding='utf-16') as f:
+                    f.write(xml_config)
                 
                 cmd = [
                     'schtasks', '/Create', '/XML', str(xml_file),
@@ -536,6 +540,7 @@ class WindowsScheduleManager:
                 
                 if result.returncode != 0:
                     logger.error(f"schtasks create failed: {result.stderr}")
+                    logger.debug(f"XML content:\n{xml_config}")
                     return False
                 
                 if not enabled:
@@ -640,6 +645,15 @@ class WindowsScheduleManager:
         python_exe = str(Path(sys.executable).resolve())
         working_directory = os.getcwd()
         
+        # 获取当前登录用户名
+        current_user = os.environ.get('USERNAME', '')
+        if not current_user:
+            try:
+                import getpass
+                current_user = getpass.getuser()
+            except Exception:
+                current_user = 'User'
+        
         # 构建命令行参数
         cmd_args = f"-t {task_index}"
         if auto_exit:
@@ -675,7 +689,8 @@ class WindowsScheduleManager:
   </Triggers>
   <Principals>
     <Principal id="Author">
-      <UserId>S-1-5-18</UserId>
+      <UserId>{current_user}</UserId>
+      <LogonType>InteractiveToken</LogonType>
       <RunLevel>HighestAvailable</RunLevel>
     </Principal>
   </Principals>
