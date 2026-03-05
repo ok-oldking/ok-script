@@ -643,15 +643,9 @@ class ScheduleTaskTab(Tab):
                 return
 
             success = self.schedule_manager.create_task(
-                task_name=task_name,
-                task_index=task_index,
-                trigger_type=trigger_type,
-                timeout_hours=timeout_hours,
-                start_hour=start_hour,
-                start_minute=start_minute,
-                auto_exit=auto_exit,
-                enabled=enabled
-            )
+                task_name=task_name, task_index=task_index, trigger_type=trigger_type,
+                timeout_hours=timeout_hours, start_hour=start_hour, start_minute=start_minute,
+                auto_exit=auto_exit, enabled=enabled)
             if success:
                 self.load_tasks()
                 self.show_success(self.tr("Task modified successfully"))
@@ -701,15 +695,10 @@ class ScheduleTaskTab(Tab):
         """处理任务创建"""
         try:
             success = self.schedule_manager.create_task(
-                task_name=name or f"AutoTask_{task_index}",
-                task_index=task_index,
-                trigger_type=trigger_type,
-                timeout_hours=timeout_hours,
-                start_hour=start_hour,
-                start_minute=start_minute,
-                auto_exit=auto_exit,
-                enabled=True
-            )
+                task_name=name or f"AutoTask_{task_index}", task_index=task_index,
+                trigger_type=trigger_type, timeout_hours=timeout_hours,
+                start_hour=start_hour, start_minute=start_minute,
+                auto_exit=auto_exit, enabled=True)
             if success:
                 self.load_tasks()
                 self.show_success(self.tr("Task created successfully"))
@@ -763,25 +752,15 @@ class ScheduleTaskTab(Tab):
 
     def show_success(self, message: str):
         """显示成功消息"""
-        InfoBar.success(
-            title=self.tr("Success"),
-            content=message,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            parent=self
-        )
+        InfoBar.success(title=self.tr("Success"), content=message,
+                       orient=Qt.Horizontal, isClosable=True,
+                       position=InfoBarPosition.TOP, parent=self)
 
     def show_error(self, message: str):
         """显示错误消息"""
-        InfoBar.error(
-            title=self.tr("Error"),
-            content=message,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            parent=self
-        )
+        InfoBar.error(title=self.tr("Error"), content=message,
+                      orient=Qt.Horizontal, isClosable=True,
+                      position=InfoBarPosition.TOP, parent=self)
 
     def closeEvent(self, event):
         """关闭事件 - 停止后台同步"""
