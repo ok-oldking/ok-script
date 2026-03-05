@@ -201,16 +201,12 @@ class WindowsScheduleManager:
             except Exception:
                 # 首次启动任务目录可能不存在，保留 COM 服务可用，后续创建任务后再获取目录
                 self.SCHEDULE_FOLDER = None
-            logger.info(
-                f"Windows Task Scheduler COM service initialized, root={self.SCHEDULE_ROOT_PATH}"
-            )
+            logger.info(f"Windows Task Scheduler COM service initialized, root={self.SCHEDULE_ROOT_PATH}")
         except ImportError:
             logger.warning("win32com not available, will use schtasks command")
             self.SCHEDULE_SERVICE = None
         except Exception as e:
-            logger.warning(
-                f"Failed to initialize COM service: {e}, will use schtasks command"
-            )
+            logger.warning(f"Failed to initialize COM service: {e}, will use schtasks command")
             self.SCHEDULE_SERVICE = None
 
     def is_com_available(self) -> bool:
@@ -375,14 +371,8 @@ class WindowsScheduleManager:
 
             # 使用 CSV 格式输出
             cmd = [
-                "schtasks",
-                "/Query",
-                "/TN",
-                query_path,
-                "/Recurse",
-                "/FO",
-                "CSV",
-                "/V",
+                "schtasks", "/Query", "/TN", query_path, "/Recurse",
+                "/FO", "CSV", "/V",
             ]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
 
@@ -445,10 +435,7 @@ class WindowsScheduleManager:
             if task_path:
                 result = subprocess.run(
                     ["schtasks", "/Query", "/TN", task_path, "/XML"],
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                )
+                    capture_output=True, text=True, timeout=5)
                 if result.returncode == 0:
                     xml_config = result.stdout
         except Exception as e:
@@ -473,18 +460,11 @@ class WindowsScheduleManager:
         )
         return task_info
 
-    def create_task(
-        self,
-        task_name: str,
-        task_index: int,
-        trigger_type: TriggerType,
-        timeout_hours: int = 0,
-        start_hour: int = 9,
-        start_minute: int = 0,
-        auto_exit: bool = True,
-        enabled: bool = True,
-        description: str = "",
-    ) -> bool:
+    def create_task(self, task_name: str, task_index: int,
+                    trigger_type: TriggerType, timeout_hours: int = 0,
+                    start_hour: int = 9, start_minute: int = 0,
+                    auto_exit: bool = True, enabled: bool = True,
+                    description: str = "") -> bool:
         """
         创建计划任务
 
@@ -508,29 +488,14 @@ class WindowsScheduleManager:
 
                 if self.is_com_available():
                     success = self._create_task_via_com(
-                        task_name,
-                        task_index,
-                        trigger_type,
-                        timeout_hours,
-                        start_hour,
-                        start_minute,
-                        auto_exit,
-                        enabled,
-                        description,
-                        task_path,
-                    )
+                        task_name, task_index, trigger_type, timeout_hours,
+                        start_hour, start_minute, auto_exit, enabled,
+                        description, task_path)
                 else:
                     success = self._create_task_via_schtasks(
-                        task_name,
-                        task_index,
-                        trigger_type,
-                        enabled,
-                        task_path,
-                        timeout_hours,
-                        start_hour,
-                        start_minute,
-                        auto_exit,
-                    )
+                        task_name, task_index, trigger_type, enabled,
+                        task_path, timeout_hours, start_hour, start_minute,
+                        auto_exit)
 
                 if success:
                     # 更新缓存
@@ -552,8 +517,9 @@ class WindowsScheduleManager:
                 logger.error(f"Failed to create task: {e}")
                 return False
 
-    def _create_task_via_com(self, task_name: str, task_index: int, trigger_type: TriggerType,
-                            timeout_hours: int, start_hour: int, start_minute: int,
+    def _create_task_via_com(self, task_name: str, task_index: int,
+                            trigger_type: TriggerType, timeout_hours: int,
+                            start_hour: int, start_minute: int,
                             auto_exit: bool, enabled: bool, description: str,
                             task_path: str) -> bool:
         """通过 COM API 创建任务"""
@@ -564,28 +530,13 @@ class WindowsScheduleManager:
             if not self.is_com_available():
                 logger.warning("COM service not available, falling back to schtasks")
                 return self._create_task_via_schtasks(
-                    task_name,
-                    task_index,
-                    trigger_type,
-                    enabled,
-                    task_path,
-                    timeout_hours,
-                    start_hour,
-                    start_minute,
-                    auto_exit,
-                )
+                    task_name, task_index, trigger_type, enabled, task_path,
+                    timeout_hours, start_hour, start_minute, auto_exit)
 
             # 生成 XML 配置
             xml_config = self._generate_task_xml(
-                task_name,
-                task_index,
-                trigger_type,
-                timeout_hours,
-                description,
-                start_hour,
-                start_minute,
-                auto_exit,
-            )
+                task_name, task_index, trigger_type, timeout_hours,
+                description, start_hour, start_minute, auto_exit)
 
             # 确保已连接
             self.SCHEDULE_SERVICE.Connect()
@@ -620,16 +571,9 @@ class WindowsScheduleManager:
             logger.warning(f"COM task creation failed: {e}, falling back to schtasks")
             # 降级到 schtasks
             return self._create_task_via_schtasks(
-                task_name,
-                task_index,
-                trigger_type,
-                enabled,
-                task_path,
-                timeout_hours,
-                start_hour,
-                start_minute,
-                auto_exit,
-            )
+                task_name, task_index, trigger_type, enabled,
+                task_path, timeout_hours, start_hour, start_minute,
+                auto_exit)
 
     def _create_task_via_schtasks(self, task_name: str, task_index: int,
                                  trigger_type: TriggerType, enabled: bool,
@@ -639,15 +583,8 @@ class WindowsScheduleManager:
         """通过 schtasks 命令创建任务（降级方案）"""
         try:
             xml_config = self._generate_task_xml(
-                task_name,
-                task_index,
-                trigger_type,
-                timeout_hours,
-                "",
-                start_hour,
-                start_minute,
-                auto_exit,
-            )
+                task_name, task_index, trigger_type, timeout_hours,
+                "", start_hour, start_minute, auto_exit)
             xml_file = Path(f"temp_task_{task_name}.xml")
 
             try:
@@ -656,13 +593,8 @@ class WindowsScheduleManager:
                     f.write(xml_config)
 
                 cmd = [
-                    "schtasks",
-                    "/Create",
-                    "/XML",
-                    str(xml_file),
-                    "/TN",
-                    task_path,
-                    "/F",
+                    "schtasks", "/Create", "/XML", str(xml_file),
+                    "/TN", task_path, "/F",
                 ]
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
 
@@ -759,10 +691,10 @@ class WindowsScheduleManager:
             logger.error(f"Failed to disable task: {e}")
             return False
 
-    def _generate_task_xml(self, task_name: str, task_index: int, trigger_type: TriggerType,
-                          timeout_hours: int = 0, description: str = "",
-                          start_hour: int = 9, start_minute: int = 0,
-                          auto_exit: bool = True) -> str:
+    def _generate_task_xml(self, task_name: str, task_index: int,
+                          trigger_type: TriggerType, timeout_hours: int = 0,
+                          description: str = "", start_hour: int = 9,
+                          start_minute: int = 0, auto_exit: bool = True) -> str:
         """
         生成任务 XML 配置
 
@@ -847,9 +779,7 @@ class WindowsScheduleManager:
 </Task>"""
         return xml_template
 
-    def _get_trigger_xml(
-        self, trigger_type: TriggerType, start_time: str = "09:00:00"
-    ) -> str:
+    def _get_trigger_xml(self, trigger_type: TriggerType, start_time: str = "09:00:00") -> str:
         """获取触发器 XML"""
         if trigger_type == TriggerType.DAILY:
             return f"""<CalendarTrigger>

@@ -71,8 +71,8 @@ class ScheduleTaskTable(TableWidget):
         self.view_callbacks = {}
         self.toggle_callbacks = {}
 
-    def add_task_row(self, task_info: ScheduleTaskInfo, 
-                    on_delete=None, on_view=None, on_toggle=None) -> int:
+    def add_task_row(self, task_info: ScheduleTaskInfo, on_delete=None,
+                    on_view=None, on_toggle=None) -> int:
         """添加任务行"""
         row = self.rowCount()
         self.insertRow(row)
@@ -320,9 +320,12 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
         self.viewLayout.setSpacing(12)
         self.viewLayout.setContentsMargins(16, 12, 16, 12)
 
-        self.task_index, auto_exit_default = self._parse_args(task_info.actions)
-        timeout_default = self._parse_timeout(task_info.xml_config)
-        start_hour_default, start_minute_default = self._parse_start_time(task_info.next_run_time)
+        self.task_index, auto_exit_default = self._parse_args(
+            task_info.actions)
+        timeout_default = self._parse_timeout(
+            task_info.xml_config)
+        start_hour_default, start_minute_default = self._parse_start_time(
+            task_info.next_run_time)
 
         # 任务名称（显示，不可修改）
         task_name_label = QLabel(self.tr("Task Name"))
@@ -582,11 +585,8 @@ class ScheduleTaskTab(Tab):
 
         for task_info in tasks:
             self.task_table.add_task_row(
-                task_info,
-                on_delete=self.on_task_deleted,
-                on_view=self.on_task_view,
-                on_toggle=self.on_task_toggled
-            )
+                task_info, on_delete=self.on_task_deleted,
+                on_view=self.on_task_view, on_toggle=self.on_task_toggled)
 
     def on_tasks_loaded(self, tasks: List[ScheduleTaskInfo]):
         """后台刷新完成后在主线程更新 UI"""
