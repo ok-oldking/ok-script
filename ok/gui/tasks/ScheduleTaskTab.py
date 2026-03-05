@@ -631,8 +631,7 @@ class ScheduleTaskTab(Tab):
             self.show_error(self.tr("Failed to open modify dialog") + f": {e}")
 
     def on_task_modified(self, task_name: str, task_index: int, trigger_type: TriggerType,
-                         timeout_hours: int, start_hour: int, start_minute: int,
-                         auto_exit: bool):
+                         timeout_hours: int, start_hour: int, start_minute: int, auto_exit: bool):
         """处理任务修改"""
         try:
             current = self.schedule_manager.cache.get(task_name)
@@ -698,8 +697,7 @@ class ScheduleTaskTab(Tab):
         dialog.exec()
 
     def on_task_created(self, name: str, task_index: int, trigger_type: TriggerType,
-                        timeout_hours: int, start_hour: int, start_minute: int,
-                        auto_exit: bool):
+                        timeout_hours: int, start_hour: int, start_minute: int, auto_exit: bool):
         """处理任务创建"""
         try:
             success = self.schedule_manager.create_task(

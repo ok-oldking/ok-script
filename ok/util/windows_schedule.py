@@ -552,19 +552,10 @@ class WindowsScheduleManager:
                 logger.error(f"Failed to create task: {e}")
                 return False
 
-    def _create_task_via_com(
-        self,
-        task_name: str,
-        task_index: int,
-        trigger_type: TriggerType,
-        timeout_hours: int,
-        start_hour: int,
-        start_minute: int,
-        auto_exit: bool,
-        enabled: bool,
-        description: str,
-        task_path: str,
-    ) -> bool:
+    def _create_task_via_com(self, task_name: str, task_index: int, trigger_type: TriggerType,
+                            timeout_hours: int, start_hour: int, start_minute: int,
+                            auto_exit: bool, enabled: bool, description: str,
+                            task_path: str) -> bool:
         """通过 COM API 创建任务"""
         try:
             import win32com.client
@@ -640,18 +631,11 @@ class WindowsScheduleManager:
                 auto_exit,
             )
 
-    def _create_task_via_schtasks(
-        self,
-        task_name: str,
-        task_index: int,
-        trigger_type: TriggerType,
-        enabled: bool,
-        task_path: str,
-        timeout_hours: int = 0,
-        start_hour: int = 9,
-        start_minute: int = 0,
-        auto_exit: bool = True,
-    ) -> bool:
+    def _create_task_via_schtasks(self, task_name: str, task_index: int,
+                                 trigger_type: TriggerType, enabled: bool,
+                                 task_path: str, timeout_hours: int = 0,
+                                 start_hour: int = 9, start_minute: int = 0,
+                                 auto_exit: bool = True) -> bool:
         """通过 schtasks 命令创建任务（降级方案）"""
         try:
             xml_config = self._generate_task_xml(
@@ -775,17 +759,10 @@ class WindowsScheduleManager:
             logger.error(f"Failed to disable task: {e}")
             return False
 
-    def _generate_task_xml(
-        self,
-        task_name: str,
-        task_index: int,
-        trigger_type: TriggerType,
-        timeout_hours: int = 0,
-        description: str = "",
-        start_hour: int = 9,
-        start_minute: int = 0,
-        auto_exit: bool = True,
-    ) -> str:
+    def _generate_task_xml(self, task_name: str, task_index: int, trigger_type: TriggerType,
+                          timeout_hours: int = 0, description: str = "",
+                          start_hour: int = 9, start_minute: int = 0,
+                          auto_exit: bool = True) -> str:
         """
         生成任务 XML 配置
 
