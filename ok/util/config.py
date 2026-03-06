@@ -35,6 +35,7 @@ class Config(dict):
         """
         self.default = default
         self.validator = validator
+        self._listeners = {}
         if folder is None:
             folder = self.config_folder
         self.config_file = get_relative_path(folder, f"{name}.json")
@@ -98,12 +99,25 @@ class Config(dict):
         super().clear()
         self.save_file()
 
+    def add_listener(self, key, callback):
+        self._listeners.setdefault(key, []).append(callback)
+
+    def remove_listener(self, key, callback):
+        listeners = self._listeners.get(key, [])
+        if callback in listeners:
+            listeners.remove(callback)
+
     def __setitem__(self, key, value):
         if value != self.get(key) and self.validate(key, value):
             old_value = self.get(key)
             super().__setitem__(key, value)
             if old_value != value:
                 self.save_file()
+                for cb in list(self._listeners.get(key, [])):
+                    try:
+                        cb(value)
+                    except RuntimeError:
+                        self._listeners[key].remove(cb)
 
     def __getitem__(self, key):
         try:
