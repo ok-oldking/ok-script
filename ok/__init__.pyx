@@ -200,18 +200,10 @@ cdef class App:
         if self.debug:
             communicate.window.connect(self.overlay_window.update_overlay)
 
-        main_window_cfg = self.config.get('main_window')
-        if main_window_cfg:
-            import importlib
-            mod = importlib.import_module(main_window_cfg[0])
-            MainWindowClass = getattr(mod, main_window_cfg[1])
-        else:
-            MainWindowClass = MainWindow
-
-        self.main_window = MainWindowClass(self, self.config, self.ok_config, self.icon, self.title, self.version,
-                                           self.debug,
-                                           self.about,
-                                           self.exit_event, self.global_config, og.executor, og.handler)
+        self.main_window = MainWindow(self, self.config, self.ok_config, self.icon, self.title, self.version,
+                                      self.debug,
+                                      self.about,
+                                      self.exit_event, self.global_config, og.executor, og.handler)
         og.set_dpi_scaling(self.main_window)
         # Set the window title here
         self.main_window.setWindowIcon(self.icon)
