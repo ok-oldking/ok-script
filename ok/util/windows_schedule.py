@@ -346,7 +346,7 @@ class WindowsScheduleManager:
                     # 如果不是 1 天，说明是自定义间隔
                     if interval_days > 1:
                         trigger_type = "Custom"
-                
+
                 # 解析小时间隔: <Interval>PT(\d+)H</Interval>
                 hours_match = re.search(r"<Interval>PT(\d+)H</Interval>", xml_config)
                 if hours_match:
@@ -893,10 +893,6 @@ class WindowsScheduleManager:
         <WeeksInterval>1</WeeksInterval>
         <DaysOfWeek>
                     <Monday></Monday>
-                    <Tuesday></Tuesday>
-                    <Wednesday></Wednesday>
-                    <Thursday></Thursday>
-                    <Friday></Friday>
         </DaysOfWeek>
       </ScheduleByWeek>
     </CalendarTrigger>"""
