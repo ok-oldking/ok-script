@@ -296,7 +296,7 @@ class CreateScheduleTaskDialog(MessageBoxBase):
 
         # 获取所有 onetime_tasks
         self.tasks = og.executor.onetime_tasks if og.executor.onetime_tasks else []
-        self.task_names = [self.tr(task.name) for task in self.tasks]
+        self.task_names = [og.app.tr(task.name) for task in self.tasks]
 
         self.viewLayout.setSpacing(12)
         self.viewLayout.setContentsMargins(16, 12, 16, 12)

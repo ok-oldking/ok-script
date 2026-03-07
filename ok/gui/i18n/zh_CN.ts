@@ -1269,6 +1269,26 @@
         <translation>触发类型</translation>
     </message>
     <message>
+        <source>Daily</source>
+        <translation>每天</translation>
+    </message>
+    <message>
+        <source>Weekly</source>
+        <translation>每周</translation>
+    </message>
+    <message>
+        <source>Monthly</source>
+        <translation>每月</translation>
+    </message>
+    <message>
+        <source>Once</source>
+        <translation>一次</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation>自定义</translation>
+    </message>
+    <message>
         <source>Start Time</source>
         <translation>开始时间</translation>
     </message>
@@ -1326,6 +1346,26 @@
     <message>
         <source>Trigger Type</source>
         <translation>触发类型</translation>
+    </message>
+    <message>
+        <source>Daily</source>
+        <translation>每天</translation>
+    </message>
+    <message>
+        <source>Weekly</source>
+        <translation>每周</translation>
+    </message>
+    <message>
+        <source>Monthly</source>
+        <translation>每月</translation>
+    </message>
+    <message>
+        <source>Once</source>
+        <translation>一次</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation>自定义</translation>
     </message>
     <message>
         <source>Start Time</source>
