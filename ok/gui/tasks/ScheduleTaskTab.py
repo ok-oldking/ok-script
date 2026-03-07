@@ -41,7 +41,6 @@ from ok import Logger, og
 from ok.gui.widget.Tab import Tab
 from ok.util.windows_schedule import WindowsScheduleManager, ScheduleTaskInfo, TriggerType
 
-
 logger = Logger.get_logger(__name__)
 
 
@@ -83,7 +82,8 @@ def trigger_type_to_index(raw_type: str) -> int:
     return mapping.get(trigger, 0)
 
 
-def infer_trigger_type(raw_type: str, xml_config: str = "", interval_days: int = 0, interval_hours: int = 0) -> TriggerType:
+def infer_trigger_type(raw_type: str, xml_config: str = "", interval_days: int = 0,
+                       interval_hours: int = 0) -> TriggerType:
     """综合 raw/xml/interval 推断触发类型，避免读取异常时回显错误"""
     if interval_hours > 0 or interval_days > 1:
         return TriggerType.CUSTOM
@@ -511,6 +511,7 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
     """修改计划任务对话框"""
 
     task_modified = Signal(str, int, TriggerType, int, int, int, bool, int, int)
+
     # task_name, task_index, trigger_type, timeout_hours, start_hour, start_minute, auto_exit, interval_days, interval_hours
 
     def __init__(self, task_info: ScheduleTaskInfo, parent=None):
@@ -526,7 +527,7 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
             timeout_default = self._parse_timeout(task_info.xml_config)
             start_hour_default, start_minute_default = self._parse_start_time(task_info.next_run_time)
             interval_days_default, interval_hours_default = self._parse_custom_interval(task_info)
-            
+
             logger.debug(
                 f"ModifyScheduleTaskDialog init - task: {task_info.name}, "
                 f"trigger_type: {task_info.trigger_type}, "
@@ -1041,16 +1042,16 @@ class ScheduleTaskTab(Tab):
             self.show_error(self.tr("Failed to open modify dialog") + f": {e}")
 
     def on_task_modified(
-        self,
-        task_name: str,
-        task_index: int,
-        trigger_type: TriggerType,
-        timeout_hours: int,
-        start_hour: int,
-        start_minute: int,
-        auto_exit: bool,
-        interval_days: int = 0,
-        interval_hours: int = 0,
+            self,
+            task_name: str,
+            task_index: int,
+            trigger_type: TriggerType,
+            timeout_hours: int,
+            start_hour: int,
+            start_minute: int,
+            auto_exit: bool,
+            interval_days: int = 0,
+            interval_hours: int = 0,
     ):
         """处理任务修改"""
         try:
@@ -1120,16 +1121,16 @@ class ScheduleTaskTab(Tab):
         dialog.exec()
 
     def on_task_created(
-        self,
-        name: str,
-        task_index: int,
-        trigger_type: TriggerType,
-        timeout_hours: int,
-        start_hour: int,
-        start_minute: int,
-        auto_exit: bool,
-        interval_days: int = 0,
-        interval_hours: int = 0,
+            self,
+            name: str,
+            task_index: int,
+            trigger_type: TriggerType,
+            timeout_hours: int,
+            start_hour: int,
+            start_minute: int,
+            auto_exit: bool,
+            interval_days: int = 0,
+            interval_hours: int = 0,
     ):
         """处理任务创建"""
         try:

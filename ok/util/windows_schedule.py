@@ -72,7 +72,7 @@ class ScheduleTaskInfo:
 class WindowsScheduleCache:
     """Windows 任务计划本地缓存管理"""
 
-    def __init__(self,config: Config = None):
+    def __init__(self, config: Config = None):
         """
         初始化缓存
 
@@ -80,7 +80,7 @@ class WindowsScheduleCache:
             cache_dir: 缓存目录，默认使用 Config.config_folder
         """
         self.config = config or Config()
-        default_cache_dir = self.config.get("config_folder","configs")
+        default_cache_dir = self.config.get("config_folder", "configs")
         self.cache_dir = Path(default_cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.cache_file = self.cache_dir / "schedule_tasks_cache.json"
@@ -426,7 +426,7 @@ class WindowsScheduleManager:
             if result.returncode != 0:
                 # 首次启动目录不存在时常见，按空任务处理
                 if "cannot find" in (result.stderr or "").lower() or "找不到" in (
-                    result.stderr or ""
+                        result.stderr or ""
                 ):
                     return tasks
                 logger.warning(f"schtasks query failed: {result.stderr}")
@@ -502,9 +502,9 @@ class WindowsScheduleManager:
             logger.debug(f"Failed to get XML for task {name}: {e}")
 
         schedule_type = (
-            task_dict.get("Schedule Type", "")
-            or task_dict.get("ScheduleType", "")
-            or task_dict.get("计划类型", "")
+                task_dict.get("Schedule Type", "")
+                or task_dict.get("ScheduleType", "")
+                or task_dict.get("计划类型", "")
         )
         schedule_lower = schedule_type.lower()
         trigger_type = ""
@@ -606,11 +606,11 @@ class WindowsScheduleManager:
                 return False
 
     def _create_task_via_com(self, task_name: str, task_index: int,
-                            trigger_type: TriggerType, timeout_hours: int,
-                            start_hour: int, start_minute: int,
-                            auto_exit: bool, enabled: bool, description: str,
-                            task_path: str, interval_days: int = 0,
-                            interval_hours: int = 0) -> bool:
+                             trigger_type: TriggerType, timeout_hours: int,
+                             start_hour: int, start_minute: int,
+                             auto_exit: bool, enabled: bool, description: str,
+                             task_path: str, interval_days: int = 0,
+                             interval_hours: int = 0) -> bool:
         """通过 COM API 创建任务"""
         try:
             import win32com.client
@@ -667,12 +667,12 @@ class WindowsScheduleManager:
                 auto_exit, interval_days, interval_hours)
 
     def _create_task_via_schtasks(self, task_name: str, task_index: int,
-                                 trigger_type: TriggerType, enabled: bool,
-                                 task_path: str, timeout_hours: int = 0,
-                                 start_hour: int = 9, start_minute: int = 0,
-                                 auto_exit: bool = True,
-                                 interval_days: int = 0,
-                                 interval_hours: int = 0) -> bool:
+                                  trigger_type: TriggerType, enabled: bool,
+                                  task_path: str, timeout_hours: int = 0,
+                                  start_hour: int = 9, start_minute: int = 0,
+                                  auto_exit: bool = True,
+                                  interval_days: int = 0,
+                                  interval_hours: int = 0) -> bool:
         """通过 schtasks 命令创建任务（降级方案）"""
         try:
             xml_config = self._generate_task_xml(
@@ -786,10 +786,10 @@ class WindowsScheduleManager:
             return False
 
     def _generate_task_xml(self, task_name: str, task_index: int,
-                          trigger_type: TriggerType, timeout_hours: int = 0,
-                          description: str = "", start_hour: int = 9,
-                          start_minute: int = 0, auto_exit: bool = True,
-                          interval_days: int = 0, interval_hours: int = 0) -> str:
+                           trigger_type: TriggerType, timeout_hours: int = 0,
+                           description: str = "", start_hour: int = 9,
+                           start_minute: int = 0, auto_exit: bool = True,
+                           interval_days: int = 0, interval_hours: int = 0) -> str:
         """
         生成任务 XML 配置
 
