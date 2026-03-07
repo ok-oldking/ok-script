@@ -52,6 +52,23 @@ class MainWindow(MSFluentWindow):
 
         self.first_task_tab = None
         self.grouped_task_tabs = []
+
+        # Prepare custom tabs and separate them by add_after_default_tabs
+        before_custom_tabs = []
+        after_custom_tabs = []
+        if custom_tabs := config.get('custom_tabs'):
+            for tab in custom_tabs:
+                tab_obj = init_class_by_name(tab[0], tab[1])
+                tab_obj.executor = executor
+                if tab_obj.add_after_default_tabs:
+                    after_custom_tabs.append(tab_obj)
+                else:
+                    before_custom_tabs.append(tab_obj)
+
+        # Add custom tabs that should appear before built-in task tabs
+        for tab_obj in before_custom_tabs:
+            self.addSubInterface(tab_obj, tab_obj.icon, tab_obj.name, position=tab_obj.position)
+
         if self.executor.onetime_tasks:
             from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
             from collections import defaultdict
@@ -87,11 +104,9 @@ class MainWindow(MSFluentWindow):
                 self.first_task_tab = self.trigger_tab
             self.addSubInterface(self.trigger_tab, FluentIcon.ROBOT, self.tr('Triggers'))
 
-        if custom_tabs := config.get('custom_tabs'):
-            for tab in custom_tabs:
-                tab_obj = init_class_by_name(tab[0], tab[1])
-                tab_obj.executor = executor
-                self.addSubInterface(tab_obj, tab_obj.icon, tab_obj.name)
+        # Add custom tabs that should appear after built-in task tabs
+        for tab_obj in after_custom_tabs:
+            self.addSubInterface(tab_obj, tab_obj.icon, tab_obj.name, position=tab_obj.position)
 
         if debug:
             from ok.gui.debug.DebugTab import DebugTab
