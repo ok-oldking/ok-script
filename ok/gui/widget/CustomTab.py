@@ -1,3 +1,5 @@
+from qfluentwidgets import NavigationItemPosition
+
 from ok import TaskExecutor
 from ok.gui.widget.Tab import Tab
 from ok import Logger
@@ -15,3 +17,11 @@ class CustomTab(Tab):
     @property
     def name(self):
         return "CustomTab"
+
+    @property
+    def position(self):
+        return NavigationItemPosition.BOTTOM
+
+    @property
+    def add_after_default_tabs(self):
+        return True
