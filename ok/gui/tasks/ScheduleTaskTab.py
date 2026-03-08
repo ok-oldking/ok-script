@@ -883,6 +883,9 @@ class ScheduleTaskTab(Tab):
         self.schedule_manager: Optional[WindowsScheduleManager] = None
         self.task_table: Optional[ScheduleTaskTable] = None
         self.refreshing = False
+        # 仅通过软件内操作与手动刷新管理任务，不启用自动轮询/后台同步
+        self.enable_ui_polling = False
+        self.enable_background_sync = False
         self.icon = FluentIcon.CALENDAR  # 设置侧边栏图标
         self.tasks_loaded.connect(self.on_tasks_loaded)
         self.refresh_failed.connect(self.on_refresh_failed)
@@ -922,18 +925,20 @@ class ScheduleTaskTab(Tab):
         # 连接表格信号
         self.task_table.itemClicked.connect(self.on_table_item_clicked)
 
-        # 定时刷新表格
+        # 可选：定时刷新表格（默认关闭，采用手动刷新 + 操作后更新）
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_table)
-        self.timer.start(5000)  # 每 5 秒刷新一次
+        if self.enable_ui_polling:
+            self.timer.start(5000)  # 每 5 秒刷新一次
 
     def setup_manager(self):
         """设置管理器"""
         self.schedule_manager = WindowsScheduleManager(config=self.config)
         self.schedule_manager.register_update_callback(self.on_task_updated)
 
-        # 启动后台同步
-        self.schedule_manager.start_background_sync(interval=30)
+        # 可选：后台同步（默认关闭）
+        if self.enable_background_sync:
+            self.schedule_manager.start_background_sync(interval=30)
 
     def load_tasks(self):
         """加载任务列表"""
@@ -1232,7 +1237,8 @@ class ScheduleTaskTab(Tab):
 
     def closeEvent(self, event):
         """关闭事件 - 停止后台同步"""
-        self.timer.stop()
+        if hasattr(self, "timer") and self.timer.isActive():
+            self.timer.stop()
         if self.schedule_manager:
             self.schedule_manager.stop_background_sync()
         super().closeEvent(event)
