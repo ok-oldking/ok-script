@@ -115,8 +115,8 @@ def infer_trigger_type(raw_type: str, xml_config: str = "", interval_days: int =
 
 
 def display_trigger_type_for_task(
-    task_info: ScheduleTaskInfo,
-    tr_func: Optional[Callable[[str], str]] = None,
+        task_info: ScheduleTaskInfo,
+        tr_func: Optional[Callable[[str], str]] = None,
 ) -> str:
     trigger = infer_trigger_type(
         task_info.trigger_type,

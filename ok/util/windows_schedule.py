@@ -777,11 +777,11 @@ class WindowsScheduleManager:
             try:
                 # UTF-16 LE with BOM for Windows Task Scheduler
                 with tempfile.NamedTemporaryFile(
-                    mode="w",
-                    encoding="utf-16",
-                    suffix=".xml",
-                    prefix="ok_task_",
-                    delete=False,
+                        mode="w",
+                        encoding="utf-16",
+                        suffix=".xml",
+                        prefix="ok_task_",
+                        delete=False,
                 ) as f:
                     f.write(xml_config)
                     xml_file = Path(f.name)
