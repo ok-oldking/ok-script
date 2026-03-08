@@ -15,6 +15,7 @@ import os
 import subprocess
 import threading
 import time
+from datetime import datetime, timedelta
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 from pathlib import Path
@@ -829,10 +830,22 @@ class WindowsScheduleManager:
         except Exception:
             start_hour = 9
             start_minute = 0
-        start_time = f"{start_hour:02d}:{start_minute:02d}:00"
+
+        now = datetime.now()
+        start_dt = now.replace(
+            hour=start_hour,
+            minute=start_minute,
+            second=0,
+            microsecond=0,
+        )
+        # ONCE 触发器需要确保开始时间在未来
+        if trigger_type == TriggerType.ONCE and start_dt <= now:
+            start_dt = start_dt + timedelta(days=1)
+
+        start_boundary = start_dt.strftime("%Y-%m-%dT%H:%M:%S")
 
         # 构建触发器配置
-        trigger_xml = self._get_trigger_xml(trigger_type, start_time, interval_days, interval_hours)
+        trigger_xml = self._get_trigger_xml(trigger_type, start_boundary, interval_days, interval_hours)
 
         xml_template = f"""<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
@@ -874,12 +887,12 @@ class WindowsScheduleManager:
 </Task>"""
         return xml_template
 
-    def _get_trigger_xml(self, trigger_type: TriggerType, start_time: str = "09:00:00",
+    def _get_trigger_xml(self, trigger_type: TriggerType, start_boundary: str,
                          interval_days: int = 0, interval_hours: int = 0) -> str:
         """获取触发器 XML"""
         if trigger_type == TriggerType.DAILY:
             return f"""<CalendarTrigger>
-      <StartBoundary>2024-01-01T{start_time}</StartBoundary>
+            <StartBoundary>{start_boundary}</StartBoundary>
             <Enabled>true</Enabled>
       <ScheduleByDay>
         <DaysInterval>1</DaysInterval>
@@ -887,7 +900,7 @@ class WindowsScheduleManager:
     </CalendarTrigger>"""
         elif trigger_type == TriggerType.WEEKLY:
             return f"""<CalendarTrigger>
-      <StartBoundary>2024-01-01T{start_time}</StartBoundary>
+            <StartBoundary>{start_boundary}</StartBoundary>
             <Enabled>true</Enabled>
       <ScheduleByWeek>
         <WeeksInterval>1</WeeksInterval>
@@ -898,7 +911,7 @@ class WindowsScheduleManager:
     </CalendarTrigger>"""
         elif trigger_type == TriggerType.MONTHLY:
             return f"""<CalendarTrigger>
-      <StartBoundary>2024-01-01T{start_time}</StartBoundary>
+        <StartBoundary>{start_boundary}</StartBoundary>
             <Enabled>true</Enabled>
       <ScheduleByMonth>
         <DaysOfMonth>
@@ -925,7 +938,7 @@ class WindowsScheduleManager:
             if interval_days > 0:
                 # 基于天的间隔（使用 CalendarTrigger）
                 return f"""<CalendarTrigger>
-      <StartBoundary>2024-01-01T{start_time}</StartBoundary>
+        <StartBoundary>{start_boundary}</StartBoundary>
             <Enabled>true</Enabled>
       <ScheduleByDay>
         <DaysInterval>{interval_days}</DaysInterval>
@@ -934,7 +947,7 @@ class WindowsScheduleManager:
             elif interval_hours > 0:
                 # 基于小时的间隔（使用 TimeTrigger + Repetition）
                 return f"""<TimeTrigger>
-      <StartBoundary>2024-01-01T{start_time}</StartBoundary>
+        <StartBoundary>{start_boundary}</StartBoundary>
             <Enabled>true</Enabled>
       <Repetition>
         <Interval>PT{interval_hours}H</Interval>
@@ -945,7 +958,7 @@ class WindowsScheduleManager:
             else:
                 # 默认：每天一次
                 return f"""<CalendarTrigger>
-      <StartBoundary>2024-01-01T{start_time}</StartBoundary>
+        <StartBoundary>{start_boundary}</StartBoundary>
             <Enabled>true</Enabled>
       <ScheduleByDay>
         <DaysInterval>1</DaysInterval>
@@ -953,7 +966,7 @@ class WindowsScheduleManager:
     </CalendarTrigger>"""
         else:  # ONCE
             return f"""<TimeTrigger>
-      <StartBoundary>2024-01-01T{start_time}</StartBoundary>
+        <StartBoundary>{start_boundary}</StartBoundary>
             <Enabled>true</Enabled>
     </TimeTrigger>"""
 

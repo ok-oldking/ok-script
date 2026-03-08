@@ -1249,6 +1249,42 @@
         <source>Delete</source>
         <translation>删除</translation>
     </message>
+    <message>
+        <source>Daily</source>
+        <translation>每天</translation>
+    </message>
+    <message>
+        <source>Weekly</source>
+        <translation>每周</translation>
+    </message>
+    <message>
+        <source>Monthly</source>
+        <translation>每月</translation>
+    </message>
+    <message>
+        <source>Once</source>
+        <translation>一次</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation>自定义</translation>
+    </message>
+    <message>
+        <source>Ready</source>
+        <translation>就绪</translation>
+    </message>
+    <message>
+        <source>Running</source>
+        <translation>运行中</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation>已禁用</translation>
+    </message>
+    <message>
+        <source>Unknown</source>
+        <translation>未知</translation>
+    </message>
 </context>
 <context>
     <name>CreateScheduleTaskDialog</name>
@@ -1303,6 +1339,22 @@
     <message>
         <source>24h</source>
         <translation>24小时制</translation>
+    </message>
+    <message>
+        <source>Custom Interval</source>
+        <translation>自定义时间设置</translation>
+    </message>
+    <message>
+        <source>Days</source>
+        <translation>天</translation>
+    </message>
+    <message>
+        <source>Hours</source>
+        <translation>小时</translation>
+    </message>
+    <message>
+        <source>(0 = disabled)</source>
+        <translation>（0 = 不启用）</translation>
     </message>
     <message>
         <source>Timeout</source>
@@ -1384,6 +1436,22 @@
         <translation>24小时制</translation>
     </message>
     <message>
+        <source>Custom Interval</source>
+        <translation>自定义时间设置</translation>
+    </message>
+    <message>
+        <source>Days</source>
+        <translation>天</translation>
+    </message>
+    <message>
+        <source>Hours</source>
+        <translation>小时</translation>
+    </message>
+    <message>
+        <source>(0 = disabled)</source>
+        <translation>（0 = 不启用）</translation>
+    </message>
+    <message>
         <source>Timeout</source>
         <translation>超时时间</translation>
     </message>
@@ -1457,6 +1525,14 @@
     <message>
         <source>Delete Task</source>
         <translation>删除任务</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
     <message>
         <source>Are you sure you want to delete task</source>

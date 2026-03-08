@@ -10,7 +10,7 @@ Schedule Task Tab - 计划任务管理界面
 6. 实时更新（基于缓存和信号通知）
 """
 
-from typing import Optional, List
+from typing import Optional, List, Callable
 import re
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (
@@ -63,10 +63,11 @@ def normalize_trigger_type(raw_type: str) -> TriggerType:
     return TriggerType.DAILY
 
 
-def display_trigger_type(raw_type: str) -> str:
+def display_trigger_type(raw_type: str, tr_func: Optional[Callable[[str], str]] = None) -> str:
     """用于 UI 展示的触发类型文本"""
     trigger = normalize_trigger_type(raw_type)
-    return og.app.tr(trigger.value)
+    translator = tr_func or og.app.tr
+    return translator(trigger.value)
 
 
 def trigger_type_to_index(raw_type: str) -> int:
@@ -113,14 +114,18 @@ def infer_trigger_type(raw_type: str, xml_config: str = "", interval_days: int =
     return trigger
 
 
-def display_trigger_type_for_task(task_info: ScheduleTaskInfo) -> str:
+def display_trigger_type_for_task(
+    task_info: ScheduleTaskInfo,
+    tr_func: Optional[Callable[[str], str]] = None,
+) -> str:
     trigger = infer_trigger_type(
         task_info.trigger_type,
         task_info.xml_config,
         task_info.interval_days,
         task_info.interval_hours,
     )
-    return og.app.tr(trigger.value)
+    translator = tr_func or og.app.tr
+    return translator(trigger.value)
 
 
 def trigger_type_to_index_for_task(task_info: ScheduleTaskInfo) -> int:
@@ -206,9 +211,9 @@ class ScheduleTaskTable(TableWidget):
         self.insertRow(row)
 
         # 任务名称
-        name_item = QTableWidgetItem(task_info.name)
+        name_item = QTableWidgetItem(og.app.tr(task_info.name))
         name_item.setData(Qt.UserRole, task_info.name)
-        name_item.setToolTip(task_info.name)
+        name_item.setToolTip(f"{og.app.tr(task_info.name)} ({task_info.name})")
         self.setItem(row, 0, name_item)
 
         # 状态
@@ -216,7 +221,7 @@ class ScheduleTaskTable(TableWidget):
         self.setItem(row, 1, status_item)
 
         # 触发类型
-        trigger_item = QTableWidgetItem(display_trigger_type_for_task(task_info))
+        trigger_item = QTableWidgetItem(display_trigger_type_for_task(task_info, self.tr))
         self.setItem(row, 2, trigger_item)
 
         # 下次运行时间
@@ -261,9 +266,11 @@ class ScheduleTaskTable(TableWidget):
         """更新任务行"""
         for row in range(self.rowCount()):
             name_item = self.item(row, 0)
-            if name_item and name_item.text() == task_info.name:
+            if name_item and name_item.data(Qt.UserRole) == task_info.name:
+                name_item.setText(og.app.tr(task_info.name))
+                name_item.setToolTip(f"{og.app.tr(task_info.name)} ({task_info.name})")
                 self.item(row, 1).setText(self.tr(task_info.status))
-                self.item(row, 2).setText(display_trigger_type_for_task(task_info))
+                self.item(row, 2).setText(display_trigger_type_for_task(task_info, self.tr))
                 self.item(row, 3).setText(format_next_run_time(task_info.next_run_time))
 
                 # 更新开关状态
@@ -278,7 +285,7 @@ class ScheduleTaskTable(TableWidget):
         """删除任务行"""
         for row in range(self.rowCount()):
             name_item = self.item(row, 0)
-            if name_item and name_item.text() == task_name:
+            if name_item and name_item.data(Qt.UserRole) == task_name:
                 self.removeRow(row)
                 break
 
@@ -544,7 +551,8 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
         # 任务名称（显示，不可修改）
         task_name_label = QLabel(self.tr("Task Name"))
         task_name_label.setMinimumWidth(140)
-        task_name_display = QLabel(task_info.name)
+        task_name_display = QLabel(og.app.tr(task_info.name))
+        task_name_display.setToolTip(f"{og.app.tr(task_info.name)} ({task_info.name})")
         task_name_display.setMinimumWidth(260)
 
         # 任务索引（显示，不可修改）
@@ -950,7 +958,7 @@ class ScheduleTaskTab(Tab):
         for row in range(self.task_table.rowCount()):
             name_item = self.task_table.item(row, 0)
             if name_item:
-                task_name = name_item.text()
+                task_name = name_item.data(Qt.UserRole) or name_item.text()
                 existing_tasks.add(task_name)
 
                 if task_name not in new_tasks_dict:
@@ -982,7 +990,7 @@ class ScheduleTaskTab(Tab):
 
         # 检查触发类型
         trigger_item = self.task_table.item(row, 2)
-        if trigger_item and trigger_item.text() != display_trigger_type_for_task(new_task):
+        if trigger_item and trigger_item.text() != display_trigger_type_for_task(new_task, self.tr):
             return True
 
         # 检查下次运行时间
@@ -1165,7 +1173,10 @@ class ScheduleTaskTab(Tab):
         title_label = SubtitleLabel(self.tr("Delete Task"), self)
         dialog.viewLayout.addWidget(title_label)
 
-        content = BodyLabel(self.tr("Are you sure you want to delete task") + f" '{task_name}'?")
+        display_name = og.app.tr(task_name)
+        content = BodyLabel(
+            self.tr("Are you sure you want to delete task") + f"\n{display_name}?"
+        )
         content.setWordWrap(True)
         dialog.viewLayout.addWidget(content)
 
