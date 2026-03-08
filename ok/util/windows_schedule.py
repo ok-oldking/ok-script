@@ -17,7 +17,7 @@ import subprocess
 import tempfile
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 from pathlib import Path
@@ -920,8 +920,19 @@ class WindowsScheduleManager:
         except Exception:
             start_hour = 9
             start_minute = 0
-        start_time = f"{start_hour:02d}:{start_minute:02d}:00"
-        start_boundary = f"{datetime.now().strftime('%Y-%m-%d')}T{start_time}"
+
+        now = datetime.now()
+        start_dt = now.replace(
+            hour=start_hour,
+            minute=start_minute,
+            second=0,
+            microsecond=0,
+        )
+        # ONCE 触发器需要确保开始时间在未来
+        if trigger_type == TriggerType.ONCE and start_dt <= now:
+            start_dt = start_dt + timedelta(days=1)
+
+        start_boundary = start_dt.strftime("%Y-%m-%dT%H:%M:%S")
 
         # 构建触发器配置
         trigger_xml = self._get_trigger_xml(trigger_type, start_boundary, interval_days, interval_hours)
