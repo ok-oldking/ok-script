@@ -135,7 +135,9 @@ cdef class TaskExecutor:
             elif lib == 'onnxocr':
                 from onnxocr.onnx_paddleocr import ONNXPaddleOcr
                 logger.info(f'init onnxocr {config_params}')
-                self._ocr_lib[name] = ONNXPaddleOcr(use_angle_cls=False, use_gpu=False, use_dml=False,
+                self._ocr_lib[name] = ONNXPaddleOcr(use_angle_cls=False,
+                                                    logger=logger,
+                                                    use_npu=config_params.get('use_npu', True),
                                                     use_openvino=config_params.get('use_openvino', False))
             elif lib == 'rapidocr':
                 from rapidocr import RapidOCR
