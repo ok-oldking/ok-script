@@ -20,7 +20,7 @@ class CustomTab(Tab):
 
     @property
     def position(self):
-        return NavigationItemPosition.BOTTOM
+        return NavigationItemPosition.TOP
 
     @property
     def add_after_default_tabs(self):
