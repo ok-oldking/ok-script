@@ -128,8 +128,6 @@ cdef class App:
         og.executor = task_executor
         if task_executor:
             og.device_manager = task_executor.device_manager
-        if my_app := self.config.get('my_app'):
-            og.my_app = init_class_by_name(my_app[0], my_app[1], exit_event)
 
         if self.config.get('analytics'):
             self.fire_base_analytics = Analytics(self.config, self.exit_event, og.handler, og.device_manager)
@@ -211,6 +209,10 @@ cdef class App:
         self.main_window.set_window_size(self.config['window_size']['width'], self.config['window_size']['height'],
                                          self.config['window_size']['min_width'],
                                          self.config['window_size']['min_height'])
+
+        og.main_window = self.main_window
+        if my_app := self.config.get('my_app'):
+            og.my_app = init_class_by_name(my_app[0], my_app[1], self.exit_event)
 
         self.main_window.show()
         self.main_window.raise_()
@@ -471,6 +473,7 @@ class OkGlobals:
         self.auth_rd = None
         self.auth_expire = 0
         self.trial_expire = 0
+        self.main_window = None
         self.my_app = None
         self.dpi_scaling = 1.0
         self.ok = None
