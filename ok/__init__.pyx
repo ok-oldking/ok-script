@@ -129,6 +129,9 @@ cdef class App:
         if task_executor:
             og.device_manager = task_executor.device_manager
 
+        if my_app := self.config.get('my_app'):
+            og.my_app = init_class_by_name(my_app[0], my_app[1], exit_event)
+
         if self.config.get('analytics'):
             self.fire_base_analytics = Analytics(self.config, self.exit_event, og.handler, og.device_manager)
         logger.debug('init app end')
@@ -211,8 +214,10 @@ cdef class App:
                                          self.config['window_size']['min_height'])
 
         og.main_window = self.main_window
-        if my_app := self.config.get('my_app'):
-            og.my_app = init_class_by_name(my_app[0], my_app[1], self.exit_event)
+
+        if og.my_app:
+            if hasattr(og.my_app, 'on_show_main_window'):
+                og.my_app.on_show_main_window(self.main_window)
 
         self.main_window.show()
         self.main_window.raise_()
