@@ -375,9 +375,17 @@ def filter_and_sort_matches(result, threshold, w, h):
     return selected_matches
 
 
-def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder, generate_label_enmu=None):
+def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder, generate_label_enmu=None, use_exe=None):
     classes_path = os.path.join(x_anylabeling_folder, "classes.txt")
     output_dir = os.path.join(x_anylabeling_folder, "coco_output")
+
+    if use_exe is None:
+        cli_tool = "xanylabeling"
+    else:
+        try:
+            cli_tool = os.path.abspath(use_exe)
+        except Exception:
+            cli_tool = "xanylabeling"
 
     if os.path.exists(classes_path):
         os.remove(classes_path)
@@ -403,7 +411,7 @@ def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder, generate_la
         f.write("\n".join(sorted_labels))
 
     cmd = [
-        "xanylabeling", "convert",
+        cli_tool, "convert",
         "--task", "xlabel2coco",
         "--mode", "detect",
         "--images", x_anylabeling_folder,
