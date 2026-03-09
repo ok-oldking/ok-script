@@ -291,6 +291,10 @@
         <translation>实时触发</translation>
     </message>
     <message>
+        <source>Schedule</source>
+        <translation>计划任务</translation>
+    </message>
+    <message>
         <source>Capture</source>
         <translation>截图方式</translation>
     </message>
@@ -1209,6 +1213,366 @@
     <message>
         <source>Kill Launcher after Start</source>
         <translation>启动后关闭启动器</translation>
+    </message>
+</context>
+<context>
+    <name>ScheduleTaskTable</name>
+    <message>
+        <source>Task Name</source>
+        <translation>任务名称</translation>
+    </message>
+    <message>
+        <source>Status</source>
+        <translation>状态</translation>
+    </message>
+    <message>
+        <source>Trigger Type</source>
+        <translation>触发类型</translation>
+    </message>
+    <message>
+        <source>Next Run</source>
+        <translation>下次运行</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <translation>已启用</translation>
+    </message>
+    <message>
+        <source>Actions</source>
+        <translation>操作</translation>
+    </message>
+    <message>
+        <source>Modify</source>
+        <translation>修改</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <source>Daily</source>
+        <translation>每天</translation>
+    </message>
+    <message>
+        <source>Weekly</source>
+        <translation>每周</translation>
+    </message>
+    <message>
+        <source>Monthly</source>
+        <translation>每月</translation>
+    </message>
+    <message>
+        <source>Once</source>
+        <translation>一次</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation>自定义</translation>
+    </message>
+    <message>
+        <source>Ready</source>
+        <translation>就绪</translation>
+    </message>
+    <message>
+        <source>Running</source>
+        <translation>运行中</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation>已禁用</translation>
+    </message>
+    <message>
+        <source>Unknown</source>
+        <translation>未知</translation>
+    </message>
+</context>
+<context>
+    <name>CreateScheduleTaskDialog</name>
+    <message>
+        <source>Create Schedule Task</source>
+        <translation>创建计划任务</translation>
+    </message>
+    <message>
+        <source>Select Task</source>
+        <translation>选择任务</translation>
+    </message>
+    <message>
+        <source>No tasks available</source>
+        <translation>无可用任务</translation>
+    </message>
+    <message>
+        <source>Trigger Type</source>
+        <translation>触发类型</translation>
+    </message>
+    <message>
+        <source>Daily</source>
+        <translation>每天</translation>
+    </message>
+    <message>
+        <source>Weekly</source>
+        <translation>每周</translation>
+    </message>
+    <message>
+        <source>Monthly</source>
+        <translation>每月</translation>
+    </message>
+    <message>
+        <source>Once</source>
+        <translation>一次</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation>自定义</translation>
+    </message>
+    <message>
+        <source>Start Time</source>
+        <translation>开始时间</translation>
+    </message>
+    <message>
+        <source>Hour</source>
+        <translation>时</translation>
+    </message>
+    <message>
+        <source>Minute</source>
+        <translation>分</translation>
+    </message>
+    <message>
+        <source>24h</source>
+        <translation>24小时制</translation>
+    </message>
+    <message>
+        <source>Custom Interval</source>
+        <translation>自定义时间设置</translation>
+    </message>
+    <message>
+        <source>Days</source>
+        <translation>天</translation>
+    </message>
+    <message>
+        <source>Hours</source>
+        <translation>小时</translation>
+    </message>
+    <message>
+        <source>(0 = disabled)</source>
+        <translation>（0 = 不启用）</translation>
+    </message>
+    <message>
+        <source>Timeout</source>
+        <translation>超时时间</translation>
+    </message>
+    <message>
+        <source>hours (0 = unlimited)</source>
+        <translation>小时（0 = 无限制）</translation>
+    </message>
+    <message>
+        <source>Auto exit after task done (-e)</source>
+        <translation>任务完成后自动退出 (-e)</translation>
+    </message>
+    <message>
+        <source>Startup Options</source>
+        <translation>启动选项</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>创建</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+</context>
+<context>
+    <name>ModifyScheduleTaskDialog</name>
+    <message>
+        <source>Modify Schedule Task</source>
+        <translation>修改计划任务</translation>
+    </message>
+    <message>
+        <source>Task Name</source>
+        <translation>任务名称</translation>
+    </message>
+    <message>
+        <source>Task Index (-t)</source>
+        <translation>任务索引 (-t)</translation>
+    </message>
+    <message>
+        <source>Trigger Type</source>
+        <translation>触发类型</translation>
+    </message>
+    <message>
+        <source>Daily</source>
+        <translation>每天</translation>
+    </message>
+    <message>
+        <source>Weekly</source>
+        <translation>每周</translation>
+    </message>
+    <message>
+        <source>Monthly</source>
+        <translation>每月</translation>
+    </message>
+    <message>
+        <source>Once</source>
+        <translation>一次</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation>自定义</translation>
+    </message>
+    <message>
+        <source>Start Time</source>
+        <translation>开始时间</translation>
+    </message>
+    <message>
+        <source>Hour</source>
+        <translation>时</translation>
+    </message>
+    <message>
+        <source>Minute</source>
+        <translation>分</translation>
+    </message>
+    <message>
+        <source>24h</source>
+        <translation>24小时制</translation>
+    </message>
+    <message>
+        <source>Custom Interval</source>
+        <translation>自定义时间设置</translation>
+    </message>
+    <message>
+        <source>Days</source>
+        <translation>天</translation>
+    </message>
+    <message>
+        <source>Hours</source>
+        <translation>小时</translation>
+    </message>
+    <message>
+        <source>(0 = disabled)</source>
+        <translation>（0 = 不启用）</translation>
+    </message>
+    <message>
+        <source>Timeout</source>
+        <translation>超时时间</translation>
+    </message>
+    <message>
+        <source>hours (0 = unlimited)</source>
+        <translation>小时（0 = 无限制）</translation>
+    </message>
+    <message>
+        <source>Auto exit after task done (-e)</source>
+        <translation>任务完成后自动退出 (-e)</translation>
+    </message>
+    <message>
+        <source>Startup Options</source>
+        <translation>启动选项</translation>
+    </message>
+    <message>
+        <source>Modify</source>
+        <translation>修改</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+</context>
+<context>
+    <name>ScheduleTaskTab</name>
+    <message>
+        <source>Refresh</source>
+        <translation>刷新</translation>
+    </message>
+    <message>
+        <source>Create Task</source>
+        <translation>创建任务</translation>
+    </message>
+    <message>
+        <source>Schedule Tasks</source>
+        <translation>计划任务</translation>
+    </message>
+    <message>
+        <source>Failed to load tasks</source>
+        <translation>加载任务失败</translation>
+    </message>
+    <message>
+        <source>Tasks refreshed</source>
+        <translation>任务已刷新</translation>
+    </message>
+    <message>
+        <source>Refresh failed</source>
+        <translation>刷新失败</translation>
+    </message>
+    <message>
+        <source>Task not found in cache</source>
+        <translation>缓存中未找到任务</translation>
+    </message>
+    <message>
+        <source>Failed to open modify dialog</source>
+        <translation>打开修改对话框失败</translation>
+    </message>
+    <message>
+        <source>Failed to modify task: cannot delete old task</source>
+        <translation>修改任务失败：无法删除旧任务</translation>
+    </message>
+    <message>
+        <source>Task modified successfully</source>
+        <translation>任务修改成功</translation>
+    </message>
+    <message>
+        <source>Failed to modify task</source>
+        <translation>修改任务失败</translation>
+    </message>
+    <message>
+        <source>Delete Task</source>
+        <translation>删除任务</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete task</source>
+        <translation>确定要删除任务</translation>
+    </message>
+    <message>
+        <source>Task deleted successfully</source>
+        <translation>任务删除成功</translation>
+    </message>
+    <message>
+        <source>Failed to delete task</source>
+        <translation>删除任务失败</translation>
+    </message>
+    <message>
+        <source>Task enabled</source>
+        <translation>任务已启用</translation>
+    </message>
+    <message>
+        <source>Task disabled</source>
+        <translation>任务已禁用</translation>
+    </message>
+    <message>
+        <source>Failed to toggle task</source>
+        <translation>切换任务状态失败</translation>
+    </message>
+    <message>
+        <source>Success</source>
+        <translation>成功</translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation>错误</translation>
+    </message>
+    <message>
+        <source>Task created successfully</source>
+        <translation>任务创建成功</translation>
+    </message>
+    <message>
+        <source>Failed to create task</source>
+        <translation>创建任务失败</translation>
     </message>
 </context>
 </TS>

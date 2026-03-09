@@ -919,6 +919,7 @@ cdef class BaseTask(OCR):
     cdef public object group_icon
     cdef public double sleep_check_interval
     cdef public double last_sleep_check_time
+    cdef public bint support_schedule_task
     cdef public bint in_sleep_check
 
     def __init__(self, *args, **kwargs):
@@ -949,6 +950,7 @@ cdef class BaseTask(OCR):
         self.sleep_check_interval = -1
         self.last_sleep_check_time = 0
         self.in_sleep_check = False
+        self.support_schedule_task = False
 
     def run_task_by_class(self, cls):
         task = self.get_task_by_class(cls)

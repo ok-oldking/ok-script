@@ -1590,6 +1590,7 @@ class BaseTask(OCR):
     show_create_shortcut: bool
     sleep_check_interval: float
     last_sleep_check_time: float
+    support_schedule_task: bool
     in_sleep_check: bool
 
     def __init__(self, executor: Optional["TaskExecutor"] = None) -> None:

@@ -52,6 +52,7 @@ class MainWindow(MSFluentWindow):
 
         self.first_task_tab = None
         self.grouped_task_tabs = []
+        self.schedule_tab = None
 
         # Prepare custom tabs and separate them by add_after_default_tabs
         before_custom_tabs = []
@@ -104,10 +105,11 @@ class MainWindow(MSFluentWindow):
                 self.first_task_tab = self.trigger_tab
             self.addSubInterface(self.trigger_tab, FluentIcon.ROBOT, self.tr('Triggers'))
 
+       
+
         # Add custom tabs that should appear after built-in task tabs
         for tab_obj in after_custom_tabs:
             self.addSubInterface(tab_obj, tab_obj.icon, tab_obj.name, position=tab_obj.position)
-
         if debug:
             from ok.gui.debug.DebugTab import DebugTab
             debug_tab = DebugTab(config, exit_event)
@@ -117,7 +119,13 @@ class MainWindow(MSFluentWindow):
             run_code_tab = RunCodeTab(config, exit_event)
             self.addSubInterface(run_code_tab, FluentIcon.COMMAND_PROMPT, self.tr('Run Code'),
                                  position=NavigationItemPosition.BOTTOM)
-
+        
+        # 添加计划任务Tab
+        any_support_schedule = any(task.support_schedule_task for task in executor.onetime_tasks)
+        if any_support_schedule:
+            from ok.gui.tasks.ScheduleTaskTab import ScheduleTaskTab
+            self.schedule_tab = ScheduleTaskTab(config=self.config)
+            self.addSubInterface(self.schedule_tab, FluentIcon.CALENDAR, self.tr('Schedule'))
         from ok.gui.about.AboutTab import AboutTab
         self.about_tab = AboutTab(config, self.app.updater)
         self.addSubInterface(self.about_tab, FluentIcon.QUESTION, self.tr('About'),
@@ -327,6 +335,8 @@ class MainWindow(MSFluentWindow):
             self.switchTo(self.onetime_tab)
         elif index == "trigger" and self.trigger_tab is not None:
             self.switchTo(self.trigger_tab)
+        elif index == "schedule" and self.schedule_tab is not None:
+            self.switchTo(self.schedule_tab)
         elif index == "about" and self.about_tab is not None:
             self.switchTo(self.about_tab)
 
