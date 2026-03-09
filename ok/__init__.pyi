@@ -28,16 +28,83 @@ def find_boxes_by_name(boxes: List["Box"], names: Union[str, List[str], Pattern[
     ...
 
 
-def is_close_to_pure_color(image: np.ndarray, max_colors: int = 5000, percent: float = 0.97) -> bool:
+def relative_box(frame_width: int, frame_height: int, x: float, y: float, to_x: float = 1, to_y: float = 1, width: float = 0, height: float = 0, name: Optional[str] = None, confidence: float = 1.0) -> "Box":
     """
-    Checks if the image is close to a single pure color.
+    Calculate a box coordinates relative to the frame size.
 
-    检查图像是否接近单一纯色。
+    根据帧大小计算相对框坐标。
+    """
+    ...
 
-    :param image: Input image. 输入图像。
-    :param max_colors: Maximum number of unique colors allowed before returning False. 返回 False 前允许的最大唯一颜色数。
-    :param percent: Minimum percentage of the dominant color to be considered pure. 认为纯色的主导颜色最小百分比。
-    :return: True if close to pure color. 如果接近纯色返回 True。
+
+def crop_image(image: np.ndarray, box: Optional["Box"] = None) -> np.ndarray:
+    """
+    Crops the image based on the box.
+
+    根据框裁剪图像。
+    """
+    ...
+
+
+def average_width(boxes: List["Box"]) -> int:
+    """
+    Calculates the average width of a list of boxes.
+
+    计算框列表的平均宽度。
+    """
+    ...
+
+
+def find_boxes_within_boundary(boxes: List["Box"], boundary_box: "Box", sort: bool = True) -> List["Box"]:
+    """
+    Finds boxes within a boundary box.
+
+    查找边界框内的框。
+    """
+    ...
+
+
+def get_bounding_box(boxes: List["Box"]) -> "Box":
+    """
+    Calculates the bounding box for a list of boxes.
+
+    计算框列表的边界框。
+    """
+    ...
+
+
+def find_box_by_name(boxes: List["Box"], names: Union[str, List[str], Pattern[str], List[Pattern[str]]]) -> Optional["Box"]:
+    """
+    Finds the first box matching any of the names.
+
+    查找匹配任一名称的第一个框。
+    """
+    ...
+
+
+def find_highest_confidence_box(boxes: List["Box"]) -> Optional["Box"]:
+    """
+    Finds the box with the highest confidence.
+
+    查找置信度最高的框。
+    """
+    ...
+
+
+def sort_boxes(boxes: List["Box"]) -> List["Box"]:
+    """
+    Sorts boxes from top to bottom, left to right.
+
+    从上到下、从左到右对框进行排序。
+    """
+    ...
+
+
+def mask_white(image: np.ndarray, lower_white: int = 255) -> np.ndarray:
+    """
+    Creates a mask for white pixels.
+
+    为白色像素创建掩码。
     """
     ...
 
@@ -55,22 +122,6 @@ def get_mask_in_color_range(image: np.ndarray, color_range: Dict[str, tuple[int,
     ...
 
 
-def get_connected_area_by_color(image: np.ndarray, color_range: Dict[str, tuple[int, int]], connectivity: int = 4,
-                                gray_range: int = 0) -> tuple[int, np.ndarray, np.ndarray]:
-    """
-    Finds connected areas of a specific color.
-
-    查找特定颜色的连通区域。
-
-    :param image: Input image. 输入图像。
-    :param color_range: Color range dictionary. 颜色范围字典。
-    :param connectivity: Connectivity (4 or 8). 连通性 (4 或 8)。
-    :param gray_range: Grayscale check range. 灰度检查范围。
-    :return: (num_labels, stats, labels) tuple. (标签数, 统计信息, 标签) 元组。
-    """
-    ...
-
-
 def color_range_to_bound(color_range: Dict[str, tuple[int, int]]) -> tuple[np.ndarray, np.ndarray]:
     """
     Converts a color range dictionary to lower and upper bounds for OpenCV.
@@ -79,32 +130,6 @@ def color_range_to_bound(color_range: Dict[str, tuple[int, int]]) -> tuple[np.nd
 
     :param color_range: Color range dictionary. 颜色范围字典。
     :return: (lower_bound, upper_bound) tuple. (下限, 上限) 元组。
-    """
-    ...
-
-
-def calculate_colorfulness(image: np.ndarray, box: Optional["Box"] = None) -> float:
-    """
-    Calculates the colorfulness of an image or a region.
-
-    计算图像或区域的色彩丰富度。
-
-    :param image: Input image. 输入图像。
-    :param box: Optional ROI. 可选 ROI。
-    :return: Colorfulness value (0-1 approx). 色彩丰富度值（约 0-1）。
-    """
-    ...
-
-
-def get_saturation(image: np.ndarray, box: Optional["Box"] = None) -> float:
-    """
-    Calculates the average saturation of an image or a region.
-
-    计算图像或区域的平均饱和度。
-
-    :param image: Input image. 输入图像。
-    :param box: Optional ROI. 可选 ROI。
-    :return: Average saturation (0-1). 平均饱和度 (0-1)。
     """
     ...
 
@@ -132,18 +157,6 @@ def calculate_color_percentage(image: np.ndarray, color_ranges: Dict[str, tuple[
     :param color_ranges: Color range dictionary. 颜色范围字典。
     :param box: Optional ROI. 可选 ROI。
     :return: Percentage (0-1). 百分比 (0-1)。
-    """
-    ...
-
-
-def rgb_to_gray(rgb: Union[tuple, list, np.ndarray]) -> float:
-    """
-    Converts RGB color to grayscale value.
-
-    将 RGB 颜色转换为灰度值。
-
-    :param rgb: RGB values (tuple or list). RGB 值（元组或列表）。
-    :return: Grayscale value. 灰度值。
     """
     ...
 
@@ -566,6 +579,51 @@ class ExecutorOperation:
         Resets the current scene.
 
         重置当前场景。
+        """
+        ...
+
+    @property
+    def width(self) -> int:
+        """
+        Gets the width of the screen.
+
+        获取屏幕宽度。
+        """
+        ...
+
+    @property
+    def height(self) -> int:
+        """
+        Gets the height of the screen.
+
+        获取屏幕高度。
+        """
+        ...
+
+    @property
+    def screen_width(self) -> int:
+        """
+        Gets the width of the screen.
+
+        获取屏幕宽度。
+        """
+        ...
+
+    @property
+    def screen_height(self) -> int:
+        """
+        Gets the height of the screen.
+
+        获取屏幕高度。
+        """
+        ...
+
+    @property
+    def app(self) -> "App":
+        """
+        Gets the App instance.
+
+        获取 App 实例。
         """
         ...
 
@@ -1592,6 +1650,7 @@ class BaseTask(OCR):
     last_sleep_check_time: float
     support_schedule_task: bool
     in_sleep_check: bool
+    global_config_names: List[str]
 
     def __init__(self, executor: Optional["TaskExecutor"] = None) -> None:
         """
@@ -1928,6 +1987,14 @@ class BaseTask(OCR):
         On destroy callback.
 
         销毁回调。
+        """
+        ...
+
+    def after_init(self, executor: Optional["TaskExecutor"] = None, scene: Optional["BaseScene"] = None) -> None:
+        """
+        Called after initialization.
+
+        初始化后的回调。
         """
         ...
 
@@ -3328,3 +3395,143 @@ class ScheduledTask:
     """
     execute_at: float
     task: Optional[Callable]
+
+
+def get_my_id() -> str:
+    """
+    Gets the unique ID for the current machine.
+
+    获取当前机器的唯一 ID。
+    """
+    ...
+
+
+def get_my_id_with_cwd() -> str:
+    """
+    Gets the unique ID for the current machine and current working directory.
+
+    获取当前机器和当前工作目录的唯一 ID。
+    """
+    ...
+
+
+class Response:
+    """
+    Response class for API results.
+
+    API 结果的响应类。
+    """
+    code: int
+    message: str
+    data: Any
+
+    def __init__(self, code: int, message: str, data: Any = None) -> None: ...
+
+
+class App:
+    """
+    Main application class.
+
+    主应用程序类。
+    """
+    global_config: Any
+    app: Any
+    ok_config: "Config"
+    auth_config: Any
+    locale: Any
+    overlay: Any
+    start_controller: Any
+    loading_window: Any
+    overlay_window: Any
+    main_window: Any
+    exit_event: "ExitEvent"
+    icon: Any
+    fire_base_analytics: Any
+    to_translate: Optional[set]
+    po_translation: Any
+    updater: Any
+    timer: Any
+    config: Dict[str, Any]
+    about: str
+    title: str
+    version: str
+    debug: bool
+
+    def __init__(self, config: Dict[str, Any], task_executor: Any, exit_event: Optional["ExitEvent"] = None) -> None: ...
+    def quit(self) -> None: ...
+    def tr(self, key: str) -> str: ...
+    def gen_tr_po_files(self) -> str: ...
+    def show_message_window(self, title: str, message: str) -> None: ...
+    def show_already_running_error(self) -> None: ...
+    def show_path_ascii_error(self, path: str) -> None: ...
+    def update_overlay(self, visible: bool, x: int, y: int, window_width: int, window_height: int, width: int,
+                       height: int, scaling: float) -> None: ...
+    def show_main_window(self) -> None: ...
+    def do_show_main(self) -> None: ...
+    def exec(self) -> None: ...
+
+
+class OK:
+    """
+    The main coordinator class for ok-script.
+
+    ok-script 的主要协调类。
+    """
+    executor: Any
+    adb: Any
+    adb_device: Any
+    feature_set: Any
+    hwnd: Any
+    device_manager: "DeviceManager"
+    ocr: Any
+    overlay_window: Any
+    screenshot: Any
+    exit_event: "ExitEvent"
+    init_error: Any
+    config: Dict[str, Any]
+    task_executor: Any
+    debug: bool
+    global_config: "GlobalConfig"
+
+    def __init__(self, config: Dict[str, Any]) -> None: ...
+
+    @property
+    def app(self) -> App: ...
+
+    def start(self) -> None: ...
+
+    def do_init(self) -> bool: ...
+
+    def wait_task(self) -> None: ...
+
+    def console_handler(self, event: int) -> bool: ...
+
+    def quit(self) -> None: ...
+
+    def init_device_manager(self) -> None: ...
+
+
+class BaseScene:
+    """
+    Base class for scenes.
+
+    场景的基类。
+    """
+
+    def reset(self) -> None: ...
+
+
+class GlobalConfig:
+    """
+    Manages global configuration options.
+
+    管理全局配置选项。
+    """
+    configs: Dict[str, Config]
+    config_options: Dict[str, Any]
+    lock: threading.Lock
+
+    def __init__(self, config_options: List[Any]) -> None: ...
+    def get_config(self, option: Union[str, Any]) -> Config: ...
+    def get_config_desc(self, key: str) -> Optional[Dict[str, str]]: ...
+    def get_all_visible_configs(self) -> List[Tuple[str, Config, Any]]: ...
