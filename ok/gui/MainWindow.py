@@ -121,9 +121,11 @@ class MainWindow(MSFluentWindow):
                                  position=NavigationItemPosition.BOTTOM)
         
         # 添加计划任务Tab
-        from ok.gui.tasks.ScheduleTaskTab import ScheduleTaskTab
-        self.schedule_tab = ScheduleTaskTab(config=self.config)
-        self.addSubInterface(self.schedule_tab, FluentIcon.CALENDAR, self.tr('Schedule'))
+        any_support_schedule = any(task.support_schedule_task for task in executor.onetime_tasks)
+        if any_support_schedule:
+            from ok.gui.tasks.ScheduleTaskTab import ScheduleTaskTab
+            self.schedule_tab = ScheduleTaskTab(config=self.config)
+            self.addSubInterface(self.schedule_tab, FluentIcon.CALENDAR, self.tr('Schedule'))
         from ok.gui.about.AboutTab import AboutTab
         self.about_tab = AboutTab(config, self.app.updater)
         self.addSubInterface(self.about_tab, FluentIcon.QUESTION, self.tr('About'),

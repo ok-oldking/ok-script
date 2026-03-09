@@ -302,7 +302,7 @@ class CreateScheduleTaskDialog(MessageBoxBase):
         self.titleLabel = SubtitleLabel(self.tr("Create Schedule Task"), self)
 
         # 获取所有 onetime_tasks
-        self.tasks = og.executor.onetime_tasks if og.executor.onetime_tasks else []
+        self.tasks = [task for task in (og.executor.onetime_tasks if og.executor.onetime_tasks else []) if task.support_schedule_task]
         self.task_names = [og.app.tr(task.name) for task in self.tasks]
 
         self.viewLayout.setSpacing(12)
@@ -484,7 +484,7 @@ class CreateScheduleTaskDialog(MessageBoxBase):
         selected_task = self.tasks[selected_index]
         task_name = selected_task.name
         # -t N: N 为 onetime_tasks 的第 N 个（从 1 开始）
-        task_index = selected_index + 1
+        task_index = og.executor.onetime_tasks.index(selected_task) + 1
         # 根据下拉框索引获取触发类型
         trigger_types = [
             TriggerType.DAILY,
