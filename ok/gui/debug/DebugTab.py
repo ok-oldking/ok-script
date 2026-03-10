@@ -51,7 +51,7 @@ class DebugTab(Tab):
         layout.addWidget(capture_button)
 
         ocr_button = PushButton("OCR")
-        ocr_button.clicked.connect(lambda: self.handler.post(self.ocr))
+        ocr_button.clicked.connect(lambda: self.handler.post(self.ocr_log))
         layout.addWidget(ocr_button)
 
         self.log_window = None
@@ -203,22 +203,17 @@ class DebugTab(Tab):
         self.config['target_function'] = func_name
         alert_info(self.tr(f"call success: {result}"))
 
-    def ocr(self):
-        if not og.executor.ocr:
-            alert_error(self.tr('No OCR configured'))
+    def ocr_log(self):
+        try:
+            result = og.executor.get_all_tasks()[0].ocr(log=True)
+            self.update_result_text.emit(str(result))
+            alert_info(self.tr(f"OCR success (Logged): {result}"))
+            folder = og.ok.screenshot.screenshot_folder
+            if folder:
+                subprocess.Popen(r'explorer "{}"'.format(folder))
+        except Exception as e:
+            logger.error('debug ocr_log exception', e)
             return
-        if og.device_manager.capture_method is not None:
-            logger.info(f'og.device_manager.capture_method {og.device_manager.capture_method}')
-            capture = str(og.device_manager.capture_method)
-            frame = og.device_manager.capture_method.do_get_frame()
-            if frame is not None:
-                result = og.executor.ocr.ocr(frame=frame)
-                self.update_result_text.emit(str(result))
-                alert_info(self.tr(f"OCR success: {result}"))
-            else:
-                alert_error(self.tr('Capture returned None'))
-        else:
-            alert_error(self.tr('No Capture Available or Selected'))
 
     def task_changed(self, text):
         self.config['target_task'] = text
