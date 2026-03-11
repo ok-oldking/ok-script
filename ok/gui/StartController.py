@@ -153,7 +153,14 @@ class StartController(QObject):
                             else:
                                 alert_error(self.tr('Auto HDR is enabled, tasks might not work correctly!'), True)
                 if not og.device_manager.capture_method.hwnd_window.pos_valid:
-                    return self.tr(f'Window is minimized or out of screen, and don\'t use full-screen exclusive mode!')
+                    hwnd_window = og.device_manager.capture_method.hwnd_window
+                    if hwnd_window.hwnd and hwnd_window.window_width > 0 and hwnd_window.window_height > 0:
+                        from ok.util.window import resize_window
+                        logger.info(f"Window pos invalid, trying to center window with size {hwnd_window.window_width}x{hwnd_window.window_height}")
+                        resize_window(hwnd_window.hwnd, hwnd_window.window_width, hwnd_window.window_height)
+                        hwnd_window.do_update_window_size()
+                    if not og.device_manager.capture_method.hwnd_window.pos_valid:
+                        return self.tr(f'Window is minimized or out of screen, and don\'t use full-screen exclusive mode!')
             frame = self.try_capture_a_frame()
             if frame is None:
                 logger.error(f'check_device_error: try_capture_a_frame returned None')

@@ -162,7 +162,18 @@ def resize_window(hwnd, width, height):
 
         user32.SetWindowPos(hwnd, None, center_x, center_y, 0, 0,
                             SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW)
-        time.sleep(0.01)
+        
+        start_time = time.time()
+        while time.time() - start_time < 5:
+            n_left, n_top, n_right, n_bottom = win32gui.GetWindowRect(hwnd)
+            n_width = n_right - n_left
+            n_height = n_bottom - n_top
+            if n_width == width and n_height == height and n_left == center_x and n_top == center_y:
+                break
+            time.sleep(0.1)
+        
+        time.sleep(0.5)
+        
         logger.info(f"Window with handle {hwnd} resized to {width}x{height} and centered at ({center_x}, {center_y}).")
         return True
     except Exception as e:
