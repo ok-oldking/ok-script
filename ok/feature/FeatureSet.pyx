@@ -294,6 +294,8 @@ def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcente
                 x, y, w, h, scale = adjust_coordinates(x, y, w, h, width, height, image_width, image_height,
                                                        hcenter=is_hcenter, vcenter=is_vcenter)
 
+                w = max(1, w)
+                h = max(1, h)
                 image = cv2.resize(image, (w, h))
             else:
                 scale = 1
