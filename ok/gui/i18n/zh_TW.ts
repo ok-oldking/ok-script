@@ -29,6 +29,10 @@
             <source>Download Error:</source>
             <translation>下載錯誤：</translation>
         </message>
+        <message>
+            <source>Other Projects</source>
+            <translation>相關項目</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>

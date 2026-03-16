@@ -30,6 +30,10 @@
         <source>Download Error:</source>
         <translation>下载错误: </translation>
     </message>
+    <message>
+        <source>Other Projects</source>
+        <translation>相关项目</translation>
+    </message>
 </context>
 <context>
     <name>ActWindow</name>

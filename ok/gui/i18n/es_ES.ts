@@ -29,6 +29,10 @@
             <source>Download Error:</source>
             <translation>Error de descarga:</translation>
         </message>
+        <message>
+            <source>Other Projects</source>
+            <translation>Otros proyectos</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
