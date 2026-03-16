@@ -119,8 +119,8 @@ cdef class App:
         if not config.get('window_size'):
             logger.info(f'no config.window_size was set use default')
             config['window_size'] = {
-                'width': 800,
-                'height': 600,
+                'width': 1000,
+                'height': 800,
                 'min_width': 600,
                 'min_height': 450,
             }

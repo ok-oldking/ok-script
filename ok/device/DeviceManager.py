@@ -1,6 +1,7 @@
 import os
 import re
 import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import cv2
 import numpy as np
@@ -223,13 +224,14 @@ class DeviceManager:
     def refresh_phones(self, current=False):
         if self.adb_capture_config is None:
             return
-        for adb_device in self.adb.iter_device():
+
+        def refresh_one(adb_device):
             imei = self.adb_get_imei(adb_device)
             if imei is not None:
                 preferred = self.get_preferred_device()
                 if current and preferred is not None and preferred['imei'] != imei:
                     logger.debug(f"refresh current only skip others {preferred['imei']} != {imei}")
-                    continue
+                    return None
                 found = False
                 for device in self.device_dict.values():
                     if device.get('adb_imei') == imei:
@@ -240,8 +242,18 @@ class DeviceManager:
                     logger.debug(f'refresh_phones found an phone {adb_device}')
                     phone_device = {"address": adb_device.serial, "device": "adb", "connected": True, "imei": imei,
                                     "nick": adb_device.prop.model or imei, "player_id": -1,
-                                    "resolution": f'{width}x{height}'}
-                    self.device_dict[imei] = phone_device
+                                    "resolution": f'{width}x{height}', "adb_imei": imei}
+                    return imei, phone_device
+            return None
+
+        devices = list(self.adb.iter_device())
+        with ThreadPoolExecutor(max_workers=min(len(devices), 8) if devices else 1) as executor:
+            results = list(executor.map(refresh_one, devices))
+
+        for result in results:
+            if result:
+                imei, device = result
+                self.device_dict[imei] = device
         logger.debug(f'refresh_phones done')
 
     def refresh_emulators(self, current=False):
@@ -251,11 +263,12 @@ class DeviceManager:
         manager = EmulatorManager()
         installed_emulators = manager.all_emulator_instances
         logger.info(f'installed emulators {installed_emulators}')
-        for emulator in installed_emulators:
+
+        def refresh_one(emulator):
             preferred = self.get_preferred_device()
             if current and preferred is not None and preferred['imei'] != emulator.name:
                 logger.debug(f"refresh current only skip others {preferred['imei']} != {emulator.name}")
-                continue
+                return None
             adb_device = self.adb_connect(emulator.serial)
             if adb_device is not None:
                 adb_width, adb_height = self.get_resolution(adb_device)
@@ -273,7 +286,15 @@ class DeviceManager:
             if adb_device is not None:
                 emulator_device["resolution"] = f"{adb_width}x{adb_height}"
                 emulator_device["adb_imei"] = self.adb_get_imei(adb_device)
-            self.device_dict[emulator.name] = emulator_device
+            return emulator.name, emulator_device
+
+        with ThreadPoolExecutor(max_workers=min(len(installed_emulators), 8) if installed_emulators else 1) as executor:
+            results = list(executor.map(refresh_one, installed_emulators))
+
+        for result in results:
+            if result:
+                name, device = result
+                self.device_dict[name] = device
         logger.info(f'refresh emulators {self.device_dict}')
 
     def get_resolution(self, device=None):
@@ -330,14 +351,14 @@ class DeviceManager:
             raise Exception('Device is none')
 
     def adb_get_imei(self, device):
-        return (self.shell_device(device, "settings get secure android_id") or
-                self.shell_device(device, "service call iphonesubinfo 4") or device.prop.model)
+        return (self.shell_device(device, "settings get secure android_id", timeout=5) or
+                self.shell_device(device, "service call iphonesubinfo 4", timeout=5) or device.prop.model)
 
     def do_screencap(self, device) -> np.ndarray | None:
         if device is None:
             return None
         try:
-            png_bytes = self.shell_device(device, "screencap -p", encoding=None)
+            png_bytes = self.shell_device(device, "screencap -p", encoding=None, timeout=10)
             if png_bytes is not None and len(png_bytes) > 0:
                 image_data = np.frombuffer(png_bytes, dtype=np.uint8)
                 image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
@@ -352,7 +373,7 @@ class DeviceManager:
         device = self.device
         if device:
             try:
-                dump_output = self.shell_device(device, ["uiautomator", "dump"], encoding='utf-8')
+                dump_output = self.shell_device(device, ["uiautomator", "dump"], encoding='utf-8', timeout=60)
                 match = re.search(r"/sdcard/.*\.xml", dump_output)
                 if match:
                     dump_file_path = match.group(0)
@@ -546,7 +567,7 @@ class DeviceManager:
             return True
         elif self.device is not None:
             try:
-                state = self.shell('echo 1')
+                state = self.shell('echo 1', timeout=3)
                 logger.debug(f'device_connected check device state is {state}')
                 return state is not None
             except Exception as e:
@@ -577,7 +598,7 @@ class DeviceManager:
             return None
 
     def adb_check_installed(self, packages):
-        installed = self.shell('pm list packages')
+        installed = self.shell('pm list packages', timeout=30)
         if isinstance(packages, str):
             packages = [packages]
         for package in packages:
