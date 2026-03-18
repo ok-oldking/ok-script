@@ -28,6 +28,7 @@ class AboutTab(Tab):
             {"name": "星痕共鸣", "url": "https://github.com/Sanheiii/ok-star-resonance"},
             {"name": "二重螺旋", "url": "https://github.com/BnanZ0/ok-duet-night-abyss"},
             {"name": "终末地", "url": "https://github.com/AliceJump/ok-end-field"},
+            {"name": "异环", "url": "https://github.com/BnanZ0/ok-neverness-to-everness"},
         ]
 
         def normalize_url(url):
