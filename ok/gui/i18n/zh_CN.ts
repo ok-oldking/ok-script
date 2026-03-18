@@ -3,11 +3,15 @@
 <TS version="2.1" language="zh_CN" sourcelanguage="en_US">
 <context>
     <name>@default</name>
-    <message>
-        <source>Version Update</source>
-        <translation>更新版本</translation>
-    </message>
-</context>
+        <message>
+            <source>Version Update</source>
+            <translation>更新版本</translation>
+        </message>
+        <message>
+            <source>{key} is invalid, please check the hotkey config!</source>
+            <translation>{key} 这种按键是无效的，请检查热键配置！</translation>
+        </message>
+    </context>
 <context>
     <name>AboutTab</name>
     <message>
@@ -275,14 +279,13 @@
         <translation>关闭</translation>
     </message>
 </context>
-<context>
-    <name>MainWindow</name>
-    <message>
-        <source>Tasks</source>
-        <translation>任务</translation>
-    </message>
-    <name>MainWindow</name>
-    <message>
+    <context>
+        <name>MainWindow</name>
+        <message>
+            <source>Tasks</source>
+            <translation>任务</translation>
+        </message>
+        <message>
         <source>This is a free software. If you purchased this anywhere, request a refund from the seller.</source>
         <translation>这是一个免费软件, 如果你从任何地方购买, 请申请退款!</translation>
     </message>

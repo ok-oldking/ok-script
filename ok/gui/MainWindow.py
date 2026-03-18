@@ -314,14 +314,18 @@ class MainWindow(MSFluentWindow):
         )
         self.tray.showMessage(title, message)
 
-    def show_notification(self, message, title=None, error=False, tray=False, show_tab=None):
+    def show_notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None):
         from ok.gui.util.app import show_info_bar
-        show_info_bar(self.window(), self.app.tr(message), self.app.tr(title), error)
+        translated_message = QCoreApplication.translate("@default", message)
+        if params:
+            translated_message = translated_message.format(**params)
+        translated_title = QCoreApplication.translate("@default", title) if title else ""
+        show_info_bar(self.window(), translated_message, translated_title, error)
         if tray:
-            self.tray.showMessage(self.app.tr(title), self.app.tr(message),
+            self.tray.showMessage(translated_title, translated_message,
                                   QSystemTrayIcon.Critical if error else QSystemTrayIcon.Information,
                                   5000)
-            self.navigate_tab(show_tab)
+        self.navigate_tab(show_tab)
 
     def capture_error(self):
         self.show_notification(self.tr('Please check whether the game window is selected correctly!'),

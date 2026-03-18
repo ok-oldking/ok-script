@@ -16,6 +16,16 @@ from ok.util.config import Config
 from ok.util.handler import Handler
 from ok.util.logger import Logger
 from ok.util.process import create_shortcut
+from ok.task.exceptions import HotkeyConfigException
+
+VALID_NAMED_KEYS = {
+    'esc', 'tab', 'shift', 'lshift', 'rshift', 'ctrl', 'lctrl', 'rctrl', 'alt', 'lalt', 'ralt',
+    'enter', 'return', 'space', 'backspace', 'up', 'down', 'left', 'right', 'pageup', 'pagedown',
+    'home', 'end', 'insert', 'delete', 'capslock', 'numlock', 'scrolllock', 'printscreen',
+    'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12',
+    'num0', 'num1', 'num2', 'num3', 'num4', 'num5', 'num6', 'num7', 'num8', 'num9',
+    'windows', 'command', 'meta'
+}
 
 logger = Logger.get_logger(__name__)
 
@@ -31,6 +41,19 @@ cdef class ExecutorOperation:
         self.last_click_time = 0
         self.logger.debug(f'ExecutorOperation init {executor.scene}')
         self.scene = executor.scene
+
+    def validate_key(self, key):
+        if isinstance(key, int):
+            key = str(key)
+        if not isinstance(key, str):
+            raise HotkeyConfigException(str(key))
+        k = key.lower()
+        if len(k) == 1:
+            if not (k.isalnum() or k in ' `~!@#$%^&*()-_=+[{]}\\|;:\'",<.>/?'):
+                raise HotkeyConfigException(key)
+        elif k not in VALID_NAMED_KEYS:
+            raise HotkeyConfigException(key)
+        return key
 
     def exit_is_set(self):
         return self.executor.exit_event.is_set()
@@ -312,6 +335,7 @@ cdef class ExecutorOperation:
         return True
 
     def send_key(self, key, down_time=0.02, interval=-1, after_sleep=0):
+        key = self.validate_key(key)
         if not self.check_interval(interval):
             self.executor.reset_scene()
             return False
@@ -331,10 +355,12 @@ cdef class ExecutorOperation:
         return self.executor.global_config.get_config_desc(option)
 
     def send_key_down(self, key):
+        key = self.validate_key(key)
         self.executor.reset_scene()
         self.executor.interaction.send_key_down(key)
 
     def send_key_up(self, key):
+        key = self.validate_key(key)
         self.executor.reset_scene()
         self.executor.interaction.send_key_up(key)
 
@@ -1070,8 +1096,8 @@ cdef class BaseTask(OCR):
         self.log_info(f"go to tab {tab}")
         communicate.tab.emit(tab)
 
-    def notification(self, message, title=None, error=False, tray=False, show_tab=None):
-        communicate.notification.emit(message, title, error, tray, show_tab)
+    def notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None):
+        communicate.notification.emit(message, title, error, tray, show_tab, params)
 
     @property
     def enabled(self):

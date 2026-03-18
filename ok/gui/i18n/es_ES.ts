@@ -6,6 +6,10 @@
             <source>Version Update</source>
             <translation>Actualización de versión</translation>
         </message>
+        <message>
+            <source>{key} is invalid, please check the hotkey config!</source>
+            <translation>{key} no es válido, ¡comprueba la configuración de las teclas rápidas!</translation>
+        </message>
     </context>
     <context>
         <name>AboutTab</name>

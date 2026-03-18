@@ -733,8 +733,8 @@ cdef class HwndWindow:
                         if self.device_manager.executor.pause():
                             logger.error(f'og.executor.pause pos_invalid: {x, y, width, height}')
                             communicate.notification.emit('Paused because game window is minimized or out of screen!',
-                                                          None,
-                                                          True, True, "start")
+                                                      None,
+                                                      True, True, "start", None)
                     if pos_valid != self.pos_valid:
                         self.pos_valid = pos_valid
                 else:
@@ -743,7 +743,7 @@ cdef class HwndWindow:
                         alert_info('Auto exit because game exited', True)
                         communicate.quit.emit()
                     else:
-                        communicate.notification.emit('Game Exited', None, True, True, None)
+                        communicate.notification.emit('Game Exited', None, True, True, None, None)
                     self.hwnd = 0
                 if visible != self.visible:
                     self.visible = visible

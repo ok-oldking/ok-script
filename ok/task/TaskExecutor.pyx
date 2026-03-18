@@ -6,7 +6,8 @@ from PySide6.QtCore import QCoreApplication
 
 from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_info
-from ok.task.exceptions import FinishedException, TaskDisabledException, WaitFailedException, CaptureException
+from ok.task.exceptions import FinishedException, TaskDisabledException, WaitFailedException, CaptureException, \
+    HotkeyConfigException
 from ok.util.GlobalConfig import basic_options
 from ok.util.logger import Logger, config_logger
 from ok.util.process import is_cuda_12_or_above, prevent_sleeping
@@ -432,7 +433,7 @@ cdef class TaskExecutor:
                 logger.info(f"TaskDisabledException, continue {task}")
                 from ok import og
                 communicate.notification.emit('Stopped', task.name, False,
-                                              True, "start")
+                                              True, "start", None)
                 continue
             except FinishedException:
                 logger.info(f"FinishedException, breaking")
@@ -443,8 +444,13 @@ cdef class TaskExecutor:
                 name = task.name
                 task.disable()
                 from ok import og
-                error = str(e)
-                communicate.notification.emit(error, name, True, True, None)
+                params = None
+                if isinstance(e, HotkeyConfigException):
+                    error = "{key} is invalid, please check the hotkey config!"
+                    params = {"key": e.key}
+                else:
+                    error = str(e)
+                communicate.notification.emit(error, name, True, True, None, params)
                 tab = "trigger" if is_trigger_task else "onetime"
                 task.info_set(QCoreApplication.tr('app', 'Error'), error)
                 logger.error(f"{name} exception", e)

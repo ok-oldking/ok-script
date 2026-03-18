@@ -6,6 +6,10 @@
             <source>Version Update</source>
             <translation>版本更新</translation>
         </message>
+        <message>
+            <source>{key} is invalid, please check the hotkey config!</source>
+            <translation>{key} 這種按鍵是無效的，請檢查熱鍵設定！</translation>
+        </message>
     </context>
     <context>
         <name>AboutTab</name>

@@ -6,6 +6,10 @@
             <source>Version Update</source>
             <translation>バージョンアップデート</translation>
         </message>
+        <message>
+            <source>{key} is invalid, please check the hotkey config!</source>
+            <translation>{key} は無効です。ホットキーの設定を確認してください！</translation>
+        </message>
     </context>
     <context>
         <name>AboutTab</name>
