@@ -46,6 +46,7 @@
         - [validate\_config](#validate_config)
         - [get\_global\_config](#get_global_config)
         - [get\_global\_config\_desc](#get_global_config_desc)
+    - [任务配置 (Task Configuration)](#任务配置-task-configuration)
     - [屏幕画图 (Screen drawing)](#屏幕画图-screen-drawing)
         - [draw\_boxes](#draw_boxes)
         - [clear\_box](#clear_box)
@@ -654,6 +655,76 @@ def get_global_config_desc(self, option) -> str
 ```
 
 获取一个全局配置选项的描述。
+
+---
+
+### 任务配置 (Task Configuration)
+
+`BaseTask` 允许通过 `default_config` 和 `config_type` 来定义任务在 GUI 界面中的配置表单。
+
+#### 默认配置 (self.default_config)
+
+在 `__init__` 中定义 `self.default_config`。框架会根据值的 Python 类型自动推断 GUI 控件：
+
+- `bool`: 开关按钮 (SwitchButton)
+- `int`: 整数输入框 (SpinBox)
+- `float`: 浮点数输入框 (DoubleSpinBox)
+- `list`: 列表修改项 (ModifyListItem)
+- `str`: 
+    - 长度 > 16 或包含 `\n`: 多行文本框 (TextEdit)
+    - 其他情况: 单行文本框 (LineEdit)
+
+#### 显示指定配置类型 (self.config_type)
+
+如果需要更复杂的控件（如下拉菜单、多选框或按钮），可以使用 `self.config_type` 进行显式定义。
+
+目前支持以下类型：
+
+- **`drop_down`**: 下拉选择框。
+    - **参数:** `options` (list[str]): 选项列表。
+- **`multi_selection`**: 多选列表。
+    - **参数:** `options` (list[str]): 选项列表。
+- **`text_edit`**: 强制使用多行文本框。
+- **`global`**: 引用全局配置项。
+- **`button` (NEW)**: 在配置区域显示一个按钮，用于触发特定方法。
+    - **参数:**
+        - `text` (str): 按钮上显示的文本（该文本会参与 `og.app.tr` 翻译）。
+        - `icon` (FluentIcon): 可选图标，例如 `FluentIcon.PLAY`。
+        - `callback` (callable): 点击按钮时触发的函数或方法。
+    - **注意:** `button` 类型的配置项其 key 和 value 只用于 GUI 渲染展示，**不会** 被保存到本地配置文件中。
+
+**示例代码:**
+
+```python
+class MyTask(BaseTask):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_config = {
+            'Run Count': 1,
+            'Mode': 'Default',
+            'Advanced Tool': 'Action' # 占位符
+        }
+        self.config_type = {
+            'Mode': {
+                'type': 'drop_down', 
+                'options': ['Default', 'Fast']
+            },
+            'Advanced Tool': {
+                'type': 'button',
+                'text': 'Run Diagnosis',
+                'icon': FluentIcon.SEARCH,
+                'callback': self.run_diagnosis
+            }
+        }
+        self.config_description = {
+            'Advanced Tool': 'Click to run system diagnosis'
+        }
+
+    def run_diagnosis(self):
+        self.log_info("Starting diagnosis...")
+```
+
+---
 
 ### 屏幕画图 (Screen drawing)
 
