@@ -48,12 +48,19 @@ class ConfigCard(ExpandSettingCard):
         self.viewLayout.setSpacing(0)
         self.viewLayout.setAlignment(Qt.AlignTop)
         self.viewLayout.setContentsMargins(10, 0, 10, 0)
-        if not self.config or not self.config.has_user_config() and not self.default_config:
+        if not self.config or not (self.config.has_user_config() or self.default_config or self.config_type):
             self.card.expandButton.hide()
         else:
+            added_keys = set()
             for key, value in self.config.items():
                 if not key.startswith('_'):
                     self.__addConfig(key, value)
+                    added_keys.add(key)
+            if self.config_type:
+                for key, the_type in self.config_type.items():
+                    if key not in added_keys and not key.startswith('_'):
+                        if isinstance(the_type, dict) and the_type.get('type') == 'button':
+                            self.__addConfig(key, None)
         self.add_buttons()
         self._adjustViewSize()
 

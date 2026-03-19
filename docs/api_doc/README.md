@@ -686,11 +686,12 @@ def get_global_config_desc(self, option) -> str
     - **参数:** `options` (list[str]): 选项列表。
 - **`text_edit`**: 强制使用多行文本框。
 - **`global`**: 引用全局配置项。
-- **`button` (NEW)**: 在配置区域显示一个按钮，用于触发特定方法。
+- **`button` (NEW)**: 在配置区域显示一个或多个按钮，用于触发特定方法。
     - **参数:**
         - `text` (str): 按钮上显示的文本（该文本会参与 `og.app.tr` 翻译）。
-        - `icon` (FluentIcon): 可选图标，例如 `FluentIcon.PLAY`。
+        - `icon` (FluentIcon): 可选图标。
         - `callback` (callable): 点击按钮时触发的函数或方法。
+        - `buttons` (list[dict]): 如果需要显示多个按钮，可以提供一个按钮配置列表，每个元素包含上述 `text`, `icon`, `callback`。
     - **注意:** `button` 类型的配置项其 key 和 value 只用于 GUI 渲染展示，**不会** 被保存到本地配置文件中。
 
 **示例代码:**
@@ -711,13 +712,22 @@ class MyTask(BaseTask):
             },
             'Advanced Tool': {
                 'type': 'button',
-                'text': 'Run Diagnosis',
-                'icon': FluentIcon.SEARCH,
-                'callback': self.run_diagnosis
+                'buttons': [
+                    {
+                        'text': 'Run Diagnosis',
+                        'icon': FluentIcon.SEARCH,
+                        'callback': self.run_diagnosis
+                    },
+                    {
+                        'text': 'Clean Cache',
+                        'icon': FluentIcon.DELETE,
+                        'callback': self.clean_cache
+                    }
+                ]
             }
         }
         self.config_description = {
-            'Advanced Tool': 'Click to run system diagnosis'
+            'Advanced Tool': 'Click to run advanced operations'
         }
 
     def run_diagnosis(self):

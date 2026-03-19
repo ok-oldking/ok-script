@@ -7,7 +7,7 @@ from ok.gui.tasks.LabelAndSpinBox import LabelAndSpinBox
 from ok.gui.tasks.LabelAndSwitchButton import LabelAndSwitchButton
 from ok.gui.tasks.LabelAndTextEdit import LabelAndTextEdit
 from ok.gui.tasks.ModifyListItem import ModifyListItem
-from ok.gui.tasks.LabelAndButton import LabelAndButton
+from ok.gui.tasks.LabelAndButtons import LabelAndButtons
 
 
 def config_widget(config_type, config_desc, config, key, value, task):
@@ -24,10 +24,10 @@ def config_widget(config_type, config_desc, config, key, value, task):
         elif the_type['type'] == 'text_edit':
             return LabelAndTextEdit(config_desc, config, key)
         elif the_type['type'] == 'button':
-            text = the_type.get('text', key)
-            icon = the_type.get('icon')
-            callback = the_type.get('callback')
-            return LabelAndButton(config_desc, key, text, icon, callback)
+            buttons = the_type.get('buttons')
+            if not buttons:
+                buttons = [the_type]
+            return LabelAndButtons(config_desc, key, buttons)
         else:
             raise Exception('Unknown config type')
     value = config.get_default(key)
