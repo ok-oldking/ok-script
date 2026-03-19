@@ -346,13 +346,27 @@ class DeviceManager:
     def shell_device(self, device, *args, **kwargs):
         logger.debug(f'adb shell {device} {args} {kwargs}')
         if device is not None:
-            return device.shell(*args, **kwargs)
+            try:
+                return device.shell(*args, **kwargs)
+            except Exception as e:
+                error_msg = str(e).lower()
+                if 'offline' in error_msg or 'closed' in error_msg:
+                    logger.warning(f"shell_device: Device {device.serial} offline or closed, disconnecting to force reconnect. ({e})")
+                    try:
+                        self.adb.disconnect(device.serial)
+                    except Exception as disc_e:
+                        logger.error(f'shell_device disconnect failed: {disc_e}')
+                raise
         else:
             raise Exception('Device is none')
 
     def adb_get_imei(self, device):
-        return (self.shell_device(device, "settings get secure android_id", timeout=5) or
-                self.shell_device(device, "service call iphonesubinfo 4", timeout=5) or device.prop.model)
+        try:
+            return (self.shell_device(device, "settings get secure android_id", timeout=5) or
+                    self.shell_device(device, "service call iphonesubinfo 4", timeout=5) or device.prop.model)
+        except Exception as e:
+            logger.error(f"adb_get_imei exception: {e}")
+            return None
 
     def do_screencap(self, device) -> np.ndarray | None:
         if device is None:

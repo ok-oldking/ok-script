@@ -29,24 +29,29 @@ class StartController(QObject):
             logger.info(f'do_start: call do_refresh')
             og.device_manager.do_refresh(True)
         except Exception as e:
+            logger.error(f'do_start do_refresh exception: {e}', e)
             communicate.starting_emulator.emit(True, self.tr(str(e)), 0)
             return
 
-        if not self.start_device():
-            return
-
-        if isinstance(task, int):
-            task = og.executor.onetime_tasks[task]
-            logger.info(f"enable task {task}")
-            if exit_after and task:
-                task.exit_after_task = True
-                communicate.task.emit(task)
-        if task:
-            task.enable()
-            task.unpause()
-
-        og.executor.start()
-        communicate.starting_emulator.emit(True, None, 0)
+        try:
+            if not self.start_device():
+                return
+    
+            if isinstance(task, int):
+                task = og.executor.onetime_tasks[task]
+                logger.info(f"enable task {task}")
+                if exit_after and task:
+                    task.exit_after_task = True
+                    communicate.task.emit(task)
+            if task:
+                task.enable()
+                task.unpause()
+    
+            og.executor.start()
+            communicate.starting_emulator.emit(True, None, 0)
+        except Exception as e:
+            logger.error(f'do_start exception: {e}', e)
+            communicate.starting_emulator.emit(True, self.tr(f'Start failed: {e}'), 0)
 
     def start_device(self):
         device = og.device_manager.get_preferred_device()
@@ -63,7 +68,8 @@ class StartController(QObject):
             if path:
                 logger.info(f"starting game {path}")
                 args = None
-                if og.global_config.get_config('Launch with DX11').get('Launch with DX11'):
+                dx11_config = og.global_config.get_config('Launch with DX11')
+                if dx11_config and dx11_config.get('Launch with DX11'):
                     args = "-dx11 -d3d11 -force-d3d11"
                 if not execute(path, arguments=args):
                     communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
