@@ -795,19 +795,24 @@ cdef class OCR(FindFeature):
         cdef list detected_boxes = []
         # logger.debug(f'rapid_ocr result {result}')
         # Process the results and create Box objects
-        for result in results:
-            pos = result[0]
-            text, confidence = result[1]
-            width, height = round(pos[2][0] - pos[0][0]), round(pos[2][1] - pos[0][1])
-            if width <= 0 or height <= 0:
-                logger.error(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
-                if self.debug:
-                    self.screenshot('negative_text', frame=image)
+        # duguang_ocr returns a list of per-image results (第1张图片结果, 第2张图片结果, ...)
+        # each element is itself a list of [pos, (text, confidence)] detections
+        for image_results in results:
+            if not image_results:
                 continue
-            detected_box = self.get_box(box, confidence, height, pos, scale_factor, text, threshold, width)
-            # logger.debug(f'rapid_ocr {text} {box} {confidence} {threshold} detected_box {detected_box}')
-            if detected_box:
-                detected_boxes.append(detected_box)
+            for result in image_results:
+                pos = result[0]
+                text, confidence = result[1]
+                width, height = round(pos[2][0] - pos[0][0]), round(pos[2][1] - pos[0][1])
+                if width <= 0 or height <= 0:
+                    logger.error(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
+                    if self.debug:
+                        self.screenshot('negative_text', frame=image)
+                    continue
+                detected_box = self.get_box(box, confidence, height, pos, scale_factor, text, threshold, width)
+                # logger.debug(f'rapid_ocr {text} {box} {confidence} {threshold} detected_box {detected_box}')
+                if detected_box:
+                    detected_boxes.append(detected_box)
         ocr_boxes = detected_boxes
         self.fix_texts(detected_boxes)
         if match is not None:
