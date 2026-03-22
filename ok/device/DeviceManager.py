@@ -164,7 +164,7 @@ class DeviceManager:
 
     def update_pc_device(self):
         if self.windows_capture_config is not None:
-            name, hwnd, full_path, x, y, width, height = find_hwnd(self.windows_capture_config.get('title'),
+            name, hwnd, full_path, x, y, width, height, hwnds = find_hwnd(self.windows_capture_config.get('title'),
                                                                    self.windows_capture_config.get(
                                                                        'exe') or self.config.get('selected_exe'), 0, 0,
                                                                    player_id=-1,
@@ -274,7 +274,7 @@ class DeviceManager:
                 adb_width, adb_height = self.get_resolution(adb_device)
             else:
                 adb_width, adb_height = 0, 0
-            name, hwnd, full_path, x, y, width, height = find_hwnd(None,
+            name, hwnd, full_path, x, y, width, height, _ = find_hwnd(None,
                                                                    emulator.path, adb_width, adb_height,
                                                                    emulator.player_id)
             logger.info(

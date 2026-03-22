@@ -384,11 +384,15 @@ class PostMessageInteraction(BaseInteraction):
         self.activate_interval = 1
         self.lparam = 0x1e0001
         self.activated = False
+        self._dynamic_target_hwnd = 0
         self.hwnd_window.visible_monitors.append(self)
 
     @property
     def hwnd(self):
-        return self.hwnd_window.hwnd
+        if self._dynamic_target_hwnd != 0:
+            if win32gui.IsWindow(self._dynamic_target_hwnd):
+                return self._dynamic_target_hwnd
+        return self.hwnd_window.top_hwnd if self.hwnd_window.top_hwnd else self.hwnd_window.hwnd
 
     def on_visible(self, visible):
         if visible:
@@ -543,12 +547,46 @@ class PostMessageInteraction(BaseInteraction):
 
     def update_mouse_pos(self, x, y, activate=True):
         self.try_activate()
+        
+        base_hwnd = self.hwnd_window.top_hwnd if self.hwnd_window.top_hwnd else self.hwnd_window.hwnd
+        
         if x == -1 or y == -1:
-            x, y = self.mouse_pos
+            x, y = getattr(self, 'bg_mouse_pos', (0, 0))
         else:
-            self.mouse_pos = (x, y)
-        # logger.debug(f'mouse_pos: {x, y}')
-        return win32api.MAKELONG(x, y)
+            x, y = self.hwnd_window.get_top_window_cords(x, y)
+            self.bg_mouse_pos = (x, y)
+            
+        try:
+            abs_x, abs_y = win32gui.ClientToScreen(base_hwnd, (int(x), int(y)))
+            
+            found_child = None
+            if self.hwnd_window.top_hwnd and self.hwnd_window.top_hwnd != self.hwnd_window.hwnd:
+                def find_child_at_point(child, _):
+                    nonlocal found_child
+                    if win32gui.IsWindowVisible(child):
+                        rect = win32gui.GetWindowRect(child)
+                        if rect[0] <= abs_x < rect[2] and rect[1] <= abs_y < rect[3]:
+                            found_child = child
+                            return False
+                    return True
+                    
+                try:
+                    win32gui.EnumChildWindows(base_hwnd, find_child_at_point, None)
+                except Exception: pass
+                logger.debug(f'found_child {found_child}')
+                
+            target_hwnd = found_child if found_child else base_hwnd
+            self._dynamic_target_hwnd = target_hwnd
+            
+            local_x, local_y = win32gui.ScreenToClient(target_hwnd, (abs_x, abs_y))
+            
+            logger.debug(f'mouse_pos dynamically aimed at {target_hwnd} ({win32gui.GetClassName(target_hwnd)}): {local_x}, {local_y}')
+            return win32api.MAKELONG(local_x, local_y)
+            
+        except Exception as e:
+            logger.error(f'update_mouse_pos conversion error targeting {base_hwnd}', e)
+            self._dynamic_target_hwnd = base_hwnd
+            return win32api.MAKELONG(int(x), int(y))
 
     def mouse_up(self, key="left"):
         if key == "left":
