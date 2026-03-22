@@ -11,6 +11,7 @@ from enum import IntEnum
 
 import cv2
 import numpy as np
+import psutil
 import win32api
 import win32con
 import win32gui
@@ -69,6 +70,7 @@ cdef object capture_by_bitblt(object context, int hwnd, int width, int height, i
         logger.error(f'capture_by_bitblt invalid params: hwnd={hwnd}, w={width}, h={height}')
         return None
 
+    #logger.debug(f'capture_by_bitblt hwnd={hwnd} size={width}x{height} offset={x},{y} render={render_full_content}')
     cdef object image = None
 
     try:
@@ -116,6 +118,7 @@ class BitBltCtxDummy:
         self.last_hwnd = 0
         self.last_width = 0
         self.last_height = 0
+
 
 cdef class BaseCaptureMethod:
     name = "None"
@@ -208,8 +211,9 @@ cdef composite_hwnds(object bg, object hwnd_window, object contexts, int bg_crop
     cdef object hwnds = getattr(hwnd_window, 'hwnds', None)
     cdef int bg_client_x, bg_client_y, height, width
     cdef int w_hwnd, w_w, w_h, w_client_x, w_client_y
-    cdef int paste_x, paste_y, x1, y1, x2, y2, src_x1, src_y1, src_x2, src_y2, c
+    cdef int paste_x, paste_y, x1, y1, x2, y2, src_x1, src_y1, src_x2, src_y2, c, off_x, off_y, w_w_to_capture, w_h_to_capture, off_x_to_capture, off_y_to_capture
     cdef object img
+    cdef double m_scaling, w_scaling, ratio
 
     if bg is not None and hwnds and len(hwnds) > 1:
         bg = bg.copy()
@@ -224,23 +228,64 @@ cdef composite_hwnds(object bg, object hwnd_window, object contexts, int bg_crop
             if w_hwnd == hwnd_window.hwnd:
                 continue
 
+            # Determine the virtualization ratio by comparing window DPI to monitor DPI
+            m_scaling = w[8]
+            w_scaling = m_scaling
+            try:
+                # GetDpiForWindow tells us if the application is per-monitor aware or virtualized (96)
+                w_scaling = ctypes.windll.user32.GetDpiForWindow(w_hwnd) / 96.0
+            except Exception:
+                pass
+
+            # The virtualization ratio determines how much the OS is stretching the logical DC
+            ratio = 1.0
+            if w_scaling < m_scaling and w_scaling != 0:
+                ratio = m_scaling / w_scaling
+
+            # Capture sub-windows at logical resolution. Coordinates are already physical because the process is DPI-aware.
             w_w = w[2]
             w_h = w[3]
             w_client_x = w[4]
             w_client_y = w[5]
 
+            # Calculate the offset between the top-left of the whole window and the top-left of the client area
+            off_x = 0
+            off_y = 0
+            try:
+                wr = win32gui.GetWindowRect(w_hwnd)
+                # w_client_x and wr[0] are both in the process's current DPI units (physical pixels)
+                off_x = w_client_x - wr[0]
+                off_y = w_client_y - wr[1]
+            except Exception:
+                pass
+
             if w_hwnd not in contexts:
                 contexts[w_hwnd] = BitBltCtxDummy()
 
-            img = capture_by_bitblt(contexts[w_hwnd], w_hwnd, w_w, w_h, 0, 0, render_full)
+            # Capturing the logical buffer (Physical / Ratio) and upscaling back to Physical
+            w_w_to_capture = int(w_w / ratio)
+            w_h_to_capture = int(w_h / ratio)
+            off_x_to_capture = int(off_x / ratio)
+            off_y_to_capture = int(off_y / ratio)
+
+            # logger.debug(
+            #    f'composite_hwnds bitblt {w_hwnd} m_scaling={m_scaling} w_scaling={w_scaling} ratio={ratio} capture_size={w_w_to_capture}x{w_h_to_capture} target={w_w}x{w_h} offset={off_x_to_capture},{off_y_to_capture}')
+            img = capture_by_bitblt(contexts[w_hwnd], w_hwnd, w_w_to_capture, w_h_to_capture, off_x_to_capture,
+                                    off_y_to_capture, render_full)
             if img is not None:
+                if ratio != 1.0:
+                    img = cv2.resize(img, (w_w, w_h), interpolation=cv2.INTER_LINEAR)
+
                 paste_x = (w_client_x - bg_client_x) - bg_crop_x
                 paste_y = (w_client_y - bg_client_y) - bg_crop_y
 
+                # logger.debug(
+                #    f'composite_hwnds pasting {w_hwnd} to {paste_x},{paste_y} size={img.shape[1]}x{img.shape[0]} bg_size={width}x{height}')
+
                 x1 = max(0, paste_x)
                 y1 = max(0, paste_y)
-                x2 = min(width, paste_x + w_w)
-                y2 = min(height, paste_y + w_h)
+                x2 = min(width, paste_x + img.shape[1])
+                y2 = min(height, paste_y + img.shape[0])
 
                 src_x1 = x1 - paste_x
                 src_y1 = y1 - paste_y
@@ -299,7 +344,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     cdef frame_arrived_callback(self, x, y):
         cdef object next_frame = None
         cdef object frame = None
-        
+
         with self.lock:
             if self.exit_event.is_set():
                 logger.warning('frame_arrived_callback exit_event.is_set() return')
@@ -317,7 +362,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             frame = self.convert_dx_frame(next_frame)
             if hasattr(next_frame, 'Close'):
                 next_frame.Close()
-            
+
             if frame is not None:
                 with self.lock:
                     self.last_frame = frame
@@ -358,7 +403,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             mapinfo = self.immediatedc.Map(self.cputex, 0, self.d3d11.D3D11_MAP_READ, 0)
             img = np.ctypeslib.as_array(ctypes.cast(mapinfo.pData, PBYTE),
                                         (self.last_size.Height, mapinfo.RowPitch // 4, 4))[
-                  :, :self.last_size.Width].copy()
+                :, :self.last_size.Width].copy()
             self.immediatedc.Unmap(self.cputex, 0)
             return img
         except OSError as e:
@@ -526,7 +571,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             if latency > 2:
                 logger.warning(f"latency too large return None frame: {latency}")
                 return None
-                
+
             frame = self.crop_image(frame)
 
             border = 0
@@ -642,8 +687,8 @@ cdef class BitBltCaptureMethod(BaseWindowsCaptureMethod):
                 return True
 
 cdef class HwndWindow:
-    cdef public object app_exit_event, stop_event, mute_option, thread, device_manager, global_config
-    cdef public str title, exe_full_path, hwnd_class, _hwnd_title
+    cdef public object app_exit_event, stop_event, mute_option, thread, device_manager, global_config, hwnd_class, top_hwnd_class
+    cdef public str title, exe_full_path, _hwnd_title
     cdef public int hwnd, player_id, window_width, window_height, x, y, width, height, frame_width, frame_height, real_width, real_height, real_x_offset, real_y_offset, top_offset_x, top_offset_y, top_hwnd
     cdef public bint visible, exists, pos_valid, to_handle_mute
     cdef public double scaling, frame_aspect_ratio, last_mute_check
@@ -651,9 +696,10 @@ cdef class HwndWindow:
     cdef public list visible_monitors
 
     def __init__(self, exit_event, title, exe_name=None, frame_width=0, frame_height=0, player_id=-1, hwnd_class=None,
-                 global_config=None, device_manager=None):
+                 global_config=None, device_manager=None, top_hwnd_class=None):
         super().__init__()
-        logger.info(f'HwndWindow init title:{title} player_id:{player_id} exe_name:{exe_name} hwnd_class:{hwnd_class}')
+        logger.info(
+            f'HwndWindow init title:{title} player_id:{player_id} exe_name:{exe_name} hwnd_class:{hwnd_class} top_hwnd_class:{top_hwnd_class}')
         self.app_exit_event = exit_event
         self.exe_names = None
         self.visible_monitors = []
@@ -688,13 +734,14 @@ cdef class HwndWindow:
         self.top_offset_y = 0
 
         self.hwnd_class = hwnd_class
+        self.top_hwnd_class = top_hwnd_class
         self.pos_valid = False
         self._hwnd_title = ""
         self.monitors_bounds = get_monitors_bounds()
         self.mute_option = global_config.get_config(basic_options)
         self.global_config = global_config
         self.mute_option.validator = self.validate_mute_config
-        self.update_window(title, exe_name, frame_width, frame_height, player_id, hwnd_class)
+        self.update_window(title, exe_name, frame_width, frame_height, player_id, hwnd_class, top_hwnd_class)
         self.thread = threading.Thread(target=self.update_window_size, name="update_window_size")
         self.thread.start()
 
@@ -746,7 +793,8 @@ cdef class HwndWindow:
                 else:
                     logger.error(f'resize hwnd failed: {self.width}x{self.height}')
 
-    def update_window(self, title, exe_name, frame_width, frame_height, player_id=-1, hwnd_class=None):
+    def update_window(self, title, exe_name, frame_width, frame_height, player_id=-1, hwnd_class=None,
+                      top_hwnd_class=None):
         self.player_id = player_id
         self.title = title
         if isinstance(exe_name, str):
@@ -755,6 +803,7 @@ cdef class HwndWindow:
             self.exe_names = exe_name
         self.update_frame_size(frame_width, frame_height)
         self.hwnd_class = hwnd_class
+        self.top_hwnd_class = top_hwnd_class
 
     def update_frame_size(self, width, height):
         logger.debug(f"update_frame_size:{self.frame_width}x{self.frame_height} to {width}x{height}")
@@ -793,7 +842,8 @@ cdef class HwndWindow:
                 self.title,
                 self.exe_names or self.device_manager.config.get('selected_exe'),
                 self.frame_width, self.frame_height, player_id=self.player_id, class_name=self.hwnd_class,
-                selected_hwnd=self.device_manager.config.get('selected_hwnd'))
+                selected_hwnd=self.device_manager.config.get('selected_hwnd'),
+                top_hwnd_class=self.top_hwnd_class, last_hwnd=self.hwnd)
 
             if self.hwnd == 0 and find_hwnd_res > 0:
                 self.hwnd = find_hwnd_res
@@ -835,8 +885,8 @@ cdef class HwndWindow:
                         if self.device_manager.executor.pause():
                             logger.error(f'og.executor.pause pos_invalid: {x, y, width, height}')
                             communicate.notification.emit('Paused because game window is minimized or out of screen!',
-                                                      None,
-                                                      True, True, "start", None)
+                                                          None,
+                                                          True, True, "start", None)
                     if pos_valid != self.pos_valid:
                         self.pos_valid = pos_valid
                 else:
@@ -931,67 +981,179 @@ def is_window_in_screen_bounds(window_left, window_top, window_width, window_hei
 
     return False
 
+def _match_class_name(hwnd_class, patterns):
+    """Check if hwnd_class matches a pattern or list of patterns (str or compiled regex) and return the first matching index."""
+    if patterns is None:
+        return -1
+    if not isinstance(patterns, list):
+        patterns = [patterns]
+    for i, pattern in enumerate(patterns):
+        if isinstance(pattern, str):
+            if hwnd_class == pattern:
+                return i
+        elif re.search(pattern, hwnd_class):
+            return i
+    return -1
+
+# WS_EX_TOOLWINDOW: window is a tool window (not in taskbar, not alt-tab)
+cdef int IGNORE_EX_STYLE = 0x00000080  # WS_EX_TOOLWINDOW
+cdef int GWL_EXSTYLE = -20
+
 def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_name=None,
-              selected_hwnd=0):
-    # logger.debug(f'find_hwnd called with title={title}, exe_names={exe_names}, frame_width={frame_width}, frame_height={frame_height}, player_id={player_id}, class_name={class_name}, selected_hwnd={selected_hwnd}')
+              selected_hwnd=0, top_hwnd_class=None, last_hwnd=0):
+    # logger.debug(f'find_hwnd called with title={title}, exe_names={exe_names}, frame_width={frame_width}, frame_height={frame_height}, player_id={player_id}, class_name={class_name}, selected_hwnd={selected_hwnd}, top_hwnd_class={top_hwnd_class}')
     if exe_names is None and title is None:
         return None, 0, None, 0, 0, 0, 0, []
     frame_aspect_ratio = frame_width / frame_height if frame_height != 0 else 0
 
+    top_results = []
     def callback(hwnd, results):
+        # Filter by extended window style (skip tool windows etc.)
+        try:
+            ex_style = win32gui.GetWindowLong(hwnd, GWL_EXSTYLE)
+            if ex_style & IGNORE_EX_STYLE:
+                return True
+        except Exception:
+            return True
+        #
+        # # Skip windows with empty or whitespace-only title
+        text = win32gui.GetWindowText(hwnd)
+
+        cname = win32gui.GetClassName(hwnd)
+        # Skip known internal helper windows or offscreen buffers
+        if cname in ('NVOpenGLPbuffer', 'OleMainThreadWndClass', 'GDI+ Hook Window Class'):
+            return True
+
+        name, full_path, cmdline = None, None, None
+        t_idx = _match_class_name(cname, top_hwnd_class) if top_hwnd_class is not None else -1
+        if t_idx >= 0:
+            if not win32gui.IsWindowVisible(hwnd):
+                return True
+            name, full_path, cmdline = get_exe_by_hwnd(hwnd)
+            # logger.debug(f'matching top_hwnd_class {name, full_path, cmdline}')
+            tx, ty, _, _, tcw, tch, m_ts = get_window_bounds(hwnd)
+            top_results.append((hwnd, full_path, tcw, tch, tx, ty, text, cname, m_ts, t_idx))
+
         if selected_hwnd > 0:
             if hwnd != selected_hwnd:
                 return True
-        if win32gui.IsWindow(hwnd) and win32gui.IsWindowEnabled(hwnd) and win32gui.IsWindowVisible(hwnd):
-            text = win32gui.GetWindowText(hwnd)
-            if title:
-                if isinstance(title, str):
-                    if title != text:
-                        return True
-                elif not re.search(title, text):
+
+        if title:
+            if isinstance(title, str):
+                if title != text:
                     return True
-            name, full_path, cmdline = get_exe_by_hwnd(hwnd)
-            # logger.debug(f'find_hwnd name {name, full_path, cmdline}')
-            if exe_names:
-                if not name:
-                    return True
-                match = False
-                for exe_name in exe_names:
-                    if compare_path_safe(name, exe_name) or compare_path_safe(exe_name, full_path):
-                        match = True
-                if not match:
-                    # logger.debug(f'find_hwnd exe match failed: {name} {full_path} not in {exe_names}')
-                    return True
-            if player_id != -1:
-                if player_id != get_player_id_from_cmdline(cmdline):
-                    logger.warning(
-                        f'player id check failed,cmdline {cmdline} {get_player_id_from_cmdline(cmdline)} != {player_id}')
-                    return True
-                else:
-                    logger.info(f'player id check success')
-            if class_name is not None:
-                if win32gui.GetClassName(hwnd) != class_name:
-                    logger.debug(f'find_hwnd class match failed: {win32gui.GetClassName(hwnd)} != {class_name}')
-                    return True
-            x, y, _, _, width, height, scaling = get_window_bounds(
-                hwnd)
-            if width <= 10 or height <= 10:
-                logger.debug(f'find_hwnd skipping small window {width}x{height} hwnd={hwnd}')
+            elif not re.search(title, text):
                 return True
-            cname = win32gui.GetClassName(hwnd)
-            ret = (hwnd, full_path, width, height, x, y, text, cname)
-            results.append(ret)
+        if name is None:
+            name, full_path, cmdline = get_exe_by_hwnd(hwnd)
+        # logger.debug(f'find_hwnd name {name, full_path, cmdline}')
+        if exe_names:
+            if not name:
+                return True
+            match = False
+            for exe_name in exe_names:
+                if compare_path_safe(name, exe_name) or compare_path_safe(exe_name, full_path):
+                    match = True
+            if not match:
+                # logger.debug(f'find_hwnd exe match failed: {name} {full_path} not in {exe_names}')
+                return True
+        if player_id != -1:
+            if player_id != get_player_id_from_cmdline(cmdline):
+                logger.warning(
+                    f'player id check failed,cmdline {cmdline} {get_player_id_from_cmdline(cmdline)} != {player_id}')
+                return True
+            else:
+                logger.info(f'player id check success')
+        x, y, _, _, width, height, m_scaling = get_window_bounds(hwnd)
+        if width <= 10 or height <= 10:
+            #logger.debug(f'find_hwnd skipping small window {width}x{height} hwnd={hwnd}')
+            return True
+        ret = (hwnd, full_path, width, height, x, y, text, cname, m_scaling)
+        results.append(ret)
         return True
 
     results = []
     win32gui.EnumWindows(callback, results)
 
     if len(results) > 0:
+
+        # Select the background hwnd: filter by class_name first if provided
+        if class_name is not None:
+            class_matches = [r for r in results if _match_class_name(r[7], class_name) >= 0]
+            if len(class_matches) >= 1:
+                # Decide between persistence (last_hwnd) and target acquisition (biggest window)
+                w_biggest = None
+                w_last = None
+                for r in class_matches:
+                    if w_biggest is None or (r[2] * r[3]) > (w_biggest[2] * w_biggest[3]):
+                        w_biggest = r
+                    if last_hwnd > 0 and r[0] == last_hwnd:
+                        w_last = r
+                
+                # If another window is significantly larger (e.g., splash screen ended), switch
+                if w_last is not None and w_biggest is not None:
+                    if (w_biggest[2] * w_biggest[3]) > (w_last[2] * w_last[3]) * 1.1:
+                        biggest = w_biggest
+                    else:
+                        biggest = w_last
+                else:
+                    biggest = w_biggest if w_biggest else class_matches[0]
+            else:
+                # No class_name matches, do not fall back to other classes
+                biggest = None
+        else:
+            # No class_name specified, use all result matches (by title or exe)
+            w_biggest = None
+            w_last = None
+            for r in results:
+                if w_biggest is None or (r[2] * r[3]) > (w_biggest[2] * w_biggest[3]):
+                    w_biggest = r
+                if last_hwnd > 0 and r[0] == last_hwnd:
+                    w_last = r
+
+            if w_last is not None and w_biggest is not None:
+                if (w_biggest[2] * w_biggest[3]) > (w_last[2] * w_last[3]) * 1.1:
+                    biggest = w_biggest
+                else:
+                    biggest = w_last
+            else:
+                biggest = w_biggest
+
+        # Narrow results down to one (the background window) or zero
+        results = [biggest] if biggest else []
+
+        # Find the top hwnd if top_hwnd_class is specified
+        if top_hwnd_class is not None and biggest:
+            bg_exe_path = biggest[1]
+            bg_dir = os.path.dirname(os.path.normpath(bg_exe_path)).lower() if bg_exe_path else None
+
+            # Filter top_results by process path proximity (same exe or same/sub folder)
+            filtered_top = []
+            for result in top_results:
+                # result: (hwnd, full_path, width, height, x, y, text, cname)
+                top_exe_path = result[1]
+                if not top_exe_path or not bg_exe_path:
+                    continue
+
+                top_exe_path_norm = os.path.normpath(top_exe_path).lower()
+                bg_exe_path_norm = os.path.normpath(bg_exe_path).lower()
+
+                if top_exe_path_norm == bg_exe_path_norm:
+                    filtered_top.append(result)
+                elif bg_dir and top_exe_path_norm.startswith(bg_dir + os.sep):
+                    filtered_top.append(result)
+
+            if filtered_top:
+                # Prioritize by index in top_hwnd_class list, then by Z-order (EnumWindows order)
+                filtered_top.sort(key=lambda x: x[9])
+                top_hwnd_result = filtered_top[0]
+
+                # Prepend the top hwnd so results[0] is the top-most interaction target
+                if top_hwnd_result[0] != biggest[0]:
+                    results.insert(0, top_hwnd_result)
+
         # logger.debug(f'find_hwnd results {len(results)} {results}')
-        biggest = None
-        for result in results:
-            if biggest is None or (result[2] * result[3]) > biggest[2] * biggest[3]:
-                biggest = result
+
         x_offset = 0
         y_offset = 0
         real_width = 0

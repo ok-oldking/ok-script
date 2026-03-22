@@ -97,7 +97,7 @@ cdef class ExecutorOperation:
         self.executor.reset_scene()
 
     def click(self, x: int | Box | List[Box] = -1, y=-1, move_back=False, name=None, interval=-1, move=True,
-              down_time=0.01, after_sleep=0, key='left', hcenter=False, vcenter=False):
+              down_time=0.02, after_sleep=0, key='left', hcenter=False, vcenter=False):
         if isinstance(x, Box) or isinstance(x, list):
             return self.click_box(x, move_back=move_back, down_time=down_time, after_sleep=after_sleep)
         elif 0 < x < 1 or 0 < y < 1:

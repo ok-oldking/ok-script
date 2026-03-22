@@ -383,7 +383,7 @@ class PostMessageInteraction(BaseInteraction):
         self.last_activate = 0
         self.activate_interval = 1
         self.lparam = 0x1e0001
-        self.activated = False
+        self.activated = 0
         self._dynamic_target_hwnd = 0
         self.hwnd_window.visible_monitors.append(self)
 
@@ -395,8 +395,7 @@ class PostMessageInteraction(BaseInteraction):
         return self.hwnd_window.top_hwnd if self.hwnd_window.top_hwnd else self.hwnd_window.hwnd
 
     def on_visible(self, visible):
-        if visible:
-            self.activated = False
+        self.activated = visible
 
     def send_key(self, key, down_time=0.01):
         super().send_key(key, down_time)
@@ -495,10 +494,11 @@ class PostMessageInteraction(BaseInteraction):
         self.post(win32con.WM_ACTIVATE, win32con.WA_INACTIVE, 0)
 
     def try_activate(self):
-        if not self.activated:
+        current_hwnd = self.hwnd
+        if self.activated != current_hwnd:
             if not self.hwnd_window.is_foreground():
-                self.activated = True
                 self.activate()
+            self.activated = current_hwnd
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01, move=True, key="left"):
         super().click(x, y, name=name)

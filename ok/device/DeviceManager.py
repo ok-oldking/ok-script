@@ -59,7 +59,8 @@ class DeviceManager:
             self.hwnd_window = HwndWindow(exit_event, self.windows_capture_config.get('title'),
                                           self.windows_capture_config.get('exe'),
                                           hwnd_class=self.windows_capture_config.get('hwnd_class'),
-                                          global_config=self.global_config, device_manager=self)
+                                          global_config=self.global_config, device_manager=self,
+                                          top_hwnd_class=self.windows_capture_config.get('top_hwnd_class'))
             if self.windows_capture_config.get(
                     'interaction') == 'PostMessage':
                 self.win_interaction_class = PostMessageInteraction
@@ -170,7 +171,8 @@ class DeviceManager:
                                                                    player_id=-1,
                                                                    class_name=self.windows_capture_config.get(
                                                                        'hwnd_class'),
-                                                                   selected_hwnd=self.config.get('selected_hwnd'))
+                                                                   selected_hwnd=self.config.get('selected_hwnd'),
+                                                                   top_hwnd_class=self.windows_capture_config.get('top_hwnd_class'))
             nick = name or self.windows_capture_config.get('exe')
             pc_device = {"address": "", "imei": 'pc', "device": "windows",
                          "model": "", "nick": nick, "width": width,
@@ -438,12 +440,12 @@ class DeviceManager:
         preferred = self.get_preferred_device()
         return preferred.get('hwnd')
 
-    def ensure_hwnd(self, title, exe, frame_width=0, frame_height=0, player_id=-1, hwnd_class=None):
+    def ensure_hwnd(self, title, exe, frame_width=0, frame_height=0, player_id=-1, hwnd_class=None, top_hwnd_class=None):
         if self.hwnd_window is None:
             self.hwnd_window = HwndWindow(self.exit_event, title, exe, frame_width, frame_height, player_id,
-                                          hwnd_class, global_config=self.global_config, device_manager=self)
+                                          hwnd_class, global_config=self.global_config, device_manager=self, top_hwnd_class=top_hwnd_class)
         else:
-            self.hwnd_window.update_window(title, exe, frame_width, frame_height, player_id, hwnd_class)
+            self.hwnd_window.update_window(title, exe, frame_width, frame_height, player_id, hwnd_class, top_hwnd_class)
 
     def use_windows_capture(self):
         selected_method = self.global_config.get_config('Basic Options').get('Windows Capture')
@@ -469,7 +471,8 @@ class DeviceManager:
 
         if preferred['device'] == 'windows':
             self.ensure_hwnd(self.windows_capture_config.get('title'), self.windows_capture_config.get('exe'),
-                             hwnd_class=self.windows_capture_config.get('hwnd_class'))
+                             hwnd_class=self.windows_capture_config.get('hwnd_class'),
+                             top_hwnd_class=self.windows_capture_config.get('top_hwnd_class'))
             self.use_windows_capture()
             if not isinstance(self.interaction, self.win_interaction_class):
                 self.interaction = self.win_interaction_class(self.capture_method, self.hwnd_window)
