@@ -156,6 +156,8 @@ cdef class BaseCaptureMethod:
         try:
             frame = self.do_get_frame()
             if frame is not None:
+                if frame.shape[0] <= 10 or frame.shape[1] <= 10:
+                    return None
                 self._size = (frame.shape[1], frame.shape[0])
                 if frame.shape[2] == 4:
                     frame = frame[:, :, :3]
@@ -1121,9 +1123,12 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
 
         # Narrow results down to one (the background window) or zero
         results = [biggest] if biggest else []
+        
+        if not biggest:
+            return None, 0, None, 0, 0, 0, 0, []
 
         # Find the top hwnd if top_hwnd_class is specified
-        if top_hwnd_class is not None and biggest:
+        if top_hwnd_class is not None:
             bg_exe_path = biggest[1]
             bg_dir = os.path.dirname(os.path.normpath(bg_exe_path)).lower() if bg_exe_path else None
 

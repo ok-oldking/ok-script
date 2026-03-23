@@ -245,6 +245,8 @@ cdef class ExecutorOperation:
                                 to_x=to_x, to_y=to_y, width=width, height=height, name=name, confidence=confidence)
 
     def out_of_ratio(self):
+        if self.height == 0:
+            return False
         return self.executor.device_manager.supported_ratio and abs(
             self.width / self.height - self.executor.device_manager.supported_ratio) > 0.01
 
