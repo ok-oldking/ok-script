@@ -1273,7 +1273,7 @@ class FindFeature(ExecutorOperation):
                      frame_processor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
                      template: Optional[np.ndarray] = None, match_method: int = cv2.TM_CCOEFF_NORMED,
                      screenshot: bool = False, mask_function: Optional[Callable[[np.ndarray], np.ndarray]] = None,
-                     frame: Optional[np.ndarray] = None) -> List["Box"]:
+                     frame: Optional[np.ndarray] = None, limit: int = 0, target_height: int = 0) -> List["Box"]:
         """
         Finds features in frame.
 
@@ -1299,6 +1299,8 @@ class FindFeature(ExecutorOperation):
         :param screenshot: Screenshot. 截图。
         :param mask_function: Mask function. 掩码函数。
         :param frame: Frame. 帧。
+        :param limit: Limit results. 结果限制。
+        :param target_height: Target height. 目标高度。
         :return: Boxes. 框列表。
         """
         ...
@@ -1344,8 +1346,8 @@ class FindFeature(ExecutorOperation):
                      threshold: float = 0, time_out: float = 0, pre_action: Optional[Callable] = None,
                      post_action: Optional[Callable] = None, use_gray_scale: bool = False, box: Optional["Box"] = None,
                      raise_if_not_found: bool = False, canny_lower: int = 0, canny_higher: int = 0,
-                     settle_time: float = -1, frame_processor: Optional[Callable[[np.ndarray], np.ndarray]] = None) -> \
-    Optional["Box"]:
+                     settle_time: float = -1, frame_processor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+                     target_height: int = 0) -> Optional["Box"]:
         """
         Waits for feature.
 
@@ -1365,6 +1367,7 @@ class FindFeature(ExecutorOperation):
         :param canny_higher: Canny higher. Canny 上限。
         :param settle_time: Settle time. 稳定时间。
         :param frame_processor: Frame processor. 帧处理器。
+        :param target_height: Target height. 目标高度。
         :return: Box or None. 框或 None。
         """
         ...
@@ -1374,7 +1377,7 @@ class FindFeature(ExecutorOperation):
                            pre_action: Optional[Callable] = None, post_action: Optional[Callable] = None,
                            box: Optional["Box"] = None, raise_if_not_found: bool = True, use_gray_scale: bool = False,
                            canny_lower: int = 0, canny_higher: int = 0, click_after_delay: float = 0,
-                           settle_time: float = -1, after_sleep: float = 0) -> bool:
+                           settle_time: float = -1, after_sleep: float = 0, target_height: int = 0) -> bool:
         """
         Waits and clicks feature.
 
@@ -1397,6 +1400,7 @@ class FindFeature(ExecutorOperation):
         :param click_after_delay: Delay after click. 点击后延迟。
         :param settle_time: Settle time. 稳定时间。
         :param after_sleep: Sleep after. 后睡眠。
+        :param target_height: Target height. 目标高度。
         :return: True if clicked. 如果点击返回 True。
         """
         ...
@@ -1406,7 +1410,8 @@ class FindFeature(ExecutorOperation):
                  canny_higher: int = 0, frame_processor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
                  template: Optional[np.ndarray] = None,
                  mask_function: Optional[Callable[[np.ndarray], np.ndarray]] = None, frame: Optional[np.ndarray] = None,
-                 match_method: int = cv2.TM_CCOEFF_NORMED, screenshot: bool = False) -> Optional["Box"]:
+                 match_method: int = cv2.TM_CCOEFF_NORMED, screenshot: bool = False, limit: int = 1,
+                 target_height: int = 0) -> Optional["Box"]:
         """
         Finds one feature.
 
@@ -1426,6 +1431,8 @@ class FindFeature(ExecutorOperation):
         :param frame: Frame. 帧。
         :param match_method: Match method. 匹配方法。
         :param screenshot: Screenshot. 截图。
+        :param limit: Limit results. 结果限制。
+        :param target_height: Target height. 目标高度。
         :return: Box or None. 框或 None。
         """
         ...

@@ -198,7 +198,7 @@ cdef class App:
         self.do_show_main()
 
     def do_show_main(self):
-        if self.debug:
+        if self.overlay_window:
             communicate.window.connect(self.overlay_window.update_overlay)
 
         self.main_window = MainWindow(self, self.config, self.ok_config, self.icon, self.title, self.version,
@@ -355,6 +355,7 @@ class OK:
                     app = QApplication(sys.argv)
                     from ok.gui.overlay.OverlayWindow import OverlayWindow
                     self.overlay_window = OverlayWindow(og.device_manager.hwnd_window)
+                    communicate.window.connect(self.overlay_window.update_overlay)
                     app.exec()
                 else:
                     try:

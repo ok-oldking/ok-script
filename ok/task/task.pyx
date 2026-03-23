@@ -9,7 +9,7 @@ from qfluentwidgets import FluentIcon
 
 from ok.feature.Box import find_boxes_by_name, find_boxes_within_boundary, Box, find_box_by_name, relative_box, \
     sort_boxes, find_highest_confidence_box
-from ok.feature.FeatureSet import adjust_coordinates
+from ok.feature.FeatureSet import adjust_coordinates, resize_image, scale_box, join_list_elements
 from ok.gui.Communicate import communicate
 from ok.util.color import calculate_color_percentage
 from ok.util.config import Config
@@ -434,7 +434,7 @@ cdef class FindFeature(ExecutorOperation):
                      use_gray_scale=False, x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0,
                      canny_higher=0, frame_processor=None, template=None, match_method=cv2.TM_CCOEFF_NORMED,
                      screenshot=False,
-                     mask_function=None, frame=None) -> List[Box]:
+                     mask_function=None, frame=None, limit=0, target_height=0) -> List[Box]:
         if box and isinstance(box, str):
             box = self.get_box_by_name(box)
         return self.executor.feature_set.find_feature(frame if frame is not None else self.executor.frame, feature_name,
@@ -444,7 +444,8 @@ cdef class FindFeature(ExecutorOperation):
                                                       box=box, match_method=match_method, screenshot=screenshot,
                                                       canny_lower=canny_lower, canny_higher=canny_higher,
                                                       frame_processor=frame_processor,
-                                                      template=template, mask_function=mask_function)
+                                                      template=template, mask_function=mask_function, limit=limit,
+                                                      target_height=target_height)
 
     def get_feature_by_name(self, name):
         if self.executor.feature_set:
@@ -493,12 +494,12 @@ cdef class FindFeature(ExecutorOperation):
     def wait_feature(self, feature, horizontal_variance=0, vertical_variance=0, threshold=0,
                      time_out=0, pre_action=None, post_action=None, use_gray_scale=False, box=None,
                      raise_if_not_found=False, canny_lower=0, canny_higher=0, settle_time=-1,
-                     frame_processor=None):
+                     frame_processor=None, target_height=0):
         return self.wait_until(
             lambda: self.find_one(feature, horizontal_variance, vertical_variance, threshold,
                                   use_gray_scale=use_gray_scale, box=box,
                                   canny_lower=canny_lower, canny_higher=canny_higher,
-                                  frame_processor=frame_processor),
+                                  frame_processor=frame_processor, target_height=target_height),
             time_out=time_out,
             pre_action=pre_action,
             post_action=post_action,
@@ -508,10 +509,11 @@ cdef class FindFeature(ExecutorOperation):
                            relative_y=0.5,
                            time_out=0, pre_action=None, post_action=None, box=None, raise_if_not_found=True,
                            use_gray_scale=False, canny_lower=0, canny_higher=0, click_after_delay=0, settle_time=-1,
-                           after_sleep=0):
+                           after_sleep=0, target_height=0):
         box = self.wait_until(
             lambda: self.find_one(feature, horizontal_variance, vertical_variance, threshold, box=box,
-                                  use_gray_scale=use_gray_scale, canny_lower=canny_lower, canny_higher=canny_higher),
+                                  use_gray_scale=use_gray_scale, canny_lower=canny_lower, canny_higher=canny_higher,
+                                  target_height=target_height),
             time_out=time_out,
             pre_action=pre_action,
             post_action=post_action, raise_if_not_found=raise_if_not_found,
@@ -526,13 +528,13 @@ cdef class FindFeature(ExecutorOperation):
     def find_one(self, feature_name=None, horizontal_variance=0, vertical_variance=0, threshold=0,
                  use_gray_scale=False, box=None, canny_lower=0, canny_higher=0,
                  frame_processor=None, template=None, mask_function=None, frame=None, match_method=cv2.TM_CCOEFF_NORMED,
-                 screenshot=False) -> Box:
+                 screenshot=False, limit=1, target_height=0) -> Box:
         boxes = self.find_feature(feature_name=feature_name, horizontal_variance=horizontal_variance,
                                   vertical_variance=vertical_variance, threshold=threshold,
                                   use_gray_scale=use_gray_scale, box=box, canny_lower=canny_lower,
                                   canny_higher=canny_higher, match_method=match_method, screenshot=screenshot,
                                   frame_processor=frame_processor, template=template, mask_function=mask_function,
-                                  frame=frame)
+                                  frame=frame, limit=limit, target_height=target_height)
         if len(boxes) > 0:
             if len(boxes) > 1:
                 logger.warning(f"find_one:found {feature_name} too many {len(boxes)}")
@@ -896,36 +898,6 @@ cdef class OCR(FindFeature):
                              threshold=threshold, frame=frame, target_height=target_height, log=True, lib=lib)
         return boxes
 
-cdef tuple resize_image(object image, int frame_height, int target_height):
-    """Resizes the image if the original height is significantly larger than the target height."""
-    cdef double scale_factor = 1.0
-    cdef int original_height = image.shape[0]
-    cdef int image_height, image_width, new_width, new_height
-
-    if target_height > 0 and frame_height >= 1.5 * target_height:
-        image_height, image_width = image.shape[:2]
-        scale_factor = target_height / frame_height
-        new_width = <int> round(image_width * scale_factor)
-        new_height = <int> round(image_height * scale_factor)
-        image = cv2.resize(image, (new_width, new_height))
-    return image, scale_factor
-
-cdef void scale_box(object box, double scale_factor):
-    """Scales the box coordinates by the given scale factor."""
-    if scale_factor != 1:
-        box.x = <int> round(box.x / scale_factor)
-        box.y = <int> round(box.y / scale_factor)
-        box.width = <int> round(box.width / scale_factor)
-        box.height = <int> round(box.height / scale_factor)
-
-cdef str join_list_elements(input_object):
-    """Joins the elements of a list into a single string."""
-    if input_object is None:
-        return ''
-    elif isinstance(input_object, list):
-        return ''.join(map(str, input_object))
-    else:
-        return str(input_object)
 
 cdef class BaseTask(OCR):
     cdef public str name

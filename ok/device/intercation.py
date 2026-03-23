@@ -580,7 +580,7 @@ class PostMessageInteraction(BaseInteraction):
             
             local_x, local_y = win32gui.ScreenToClient(target_hwnd, (abs_x, abs_y))
             
-            logger.debug(f'mouse_pos dynamically aimed at {target_hwnd} ({win32gui.GetClassName(target_hwnd)}): {local_x}, {local_y}')
+            # logger.debug(f'mouse_pos dynamically aimed at {target_hwnd} ({win32gui.GetClassName(target_hwnd)}): {local_x}, {local_y}')
             return win32api.MAKELONG(local_x, local_y)
             
         except Exception as e:

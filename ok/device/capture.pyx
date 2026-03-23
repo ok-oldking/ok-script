@@ -899,6 +899,7 @@ cdef class HwndWindow:
                     else:
                         communicate.notification.emit('Game Exited', None, True, True, None, None)
                     self.hwnd = 0
+                    visible = False
                 if visible != self.visible:
                     self.visible = visible
                     for visible_monitor in self.visible_monitors:
@@ -933,7 +934,13 @@ cdef class HwndWindow:
             logger.error(f"do_update_window_size exception", e)
 
     def is_foreground(self):
-        return is_foreground_window(self.hwnd)
+        if is_foreground_window(self.hwnd):
+            return True
+        for w in self.hwnds:
+            if is_foreground_window(w[0]):
+                return True
+        return False
+
 
     def handle_mute(self, mute=None):
         if mute is None:

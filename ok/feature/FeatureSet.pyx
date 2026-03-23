@@ -19,6 +19,36 @@ from ok.gui.Communicate import communicate
 from ok.util.file import get_path_relative_to_exe
 from ok.util.logger import Logger
 
+cpdef tuple resize_image(object image, int frame_height, int target_height):
+    """Resizes the image if the original height is significantly larger than the target height."""
+    cdef double scale_factor = 1.0
+    cdef int original_height = image.shape[0]
+    cdef int image_height, image_width, new_width, new_height
+
+    if target_height > 0 and frame_height >= 1.5 * target_height:
+        image_height, image_width = image.shape[:2]
+        scale_factor = target_height / frame_height
+        new_width = <int> round(image_width * scale_factor)
+        new_height = <int> round(image_height * scale_factor)
+        image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
+    return image, scale_factor
+
+cpdef void scale_box(object box, double scale_factor):
+    """Scales the box coordinates by the given scale factor."""
+    if scale_factor != 1:
+        box.x = <int> round(box.x / scale_factor)
+        box.y = <int> round(box.y / scale_factor)
+        box.width = <int> round(box.width / scale_factor)
+        box.height = <int> round(box.height / scale_factor)
+
+cpdef str join_list_elements(input_object):
+    """Joins the elements of a list into a single string."""
+    if input_object is None:
+        return ''
+    elif isinstance(input_object, list):
+        return ''.join(map(str, input_object))
+    else:
+        return str(input_object)
 from ok.util.clazz import generate_label_enum
 logger = Logger.get_logger(__name__)
 
@@ -111,8 +141,11 @@ cdef class FeatureSet:
                          vertical_variance: float = 0, threshold: float = 0, use_gray_scale: bool = False, x=-1, y=-1,
                          to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0, canny_higher=0,
                          frame_processor=None, template=None, mask_function=None, match_method=cv2.TM_CCOEFF_NORMED,
-                         screenshot=False):
+                         screenshot=False, limit=0, target_height=0):
+        import time
+        start_time = time.time()
         self.check_size(mat)
+        check_size_time = time.time()
 
         if threshold == 0:
             threshold = self.default_threshold
@@ -162,6 +195,7 @@ cdef class FeatureSet:
             search_y2 = min(self.height, round(feature.y + feature_height + y_offset))
 
         search_area = mat[search_y1:search_y2, search_x1:search_x2, :3]
+        prepare_time = time.time()
 
         feature_height, feature_width = template.shape[:2]
         if use_gray_scale:
@@ -193,8 +227,18 @@ cdef class FeatureSet:
             logger.error(
                 f'feature template {category_name} {box.name if box else ""} size greater than search area {feature.mat.shape} > {search_area.shape}')
 
+        cdef double scale_factor = 1.0
+        if target_height > 0:
+            search_area, scale_factor = resize_image(search_area, mat.shape[0], target_height)
+            if scale_factor != 1:
+                template = cv2.resize(template, (0, 0), fx=scale_factor, fy=scale_factor,
+                                      interpolation=cv2.INTER_AREA)
+                if mask is not None:
+                    mask = cv2.resize(mask, (template.shape[1], template.shape[0]), interpolation=cv2.INTER_NEAREST)
+
         result = cv2.matchTemplate(search_area, template, match_method,
                                    mask=mask)
+        match_time = time.time()
 
         if screenshot:
             logger.info(f'template matching screenshot match_method:{match_method} canny:{canny_lower, canny_higher}')
@@ -202,15 +246,28 @@ cdef class FeatureSet:
             communicate.screenshot.emit(search_area, "search_area", False, box)
             communicate.screenshot.emit(template, "template", False, None)
 
-        locations = filter_and_sort_matches(result, threshold, feature_width, feature_height)
         boxes = []
-
-        for loc in locations:
-            x, y = loc[0][0] + search_x1, loc[0][1] + search_y1
-            confidence = 1.0 if math.isinf(loc[1]) and loc[1] > 0 else loc[1]
-            boxes.append(Box(x, y, feature_width, feature_height, confidence, category_name))
-
-        boxes = sort_boxes(boxes)
+        if limit == 1 and match_method == cv2.TM_CCOEFF_NORMED:
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+            if max_val >= threshold:
+                x, y = round(max_loc[0] / scale_factor) + search_x1, round(max_loc[1] / scale_factor) + search_y1
+                boxes.append(Box(x, y, feature_width, feature_height, max_val, category_name))
+        else:
+            locations = filter_and_sort_matches(result, threshold, template.shape[1], template.shape[0])
+            for loc in locations:
+                x, y = round(loc[0][0] / scale_factor) + search_x1, round(loc[0][1] / scale_factor) + search_y1
+                confidence = 1.0 if math.isinf(loc[1]) and loc[1] > 0 else loc[1]
+                boxes.append(Box(x, y, feature_width, feature_height, confidence, category_name))
+            boxes = sort_boxes(boxes)
+            if limit > 0:
+                boxes = boxes[:limit]
+        end_time = time.time()
+        if end_time - start_time > 0.1:
+            logger.info(f"find_one_feature {category_name} took {(end_time - start_time) * 1000:.2f}ms "
+                        f"(check_size: {(check_size_time - start_time) * 1000:.2f}ms, "
+                        f"prepare: {(prepare_time - check_size_time) * 1000:.2f}ms, "
+                        f"match: {(match_time - prepare_time) * 1000:.2f}ms, "
+                        f"post: {(end_time - match_time) * 1000:.2f}ms)")
         if category_name:
             communicate.emit_draw_box(category_name, boxes, "red")
             search_name = "search_" + category_name
@@ -223,7 +280,7 @@ cdef class FeatureSet:
                      vertical_variance: float = 0, threshold: float = 0, use_gray_scale: bool = False, x=-1, y=-1,
                      to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0, canny_higher=0,
                      frame_processor=None, template=None, mask_function=None, match_method=cv2.TM_CCOEFF_NORMED,
-                     screenshot=False):
+                     screenshot=False, limit=0, target_height=0):
         if type(category_name) is list:
             results = []
             for cn in category_name:
@@ -235,7 +292,8 @@ cdef class FeatureSet:
                                                  canny_lower=canny_lower, canny_higher=canny_higher,
                                                  frame_processor=frame_processor,
                                                  template=template, mask_function=mask_function,
-                                                 match_method=match_method, screenshot=screenshot)
+                                                 match_method=match_method, screenshot=screenshot, limit=limit,
+                                                 target_height=target_height)
             return sort_boxes(results)
         else:
             return self.find_one_feature(mat=mat, category_name=category_name,
@@ -246,7 +304,7 @@ cdef class FeatureSet:
                                          canny_lower=canny_lower, canny_higher=canny_higher,
                                          frame_processor=frame_processor,
                                          template=template, mask_function=mask_function, match_method=match_method,
-                                         screenshot=screenshot)
+                                         screenshot=screenshot, limit=limit, target_height=target_height)
 
 def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcenter_features=None, adjust=True):
     feature_dict = {}
