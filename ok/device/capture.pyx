@@ -941,7 +941,6 @@ cdef class HwndWindow:
                 return True
         return False
 
-
     def handle_mute(self, mute=None):
         if mute is None:
             mute = self.mute_option.get('Mute Game while in Background')
@@ -1004,10 +1003,6 @@ def _match_class_name(hwnd_class, patterns):
             return i
     return -1
 
-# WS_EX_TOOLWINDOW: window is a tool window (not in taskbar, not alt-tab)
-cdef int IGNORE_EX_STYLE = 0x00000080  # WS_EX_TOOLWINDOW
-cdef int GWL_EXSTYLE = -20
-
 def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_name=None,
               selected_hwnd=0, top_hwnd_class=None, last_hwnd=0):
     # logger.debug(f'find_hwnd called with title={title}, exe_names={exe_names}, frame_width={frame_width}, frame_height={frame_height}, player_id={player_id}, class_name={class_name}, selected_hwnd={selected_hwnd}, top_hwnd_class={top_hwnd_class}')
@@ -1017,31 +1012,28 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
 
     top_results = []
     def callback(hwnd, results):
-        # Filter by extended window style (skip tool windows etc.)
-        try:
-            ex_style = win32gui.GetWindowLong(hwnd, GWL_EXSTYLE)
-            if ex_style & IGNORE_EX_STYLE:
-                return True
-        except Exception:
+        if not win32gui.IsWindow(hwnd) or not win32gui.IsWindowEnabled(hwnd):
             return True
-        #
-        # # Skip windows with empty or whitespace-only title
-        text = win32gui.GetWindowText(hwnd)
 
         cname = win32gui.GetClassName(hwnd)
-        # Skip known internal helper windows or offscreen buffers
-        if cname in ('NVOpenGLPbuffer', 'OleMainThreadWndClass', 'GDI+ Hook Window Class'):
+        is_main_class = class_name is None or _match_class_name(cname, class_name) >= 0
+        if is_main_class and class_name is None and not win32gui.IsWindowVisible(hwnd):
+            is_main_class = False
+        t_idx = _match_class_name(cname, top_hwnd_class) if top_hwnd_class is not None else -1
+
+        if not is_main_class and t_idx < 0:
             return True
 
+        text = win32gui.GetWindowText(hwnd)
         name, full_path, cmdline = None, None, None
-        t_idx = _match_class_name(cname, top_hwnd_class) if top_hwnd_class is not None else -1
         if t_idx >= 0:
-            if not win32gui.IsWindowVisible(hwnd):
-                return True
-            name, full_path, cmdline = get_exe_by_hwnd(hwnd)
-            # logger.debug(f'matching top_hwnd_class {name, full_path, cmdline}')
-            tx, ty, _, _, tcw, tch, m_ts = get_window_bounds(hwnd)
-            top_results.append((hwnd, full_path, tcw, tch, tx, ty, text, cname, m_ts, t_idx))
+            if win32gui.IsWindowVisible(hwnd):
+                name, full_path, cmdline = get_exe_by_hwnd(hwnd)
+                tx, ty, _, _, tcw, tch, m_ts = get_window_bounds(hwnd)
+                top_results.append((hwnd, full_path, tcw, tch, tx, ty, text, cname, m_ts, t_idx))
+
+        if not is_main_class:
+            return True
 
         if selected_hwnd > 0:
             if hwnd != selected_hwnd:
@@ -1055,7 +1047,7 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
                 return True
         if name is None:
             name, full_path, cmdline = get_exe_by_hwnd(hwnd)
-        # logger.debug(f'find_hwnd name {name, full_path, cmdline}')
+        # logger.debug(f'find_hwnd name {name, full_path, cmdline, exe_names}')
         if exe_names:
             if not name:
                 return True
@@ -1072,7 +1064,8 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
                     f'player id check failed,cmdline {cmdline} {get_player_id_from_cmdline(cmdline)} != {player_id}')
                 return True
             else:
-                logger.info(f'player id check success')
+                pass
+                # logger.info(f'player id check success')
         x, y, _, _, width, height, m_scaling = get_window_bounds(hwnd)
         if width <= 10 or height <= 10:
             #logger.debug(f'find_hwnd skipping small window {width}x{height} hwnd={hwnd}')
@@ -1085,52 +1078,27 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
     win32gui.EnumWindows(callback, results)
 
     if len(results) > 0:
+        # Decide between persistence (last_hwnd) and target acquisition (biggest window)
+        w_biggest = None
+        w_last = None
+        for r in results:
+            if w_biggest is None or (r[2] * r[3]) > (w_biggest[2] * w_biggest[3]):
+                w_biggest = r
+            if last_hwnd > 0 and r[0] == last_hwnd:
+                w_last = r
 
-        # Select the background hwnd: filter by class_name first if provided
-        if class_name is not None:
-            class_matches = [r for r in results if _match_class_name(r[7], class_name) >= 0]
-            if len(class_matches) >= 1:
-                # Decide between persistence (last_hwnd) and target acquisition (biggest window)
-                w_biggest = None
-                w_last = None
-                for r in class_matches:
-                    if w_biggest is None or (r[2] * r[3]) > (w_biggest[2] * w_biggest[3]):
-                        w_biggest = r
-                    if last_hwnd > 0 and r[0] == last_hwnd:
-                        w_last = r
-                
-                # If another window is significantly larger (e.g., splash screen ended), switch
-                if w_last is not None and w_biggest is not None:
-                    if (w_biggest[2] * w_biggest[3]) > (w_last[2] * w_last[3]) * 1.1:
-                        biggest = w_biggest
-                    else:
-                        biggest = w_last
-                else:
-                    biggest = w_biggest if w_biggest else class_matches[0]
-            else:
-                # No class_name matches, do not fall back to other classes
-                biggest = None
-        else:
-            # No class_name specified, use all result matches (by title or exe)
-            w_biggest = None
-            w_last = None
-            for r in results:
-                if w_biggest is None or (r[2] * r[3]) > (w_biggest[2] * w_biggest[3]):
-                    w_biggest = r
-                if last_hwnd > 0 and r[0] == last_hwnd:
-                    w_last = r
-
-            if w_last is not None and w_biggest is not None:
-                if (w_biggest[2] * w_biggest[3]) > (w_last[2] * w_last[3]) * 1.1:
-                    biggest = w_biggest
-                else:
-                    biggest = w_last
-            else:
+        # If another window is significantly larger (e.g., splash screen ended), switch
+        if w_last is not None and w_biggest is not None:
+            if (w_biggest[2] * w_biggest[3]) > (w_last[2] * w_last[3]) * 1.1:
                 biggest = w_biggest
+            else:
+                biggest = w_last
+        else:
+            biggest = w_biggest if w_biggest else results[0]
 
         # Narrow results down to one (the background window) or zero
         results = [biggest] if biggest else []
-        
+
         if not biggest:
             return None, 0, None, 0, 0, 0, 0, []
 
@@ -1156,13 +1124,11 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
                     filtered_top.append(result)
 
             if filtered_top:
-                # Prioritize by index in top_hwnd_class list, then by Z-order (EnumWindows order)
-                filtered_top.sort(key=lambda x: x[9])
-                top_hwnd_result = filtered_top[0]
-
-                # Prepend the top hwnd so results[0] is the top-most interaction target
-                if top_hwnd_result[0] != biggest[0]:
-                    results.insert(0, top_hwnd_result)
+                # Add all top hwnds that are not the background window in Z-order
+                for top_item in reversed(filtered_top):
+                    if top_item[0] != biggest[0]:
+                        if not any(r[0] == top_item[0] for r in results):
+                            results.insert(0, top_item[:9] if len(top_item) > 9 else top_item)
 
         # logger.debug(f'find_hwnd results {len(results)} {results}')
 
@@ -1170,22 +1136,56 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
         y_offset = 0
         real_width = 0
         real_height = 0
-        if frame_aspect_ratio != 0:
+        if biggest:
             real_width, real_height = biggest[2], biggest[3]
-            matching_child = enum_child_windows(biggest, frame_aspect_ratio, frame_width, frame_height)
-            if matching_child is not None:
-                x_offset, y_offset, real_width, real_height = matching_child
-            if real_width < 10 or real_height < 10:
-                logger.error(
-                    f'find_hwnd real_width, real_height too small return None {frame_width, frame_height} {biggest} {x_offset, y_offset, real_width, real_height}')
-                return None, 0, None, 0, 0, 0, 0, []
-            else:
-                logger.debug(
-                    f'find_hwnd frame {frame_width, frame_height} {biggest} offset/size {x_offset, y_offset, real_width, real_height}')
+            if class_name is None and frame_aspect_ratio != 0:
+                matching_child = enum_child_windows(biggest, frame_aspect_ratio, frame_width, frame_height)
+                if matching_child is not None:
+                    x_offset, y_offset, real_width, real_height = matching_child
+                if real_width < 10 or real_height < 10:
+                    logger.error(
+                        f'find_hwnd real_width, real_height too small return None {frame_width, frame_height} {biggest} {x_offset, y_offset, real_width, real_height}')
+                    return None, 0, None, 0, 0, 0, 0, []
+                else:
+                    pass
+                    #logger.debug(
+                    #    f'find_hwnd frame {frame_width, frame_height} {biggest} offset/size {x_offset, y_offset, real_width, real_height}')
 
         return biggest[6], biggest[0], biggest[1], x_offset, y_offset, real_width, real_height, results
 
     return None, 0, None, 0, 0, 0, 0, []
+
+def enum_child_windows(biggest, frame_aspect_ratio, frame_width, frame_height):
+    ratio_match = []
+
+    def child_callback(hwnd, _):
+        visible = win32gui.IsWindowVisible(hwnd)
+        parent = win32gui.GetParent(hwnd)
+        rect = win32gui.GetWindowRect(hwnd)
+        parent_rect = win32gui.GetWindowRect(parent)
+        real_width = rect[2] - rect[0]
+        real_height = rect[3] - rect[1]
+        if visible and real_height > 0:
+            ratio = real_width / real_height
+            difference = abs(ratio - frame_aspect_ratio)
+            support = difference <= 0.01 * frame_aspect_ratio
+            percent = (real_width * real_height) / (biggest[2] * biggest[3]) if biggest[2] * biggest[3] > 0 else 0
+            x_offset = rect[0] - biggest[4]
+            y_offset = rect[1] - biggest[5]
+            child_class = win32gui.GetClassName(hwnd)
+            if support and percent >= 0.7 or (frame_width == real_width and real_width >= frame_width) or (
+                    frame_height == real_height and real_height >= frame_height):
+                ratio_match.append((difference, (x_offset, y_offset, real_width, real_height)))
+            #logger.info(
+            #   f'find_hwnd child_callback {child_class} {visible} {parent_rect} {rect} {real_width} {real_height} support:{support}')
+        return True
+
+    win32gui.EnumChildWindows(biggest[0], child_callback, None)
+
+    if ratio_match:
+        ratio_match.sort(key=lambda x: x[0])
+        return ratio_match[0][1]
+    return None
 
 def get_mute_state(hwnd):
     try:
@@ -1227,40 +1227,6 @@ def get_player_id_from_cmdline(cmdline):
             if value is not None:
                 return int(value.group(1))
     return 0
-
-def enum_child_windows(biggest, frame_aspect_ratio, frame_width, frame_height):
-    ratio_match = []
-
-    def child_callback(hwnd, _):
-        visible = win32gui.IsWindowVisible(hwnd)
-        parent = win32gui.GetParent(hwnd)
-        rect = win32gui.GetWindowRect(hwnd)
-        parent_rect = win32gui.GetWindowRect(parent)
-        real_width = rect[2] - rect[0]
-        real_height = rect[3] - rect[1]
-        if visible:
-            ratio = real_width / real_height
-            difference = abs(ratio - frame_aspect_ratio)
-            support = difference <= 0.01 * frame_aspect_ratio
-            percent = (real_width * real_height) / (biggest[2] * biggest[3])
-            x_offset = rect[0] - biggest[4]
-            y_offset = rect[1] - biggest[5]
-            child_class = win32gui.GetClassName(hwnd)
-            if support and percent >= 0.7 or (frame_width == real_width and real_width >= frame_width) or (
-                    frame_height == real_height and real_height >= frame_height):
-                ratio_match.append((difference, (x_offset, y_offset, real_width, real_height)))
-            logger.info(
-                f'find_hwnd child_callback {child_class} {visible} {parent_rect} {rect} {real_width} {real_height} support:{support}')
-        return True
-
-    win32gui.EnumChildWindows(biggest[0], child_callback, None)
-
-    if len(ratio_match) > 0:
-        ratio_match.sort(key=lambda x: x[0])
-        logger.debug(f'ratio_match sorted {ratio_match}')
-        return ratio_match[0][1]
-
-    return None
 
 cdef class DesktopDuplicationCaptureMethod(BaseWindowsCaptureMethod):
     name = "Direct3D Desktop Duplication"

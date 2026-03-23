@@ -28,7 +28,10 @@ class SelectCaptureListView(ListWidget):
                     if self.count() == 1:
                         item = QListWidgetItem(self.tr("Ipc (MuMuPlayer12 version >= 4.0)"))
                         self.addItem(item)
-                    selected = 1
+                    if og.device_manager.config.get('capture') == 'adb':
+                        selected = 0
+                    else:
+                        selected = 1
                 else:
                     self.reduce_row_to_1()
                     selected = 0
