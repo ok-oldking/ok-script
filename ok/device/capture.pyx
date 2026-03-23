@@ -850,16 +850,16 @@ cdef class HwndWindow:
             if self.hwnd == 0 and find_hwnd_res > 0:
                 self.hwnd = find_hwnd_res
                 self.exe_full_path = exe_full_path
-                self.real_x_offset = real_x_offset
-                self.real_y_offset = real_y_offset
-                self.real_width = real_width
-                self.real_height = real_height
                 logger.info(
-                    f'do_update_window_size find_hwnd {self.hwnd} top {hwnds[0][0] if hwnds else self.hwnd} {self.exe_full_path} {win32gui.GetClassName(self.hwnd)} real:{self.real_x_offset},{self.real_y_offset},{self.real_width},{self.real_height}')
+                    f'do_update_window_size find_hwnd {self.hwnd} top {hwnds[0][0] if hwnds else self.hwnd} {self.exe_full_path} {win32gui.GetClassName(self.hwnd)} real:{real_x_offset},{real_y_offset},{real_width},{real_height}')
                 changed = True
 
             if find_hwnd_res > 0:
                 self.hwnds = hwnds
+                self.real_x_offset = real_x_offset
+                self.real_y_offset = real_y_offset
+                self.real_width = real_width
+                self.real_height = real_height
                 self.top_hwnd = hwnds[0][0] if hwnds else self.hwnd
                 self.top_offset_x = 0
                 self.top_offset_y = 0
@@ -920,9 +920,12 @@ cdef class HwndWindow:
                     changed = True
                 if changed:
                     device = self.device_manager.get_preferred_device()
-                    if device and device['connected'] != self.exists:
+                    if device:
                         logger.info(f"hwnd changed,connected:{self.exists}")
                         device['connected'] = self.exists
+                        device['width'] = width
+                        device['height'] = height
+                        device['resolution'] = f"{width}x{height}"
                         communicate.adb_devices.emit(True)
                     logger.info(
                         f"do_update_window_size changed,visible:{self.visible},exists:{self.exists} x:{self.x} y:{self.y} window:{self.width}x{self.height} self.window:{self.window_width}x{self.window_height} real:{self.real_width}x{self.real_height}")
