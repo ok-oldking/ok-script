@@ -195,7 +195,24 @@ class PyDirectInteraction(BaseInteraction):
 
 
 class PynputInteraction(BaseInteraction):
-
+    KEY_MAP = {
+        'lshift': 'shift_l',
+        'rshift': 'shift_r',
+        'lctrl': 'ctrl_l',
+        'rctrl': 'ctrl_r',
+        'lalt': 'alt_l',
+        'ralt': 'alt_r',
+        'return': 'enter',
+        'pageup': 'page_up',
+        'pagedown': 'page_down',
+        'capslock': 'caps_lock',
+        'numlock': 'num_lock',
+        'scrolllock': 'scroll_lock',
+        'printscreen': 'print_screen',
+        'windows': 'cmd',
+        'command': 'cmd',
+        'meta': 'cmd'
+    }
     def __init__(self, capture: BaseCaptureMethod, hwnd_window):
         super().__init__(capture)
         self.hwnd_window = hwnd_window
@@ -211,8 +228,12 @@ class PynputInteraction(BaseInteraction):
 
     def _parse_key(self, key):
         from pynput import keyboard
+        if not isinstance(key, str):
+            return key
+        key_lower = key.lower()
+        target_name = self.KEY_MAP.get(key_lower, key_lower)
         try:
-            return keyboard.Key[key.lower()]
+            return keyboard.Key[target_name]
         except KeyError:
             return key
 
