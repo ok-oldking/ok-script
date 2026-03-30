@@ -5,7 +5,7 @@ from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt
 from PySide6.QtGui import QScreen
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
 from qfluentwidgets import MSFluentWindow, qconfig, FluentIcon, NavigationItemPosition, MessageBox, InfoBar, \
-    InfoBarPosition
+    InfoBarPosition, SystemThemeListener, Theme, setTheme
 
 from ok.util.config import Config
 
@@ -155,6 +155,10 @@ class MainWindow(MSFluentWindow):
         self.tray.show()
         self.tray.setToolTip(title)
 
+        self.themeListener = ThemeListener(self)
+        self.themeListener.systemThemeChanged.connect(self.on_systemThemeChanged)
+        self.themeListener.start()
+
         communicate.capture_error.connect(self.capture_error)
         communicate.notification.connect(self.show_notification)
         communicate.config_validation.connect(self.config_validation)
@@ -162,6 +166,10 @@ class MainWindow(MSFluentWindow):
         communicate.global_config.connect(self.goto_global_config)
 
         logger.info('main window __init__ done')
+
+    def on_systemThemeChanged(self):
+        setTheme(Theme.AUTO)
+        logger.debug("system theme changed, set theme to auto")
 
     def restart_admin(self):
         w = MessageBox(QCoreApplication.translate("app", "Alert"),
@@ -352,6 +360,8 @@ class MainWindow(MSFluentWindow):
     def closeEvent(self, event):
         if self.app.exit_event.is_set():
             logger.info("Window closed exit_event.is_set")
+            self.themeListener.terminate()
+            self.themeListener.deleteLater()
             event.accept()
             return
         else:
@@ -368,3 +378,17 @@ class MainWindow(MSFluentWindow):
             if not self.do_not_quit:
                 pyappify.kill_pyappify()
                 QApplication.instance().exit()
+
+
+class ThemeListener(SystemThemeListener):
+    """ System theme listener """
+
+    def _onThemeChanged(self, theme: str):
+        theme = Theme.DARK if theme.lower() == "dark" else Theme.LIGHT
+
+        if theme == qconfig.theme:
+            return
+
+        qconfig.theme = Theme.AUTO
+        qconfig._cfg.themeChanged.emit(Theme.AUTO)
+        self.systemThemeChanged.emit()
