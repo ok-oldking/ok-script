@@ -478,6 +478,26 @@
             <source>ADB(Supports Background, Slow, High Compatibility, High Latency)</source>
             <translation>ADB (バックグラウンド対応、低速、高互換性、高遅延)</translation>
         </message>
+    <message>
+        <source>Browser Capture</source>
+        <translation>ブラウザキャプチャ</translation>
+    </message>
+    <message>
+        <source>BitBlt_RenderFull</source>
+        <translation>BitBlt 全画面キャプチャ</translation>
+    </message>
+    <message>
+        <source>WGC</source>
+        <translation>WGC キャプチャ</translation>
+    </message>
+    <message>
+        <source>BitBlt</source>
+        <translation>BitBlt キャプチャ</translation>
+    </message>
+    <message>
+        <source>DXGI</source>
+        <translation>DXGI デスクトップキャプチャ</translation>
+    </message>
     </context>
     <context>
         <name>SettingTab</name>

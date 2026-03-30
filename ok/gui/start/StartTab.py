@@ -74,6 +74,8 @@ class StartTab(Tab):
     def capture_index_changed(self):  # i is an index
         i = self.capture_list.currentRow()
         self.capture_list_row = i
+        if i == -1:
+            return
         from ok import og
         device = og.device_manager.get_preferred_device()
         self.logger.debug(f"capture_index_changed {i} {device}")
@@ -84,7 +86,13 @@ class StartTab(Tab):
                 elif i == 1:
                     og.device_manager.set_capture("ipc")
             elif device.get('device') == 'windows':
-                og.device_manager.set_capture("windows")
+                methods = og.device_manager.windows_capture_config.get('capture_method', [])
+                if methods and i < len(methods):
+                    og.device_manager.set_capture(methods[i])
+                else:
+                    og.device_manager.set_capture("windows")
+            elif device.get('device') == 'browser':
+                og.device_manager.set_capture("browser")
             self.start_card.update_status()
 
     def device_index_changed(self):  # i is an index
@@ -95,6 +103,7 @@ class StartTab(Tab):
             return
         from ok import og
         og.device_manager.set_preferred_device(index=i)
+        self.capture_list.update_for_device()
         self.logger.debug(f"device_index_changed done {i}")
 
     def update_capture(self, finished):

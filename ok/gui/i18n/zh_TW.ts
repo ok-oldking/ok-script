@@ -478,6 +478,26 @@
             <source>ADB(Supports Background, Slow, High Compatibility, High Latency)</source>
             <translation>ADB 截圖 (支援背景、相容性高、速度慢、高延遲)</translation>
         </message>
+    <message>
+        <source>Browser Capture</source>
+        <translation>瀏覽器截圖</translation>
+    </message>
+    <message>
+        <source>BitBlt_RenderFull</source>
+        <translation>BitBlt 完整渲染</translation>
+    </message>
+    <message>
+        <source>WGC</source>
+        <translation>WGC 截圖</translation>
+    </message>
+    <message>
+        <source>BitBlt</source>
+        <translation>BitBlt 截圖</translation>
+    </message>
+    <message>
+        <source>DXGI</source>
+        <translation>DXGI 桌面截圖</translation>
+    </message>
     </context>
     <context>
         <name>SettingTab</name>

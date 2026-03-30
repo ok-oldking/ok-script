@@ -1,6 +1,8 @@
 # window.py
 import ctypes
+import os
 import platform
+import re
 import sys
 import time
 
@@ -184,3 +186,171 @@ def resize_window(hwnd, width, height):
 def ratio_text_to_number(supported_ratio):
     supported_ratio_list = [int(i) for i in supported_ratio.split(':')]
     return supported_ratio_list[0] / supported_ratio_list[1]
+
+
+def compare_path_safe(str1, str2):
+    if str1 is None and str2 is None:
+        return True
+    if str1 is None or str2 is None:
+        return False
+    return str1.replace('\\', '/').lower() == str2.replace('\\', '/').lower()
+
+
+def get_player_id_from_cmdline(cmdline):
+    for i in range(len(cmdline)):
+        if i != 0:
+            if cmdline[i].isdigit():
+                return int(cmdline[i])
+    for i in range(len(cmdline)):
+        if i != 0:
+            value = re.search(r'index=(\d+)', cmdline[i])
+            if value is not None:
+                return int(value.group(1))
+    return 0
+
+
+def _match_class_name(hwnd_class, patterns):
+    if patterns is None:
+        return -1
+    if not isinstance(patterns, list):
+        patterns = [patterns]
+    for i, pattern in enumerate(patterns):
+        if isinstance(pattern, str):
+            if hwnd_class == pattern:
+                return i
+        elif re.search(pattern, hwnd_class):
+            return i
+    return -1
+
+
+def enum_child_windows(biggest, frame_aspect_ratio, frame_width, frame_height):
+    ratio_match = []
+
+    def child_callback(hwnd, _):
+        visible = win32gui.IsWindowVisible(hwnd)
+        parent = win32gui.GetParent(hwnd)
+        rect = win32gui.GetWindowRect(hwnd)
+        real_width = rect[2] - rect[0]
+        real_height = rect[3] - rect[1]
+        if visible and real_height > 0:
+            ratio = real_width / real_height
+            difference = abs(ratio - frame_aspect_ratio)
+            support = difference <= 0.01 * frame_aspect_ratio
+            percent = (real_width * real_height) / (biggest[2] * biggest[3]) if biggest[2] * biggest[3] > 0 else 0
+            x_offset = rect[0] - biggest[4]
+            y_offset = rect[1] - biggest[5]
+            if support and percent >= 0.7 or (frame_width == real_width and real_width >= frame_width) or (
+                    frame_height == real_height and real_height >= frame_height):
+                ratio_match.append((difference, (x_offset, y_offset, real_width, real_height)))
+        return True
+
+    win32gui.EnumChildWindows(biggest[0], child_callback, None)
+
+    if ratio_match:
+        ratio_match.sort(key=lambda x: x[0])
+        return ratio_match[0][1]
+    return None
+
+
+def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_name=None,
+              selected_hwnd=0, top_hwnd_class=None, last_hwnd=0):
+    if exe_names is None and title is None:
+        return None, 0, None, 0, 0, 0, 0, []
+    frame_aspect_ratio = frame_width / frame_height if frame_height != 0 else 0
+
+    top_results = []
+
+    def is_match(hwnd, results):
+        if not win32gui.IsWindow(hwnd) or not win32gui.IsWindowEnabled(hwnd):
+            return True
+
+        cname = win32gui.GetClassName(hwnd)
+        is_main_class = class_name is None or _match_class_name(cname, class_name) >= 0
+        if is_main_class and class_name is None and not win32gui.IsWindowVisible(hwnd):
+            is_main_class = False
+
+        t_idx = _match_class_name(cname, top_hwnd_class) if top_hwnd_class is not None else -1
+
+        if not is_main_class and t_idx < 0:
+            return True
+
+        text = win32gui.GetWindowText(hwnd)
+        if t_idx >= 0 and win32gui.IsWindowVisible(hwnd):
+            name, full_path, cmdline = get_exe_by_hwnd(hwnd)
+            tx, ty, _, _, tcw, tch, m_ts = get_window_bounds(hwnd)
+            top_results.append((hwnd, full_path, tcw, tch, tx, ty, text, cname, m_ts, t_idx))
+
+        if not is_main_class or (0 < selected_hwnd != hwnd):
+            return True
+
+        if title:
+            if isinstance(title, str):
+                if title != text:
+                    return True
+            elif not re.search(title, text):
+                return True
+
+        name, full_path, cmdline = get_exe_by_hwnd(hwnd)
+
+        if exe_names:
+            if not name or not any((compare_path_safe(name, exe_name) or compare_path_safe(exe_name, full_path)) for exe_name in exe_names):
+                return True
+
+        if player_id != -1 and player_id != get_player_id_from_cmdline(cmdline):
+            logger.warning(f'player id check failed,cmdline {cmdline} {get_player_id_from_cmdline(cmdline)} != {player_id}')
+            return True
+
+        x, y, _, _, width, height, m_scaling = get_window_bounds(hwnd)
+        if width <= 10 or height <= 10:
+            return True
+        # logger.debug(f'find_hwnd EnumWindows selected_hwnd {selected_hwnd} {results}')
+        results.append((hwnd, full_path, width, height, x, y, text, cname, m_scaling))
+        return True
+
+    results = []
+    win32gui.EnumWindows(is_match, results)
+    # logger.debug(f'find_hwnd EnumWindows selected_hwnd {selected_hwnd} {results}')
+    if not results:
+        return None, 0, None, 0, 0, 0, 0, []
+
+    w_biggest = max(results, key=lambda r: r[2] * r[3])
+    w_last = next((r for r in results if 0 < last_hwnd == r[0]), None)
+
+    biggest = w_biggest
+    if w_last and w_biggest:
+        if (w_biggest[2] * w_biggest[3]) <= (w_last[2] * w_last[3]) * 1.1:
+            biggest = w_last
+
+    results = [biggest]
+
+    if top_hwnd_class is not None:
+        bg_exe_path, bg_dir = biggest[1], None
+        if bg_exe_path:
+            bg_dir = os.path.dirname(os.path.normpath(bg_exe_path)).lower()
+
+        filtered_top = []
+        for result in top_results:
+            top_exe_path = result[1]
+            if top_exe_path and bg_exe_path:
+                top_exe_path_norm = os.path.normpath(top_exe_path).lower()
+                bg_exe_path_norm = os.path.normpath(bg_exe_path).lower()
+                if top_exe_path_norm == bg_exe_path_norm or (bg_dir and top_exe_path_norm.startswith(bg_dir + os.sep)):
+                    filtered_top.append(result)
+
+        if filtered_top:
+            for top_item in reversed(filtered_top):
+                if top_item[0] != biggest[0] and not any(r[0] == top_item[0] for r in results):
+                    results.insert(0, top_item[:9] if len(top_item) > 9 else top_item)
+
+    x_offset, y_offset, real_width, real_height = 0, 0, biggest[2], biggest[3]
+    if class_name is None and frame_aspect_ratio != 0:
+        matching_child = enum_child_windows(biggest, frame_aspect_ratio, frame_width, frame_height)
+        if matching_child is not None:
+            x_offset, y_offset, real_width, real_height = matching_child
+        if real_width < 10 or real_height < 10:
+            logger.error(f'find_hwnd real_width, real_height too small return None {frame_width, frame_height} {biggest} {x_offset, y_offset, real_width, real_height}')
+            return None, 0, None, 0, 0, 0, 0, []
+
+    # logger.debug(f'find_hwnd {results}')
+
+    return biggest[6], biggest[0], biggest[1], x_offset, y_offset, real_width, real_height, results

@@ -1,42 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="zh_CN" sourcelanguage="en_US">
+<TS version="2.1" language="en_US" sourcelanguage="en_US">
 <context>
     <name>@default</name>
         <message>
             <source>Version Update</source>
-            <translation>更新版本</translation>
+            <translation>Version Update</translation>
         </message>
         <message>
             <source>{key} is invalid, please check the hotkey config!</source>
-            <translation>{key} 这种按键是无效的，请检查热键配置！</translation>
+            <translation>{key} is invalid, please check the hotkey config!</translation>
         </message>
     </context>
 <context>
     <name>AboutTab</name>
     <message>
         <source>Download Release</source>
-        <translation>下载正式版</translation>
+        <translation>Download Release</translation>
     </message>
     <message>
         <source>Download Debug</source>
-        <translation>下载开发版</translation>
+        <translation>Download Debug</translation>
     </message>
     <message>
         <source>Beta Version</source>
-        <translation>测试版</translation>
+        <translation>Beta Version</translation>
     </message>
     <message>
         <source>Stable Version</source>
-        <translation>正式版</translation>
+        <translation>Stable Version</translation>
     </message>
     <message>
         <source>Download Error:</source>
-        <translation>下载错误: </translation>
+        <translation>Download Error:</translation>
     </message>
     <message>
         <source>Other Projects</source>
-        <translation>相关项目</translation>
+        <translation>Other Projects</translation>
     </message>
 </context>
 <context>
@@ -73,172 +73,172 @@
     <name>AddTextMessageBox</name>
     <message>
         <source>Add</source>
-        <translation>添加</translation>
+        <translation>Add</translation>
     </message>
     <message>
         <source>Confirm</source>
-        <translation>确认</translation>
+        <translation>Confirm</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation>Cancel</translation>
     </message>
 </context>
 <context>
     <name>AppConfigWidget</name>
     <message>
         <source>Theme</source>
-        <translation>主题</translation>
+        <translation>Theme</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation>深色</translation>
+        <translation>Dark</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation>浅色</translation>
+        <translation>Light</translation>
     </message>
 </context>
 <context>
     <name>ConfigCard</name>
     <message>
         <source>Reset Config</source>
-        <translation>重置配置</translation>
+        <translation>Reset Config</translation>
     </message>
 
     <message>
         <source>Add Start Menu Shortcut</source>
-        <translation>添加开始菜单快捷方式</translation>
+        <translation>Add Start Menu Shortcut</translation>
     </message>
 </context>
 <context>
     <name>DebugTab</name>
     <message>
         <source>Dump Threads(HotKey:Ctrl+Alt+D)</source>
-        <translation>Dump Threads(快捷键:Ctrl+Alt+D)</translation>
+        <translation>Dump Threads(HotKey:Ctrl+Alt+D)</translation>
     </message>
     <message>
         <source>Capture Screenshot</source>
-        <translation>截图</translation>
+        <translation>Capture Screenshot</translation>
     </message>
     <message>
         <source>Open Logs</source>
-        <translation>打开日志文件夹</translation>
+        <translation>Open Logs</translation>
     </message>
     <message>
         <source>Generate i18n files</source>
-        <translation>生成i18n文件</translation>
+        <translation>Generate i18n files</translation>
     </message>
     <message>
         <source>Convert i18n files</source>
-        <translation>编译i18n文件</translation>
+        <translation>Convert i18n files</translation>
     </message>
     <message>
         <source>Debug Task Function</source>
-        <translation>调用Task方法</translation>
+        <translation>Debug Task Function</translation>
     </message>
     <message>
         <source>{num} images selected</source>
-        <translation>已选择{num}个图片</translation>
+        <translation>{num} images selected</translation>
     </message>
     <message>
         <source>Select Screenshots</source>
-        <translation>选择截图</translation>
+        <translation>Select Screenshots</translation>
     </message>
     <message>
         <source>Type a function or property</source>
-        <translation>输入方法或属性</translation>
+        <translation>Type a function or property</translation>
     </message>
     <message>
         <source>Call</source>
-        <translation>调用</translation>
+        <translation>Call</translation>
     </message>
     <message>
         <source>No such attr: {func_name}</source>
-        <translation>没有属性或方法: {func_name}</translation>
+        <translation>No such attr: {func_name}</translation>
     </message>
     <message>
         <source>call success: {result}</source>
-        <translation>调用成功 success: {result}</translation>
+        <translation>call success: {result}</translation>
     </message>
     <message>
         <source>No OCR configured</source>
-        <translation>没有配置OCR</translation>
+        <translation>No OCR configured</translation>
     </message>
     <message>
         <source>OCR success: {result}</source>
-        <translation>OCR调用成功: {result}</translation>
+        <translation>OCR success: {result}</translation>
     </message>
     <message>
         <source>Drop or Select Screenshot</source>
-        <translation>选择截图</translation>
+        <translation>Drop or Select Screenshot</translation>
     </message>
     <message>
         <source>Capture Success</source>
-        <translation>截图成功</translation>
+        <translation>Capture Success</translation>
     </message>
     <message>
         <source>Capture returned None</source>
-        <translation>截图返回空</translation>
+        <translation>Capture returned None</translation>
     </message>
     <message>
         <source>Debug Tool</source>
-        <translation>调试工具</translation>
+        <translation>Debug Tool</translation>
     </message>
     <message>
         <source>No Capture Available or Selected</source>
-        <translation>截图方式不可用或未选择</translation>
+        <translation>No Capture Available or Selected</translation>
     </message>
 </context>
 <context>
     <name>DownloadBar</name>
     <message>
         <source>Installing {progress} {percent}%</source>
-        <translation>安装中 {progress} {percent}%</translation>
+        <translation>Installing {progress} {percent}%</translation>
     </message>
 </context>
 <context>
     <name>GlobalConfigCard</name>
     <message>
         <source>Reset Config</source>
-        <translation>重置配置</translation>
+        <translation>Reset Config</translation>
     </message>
 </context>
 <context>
     <name>HwndChooser</name>
     <message>
         <source>Choose Window</source>
-        <translation>选择窗口</translation>
+        <translation>Choose Window</translation>
     </message>
     <message>
         <source>Confirm</source>
-        <translation>确认</translation>
+        <translation>Confirm</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation>Cancel</translation>
     </message>
     <message>
         <source>{} Selected</source>
-        <translation>{} 已选择</translation>
+        <translation>{} Selected</translation>
     </message>
 </context>
 <context>
     <name>LabelAndGlobal</name>
     <message>
         <source>Go to Config</source>
-        <translation>去设置</translation>
+        <translation>Go to Config</translation>
     </message>
 </context>
 <context>
     <name>LabelAndSwitchButton</name>
     <message>
         <source>Yes</source>
-        <translation>是</translation>
+        <translation>Yes</translation>
     </message>
     <message>
         <source>No</source>
-        <translation>否</translation>
+        <translation>No</translation>
     </message>
 </context>
 <context>
@@ -253,172 +253,172 @@
     </message>
     <message>
         <source>FAQ</source>
-        <translation>常见问题</translation>
+        <translation>FAQ</translation>
     </message>
     <message>
         <source>Share</source>
-        <translation>分享下载链接</translation>
+        <translation>Share</translation>
     </message>
     <message>
         <source>Sponsor</source>
-        <translation>赞助</translation>
+        <translation>Sponsor</translation>
     </message>
     <message>
         <source>Share Link copied to clipboard</source>
-        <translation>分享链接已经复制到剪切板</translation>
+        <translation>Share Link copied to clipboard</translation>
     </message>
 </context>
 <context>
     <name>LogWindow</name>
     <message>
         <source>Drag</source>
-        <translation>拖动</translation>
+        <translation>Drag</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>关闭</translation>
+        <translation>Close</translation>
     </message>
 </context>
     <context>
         <name>MainWindow</name>
         <message>
             <source>Tasks</source>
-            <translation>任务</translation>
+            <translation>Tasks</translation>
         </message>
         <message>
         <source>This is a free software. If you purchased this anywhere, request a refund from the seller.</source>
-        <translation>这是一个免费软件, 如果你从任何地方购买, 请申请退款!</translation>
+        <translation>This is a free software. If you purchased this anywhere, request a refund from the seller.</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation>提示</translation>
+        <translation>Info</translation>
     </message>
     <message>
         <source>Triggers</source>
-        <translation>实时触发</translation>
+        <translation>Triggers</translation>
     </message>
     <message>
         <source>Schedule</source>
-        <translation>计划任务</translation>
+        <translation>Schedule</translation>
     </message>
     <message>
         <source>Capture</source>
-        <translation>截图方式</translation>
+        <translation>Capture</translation>
     </message>
     <message>
         <source>Debug</source>
-        <translation>开发工具</translation>
+        <translation>Debug</translation>
     </message>
     <message>
         <source>About</source>
-        <translation>关于</translation>
+        <translation>About</translation>
     </message>
     <message>
         <source>激活</source>
     </message>
     <message>
         <source>Settings</source>
-        <translation>设置</translation>
+        <translation>Settings</translation>
     </message>
     <message>
         <source>Release</source>
-        <translation>正式版</translation>
+        <translation>Release</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>更新版本</translation>
+        <translation>Update</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation>错误</translation>
+        <translation>Error</translation>
     </message>
     <message>
         <source>Please check whether the game window is selected correctly!</source>
-        <translation>请检查游戏窗口是否正确选择</translation>
+        <translation>Please check whether the game window is selected correctly!</translation>
     </message>
     <message>
         <source>Capture Error</source>
-        <translation>截图错误</translation>
+        <translation>Capture Error</translation>
     </message>
     <message>
         <source>Start Success.</source>
-        <translation>启动成功</translation>
+        <translation>Start Success.</translation>
     </message>
     <message>
         <source>Pause Success.</source>
-        <translation>已暂停</translation>
+        <translation>Pause Success.</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation>退出</translation>
+        <translation>Exit</translation>
     </message>
 </context>
 <context>
     <name>MessageWindow</name>
     <message>
         <source>Confirm</source>
-        <translation>确认</translation>
+        <translation>Confirm</translation>
     </message>
 </context>
 <context>
     <name>ModifyListDialog</name>
     <message>
         <source>Modify</source>
-        <translation>修改</translation>
+        <translation>Modify</translation>
     </message>
     <message>
         <source>Move Up</source>
-        <translation>上移</translation>
+        <translation>Move Up</translation>
     </message>
     <message>
         <source>Move Down</source>
-        <translation>下移</translation>
+        <translation>Move Down</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>添加</translation>
+        <translation>Add</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>移除</translation>
+        <translation>Remove</translation>
     </message>
     <message>
         <source>Confirm</source>
-        <translation>确认</translation>
+        <translation>Confirm</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation>Cancel</translation>
     </message>
 </context>
 <context>
     <name>ModifyListItem</name>
     <message>
         <source>Modify</source>
-        <translation>修改</translation>
+        <translation>Modify</translation>
     </message>
 </context>
 <context>
     <name>OneTimeTaskTab</name>
     <message>
         <source>Choose Window</source>
-        <translation>选择窗口</translation>
+        <translation>Choose Window</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation>信息</translation>
+        <translation>Info</translation>
     </message>
     <message>
         <source>Value</source>
-        <translation>值</translation>
+        <translation>Value</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation>运行中</translation>
+        <translation>Running</translation>
     </message>
     <message>
         <source>Completed</source>
-        <translation>已完成</translation>
+        <translation>Completed</translation>
     </message>
 </context>
 <context>
@@ -426,1180 +426,1180 @@
     <message>
         <source>app</source>
         <comment>Error</comment>
-        <translation>错误</translation>
+        <translation>app</translation>
     </message>
 </context>
 <context>
     <name>RunBar</name>
     <message>
         <source> Current Version: </source>
-        <translation> 当前版本:</translation>
+        <translation> Current Version: </translation>
     </message>
     <message>
         <source>Launcher </source>
-        <translation>启动器</translation>
+        <translation>Launcher </translation>
     </message>
     <message>
         <source>Choose Profile:</source>
-        <translation>选择版本:</translation>
+        <translation>Choose Profile:</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation>启动</translation>
+        <translation>Start</translation>
     </message>
     <message>
         <source>Download Dependencies and Start</source>
-        <translation>下载依赖并启动</translation>
+        <translation>Download Dependencies and Start</translation>
     </message>
 </context>
 <context>
     <name>SelectCaptureListView</name>
     <message>
         <source>Game Window</source>
-        <translation>游戏窗口</translation>
+        <translation>Game Window</translation>
     </message>
     <message>
         <source>Emulator Window(Supports Background, Fast, Low Latency)</source>
-        <translation>模拟器窗口(支持后台, 速度快, 延迟低)</translation>
+        <translation>Emulator Window(Supports Background, Fast, Low Latency)</translation>
     </message>
     <message>
         <source>Ipc (MuMuPlayer12 version &gt;= 4.0)</source>
-        <translation>原生(MuMuPlayer12 version &gt;= 4.0)</translation>
+        <translation>Ipc (MuMuPlayer12 version &gt;= 4.0)</translation>
     </message>
     <message>
         <source>ADB(Supports Background, Slow, High Compatibility, High Latency)</source>
-        <translation>ADB截图(支持后台, 兼容性高, 速度慢, 延迟高)</translation>
+        <translation>ADB(Supports Background, Slow, High Compatibility, High Latency)</translation>
     </message>
     <message>
         <source>Browser Capture</source>
-        <translation>浏览器截图</translation>
+        <translation>Browser Capture</translation>
     </message>
     <message>
         <source>BitBlt_RenderFull</source>
-        <translation>BitBlt 完整渲染</translation>
+        <translation>BitBlt_RenderFull</translation>
     </message>
     <message>
         <source>WGC</source>
-        <translation>WGC 截图</translation>
+        <translation>WGC</translation>
     </message>
     <message>
         <source>BitBlt</source>
-        <translation>BitBlt 截图</translation>
+        <translation>BitBlt</translation>
     </message>
     <message>
         <source>DXGI</source>
-        <translation>DXGI 桌面截图</translation>
+        <translation>DXGI</translation>
     </message>
 </context>
 <context>
     <name>SettingTab</name>
     <message>
         <source>Settings</source>
-        <translation>设置</translation>
+        <translation>Settings</translation>
     </message>
     <message>
         <source>App Config</source>
-        <translation>软件设置</translation>
+        <translation>App Config</translation>
     </message>
     <message>
         <source>Application Theme</source>
-        <translation>应用主题</translation>
+        <translation>Application Theme</translation>
     </message>
     <message>
         <source>Change the appearance of the application</source>
-        <translation>改变应用程序的外观</translation>
+        <translation>Change the appearance of the application</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation>浅色</translation>
+        <translation>Light</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation>深色</translation>
+        <translation>Dark</translation>
     </message>
     <message>
         <source>Use system setting</source>
-        <translation>使用系统设置</translation>
+        <translation>Use system setting</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>语言</translation>
+        <translation>Language</translation>
     </message>
     <message>
         <source>Set your preferred language</source>
-        <translation>选择你的语言</translation>
+        <translation>Set your preferred language</translation>
     </message>
     <message>
         <source>App Settings</source>
-        <translation>软件设置</translation>
+        <translation>App Settings</translation>
     </message>
     <message>
         <source>Set your preferred language for UI</source>
-        <translation>设置UI的首选语言</translation>
+        <translation>Set your preferred language for UI</translation>
     </message>
     <message>
         <source>About</source>
-        <translation>关于</translation>
+        <translation>About</translation>
     </message>
     <message>
         <source>Open help page</source>
-        <translation>打开帮助页面</translation>
+        <translation>Open help page</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>帮助</translation>
+        <translation>Help</translation>
     </message>
     <message>
         <source>Discover new features and learn useful tips about PyQt-Fluent-Widgets</source>
-        <translation>发现新功能并学习有关PyQt-Fluent-Widgets的有用提示</translation>
+        <translation>Discover new features and learn useful tips about PyQt-Fluent-Widgets</translation>
     </message>
     <message>
         <source>Check update</source>
-        <translation>检查更新</translation>
+        <translation>Check update</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation>版本</translation>
+        <translation>Version</translation>
     </message>
     <message>
         <source>Updated successfully</source>
-        <translation>更新成功</translation>
+        <translation>Updated successfully</translation>
     </message>
     <message>
         <source>Configuration takes effect after restart</source>
-        <translation>配置在重启后生效</translation>
+        <translation>Configuration takes effect after restart</translation>
     </message>
 </context>
 <context>
     <name>StartButton</name>
     <message>
         <source>Start All</source>
-        <translation>开始全部</translation>
+        <translation>Start All</translation>
     </message>
     <message>
         <source>Pause All</source>
-        <translation>暂停全部</translation>
+        <translation>Pause All</translation>
     </message>
 </context>
 <context>
     <name>StartCard</name>
     <message>
         <source>Start</source>
-        <translation>开始</translation>
+        <translation>Start</translation>
     </message>
     <message>
         <source>Capture</source>
-        <translation>截图</translation>
+        <translation>Capture</translation>
     </message>
     <message>
         <source>Export Logs</source>
-        <translation>导出日志</translation>
+        <translation>Export Logs</translation>
     </message>
     <message>
         <source>Install Folder</source>
-        <translation>安装目录</translation>
+        <translation>Install Folder</translation>
     </message>
     <message>
         <source>Start Game</source>
-        <translation>启动游戏</translation>
+        <translation>Start Game</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation>暂停</translation>
+        <translation>Pause</translation>
     </message>
     <message>
         <source>Game Window Disconnected</source>
-        <translation>游戏窗口已断开</translation>
+        <translation>Game Window Disconnected</translation>
     </message>
     <message>
         <source>Paused: PC Game Window Must Be in Front!</source>
-        <translation>已暂停：PC版游戏窗口必须在前台！</translation>
+        <translation>Paused: PC Game Window Must Be in Front!</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation>运行中</translation>
+        <translation>Running</translation>
     </message>
     <message>
         <source>Trigger Tasks</source>
-        <translation>实时触发任务</translation>
+        <translation>Trigger Tasks</translation>
     </message>
     <message>
         <source>Waiting for task to be enabled</source>
-        <translation>点击选择任务开始</translation>
+        <translation>Waiting for task to be enabled</translation>
     </message>
 </context>
 <context>
     <name>StartController</name>
     <message>
         <source>Start game failed, please start game first</source>
-        <translation>启动游戏失败, 请先手动启动游戏!</translation>
+        <translation>Start game failed, please start game first</translation>
     </message>
     <message>
         <source>Start game timeout!</source>
-        <translation>启动超时!</translation>
+        <translation>Start game timeout!</translation>
     </message>
     <message>
         <source>Game path does not exist, Please open game manually!</source>
-        <translation>无法启动游戏, 请手动打开游戏</translation>
+        <translation>Game path does not exist, Please open game manually!</translation>
     </message>
     <message>
         <source>No game selected!</source>
-        <translation>未选择游戏窗口</translation>
+        <translation>No game selected!</translation>
     </message>
     <message>
         <source>Selected capture method is not supported by the game or your system!</source>
-        <translation>当前游戏或模拟器不支持选择的截图方式!</translation>
+        <translation>Selected capture method is not supported by the game or your system!</translation>
     </message>
     <message>
         <source>Emulator is not connected, start the emulator first!</source>
-        <translation>模拟器未连接, 请先启动!</translation>
+        <translation>Emulator is not connected, start the emulator first!</translation>
     </message>
     <message>
         <source>{} is not connected, please select the game window.</source>
-        <translation>{}未连接，请选择正确的游戏窗口。</translation>
+        <translation>{} is not connected, please select the game window.</translation>
     </message>
     <message>
         <source>Windows night light is enabled, please turn it off first.</source>
-        <translation>Windows显示设置夜灯/护眼模式已打开, 请先关闭!</translation>
+        <translation>Windows night light is enabled, please turn it off first.</translation>
     </message>
     <message>
         <source>Windows night light is enabled, tasks might not work correctly!</source>
-        <translation>Windows显示设置夜灯/护眼模式已打开, 请先关闭!</translation>
+        <translation>Windows night light is enabled, tasks might not work correctly!</translation>
     </message>
     <message>
-        <source>Window is minimized or out of screen, and don&apos;t use full-screen exclusive mode!</source>
-        <translation>窗口被最小化或在屏幕外, 不要使用独占全屏模式!</translation>
+        <source>Window is minimized or out of screen, and don't use full-screen exclusive mode!</source>
+        <translation>Window is minimized or out of screen, and don't use full-screen exclusive mode!</translation>
     </message>
     <message>
         <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
-        <translation>分辨率{resolution}检查失败, 部分任务可能无法正常运行!</translation>
+        <translation>Resolution {resolution} check failed, some tasks might not work correctly!</translation>
     </message>
     <message>
         <source>Auto HDR is enabled, please turn it off first.</source>
-        <translation>显示设置自动HDR已打开, 请先关闭!</translation>
+        <translation>Auto HDR is enabled, please turn it off first.</translation>
     </message>
     <message>
         <source>Auto HDR is enabled, tasks might not work correctly!</source>
-        <translation>显示设置自动HDR已打开, 可能导致任务运行异常!</translation>
+        <translation>Auto HDR is enabled, tasks might not work correctly!</translation>
     </message>
     <message>
         <source>Window is minimized or out of screen, and do NOT use full-screen exclusive!</source>
-        <translation>游戏窗口最小化或者部分在屏幕外,不要使用独占全屏!</translation>
+        <translation>Window is minimized or out of screen, and do NOT use full-screen exclusive!</translation>
     </message>
     <message>
         <source>Capture failed, please check game window</source>
-        <translation>截图失败,请检查游戏窗口</translation>
+        <translation>Capture failed, please check game window</translation>
     </message>
     <message>
-        <source>Image resource load failed, please try install again.(Don&apos;t put the app in Downloads folder)</source>
-        <translation>模板图片加载失败,请重新安装.(不要放在下载目录等可能会被自动删除图片的目录.)</translation>
+        <source>Image resource load failed, please try install again.(Don't put the app in Downloads folder)</source>
+        <translation>Image resource load failed, please try install again.(Don't put the app in Downloads folder)</translation>
     </message>
     <message>
         <source>Game resolution {resolution} is not supported</source>
-        <translation>不支持当前分辨率{resolution}</translation>
+        <translation>Game resolution {resolution} is not supported</translation>
     </message>
     <message>
         <source>, the supported ratio is {supported_ratio}</source>
-        <translation>支持的窗口比例是{supported_ratio}</translation>
+        <translation>, the supported ratio is {supported_ratio}</translation>
     </message>
     <message>
         <source>, the supported min resolution is {min_size}</source>
-        <translation>, 支持的最小分辨率是  {min_size}</translation>
+        <translation>, the supported min resolution is {min_size}</translation>
     </message>
     <message>
         <source>, check if game windows is minimized, resized or out of screen.</source>
-        <translation>, 确认游戏窗口是否被拉伸,隐藏,或者在屏幕外.</translation>
+        <translation>, check if game windows is minimized, resized or out of screen.</translation>
     </message>
     <message>
         <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
-        <translation>PC版需要管理员权限，请以管理员权限重启此应用！</translation>
+        <translation>PC version requires admin privileges, Please restart this app with admin privileges!</translation>
     </message>
     <message>
-        <source>Can&apos;t start game, make sure the game is installed</source>
-        <translation>无法启动游戏, 请确认游戏已安装!</translation>
+        <source>Can't start game, make sure the game is installed</source>
+        <translation>Can't start game, make sure the game is installed</translation>
     </message>
 </context>
 <context>
     <name>StartLoadingDialog</name>
     <message>
         <source>Starting, timeout after {seconds_left} seconds.</source>
-        <translation>正在启动, {seconds_left}秒后超时.</translation>
+        <translation>Starting, timeout after {seconds_left} seconds.</translation>
     </message>
     <message>
         <source>Loading</source>
-        <translation>加载中</translation>
+        <translation>Loading</translation>
     </message>
 </context>
 <context>
     <name>StartTab</name>
     <message>
         <source>Choose Window</source>
-        <translation>选择窗口</translation>
+        <translation>Choose Window</translation>
     </message>
     <message>
         <source>Refreshing</source>
-        <translation>正在刷新</translation>
+        <translation>Refreshing</translation>
     </message>
     <message>
         <source>Capture Method</source>
-        <translation>截图方式</translation>
+        <translation>Capture Method</translation>
     </message>
     <message>
         <source>PC</source>
-        <translation>PC版</translation>
+        <translation>PC</translation>
     </message>
     <message>
         <source>Emulator</source>
-        <translation>模拟器</translation>
+        <translation>Emulator</translation>
     </message>
     <message>
         <source>Android</source>
-        <translation>安卓版</translation>
+        <translation>Android</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation>已连接</translation>
+        <translation>Connected</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation>已断开</translation>
+        <translation>Disconnected</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation>刷新</translation>
+        <translation>Refresh</translation>
     </message>
 </context>
 <context>
     <name>TaskButtons</name>
     <message>
         <source>Start</source>
-        <translation>开始</translation>
+        <translation>Start</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation>停止</translation>
+        <translation>Stop</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation>暂停</translation>
+        <translation>Pause</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation>继续</translation>
+        <translation>Resume</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation>错误</translation>
+        <translation>Error</translation>
     </message>
     <message>
         <source>Game window is not connected, please select the game window and capture method.</source>
-        <translation>游戏窗口未连接，请选择游戏窗口和截图方式。</translation>
+        <translation>Game window is not connected, please select the game window and capture method.</translation>
     </message>
 </context>
 <context>
     <name>TaskCard</name>
     <message>
         <source>Reset Config</source>
-        <translation>重置配置</translation>
+        <translation>Reset Config</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation>已启用</translation>
+        <translation>Enabled</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation>未启用</translation>
+        <translation>Disabled</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>删除</translation>
+        <translation>Delete</translation>
     </message>
     <message>
         <source>Delete Task</source>
-        <translation>删除任务</translation>
+        <translation>Delete Task</translation>
     </message>
     <message>
         <source>Are you sure you want to delete {}</source>
-        <translation>你确定要删除 {} 吗?</translation>
+        <translation>Are you sure you want to delete {}</translation>
     </message>
 </context>
 <context>
     <name>TaskOpButton</name>
     <message>
         <source>Disable</source>
-        <translation>禁用</translation>
+        <translation>Disable</translation>
     </message>
     <message>
         <source>Enable</source>
-        <translation>启用</translation>
+        <translation>Enable</translation>
     </message>
 </context>
 <context>
     <name>TaskTab</name>
     <message>
         <source>Create Task</source>
-        <translation>创建任务</translation>
+        <translation>Create Task</translation>
     </message>
     <message>
         <source>Choose Window</source>
-        <translation>选择窗口</translation>
+        <translation>Choose Window</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation>信息</translation>
+        <translation>Info</translation>
     </message>
     <message>
         <source>Value</source>
-        <translation>值</translation>
+        <translation>Value</translation>
     </message>
     <message>
         <source>Completed</source>
-        <translation>已完成</translation>
+        <translation>Completed</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation>运行中</translation>
+        <translation>Running</translation>
     </message>
     <message>
         <source>Time Elapsed</source>
-        <translation>已运行</translation>
+        <translation>Time Elapsed</translation>
     </message>
 </context>
 <context>
     <name>UpdateBar</name>
     <message>
         <source>Current Version: </source>
-        <translation>当前版本</translation>
+        <translation>Current Version: </translation>
     </message>
     <message>
         <source>Checking for Updates...</source>
-        <translation>检查更新中...</translation>
+        <translation>Checking for Updates...</translation>
     </message>
     <message>
         <source>Delete Downloaded Dependencies</source>
-        <translation>删除已下载依赖</translation>
+        <translation>Delete Downloaded Dependencies</translation>
     </message>
     <message>
         <source>Update Source:</source>
-        <translation>更新源:</translation>
+        <translation>Update Source:</translation>
     </message>
     <message>
         <source>Check for Update</source>
-        <translation>检查更新</translation>
+        <translation>Check for Update</translation>
     </message>
     <message>
         <source>Current Version:</source>
-        <translation>当前版本</translation>
+        <translation>Current Version:</translation>
     </message>
     <message>
         <source>TargetVersion:</source>
-        <translation>目标版本</translation>
+        <translation>TargetVersion:</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>更新版本</translation>
+        <translation>Update</translation>
     </message>
     <message>
         <source>This is the newest version</source>
-        <translation>已经是最新版本</translation>
+        <translation>This is the newest version</translation>
     </message>
     <message>
         <source>Checking for Update...</source>
-        <translation>检查更新中</translation>
+        <translation>Checking for Update...</translation>
     </message>
     <message>
         <source>Updating</source>
-        <translation>更新中</translation>
+        <translation>Updating</translation>
     </message>
     <message>
         <source>Downgrade</source>
-        <translation>降级版本</translation>
+        <translation>Downgrade</translation>
     </message>
 </context>
 <context>
     <name>VersionCard</name>
     <message>
         <source>Check for updates</source>
-        <translation>检查新版本</translation>
+        <translation>Check for updates</translation>
     </message>
     <message>
         <source>Downloading {progress} {percent}%</source>
-        <translation>下载中: {progress} {percent}%</translation>
+        <translation>Downloading {progress} {percent}%</translation>
     </message>
     <message>
         <source>Update to {version} {type}</source>
-        <translation>更新到{version}{type}</translation>
+        <translation>Update to {version} {type}</translation>
     </message>
     <message>
         <source>Debug</source>
-        <translation>开发版</translation>
+        <translation>Debug</translation>
     </message>
     <message>
         <source>Release</source>
-        <translation>正式版</translation>
+        <translation>Release</translation>
     </message>
     <message>
         <source>Update Now</source>
-        <translation>现在更新</translation>
+        <translation>Update Now</translation>
     </message>
     <message>
         <source>Are you sure you want to update to {version} {type}?</source>
-        <translation>确定更新到{version}{type}吗？</translation>
+        <translation>Are you sure you want to update to {version} {type}?</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation>信息</translation>
+        <translation>Info</translation>
     </message>
     <message>
         <source>Found new version!</source>
-        <translation>发现新版本</translation>
+        <translation>Found new version!</translation>
     </message>
     <message>
         <source>Check for update error!</source>
-        <translation>检查更新错误</translation>
+        <translation>Check for update error!</translation>
     </message>
     <message>
         <source>This is the newest version!</source>
-        <translation>目前已经是最新版本！</translation>
+        <translation>This is the newest version!</translation>
     </message>
     <message>
         <source>Checking for updates</source>
-        <translation>检查更新</translation>
+        <translation>Checking for updates</translation>
     </message>
 </context>
 <context>
     <name>app</name>
     <message>
         <source>Diagnosis</source>
-        <translation>诊断</translation>
+        <translation>Diagnosis</translation>
     </message>
     <message>
         <source>Performance Test</source>
-        <translation>性能测试</translation>
+        <translation>Performance Test</translation>
     </message>
     <message>
         <source>Game Resolution</source>
-        <translation>窗口分辨率</translation>
+        <translation>Game Resolution</translation>
     </message>
     <message>
         <source>Frame Count</source>
-        <translation>总帧数</translation>
+        <translation>Frame Count</translation>
     </message>
     <message>
         <source>Process Frame Rate</source>
-        <translation>处理帧率</translation>
+        <translation>Process Frame Rate</translation>
     </message>
     <message>
         <source>Capture Frame Rate</source>
-        <translation>截图帧率</translation>
+        <translation>Capture Frame Rate</translation>
     </message>
     <message>
         <source>Texts</source>
-        <translation>文字识别结果</translation>
+        <translation>Texts</translation>
     </message>
     <message>
         <source>Capture Latency</source>
-        <translation>截图延迟</translation>
+        <translation>Capture Latency</translation>
     </message>
     <message>
         <source>OCR Latency</source>
-        <translation>文字识别延迟</translation>
+        <translation>OCR Latency</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation>内存</translation>
+        <translation>Memory</translation>
     </message>
     <message>
         <source>Alert</source>
-        <translation>提示</translation>
+        <translation>Alert</translation>
     </message>
     <message>
         <source>Trigger Interval</source>
-        <translation>触发器间隔</translation>
+        <translation>Trigger Interval</translation>
     </message>
     <message>
         <source>Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)</source>
-        <translation>增加间隔以降低CPU/GPU消耗(毫秒)</translation>
+        <translation>Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)</translation>
     </message>
      <message>
         <source>Use GPU to Improve Performance</source>
-        <translation>如果你有一个显存较大的显卡, 可以选是来改善性能</translation>
+        <translation>Use GPU to Improve Performance</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation>是</translation>
+        <translation>Yes</translation>
     </message>
     <message>
         <source>No</source>
-        <translation>否</translation>
+        <translation>No</translation>
     </message>
     <message>
         <source>Windows Capture</source>
-        <translation>Windows 截图方式</translation>
+        <translation>Windows Capture</translation>
     </message>
     <message>
         <source>Switch between different Windows capture methods</source>
-        <translation>切换不同的 Windows 截图方式</translation>
+        <translation>Switch between different Windows capture methods</translation>
     </message>
     <message>
         <source>Basic Options</source>
-        <translation>基本设置</translation>
+        <translation>Basic Options</translation>
     </message>
     <message>
         <source>Use DirectML</source>
-        <translation>使用DirectML</translation>
+        <translation>Use DirectML</translation>
     </message>
     <message>
         <source>Launch with DX11</source>
-        <translation>使用DX11启动</translation>
+        <translation>Launch with DX11</translation>
     </message>
     <message>
         <source>Auto Resize Game Window</source>
-        <translation>自动调整游戏分辨率</translation>
+        <translation>Auto Resize Game Window</translation>
     </message>
     <message>
         <source>Auto</source>
-        <translation>自动</translation>
+        <translation>Auto</translation>
     </message>
     <message>
         <source>Operation</source>
-        <translation>操作</translation>
+        <translation>Operation</translation>
     </message>
     <message>
         <source>Exit_After_Execution</source>
-        <translation>运行结束后退出</translation>
+        <translation>Exit_After_Execution</translation>
     </message>
     <message>
         <source>Minimize Window to System Tray when Closing</source>
-        <translation>点击关闭按钮时最小化到系统托盘</translation>
+        <translation>Minimize Window to System Tray when Closing</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation>信息</translation>
+        <translation>Info</translation>
     </message>
     <message>
         <source>Confirm</source>
-        <translation>确认</translation>
+        <translation>Confirm</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation>Cancel</translation>
     </message>
     <message>
         <source>Window Config</source>
-        <translation>窗口设置</translation>
+        <translation>Window Config</translation>
     </message>
     <message>
         <source>New Version {} Available</source>
-        <translation>有新版本{}可更新!</translation>
+        <translation>New Version {} Available</translation>
     </message>
     <message>
         <source>Exit After Task</source>
-        <translation>完成后退出</translation>
+        <translation>Exit After Task</translation>
     </message>
     <message>
         <source>Exit the Game and the App after Successfully Executing the Task</source>
-        <translation>完成任务后退出游戏和App</translation>
+        <translation>Exit the Game and the App after Successfully Executing the Task</translation>
     </message>
     <message>
         <source>Successfully Executed Task, Exiting Game and App!</source>
-        <translation>成功执行任务, 正在退出游戏和App!</translation>
+        <translation>Successfully Executed Task, Exiting Game and App!</translation>
     </message>
     <message>
         <source>China</source>
-        <translation>国内</translation>
+        <translation>China</translation>
     </message>
     <message>
         <source>Fetch remote version list error!</source>
-        <translation>读取版本列表失败!</translation>
+        <translation>Fetch remote version list error!</translation>
     </message>
     <message>
         <source>App startup error. Please add the installation folder to the Windows Defender whitelist and reinstall:</source>
-        <translation>应用启动错误。请将安装文件夹添加到Windows Defender白名单并重新安装:</translation>
+        <translation>App startup error. Please add the installation folder to the Windows Defender whitelist and reinstall:</translation>
     </message>
     <message>
         <source>Global</source>
-        <translation>海外</translation>
+        <translation>Global</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation>错误</translation>
+        <translation>Error</translation>
     </message>
     <message>
         <source>Please turn off enable background keep alive in MuMuPlayer settings</source>
-        <translation>请在MuMU模拟器[设置]-&gt;[其他设置]中关闭[后台挂机时保活运行]</translation>
+        <translation>Please turn off enable background keep alive in MuMuPlayer settings</translation>
     </message>
     <message>
         <source>Another instance is already running</source>
-        <translation>另一个实例已经在运行, 请手动结束另一个实例.</translation>
+        <translation>Another instance is already running</translation>
     </message>
     <message>
         <source>Install dir {path} must be an English path, move to another path.</source>
-        <translation>安装目录{path}必须是英文目录，请移动到英文目录。</translation>
+        <translation>Install dir {path} must be an English path, move to another path.</translation>
     </message>
     <message>
         <source>Paused because game window is minimized or out of screen!</source>
-        <translation>已暂停：游戏窗口最小化或者部分在屏幕外！</translation>
+        <translation>Paused because game window is minimized or out of screen!</translation>
     </message>
     <message>
         <source>Paused because game exited</source>
-        <translation>已暂停：游戏已经退出！</translation>
+        <translation>Paused because game exited</translation>
     </message>
     <message>
         <source>Auto exit because game exited</source>
-        <translation>由于游戏退出, 自动关闭</translation>
+        <translation>Auto exit because game exited</translation>
     </message>
     <message>
         <source>Exit App when Game Exits</source>
-        <translation>游戏退出时, 自动退出应用</translation>
+        <translation>Exit App when Game Exits</translation>
     </message>
     <message>
         <source>Exit because game exited</source>
-        <translation>由于游戏已经退出, 应用自动退出！</translation>
+        <translation>Exit because game exited</translation>
     </message>
     <message>
         <source>Stopped</source>
-        <translation>已停止</translation>
+        <translation>Stopped</translation>
     </message>
     <message>
         <source>Game Sound</source>
-        <translation>游戏声音</translation>
+        <translation>Game Sound</translation>
     </message>
     <message>
         <source>Mute Game while in Background</source>
-        <translation>游戏在后台时静音</translation>
+        <translation>Mute Game while in Background</translation>
     </message>
     <message>
         <source>Auto Start Game</source>
-        <translation>自动启动游戏</translation>
+        <translation>Auto Start Game</translation>
     </message>
     <message>
         <source>Auto Start Game When App Starts</source>
-        <translation>程序启动时候自动启动游戏</translation>
+        <translation>Auto Start Game When App Starts</translation>
     </message>
     <message>
         <source>{} Launcher</source>
-        <translation>{} 启动器</translation>
+        <translation>{} Launcher</translation>
     </message>
     <message>
         <source>The current version {} must be updated</source>
-        <translation>当前版本{}必须更新</translation>
+        <translation>The current version {} must be updated</translation>
     </message>
     <message>
         <source>Updates:</source>
-        <translation>更新内容:</translation>
+        <translation>Updates:</translation>
     </message>
     <message>
         <source>Delete dependencies success!</source>
-        <translation>删除依赖成功</translation>
+        <translation>Delete dependencies success!</translation>
     </message>
     <message>
         <source>Start downloading</source>
-        <translation>开始下载依赖</translation>
+        <translation>Start downloading</translation>
     </message>
     <message>
         <source>Install dependencies failed, try changing the update source, or re-download the full version!</source>
-        <translation>安装依赖失败, 请尝试更换更新源, 或重新下载完整版!</translation>
+        <translation>Install dependencies failed, try changing the update source, or re-download the full version!</translation>
     </message>
     <message>
         <source>Start App Exception:</source>
-        <translation>启动程序异常:</translation>
+        <translation>Start App Exception:</translation>
     </message>
     <message>
         <source>Already updated to version:</source>
-        <translation>已经更新到版本:</translation>
+        <translation>Already updated to version:</translation>
     </message>
     <message>
-        <source>Can&apos;t find python venv</source>
-        <translation>无法找到python venv</translation>
+        <source>Can't find python venv</source>
+        <translation>Can't find python venv</translation>
     </message>
     <message>
         <source>Create venv failed.</source>
-        <translation>创建venv失败.</translation>
+        <translation>Create venv failed.</translation>
     </message>
     <message>
         <source>Start/Stop</source>
-        <translation>开始/停止</translation>
+        <translation>Start/Stop</translation>
     </message>
     <message>
         <source>HotKey</source>
-        <translation>快捷键</translation>
+        <translation>HotKey</translation>
     </message>
     <message>
         <source>None</source>
-        <translation>无</translation>
+        <translation>None</translation>
     </message>
     <message>
         <source>Stable Version</source>
-        <translation>稳定版</translation>
+        <translation>Stable Version</translation>
     </message>
     <message>
         <source>Beta Version</source>
-        <translation>测试版</translation>
+        <translation>Beta Version</translation>
     </message>
     <message>
         <source>Kill Launcher after Start</source>
-        <translation>启动后关闭启动器</translation>
+        <translation>Kill Launcher after Start</translation>
     </message>
 </context>
 <context>
     <name>ScheduleTaskTable</name>
     <message>
         <source>Task Name</source>
-        <translation>任务名称</translation>
+        <translation>Task Name</translation>
     </message>
     <message>
         <source>Status</source>
-        <translation>状态</translation>
+        <translation>Status</translation>
     </message>
     <message>
         <source>Trigger Type</source>
-        <translation>触发类型</translation>
+        <translation>Trigger Type</translation>
     </message>
     <message>
         <source>Next Run</source>
-        <translation>下次运行</translation>
+        <translation>Next Run</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation>已启用</translation>
+        <translation>Enabled</translation>
     </message>
     <message>
         <source>Actions</source>
-        <translation>操作</translation>
+        <translation>Actions</translation>
     </message>
     <message>
         <source>Modify</source>
-        <translation>修改</translation>
+        <translation>Modify</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>删除</translation>
+        <translation>Delete</translation>
     </message>
     <message>
         <source>Daily</source>
-        <translation>每天</translation>
+        <translation>Daily</translation>
     </message>
     <message>
         <source>Weekly</source>
-        <translation>每周</translation>
+        <translation>Weekly</translation>
     </message>
     <message>
         <source>Monthly</source>
-        <translation>每月</translation>
+        <translation>Monthly</translation>
     </message>
     <message>
         <source>Once</source>
-        <translation>一次</translation>
+        <translation>Once</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation>自定义</translation>
+        <translation>Custom</translation>
     </message>
     <message>
         <source>Ready</source>
-        <translation>就绪</translation>
+        <translation>Ready</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation>运行中</translation>
+        <translation>Running</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <translation>已禁用</translation>
+        <translation>Disabled</translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation>未知</translation>
+        <translation>Unknown</translation>
     </message>
 </context>
 <context>
     <name>CreateScheduleTaskDialog</name>
     <message>
         <source>Create Schedule Task</source>
-        <translation>创建计划任务</translation>
+        <translation>Create Schedule Task</translation>
     </message>
     <message>
         <source>Select Task</source>
-        <translation>选择任务</translation>
+        <translation>Select Task</translation>
     </message>
     <message>
         <source>No tasks available</source>
-        <translation>无可用任务</translation>
+        <translation>No tasks available</translation>
     </message>
     <message>
         <source>Trigger Type</source>
-        <translation>触发类型</translation>
+        <translation>Trigger Type</translation>
     </message>
     <message>
         <source>Daily</source>
-        <translation>每天</translation>
+        <translation>Daily</translation>
     </message>
     <message>
         <source>Weekly</source>
-        <translation>每周</translation>
+        <translation>Weekly</translation>
     </message>
     <message>
         <source>Monthly</source>
-        <translation>每月</translation>
+        <translation>Monthly</translation>
     </message>
     <message>
         <source>Once</source>
-        <translation>一次</translation>
+        <translation>Once</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation>自定义</translation>
+        <translation>Custom</translation>
     </message>
     <message>
         <source>Start Time</source>
-        <translation>开始时间</translation>
+        <translation>Start Time</translation>
     </message>
     <message>
         <source>Hour</source>
-        <translation>时</translation>
+        <translation>Hour</translation>
     </message>
     <message>
         <source>Minute</source>
-        <translation>分</translation>
+        <translation>Minute</translation>
     </message>
     <message>
         <source>24h</source>
-        <translation>24小时制</translation>
+        <translation>24h</translation>
     </message>
     <message>
         <source>Custom Interval</source>
-        <translation>自定义时间设置</translation>
+        <translation>Custom Interval</translation>
     </message>
     <message>
         <source>Days</source>
-        <translation>天</translation>
+        <translation>Days</translation>
     </message>
     <message>
         <source>Hours</source>
-        <translation>小时</translation>
+        <translation>Hours</translation>
     </message>
     <message>
         <source>(0 = disabled)</source>
-        <translation>（0 = 不启用）</translation>
+        <translation>(0 = disabled)</translation>
     </message>
     <message>
         <source>Timeout</source>
-        <translation>超时时间</translation>
+        <translation>Timeout</translation>
     </message>
     <message>
         <source>hours (0 = unlimited)</source>
-        <translation>小时（0 = 无限制）</translation>
+        <translation>hours (0 = unlimited)</translation>
     </message>
     <message>
         <source>Auto exit after task done (-e)</source>
-        <translation>任务完成后自动退出 (-e)</translation>
+        <translation>Auto exit after task done (-e)</translation>
     </message>
     <message>
         <source>Startup Options</source>
-        <translation>启动选项</translation>
+        <translation>Startup Options</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation>创建</translation>
+        <translation>Create</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation>Cancel</translation>
     </message>
 </context>
 <context>
     <name>ModifyScheduleTaskDialog</name>
     <message>
         <source>Modify Schedule Task</source>
-        <translation>修改计划任务</translation>
+        <translation>Modify Schedule Task</translation>
     </message>
     <message>
         <source>Task Name</source>
-        <translation>任务名称</translation>
+        <translation>Task Name</translation>
     </message>
     <message>
         <source>Task Index (-t)</source>
-        <translation>任务索引 (-t)</translation>
+        <translation>Task Index (-t)</translation>
     </message>
     <message>
         <source>Trigger Type</source>
-        <translation>触发类型</translation>
+        <translation>Trigger Type</translation>
     </message>
     <message>
         <source>Daily</source>
-        <translation>每天</translation>
+        <translation>Daily</translation>
     </message>
     <message>
         <source>Weekly</source>
-        <translation>每周</translation>
+        <translation>Weekly</translation>
     </message>
     <message>
         <source>Monthly</source>
-        <translation>每月</translation>
+        <translation>Monthly</translation>
     </message>
     <message>
         <source>Once</source>
-        <translation>一次</translation>
+        <translation>Once</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation>自定义</translation>
+        <translation>Custom</translation>
     </message>
     <message>
         <source>Start Time</source>
-        <translation>开始时间</translation>
+        <translation>Start Time</translation>
     </message>
     <message>
         <source>Hour</source>
-        <translation>时</translation>
+        <translation>Hour</translation>
     </message>
     <message>
         <source>Minute</source>
-        <translation>分</translation>
+        <translation>Minute</translation>
     </message>
     <message>
         <source>24h</source>
-        <translation>24小时制</translation>
+        <translation>24h</translation>
     </message>
     <message>
         <source>Custom Interval</source>
-        <translation>自定义时间设置</translation>
+        <translation>Custom Interval</translation>
     </message>
     <message>
         <source>Days</source>
-        <translation>天</translation>
+        <translation>Days</translation>
     </message>
     <message>
         <source>Hours</source>
-        <translation>小时</translation>
+        <translation>Hours</translation>
     </message>
     <message>
         <source>(0 = disabled)</source>
-        <translation>（0 = 不启用）</translation>
+        <translation>(0 = disabled)</translation>
     </message>
     <message>
         <source>Timeout</source>
-        <translation>超时时间</translation>
+        <translation>Timeout</translation>
     </message>
     <message>
         <source>hours (0 = unlimited)</source>
-        <translation>小时（0 = 无限制）</translation>
+        <translation>hours (0 = unlimited)</translation>
     </message>
     <message>
         <source>Auto exit after task done (-e)</source>
-        <translation>任务完成后自动退出 (-e)</translation>
+        <translation>Auto exit after task done (-e)</translation>
     </message>
     <message>
         <source>Startup Options</source>
-        <translation>启动选项</translation>
+        <translation>Startup Options</translation>
     </message>
     <message>
         <source>Modify</source>
-        <translation>修改</translation>
+        <translation>Modify</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation>Cancel</translation>
     </message>
 </context>
 <context>
     <name>ScheduleTaskTab</name>
     <message>
         <source>Refresh</source>
-        <translation>刷新</translation>
+        <translation>Refresh</translation>
     </message>
     <message>
         <source>Create Task</source>
-        <translation>创建任务</translation>
+        <translation>Create Task</translation>
     </message>
     <message>
         <source>Schedule Tasks</source>
-        <translation>计划任务</translation>
+        <translation>Schedule Tasks</translation>
     </message>
     <message>
         <source>Failed to load tasks</source>
-        <translation>加载任务失败</translation>
+        <translation>Failed to load tasks</translation>
     </message>
     <message>
         <source>Tasks refreshed</source>
-        <translation>任务已刷新</translation>
+        <translation>Tasks refreshed</translation>
     </message>
     <message>
         <source>Refresh failed</source>
-        <translation>刷新失败</translation>
+        <translation>Refresh failed</translation>
     </message>
     <message>
         <source>Task not found in cache</source>
-        <translation>缓存中未找到任务</translation>
+        <translation>Task not found in cache</translation>
     </message>
     <message>
         <source>Failed to open modify dialog</source>
-        <translation>打开修改对话框失败</translation>
+        <translation>Failed to open modify dialog</translation>
     </message>
     <message>
         <source>Failed to modify task: cannot delete old task</source>
-        <translation>修改任务失败：无法删除旧任务</translation>
+        <translation>Failed to modify task: cannot delete old task</translation>
     </message>
     <message>
         <source>Task modified successfully</source>
-        <translation>任务修改成功</translation>
+        <translation>Task modified successfully</translation>
     </message>
     <message>
         <source>Failed to modify task</source>
-        <translation>修改任务失败</translation>
+        <translation>Failed to modify task</translation>
     </message>
     <message>
         <source>Delete Task</source>
-        <translation>删除任务</translation>
+        <translation>Delete Task</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>删除</translation>
+        <translation>Delete</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation>Cancel</translation>
     </message>
     <message>
         <source>Are you sure you want to delete task</source>
-        <translation>确定要删除任务</translation>
+        <translation>Are you sure you want to delete task</translation>
     </message>
     <message>
         <source>Task deleted successfully</source>
-        <translation>任务删除成功</translation>
+        <translation>Task deleted successfully</translation>
     </message>
     <message>
         <source>Failed to delete task</source>
-        <translation>删除任务失败</translation>
+        <translation>Failed to delete task</translation>
     </message>
     <message>
         <source>Task enabled</source>
-        <translation>任务已启用</translation>
+        <translation>Task enabled</translation>
     </message>
     <message>
         <source>Task disabled</source>
-        <translation>任务已禁用</translation>
+        <translation>Task disabled</translation>
     </message>
     <message>
         <source>Failed to toggle task</source>
-        <translation>切换任务状态失败</translation>
+        <translation>Failed to toggle task</translation>
     </message>
     <message>
         <source>Success</source>
-        <translation>成功</translation>
+        <translation>Success</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation>错误</translation>
+        <translation>Error</translation>
     </message>
     <message>
         <source>Task created successfully</source>
-        <translation>任务创建成功</translation>
+        <translation>Task created successfully</translation>
     </message>
     <message>
         <source>Failed to create task</source>
-        <translation>创建任务失败</translation>
+        <translation>Failed to create task</translation>
     </message>
 </context>
 </TS>

@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 import cv2
 import numpy as np
 
-from ok.device.capture import HwndWindow, find_hwnd, BrowserCaptureMethod, update_capture_method, NemuIpcCaptureMethod, \
+from ok.device.capture import HwndWindow, BrowserCaptureMethod, update_capture_method, NemuIpcCaptureMethod, \
     ADBCaptureMethod
 from ok.device.intercation import PostMessageInteraction, GenshinInteraction, ForegroundPostMessageInteraction, \
     PynputInteraction, PyDirectInteraction, BrowserInteraction, ADBInteraction
@@ -17,7 +17,7 @@ from ok.util.file import delete_if_exists
 from ok.util.handler import Handler
 from ok.util.logger import Logger
 from ok.util.process import kill_exe
-from ok.util.window import windows_graphics_available
+from ok.util.window import windows_graphics_available, find_hwnd
 
 logger = Logger.get_logger(__name__)
 
@@ -161,7 +161,17 @@ class DeviceManager:
             logger.error(f"adb connect error return none {addr}", e)
 
     def get_devices(self):
-        return list(self.device_dict.values())
+        devices = list(self.device_dict.values())
+        def sort_key(d):
+            device_type = d.get('device')
+            if device_type == 'adb':
+                return 0
+            if device_type == 'windows':
+                return 1
+            if device_type == 'browser':
+                return 2
+            return 3
+        return sorted(devices, key=sort_key)
 
     def update_pc_device(self):
         if self.windows_capture_config is not None:
@@ -210,10 +220,10 @@ class DeviceManager:
 
     def do_refresh(self, current=False):
         try:
-            self.update_pc_device()
-            self.update_browser_device()
             self.refresh_emulators(current)
             self.refresh_phones(current)
+            self.update_pc_device()
+            self.update_browser_device()
         except Exception as e:
             logger.error('refresh error', e)
 
@@ -448,7 +458,12 @@ class DeviceManager:
             self.hwnd_window.update_window(title, exe, frame_width, frame_height, player_id, hwnd_class, top_hwnd_class)
 
     def use_windows_capture(self):
-        selected_method = self.global_config.get_config('Basic Options').get('Windows Capture')
+        selected_method = self.config.get('capture')
+        valid_methods = self.windows_capture_config.get('capture_method', [])
+        if not selected_method or selected_method not in valid_methods:
+             selected_method = self.global_config.get_config('Basic Options').get('Windows Capture')
+             if selected_method not in valid_methods and valid_methods:
+                 selected_method = valid_methods[0]
         self.capture_method = update_capture_method(self.windows_capture_config, self.capture_method, self.hwnd_window,
                                                     exit_event=self.exit_event, selected_method=selected_method)
         if self.capture_method is None:

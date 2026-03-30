@@ -478,6 +478,26 @@
             <source>ADB(Supports Background, Slow, High Compatibility, High Latency)</source>
             <translation>ADB (Soporta segundo plano, lento, alta compatibilidad, alta latencia)</translation>
         </message>
+    <message>
+        <source>Browser Capture</source>
+        <translation>Captura de navegador</translation>
+    </message>
+    <message>
+        <source>BitBlt_RenderFull</source>
+        <translation>BitBlt Captura de fondo completa</translation>
+    </message>
+    <message>
+        <source>WGC</source>
+        <translation>Captura WGC</translation>
+    </message>
+    <message>
+        <source>BitBlt</source>
+        <translation>BitBlt Captura de fondo</translation>
+    </message>
+    <message>
+        <source>DXGI</source>
+        <translation>Captura de escritorio DXGI</translation>
+    </message>
     </context>
     <context>
         <name>SettingTab</name>

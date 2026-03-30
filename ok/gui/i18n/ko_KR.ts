@@ -479,6 +479,26 @@
             <source>ADB(Supports Background, Slow, High Compatibility, High Latency)</source>
             <translation>ADB(백그라운드 지원, 느림, 높은 호환성, 높은 지연 시간)</translation>
         </message>
+    <message>
+        <source>Browser Capture</source>
+        <translation>브라우저 캡처</translation>
+    </message>
+    <message>
+        <source>BitBlt_RenderFull</source>
+        <translation>BitBlt 전체 화면 캡처</translation>
+    </message>
+    <message>
+        <source>WGC</source>
+        <translation>WGC 캡처</translation>
+    </message>
+    <message>
+        <source>BitBlt</source>
+        <translation>BitBlt 캡처</translation>
+    </message>
+    <message>
+        <source>DXGI</source>
+        <translation>DXGI 데스크톱 캡처</translation>
+    </message>
     </context>
     <context>
         <name>SettingTab</name>
