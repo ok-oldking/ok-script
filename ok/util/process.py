@@ -152,7 +152,14 @@ def execute(game_cmd: str, arguments=None):
             if os.path.exists(game_path):
                 try:
                     logger.info(f'try execute {game_cmd} {arguments}')
-                    cmd = f'start "" /b "{game_cmd}"'
+                    game_cmd_stripped = game_cmd.strip()
+                    if game_cmd_stripped.startswith('"'):
+                        cmd = f'start "" /b {game_cmd_stripped}'
+                    elif game_cmd_stripped.startswith(game_path):
+                        args_part = game_cmd_stripped[len(game_path):]
+                        cmd = f'start "" /b "{game_path}"{args_part}'
+                    else:
+                        cmd = f'start "" /b "{game_cmd_stripped}"'
                     if arguments:
                         cmd += f" {arguments}"
                     subprocess.Popen(cmd, cwd=os.path.dirname(game_path), shell=True,
@@ -161,7 +168,7 @@ def execute(game_cmd: str, arguments=None):
                 except Exception as e:
                     logger.error('execute error', e)
             else:
-                logger.error(f'execute error path not exist {game_cmd}')
+                logger.error(f'execute error path not exist {game_path}')
 
 
 def kill_exe(relative_path=None, abs_path=None):

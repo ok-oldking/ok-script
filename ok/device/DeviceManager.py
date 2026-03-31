@@ -666,6 +666,8 @@ class DeviceManager:
                 return package
 
     def adb_check_in_front(self, packages):
+        if not packages:
+            return True
         front = self.device is not None and self.device.app_current()
         logger.debug(f'adb_check_in_front {front}')
         if front:
