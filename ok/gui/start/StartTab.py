@@ -171,12 +171,24 @@ class StartTab(Tab):
 
     def ocr_log_bg(self):
         try:
+            import os
             from ok import og
-            result = og.executor.get_all_tasks()[0].ocr(log=True)
+            from ok.gui.util.Alert import alert_error
+            if og.executor.paused:
+                alert_error(self.tr("Please Start First"))
+                return
+            result = og.executor.get_all_tasks()[0].ocr(log=True, screenshot=True)
+            from ok.gui.util.Alert import alert_info
             alert_info(self.tr(f"OCR success (Logged): {result}"))
             folder = og.ok.screenshot.screenshot_folder
             if folder:
-                subprocess.Popen(r'explorer "{}"'.format(folder))
+                folder_abs = os.path.abspath(folder)
+                if result:
+                    result_path = os.path.join(folder_abs, 'ocr_result.txt')
+                    with open(result_path, 'w', encoding='utf-8') as f:
+                        for box in result:
+                            f.write(f"{box.name}, {box}, {box.confidence}\n")
+                subprocess.Popen(f'explorer "{folder_abs}"')
         except Exception as e:
             self.logger.error('debug ocr_log exception', e)
 

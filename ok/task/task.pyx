@@ -600,6 +600,7 @@ cdef class OCR(FindFeature):
                    int width=0, int height=0, object box=None, name=None,
                    double threshold=0,
                    object frame=None, int target_height=0, bint use_grayscale=False, bint log=False,
+                   bint screenshot=False,
                    frame_processor=None, lib='default'):
         """
         Performs OCR on a region of an image.
@@ -661,7 +662,7 @@ cdef class OCR(FindFeature):
             communicate.emit_draw_box("ocr_zone" + join_list_elements(name), [box] if box else [],
                                       "blue")  # ensure list for drawing
 
-            if log and self.debug:
+            if screenshot:
                 self.screenshot('ocr', frame=image, show_box=True, frame_box=box)
             if log:
                 level = logger.info
@@ -862,16 +863,18 @@ cdef class OCR(FindFeature):
                          box=None, name=None,
                          match=None, double threshold=0, frame=None, int target_height=0, int time_out=0,
                          bint raise_if_not_found=False, recheck_time=0, after_sleep=0, post_action=None, log=False,
+                         bint screenshot=False,
                          settle_time=-1, lib="default"):
 
         result = self.wait_ocr(x, y, width=width, height=height, to_x=to_x, to_y=to_y, box=box, name=name, match=match,
                                threshold=threshold, frame=frame, target_height=target_height, time_out=time_out,
                                raise_if_not_found=raise_if_not_found, post_action=post_action, log=log,
+                               screenshot=screenshot,
                                settle_time=settle_time, lib=lib)
         if recheck_time > 0:
             self.sleep(1)
             result = self.ocr(x, y, width=width, height=height, to_x=to_x, to_y=to_y, box=box, name=name, match=match,
-                              threshold=threshold, frame=frame, target_height=target_height, log=log, lib=lib)
+                              threshold=threshold, frame=frame, target_height=target_height, log=log, screenshot=screenshot, lib=lib)
         if result is not None:
             self.click_box(result, after_sleep=after_sleep)
             return result
@@ -881,17 +884,18 @@ cdef class OCR(FindFeature):
     def wait_ocr(self, double x=0, double y=0, double to_x=1, double to_y=1, int width=0, int height=0, name=None,
                  box=None,
                  match=None, double threshold=0, frame=None, int target_height=0, int time_out=0, post_action=None,
-                 bint raise_if_not_found=False, log=False, settle_time=-1, lib="default"):
+                 bint raise_if_not_found=False, log=False, bint screenshot=False, settle_time=-1, lib="default"):
         boxes = self.wait_until(
             lambda: self.ocr(x, y, to_x=to_x, to_y=to_y, width=width, height=height, box=box, name=name,
                              match=match, threshold=threshold, frame=frame, target_height=target_height, log=log,
+                             screenshot=screenshot,
                              lib=lib),
             time_out=time_out, post_action=post_action,
             raise_if_not_found=raise_if_not_found, settle_time=settle_time)
         if not boxes and raise_if_not_found:
             logger.error(f'wait_ocr failed, ocr again and log')
             boxes = self.ocr(x, y, to_x=to_x, to_y=to_y, width=width, height=height, box=box, name=name,
-                             threshold=threshold, frame=frame, target_height=target_height, log=True, lib=lib)
+                             threshold=threshold, frame=frame, target_height=target_height, log=True, screenshot=True, lib=lib)
         return boxes
 
 

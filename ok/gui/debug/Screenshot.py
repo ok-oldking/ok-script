@@ -88,8 +88,6 @@ class Screenshot(QObject):
     def draw_box(self, key: str = None, boxes=None, color="red", frame=None, debug=True):
         if boxes is None:
             return
-        if debug and not og.config.get('debug'):
-            return
         if isinstance(boxes, Box):
             boxes = [boxes]
         if len(boxes) == 0:
