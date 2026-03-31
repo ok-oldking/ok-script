@@ -354,3 +354,36 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
     # logger.debug(f'find_hwnd {results}')
 
     return biggest[6], biggest[0], biggest[1], x_offset, y_offset, real_width, real_height, results
+
+def find_all_visible_windows():
+    windows = []
+    
+    def callback(hwnd, extra):
+        if not win32gui.IsWindowVisible(hwnd):
+            return True
+            
+        exStyle = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+        WS_EX_TOOLWINDOW = 0x00000080
+        if exStyle & WS_EX_TOOLWINDOW:
+            return True
+            
+        title = win32gui.GetWindowText(hwnd)
+        if not title or not str(title).strip():
+            return True
+            
+        try:
+            _, pid = win32process.GetWindowThreadProcessId(hwnd)
+            if pid <= 0:
+                return True
+            process = psutil.Process(pid)
+            exe_name = process.name()
+            exe_full_path = process.exe()
+        except Exception:
+            exe_name = ""
+            exe_full_path = ""
+            
+        windows.append((hwnd, title, exe_name, exe_full_path))
+        return True
+        
+    win32gui.EnumWindows(callback, None)
+    return windows

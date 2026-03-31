@@ -32,17 +32,6 @@ class StartTab(Tab):
 
         self.start_card.refresh_button.clicked.connect(self.refresh_clicked)
 
-        if config.get('windows') and (
-                not config.get('windows').get('exe') and not config.get('windows').get('hwnd_class')):
-            button_widget = QWidget()
-            button_layout = QHBoxLayout(button_widget)
-            button_layout.setContentsMargins(0, 0, 0, 0)
-            self.choose_window_button = PushButton(FluentIcon.VIEW, self.tr("Choose Window"))
-            self.choose_window_button.clicked.connect(self.choose_window_clicked)
-            button_layout.addWidget(self.choose_window_button)
-            button_layout.addStretch(1)
-            self.add_widget(button_widget)
-
         horizontal_widget = QWidget()
         horizontal_layout = QHBoxLayout(horizontal_widget)
         horizontal_layout.setContentsMargins(0, 20, 0, 20)
@@ -204,10 +193,6 @@ class StartTab(Tab):
         self.capture_list.update_for_device()
         self.interaction_list.update_for_device()
 
-    def choose_window_clicked(self):
-        window = HwndChooser(None, self.winId())
-        window.show()
-
     def refresh_clicked(self):
         from ok import og
         og.device_manager.refresh()
@@ -303,84 +288,3 @@ class StartTab(Tab):
 
     def update_progress(self, message):
         self.message = message
-
-
-def list_visible_hwnds(exclude_hwnd=None):
-    hwnds = []
-
-    def callback(hwnd, lParam):
-        if win32gui.IsWindow(hwnd) and win32gui.IsWindowEnabled(hwnd) and win32gui.IsWindowVisible(
-                hwnd) and hwnd not in exclude_hwnd:
-            title = win32gui.GetWindowText(hwnd)
-            if title:
-                hwnds.append((hwnd, title))
-        return True
-
-    win32gui.EnumWindows(callback, None)
-    return hwnds
-
-
-import psutil
-
-black_list_process = ['NVIDIA Overlay.exe', 'explorer.exe', 'TextInputHost.exe', 'SystemSettings.exe',
-                      'ApplicationFrameHost.exe']
-
-
-class HwndChooser(BaseWindow):  # Assuming BaseWindow is defined elsewhere
-
-    def __init__(self, parent=None, parent_id=None, icon=None):
-        super().__init__()
-
-        self.setTitleBar(SplitTitleBar(self))
-        self.titleBar.raise_()
-
-        self.setWindowTitle(self.tr("Choose Window"))
-
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(12, 40, 12, 12)
-
-        self.parent_id = parent_id
-
-        self.list_widget = ListWidget(self)
-        self.layout.addWidget(self.list_widget)
-        self.hwnds = []
-        self.load_hwnds()
-
-        self.btn_confirm = PushButton(self.tr("Confirm"), self)
-        self.btn_confirm.clicked.connect(self.confirm)
-        self.layout.addWidget(self.btn_confirm)
-
-        self.btn_cancel = PushButton(self.tr("Cancel"), self)
-        self.btn_cancel.clicked.connect(self.cancel)
-        self.layout.addWidget(self.btn_cancel)
-
-    def load_hwnds(self):
-        current_hwnd = int(self.winId()) if self.winId() else None
-        hwnds = list_visible_hwnds([int(self.parent_id), int(current_hwnd)])
-        current_pid = os.getpid()
-        # Enhanced with process name retrieval using psutil
-        self.hwnds.clear()
-        for hwnd, title in hwnds:
-            _, pid = win32process.GetWindowThreadProcessId(hwnd)
-
-            # Get the process name and executable path
-            if 0 < pid != current_pid:
-                try:
-                    process = psutil.Process(pid)
-                    exe_name = process.name()  # Get the executable name
-                    if exe_name not in black_list_process:
-                        self.list_widget.addItem(f"{title} ({exe_name})")
-                        self.hwnds.append((hwnd, exe_name, process.exe()))
-                except Exception as e:
-                    self.logger.error('get process error', e)
-
-    def confirm(self):
-        row = self.list_widget.currentRow()
-        if row > 0:
-            alert_info(self.tr('{} Selected').format(self.list_widget.item(row).text()))
-            from ok import og
-            og.device_manager.select_hwnd(self.hwnds[row][2], self.hwnds[row][0])
-        self.close()
-
-    def cancel(self):
-        self.close()

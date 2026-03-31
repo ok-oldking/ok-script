@@ -184,6 +184,27 @@ class DeviceManager:
 
     def update_pc_device(self):
         if self.windows_capture_config is not None:
+            if not self.windows_capture_config.get('exe'):
+                from ok.util.window import find_all_visible_windows, get_window_bounds
+                windows = find_all_visible_windows()
+                keys_to_remove = [k for k in self.device_dict if k.startswith('pc_')]
+                for k in keys_to_remove:
+                    del self.device_dict[k]
+                for hwnd, title, exe_name, full_path in windows:
+                    x, y, _, _, width, height, m_scaling = get_window_bounds(hwnd)
+                    if width > 0 and height > 0:
+                        imei = f"pc_{hwnd}"
+                        pc_device = {
+                            "address": "", "imei": imei, "device": "windows",
+                            "model": "", "nick": title, "width": width,
+                            "height": height, "hwnd": title, "capture": "windows",
+                            "connected": True, "full_path": full_path,
+                            "real_hwnd": hwnd, "exe": exe_name,
+                            "resolution": f"{width}x{height}"
+                        }
+                        self.device_dict[imei] = pc_device
+                return
+
             name, hwnd, full_path, x, y, width, height, hwnds = find_hwnd(self.windows_capture_config.get('title'),
                                                                    self.windows_capture_config.get(
                                                                        'exe') or self.config.get('selected_exe'), 0, 0,
@@ -361,6 +382,8 @@ class DeviceManager:
         if self.config.get("preferred") != imei:
             logger.info(f'preferred device did change {imei}')
             self.config["preferred"] = imei
+            if preferred.get('device') == 'windows' and preferred.get('real_hwnd'):
+                self.select_hwnd(preferred.get('exe'), preferred.get('real_hwnd'))
             self.start()
         logger.debug(f'preferred device: {preferred}')
 
@@ -513,7 +536,12 @@ class DeviceManager:
             return
 
         if preferred['device'] == 'windows':
-            self.ensure_hwnd(self.windows_capture_config.get('title'), self.windows_capture_config.get('exe'),
+            title = self.windows_capture_config.get('title')
+            exe = self.windows_capture_config.get('exe')
+            if not exe and not title and preferred.get('real_hwnd'):
+                exe = preferred.get('exe')
+                
+            self.ensure_hwnd(title, exe,
                              hwnd_class=self.windows_capture_config.get('hwnd_class'),
                              top_hwnd_class=self.windows_capture_config.get('top_hwnd_class'))
             self.use_windows_capture()
