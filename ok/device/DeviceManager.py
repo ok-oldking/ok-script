@@ -61,23 +61,32 @@ class DeviceManager:
                                           hwnd_class=self.windows_capture_config.get('hwnd_class'),
                                           global_config=self.global_config, device_manager=self,
                                           top_hwnd_class=self.windows_capture_config.get('top_hwnd_class'))
-            if self.windows_capture_config.get(
-                    'interaction') == 'PostMessage':
+            interaction = self.windows_capture_config.get('interaction')
+            if isinstance(interaction, list):
+                if interaction:
+                    interaction_name = interaction[0]
+                else:
+                    interaction_name = 'PyDirect'
+            else:
+                interaction_name = interaction
+
+            saved_interaction = self.config.get('interaction')
+            if saved_interaction:
+                if isinstance(interaction, list) and saved_interaction in interaction:
+                    interaction_name = saved_interaction
+                elif saved_interaction == interaction:
+                    interaction_name = saved_interaction
+
+            if interaction_name == 'PostMessage':
                 self.win_interaction_class = PostMessageInteraction
-            elif self.windows_capture_config.get(
-                    'interaction') == 'Genshin':
+            elif interaction_name == 'Genshin':
                 self.win_interaction_class = GenshinInteraction
-            elif self.windows_capture_config.get(
-                    'interaction') == 'ForegroundPostMessage':
+            elif interaction_name == 'ForegroundPostMessage':
                 self.win_interaction_class = ForegroundPostMessageInteraction
-            elif self.windows_capture_config.get(
-                    'interaction') == 'Pynput':
+            elif interaction_name == 'Pynput':
                 self.win_interaction_class = PynputInteraction
-            elif self.windows_capture_config.get(
-                    'interaction') and self.windows_capture_config.get(
-                'interaction') != 'PyDirect':
-                self.win_interaction_class = self.windows_capture_config.get(
-                    'interaction')
+            elif interaction_name and interaction_name != 'PyDirect':
+                self.win_interaction_class = interaction_name
             else:
                 self.win_interaction_class = PyDirectInteraction
         else:
@@ -444,6 +453,25 @@ class DeviceManager:
             if self.executor:
                 self.executor.stop_current_task()
             self.config['capture'] = capture
+            self.start()
+
+    def set_interaction(self, interaction):
+        if self.config.get("interaction") != interaction:
+            if self.executor:
+                self.executor.stop_current_task()
+            self.config['interaction'] = interaction
+            if interaction == 'PostMessage':
+                self.win_interaction_class = PostMessageInteraction
+            elif interaction == 'Genshin':
+                self.win_interaction_class = GenshinInteraction
+            elif interaction == 'ForegroundPostMessage':
+                self.win_interaction_class = ForegroundPostMessageInteraction
+            elif interaction == 'Pynput':
+                self.win_interaction_class = PynputInteraction
+            elif interaction and interaction != 'PyDirect':
+                self.win_interaction_class = interaction
+            else:
+                self.win_interaction_class = PyDirectInteraction
             self.start()
 
     def get_hwnd_name(self):

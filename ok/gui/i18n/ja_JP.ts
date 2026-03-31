@@ -608,6 +608,10 @@
             <translation>インストールフォルダ</translation>
         </message>
         <message>
+            <source>Refresh</source>
+            <translation>更新</translation>
+        </message>
+        <message>
             <source>Start Game</source>
             <translation>ゲームを開始</translation>
         </message>
@@ -773,8 +777,44 @@
             <translation>切断</translation>
         </message>
         <message>
-            <source>Refresh</source>
-            <translation>更新</translation>
+            <source>Choose Interaction</source>
+            <translation>操作方法の選択</translation>
+        </message>
+        <message>
+            <source>Show Overlay</source>
+            <translation>デバッグオーバーレイを表示</translation>
+        </message>
+        <message>
+            <source>Hide Overlay</source>
+            <translation>デバッグオーバーレイを隠す</translation>
+        </message>
+        <message>
+            <source>Show Log on Overlay</source>
+            <translation>オーバーレイにログを表示</translation>
+        </message>
+        <message>
+            <source>Hide Log on Overlay</source>
+            <translation>オーバーレイのログを隠す</translation>
+        </message>
+        <message>
+            <source>Debug Overlay</source>
+            <translation>デバッグオーバーレイ</translation>
+        </message>
+        <message>
+            <source>Debug</source>
+            <translation>デバッグ</translation>
+        </message>
+        <message>
+            <source>Install Folder</source>
+            <translation>インストールフォルダ</translation>
+        </message>
+        <message>
+            <source>Export Logs</source>
+            <translation>ログをエクスポート</translation>
+        </message>
+        <message>
+            <source>Capture</source>
+            <translation>キャプチャ</translation>
         </message>
     </context>
     <context>

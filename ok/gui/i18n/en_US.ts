@@ -600,6 +600,10 @@
         <translation>Install Folder</translation>
     </message>
     <message>
+        <source>Refresh</source>
+        <translation>Refresh</translation>
+    </message>
+    <message>
         <source>Start Game</source>
         <translation>Start Game</translation>
     </message>
@@ -767,6 +771,50 @@
     <message>
         <source>Refresh</source>
         <translation>Refresh</translation>
+    </message>
+    <message>
+        <source>Choose Interaction</source>
+        <translation>Choose Interaction</translation>
+    </message>
+    <message>
+        <source>Show Overlay</source>
+        <translation>Show Overlay</translation>
+    </message>
+    <message>
+        <source>Hide Overlay</source>
+        <translation>Hide Overlay</translation>
+    </message>
+    <message>
+        <source>Show Log on Overlay</source>
+        <translation>Show Log on Overlay</translation>
+    </message>
+    <message>
+        <source>Hide Log on Overlay</source>
+        <translation>Hide Log on Overlay</translation>
+    </message>
+    <message>
+        <source>Debug Overlay</source>
+        <translation>Debug Overlay</translation>
+    </message>
+    <message>
+        <source>Debug</source>
+        <translation>Debug</translation>
+    </message>
+    <message>
+        <source>Install Folder</source>
+        <translation>Install Folder</translation>
+    </message>
+    <message>
+        <source>Export Logs</source>
+        <translation>Export Logs</translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <translation>Capture</translation>
+    </message>
+    <message>
+        <source>OCR</source>
+        <translation>OCR</translation>
     </message>
 </context>
 <context>

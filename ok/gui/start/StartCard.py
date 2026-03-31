@@ -35,24 +35,13 @@ class StartCard(SettingCard):
         self.hBoxLayout.addWidget(self.status_bar, 0, Qt.AlignLeft)
         self.hBoxLayout.addSpacing(6)
 
-        self.open_install_folder_button = PushButton(FluentIcon.FOLDER, self.tr("Install Folder"), self)
-        self.hBoxLayout.addWidget(self.open_install_folder_button, 0, Qt.AlignRight)
-        self.open_install_folder_button.clicked.connect(self.open_install_folder)
-        self.hBoxLayout.addSpacing(6)
-
-        self.export_log_button = PushButton(FluentIcon.FEEDBACK, self.tr("Export Logs"), self)
-        self.hBoxLayout.addWidget(self.export_log_button, 0, Qt.AlignRight)
-        self.export_log_button.clicked.connect(self.export_logs)
-        self.hBoxLayout.addSpacing(6)
-
-        self.capture_button = PushButton(FluentIcon.ZOOM, self.tr("Capture"), self)
-        self.hBoxLayout.addWidget(self.capture_button, 0, Qt.AlignRight)
-        self.capture_button.clicked.connect(self.capture)
+        self.refresh_button = PushButton(FluentIcon.SYNC, self.tr("Refresh"), self)
+        self.hBoxLayout.addWidget(self.refresh_button, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(6)
 
         self.start_button = PushButton(FluentIcon.PLAY, self.tr("Start"), self)
         self.hBoxLayout.addWidget(self.start_button, 0, Qt.AlignRight)
-        self.hBoxLayout.addSpacing(6)
+        self.hBoxLayout.addSpacing(20)
 
         self.hotkey_changed.connect(self.update_status)
         self.update_status()
@@ -65,10 +54,6 @@ class StartCard(SettingCard):
         self.current_hotkey = "UNINIT"
         self.handler.post(self.check_hotkey, 0.1)
         logger.debug('basic_options.start/stop: {}'.format(self.basic_options.get('Start/Stop')))
-
-    @staticmethod
-    def capture():
-        return capture(processor=og.config.get('screenshot_processor'))
 
     def status_clicked(self):
         if not og.executor.paused:
@@ -86,29 +71,6 @@ class StartCard(SettingCard):
             og.executor.pause()
         else:
             og.app.start_controller.start()
-
-    @staticmethod
-    def open_install_folder():
-        cwd = os.getcwd()
-        subprocess.Popen(f'explorer "{cwd}"')
-
-    @staticmethod
-    def export_logs():
-        app_name = og.config.get('gui_title')
-        downloads_path = Path.home() / "Downloads"
-        zip_path = downloads_path / f"{app_name}-log.zip"
-        folders_to_archive = ["screenshots", "logs"]
-
-        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-            for folder in folders_to_archive:
-                source_dir = Path.cwd() / folder
-                if not source_dir.is_dir():
-                    continue
-                for file_path in source_dir.rglob("*"):
-                    if file_path.is_file():
-                        zipf.write(file_path, file_path.relative_to(Path.cwd()))
-
-        subprocess.run(["explorer", f"/select,{zip_path}"])
 
     def update_task(self, task):
         self.update_status()

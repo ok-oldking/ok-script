@@ -2,7 +2,7 @@ from PySide6.QtCore import QObject, Signal, Qt
 
 from ok import Logger
 from ok.device.capture import HwndWindow
-from ok.gui.debug.FrameWidget import FrameWidget
+from ok.gui.debug.OverlayWidget import OverlayWidget
 
 logger = Logger.get_logger(__name__)
 
@@ -11,7 +11,7 @@ class Communicate(QObject):
     speak = Signal(str)
 
 
-class OverlayWindow(FrameWidget):
+class OverlayWindow(OverlayWidget):
     def __init__(self, hwnd_window: HwndWindow):
         super().__init__()
         # Set translucent background

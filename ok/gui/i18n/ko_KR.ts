@@ -609,6 +609,10 @@
             <translation>설치 폴더</translation>
         </message>
         <message>
+            <source>Refresh</source>
+            <translation>새로고침</translation>
+        </message>
+        <message>
             <source>Start Game</source>
             <translation>게임 시작</translation>
         </message>
@@ -776,6 +780,50 @@
         <message>
             <source>Refresh</source>
             <translation>새로고침</translation>
+        </message>
+        <message>
+            <source>Choose Interaction</source>
+            <translation>상호 작용 선택</translation>
+        </message>
+        <message>
+            <source>Show Overlay</source>
+            <translation>디버그 오버레이 표시</translation>
+        </message>
+        <message>
+            <source>Hide Overlay</source>
+            <translation>디버그 오버레이 숨기기</translation>
+        </message>
+        <message>
+            <source>Show Log on Overlay</source>
+            <translation>오버레이에 로그 표시</translation>
+        </message>
+        <message>
+            <source>Hide Log on Overlay</source>
+            <translation>오버레이에 로그 숨기기</translation>
+        </message>
+        <message>
+            <source>Debug Overlay</source>
+            <translation>디버그 오버레이</translation>
+        </message>
+        <message>
+            <source>Debug</source>
+            <translation>개발 도구</translation>
+        </message>
+        <message>
+            <source>Install Folder</source>
+            <translation>설치 폴더</translation>
+        </message>
+        <message>
+            <source>Export Logs</source>
+            <translation>로그 내보내기</translation>
+        </message>
+        <message>
+            <source>Capture</source>
+            <translation>캡처</translation>
+        </message>
+        <message>
+             <source>OCR</source>
+             <translation>OCR</translation>
         </message>
     </context>
     <context>

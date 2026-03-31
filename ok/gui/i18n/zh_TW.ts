@@ -608,6 +608,10 @@
             <translation>安裝目錄</translation>
         </message>
         <message>
+            <source>Refresh</source>
+            <translation>重新整理</translation>
+        </message>
+        <message>
             <source>Start Game</source>
             <translation>啟動遊戲</translation>
         </message>
@@ -775,6 +779,46 @@
         <message>
             <source>Refresh</source>
             <translation>重新整理</translation>
+        </message>
+        <message>
+            <source>Choose Interaction</source>
+            <translation>選擇互動方式</translation>
+        </message>
+        <message>
+            <source>Show Overlay</source>
+            <translation>顯示除錯懸浮窗</translation>
+        </message>
+        <message>
+            <source>Hide Overlay</source>
+            <translation>隱藏除錯懸浮窗</translation>
+        </message>
+        <message>
+            <source>Show Log on Overlay</source>
+            <translation>在懸浮窗顯示日誌</translation>
+        </message>
+        <message>
+            <source>Hide Log on Overlay</source>
+            <translation>隱藏懸浮窗日誌</translation>
+        </message>
+        <message>
+            <source>Debug Overlay</source>
+            <translation>除錯懸浮窗</translation>
+        </message>
+        <message>
+            <source>Debug</source>
+            <translation>開發工具</translation>
+        </message>
+        <message>
+            <source>Install Folder</source>
+            <translation>安裝目錄</translation>
+        </message>
+        <message>
+            <source>Export Logs</source>
+            <translation>匯出日誌</translation>
+        </message>
+        <message>
+            <source>Capture</source>
+            <translation>截圖</translation>
         </message>
     </context>
     <context>

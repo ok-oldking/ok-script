@@ -600,6 +600,10 @@
         <translation>安装目录</translation>
     </message>
     <message>
+        <source>Refresh</source>
+        <translation>刷新</translation>
+    </message>
+    <message>
         <source>Start Game</source>
         <translation>启动游戏</translation>
     </message>
@@ -767,6 +771,46 @@
     <message>
         <source>Refresh</source>
         <translation>刷新</translation>
+    </message>
+    <message>
+        <source>Choose Interaction</source>
+        <translation>选择交互方式</translation>
+    </message>
+    <message>
+        <source>Show Overlay</source>
+        <translation>显示调试悬浮窗</translation>
+    </message>
+    <message>
+        <source>Hide Overlay</source>
+        <translation>隐藏调试悬浮窗</translation>
+    </message>
+    <message>
+        <source>Show Log on Overlay</source>
+        <translation>在悬浮窗显示日志</translation>
+    </message>
+    <message>
+        <source>Hide Log on Overlay</source>
+        <translation>隐藏悬浮窗日志</translation>
+    </message>
+    <message>
+        <source>Debug Overlay</source>
+        <translation>调试悬浮窗</translation>
+    </message>
+    <message>
+        <source>Debug</source>
+        <translation>开发工具</translation>
+    </message>
+    <message>
+        <source>Install Folder</source>
+        <translation>安装目录</translation>
+    </message>
+    <message>
+        <source>Export Logs</source>
+        <translation>导出日志</translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <translation>截图</translation>
     </message>
 </context>
 <context>

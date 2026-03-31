@@ -108,7 +108,7 @@ cdef class App:
 
         from ok.gui.StartController import StartController
         self.start_controller = StartController(self.config, exit_event)
-        if self.config.get('debug') or self.config.get('use_overlay'):
+        if self.config.get('debug'):
             logger.debug('init overlay')
             from ok.gui.overlay.OverlayWindow import OverlayWindow
             self.overlay_window = OverlayWindow(og.device_manager.hwnd_window)
@@ -350,7 +350,7 @@ class OK:
                 self.app.exec()
             else:
                 self.task_executor.start()
-                if self.config.get("debug") or self.config.get('use_overlay'):
+                if self.config.get("debug"):
                     from PySide6.QtWidgets import QApplication
                     app = QApplication(sys.argv)
                     from ok.gui.overlay.OverlayWindow import OverlayWindow

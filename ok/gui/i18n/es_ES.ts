@@ -608,6 +608,10 @@
             <translation>Carpeta de instalación</translation>
         </message>
         <message>
+            <source>Refresh</source>
+            <translation>Actualizar</translation>
+        </message>
+        <message>
             <source>Start Game</source>
             <translation>Iniciar juego</translation>
         </message>
@@ -774,7 +778,51 @@
         </message>
         <message>
             <source>Refresh</source>
-            <translation>Refrescar</translation>
+            <translation>Actualizar</translation>
+        </message>
+        <message>
+            <source>Choose Interaction</source>
+            <translation>Elegir interacción</translation>
+        </message>
+        <message>
+            <source>Show Overlay</source>
+            <translation>Mostrar superposición de depuración</translation>
+        </message>
+        <message>
+            <source>Hide Overlay</source>
+            <translation>Ocultar superposición de depuración</translation>
+        </message>
+        <message>
+            <source>Show Log on Overlay</source>
+            <translation>Mostrar registro en superposición</translation>
+        </message>
+        <message>
+            <source>Hide Log on Overlay</source>
+            <translation>Ocultar registro en superposición</translation>
+        </message>
+        <message>
+            <source>Debug Overlay</source>
+            <translation>Superposición de depuración</translation>
+        </message>
+        <message>
+            <source>Debug</source>
+            <translation>Depurar</translation>
+        </message>
+        <message>
+            <source>Install Folder</source>
+            <translation>Carpeta de instalación</translation>
+        </message>
+        <message>
+            <source>Export Logs</source>
+            <translation>Exportar registros</translation>
+        </message>
+        <message>
+            <source>Capture</source>
+            <translation>Captura</translation>
+        </message>
+        <message>
+            <source>OCR</source>
+            <translation>OCR</translation>
         </message>
     </context>
     <context>

@@ -1820,6 +1820,17 @@ class BaseTask(OCR):
         """
         ...
 
+    def log_warning(self, message: str, notify: bool = False) -> None:
+        """
+        Logs warning.
+
+        日志警告。
+
+        :param message: Message. 消息。
+        :param notify: Notify. 通知。
+        """
+        ...
+
     def log_error(self, message: str, exception: Optional[Exception] = None, notify: bool = False) -> None:
         """
         Logs error.

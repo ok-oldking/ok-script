@@ -1054,6 +1054,12 @@ cdef class BaseTask(OCR):
         if notify:
             self.notification(message, tray=True)
 
+    def log_warning(self, message, notify=False):
+        self.logger.warning(message)
+        self.info_set("Warning", message)
+        if notify:
+            self.notification(message, tray=True)
+
     def log_error(self, message, exception=None, notify=False):
         self.logger.error(message, exception)
         if exception is not None:

@@ -28,8 +28,6 @@ class DebugTab(Tab):
         super().__init__()
         self.config = Config('debug', {'target_task': "", 'target_images': [], 'target_function': ""}
                              )
-        self.log_window_config = Config('log_window', {'width': 800, 'height': 300, 'x': 0, 'y': 0, 'keyword': '',
-                                                       'level': 'ALL', 'show': True})
         tool_widget = QWidget()
         layout = FlowLayout(tool_widget, False)
 
@@ -53,15 +51,6 @@ class DebugTab(Tab):
         ocr_button = PushButton("OCR")
         ocr_button.clicked.connect(lambda: self.handler.post(self.ocr_log))
         layout.addWidget(ocr_button)
-
-        self.log_window = None
-
-        log_window_button = PushButton(self.tr("Open Logs"))
-        log_window_button.clicked.connect(self.toggle_log_window)
-        layout.addWidget(log_window_button)
-
-        if self.log_window_config.get('show'):
-            self.toggle_log_window()
 
         gen_tr_button = PushButton(self.tr("Generate i18n files"))
         gen_tr_button.clicked.connect(self.gen_tr)
@@ -115,20 +104,6 @@ class DebugTab(Tab):
         self.handler.post(self.check_hotkey, 0.1)
 
         og.app.app.aboutToQuit.connect(self.unregister)
-
-    def toggle_log_window(self):
-        if self.log_window is None:
-            from ok.gui.debug.LogWindow import LogWindow
-            self.log_window = LogWindow(self.log_window_config)
-            self.log_window.show()
-            self.log_window_config['show'] = True
-        elif self.log_window.isVisible():
-            self.log_window.hide()
-            self.log_window_config['show'] = False
-        else:
-            self.log_window_config['show'] = True
-            self.log_window.show()
-        logger.debug('showing log_window')
 
     def gen_tr(self):
         folder = og.app.gen_tr_po_files()
