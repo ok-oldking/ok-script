@@ -15,10 +15,6 @@ logger = Logger.get_logger(__name__)
 class TaskTab(Tab):
     def __init__(self):
         super().__init__()
-        if og.task_manager.has_custom:
-            self.create_task_btn = PushButton(self.tr("Create Task"))
-            self.add_widget(self.create_task_btn)
-            self.create_task_btn.clicked.connect(self.create_task)
         self.keep_info_when_done = False
         self.current_task_name = ""
         self.last_task = None

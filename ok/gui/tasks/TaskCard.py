@@ -27,12 +27,21 @@ class TaskCard(ConfigCard):
             self.enable_button.checkedChanged.connect(self.check_changed)
             self.addWidget(self.enable_button)
 
-        self.update_buttons(self.task)
+        if getattr(self.task, 'is_custom', False):
+            self.edit_button = PushButton(FluentIcon.EDIT, self.tr("Edit"))
+            self.edit_button.clicked.connect(self.edit_clicked)
+            self.addWidget(self.edit_button)
 
+        self.update_buttons(self.task)
         communicate.task.connect(self.update_buttons)
 
     def start_clicked(self):
         self.setExpand(False)
+
+    def edit_clicked(self):
+        from ok import og
+        og.main_window.edit_task_tab.load_task(self.task)
+        og.main_window.switchTo(og.main_window.edit_task_tab)
 
     def delete_task(self):
         w = MessageBox(self.tr('Delete Task'), self.tr('Are you sure you want to delete {}').format(self.task.name),

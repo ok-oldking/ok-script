@@ -332,6 +332,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     cdef object IDirect3DDxgiInterfaceAccess
     cdef object frame_event
     cdef public object contexts
+    cdef int capture_hwnd
 
     def __init__(self, object hwnd_window):
         super().__init__(hwnd_window)
@@ -341,6 +342,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         self.exit_event = hwnd_window.app_exit_event
         self.cputex = None
         self.contexts = {}
+        self.capture_hwnd = 0
         self.start_or_stop()
 
     cdef frame_arrived_callback(self, x, y):
@@ -445,7 +447,12 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 logger.warning('start_or_stop not self.hwnd_window.exists')
                 self.close()
                 return False
-            elif self.hwnd_window.hwnd and self.hwnd_window.exists and self.frame_pool is None:
+            
+            if self.frame_pool is not None and self.capture_hwnd != self.hwnd_window.hwnd:
+                logger.info(f'start_or_stop hwnd changed from {self.capture_hwnd} to {self.hwnd_window.hwnd}')
+                self.close()
+
+            if self.hwnd_window.hwnd and self.hwnd_window.exists and self.frame_pool is None:
                 logger.info('start_or_stop start WGC capture')
                 try:
                     from ok.capture.windows import d3d11
@@ -468,6 +475,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                     self.dxdevice = self.d3d11.ID3D11Device()
                     self.immediatedc = self.d3d11.ID3D11DeviceContext()
                     self.create_device()
+                    self.capture_hwnd = self.hwnd_window.hwnd
                     item = interop.CreateForWindow(self.hwnd_window.hwnd, IGraphicsCaptureItem.GUID)
                     self.item = item
                     self.last_size = item.Size
@@ -532,6 +540,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             if self.cputex:
                 self.cputex.Release()
                 self.cputex = None
+            self.capture_hwnd = 0
 
     cpdef object do_get_frame(self):
         cdef object frame = None

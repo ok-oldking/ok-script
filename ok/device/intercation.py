@@ -652,6 +652,7 @@ vk_key_dict = {
     'UP': win32con.VK_UP,
     'RIGHT': win32con.VK_RIGHT,
     'DOWN': win32con.VK_DOWN,
+    'BACKSPACE': win32con.VK_BACK,
     # Add more keys as needed
 }
 

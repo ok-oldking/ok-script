@@ -251,7 +251,12 @@ cdef class ExecutorOperation:
             self.width / self.height - self.executor.device_manager.supported_ratio) > 0.01
 
     def ensure_in_front(self):
-        self.executor.device_manager.adb_ensure_in_front()
+        if self.is_adb():
+            self.executor.device_manager.adb_ensure_in_front()
+        elif self.hwnd:
+            self.hwnd.bring_to_front()
+        else:
+            self.logger.warning("ensure_in_front: not adb and no hwnd found")
 
     def box_of_screen_scaled(self, original_screen_width, original_screen_height, x_original, y_original,
                              to_x = 0, to_y = 0, width_original=0, height_original=0,
@@ -924,12 +929,14 @@ cdef class BaseTask(OCR):
     cdef public double last_sleep_check_time
     cdef public bint support_schedule_task
     cdef public bint in_sleep_check
+    cdef public dict capture_config
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = self.__class__.__name__
         self.description = ""
         self._enabled = False
+        self.capture_config = None
         self.config = None
         self.exit_after_task = False
         self.info = {}
@@ -966,7 +973,7 @@ cdef class BaseTask(OCR):
             task.info = old_ifo
             raise e
         task.info = old_ifo
-
+        
     def post_init(self):
         pass
 
@@ -1017,6 +1024,8 @@ cdef class BaseTask(OCR):
         if not self._enabled:
             self._enabled = True
             self.info_clear()
+            if self.capture_config:
+                self.executor.device_manager.ensure_capture(self.capture_config)
             self.executor.interaction.on_run()
             logger.info(f'enabled task {self}')
         communicate.task.emit(self)
@@ -1078,6 +1087,10 @@ cdef class BaseTask(OCR):
     def go_to_tab(self, tab):
         self.log_info(f"go to tab {tab}")
         communicate.tab.emit(tab)
+
+    def start(self):
+        self.executor.start()
+        self.enable()
 
     def notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None):
         communicate.notification.emit(message, title, error, tray, show_tab, params)

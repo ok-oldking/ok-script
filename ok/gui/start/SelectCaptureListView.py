@@ -12,6 +12,7 @@ class SelectCaptureListView(ListWidget):
     def update_for_device(self):
         device = og.device_manager.get_preferred_device()
         if device is not None:
+            self.blockSignals(True)
             if self.count() == 0:
                 item = QListWidgetItem(self.tr(f"Game Window"))
                 self.addItem(item)
@@ -22,7 +23,7 @@ class SelectCaptureListView(ListWidget):
                     title = self.tr("Game Window")
                     self.reduce_row_to_1()
                     self.item(0).setText(f"{title}")
-                    self.setCurrentRow(0)
+                    selected = 0
                 else:
                     while self.count() > len(methods):
                         self.takeItem(self.count() - 1)
@@ -34,32 +35,34 @@ class SelectCaptureListView(ListWidget):
                     current_capture = og.device_manager.get_preferred_capture()
                     if current_capture in methods:
                         selected = methods.index(current_capture)
-                    self.setCurrentRow(selected)
-                return
             elif device.get('device') == "browser":
                 title = self.tr("Browser Capture")
                 self.reduce_row_to_1()
+                self.item(0).setText(f"{title}")
                 selected = 0
             elif device.get('emulator') is not None:
                 title = self.tr("ADB(Supports Background, Slow, High Compatibility, High Latency)")
+                self.reduce_row_to_1()
+                self.item(0).setText(f"{title}")
                 from ok.alas.emulator_windows import Emulator
                 if device.get('emulator') and device.get(
                         'emulator').type == Emulator.MuMuPlayer12 and "MuMuPlayerGlobal" not in device.get(
                     'emulator').path:
-                    if self.count() == 1:
-                        item = QListWidgetItem(self.tr("Ipc (MuMuPlayer12 version >= 4.0)"))
-                        self.addItem(item)
+                    item = QListWidgetItem(self.tr("Ipc (MuMuPlayer12 version >= 4.0)"))
+                    self.addItem(item)
                     if og.device_manager.config.get('capture') == 'adb':
                         selected = 0
                     else:
                         selected = 1
                 else:
-                    self.reduce_row_to_1()
                     selected = 0
             else:
                 title = self.tr("ADB(Supports Background, Slow, High Compatibility, High Latency)")
                 self.reduce_row_to_1()
-            self.item(0).setText(f"{title}")
+                self.item(0).setText(f"{title}")
+                selected = 0
+            
+            self.blockSignals(False)
             self.setCurrentRow(selected)
 
     def reduce_row_to_1(self):

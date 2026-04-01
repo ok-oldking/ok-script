@@ -11,6 +11,7 @@ class SelectInteractionListView(ListWidget):
     def update_for_device(self):
         device = og.device_manager.get_preferred_device()
         if device is not None:
+            self.blockSignals(True)
             if self.count() == 0:
                 item = QListWidgetItem(self.tr("Default Interaction"))
                 self.addItem(item)
@@ -23,7 +24,7 @@ class SelectInteractionListView(ListWidget):
                     title = self.tr("WindowsInteraction")
                     self.reduce_row_to_1()
                     self.item(0).setText(f"{title}")
-                    self.setCurrentRow(0)
+                    selected = 0
                 else:
                     while self.count() > len(methods):
                         self.takeItem(self.count() - 1)
@@ -35,23 +36,23 @@ class SelectInteractionListView(ListWidget):
                     current_interaction = og.device_manager.config.get("interaction")
                     if current_interaction in methods:
                         selected = methods.index(current_interaction)
-                    self.setCurrentRow(selected)
-                return
             elif device['device'] == "adb":
                 title = self.tr("ADBInteraction")
                 self.reduce_row_to_1()
                 self.item(0).setText(f"{title}")
-                self.setCurrentRow(0)
+                selected = 0
             elif device['device'] == "browser":
                 title = self.tr("BrowserInteraction")
                 self.reduce_row_to_1()
                 self.item(0).setText(f"{title}")
-                self.setCurrentRow(0)
+                selected = 0
             else:
                 title = self.tr("Default Interaction")
                 self.reduce_row_to_1()
                 self.item(0).setText(f"{title}")
-                self.setCurrentRow(0)
+                selected = 0
+            self.blockSignals(False)
+            self.setCurrentRow(selected)
 
     def reduce_row_to_1(self):
         while self.count() > 1:

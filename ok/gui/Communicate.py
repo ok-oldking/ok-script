@@ -9,6 +9,7 @@ class Communicate(QObject):
     draw_box = Signal(str, object, str, object, bool)
     clear_box = Signal()
     task = Signal(object)
+    task_list_updated = Signal()
     task_done = Signal(object)
     window = Signal(bool, int, int, int, int, int, int, float)
     loading_progress = Signal(str)

@@ -31,6 +31,7 @@ class StartTab(Tab):
         self.add_widget(self.start_card)
 
         self.start_card.refresh_button.clicked.connect(self.refresh_clicked)
+        self.start_card.capture_button.clicked.connect(self.capture)
 
         horizontal_widget = QWidget()
         horizontal_layout = QHBoxLayout(horizontal_widget)
@@ -54,6 +55,25 @@ class StartTab(Tab):
 
         from ok import og
 
+        self.debug_widget = QWidget()
+        self.debug_layout = QHBoxLayout(self.debug_widget)
+        self.debug_layout.setContentsMargins(0, 20, 0, 20)
+
+        self.open_install_folder_button = PushButton(FluentIcon.FOLDER, self.tr("Install Folder"))
+        self.open_install_folder_button.clicked.connect(self.open_install_folder)
+        self.debug_layout.addWidget(self.open_install_folder_button)
+
+        self.export_log_button = PushButton(FluentIcon.FEEDBACK, self.tr("Export Logs"))
+        self.export_log_button.clicked.connect(self.export_logs)
+        self.debug_layout.addWidget(self.export_log_button)
+
+        self.ocr_button = PushButton(FluentIcon.SEARCH, "OCR")
+        self.ocr_button.clicked.connect(self.ocr_log)
+        self.debug_layout.addWidget(self.ocr_button)
+        self.debug_layout.addStretch(1)
+
+        self.add_card(self.tr("Debug"), self.debug_widget)
+
         self.overlay_widget = QWidget()
         self.overlay_layout = QHBoxLayout(self.overlay_widget)
         self.overlay_layout.setContentsMargins(0, 20, 0, 20)
@@ -75,28 +95,6 @@ class StartTab(Tab):
 
         self.add_card(self.tr("Debug Overlay"), self.overlay_widget)
 
-        self.debug_widget = QWidget()
-        self.debug_layout = QHBoxLayout(self.debug_widget)
-        self.debug_layout.setContentsMargins(0, 20, 0, 20)
-
-        self.open_install_folder_button = PushButton(FluentIcon.FOLDER, self.tr("Install Folder"))
-        self.open_install_folder_button.clicked.connect(self.open_install_folder)
-        self.debug_layout.addWidget(self.open_install_folder_button)
-
-        self.export_log_button = PushButton(FluentIcon.FEEDBACK, self.tr("Export Logs"))
-        self.export_log_button.clicked.connect(self.export_logs)
-        self.debug_layout.addWidget(self.export_log_button)
-
-        self.capture_button = PushButton(FluentIcon.ZOOM, self.tr("Capture"))
-        self.capture_button.clicked.connect(self.capture)
-        self.debug_layout.addWidget(self.capture_button)
-
-        self.ocr_button = PushButton(FluentIcon.SEARCH, "OCR")
-        self.ocr_button.clicked.connect(self.ocr_log)
-        self.debug_layout.addWidget(self.ocr_button)
-
-        self.add_card(self.tr("Debug"), self.debug_widget)
-
         self.closed_by_finish_loading = False
         self.message = "Loading"
 
@@ -113,7 +111,9 @@ class StartTab(Tab):
         self.logger.debug(f"interaction_index_changed {i} {device}")
         if device is not None:
             if device.get('device') == 'windows':
-                methods = og.device_manager.windows_capture_config.get('interaction_method', [])
+                methods = og.device_manager.windows_capture_config.get('interaction', [])
+                if isinstance(methods, str):
+                    methods = [methods]
                 if methods and i < len(methods):
                     og.device_manager.set_interaction(methods[i])
             self.start_card.update_status()
