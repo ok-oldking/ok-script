@@ -1079,6 +1079,10 @@ cdef class BaseTask(OCR):
         self.log_info(f"go to tab {tab}")
         communicate.tab.emit(tab)
 
+    def start(self):
+        self.executor.start()
+        self.enable()
+
     def notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None):
         communicate.notification.emit(message, title, error, tray, show_tab, params)
 

@@ -70,7 +70,8 @@ class MainWindow(MSFluentWindow):
         for tab_obj in before_custom_tabs:
             self.addSubInterface(tab_obj, tab_obj.icon, tab_obj.name, position=tab_obj.position)
 
-        if self.executor.onetime_tasks:
+        from ok import og
+        if self.executor.onetime_tasks or og.task_manager.has_custom:
             from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
             from collections import defaultdict
 
@@ -82,15 +83,15 @@ class MainWindow(MSFluentWindow):
                 else:
                     standalone_tasks.append(task)
 
-            if standalone_tasks:
-                self.onetime_tab = OneTimeTaskTab(tasks=standalone_tasks)
+            if standalone_tasks or og.task_manager.has_custom:
+                self.onetime_tab = OneTimeTaskTab(is_standalone=True)
                 if self.first_task_tab is None:
                     self.first_task_tab = self.onetime_tab
                 logger.debug(f"add default onetime_tab len {len(standalone_tasks)}")
                 self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('Tasks'))
 
             for group_name, tasks_in_group in groups.items():
-                group_tab = OneTimeTaskTab(tasks=tasks_in_group)
+                group_tab = OneTimeTaskTab(is_standalone=False, group_name=group_name)
                 group_icon = tasks_in_group[0].group_icon
                 if self.first_task_tab is None:
                     self.first_task_tab = group_tab
@@ -98,7 +99,7 @@ class MainWindow(MSFluentWindow):
                 self.addSubInterface(group_tab, group_icon, self.app.tr(group_name))
                 self.grouped_task_tabs.append(group_tab)
 
-        if len(executor.trigger_tasks) > 0:
+        if len(executor.trigger_tasks) > 0 or og.task_manager.has_custom:
             from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
             self.trigger_tab = TriggerTaskTab()
             if self.first_task_tab is None:
@@ -119,6 +120,12 @@ class MainWindow(MSFluentWindow):
             run_code_tab = RunCodeTab(config, exit_event)
             self.addSubInterface(run_code_tab, FluentIcon.COMMAND_PROMPT, self.tr('Run Code'),
                                  position=NavigationItemPosition.BOTTOM)
+
+        from ok import og
+        if og.task_manager.has_custom:
+            from ok.gui.tasks.EditTaskTab import EditTaskTab
+            self.edit_task_tab = EditTaskTab()
+            self.addSubInterface(self.edit_task_tab, FluentIcon.EDIT, self.tr('Custom Code'))
         
         # 添加计划任务Tab
         any_support_schedule = any(task.support_schedule_task for task in executor.onetime_tasks)
