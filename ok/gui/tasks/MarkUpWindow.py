@@ -813,6 +813,7 @@ class MarkUpWindow(BaseWindow):
         self.setTitleBar(SplitTitleBar(self))
         self.titleBar.raise_()
         self.setWindowTitle(self.tr("Markup Editor"))
+        self.titleBar.setIcon(self.windowIcon())
         self.setMinimumSize(1600, 900)
 
         self.image_list = image_list
