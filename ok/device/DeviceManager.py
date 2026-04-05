@@ -295,13 +295,22 @@ class DeviceManager:
             return None
 
         devices = list(self.adb.iter_device())
-        with ThreadPoolExecutor(max_workers=min(len(devices), 8) if devices else 1) as executor:
-            results = list(executor.map(refresh_one, devices))
+        if self.exit_event.is_set():
+            return
+            
+        try:
+            with ThreadPoolExecutor(max_workers=min(len(devices), 8) if devices else 1) as executor:
+                results = list(executor.map(refresh_one, devices))
 
-        for result in results:
-            if result:
-                imei, device = result
-                self.device_dict[imei] = device
+            for result in results:
+                if result:
+                    imei, device = result
+                    self.device_dict[imei] = device
+        except RuntimeError as e:
+            if 'shutdown' in str(e):
+                logger.debug(f'ThreadPoolExecutor failed during shutdown: {e}')
+            else:
+                raise
         logger.debug(f'refresh_phones done')
 
     def refresh_emulators(self, current=False):
@@ -336,15 +345,23 @@ class DeviceManager:
                 emulator_device["adb_imei"] = self.adb_get_imei(adb_device)
             return emulator.name, emulator_device
 
-        with ThreadPoolExecutor(max_workers=min(len(installed_emulators), 8) if installed_emulators else 1) as executor:
-            results = list(executor.map(refresh_one, installed_emulators))
+        if self.exit_event.is_set():
+            return
+            
+        try:
+            with ThreadPoolExecutor(max_workers=min(len(installed_emulators), 8) if installed_emulators else 1) as executor:
+                results = list(executor.map(refresh_one, installed_emulators))
 
-        for result in results:
-            if result:
-                name, device = result
-                self.device_dict[name] = device
+            for result in results:
+                if result:
+                    name, device = result
+                    self.device_dict[name] = device
+        except RuntimeError as e:
+            if 'shutdown' in str(e):
+                logger.debug(f'ThreadPoolExecutor failed during shutdown: {e}')
+            else:
+                raise
         logger.info(f'refresh emulators {self.device_dict}')
-
     def get_resolution(self, device=None):
         if device is None:
             device = self.device

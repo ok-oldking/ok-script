@@ -1914,7 +1914,79 @@
         <source>Other</source>
         <translation>其他</translation>
     </message>
-<message><source>click</source><translation>点击</translation></message><message><source>middle_click</source><translation>中键点击</translation></message><message><source>right_click</source><translation>右键点击</translation></message><message><source>mouse_down</source><translation>鼠标按下</translation></message><message><source>mouse_up</source><translation>鼠标松开</translation></message><message><source>swipe</source><translation>滑动</translation></message><message><source>scroll</source><translation>滚动</translation></message><message><source>send_key</source><translation>发送按键</translation></message><message><source>send_key_down</source><translation>按下按键</translation></message><message><source>send_key_up</source><translation>松开按键</translation></message><message><source>input_text</source><translation>输入文本</translation></message><message><source>sleep</source><translation>休眠</translation></message><message><source>wait_until</source><translation>等待直到</translation></message><message><source>find</source><translation>查找</translation></message><message><source>box</source><translation>矩形框</translation></message><message><source>ocr</source><translation>OCR文字识别</translation></message><message><source>screenshot</source><translation>截图</translation></message><message><source>get_task_by_class</source><translation>通过类名获取任务</translation></message><message><source>box_in_horizontal_center</source><translation>水平居中框</translation></message><message><source>clipboard</source><translation>剪贴板</translation></message><message><source>back</source><translation>返回</translation></message><message><source>is_adb</source><translation>是否为ADB</translation></message><message><source>is_browser</source><translation>是否为浏览器</translation></message><message><source>start_device</source><translation>启动设备</translation></message><message><source>swipe_relative</source><translation>相对滑动</translation></message><message><source>ensure_in_front</source><translation>确保在最前</translation></message><message><source>scroll_relative</source><translation>相对滚动</translation></message><message><source>click_box_if_name_match</source><translation>如果名称匹配则点击框</translation></message><message><source>out_of_ratio</source><translation>超出比例</translation></message><message><source>click_box</source><translation>点击框</translation></message><message><source>wait_click_box</source><translation>等待并点击框</translation></message><message><source>next_frame</source><translation>下一帧</translation></message><message><source>adb_ui_dump</source><translation>ADB UI 导出</translation></message><message><source>draw_boxes</source><translation>绘制框</translation></message><message><source>clear_box</source><translation>清除框</translation></message><message><source>calculate_color_percentage</source><translation>计算颜色百分比</translation></message><message><source>adb_shell</source><translation>ADB Shell</translation></message><message><source>box_of_screen</source><translation>屏幕框</translation></message><message><source>box_of_screen_scaled</source><translation>缩放后的屏幕框</translation></message><message><source>width_of_screen</source><translation>屏幕宽度</translation></message><message><source>height_of_screen</source><translation>屏幕高度</translation></message><message><source>move</source><translation>移动鼠标</translation></message><message><source>move_relative</source><translation>相对移动鼠标</translation></message><message><source>middle_click_relative</source><translation>相对中键点击</translation></message><message><source>click_relative</source><translation>相对点击</translation></message><message><source>find_feature</source><translation>查找特征</translation></message><message><source>get_feature_by_name</source><translation>按名称获取特征</translation></message><message><source>get_box_by_name</source><translation>按名称获取框</translation></message><message><source>find_feature_and_set</source><translation>查找特征并设置</translation></message><message><source>wait_feature</source><translation>等待特征</translation></message><message><source>wait_click_feature</source><translation>等待并点击特征</translation></message><message><source>find_one</source><translation>查找一个</translation></message><message><source>feature_exists</source><translation>特征是否存在</translation></message><message><source>find_best_match_in_box</source><translation>在框内查找最佳匹配</translation></message><message><source>find_first_match_in_box</source><translation>在框内查找首个匹配</translation></message><message><source>wait_click_ocr</source><translation>等待并点击OCR文字</translation></message><message><source>wait_ocr</source><translation>等待OCR文字</translation></message><message><source>add_text_fix</source><translation>添加文本修正</translation></message><message><source>create_shortcut</source><translation>创建快捷方式</translation></message><message><source>sleep_check</source><translation>休眠检查</translation></message><message><source>tr</source><translation>翻译</translation></message><message><source>get_status</source><translation>获取状态</translation></message><message><source>enable</source><translation>启用任务</translation></message><message><source>pause</source><translation>暂停</translation></message><message><source>unpause</source><translation>恢复</translation></message><message><source>log_info</source><translation>记录信息</translation></message><message><source>log_debug</source><translation>记录调试</translation></message><message><source>log_warning</source><translation>记录警告</translation></message><message><source>log_error</source><translation>记录错误</translation></message><message><source>go_to_tab</source><translation>转到标签页</translation></message><message><source>notification</source><translation>通知</translation></message><message><source>info_clear</source><translation>信息清除</translation></message><message><source>info_incr</source><translation>信息递增</translation></message><message><source>info_add_to_list</source><translation>信息添加到列表</translation></message><message><source>info_set</source><translation>信息设置</translation></message><message><source>info_get</source><translation>信息获取</translation></message><message><source>info_add</source><translation>信息增加</translation></message><message><source>disable</source><translation>禁用任务</translation></message><message><source>trigger</source><translation>触发</translation></message><message><source>find_boxes</source><translation>查找多个框</translation></message></context>
+<message><source>click</source><translation>点击</translation></message><message><source>middle_click</source><translation>中键点击</translation></message><message><source>right_click</source><translation>右键点击</translation></message><message><source>mouse_down</source><translation>鼠标按下</translation></message><message><source>mouse_up</source><translation>鼠标松开</translation></message><message><source>swipe</source><translation>滑动</translation></message><message><source>scroll</source><translation>滚动</translation></message><message><source>send_key</source><translation>发送按键</translation></message><message><source>send_key_down</source><translation>按下按键</translation></message><message><source>send_key_up</source><translation>松开按键</translation></message><message><source>input_text</source><translation>输入文本</translation></message><message><source>sleep</source><translation>休眠</translation></message><message><source>wait_until</source><translation>等待直到</translation></message><message><source>find</source><translation>查找</translation></message><message><source>box</source><translation>矩形框</translation></message><message><source>ocr</source><translation>OCR文字识别</translation></message><message><source>screenshot</source><translation>截图</translation></message><message><source>get_task_by_class</source><translation>通过类名获取任务</translation></message><message><source>box_in_horizontal_center</source><translation>水平居中框</translation></message><message><source>clipboard</source><translation>剪贴板</translation></message><message><source>back</source><translation>返回</translation></message><message><source>is_adb</source><translation>是否为ADB</translation></message><message><source>is_browser</source><translation>是否为浏览器</translation></message><message><source>start_device</source><translation>启动设备</translation></message><message><source>swipe_relative</source><translation>相对滑动</translation></message><message><source>ensure_in_front</source><translation>确保在最前</translation></message><message><source>scroll_relative</source><translation>相对滚动</translation></message><message><source>click_box_if_name_match</source><translation>如果名称匹配则点击框</translation></message><message><source>out_of_ratio</source><translation>超出比例</translation></message><message><source>click_box</source><translation>点击框</translation></message><message><source>wait_click_box</source><translation>等待并点击框</translation></message><message><source>next_frame</source><translation>下一帧</translation></message><message><source>adb_ui_dump</source><translation>ADB UI 导出</translation></message><message><source>draw_boxes</source><translation>绘制框</translation></message><message><source>clear_box</source><translation>清除框</translation></message><message><source>calculate_color_percentage</source><translation>计算颜色百分比</translation></message><message><source>adb_shell</source><translation>ADB Shell</translation></message><message><source>box_of_screen</source><translation>屏幕框</translation></message><message><source>box_of_screen_scaled</source><translation>缩放后的屏幕框</translation></message><message><source>width_of_screen</source><translation>屏幕宽度</translation></message><message><source>height_of_screen</source><translation>屏幕高度</translation></message><message><source>move</source><translation>移动鼠标</translation></message><message><source>move_relative</source><translation>相对移动鼠标</translation></message><message><source>middle_click_relative</source><translation>相对中键点击</translation></message><message><source>click_relative</source><translation>相对点击</translation></message><message><source>find_feature</source><translation>查找特征</translation></message><message><source>get_feature_by_name</source><translation>按名称获取特征</translation></message><message><source>get_box_by_name</source><translation>按名称获取框</translation></message><message><source>find_feature_and_set</source><translation>查找特征并设置</translation></message><message><source>wait_feature</source><translation>等待特征</translation></message><message><source>wait_click_feature</source><translation>等待并点击特征</translation></message><message><source>find_one</source><translation>查找一个</translation></message><message><source>feature_exists</source><translation>特征是否存在</translation></message><message><source>find_best_match_in_box</source><translation>在框内查找最佳匹配</translation></message><message><source>find_first_match_in_box</source><translation>在框内查找首个匹配</translation></message><message><source>wait_click_ocr</source><translation>等待并点击OCR文字</translation></message><message><source>wait_ocr</source><translation>等待OCR文字</translation></message><message><source>add_text_fix</source><translation>添加文本修正</translation></message><message><source>create_shortcut</source><translation>创建快捷方式</translation></message><message><source>sleep_check</source><translation>休眠检查</translation></message><message><source>tr</source><translation>翻译</translation></message><message><source>get_status</source><translation>获取状态</translation></message><message><source>enable</source><translation>启用任务</translation></message><message><source>pause</source><translation>暂停</translation></message><message><source>unpause</source><translation>恢复</translation></message><message><source>log_info</source><translation>记录信息</translation></message><message><source>log_debug</source><translation>记录调试</translation></message><message><source>log_warning</source><translation>记录警告</translation></message><message><source>log_error</source><translation>记录错误</translation></message><message><source>go_to_tab</source><translation>转到标签页</translation></message><message><source>notification</source><translation>通知</translation></message><message><source>info_clear</source><translation>信息清除</translation></message><message><source>info_incr</source><translation>信息递增</translation></message><message><source>info_add_to_list</source><translation>信息添加到列表</translation></message><message><source>info_set</source><translation>信息设置</translation></message><message><source>info_get</source><translation>信息获取</translation></message><message><source>info_add</source><translation>信息增加</translation></message><message><source>disable</source><translation>禁用任务</translation></message><message><source>trigger</source><translation>触发</translation></message><message><source>find_boxes</source><translation>查找多个框</translation></message>    <message>
+        <source>Export Script</source>
+        <translation>匯出腳本</translation>
+    </message>
+    <message>
+        <source>Import Script</source>
+        <translation>匯入腳本</translation>
+    </message>
+    <message>
+        <source>Select tasks to export:</source>
+        <translation>選擇要匯出的任務：</translation>
+    </message>
+    <message>
+        <source>File Name:</source>
+        <translation>檔案名稱：</translation>
+    </message>
+    <message>
+        <source>English, numbers and valid filename chars only</source>
+        <translation>僅限英文、數字和有效的檔案名稱字元</translation>
+    </message>
+    <message>
+        <source>Script Name:</source>
+        <translation>腳本名稱：</translation>
+    </message>
+    <message>
+        <source>Display name for the script</source>
+        <translation>腳本的顯示名稱</translation>
+    </message>
+    <message>
+        <source>Version:</source>
+        <translation>版本：</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation>匯出</translation>
+    </message>
+    <message>
+        <source>No tasks to export.</source>
+        <translation>沒有可匯出的任務。</translation>
+    </message>
+    <message>
+        <source>Invalid file name. Use English letters, numbers, underscores, hyphens only.</source>
+        <translation>無效的檔案名稱。只能使用英文字母、數字、底線和連字號。</translation>
+    </message>
+    <message>
+        <source>Script name is required.</source>
+        <translation>腳本名稱為必填項。</translation>
+    </message>
+    <message>
+        <source>Please select at least one task to export.</source>
+        <translation>請至少選擇一個任務進行匯出。</translation>
+    </message>
+    <message>
+        <source>Script exported successfully to Downloads folder.</source>
+        <translation>腳本已成功匯出到下載資料夾。</translation>
+    </message>
+    <message>
+        <source>Export failed</source>
+        <translation>匯出失敗</translation>
+    </message>
+    <message>
+        <source>Select Script File</source>
+        <translation>選擇腳本檔案</translation>
+    </message>
+    <message>
+        <source>OKScript Files (*.okscript);;All Files (*)</source>
+        <translation>OKScript 檔案 (*.okscript);;所有檔案 (*)</translation>
+    </message>
+    <message>
+        <source>Import failed</source>
+        <translation>匯入失敗</translation>
+    </message>
+</context>
     <context>
         <name>CreateTaskDialog</name>
         <message>

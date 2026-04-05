@@ -2,10 +2,10 @@ import os
 import sys
 from PySide6.QtCore import Qt, Signal, QSize, QRect
 from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QFont, QColor, QPainter, QFontMetrics
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QInputDialog, QMessageBox, QListWidgetItem, QTreeWidgetItem, QAbstractItemView
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QInputDialog, QMessageBox, QListWidgetItem, QTreeWidgetItem, QAbstractItemView, QFileDialog
 from qfluentwidgets import ListWidget, TextEdit, MessageBox, PlainTextEdit, PushButton, FluentIcon, Dialog, PrimaryPushButton, SearchLineEdit, \
     BodyLabel, ComboBox, PrimaryDropDownToolButton, RoundMenu, Action, TreeWidget, TreeView, CommandBar, \
-    TransparentDropDownToolButton, TransparentDropDownPushButton
+    TransparentDropDownToolButton, TransparentDropDownPushButton, CheckBox
 from PySide6.QtCore import QFileSystemWatcher
 
 from ok import og
@@ -284,6 +284,16 @@ class EditTaskTab(QWidget):
         self.delete_action = Action(FluentIcon.DELETE, self.tr("Delete Task"))
         self.delete_action.triggered.connect(self.delete_task)
         self.menu.addAction(self.delete_action)
+
+        self.menu.addSeparator()
+
+        self.export_action = Action(FluentIcon.SHARE, self.tr("Export Script"))
+        self.export_action.triggered.connect(self.show_export_dialog)
+        self.menu.addAction(self.export_action)
+
+        self.import_action = Action(FluentIcon.DOWNLOAD, self.tr("Import Script"))
+        self.import_action.triggered.connect(self.show_import_dialog)
+        self.menu.addAction(self.import_action)
 
         self.file_button = TransparentDropDownPushButton(FluentIcon.MENU, self.tr("File"), self)
         self.file_button.setMenu(self.menu)
@@ -920,3 +930,119 @@ class {class_name}({base_class}):
                 show_info_bar(self.window(), self.tr("Task copied successfully."), title=self.tr("Success"))
             except Exception as e:
                 alert_error(f"Error copying task: {e}")
+
+    def show_export_dialog(self):
+        from qfluentwidgets import MessageBoxBase, LineEdit, SubtitleLabel
+        from ok.gui.util.Alert import alert_error
+        from ok.gui.tasks.ScriptPackager import get_task_files, load_manifest, export_script, validate_filename
+
+        task_files = get_task_files()
+        if not task_files:
+            alert_error(self.tr("No tasks to export."))
+            return
+
+        manifest = load_manifest()
+        parent = self
+
+        class ExportScriptDialog(MessageBoxBase):
+            def __init__(self, p=None):
+                super().__init__(p)
+                self.titleLabel = SubtitleLabel(parent.tr('Export Script'), self)
+                self.viewLayout.addWidget(self.titleLabel)
+
+                # Task checkboxes
+                self.task_label = BodyLabel(parent.tr('Select tasks to export:'), self)
+                self.viewLayout.addWidget(self.task_label)
+
+                self.checkboxes = []
+                for tf in task_files:
+                    cb = CheckBox(os.path.splitext(tf)[0], self)
+                    cb.setChecked(True)
+                    cb.setProperty('filename', tf)
+                    self.viewLayout.addWidget(cb)
+                    self.checkboxes.append(cb)
+
+                # File name
+                self.file_name_label = BodyLabel(parent.tr('File Name:'), self)
+                self.viewLayout.addWidget(self.file_name_label)
+                self.file_name_input = LineEdit(self)
+                self.file_name_input.setPlaceholderText(parent.tr('English, numbers and valid filename chars only'))
+                self.file_name_input.setText(manifest.get('file_name', ''))
+                self.viewLayout.addWidget(self.file_name_input)
+
+                # Script name
+                self.script_name_label = BodyLabel(parent.tr('Script Name:'), self)
+                self.viewLayout.addWidget(self.script_name_label)
+                self.script_name_input = LineEdit(self)
+                self.script_name_input.setPlaceholderText(parent.tr('Display name for the script'))
+                self.script_name_input.setText(manifest.get('script_name', ''))
+                self.viewLayout.addWidget(self.script_name_input)
+
+                # Version
+                self.version_label = BodyLabel(parent.tr('Version:'), self)
+                self.viewLayout.addWidget(self.version_label)
+                self.version_input = LineEdit(self)
+                self.version_input.setPlaceholderText('1.0.0')
+                self.version_input.setText(manifest.get('version', '1.0.0'))
+                self.viewLayout.addWidget(self.version_input)
+
+                self.yesButton.setText(parent.tr('Export'))
+                self.cancelButton.setText(parent.tr('Cancel'))
+                self.widget.setMinimumWidth(400)
+
+        dialog = ExportScriptDialog(self.window())
+
+        if dialog.exec():
+            file_name = dialog.file_name_input.text().strip()
+            script_name = dialog.script_name_input.text().strip()
+            version = dialog.version_input.text().strip()
+
+            if not validate_filename(file_name):
+                alert_error(self.tr('Invalid file name. Use English letters, numbers, underscores, hyphens only.'))
+                return
+
+            if not script_name:
+                alert_error(self.tr('Script name is required.'))
+                return
+
+            selected = [cb.property('filename') for cb in dialog.checkboxes if cb.isChecked()]
+            if not selected:
+                alert_error(self.tr('Please select at least one task to export.'))
+                return
+
+            success, message, output_path = export_script(selected, file_name, script_name, version)
+            if success:
+                from ok.gui.util.app import show_info_bar
+                show_info_bar(self.window(), self.tr('Script exported successfully to Downloads folder.'), title=self.tr('Success'))
+                # Open Explorer and select the file
+                import subprocess
+                subprocess.Popen(f'explorer /select,"{os.path.normpath(output_path)}"')
+            else:
+                alert_error(f"{self.tr('Export failed')}: {message}")
+
+    def show_import_dialog(self):
+        from ok.gui.util.Alert import alert_error
+        from ok.gui.tasks.ScriptPackager import import_script
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, self.tr('Select Script File'), '',
+            self.tr('OKScript Files (*.okscript);;All Files (*)')
+        )
+
+        if not file_path:
+            return
+
+        self._do_import(file_path)
+
+    def _do_import(self, file_path):
+        from ok.gui.util.Alert import alert_error
+        from ok.gui.tasks.ScriptPackager import import_script
+
+        success, message, import_folder = import_script(file_path)
+        if success:
+            from ok.gui.util.app import show_info_bar
+            show_info_bar(self.window(), message, title=self.tr('Success'))
+            # Load the imported tasks
+            og.task_manager.load_import_folder(import_folder)
+        else:
+            alert_error(f"{self.tr('Import failed')}: {message}")

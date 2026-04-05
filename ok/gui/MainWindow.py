@@ -1,3 +1,4 @@
+import os
 import threading
 
 import pyappify
@@ -71,6 +72,8 @@ class MainWindow(MSFluentWindow):
             self.addSubInterface(tab_obj, tab_obj.icon, tab_obj.name, position=tab_obj.position)
 
         from ok import og
+        self.imported_tabs = {}  # {file_name: tab_object}
+        
         if self.executor.onetime_tasks:
             from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
             from collections import defaultdict
@@ -79,7 +82,8 @@ class MainWindow(MSFluentWindow):
             standalone_tasks = []
             for task in executor.onetime_tasks:
                 if task.group_name:
-                    groups[task.group_name].append(task)
+                    if task.group_name not in [imp['script_name'] for imp in og.task_manager.imported_scripts.values()]:
+                        groups[task.group_name].append(task)
                 else:
                     standalone_tasks.append(task)
 
@@ -106,8 +110,6 @@ class MainWindow(MSFluentWindow):
                 self.first_task_tab = self.trigger_tab
             self.addSubInterface(self.trigger_tab, FluentIcon.ROBOT, self.tr('Triggers'))
 
-       
-
         # Add custom tabs that should appear after built-in task tabs
         for tab_obj in after_custom_tabs:
             self.addSubInterface(tab_obj, tab_obj.icon, tab_obj.name, position=tab_obj.position)
@@ -121,7 +123,6 @@ class MainWindow(MSFluentWindow):
             self.addSubInterface(run_code_tab, FluentIcon.COMMAND_PROMPT, self.tr('Run Code'),
                                  position=NavigationItemPosition.BOTTOM)
 
-        from ok import og
         if og.task_manager.has_custom:
             from ok.gui.tasks.EditTaskTab import EditTaskTab
             self.edit_task_tab = EditTaskTab()
@@ -132,6 +133,10 @@ class MainWindow(MSFluentWindow):
             self.template_tab = TemplateTab()
             self.addSubInterface(self.template_tab, FluentIcon.PHOTO, self.tr('Templates'))
         
+        # Initial load of imported tabs
+        self.update_imported_tabs()
+        communicate.task_list_updated.connect(self.update_imported_tabs)
+
         # 添加计划任务Tab
         any_support_schedule = any(task.support_schedule_task for task in executor.onetime_tasks)
         if any_support_schedule:
@@ -167,7 +172,7 @@ class MainWindow(MSFluentWindow):
         self.tray.show()
         self.tray.setToolTip(title)
 
-        self.themeListener = ThemeListener(self)
+        self.themeListener = SystemThemeListener(self)
         self.themeListener.systemThemeChanged.connect(self.on_systemThemeChanged)
         self.themeListener.start()
 
@@ -179,6 +184,39 @@ class MainWindow(MSFluentWindow):
 
         logger.info('main window __init__ done')
 
+    def update_imported_tabs(self):
+        """Update navigation tabs for imported scripts."""
+        from ok import og
+        from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
+        
+        imported_scripts = og.task_manager.imported_scripts
+        
+        # Remove tabs for scripts that no longer exist
+        scripts_to_remove = [fn for fn in self.imported_tabs if fn not in imported_scripts]
+        for fn in scripts_to_remove:
+            tab = self.imported_tabs.pop(fn)
+            # Remove from navigation. MSFluentWindow provides navigation object
+            self.navigationInterface.removeWidget(tab.objectName())
+            self.stackedWidget.removeWidget(tab)
+            tab.deleteLater()
+            
+        # Add tabs for new scripts
+        for file_name, imp in imported_scripts.items():
+            if file_name not in self.imported_tabs:
+                script_name = imp['script_name']
+                tasks = imp.get('tasks', [])
+                if tasks:
+                    group_tab = OneTimeTaskTab(is_standalone=False, group_name=script_name)
+                    group_icon = tasks[0].group_icon if hasattr(tasks[0], 'group_icon') else FluentIcon.APPLICATION
+                    self.imported_tabs[file_name] = group_tab
+                    
+                    # Inserting after TemplateTab if it exists
+                    if hasattr(self, 'template_tab'):
+                        # Using our custom logic or standard addSubInterface
+                        # qfluentwidgets typically appends to the current section
+                        self.addSubInterface(group_tab, group_icon, self.app.tr(script_name))
+                    else:
+                        self.addSubInterface(group_tab, group_icon, self.app.tr(script_name))
     def on_systemThemeChanged(self):
         setTheme(Theme.AUTO)
         logger.debug("system theme changed, set theme to auto")
@@ -270,6 +308,8 @@ class MainWindow(MSFluentWindow):
                 self.app.start_controller.start(args.get('task') - 1, exit_after=args.get('exit'))
             elif self.basic_global_config.get('Auto Start Game When App Starts'):
                 self.app.start_controller.start()
+            # Check for .okscript file in command line arguments
+            self._check_okscript_args()
         super().showEvent(event)
 
     def set_window_size(self, width, height, min_width, min_height):
@@ -368,6 +408,29 @@ class MainWindow(MSFluentWindow):
         if not paused and self.stackedWidget.currentIndex() == 0 and self.first_task_tab:
             self.switchTo(self.first_task_tab)
         self.show_notification(self.tr("Start Success.") if not paused else self.tr("Pause Success."), tray=not paused)
+
+    def _check_okscript_args(self):
+        """Check sys.argv for .okscript files and import them."""
+        import sys
+        for arg in sys.argv[1:]:
+            if arg.lower().endswith('.okscript') and os.path.exists(arg):
+                logger.info(f'Found .okscript file in args: {arg}')
+                try:
+                    if hasattr(self, 'edit_task_tab'):
+                        self.edit_task_tab._do_import(arg)
+                    else:
+                        from ok.gui.tasks.ScriptPackager import import_script
+                        success, message, import_folder = import_script(arg)
+                        if success:
+                            from ok import og
+                            og.task_manager.load_import_folder(import_folder)
+                            from ok.gui.util.app import show_info_bar
+                            show_info_bar(self.window(), message, title=self.tr('Success'))
+                        else:
+                            from ok.gui.util.Alert import alert_error
+                            alert_error(f"Import failed: {message}")
+                except Exception as e:
+                    logger.error(f'Error importing .okscript file: {e}')
 
     def closeEvent(self, event):
         if self.app.exit_event.is_set():

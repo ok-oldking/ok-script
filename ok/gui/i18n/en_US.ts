@@ -431,6 +431,18 @@
         <source>Completed</source>
         <translation>Completed</translation>
     </message>
+    <message>
+        <source>Delete Script</source>
+        <translation>Delete Script</translation>
+    </message>
+    <message>
+        <source>Confirm Delete</source>
+        <translation>Confirm Delete</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete the script "{}"?</source>
+        <translation>Are you sure you want to delete the script "{}"?</translation>
+    </message>
 </context>
 <context>
     <name>QCoreApplication</name>
@@ -1909,7 +1921,79 @@
         <source>Other</source>
         <translation>Other</translation>
     </message>
-<message><source>click</source><translation>click</translation></message><message><source>middle_click</source><translation>middle_click</translation></message><message><source>right_click</source><translation>right_click</translation></message><message><source>mouse_down</source><translation>mouse_down</translation></message><message><source>mouse_up</source><translation>mouse_up</translation></message><message><source>swipe</source><translation>swipe</translation></message><message><source>scroll</source><translation>scroll</translation></message><message><source>send_key</source><translation>send_key</translation></message><message><source>send_key_down</source><translation>send_key_down</translation></message><message><source>send_key_up</source><translation>send_key_up</translation></message><message><source>input_text</source><translation>input_text</translation></message><message><source>sleep</source><translation>sleep</translation></message><message><source>wait_until</source><translation>wait_until</translation></message><message><source>find</source><translation>find</translation></message><message><source>box</source><translation>box</translation></message><message><source>ocr</source><translation>ocr</translation></message><message><source>screenshot</source><translation>screenshot</translation></message><message><source>get_task_by_class</source><translation>get_task_by_class</translation></message><message><source>box_in_horizontal_center</source><translation>box_in_horizontal_center</translation></message><message><source>clipboard</source><translation>clipboard</translation></message><message><source>back</source><translation>back</translation></message><message><source>is_adb</source><translation>is_adb</translation></message><message><source>is_browser</source><translation>is_browser</translation></message><message><source>start_device</source><translation>start_device</translation></message><message><source>swipe_relative</source><translation>swipe_relative</translation></message><message><source>ensure_in_front</source><translation>ensure_in_front</translation></message><message><source>scroll_relative</source><translation>scroll_relative</translation></message><message><source>click_box_if_name_match</source><translation>click_box_if_name_match</translation></message><message><source>out_of_ratio</source><translation>out_of_ratio</translation></message><message><source>click_box</source><translation>click_box</translation></message><message><source>wait_click_box</source><translation>wait_click_box</translation></message><message><source>next_frame</source><translation>next_frame</translation></message><message><source>adb_ui_dump</source><translation>adb_ui_dump</translation></message><message><source>draw_boxes</source><translation>draw_boxes</translation></message><message><source>clear_box</source><translation>clear_box</translation></message><message><source>calculate_color_percentage</source><translation>calculate_color_percentage</translation></message><message><source>adb_shell</source><translation>adb_shell</translation></message><message><source>box_of_screen</source><translation>box_of_screen</translation></message><message><source>box_of_screen_scaled</source><translation>box_of_screen_scaled</translation></message><message><source>width_of_screen</source><translation>width_of_screen</translation></message><message><source>height_of_screen</source><translation>height_of_screen</translation></message><message><source>move</source><translation>move</translation></message><message><source>move_relative</source><translation>move_relative</translation></message><message><source>middle_click_relative</source><translation>middle_click_relative</translation></message><message><source>click_relative</source><translation>click_relative</translation></message><message><source>find_feature</source><translation>find_feature</translation></message><message><source>get_feature_by_name</source><translation>get_feature_by_name</translation></message><message><source>get_box_by_name</source><translation>get_box_by_name</translation></message><message><source>find_feature_and_set</source><translation>find_feature_and_set</translation></message><message><source>wait_feature</source><translation>wait_feature</translation></message><message><source>wait_click_feature</source><translation>wait_click_feature</translation></message><message><source>find_one</source><translation>find_one</translation></message><message><source>feature_exists</source><translation>feature_exists</translation></message><message><source>find_best_match_in_box</source><translation>find_best_match_in_box</translation></message><message><source>find_first_match_in_box</source><translation>find_first_match_in_box</translation></message><message><source>wait_click_ocr</source><translation>wait_click_ocr</translation></message><message><source>wait_ocr</source><translation>wait_ocr</translation></message><message><source>add_text_fix</source><translation>add_text_fix</translation></message><message><source>create_shortcut</source><translation>create_shortcut</translation></message><message><source>sleep_check</source><translation>sleep_check</translation></message><message><source>tr</source><translation>tr</translation></message><message><source>get_status</source><translation>get_status</translation></message><message><source>enable</source><translation>enable</translation></message><message><source>pause</source><translation>pause</translation></message><message><source>unpause</source><translation>unpause</translation></message><message><source>log_info</source><translation>log_info</translation></message><message><source>log_debug</source><translation>log_debug</translation></message><message><source>log_warning</source><translation>log_warning</translation></message><message><source>log_error</source><translation>log_error</translation></message><message><source>go_to_tab</source><translation>go_to_tab</translation></message><message><source>notification</source><translation>notification</translation></message><message><source>info_clear</source><translation>info_clear</translation></message><message><source>info_incr</source><translation>info_incr</translation></message><message><source>info_add_to_list</source><translation>info_add_to_list</translation></message><message><source>info_set</source><translation>info_set</translation></message><message><source>info_get</source><translation>info_get</translation></message><message><source>info_add</source><translation>info_add</translation></message><message><source>disable</source><translation>disable</translation></message><message><source>trigger</source><translation>trigger</translation></message><message><source>find_boxes</source><translation>find_boxes</translation></message></context>
+<message><source>click</source><translation>click</translation></message><message><source>middle_click</source><translation>middle_click</translation></message><message><source>right_click</source><translation>right_click</translation></message><message><source>mouse_down</source><translation>mouse_down</translation></message><message><source>mouse_up</source><translation>mouse_up</translation></message><message><source>swipe</source><translation>swipe</translation></message><message><source>scroll</source><translation>scroll</translation></message><message><source>send_key</source><translation>send_key</translation></message><message><source>send_key_down</source><translation>send_key_down</translation></message><message><source>send_key_up</source><translation>send_key_up</translation></message><message><source>input_text</source><translation>input_text</translation></message><message><source>sleep</source><translation>sleep</translation></message><message><source>wait_until</source><translation>wait_until</translation></message><message><source>find</source><translation>find</translation></message><message><source>box</source><translation>box</translation></message><message><source>ocr</source><translation>ocr</translation></message><message><source>screenshot</source><translation>screenshot</translation></message><message><source>get_task_by_class</source><translation>get_task_by_class</translation></message><message><source>box_in_horizontal_center</source><translation>box_in_horizontal_center</translation></message><message><source>clipboard</source><translation>clipboard</translation></message><message><source>back</source><translation>back</translation></message><message><source>is_adb</source><translation>is_adb</translation></message><message><source>is_browser</source><translation>is_browser</translation></message><message><source>start_device</source><translation>start_device</translation></message><message><source>swipe_relative</source><translation>swipe_relative</translation></message><message><source>ensure_in_front</source><translation>ensure_in_front</translation></message><message><source>scroll_relative</source><translation>scroll_relative</translation></message><message><source>click_box_if_name_match</source><translation>click_box_if_name_match</translation></message><message><source>out_of_ratio</source><translation>out_of_ratio</translation></message><message><source>click_box</source><translation>click_box</translation></message><message><source>wait_click_box</source><translation>wait_click_box</translation></message><message><source>next_frame</source><translation>next_frame</translation></message><message><source>adb_ui_dump</source><translation>adb_ui_dump</translation></message><message><source>draw_boxes</source><translation>draw_boxes</translation></message><message><source>clear_box</source><translation>clear_box</translation></message><message><source>calculate_color_percentage</source><translation>calculate_color_percentage</translation></message><message><source>adb_shell</source><translation>adb_shell</translation></message><message><source>box_of_screen</source><translation>box_of_screen</translation></message><message><source>box_of_screen_scaled</source><translation>box_of_screen_scaled</translation></message><message><source>width_of_screen</source><translation>width_of_screen</translation></message><message><source>height_of_screen</source><translation>height_of_screen</translation></message><message><source>move</source><translation>move</translation></message><message><source>move_relative</source><translation>move_relative</translation></message><message><source>middle_click_relative</source><translation>middle_click_relative</translation></message><message><source>click_relative</source><translation>click_relative</translation></message><message><source>find_feature</source><translation>find_feature</translation></message><message><source>get_feature_by_name</source><translation>get_feature_by_name</translation></message><message><source>get_box_by_name</source><translation>get_box_by_name</translation></message><message><source>find_feature_and_set</source><translation>find_feature_and_set</translation></message><message><source>wait_feature</source><translation>wait_feature</translation></message><message><source>wait_click_feature</source><translation>wait_click_feature</translation></message><message><source>find_one</source><translation>find_one</translation></message><message><source>feature_exists</source><translation>feature_exists</translation></message><message><source>find_best_match_in_box</source><translation>find_best_match_in_box</translation></message><message><source>find_first_match_in_box</source><translation>find_first_match_in_box</translation></message><message><source>wait_click_ocr</source><translation>wait_click_ocr</translation></message><message><source>wait_ocr</source><translation>wait_ocr</translation></message><message><source>add_text_fix</source><translation>add_text_fix</translation></message><message><source>create_shortcut</source><translation>create_shortcut</translation></message><message><source>sleep_check</source><translation>sleep_check</translation></message><message><source>tr</source><translation>tr</translation></message><message><source>get_status</source><translation>get_status</translation></message><message><source>enable</source><translation>enable</translation></message><message><source>pause</source><translation>pause</translation></message><message><source>unpause</source><translation>unpause</translation></message><message><source>log_info</source><translation>log_info</translation></message><message><source>log_debug</source><translation>log_debug</translation></message><message><source>log_warning</source><translation>log_warning</translation></message><message><source>log_error</source><translation>log_error</translation></message><message><source>go_to_tab</source><translation>go_to_tab</translation></message><message><source>notification</source><translation>notification</translation></message><message><source>info_clear</source><translation>info_clear</translation></message><message><source>info_incr</source><translation>info_incr</translation></message><message><source>info_add_to_list</source><translation>info_add_to_list</translation></message><message><source>info_set</source><translation>info_set</translation></message><message><source>info_get</source><translation>info_get</translation></message><message><source>info_add</source><translation>info_add</translation></message><message><source>disable</source><translation>disable</translation></message><message><source>trigger</source><translation>trigger</translation></message><message><source>find_boxes</source><translation>find_boxes</translation></message>    <message>
+        <source>Export Script</source>
+        <translation>Export Script</translation>
+    </message>
+    <message>
+        <source>Import Script</source>
+        <translation>Import Script</translation>
+    </message>
+    <message>
+        <source>Select tasks to export:</source>
+        <translation>Select tasks to export:</translation>
+    </message>
+    <message>
+        <source>File Name:</source>
+        <translation>File Name:</translation>
+    </message>
+    <message>
+        <source>English, numbers and valid filename chars only</source>
+        <translation>English, numbers and valid filename chars only</translation>
+    </message>
+    <message>
+        <source>Script Name:</source>
+        <translation>Script Name:</translation>
+    </message>
+    <message>
+        <source>Display name for the script</source>
+        <translation>Display name for the script</translation>
+    </message>
+    <message>
+        <source>Version:</source>
+        <translation>Version:</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation>Export</translation>
+    </message>
+    <message>
+        <source>No tasks to export.</source>
+        <translation>No tasks to export.</translation>
+    </message>
+    <message>
+        <source>Invalid file name. Use English letters, numbers, underscores, hyphens only.</source>
+        <translation>Invalid file name. Use English letters, numbers, underscores, hyphens only.</translation>
+    </message>
+    <message>
+        <source>Script name is required.</source>
+        <translation>Script name is required.</translation>
+    </message>
+    <message>
+        <source>Please select at least one task to export.</source>
+        <translation>Please select at least one task to export.</translation>
+    </message>
+    <message>
+        <source>Script exported successfully to Downloads folder.</source>
+        <translation>Script exported successfully to Downloads folder.</translation>
+    </message>
+    <message>
+        <source>Export failed</source>
+        <translation>Export failed</translation>
+    </message>
+    <message>
+        <source>Select Script File</source>
+        <translation>Select Script File</translation>
+    </message>
+    <message>
+        <source>OKScript Files (*.okscript);;All Files (*)</source>
+        <translation>OKScript Files (*.okscript);;All Files (*)</translation>
+    </message>
+    <message>
+        <source>Import failed</source>
+        <translation>Import failed</translation>
+    </message>
+</context>
 <context>
     <name>CreateTaskDialog</name>
     <message>

@@ -53,7 +53,7 @@ from ok.util.clazz import generate_label_enum
 logger = Logger.get_logger(__name__)
 
 cdef class FeatureSet:
-    cdef int width, height
+    cdef public int width, height
     cdef double default_threshold, default_horizontal_variance, default_vertical_variance
     cdef str coco_json
     cdef bint debug, load_success
@@ -125,6 +125,27 @@ cdef class FeatureSet:
                     logger.info(f'Merged {len(extra_features)} features from {ok_tasks_coco}')
             except Exception as e:
                 logger.error(f'Failed to merge {ok_tasks_coco}: {e}')
+        # Also process ok_import/*/assets/coco_annotations.json with namespace prefix
+        ok_import_dir = os.path.join(os.getcwd(), 'ok_import')
+        if os.path.exists(ok_import_dir):
+            for entry in os.listdir(ok_import_dir):
+                import_coco = os.path.join(ok_import_dir, entry, 'assets', 'coco_annotations.json')
+                if os.path.exists(import_coco):
+                    try:
+                        imp_features, imp_boxes, _, imp_success = read_from_json(import_coco, self.width,
+                                                                                   self.height,
+                                                                                   self.hcenter_features,
+                                                                                   self.vcenter_features)
+                        if imp_success:
+                            for k, v in imp_features.items():
+                                namespaced_key = f"{entry}/{k}"
+                                self.feature_dict[namespaced_key] = v
+                            for k, v in imp_boxes.items():
+                                namespaced_key = f"{entry}/{k}"
+                                self.box_dict[namespaced_key] = v
+                            logger.info(f'Merged {len(imp_features)} namespaced features from import {entry}')
+                    except Exception as e:
+                        logger.error(f'Failed to merge import features from {entry}: {e}')
         if self.feature_processor:
             logger.info('process features with feature_processor')
             for feature in self.feature_dict:
