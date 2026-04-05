@@ -495,8 +495,8 @@ class EditTaskTab(QWidget):
             if self.python_file:
                 for t, data in og.task_manager.task_map.items():
                     if data[0] == self.python_file:
-                        t.start()
-                        self._switch_to_task_tab()
+                        self._switch_to_task_tab() # Switch first for immediate UI response
+                        og.app.start_controller.start(t) # Launch asynchronously via start_controller
                         return
 
     def _switch_to_task_tab(self):
@@ -788,6 +788,7 @@ class {class_name}({base_class}):
         super().__init__(*args, **kwargs)
         self.name = "{task_name}"
         self.description = "{task_desc}"
+        self.instructions = \"\"\"<a href="https://github.com/ok-oldking/ok-py">ok-py</a>\"\"\"
 
     def run(self):
         pass

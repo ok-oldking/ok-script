@@ -78,11 +78,14 @@ class Recorder:
     def get_relative_coords(self, x, y):
         try:
             if getattr(og.device_manager, 'hwnd_window', None) and og.device_manager.hwnd_window.hwnd == self.target_hwnd:
-                return x - og.device_manager.hwnd_window.x, y - og.device_manager.hwnd_window.y
+                hw = og.device_manager.hwnd_window
+                return x - (hw.x + hw.real_x_offset), y - (hw.y + hw.real_y_offset)
             if not self.target_hwnd:
                 return x, y
-            rect = win32gui.GetWindowRect(self.target_hwnd)
-            return x - rect[0], y - rect[1]
+            # Fallback using win32gui for non-HwndWindow cases
+            # ClientToScreen with (0,0) gives the top-left of the content area in screen coordinates
+            client_pos = win32gui.ClientToScreen(self.target_hwnd, (0, 0))
+            return x - client_pos[0], y - client_pos[1]
         except:
             return x, y
 
@@ -191,12 +194,21 @@ class Recorder:
                 init_lines.append(f"    }}")
                 
             elif current_device_type == 'adb':
-                packages = dm.packages
+                # Get the current foreground package from the ADB device
+                packages = []
+                try:
+                    if dm.device is not None:
+                        front = dm.device.app_current()
+                        if front and front.package:
+                            packages = [front.package]
+                except Exception as e:
+                    logger.error(f'Failed to get foreground package: {e}')
+                if not packages:
+                    packages = dm.packages or []
                 packages_str = repr(packages) if packages else "[]"
                 init_lines.append(f"    'adb': {{")
                 init_lines.append(f"        'packages': {packages_str},")
-                if interaction:
-                    init_lines.append(f"        'interaction': '{interaction}',")
+                init_lines.append(f"        'interaction': 'adb',")
                 if capture:
                     init_lines.append(f"        'capture_method': '{capture}',")
                 if resolution and resolution[0] > 0 and resolution[1] > 0:

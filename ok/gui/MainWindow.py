@@ -71,7 +71,7 @@ class MainWindow(MSFluentWindow):
             self.addSubInterface(tab_obj, tab_obj.icon, tab_obj.name, position=tab_obj.position)
 
         from ok import og
-        if self.executor.onetime_tasks or og.task_manager.has_custom:
+        if self.executor.onetime_tasks:
             from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
             from collections import defaultdict
 
@@ -83,7 +83,7 @@ class MainWindow(MSFluentWindow):
                 else:
                     standalone_tasks.append(task)
 
-            if standalone_tasks or og.task_manager.has_custom:
+            if standalone_tasks:
                 self.onetime_tab = OneTimeTaskTab(is_standalone=True)
                 if self.first_task_tab is None:
                     self.first_task_tab = self.onetime_tab
@@ -99,7 +99,7 @@ class MainWindow(MSFluentWindow):
                 self.addSubInterface(group_tab, group_icon, self.app.tr(group_name))
                 self.grouped_task_tabs.append(group_tab)
 
-        if len(executor.trigger_tasks) > 0 or og.task_manager.has_custom:
+        if len(executor.trigger_tasks) > 0:
             from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
             self.trigger_tab = TriggerTaskTab()
             if self.first_task_tab is None:
@@ -125,7 +125,7 @@ class MainWindow(MSFluentWindow):
         if og.task_manager.has_custom:
             from ok.gui.tasks.EditTaskTab import EditTaskTab
             self.edit_task_tab = EditTaskTab()
-            self.addSubInterface(self.edit_task_tab, FluentIcon.EDIT, self.tr('Custom Script'))
+            self.addSubInterface(self.edit_task_tab, FluentIcon.EDIT, self.tr('Custom'))
         
         # 添加计划任务Tab
         any_support_schedule = any(task.support_schedule_task for task in executor.onetime_tasks)
@@ -360,7 +360,7 @@ class MainWindow(MSFluentWindow):
             self.switchTo(self.about_tab)
 
     def executor_paused(self, paused):
-        if not paused and self.stackedWidget.currentIndex() == 0:
+        if not paused and self.stackedWidget.currentIndex() == 0 and self.first_task_tab:
             self.switchTo(self.first_task_tab)
         self.show_notification(self.tr("Start Success.") if not paused else self.tr("Pause Success."), tray=not paused)
 

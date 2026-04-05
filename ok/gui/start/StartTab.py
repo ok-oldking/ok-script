@@ -5,8 +5,9 @@ from pathlib import Path
 
 import win32gui
 import win32process
-from PySide6.QtWidgets import QAbstractItemView, QVBoxLayout, QHBoxLayout, QWidget
-from qfluentwidgets import ListWidget, PushButton, FluentIcon, SplitTitleBar, SwitchButton
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QAbstractItemView, QVBoxLayout, QHBoxLayout, QWidget, QListWidgetItem
+from qfluentwidgets import ListWidget, PushButton, FluentIcon, SplitTitleBar, SwitchButton, SearchLineEdit
 
 from ok.gui.Communicate import communicate
 from ok.gui.start.SelectCaptureListView import SelectCaptureListView
@@ -36,21 +37,29 @@ class StartTab(Tab):
         horizontal_widget = QWidget()
         horizontal_layout = QHBoxLayout(horizontal_widget)
         horizontal_layout.setContentsMargins(0, 20, 0, 20)
-        self.add_widget(horizontal_widget)
+        self.add_widget(horizontal_widget, 1)
 
+        self.device_search_box = SearchLineEdit()
+        self.device_search_box.setPlaceholderText(self.tr("Search title or exe..."))
+        self.device_search_box.textChanged.connect(self.filter_devices)
         self.device_list = ListWidget()
-        self.device_container = Card(self.tr("Choose Window"), self.device_list)
+        device_view_widget = QWidget()
+        device_view_layout = QVBoxLayout(device_view_widget)
+        device_view_layout.setContentsMargins(0, 0, 0, 0)
+        device_view_layout.addWidget(self.device_search_box)
+        device_view_layout.addWidget(self.device_list)
+        self.device_container = Card(self.tr("Choose Window"), device_view_widget, stretch=1)
         horizontal_layout.addWidget(self.device_container, 2)
         self.device_list.itemSelectionChanged.connect(self.device_index_changed)
 
         communicate.adb_devices.connect(self.update_capture)
 
         self.capture_list = SelectCaptureListView(self.capture_index_changed)
-        self.capture_container = Card(self.tr("Capture Method"), self.capture_list)
+        self.capture_container = Card(self.tr("Capture Method"), self.capture_list, stretch=1)
         horizontal_layout.addWidget(self.capture_container, 1)
 
         self.interaction_list = SelectInteractionListView(self.interaction_index_changed)
-        self.interaction_container = Card(self.tr("Choose Interaction"), self.interaction_list)
+        self.interaction_container = Card(self.tr("Choose Interaction"), self.interaction_list, stretch=1)
         horizontal_layout.addWidget(self.interaction_container, 1)
 
         from ok import og
@@ -276,11 +285,15 @@ class StartTab(Tab):
                 item.setText(item_text)
             else:
                 # Add a new item
-                self.device_list.addItem(item_text)
+                item = QListWidgetItem(item_text)
+                self.device_list.addItem(item)
+            item.setData(Qt.UserRole, device)
 
         # Remove any extra items
         while self.device_list.count() > len(devices):
             self.device_list.takeItem(self.device_list.count() - 1)
+
+        self.filter_devices()
 
         if selected != self.device_list_row:
             self.device_list.setCurrentRow(selected)
@@ -289,6 +302,23 @@ class StartTab(Tab):
             self.start_card.refresh_button.setText(self.tr("Refresh"))
             self.capture_list.update_for_device()
             self.interaction_list.update_for_device()
+
+    def filter_devices(self, text=None):
+        if text is None:
+            text = self.device_search_box.text()
+        search_text = text.lower()
+        for i in range(self.device_list.count()):
+            item = self.device_list.item(i)
+            device = item.data(Qt.UserRole)
+            if not device:
+                continue
+            nick = (device.get('nick') or "").lower()
+            exe = (device.get('exe') or "").lower()
+            address = (device.get('address') or "").lower()
+            if search_text in nick or search_text in exe or search_text in address:
+                item.setHidden(False)
+            else:
+                item.setHidden(True)
 
     def update_selection(self):
         from ok import og

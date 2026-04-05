@@ -32,6 +32,8 @@ class Card(QWidget):
         self.topLayout = QHBoxLayout()
 
         self.__initWidget()
+        if stretch == 1:
+            self.widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     def __initWidget(self):
         self.__initLayout()
@@ -48,15 +50,17 @@ class Card(QWidget):
         self.cardLayout.setContentsMargins(0, 0, 0, 0)
         if self.title_layout:
             self.vBoxLayout.addLayout(self.title_layout, 0)
-        self.vBoxLayout.addWidget(self.card, 0, Qt.AlignTop)
-        self.vBoxLayout.setAlignment(Qt.AlignTop)
+        self.vBoxLayout.addWidget(self.card, self.stretch)
+        if self.stretch == 0:
+            self.vBoxLayout.setAlignment(Qt.AlignTop)
 
         self.cardLayout.setSpacing(0)
-        self.cardLayout.setAlignment(Qt.AlignTop)
-        self.cardLayout.addLayout(self.topLayout, 0)
+        if self.stretch == 0:
+            self.cardLayout.setAlignment(Qt.AlignTop)
+        self.cardLayout.addLayout(self.topLayout, self.stretch)
 
         self.widget.setParent(self.card)
-        self.topLayout.addWidget(self.widget)
+        self.topLayout.addWidget(self.widget, self.stretch)
         StyleSheet.CARD.apply(self)
         # if self.stretch == 0:
         #     self.topLayout.addStretch(1)

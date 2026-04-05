@@ -905,6 +905,7 @@ cdef class OCR(FindFeature):
 
 
 cdef class BaseTask(OCR):
+    cdef public str instructions
     cdef public str name
     cdef public str description
     cdef public bint _enabled
@@ -934,6 +935,7 @@ cdef class BaseTask(OCR):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = self.__class__.__name__
+        self.instructions = None
         self.description = ""
         self._enabled = False
         self.capture_config = None
