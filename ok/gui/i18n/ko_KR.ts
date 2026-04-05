@@ -361,7 +361,19 @@
             <source>Schedule</source>
             <translation>일정</translation>
         </message>
-    </context>
+        <message>
+        <source>Custom</source>
+        <translation>사용자 정의</translation>
+    </message>
+    <message>
+        <source>Templates</source>
+        <translation>템플릿</translation>
+    </message>
+    <message>
+        <source>Run Code</source>
+        <translation>코드 실행</translation>
+    </message>
+</context>
     <context>
         <name>MessageWindow</name>
         <message>
@@ -485,19 +497,19 @@
     </message>
     <message>
         <source>BitBlt_RenderFull</source>
-        <translation>BitBlt 전체 화면 캡처</translation>
+        <translation>BitBlt_RenderFull - 느림, 가장 호환됨</translation>
     </message>
     <message>
         <source>WGC</source>
-        <translation>WGC 캡처</translation>
+        <translation>WGC - &gt;=Win10, 빠름</translation>
     </message>
     <message>
         <source>BitBlt</source>
-        <translation>BitBlt 캡처</translation>
+        <translation>BitBlt - 가장 빠름, 호환성 가장 낮음</translation>
     </message>
     <message>
         <source>DXGI</source>
-        <translation>DXGI 데스크톱 캡처</translation>
+        <translation>DXGI - 가장 느림, 백업으로 사용</translation>
     </message>
     </context>
     <context>
@@ -879,7 +891,31 @@
             <source>Are you sure you want to delete {}</source>
             <translation>정말로 {}을(를) 삭제하시겠습니까?</translation>
         </message>
-    </context>
+        <message>
+        <source>Instructions</source>
+        <translation>사용 설명</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>편집</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>일시정지</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>중지</translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation>시작</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>재개</translation>
+    </message>
+</context>
     <context>
         <name>TaskOpButton</name>
         <message>
@@ -1659,4 +1695,373 @@
             <translation>작업 생성 실패</translation>
         </message>
     </context>
-</TS>
+    <context>
+        <name>MarkUpWindow</name>
+        <message>
+            <source>Markup Editor</source>
+            <translation>마크업 편집기</translation>
+        </message>
+        <message>
+            <source>Draw (R)</source>
+            <translation>그리기 (R)</translation>
+        </message>
+        <message>
+            <source>Delete (D)</source>
+            <translation>삭제 (D)</translation>
+        </message>
+        <message>
+            <source>Modify (Double Click)</source>
+            <translation>수정 (더블 클릭)</translation>
+        </message>
+        <message>
+            <source>Right click to copy color</source>
+            <translation>우클릭으로 색상 복사</translation>
+        </message>
+    </context>
+    <context>
+        <name>BBoxDialog</name>
+        <message>
+            <source>Bounding Box</source>
+            <translation>바운딩 박스</translation>
+        </message>
+        <message>
+            <source>Category name</source>
+            <translation>카테고리 이름</translation>
+        </message>
+        <message>
+            <source>Category:</source>
+            <translation>카테고리:</translation>
+        </message>
+        <message>
+            <source>Width:</source>
+            <translation>너비:</translation>
+        </message>
+        <message>
+            <source>Height:</source>
+            <translation>높이:</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>확인</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>취소</translation>
+        </message>
+        <message>
+            <source>Name required</source>
+            <translation>이름은 필수입니다</translation>
+        </message>
+        <message>
+            <source>Already exists in '{}'</source>
+            <translation>'{}' 에 이미 존재합니다</translation>
+        </message>
+    </context>
+    <context>
+        <name>EditTaskTab</name>
+        <message>
+            <source>Search templates...</source>
+            <translation>템플릿 검색...</translation>
+        </message>
+        <message>
+            <source>Choose Task:</source>
+            <translation>작업 선택:</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>저장</translation>
+        </message>
+        <message>
+            <source>Create Task</source>
+            <translation>작업 생성</translation>
+        </message>
+        <message>
+            <source>Copy Task</source>
+            <translation>작업 복사</translation>
+        </message>
+        <message>
+            <source>Delete Task</source>
+            <translation>작업 삭제</translation>
+        </message>
+        <message>
+            <source>File</source>
+            <translation>파일</translation>
+        </message>
+        <message>
+            <source>Run</source>
+            <translation>실행</translation>
+        </message>
+        <message>
+            <source>Record</source>
+            <translation>녹화</translation>
+        </message>
+        <message>
+            <source>Create New Task</source>
+            <translation>새 작업 생성</translation>
+        </message>
+        <message>
+            <source>File Changed Externally</source>
+            <translation>파일이 외부에서 변경됨</translation>
+        </message>
+        <message>
+            <source>The file was modified externally. Do you want to overwrite your unsaved changes?</source>
+            <translation>파일이 외부에서 수정되었습니다. 저장하지 않은 변경 사항을 덮어쓰시겠습니까?</translation>
+        </message>
+        <message>
+            <source>Save Changes</source>
+            <translation>변경 사항 저장</translation>
+        </message>
+        <message>
+            <source>The current task has unsaved changes. Do you want to save them?</source>
+            <translation>현재 작업에 저장되지 않은 변경 사항이 있습니다. 저장하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>중지</translation>
+        </message>
+        <message>
+            <source>Warning</source>
+            <translation>경고</translation>
+        </message>
+        <message>
+            <source>Record will override the current script logic. Continue?</source>
+            <translation>녹화하면 현재 스크립트 로직이 덮어씌워집니다. 계속하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>Task rebuilt successfully.</source>
+            <translation>작업이 성공적으로 재구성되었습니다.</translation>
+        </message>
+        <message>
+            <source>Success</source>
+            <translation>성공</translation>
+        </message>
+        <message>
+            <source>Failed to save</source>
+            <translation>저장 실패</translation>
+        </message>
+        <message>
+            <source>Confirm Delete</source>
+            <translation>삭제 확인</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to delete {}?</source>
+            <translation>{} 를 삭제하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>Task deleted successfully.</source>
+            <translation>작업이 삭제되었습니다.</translation>
+        </message>
+        <message>
+            <source>Invalid Class Name. Must be English characters only.</source>
+            <translation>클래스 이름이 유효하지 않습니다. 영문자만 사용하세요.</translation>
+        </message>
+        <message>
+            <source>Task Name is required.</source>
+            <translation>작업 이름은 필수입니다.</translation>
+        </message>
+        <message>
+            <source>Task file already exists.</source>
+            <translation>작업 파일이 이미 존재합니다.</translation>
+        </message>
+        <message>
+            <source>Task created successfully.</source>
+            <translation>작업이 생성되었습니다.</translation>
+        </message>
+        <message>
+            <source>Task copied successfully.</source>
+            <translation>작업이 복사되었습니다.</translation>
+        </message>
+        <message>
+            <source>Could not find source file for {}</source>
+            <translation>{} 의 소스 파일을 찾을 수 없습니다</translation>
+        </message>
+        <message>
+            <source>Failed to read source file: {}</source>
+            <translation>소스 파일 읽기 실패: {}</translation>
+        </message>
+        <message>
+        <source>Mouse</source>
+        <translation>마우스</translation>
+    </message>
+    <message>
+        <source>Key</source>
+        <translation>키</translation>
+    </message>
+    <message>
+        <source>Control</source>
+        <translation>제어</translation>
+    </message>
+    <message>
+        <source>OCR</source>
+        <translation>OCR</translation>
+    </message>
+    <message>
+        <source>Template Matching</source>
+        <translation>템플릿 매칭</translation>
+    </message>
+    <message>
+        <source>Box</source>
+        <translation>박스</translation>
+    </message>
+    <message>
+        <source>Window</source>
+        <translation>창</translation>
+    </message>
+    <message>
+        <source>ADB</source>
+        <translation>ADB</translation>
+    </message>
+    <message>
+        <source>Logging</source>
+        <translation>로깅</translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation>기타</translation>
+    </message>
+<message><source>click</source><translation>click</translation></message><message><source>middle_click</source><translation>middle_click</translation></message><message><source>right_click</source><translation>right_click</translation></message><message><source>mouse_down</source><translation>mouse_down</translation></message><message><source>mouse_up</source><translation>mouse_up</translation></message><message><source>swipe</source><translation>swipe</translation></message><message><source>scroll</source><translation>scroll</translation></message><message><source>send_key</source><translation>send_key</translation></message><message><source>send_key_down</source><translation>send_key_down</translation></message><message><source>send_key_up</source><translation>send_key_up</translation></message><message><source>input_text</source><translation>input_text</translation></message><message><source>sleep</source><translation>sleep</translation></message><message><source>wait_until</source><translation>wait_until</translation></message><message><source>find</source><translation>찾기</translation></message><message><source>box</source><translation>상자</translation></message><message><source>ocr</source><translation>ocr</translation></message><message><source>screenshot</source><translation>screenshot</translation></message><message><source>get_task_by_class</source><translation>get_task_by_class</translation></message><message><source>box_in_horizontal_center</source><translation>box_in_horizontal_center</translation></message><message><source>clipboard</source><translation>clipboard</translation></message><message><source>back</source><translation>back</translation></message><message><source>is_adb</source><translation>is_adb</translation></message><message><source>is_browser</source><translation>is_browser</translation></message><message><source>start_device</source><translation>start_device</translation></message><message><source>swipe_relative</source><translation>swipe_relative</translation></message><message><source>ensure_in_front</source><translation>ensure_in_front</translation></message><message><source>scroll_relative</source><translation>scroll_relative</translation></message><message><source>click_box_if_name_match</source><translation>click_box_if_name_match</translation></message><message><source>out_of_ratio</source><translation>out_of_ratio</translation></message><message><source>click_box</source><translation>click_box</translation></message><message><source>wait_click_box</source><translation>wait_click_box</translation></message><message><source>next_frame</source><translation>next_frame</translation></message><message><source>adb_ui_dump</source><translation>adb_ui_dump</translation></message><message><source>draw_boxes</source><translation>draw_boxes</translation></message><message><source>clear_box</source><translation>clear_box</translation></message><message><source>calculate_color_percentage</source><translation>calculate_color_percentage</translation></message><message><source>adb_shell</source><translation>adb_shell</translation></message><message><source>box_of_screen</source><translation>box_of_screen</translation></message><message><source>box_of_screen_scaled</source><translation>box_of_screen_scaled</translation></message><message><source>width_of_screen</source><translation>width_of_screen</translation></message><message><source>height_of_screen</source><translation>height_of_screen</translation></message><message><source>move</source><translation>move</translation></message><message><source>move_relative</source><translation>move_relative</translation></message><message><source>middle_click_relative</source><translation>middle_click_relative</translation></message><message><source>click_relative</source><translation>click_relative</translation></message><message><source>find_feature</source><translation>find_feature</translation></message><message><source>get_feature_by_name</source><translation>get_feature_by_name</translation></message><message><source>get_box_by_name</source><translation>get_box_by_name</translation></message><message><source>find_feature_and_set</source><translation>find_feature_and_set</translation></message><message><source>wait_feature</source><translation>wait_feature</translation></message><message><source>wait_click_feature</source><translation>wait_click_feature</translation></message><message><source>find_one</source><translation>find_one</translation></message><message><source>feature_exists</source><translation>feature_exists</translation></message><message><source>find_best_match_in_box</source><translation>find_best_match_in_box</translation></message><message><source>find_first_match_in_box</source><translation>find_first_match_in_box</translation></message><message><source>wait_click_ocr</source><translation>wait_click_ocr</translation></message><message><source>wait_ocr</source><translation>wait_ocr</translation></message><message><source>add_text_fix</source><translation>add_text_fix</translation></message><message><source>create_shortcut</source><translation>create_shortcut</translation></message><message><source>sleep_check</source><translation>sleep_check</translation></message><message><source>tr</source><translation>tr</translation></message><message><source>get_status</source><translation>get_status</translation></message><message><source>enable</source><translation>enable</translation></message><message><source>pause</source><translation>pause</translation></message><message><source>unpause</source><translation>unpause</translation></message><message><source>log_info</source><translation>log_info</translation></message><message><source>log_debug</source><translation>log_debug</translation></message><message><source>log_warning</source><translation>log_warning</translation></message><message><source>log_error</source><translation>log_error</translation></message><message><source>go_to_tab</source><translation>go_to_tab</translation></message><message><source>notification</source><translation>notification</translation></message><message><source>info_clear</source><translation>info_clear</translation></message><message><source>info_incr</source><translation>info_incr</translation></message><message><source>info_add_to_list</source><translation>info_add_to_list</translation></message><message><source>info_set</source><translation>info_set</translation></message><message><source>info_get</source><translation>info_get</translation></message><message><source>info_add</source><translation>info_add</translation></message><message><source>disable</source><translation>disable</translation></message><message><source>trigger</source><translation>trigger</translation></message><message><source>find_boxes</source><translation>find_boxes</translation></message></context>
+    <context>
+        <name>CreateTaskDialog</name>
+        <message>
+            <source>Create Task</source>
+            <translation>작업 생성</translation>
+        </message>
+        <message>
+            <source>Class Name (English only)</source>
+            <translation>클래스 이름 (영어만)</translation>
+        </message>
+        <message>
+            <source>Task Name</source>
+            <translation>작업 이름</translation>
+        </message>
+        <message>
+            <source>Description (Optional)</source>
+            <translation>설명 (선택)</translation>
+        </message>
+        <message>
+            <source>Confirm</source>
+            <translation>확인</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>취소</translation>
+        </message>
+    </context>
+    <context>
+        <name>CopyTaskDialog</name>
+        <message>
+            <source>Copy Task</source>
+            <translation>작업 복사</translation>
+        </message>
+        <message>
+            <source>Select task to copy...</source>
+            <translation>복사할 작업 선택...</translation>
+        </message>
+        <message>
+            <source>Confirm</source>
+            <translation>확인</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>취소</translation>
+        </message>
+    </context>
+    <context>
+        <name>TemplateTab</name>
+        <message>
+            <source>Screenshot</source>
+            <translation>스크린샷</translation>
+        </message>
+        <message>
+            <source>Markup</source>
+            <translation>마크업</translation>
+        </message>
+        <message>
+            <source>Delete</source>
+            <translation>삭제</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>저장</translation>
+        </message>
+        <message>
+            <source>Search by name or category...</source>
+            <translation>이름 또는 카테고리로 검색...</translation>
+        </message>
+        <message>
+            <source>No templates yet</source>
+            <translation>템플릿이 없습니다</translation>
+        </message>
+        <message>
+            <source>Take Screenshot</source>
+            <translation>스크린샷 촬영</translation>
+        </message>
+        <message>
+            <source>No capture method available. Please start capture first.</source>
+            <translation>캡처 방법을 사용할 수 없습니다. 먼저 캡처를 시작하세요.</translation>
+        </message>
+        <message>
+            <source>Failed to capture frame.</source>
+            <translation>프레임 캡처에 실패했습니다.</translation>
+        </message>
+        <message>
+            <source>Screenshot saved: {}</source>
+            <translation>스크린샷 저장됨: {}</translation>
+        </message>
+        <message>
+            <source>Confirm Delete</source>
+            <translation>삭제 확인</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to delete '{}'?</source>
+            <translation>'{}' 를 삭제하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>Image deleted.</source>
+            <translation>이미지가 삭제되었습니다.</translation>
+        </message>
+        <message>
+            <source>Success</source>
+            <translation>성공</translation>
+        </message>
+        <message>
+            <source>No annotations to save.</source>
+            <translation>저장할 주석이 없습니다.</translation>
+        </message>
+        <message>
+            <source>Save To</source>
+            <translation>저장 위치</translation>
+        </message>
+        <message>
+            <source>ok_tasks/assets (custom scripts)</source>
+            <translation>ok_tasks/assets (사용자 스크립트)</translation>
+        </message>
+        <message>
+            <source>assets (standalone app)</source>
+            <translation>assets (독립 실행형 앱)</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>확인</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>취소</translation>
+        </message>
+        <message>
+            <source>Save completed successfully to: {}</source>
+            <translation>성공적으로 저장됨: {}</translation>
+        </message>
+    </context>
+<context>
+    <name>TemplateInputDialog</name>
+    <message>
+        <source>Confirm</source>
+        <translation>확인</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>취소</translation>
+    </message>
+</context>
+<context><name>SelectInteractionListView</name><message><source>Pynput</source><translation>Pynput - 포그라운드, 가장 호환됨</translation></message><message><source>PostMessage</source><translation>PostMessage - 백그라운드, 대부분의 앱 및 일부 게임</translation></message><message><source>PyDirect</source><translation>PyDirect - 포그라운드, Pynput 백업</translation></message><message><source>Genshin</source><translation>Genshin - 백그라운드, 일부 Unity 게임 지원</translation></message><message><source>ADBInteraction</source><translation>ADBInteraction - 백그라운드</translation></message><message><source>BrowserInteraction</source><translation>BrowserInteraction - 백그라운드</translation></message></context></TS>

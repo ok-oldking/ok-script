@@ -360,7 +360,19 @@
             <source>Schedule</source>
             <translation>Programa</translation>
         </message>
-    </context>
+        <message>
+        <source>Custom</source>
+        <translation>Personalizado</translation>
+    </message>
+    <message>
+        <source>Templates</source>
+        <translation>Plantillas</translation>
+    </message>
+    <message>
+        <source>Run Code</source>
+        <translation>Ejecutar código</translation>
+    </message>
+</context>
     <context>
         <name>MessageWindow</name>
         <message>
@@ -484,19 +496,19 @@
     </message>
     <message>
         <source>BitBlt_RenderFull</source>
-        <translation>BitBlt Captura de fondo completa</translation>
+        <translation>BitBlt_RenderFull - Lento, más compatible</translation>
     </message>
     <message>
         <source>WGC</source>
-        <translation>Captura WGC</translation>
+        <translation>WGC - &gt;=Win10, Rápido</translation>
     </message>
     <message>
         <source>BitBlt</source>
-        <translation>BitBlt Captura de fondo</translation>
+        <translation>BitBlt - Más rápido, menos compatible</translation>
     </message>
     <message>
         <source>DXGI</source>
-        <translation>Captura de escritorio DXGI</translation>
+        <translation>DXGI - Más lento, usado como respaldo</translation>
     </message>
     </context>
     <context>
@@ -878,7 +890,31 @@
             <source>Are you sure you want to delete {}</source>
             <translation>¿Estás seguro de que quieres eliminar {}?</translation>
         </message>
-    </context>
+        <message>
+        <source>Instructions</source>
+        <translation>Instrucciones</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>Editar</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pausar</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Detener</translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation>Iniciar</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Reanudar</translation>
+    </message>
+</context>
     <context>
         <name>TaskOpButton</name>
         <message>
@@ -1658,4 +1694,373 @@
             <translation>Error al crear la tarea</translation>
         </message>
     </context>
-</TS>
+    <context>
+        <name>MarkUpWindow</name>
+        <message>
+            <source>Markup Editor</source>
+            <translation>Editor de marcado</translation>
+        </message>
+        <message>
+            <source>Draw (R)</source>
+            <translation>Dibujar (R)</translation>
+        </message>
+        <message>
+            <source>Delete (D)</source>
+            <translation>Eliminar (D)</translation>
+        </message>
+        <message>
+            <source>Modify (Double Click)</source>
+            <translation>Modificar (doble clic)</translation>
+        </message>
+        <message>
+            <source>Right click to copy color</source>
+            <translation>Clic derecho para copiar color</translation>
+        </message>
+    </context>
+    <context>
+        <name>BBoxDialog</name>
+        <message>
+            <source>Bounding Box</source>
+            <translation>Cuadro delimitador</translation>
+        </message>
+        <message>
+            <source>Category name</source>
+            <translation>Nombre de categoría</translation>
+        </message>
+        <message>
+            <source>Category:</source>
+            <translation>Categoría:</translation>
+        </message>
+        <message>
+            <source>Width:</source>
+            <translation>Ancho:</translation>
+        </message>
+        <message>
+            <source>Height:</source>
+            <translation>Alto:</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>Aceptar</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>Cancelar</translation>
+        </message>
+        <message>
+            <source>Name required</source>
+            <translation>Nombre requerido</translation>
+        </message>
+        <message>
+            <source>Already exists in '{}'</source>
+            <translation>Ya existe en '{}'</translation>
+        </message>
+    </context>
+    <context>
+        <name>EditTaskTab</name>
+        <message>
+            <source>Search templates...</source>
+            <translation>Buscar plantillas...</translation>
+        </message>
+        <message>
+            <source>Choose Task:</source>
+            <translation>Elegir tarea:</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>Guardar</translation>
+        </message>
+        <message>
+            <source>Create Task</source>
+            <translation>Crear tarea</translation>
+        </message>
+        <message>
+            <source>Copy Task</source>
+            <translation>Copiar tarea</translation>
+        </message>
+        <message>
+            <source>Delete Task</source>
+            <translation>Eliminar tarea</translation>
+        </message>
+        <message>
+            <source>File</source>
+            <translation>Archivo</translation>
+        </message>
+        <message>
+            <source>Run</source>
+            <translation>Ejecutar</translation>
+        </message>
+        <message>
+            <source>Record</source>
+            <translation>Grabar</translation>
+        </message>
+        <message>
+            <source>Create New Task</source>
+            <translation>Crear nueva tarea</translation>
+        </message>
+        <message>
+            <source>File Changed Externally</source>
+            <translation>Archivo modificado externamente</translation>
+        </message>
+        <message>
+            <source>The file was modified externally. Do you want to overwrite your unsaved changes?</source>
+            <translation>El archivo fue modificado externamente. ¿Desea sobrescribir sus cambios no guardados?</translation>
+        </message>
+        <message>
+            <source>Save Changes</source>
+            <translation>Guardar cambios</translation>
+        </message>
+        <message>
+            <source>The current task has unsaved changes. Do you want to save them?</source>
+            <translation>La tarea actual tiene cambios sin guardar. ¿Desea guardarlos?</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>Detener</translation>
+        </message>
+        <message>
+            <source>Warning</source>
+            <translation>Advertencia</translation>
+        </message>
+        <message>
+            <source>Record will override the current script logic. Continue?</source>
+            <translation>La grabación sobrescribirá la lógica del script actual. ¿Continuar?</translation>
+        </message>
+        <message>
+            <source>Task rebuilt successfully.</source>
+            <translation>Tarea reconstruida con éxito.</translation>
+        </message>
+        <message>
+            <source>Success</source>
+            <translation>Éxito</translation>
+        </message>
+        <message>
+            <source>Failed to save</source>
+            <translation>Error al guardar</translation>
+        </message>
+        <message>
+            <source>Confirm Delete</source>
+            <translation>Confirmar eliminación</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to delete {}?</source>
+            <translation>¿Está seguro de que desea eliminar {}?</translation>
+        </message>
+        <message>
+            <source>Task deleted successfully.</source>
+            <translation>Tarea eliminada con éxito.</translation>
+        </message>
+        <message>
+            <source>Invalid Class Name. Must be English characters only.</source>
+            <translation>Nombre de clase inválido. Solo caracteres en inglés.</translation>
+        </message>
+        <message>
+            <source>Task Name is required.</source>
+            <translation>El nombre de la tarea es obligatorio.</translation>
+        </message>
+        <message>
+            <source>Task file already exists.</source>
+            <translation>El archivo de tarea ya existe.</translation>
+        </message>
+        <message>
+            <source>Task created successfully.</source>
+            <translation>Tarea creada con éxito.</translation>
+        </message>
+        <message>
+            <source>Task copied successfully.</source>
+            <translation>Tarea copiada con éxito.</translation>
+        </message>
+        <message>
+            <source>Could not find source file for {}</source>
+            <translation>No se pudo encontrar el archivo fuente para {}</translation>
+        </message>
+        <message>
+            <source>Failed to read source file: {}</source>
+            <translation>Error al leer el archivo fuente: {}</translation>
+        </message>
+        <message>
+        <source>Mouse</source>
+        <translation>Ratón</translation>
+    </message>
+    <message>
+        <source>Key</source>
+        <translation>Tecla</translation>
+    </message>
+    <message>
+        <source>Control</source>
+        <translation>Control</translation>
+    </message>
+    <message>
+        <source>OCR</source>
+        <translation>OCR</translation>
+    </message>
+    <message>
+        <source>Template Matching</source>
+        <translation>Coincidencia de plantilla</translation>
+    </message>
+    <message>
+        <source>Box</source>
+        <translation>Caja</translation>
+    </message>
+    <message>
+        <source>Window</source>
+        <translation>Ventana</translation>
+    </message>
+    <message>
+        <source>ADB</source>
+        <translation>ADB</translation>
+    </message>
+    <message>
+        <source>Logging</source>
+        <translation>Registro</translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation>Otros</translation>
+    </message>
+<message><source>click</source><translation>click</translation></message><message><source>middle_click</source><translation>middle_click</translation></message><message><source>right_click</source><translation>right_click</translation></message><message><source>mouse_down</source><translation>mouse_down</translation></message><message><source>mouse_up</source><translation>mouse_up</translation></message><message><source>swipe</source><translation>swipe</translation></message><message><source>scroll</source><translation>scroll</translation></message><message><source>send_key</source><translation>send_key</translation></message><message><source>send_key_down</source><translation>send_key_down</translation></message><message><source>send_key_up</source><translation>send_key_up</translation></message><message><source>input_text</source><translation>input_text</translation></message><message><source>sleep</source><translation>sleep</translation></message><message><source>wait_until</source><translation>wait_until</translation></message><message><source>find</source><translation>encontrar</translation></message><message><source>box</source><translation>caja</translation></message><message><source>ocr</source><translation>ocr</translation></message><message><source>screenshot</source><translation>screenshot</translation></message><message><source>get_task_by_class</source><translation>get_task_by_class</translation></message><message><source>box_in_horizontal_center</source><translation>box_in_horizontal_center</translation></message><message><source>clipboard</source><translation>clipboard</translation></message><message><source>back</source><translation>back</translation></message><message><source>is_adb</source><translation>is_adb</translation></message><message><source>is_browser</source><translation>is_browser</translation></message><message><source>start_device</source><translation>start_device</translation></message><message><source>swipe_relative</source><translation>swipe_relative</translation></message><message><source>ensure_in_front</source><translation>ensure_in_front</translation></message><message><source>scroll_relative</source><translation>scroll_relative</translation></message><message><source>click_box_if_name_match</source><translation>click_box_if_name_match</translation></message><message><source>out_of_ratio</source><translation>out_of_ratio</translation></message><message><source>click_box</source><translation>click_box</translation></message><message><source>wait_click_box</source><translation>wait_click_box</translation></message><message><source>next_frame</source><translation>next_frame</translation></message><message><source>adb_ui_dump</source><translation>adb_ui_dump</translation></message><message><source>draw_boxes</source><translation>draw_boxes</translation></message><message><source>clear_box</source><translation>clear_box</translation></message><message><source>calculate_color_percentage</source><translation>calculate_color_percentage</translation></message><message><source>adb_shell</source><translation>adb_shell</translation></message><message><source>box_of_screen</source><translation>box_of_screen</translation></message><message><source>box_of_screen_scaled</source><translation>box_of_screen_scaled</translation></message><message><source>width_of_screen</source><translation>width_of_screen</translation></message><message><source>height_of_screen</source><translation>height_of_screen</translation></message><message><source>move</source><translation>move</translation></message><message><source>move_relative</source><translation>move_relative</translation></message><message><source>middle_click_relative</source><translation>middle_click_relative</translation></message><message><source>click_relative</source><translation>click_relative</translation></message><message><source>find_feature</source><translation>find_feature</translation></message><message><source>get_feature_by_name</source><translation>get_feature_by_name</translation></message><message><source>get_box_by_name</source><translation>get_box_by_name</translation></message><message><source>find_feature_and_set</source><translation>find_feature_and_set</translation></message><message><source>wait_feature</source><translation>wait_feature</translation></message><message><source>wait_click_feature</source><translation>wait_click_feature</translation></message><message><source>find_one</source><translation>find_one</translation></message><message><source>feature_exists</source><translation>feature_exists</translation></message><message><source>find_best_match_in_box</source><translation>find_best_match_in_box</translation></message><message><source>find_first_match_in_box</source><translation>find_first_match_in_box</translation></message><message><source>wait_click_ocr</source><translation>wait_click_ocr</translation></message><message><source>wait_ocr</source><translation>wait_ocr</translation></message><message><source>add_text_fix</source><translation>add_text_fix</translation></message><message><source>create_shortcut</source><translation>create_shortcut</translation></message><message><source>sleep_check</source><translation>sleep_check</translation></message><message><source>tr</source><translation>tr</translation></message><message><source>get_status</source><translation>get_status</translation></message><message><source>enable</source><translation>enable</translation></message><message><source>pause</source><translation>pause</translation></message><message><source>unpause</source><translation>unpause</translation></message><message><source>log_info</source><translation>log_info</translation></message><message><source>log_debug</source><translation>log_debug</translation></message><message><source>log_warning</source><translation>log_warning</translation></message><message><source>log_error</source><translation>log_error</translation></message><message><source>go_to_tab</source><translation>go_to_tab</translation></message><message><source>notification</source><translation>notification</translation></message><message><source>info_clear</source><translation>info_clear</translation></message><message><source>info_incr</source><translation>info_incr</translation></message><message><source>info_add_to_list</source><translation>info_add_to_list</translation></message><message><source>info_set</source><translation>info_set</translation></message><message><source>info_get</source><translation>info_get</translation></message><message><source>info_add</source><translation>info_add</translation></message><message><source>disable</source><translation>disable</translation></message><message><source>trigger</source><translation>trigger</translation></message><message><source>find_boxes</source><translation>find_boxes</translation></message></context>
+    <context>
+        <name>CreateTaskDialog</name>
+        <message>
+            <source>Create Task</source>
+            <translation>Crear tarea</translation>
+        </message>
+        <message>
+            <source>Class Name (English only)</source>
+            <translation>Nombre de clase (solo inglés)</translation>
+        </message>
+        <message>
+            <source>Task Name</source>
+            <translation>Nombre de tarea</translation>
+        </message>
+        <message>
+            <source>Description (Optional)</source>
+            <translation>Descripción (opcional)</translation>
+        </message>
+        <message>
+            <source>Confirm</source>
+            <translation>Confirmar</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>Cancelar</translation>
+        </message>
+    </context>
+    <context>
+        <name>CopyTaskDialog</name>
+        <message>
+            <source>Copy Task</source>
+            <translation>Copiar tarea</translation>
+        </message>
+        <message>
+            <source>Select task to copy...</source>
+            <translation>Seleccionar tarea a copiar...</translation>
+        </message>
+        <message>
+            <source>Confirm</source>
+            <translation>Confirmar</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>Cancelar</translation>
+        </message>
+    </context>
+    <context>
+        <name>TemplateTab</name>
+        <message>
+            <source>Screenshot</source>
+            <translation>Captura de pantalla</translation>
+        </message>
+        <message>
+            <source>Markup</source>
+            <translation>Marcado</translation>
+        </message>
+        <message>
+            <source>Delete</source>
+            <translation>Eliminar</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>Guardar</translation>
+        </message>
+        <message>
+            <source>Search by name or category...</source>
+            <translation>Buscar por nombre o categoría...</translation>
+        </message>
+        <message>
+            <source>No templates yet</source>
+            <translation>Sin plantillas aún</translation>
+        </message>
+        <message>
+            <source>Take Screenshot</source>
+            <translation>Tomar captura de pantalla</translation>
+        </message>
+        <message>
+            <source>No capture method available. Please start capture first.</source>
+            <translation>No hay método de captura disponible. Inicie la captura primero.</translation>
+        </message>
+        <message>
+            <source>Failed to capture frame.</source>
+            <translation>Error al capturar el fotograma.</translation>
+        </message>
+        <message>
+            <source>Screenshot saved: {}</source>
+            <translation>Captura guardada: {}</translation>
+        </message>
+        <message>
+            <source>Confirm Delete</source>
+            <translation>Confirmar eliminación</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to delete '{}'?</source>
+            <translation>¿Está seguro de que desea eliminar '{}'?</translation>
+        </message>
+        <message>
+            <source>Image deleted.</source>
+            <translation>Imagen eliminada.</translation>
+        </message>
+        <message>
+            <source>Success</source>
+            <translation>Éxito</translation>
+        </message>
+        <message>
+            <source>No annotations to save.</source>
+            <translation>No hay anotaciones para guardar.</translation>
+        </message>
+        <message>
+            <source>Save To</source>
+            <translation>Guardar en</translation>
+        </message>
+        <message>
+            <source>ok_tasks/assets (custom scripts)</source>
+            <translation>ok_tasks/assets (scripts personalizados)</translation>
+        </message>
+        <message>
+            <source>assets (standalone app)</source>
+            <translation>assets (aplicación independiente)</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>Aceptar</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>Cancelar</translation>
+        </message>
+        <message>
+            <source>Save completed successfully to: {}</source>
+            <translation>Guardado completado con éxito en: {}</translation>
+        </message>
+    </context>
+<context>
+    <name>TemplateInputDialog</name>
+    <message>
+        <source>Confirm</source>
+        <translation>Confirmar</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Cancelar</translation>
+    </message>
+</context>
+<context><name>SelectInteractionListView</name><message><source>Pynput</source><translation>Pynput - Primer plano, más compatible</translation></message><message><source>PostMessage</source><translation>PostMessage - Segundo plano, la mayoría de aplicaciones y algunos juegos</translation></message><message><source>PyDirect</source><translation>PyDirect - Primer plano, respaldo de Pynput</translation></message><message><source>Genshin</source><translation>Genshin - Segundo plano, soporte para algunos juegos de Unity</translation></message><message><source>ADBInteraction</source><translation>ADBInteraction - Segundo plano</translation></message><message><source>BrowserInteraction</source><translation>BrowserInteraction - Segundo plano</translation></message></context></TS>

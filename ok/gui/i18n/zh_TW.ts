@@ -360,7 +360,19 @@
             <source>Schedule</source>
             <translation>計劃任務</translation>
         </message>
-    </context>
+        <message>
+        <source>Custom</source>
+        <translation>自訂</translation>
+    </message>
+    <message>
+        <source>Templates</source>
+        <translation>模板</translation>
+    </message>
+    <message>
+        <source>Run Code</source>
+        <translation>執行程式碼</translation>
+    </message>
+</context>
     <context>
         <name>MessageWindow</name>
         <message>
@@ -484,19 +496,19 @@
     </message>
     <message>
         <source>BitBlt_RenderFull</source>
-        <translation>BitBlt 完整渲染</translation>
+        <translation>BitBlt_RenderFull - 慢，兼容性最好</translation>
     </message>
     <message>
         <source>WGC</source>
-        <translation>WGC 截圖</translation>
+        <translation>WGC - &gt;=Win10，快</translation>
     </message>
     <message>
         <source>BitBlt</source>
-        <translation>BitBlt 截圖</translation>
+        <translation>BitBlt - 最快，兼容性最差</translation>
     </message>
     <message>
         <source>DXGI</source>
-        <translation>DXGI 桌面截圖</translation>
+        <translation>DXGI - 最慢，备用</translation>
     </message>
     </context>
     <context>
@@ -874,7 +886,31 @@
             <source>Are you sure you want to delete {}</source>
             <translation>您確定要刪除 {} 嗎？</translation>
         </message>
-    </context>
+        <message>
+        <source>Instructions</source>
+        <translation>使用說明</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>編輯</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>暫停</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>停止</translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation>開始</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>繼續</translation>
+    </message>
+</context>
     <context>
         <name>TaskOpButton</name>
         <message>
@@ -1654,4 +1690,373 @@
             <translation>創建任務失敗</translation>
         </message>
     </context>
-</TS>
+    <context>
+        <name>MarkUpWindow</name>
+        <message>
+            <source>Markup Editor</source>
+            <translation>標注編輯器</translation>
+        </message>
+        <message>
+            <source>Draw (R)</source>
+            <translation>繪製 (R)</translation>
+        </message>
+        <message>
+            <source>Delete (D)</source>
+            <translation>刪除 (D)</translation>
+        </message>
+        <message>
+            <source>Modify (Double Click)</source>
+            <translation>修改 (雙擊)</translation>
+        </message>
+        <message>
+            <source>Right click to copy color</source>
+            <translation>右鍵點擊複製顏色</translation>
+        </message>
+    </context>
+    <context>
+        <name>BBoxDialog</name>
+        <message>
+            <source>Bounding Box</source>
+            <translation>邊界框</translation>
+        </message>
+        <message>
+            <source>Category name</source>
+            <translation>分類名稱</translation>
+        </message>
+        <message>
+            <source>Category:</source>
+            <translation>分類:</translation>
+        </message>
+        <message>
+            <source>Width:</source>
+            <translation>寬度:</translation>
+        </message>
+        <message>
+            <source>Height:</source>
+            <translation>高度:</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>確定</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>取消</translation>
+        </message>
+        <message>
+            <source>Name required</source>
+            <translation>名稱不能為空</translation>
+        </message>
+        <message>
+            <source>Already exists in '{}'</source>
+            <translation>已存在於 '{}'</translation>
+        </message>
+    </context>
+    <context>
+        <name>EditTaskTab</name>
+        <message>
+            <source>Search templates...</source>
+            <translation>搜尋範本...</translation>
+        </message>
+        <message>
+            <source>Choose Task:</source>
+            <translation>選擇任務:</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>儲存</translation>
+        </message>
+        <message>
+            <source>Create Task</source>
+            <translation>建立任務</translation>
+        </message>
+        <message>
+            <source>Copy Task</source>
+            <translation>複製任務</translation>
+        </message>
+        <message>
+            <source>Delete Task</source>
+            <translation>刪除任務</translation>
+        </message>
+        <message>
+            <source>File</source>
+            <translation>檔案</translation>
+        </message>
+        <message>
+            <source>Run</source>
+            <translation>執行</translation>
+        </message>
+        <message>
+            <source>Record</source>
+            <translation>錄製</translation>
+        </message>
+        <message>
+            <source>Create New Task</source>
+            <translation>建立新任務</translation>
+        </message>
+        <message>
+            <source>File Changed Externally</source>
+            <translation>檔案已被外部修改</translation>
+        </message>
+        <message>
+            <source>The file was modified externally. Do you want to overwrite your unsaved changes?</source>
+            <translation>檔案已被外部修改。是否要覆蓋未儲存的變更？</translation>
+        </message>
+        <message>
+            <source>Save Changes</source>
+            <translation>儲存變更</translation>
+        </message>
+        <message>
+            <source>The current task has unsaved changes. Do you want to save them?</source>
+            <translation>目前的任務有未儲存的變更。是否要儲存？</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>停止</translation>
+        </message>
+        <message>
+            <source>Warning</source>
+            <translation>警告</translation>
+        </message>
+        <message>
+            <source>Record will override the current script logic. Continue?</source>
+            <translation>錄製將覆蓋目前的腳本邏輯。是否繼續？</translation>
+        </message>
+        <message>
+            <source>Task rebuilt successfully.</source>
+            <translation>任務重建成功。</translation>
+        </message>
+        <message>
+            <source>Success</source>
+            <translation>成功</translation>
+        </message>
+        <message>
+            <source>Failed to save</source>
+            <translation>儲存失敗</translation>
+        </message>
+        <message>
+            <source>Confirm Delete</source>
+            <translation>確認刪除</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to delete {}?</source>
+            <translation>確定要刪除 {} 嗎？</translation>
+        </message>
+        <message>
+            <source>Task deleted successfully.</source>
+            <translation>任務刪除成功。</translation>
+        </message>
+        <message>
+            <source>Invalid Class Name. Must be English characters only.</source>
+            <translation>類別名稱無效。只能使用英文字元。</translation>
+        </message>
+        <message>
+            <source>Task Name is required.</source>
+            <translation>任務名稱不能為空。</translation>
+        </message>
+        <message>
+            <source>Task file already exists.</source>
+            <translation>任務檔案已存在。</translation>
+        </message>
+        <message>
+            <source>Task created successfully.</source>
+            <translation>任務建立成功。</translation>
+        </message>
+        <message>
+            <source>Task copied successfully.</source>
+            <translation>任務複製成功。</translation>
+        </message>
+        <message>
+            <source>Could not find source file for {}</source>
+            <translation>找不到 {} 的原始檔案</translation>
+        </message>
+        <message>
+            <source>Failed to read source file: {}</source>
+            <translation>讀取原始檔案失敗: {}</translation>
+        </message>
+        <message>
+        <source>Mouse</source>
+        <translation>滑鼠</translation>
+    </message>
+    <message>
+        <source>Key</source>
+        <translation>按鍵</translation>
+    </message>
+    <message>
+        <source>Control</source>
+        <translation>控制</translation>
+    </message>
+    <message>
+        <source>OCR</source>
+        <translation>OCR</translation>
+    </message>
+    <message>
+        <source>Template Matching</source>
+        <translation>模板匹配</translation>
+    </message>
+    <message>
+        <source>Box</source>
+        <translation>區域</translation>
+    </message>
+    <message>
+        <source>Window</source>
+        <translation>視窗</translation>
+    </message>
+    <message>
+        <source>ADB</source>
+        <translation>ADB</translation>
+    </message>
+    <message>
+        <source>Logging</source>
+        <translation>日誌</translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation>其他</translation>
+    </message>
+<message><source>click</source><translation>点击</translation></message><message><source>middle_click</source><translation>中键点击</translation></message><message><source>right_click</source><translation>右键点击</translation></message><message><source>mouse_down</source><translation>鼠标按下</translation></message><message><source>mouse_up</source><translation>鼠标松开</translation></message><message><source>swipe</source><translation>滑动</translation></message><message><source>scroll</source><translation>滚动</translation></message><message><source>send_key</source><translation>发送按键</translation></message><message><source>send_key_down</source><translation>按下按键</translation></message><message><source>send_key_up</source><translation>松开按键</translation></message><message><source>input_text</source><translation>输入文本</translation></message><message><source>sleep</source><translation>休眠</translation></message><message><source>wait_until</source><translation>等待直到</translation></message><message><source>find</source><translation>查找</translation></message><message><source>box</source><translation>矩形框</translation></message><message><source>ocr</source><translation>OCR文字识别</translation></message><message><source>screenshot</source><translation>截图</translation></message><message><source>get_task_by_class</source><translation>通过类名获取任务</translation></message><message><source>box_in_horizontal_center</source><translation>水平居中框</translation></message><message><source>clipboard</source><translation>剪贴板</translation></message><message><source>back</source><translation>返回</translation></message><message><source>is_adb</source><translation>是否为ADB</translation></message><message><source>is_browser</source><translation>是否为浏览器</translation></message><message><source>start_device</source><translation>启动设备</translation></message><message><source>swipe_relative</source><translation>相对滑动</translation></message><message><source>ensure_in_front</source><translation>确保在最前</translation></message><message><source>scroll_relative</source><translation>相对滚动</translation></message><message><source>click_box_if_name_match</source><translation>如果名称匹配则点击框</translation></message><message><source>out_of_ratio</source><translation>超出比例</translation></message><message><source>click_box</source><translation>点击框</translation></message><message><source>wait_click_box</source><translation>等待并点击框</translation></message><message><source>next_frame</source><translation>下一帧</translation></message><message><source>adb_ui_dump</source><translation>ADB UI 导出</translation></message><message><source>draw_boxes</source><translation>绘制框</translation></message><message><source>clear_box</source><translation>清除框</translation></message><message><source>calculate_color_percentage</source><translation>计算颜色百分比</translation></message><message><source>adb_shell</source><translation>ADB Shell</translation></message><message><source>box_of_screen</source><translation>屏幕框</translation></message><message><source>box_of_screen_scaled</source><translation>缩放后的屏幕框</translation></message><message><source>width_of_screen</source><translation>屏幕宽度</translation></message><message><source>height_of_screen</source><translation>屏幕高度</translation></message><message><source>move</source><translation>移动鼠标</translation></message><message><source>move_relative</source><translation>相对移动鼠标</translation></message><message><source>middle_click_relative</source><translation>相对中键点击</translation></message><message><source>click_relative</source><translation>相对点击</translation></message><message><source>find_feature</source><translation>查找特征</translation></message><message><source>get_feature_by_name</source><translation>按名称获取特征</translation></message><message><source>get_box_by_name</source><translation>按名称获取框</translation></message><message><source>find_feature_and_set</source><translation>查找特征并设置</translation></message><message><source>wait_feature</source><translation>等待特征</translation></message><message><source>wait_click_feature</source><translation>等待并点击特征</translation></message><message><source>find_one</source><translation>查找一个</translation></message><message><source>feature_exists</source><translation>特征是否存在</translation></message><message><source>find_best_match_in_box</source><translation>在框内查找最佳匹配</translation></message><message><source>find_first_match_in_box</source><translation>在框内查找首个匹配</translation></message><message><source>wait_click_ocr</source><translation>等待并点击OCR文字</translation></message><message><source>wait_ocr</source><translation>等待OCR文字</translation></message><message><source>add_text_fix</source><translation>添加文本修正</translation></message><message><source>create_shortcut</source><translation>创建快捷方式</translation></message><message><source>sleep_check</source><translation>休眠检查</translation></message><message><source>tr</source><translation>翻译</translation></message><message><source>get_status</source><translation>获取状态</translation></message><message><source>enable</source><translation>启用任务</translation></message><message><source>pause</source><translation>暂停</translation></message><message><source>unpause</source><translation>恢复</translation></message><message><source>log_info</source><translation>记录信息</translation></message><message><source>log_debug</source><translation>记录调试</translation></message><message><source>log_warning</source><translation>记录警告</translation></message><message><source>log_error</source><translation>记录错误</translation></message><message><source>go_to_tab</source><translation>转到标签页</translation></message><message><source>notification</source><translation>通知</translation></message><message><source>info_clear</source><translation>信息清除</translation></message><message><source>info_incr</source><translation>信息递增</translation></message><message><source>info_add_to_list</source><translation>信息添加到列表</translation></message><message><source>info_set</source><translation>信息设置</translation></message><message><source>info_get</source><translation>信息获取</translation></message><message><source>info_add</source><translation>信息增加</translation></message><message><source>disable</source><translation>禁用任务</translation></message><message><source>trigger</source><translation>触发</translation></message><message><source>find_boxes</source><translation>查找多个框</translation></message></context>
+    <context>
+        <name>CreateTaskDialog</name>
+        <message>
+            <source>Create Task</source>
+            <translation>建立任務</translation>
+        </message>
+        <message>
+            <source>Class Name (English only)</source>
+            <translation>類別名稱 (僅限英文)</translation>
+        </message>
+        <message>
+            <source>Task Name</source>
+            <translation>任務名稱</translation>
+        </message>
+        <message>
+            <source>Description (Optional)</source>
+            <translation>描述 (選填)</translation>
+        </message>
+        <message>
+            <source>Confirm</source>
+            <translation>確認</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>取消</translation>
+        </message>
+    </context>
+    <context>
+        <name>CopyTaskDialog</name>
+        <message>
+            <source>Copy Task</source>
+            <translation>複製任務</translation>
+        </message>
+        <message>
+            <source>Select task to copy...</source>
+            <translation>選擇要複製的任務...</translation>
+        </message>
+        <message>
+            <source>Confirm</source>
+            <translation>確認</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>取消</translation>
+        </message>
+    </context>
+    <context>
+        <name>TemplateTab</name>
+        <message>
+            <source>Screenshot</source>
+            <translation>截圖</translation>
+        </message>
+        <message>
+            <source>Markup</source>
+            <translation>標注</translation>
+        </message>
+        <message>
+            <source>Delete</source>
+            <translation>刪除</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>儲存</translation>
+        </message>
+        <message>
+            <source>Search by name or category...</source>
+            <translation>按名稱或分類搜尋...</translation>
+        </message>
+        <message>
+            <source>No templates yet</source>
+            <translation>暫無範本</translation>
+        </message>
+        <message>
+            <source>Take Screenshot</source>
+            <translation>擷取截圖</translation>
+        </message>
+        <message>
+            <source>No capture method available. Please start capture first.</source>
+            <translation>截圖方式不可用。請先啟動截圖。</translation>
+        </message>
+        <message>
+            <source>Failed to capture frame.</source>
+            <translation>截圖失敗。</translation>
+        </message>
+        <message>
+            <source>Screenshot saved: {}</source>
+            <translation>截圖已儲存: {}</translation>
+        </message>
+        <message>
+            <source>Confirm Delete</source>
+            <translation>確認刪除</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to delete '{}'?</source>
+            <translation>確定要刪除 '{}' 嗎？</translation>
+        </message>
+        <message>
+            <source>Image deleted.</source>
+            <translation>圖片已刪除。</translation>
+        </message>
+        <message>
+            <source>Success</source>
+            <translation>成功</translation>
+        </message>
+        <message>
+            <source>No annotations to save.</source>
+            <translation>沒有標注需要儲存。</translation>
+        </message>
+        <message>
+            <source>Save To</source>
+            <translation>儲存到</translation>
+        </message>
+        <message>
+            <source>ok_tasks/assets (custom scripts)</source>
+            <translation>ok_tasks/assets (自訂腳本)</translation>
+        </message>
+        <message>
+            <source>assets (standalone app)</source>
+            <translation>assets (獨立應用)</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>確定</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>取消</translation>
+        </message>
+        <message>
+            <source>Save completed successfully to: {}</source>
+            <translation>儲存成功到: {}</translation>
+        </message>
+    </context>
+<context>
+    <name>TemplateInputDialog</name>
+    <message>
+        <source>Confirm</source>
+        <translation>確認</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+</context>
+<context><name>SelectInteractionListView</name><message><source>Pynput</source><translation>Pynput - 前台，兼容性最好</translation></message><message><source>PostMessage</source><translation>PostMessage - 后台，兼容大多数应用和少数游戏</translation></message><message><source>PyDirect</source><translation>PyDirect - 前台，Pynput 备用</translation></message><message><source>Genshin</source><translation>Genshin - 后台，支持部分 Unity 游戏</translation></message><message><source>ADBInteraction</source><translation>ADBInteraction - 后台</translation></message><message><source>BrowserInteraction</source><translation>BrowserInteraction - 后台</translation></message></context></TS>

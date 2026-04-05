@@ -383,11 +383,25 @@ class EditTaskTab(QWidget):
             "Mouse", "Key", "Control", "OCR", "Template Matching",
             "Box", "Window", "ADB", "Logging", "Other"
         ]
+
+        category_translations = {
+            "Mouse": self.tr("Mouse"),
+            "Key": self.tr("Key"),
+            "Control": self.tr("Control"),
+            "OCR": self.tr("OCR"),
+            "Template Matching": self.tr("Template Matching"),
+            "Box": self.tr("Box"),
+            "Window": self.tr("Window"),
+            "ADB": self.tr("ADB"),
+            "Logging": self.tr("Logging"),
+            "Other": self.tr("Other"),
+        }
         
         for cname in categories_order:
             if cname in groups:
                 templates = groups[cname]
-                parent_item = QTreeWidgetItem([cname])
+                display_name = category_translations.get(cname, cname)
+                parent_item = QTreeWidgetItem([display_name])
                 parent_item.setFlags(parent_item.flags() & ~Qt.ItemIsSelectable)
                 self.template_list.addTopLevelItem(parent_item)
                 
@@ -396,7 +410,7 @@ class EditTaskTab(QWidget):
                     display_text = t['template_name']
                     if doc_preview:
                         display_text = f"{t['template_name']}"
-                    item = QTreeWidgetItem([display_text])
+                    item = QTreeWidgetItem([self.tr(display_text)])
                     item.setData(0, Qt.UserRole, t)
                     item.setToolTip(0, t.get('full_doc', t.get('doc', '')))
                     parent_item.addChild(item)

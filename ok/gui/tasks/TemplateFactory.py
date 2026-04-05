@@ -50,6 +50,13 @@ class TemplateInputDialog(MessageBoxBase):
         self.titleLabel = SubtitleLabel(title, self)
         self.viewLayout.addWidget(self.titleLabel)
 
+        if parent:
+            translated_title = parent.tr(title)
+            if translated_title != title:
+                translated_label = BodyLabel(translated_title, self)
+                translated_label.setStyleSheet("color: gray;")
+                self.viewLayout.addWidget(translated_label)
+
         if doc:
             doc_label = BodyLabel(doc, self)
             doc_label.setWordWrap(True)
