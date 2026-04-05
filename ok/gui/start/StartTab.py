@@ -39,14 +39,17 @@ class StartTab(Tab):
         horizontal_layout.setContentsMargins(0, 20, 0, 20)
         self.add_widget(horizontal_widget, 1)
 
-        self.device_search_box = SearchLineEdit()
-        self.device_search_box.setPlaceholderText(self.tr("Search title or exe..."))
-        self.device_search_box.textChanged.connect(self.filter_devices)
+        self.device_search_box = None
+        if not config.get('windows') or not config.get('windows').get('exe'):
+            self.device_search_box = SearchLineEdit()
+            self.device_search_box.setPlaceholderText(self.tr("Search title or exe..."))
+            self.device_search_box.textChanged.connect(self.filter_devices)
         self.device_list = ListWidget()
         device_view_widget = QWidget()
         device_view_layout = QVBoxLayout(device_view_widget)
         device_view_layout.setContentsMargins(0, 0, 0, 0)
-        device_view_layout.addWidget(self.device_search_box)
+        if self.device_search_box:
+            device_view_layout.addWidget(self.device_search_box)
         device_view_layout.addWidget(self.device_list)
         self.device_container = Card(self.tr("Choose Window"), device_view_widget, stretch=1)
         horizontal_layout.addWidget(self.device_container, 2)
@@ -305,16 +308,19 @@ class StartTab(Tab):
 
     def filter_devices(self, text=None):
         if text is None:
-            text = self.device_search_box.text()
+            if self.device_search_box:
+                text = self.device_search_box.text()
+            else:
+                text = ""
         search_text = text.lower()
         for i in range(self.device_list.count()):
             item = self.device_list.item(i)
             device = item.data(Qt.UserRole)
             if not device:
                 continue
-            nick = (device.get('nick') or "").lower()
-            exe = (device.get('exe') or "").lower()
-            address = (device.get('address') or "").lower()
+            nick = str(device.get('nick') or "").lower()
+            exe = str(device.get('exe') or "").lower()
+            address = str(device.get('address') or "").lower()
             if search_text in nick or search_text in exe or search_text in address:
                 item.setHidden(False)
             else:
