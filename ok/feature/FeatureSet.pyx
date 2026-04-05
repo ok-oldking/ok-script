@@ -102,18 +102,29 @@ cdef class FeatureSet:
                 self.process_data()
         return self.load_success
 
-    cdef bint process_data(self):
+    cpdef bint process_data(self):
         self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
                                                                                          self.height,
                                                                                          self.hcenter_features,
                                                                                          self.vcenter_features)
-        if self.debug and not compressed:
-            logger.info(f'coco not compressed try to compress the COCO dataset')
-            compress_coco(self.coco_json)
-            self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
-                                                                                             self.height,
-                                                                                             self.hcenter_features,
-                                                                                             self.vcenter_features)
+        # Also process ok_tasks/assets/coco_annotations.json if it exists, merge data
+        ok_tasks_coco = os.path.join('ok_tasks', 'assets', 'coco_annotations.json')
+        if os.path.exists(ok_tasks_coco) and os.path.abspath(ok_tasks_coco) != os.path.abspath(self.coco_json):
+            try:
+                extra_features, extra_boxes, _, extra_success = read_from_json(ok_tasks_coco, self.width,
+                                                                                self.height,
+                                                                                self.hcenter_features,
+                                                                                self.vcenter_features)
+                if extra_success:
+                    for k, v in extra_features.items():
+                        if k not in self.feature_dict:
+                            self.feature_dict[k] = v
+                    for k, v in extra_boxes.items():
+                        if k not in self.box_dict:
+                            self.box_dict[k] = v
+                    logger.info(f'Merged {len(extra_features)} features from {ok_tasks_coco}')
+            except Exception as e:
+                logger.error(f'Failed to merge {ok_tasks_coco}: {e}')
         if self.feature_processor:
             logger.info('process features with feature_processor')
             for feature in self.feature_dict:
@@ -507,6 +518,19 @@ def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder, generate_la
 
 def compress_copy_coco(coco_json, target_folder, image_folder, generate_label_enmu=None) -> str:
     import shutil
+
+    # Clear target folder before writing
+    if os.path.exists(target_folder):
+        target_image_folder = os.path.join(target_folder, 'images')
+        if os.path.exists(target_image_folder):
+            shutil.rmtree(target_image_folder)
+            logger.info(f'Cleared target image folder: {target_image_folder}')
+        # Remove any existing json files in target folder
+        for f in os.listdir(target_folder):
+            if f.lower().endswith('.json'):
+                fp = os.path.join(target_folder, f)
+                os.remove(fp)
+                logger.info(f'Removed old json: {fp}')
 
     os.makedirs(target_folder, exist_ok=True)
     target_image_folder = os.path.join(target_folder, 'images')

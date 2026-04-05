@@ -3,7 +3,7 @@ import sys
 
 from PySide6.QtCore import Qt, QSize, QRect
 from PySide6.QtGui import QPainter, QColor
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QDialog
 from qfluentwidgets import qconfig, isDarkTheme
 from qfluentwidgets.common.animation import BackgroundAnimationWidget
 from qfluentwidgets.components.widgets.frameless_window import FramelessWindow
@@ -52,6 +52,26 @@ class BaseWindow(BackgroundAnimationWidget, FramelessWindow, BaseLoading):
     def _onThemeChangedFinished(self):
         pass
 
+    def _hasVisibleChildDialog(self):
+        """Check if any child QDialog is currently visible (e.g. MessageBoxBase overlay)."""
+        for child in self.findChildren(QDialog):
+            if child.isVisible():
+                return True
+        return False
+
+    def nativeEvent(self, eventType, message):
+        """Override to disable resize hit-testing when a child dialog is active.
+
+        FramelessWindow's nativeEvent handles WM_NCHITTEST at the Win32 level
+        for border resize detection. This intercepts mouse clicks before Qt can
+        deliver them, which breaks overlay dialogs like MessageBoxBase.
+        When a child dialog is showing, skip the parent handler so clicks
+        pass through to the dialog normally.
+        """
+        if self._hasVisibleChildDialog():
+            return False, 0
+        return super().nativeEvent(eventType, message)
+
     def paintEvent(self, e):
         super().paintEvent(e)
         painter = QPainter(self)
@@ -68,5 +88,3 @@ class BaseWindow(BackgroundAnimationWidget, FramelessWindow, BaseLoading):
             original system title bar rect
         """
         return QRect(size.width() - 75, 0 if self.isFullScreen() else 9, 75, size.height())
-
-

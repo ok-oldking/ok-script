@@ -51,31 +51,36 @@ def is_window_minimized(hWnd):
 
 def get_exe_by_hwnd(hwnd):
     try:
-        _, pid = win32process.GetWindowThreadProcessId(hwnd)
-        if pid > 0:
-            process = psutil.Process(pid)
-
-            try:
-                name = process.name()
-            except psutil.AccessDenied as e:
-                name = ""
-                logger.error("get_exe_by_hwnd process.name() AccessDenied", e)
-
-            try:
-                exe = process.exe()
-            except psutil.AccessDenied as e:
-                exe = ""
-                logger.error("get_exe_by_hwnd process.exe() AccessDenied", e)
-
-            try:
-                cmdline = process.cmdline()
-            except psutil.AccessDenied as e:
-                cmdline = ""
-                logger.error("get_exe_by_hwnd process.cmdline() AccessDenied", e)
-
-            return name, exe, cmdline
-        else:
+        if not win32gui.IsWindow(hwnd):
             return "", "", ""
+        _, pid = win32process.GetWindowThreadProcessId(hwnd)
+        if pid <= 0:
+            return "", "", ""
+
+        try:
+            process = psutil.Process(pid)
+        except psutil.NoSuchProcess:
+            return "", "", ""
+
+        try:
+            name = process.name()
+        except (psutil.AccessDenied, psutil.NoSuchProcess) as e:
+            name = ""
+            logger.error("get_exe_by_hwnd process.name() error", e)
+
+        try:
+            exe = process.exe()
+        except (psutil.AccessDenied, psutil.NoSuchProcess) as e:
+            exe = ""
+            logger.error("get_exe_by_hwnd process.exe() error", e)
+
+        try:
+            cmdline = process.cmdline()
+        except (psutil.AccessDenied, psutil.NoSuchProcess) as e:
+            cmdline = ""
+            logger.error("get_exe_by_hwnd process.cmdline() error", e)
+
+        return name, exe, cmdline
     except Exception as e:
         logger.error('get_exe_by_hwnd error', e)
         return "", "", ""
@@ -378,6 +383,8 @@ def find_all_visible_windows():
             process = psutil.Process(pid)
             exe_name = process.name()
             exe_full_path = process.exe()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            return True
         except Exception:
             exe_name = ""
             exe_full_path = ""

@@ -126,6 +126,11 @@ class MainWindow(MSFluentWindow):
             from ok.gui.tasks.EditTaskTab import EditTaskTab
             self.edit_task_tab = EditTaskTab()
             self.addSubInterface(self.edit_task_tab, FluentIcon.EDIT, self.tr('Custom'))
+
+        if og.task_manager.has_custom or debug:
+            from ok.gui.tasks.TemplateTab import TemplateTab
+            self.template_tab = TemplateTab()
+            self.addSubInterface(self.template_tab, FluentIcon.PHOTO, self.tr('Templates'))
         
         # 添加计划任务Tab
         any_support_schedule = any(task.support_schedule_task for task in executor.onetime_tasks)
