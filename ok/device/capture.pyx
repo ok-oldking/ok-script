@@ -25,7 +25,7 @@ from ok.util.GlobalConfig import basic_options
 from ok.util.collection import deep_get
 from ok.util.color import is_close_to_pure_color
 from ok.util.logger import Logger
-from ok.util.process import read_global_gpu_pref, read_game_gpu_pref, is_hdr_enabled
+
 from ok.util.window import WINDOWS_BUILD_NUMBER, WGC_NO_BORDER_MIN_BUILD, show_title_bar, get_window_bounds, \
     resize_window, get_exe_by_hwnd, windows_graphics_available, find_display, is_foreground_window, find_hwnd
 
@@ -1090,18 +1090,10 @@ def update_capture_method(config, capture_method, hwnd, exit_event=None, selecte
                 if win_graphic := get_win_graphics_capture(capture_method, hwnd, exit_event):
                     logger.info(f'use WGC capture')
                     return win_graphic
-            elif method_name == 'BitBlt_RenderFull':
+            elif method_name in ('BitBlt', 'BitBlt_RenderFull'):
                 global render_full
-                render_full = True
-                if bitblt_capture := get_capture(capture_method, BitBltCaptureMethod, hwnd, exit_event):
-                    logger.info(f'use BitBlt_RenderFull capture')
-                    return bitblt_capture
-            elif method_name == 'BitBlt':
-                global render_full
-                hdr_enabled, swap_enabled = read_game_gpu_pref(hwnd.exe_full_path)
-                render_full = swap_enabled is True or \
-                              (swap_enabled is None and read_global_gpu_pref()[1] is True)
-                logger.info(f'use BitBlt capture swap_enabled: {swap_enabled}, render_full: {render_full}')
+                render_full = (method_name == 'BitBlt_RenderFull')
+                logger.info(f'use {method_name} capture render_full: {render_full}')
 
                 if bitblt_capture := get_capture(capture_method, BitBltCaptureMethod, hwnd, exit_event):
                     return bitblt_capture
@@ -1213,8 +1205,6 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
 
         width, height = self._size
 
-        hdr_enabled = is_hdr_enabled()
-        logger.info(f'BrowserCaptureMethod HDR check: {hdr_enabled}')
 
         disable_features = ["CalculateNativeWinOcclusion"]
 
@@ -1228,10 +1218,6 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
             "--disable-renderer-backgrounding",
         ]
 
-        if hdr_enabled:
-            disable_features.extend(["HardwareMediaKeyHandling", "OverlayFullscreenVideoStrategy", "VideoOverlay"])
-            args.append("--disable-direct-composition-video-overlays")
-            args.append("--disable-accelerated-video-decode")
 
         args.append(f"--disable-features={','.join(disable_features)}")
 

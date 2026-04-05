@@ -7,7 +7,7 @@ from ok import Logger
 from ok.device.capture import BaseWindowsCaptureMethod, BrowserCaptureMethod
 from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error
-from ok.util.process import is_admin, execute, read_game_gpu_pref, read_global_gpu_pref
+from ok.util.process import is_admin, execute
 
 logger = Logger.get_logger(__name__)
 
@@ -148,16 +148,7 @@ class StartController(QObject):
                 logger.error(f'Game window is not connected {og.device_manager.capture_method}')
                 return error_msg
             if isinstance(og.device_manager.capture_method, BaseWindowsCaptureMethod):
-                if self.config.get('windows', {}).get('check_hdr', False):
-                    path = og.device_manager.get_exe_path(device)
-                    if path:
-                        hdr_enabled, swap_enabled = read_game_gpu_pref(path)
-                        logger.info(f'hdr_enabled {path} {hdr_enabled}')
-                        if hdr_enabled == True or (hdr_enabled is None and read_global_gpu_pref()[0]):
-                            if self.config.get('windows', {}).get('force_no_hdr', False):
-                                return self.tr(f'Auto HDR is enabled, please turn it off first.')
-                            else:
-                                alert_error(self.tr('Auto HDR is enabled, tasks might not work correctly!'), True)
+
                 if not og.device_manager.capture_method.hwnd_window.pos_valid:
                     hwnd_window = og.device_manager.capture_method.hwnd_window
                     if hwnd_window.hwnd and hwnd_window.window_width > 0 and hwnd_window.window_height > 0:

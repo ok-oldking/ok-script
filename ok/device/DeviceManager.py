@@ -213,7 +213,10 @@ class DeviceManager:
                                                                        'hwnd_class'),
                                                                    selected_hwnd=self.config.get('selected_hwnd'),
                                                                    top_hwnd_class=self.windows_capture_config.get('top_hwnd_class'))
-            nick = name or self.windows_capture_config.get('exe')
+            exe_list = self.windows_capture_config.get('exe') or self.config.get('selected_exe')
+            if isinstance(exe_list, str):
+                exe_list = [exe_list]
+            nick = name or (exe_list[0] if exe_list else "PC")
             imei = f"pc_{hwnd}" if hwnd else "pc"
             pc_device = {"address": "", "imei": imei, "device": "windows",
                          "model": "", "nick": nick, "width": width,
@@ -222,9 +225,9 @@ class DeviceManager:
                          "connected": hwnd > 0,
                          "full_path": full_path or self.config.get('pc_full_path'),
                          "real_hwnd": hwnd,
-                         "exe": self.windows_capture_config.get('exe')
+                         "exe": exe_list
                          }
-            logger.info(f'start update_pc_device {self.windows_capture_config}, pc_device: {pc_device}')
+            logger.info(f'update_pc_device pc_device: {pc_device}')
             if full_path and full_path != self.config.get('pc_full_path'):
                 logger.info(f'start update_pc_device pc_full_path {full_path}')
                 self.config['pc_full_path'] = full_path
