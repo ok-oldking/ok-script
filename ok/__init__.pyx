@@ -393,10 +393,10 @@ class OK:
             coco_feature_json = self.config.get('template_matching').get('coco_feature_json')
             self.feature_set = FeatureSet(self.debug, coco_feature_json,
                                           default_horizontal_variance=template_matching.get(
-                                              'default_horizontal_variance', 0),
+                                              'default_horizontal_variance', 0.002),
                                           default_vertical_variance=template_matching.get('default_vertical_variance',
-                                                                                          0),
-                                          default_threshold=template_matching.get('default_threshold', 0),
+                                                                                          0.002),
+                                          default_threshold=template_matching.get('default_threshold', 0.8),
                                           feature_processor=template_matching.get('feature_processor'),
                                           hcenter_features=template_matching.get('hcenter_features'),
                                           vcenter_features=template_matching.get('vcenter_features'))
