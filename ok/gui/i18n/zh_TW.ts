@@ -361,8 +361,8 @@
             <translation>計劃任務</translation>
         </message>
         <message>
-        <source>Custom</source>
-        <translation>自訂</translation>
+        <source>Script</source>
+        <translation>腳本</translation>
     </message>
     <message>
         <source>Templates</source>

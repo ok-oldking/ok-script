@@ -362,8 +362,8 @@
             <translation>일정</translation>
         </message>
         <message>
-        <source>Custom</source>
-        <translation>사용자 정의</translation>
+        <source>Script</source>
+        <translation>스크립트</translation>
     </message>
     <message>
         <source>Templates</source>

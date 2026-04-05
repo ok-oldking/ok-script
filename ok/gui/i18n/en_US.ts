@@ -352,8 +352,8 @@
         <translation>Exit</translation>
     </message>
     <message>
-        <source>Custom</source>
-        <translation>Custom</translation>
+        <source>Script</source>
+        <translation>Script</translation>
     </message>
     <message>
         <source>Templates</source>

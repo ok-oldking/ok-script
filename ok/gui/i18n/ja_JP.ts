@@ -361,8 +361,8 @@
             <translation>スケジュール</translation>
         </message>
         <message>
-        <source>Custom</source>
-        <translation>カスタム</translation>
+        <source>Script</source>
+        <translation>スクリプト</translation>
     </message>
     <message>
         <source>Templates</source>

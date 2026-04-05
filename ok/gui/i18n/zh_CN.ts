@@ -352,8 +352,8 @@
         <translation>退出</translation>
     </message>
     <message>
-        <source>Custom</source>
-        <translation>自定义</translation>
+        <source>Script</source>
+        <translation>脚本</translation>
     </message>
     <message>
         <source>Templates</source>

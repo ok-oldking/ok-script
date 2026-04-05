@@ -125,7 +125,7 @@ class MainWindow(MSFluentWindow):
         if og.task_manager.has_custom:
             from ok.gui.tasks.EditTaskTab import EditTaskTab
             self.edit_task_tab = EditTaskTab()
-            self.addSubInterface(self.edit_task_tab, FluentIcon.EDIT, self.tr('Custom'))
+            self.addSubInterface(self.edit_task_tab, FluentIcon.EDIT, self.tr('Script'))
 
         if og.task_manager.has_custom or debug:
             from ok.gui.tasks.TemplateTab import TemplateTab

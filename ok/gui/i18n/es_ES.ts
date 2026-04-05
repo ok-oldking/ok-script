@@ -361,8 +361,8 @@
             <translation>Programa</translation>
         </message>
         <message>
-        <source>Custom</source>
-        <translation>Personalizado</translation>
+        <source>Script</source>
+        <translation>Script</translation>
     </message>
     <message>
         <source>Templates</source>
