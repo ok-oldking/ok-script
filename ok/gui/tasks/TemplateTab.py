@@ -3,7 +3,7 @@ import os
 import time
 
 import cv2
-from PySide6.QtCore import Qt, QSize, Signal, QThread
+from PySide6.QtCore import Qt, QSize, Signal, QThread, QTimer, QRunnable, QThreadPool, QObject
 from PySide6.QtGui import QPixmap, QImage, QIcon
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                QScrollArea, QLabel, QSizePolicy, QFrame)
@@ -137,13 +137,15 @@ def _card_style(selected, dark):
     """
 
 
-class ImageLoaderThread(QThread):
+class ImageLoaderSignals(QObject):
     finished = Signal(list)
 
+class ImageLoaderRunnable(QRunnable):
     def __init__(self, coco_data, query):
         super().__init__()
         self.coco_data = coco_data
         self.query = query
+        self.signals = ImageLoaderSignals()
 
     def run(self):
         all_images = get_image_files()
@@ -160,25 +162,28 @@ class ImageLoaderThread(QThread):
 
         results = []
         for img_path in all_images:
+            cats = get_categories_for_image(self.coco_data, img_path)
+            cats_str = ', '.join(cats)
             qimg = QImage(img_path)
             if not qimg.isNull():
                 scaled = qimg.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                results.append((img_path, scaled))
+                results.append((img_path, scaled, cats_str))
             else:
-                results.append((img_path, None))
+                results.append((img_path, None, cats_str))
                 
-        self.finished.emit(results)
+        self.signals.finished.emit(results)
 
 
 class ImageCard(QFrame):
     clicked = Signal(str)
     double_clicked = Signal(str)
 
-    def __init__(self, image_path, parent=None, preloaded_image=None):
+    def __init__(self, image_path, parent=None, preloaded_image=None, features_text=""):
         super().__init__(parent)
         self.image_path = image_path
         self.selected = False
         self.original_thumb = preloaded_image
+        self._features_text_full = features_text
         self.setCursor(Qt.PointingHandCursor)
         self.setFrameShape(QFrame.StyledPanel)
 
@@ -187,6 +192,10 @@ class ImageCard(QFrame):
         layout.setSpacing(2)
         layout.setAlignment(Qt.AlignCenter)
 
+        self.features_label = QLabel()
+        self.features_label.setAlignment(Qt.AlignCenter)
+        self.features_label.setWordWrap(True)
+
         self.thumb_label = QLabel()
         self.thumb_label.setAlignment(Qt.AlignCenter)
 
@@ -194,6 +203,7 @@ class ImageCard(QFrame):
         self.name_label.setAlignment(Qt.AlignCenter)
         self.name_label.setWordWrap(True)
 
+        layout.addWidget(self.features_label)
         layout.addWidget(self.thumb_label)
         layout.addWidget(self.name_label)
 
@@ -201,8 +211,19 @@ class ImageCard(QFrame):
         self.set_card_width(CARD_WIDTH)
 
     def set_card_width(self, w):
-        self.setFixedSize(w, w + 40)
         thumb_size = w - 16
+        metrics = self.fontMetrics()
+        lh = metrics.lineSpacing()
+        
+        f_h = lh * 3 if self._features_text_full else 0
+        name_h = lh * 2
+        
+        self.features_label.setFixedHeight(f_h)
+        self.name_label.setFixedHeight(name_h)
+        
+        total_h = thumb_size + f_h + name_h + 12
+        self.setFixedSize(w, total_h)
+
         self.thumb_label.setFixedSize(thumb_size, thumb_size)
         if self.original_thumb is not None and not self.original_thumb.isNull():
             scaled = self.original_thumb.scaled(thumb_size, thumb_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -212,6 +233,8 @@ class ImageCard(QFrame):
             if not pixmap.isNull():
                 scaled = pixmap.scaled(thumb_size, thumb_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.thumb_label.setPixmap(scaled)
+
+        self.features_label.setText(self._features_text_full)
 
     def set_selected(self, selected):
         self.selected = selected
@@ -303,7 +326,12 @@ class TemplateTab(QWidget):
         self.markup_window = None
         self.coco_data = load_coco()
         self._loaded = False
+        self._load_sequence = 0
         self.init_ui()
+
+        self.search_timer = QTimer(self)
+        self.search_timer.setSingleShot(True)
+        self.search_timer.timeout.connect(self.refresh_grid)
 
         # Listen for theme changes
         qconfig.themeChangedFinished.connect(self._on_theme_changed)
@@ -396,8 +424,9 @@ class TemplateTab(QWidget):
 
     def refresh_grid(self):
         """Reload image files and repopulate the grid."""
-        self.coco_data = load_coco()
         query = self.search_box.text().strip().lower() if hasattr(self, 'search_box') else ""
+        logger.info(f"Refreshing grid with query: '{query}'")
+        self.coco_data = load_coco()
 
         # Clear existing cards
         self.image_cards.clear()
@@ -408,11 +437,17 @@ class TemplateTab(QWidget):
         self.progress_container.setVisible(True)
         self.progress_ring.start()
 
-        self.loader_thread = ImageLoaderThread(self.coco_data, query)
-        self.loader_thread.finished.connect(self._on_load_finished)
-        self.loader_thread.start()
+        self._load_sequence += 1
+        current_seq = self._load_sequence
+        
+        runnable = ImageLoaderRunnable(self.coco_data, query)
+        runnable.signals.finished.connect(lambda items, seq=current_seq: self._on_load_finished(items, seq))
+        QThreadPool.globalInstance().start(runnable)
 
-    def _on_load_finished(self, items):
+    def _on_load_finished(self, items, seq):
+        if seq != getattr(self, '_load_sequence', 0):
+            return
+
         self.progress_ring.stop()
         self.progress_container.setVisible(False)
 
@@ -425,9 +460,9 @@ class TemplateTab(QWidget):
         self.scroll_area.setVisible(True)
 
         all_images = []
-        for img_path, scaled_img in items:
+        for img_path, scaled_img, cats_str in items:
             all_images.append(img_path)
-            card = ImageCard(img_path, preloaded_image=scaled_img)
+            card = ImageCard(img_path, preloaded_image=scaled_img, features_text=cats_str)
             card.clicked.connect(self.on_card_clicked)
             card.double_clicked.connect(self.on_card_double_clicked)
             self.flow_widget.add_item(card)
@@ -445,7 +480,7 @@ class TemplateTab(QWidget):
         self._update_selection_buttons()
 
     def on_search_changed(self, text):
-        self.refresh_grid()
+        self.search_timer.start(300)
 
     def on_card_clicked(self, image_path):
         # Toggle selection
