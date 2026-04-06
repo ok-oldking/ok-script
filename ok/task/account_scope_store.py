@@ -214,7 +214,7 @@ def resolve_account_id(username: str, create_if_missing: bool = False) -> str:
     return account_id
 
 
-def parse_account_list_text(text: str) -> list:
+def parse_account_list_text(text: str) -> list[Dict[str, str]]:
     """
     Parse a plain-text account list where each line is "username" or "username,password".
 

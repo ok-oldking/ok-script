@@ -907,8 +907,20 @@ class WindowsScheduleManager:
         if auto_exit:
             cmd_args += " -e"
         if account and str(account).strip():
-            escaped = str(account).replace('"', '\\"').strip()
-            cmd_args += f' -a "{escaped}"'
+            # Strip leading/trailing whitespace and remove any characters that
+            # could be interpreted as shell metacharacters in an XML attribute
+            # or command string.  Windows Task Scheduler embeds the arguments
+            # verbatim in an XML <Arguments> element, so the value must be safe
+            # for that context.  We allow only word characters, hyphens, dots,
+            # underscores, spaces and the @ symbol which are typical in
+            # usernames / phone numbers.
+            import re as _re
+            safe_account = str(account).strip()
+            # Remove any characters that are not alphanumeric, space, dash,
+            # underscore, dot or @.
+            safe_account = _re.sub(r'[^A-Za-z0-9 _\-\.@\u4e00-\u9fff\u3040-\u30ff]', '', safe_account).strip()
+            if safe_account:
+                cmd_args += f' -a "{safe_account}"'
 
         timeout_str = ""
         if timeout_hours > 0:
