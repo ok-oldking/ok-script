@@ -3,13 +3,13 @@ import os
 import time
 
 import cv2
-from PySide6.QtCore import Qt, QSize, Signal
+from PySide6.QtCore import Qt, QSize, Signal, QThread
 from PySide6.QtGui import QPixmap, QImage, QIcon
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                QScrollArea, QLabel, QSizePolicy, QFrame)
 from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
                              SearchLineEdit, MessageBox, BodyLabel, isDarkTheme,
-                             qconfig)
+                             qconfig, IndeterminateProgressRing)
 
 from ok import og
 from ok.util.logger import Logger
@@ -134,19 +134,51 @@ def _card_style(selected, dark):
         ImageCard:hover {
             border: 1px solid rgba(0, 120, 212, 0.5);
             background-color: rgba(0, 120, 212, 0.05);
-        }
     """
+
+
+class ImageLoaderThread(QThread):
+    finished = Signal(list)
+
+    def __init__(self, coco_data, query):
+        super().__init__()
+        self.coco_data = coco_data
+        self.query = query
+
+    def run(self):
+        all_images = get_image_files()
+        
+        if self.query:
+            filtered = []
+            for img_path in all_images:
+                name = os.path.splitext(os.path.basename(img_path))[0].lower()
+                cats = get_categories_for_image(self.coco_data, img_path)
+                cat_str = ' '.join(cats).lower()
+                if self.query in name or self.query in cat_str:
+                    filtered.append(img_path)
+            all_images = filtered
+
+        results = []
+        for img_path in all_images:
+            qimg = QImage(img_path)
+            if not qimg.isNull():
+                scaled = qimg.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                results.append((img_path, scaled))
+            else:
+                results.append((img_path, None))
+                
+        self.finished.emit(results)
 
 
 class ImageCard(QFrame):
     clicked = Signal(str)
     double_clicked = Signal(str)
 
-    def __init__(self, image_path, parent=None):
+    def __init__(self, image_path, parent=None, preloaded_image=None):
         super().__init__(parent)
         self.image_path = image_path
         self.selected = False
-        self.setFixedSize(CARD_WIDTH, CARD_HEIGHT)
+        self.original_thumb = preloaded_image
         self.setCursor(Qt.PointingHandCursor)
         self.setFrameShape(QFrame.StyledPanel)
 
@@ -157,11 +189,6 @@ class ImageCard(QFrame):
 
         self.thumb_label = QLabel()
         self.thumb_label.setAlignment(Qt.AlignCenter)
-        self.thumb_label.setFixedSize(THUMB_SIZE, THUMB_SIZE)
-        pixmap = QPixmap(image_path)
-        if not pixmap.isNull():
-            scaled = pixmap.scaled(THUMB_SIZE, THUMB_SIZE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.thumb_label.setPixmap(scaled)
 
         self.name_label = QLabel(os.path.splitext(os.path.basename(image_path))[0])
         self.name_label.setAlignment(Qt.AlignCenter)
@@ -171,6 +198,20 @@ class ImageCard(QFrame):
         layout.addWidget(self.name_label)
 
         self._apply_style()
+        self.set_card_width(CARD_WIDTH)
+
+    def set_card_width(self, w):
+        self.setFixedSize(w, w + 40)
+        thumb_size = w - 16
+        self.thumb_label.setFixedSize(thumb_size, thumb_size)
+        if self.original_thumb is not None and not self.original_thumb.isNull():
+            scaled = self.original_thumb.scaled(thumb_size, thumb_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.thumb_label.setPixmap(QPixmap.fromImage(scaled))
+        else:
+            pixmap = QPixmap(self.image_path)
+            if not pixmap.isNull():
+                scaled = pixmap.scaled(thumb_size, thumb_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.thumb_label.setPixmap(scaled)
 
     def set_selected(self, selected):
         self.selected = selected
@@ -214,16 +255,27 @@ class FlowWidget(QWidget):
             self.setMinimumHeight(0)
             return
 
+        columns = 5
         available_width = max(self.width(), CARD_WIDTH)
+        
+        # Calculate ideal card width so 5 cards fit perfectly in the available space
+        target_card_width = max((available_width - (columns - 1) * self._spacing) // columns, 50)
+        
         x = 0
         y = 0
         row_height = 0
 
         for widget in self._items:
+            if hasattr(widget, 'set_card_width'):
+                # Only resize if the target is noticeably different to avoid excessive reloading
+                if abs(widget.width() - target_card_width) > 1:
+                    widget.set_card_width(target_card_width)
+            
             w = widget.width()
             h = widget.height()
 
-            if x > 0 and x + w > available_width:
+            # Slight tolerance (+2) for floating/integer precision issues
+            if x > 0 and x + w > available_width + 2:
                 x = 0
                 y += row_height + self._spacing
                 row_height = 0
@@ -250,11 +302,17 @@ class TemplateTab(QWidget):
         self.image_cards = []
         self.markup_window = None
         self.coco_data = load_coco()
+        self._loaded = False
         self.init_ui()
-        self.refresh_grid()
 
         # Listen for theme changes
         qconfig.themeChangedFinished.connect(self._on_theme_changed)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not self._loaded:
+            self._loaded = True
+            self.refresh_grid()
 
     def _on_theme_changed(self):
         """Re-apply styles when the theme changes."""
@@ -327,39 +385,49 @@ class TemplateTab(QWidget):
         main_layout.addWidget(self.empty_widget, 1)
         self.empty_widget.setVisible(False)
 
+        self.progress_ring = IndeterminateProgressRing()
+        self.progress_ring.setFixedSize(50, 50)
+        self.progress_container = QWidget()
+        progress_layout = QVBoxLayout(self.progress_container)
+        progress_layout.setAlignment(Qt.AlignCenter)
+        progress_layout.addWidget(self.progress_ring, alignment=Qt.AlignCenter)
+        main_layout.addWidget(self.progress_container, 1)
+        self.progress_container.setVisible(False)
+
     def refresh_grid(self):
         """Reload image files and repopulate the grid."""
         self.coco_data = load_coco()
         query = self.search_box.text().strip().lower() if hasattr(self, 'search_box') else ""
-        all_images = get_image_files()
-
-        # Filter by search query
-        if query:
-            filtered = []
-            for img_path in all_images:
-                name = os.path.splitext(os.path.basename(img_path))[0].lower()
-                cats = get_categories_for_image(self.coco_data, img_path)
-                cat_str = ' '.join(cats).lower()
-                if query in name or query in cat_str:
-                    filtered.append(img_path)
-            all_images = filtered
 
         # Clear existing cards
         self.image_cards.clear()
         self.flow_widget.clear_items()
 
-        if not all_images:
-            self.scroll_area.setVisible(False)
+        self.scroll_area.setVisible(False)
+        self.empty_widget.setVisible(False)
+        self.progress_container.setVisible(True)
+        self.progress_ring.start()
+
+        self.loader_thread = ImageLoaderThread(self.coco_data, query)
+        self.loader_thread.finished.connect(self._on_load_finished)
+        self.loader_thread.start()
+
+    def _on_load_finished(self, items):
+        self.progress_ring.stop()
+        self.progress_container.setVisible(False)
+
+        if not items:
             self.empty_widget.setVisible(True)
             self.selected_image = None
             self._update_selection_buttons()
             return
 
         self.scroll_area.setVisible(True)
-        self.empty_widget.setVisible(False)
 
-        for img_path in all_images:
-            card = ImageCard(img_path)
+        all_images = []
+        for img_path, scaled_img in items:
+            all_images.append(img_path)
+            card = ImageCard(img_path, preloaded_image=scaled_img)
             card.clicked.connect(self.on_card_clicked)
             card.double_clicked.connect(self.on_card_double_clicked)
             self.flow_widget.add_item(card)
@@ -605,4 +673,4 @@ class TemplateTab(QWidget):
 
     def on_markup_closed(self):
         self.markup_window = None
-        self.refresh_grid()
+

@@ -444,18 +444,17 @@ class AnnotationCanvas(QWidget):
 
         if event.button() == Qt.LeftButton:
             if self.mode == self.MODE_DRAW:
+                event.accept()
                 if self.draw_start is None:
                     self.draw_start = pos  # widget coords
                 else:
                     self._finish_drawing(pos)
             elif self.mode == self.MODE_DELETE:
+                event.accept()
                 idx = self._find_ann_at(pos)
                 if idx >= 0:
-                    self.annotations.pop(idx)
-                    self.selected_ann_index = -1
-                    self.hovered_ann_index = -1
-                    self.annotations_changed.emit()
-                    self.update()
+                    self.selected_ann_index = idx
+                    self.delete_selected()
             else:
                 # Check for resize handle first
                 idx, handle = self._find_handle_at(pos)
@@ -514,9 +513,11 @@ class AnnotationCanvas(QWidget):
         # Update color info at mouse position
         self._update_color_at(pos)
 
-        if self.mode == self.MODE_DRAW and self.draw_start is not None:
-            self.draw_preview = pos
-            self.update()
+        if self.mode == self.MODE_DRAW:
+            event.accept()
+            if self.draw_start is not None:
+                self.draw_preview = pos
+                self.update()
         elif self.resizing and self.selected_ann_index >= 0 and self.resize_start_pos:
             self._do_resize(pos)
             self.update()
@@ -570,8 +571,43 @@ class AnnotationCanvas(QWidget):
                         else:
                             self.setCursor(Qt.ArrowCursor)
                 self.update()
+            elif self.mode == self.MODE_DRAW:
+                self.setCursor(Qt.CrossCursor)
+                if self.hovered_ann_index != -1:
+                    self.hovered_ann_index = -1
+                    self.hovered_handle = HANDLE_NONE
+                    self.update()
+            elif self.mode == self.MODE_DELETE:
+                idx = self._find_ann_at(pos)
+                if idx >= 0:
+                    self.setCursor(Qt.PointingHandCursor)
+                    if self.hovered_ann_index != idx:
+                        self.hovered_ann_index = idx
+                        self.hovered_handle = HANDLE_NONE
+                        self.update()
+                else:
+                    self.setCursor(Qt.ArrowCursor)
+                    if self.hovered_ann_index != -1:
+                        self.hovered_ann_index = -1
+                        self.hovered_handle = HANDLE_NONE
+                        self.update()
 
         super().mouseMoveEvent(event)
+
+    def delete_selected(self):
+        idx = self.selected_ann_index
+        if idx >= 0:
+            ann = self.annotations[idx]
+            cat = ann.get('category', '')
+            w = MessageBox(self.tr('Confirm Delete'),
+                           self.tr("Are you sure you want to delete '{}'?").format(cat),
+                           self.window())
+            if w.exec():
+                self.annotations.pop(idx)
+                self.selected_ann_index = -1
+                self.hovered_ann_index = -1
+                self.annotations_changed.emit()
+                self.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         if self.dragging:
@@ -1057,14 +1093,29 @@ class MarkUpWindow(BaseWindow):
         self.canvas.mode = AnnotationCanvas.MODE_NONE
         self.canvas.draw_start = None
         self.canvas.draw_preview = None
+        if self.canvas._is_zoomed_beyond_window():
+            self.canvas.setCursor(Qt.OpenHandCursor)
+        else:
+            self.canvas.setCursor(Qt.ArrowCursor)
         self.canvas.update()
 
     def toggle_draw_mode(self, checked):
         if checked:
             self.delete_box_btn.setChecked(False)
             self.canvas.mode = AnnotationCanvas.MODE_DRAW
+            self.canvas.dragging = False
+            self.canvas.resizing = False
+            self.canvas.panning = False
+            self.canvas.drag_start_pos = None
+            self.canvas.resize_start_pos = None
+            self.canvas.pan_start_pos = None
+            self.canvas.setCursor(Qt.CrossCursor)
         else:
             self.canvas.mode = AnnotationCanvas.MODE_NONE
+            if self.canvas._is_zoomed_beyond_window():
+                self.canvas.setCursor(Qt.OpenHandCursor)
+            else:
+                self.canvas.setCursor(Qt.ArrowCursor)
         self.canvas.draw_start = None
         self.canvas.draw_preview = None
         self.canvas.update()
@@ -1073,8 +1124,19 @@ class MarkUpWindow(BaseWindow):
         if checked:
             self.draw_btn.setChecked(False)
             self.canvas.mode = AnnotationCanvas.MODE_DELETE
+            self.canvas.dragging = False
+            self.canvas.resizing = False
+            self.canvas.panning = False
+            self.canvas.drag_start_pos = None
+            self.canvas.resize_start_pos = None
+            self.canvas.pan_start_pos = None
+            self.canvas.setCursor(Qt.ArrowCursor)
         else:
             self.canvas.mode = AnnotationCanvas.MODE_NONE
+            if self.canvas._is_zoomed_beyond_window():
+                self.canvas.setCursor(Qt.OpenHandCursor)
+            else:
+                self.canvas.setCursor(Qt.ArrowCursor)
         self.canvas.draw_start = None
         self.canvas.draw_preview = None
         self.canvas.update()
@@ -1105,7 +1167,9 @@ class MarkUpWindow(BaseWindow):
         if event.key() == Qt.Key_R:
             self.draw_btn.setChecked(not self.draw_btn.isChecked())
             self.toggle_draw_mode(self.draw_btn.isChecked())
-        elif event.key() == Qt.Key_D:
+        elif event.key() == Qt.Key_Delete and self.canvas.selected_ann_index >= 0 and self.canvas.mode == AnnotationCanvas.MODE_NONE:
+            self.canvas.delete_selected()
+        elif event.key() in (Qt.Key_D, Qt.Key_Delete):
             self.delete_box_btn.setChecked(not self.delete_box_btn.isChecked())
             self.toggle_delete_mode(self.delete_box_btn.isChecked())
         elif event.key() == Qt.Key_Left:

@@ -6,7 +6,23 @@ from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt
 from PySide6.QtGui import QScreen
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
 from qfluentwidgets import MSFluentWindow, qconfig, FluentIcon, NavigationItemPosition, MessageBox, InfoBar, \
-    InfoBarPosition, SystemThemeListener, Theme, setTheme
+    InfoBarPosition, SystemThemeListener, Theme, setTheme, MessageBoxBase
+
+_original_MessageBoxBase_keyPressEvent = MessageBoxBase.keyPressEvent
+
+def _patched_message_box_base_keyPressEvent(self, e):
+    if e.key() == Qt.Key_Escape:
+        if hasattr(self, 'cancelButton') and self.cancelButton.isEnabled() and self.cancelButton.isVisible():
+            self.cancelButton.click()
+            return
+    elif e.key() == Qt.Key_Enter or e.key() == Qt.Key_Return:
+        if hasattr(self, 'yesButton') and self.yesButton.isEnabled() and self.yesButton.isVisible():
+            self.yesButton.click()
+            return
+    _original_MessageBoxBase_keyPressEvent(self, e)
+
+MessageBoxBase.keyPressEvent = _patched_message_box_base_keyPressEvent
+
 
 from ok.util.config import Config
 

@@ -479,8 +479,6 @@ def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder, generate_la
         except Exception:
             cli_tool = "xanylabeling"
 
-    if os.path.exists(classes_path):
-        os.remove(classes_path)
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
 
