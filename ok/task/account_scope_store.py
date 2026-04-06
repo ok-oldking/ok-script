@@ -214,6 +214,70 @@ def resolve_account_id(username: str, create_if_missing: bool = False) -> str:
     return account_id
 
 
+def parse_account_list_text(text: str) -> list:
+    """
+    Parse a plain-text account list where each line is "username" or "username,password".
+
+    Returns:
+        List of dicts with keys "username" and "password".
+    """
+    entries = []
+    for raw_line in (text or "").splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if "," in line:
+            username_part, password_part = line.split(",", 1)
+        else:
+            username_part, password_part = line, ""
+        username = username_part.strip()
+        if not username:
+            continue
+        entries.append({"username": username, "password": password_part.strip()})
+    return entries
+
+
+def sync_account_list_text(account_list_text: str) -> Dict[str, Any]:
+    """
+    Persist account_list_text and update account_registry so each username is
+    assigned a stable account-id.
+
+    Returns summary dict with keys:
+        - reused_count:   number of usernames that already had an account-id
+        - created_count:  number of new account-ids created
+        - invalid_count:  number of lines that were skipped
+    """
+    data = load_overrides(force=True)
+    registry = data.setdefault("account_registry", {})
+
+    data["account_list_text"] = account_list_text
+
+    reused = 0
+    created = 0
+    invalid = 0
+
+    for raw_line in (account_list_text or "").splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if "," in line:
+            username_part = line.split(",", 1)[0].strip()
+        else:
+            username_part = line.strip()
+        if not username_part:
+            invalid += 1
+            continue
+        existing_id = _find_account_id_by_username(registry, username_part)
+        if existing_id:
+            reused += 1
+        else:
+            _ensure_registry_entry(registry, username_part)
+            created += 1
+
+    save_overrides(data)
+    return {"reused_count": reused, "created_count": created, "invalid_count": invalid}
+
+
 def get_account_task_overrides(account: str, task_name: str, account_name: str = "") -> Dict[str, Any]:
     if not account or not task_name:
         return {}

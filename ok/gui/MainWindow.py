@@ -159,6 +159,20 @@ class MainWindow(MSFluentWindow):
             from ok.gui.tasks.ScheduleTaskTab import ScheduleTaskTab
             self.schedule_tab = ScheduleTaskTab(config=self.config)
             self.addSubInterface(self.schedule_tab, FluentIcon.CALENDAR, self.tr('Schedule'))
+
+        # 添加多账号配置Tab
+        any_support_multi_account = any(
+            getattr(task, 'support_multi_account', False) for task in executor.onetime_tasks
+        )
+        if any_support_multi_account:
+            from ok.gui.tasks.AccountConfigTab import AccountConfigTab
+            self.account_config_tab = AccountConfigTab()
+            self.account_config_tab.executor = executor
+            self.addSubInterface(
+                self.account_config_tab,
+                FluentIcon.PEOPLE,
+                self.tr('Account Config'),
+            )
         from ok.gui.about.AboutTab import AboutTab
         self.about_tab = AboutTab(config, self.app.updater)
         self.addSubInterface(self.about_tab, FluentIcon.QUESTION, self.tr('About'),
