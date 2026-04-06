@@ -15,7 +15,11 @@ When you are instructed to add or update internationalization (i18n) translation
    - `ko_KR.ts` (Korean)
    - `es_ES.ts` (Spanish)
    - `en_US.ts` (English)
-3. Ensure that your new translations are correctly added under the appropriate `<context>` and `<message>` blocks in each XML file. If you are adding many translations, consider writing a temporary python script to automate the XML injection and prevent errors.
+3. Ensure that your new translations are correctly added under the appropriate `<context>` and `<message>` blocks in each XML file. If you are adding many translations, or just want to minimize errors, use the provided `add_translation.py` script to automate the XML injection:
+   ```powershell
+   python .\.agents\skills\compile_i18n\add_translation.py --context "YourContext" --source "Your Source String" --zh_cn "Your Chinese String"
+   ```
+   **IMPORTANT WARNING: DO NOT use `pyside6-lupdate` as it corrupts and deletes existing translations. Always modify the XML nodes natively or use the python script!**
 4. After updating the `.ts` files, compile them into `.qm` binary format by leveraging the provided script. Run the following command from the workspace root:
 
 // turbo
