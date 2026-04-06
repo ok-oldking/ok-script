@@ -2,6 +2,7 @@ import re
 import subprocess
 import threading
 import time
+import copy
 from typing import List
 
 import cv2
@@ -17,6 +18,7 @@ from ok.util.handler import Handler
 from ok.util.logger import Logger
 from ok.util.process import create_shortcut
 from ok.task.exceptions import HotkeyConfigException
+from ok.task.account_scope_store import resolve_account_id, get_account_task_overrides
 
 VALID_NAMED_KEYS = {
     'esc', 'tab', 'shift', 'lshift', 'rshift', 'ctrl', 'lctrl', 'rctrl', 'alt', 'lalt', 'ralt',
@@ -931,6 +933,13 @@ cdef class BaseTask(OCR):
     cdef public bint support_schedule_task
     cdef public bint in_sleep_check
     cdef public dict capture_config
+    cdef public bint support_multi_account
+    cdef public str start_account
+    cdef public str current_account
+    cdef public str current_account_name
+    cdef public bint multi_account_mode
+    cdef public bint multi_account_independent_config
+    cdef public object _base_config_snapshot
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -939,6 +948,7 @@ cdef class BaseTask(OCR):
         self.description = ""
         self._enabled = False
         self.capture_config = None
+        self._base_config_snapshot = None
         self.config = None
         self.exit_after_task = False
         self.info = {}
@@ -963,6 +973,13 @@ cdef class BaseTask(OCR):
         self.last_sleep_check_time = 0
         self.in_sleep_check = False
         self.support_schedule_task = False
+        self.support_multi_account = False
+        self.start_account = ""
+        self.current_account = ""
+        self.current_account_name = ""
+        self.multi_account_mode = False
+        self.multi_account_independent_config = False
+        self.add_multi_account_config()
 
     def run_task_by_class(self, cls):
         task = self.get_task_by_class(cls)
@@ -1006,6 +1023,94 @@ cdef class BaseTask(OCR):
         self.default_config.update({'_first_run_alert': ""})
         self.first_run_alert = first_run_alert
 
+    def add_multi_account_config(self):
+        self.default_config.update({
+            "Multi Account Mode": False,
+            "Multi Account Independent Config": False,
+            "Account List": "account1,password1\naccount2,password2\naccount3,password3",
+        })
+        self.config_description.update({
+            "Multi Account Mode": (
+                "Enable multi-account mode\n"
+                "Need at least one account already logged in"
+            ),
+            "Multi Account Independent Config": (
+                "Enable account-scoped task config overrides\n"
+                "When enabled, each account can use different task parameters"
+            ),
+            "Account List": (
+                "Account and password list\n"
+                "One account per line, split by comma"
+            ),
+        })
+
+    def get_account_list(self):
+        account_str = self.config.get("Account List", "")
+        account_list = []
+        if not account_str:
+            return account_list
+
+        lines = account_str.splitlines()
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            if "," not in line:
+                self.log_info(f"Invalid account format, skipped: {line}")
+                continue
+            username_part, password_part = line.split(",", 1)
+            username = username_part.strip()
+            password = password_part.strip()
+            if not username:
+                self.log_info(f"Invalid account format, skipped: {line}")
+                continue
+
+            account_id = resolve_account_id(username, create_if_missing=False)
+            account_list.append(
+                {
+                    "account_id": account_id,
+                    "username": username,
+                    "password": password,
+                }
+            )
+        return account_list
+
+    def set_current_account(self, account: str):
+        account = (account or "").strip()
+        self.current_account = account
+        self.current_account_name = account
+        if not account:
+            return
+        account_id = resolve_account_id(account, create_if_missing=False)
+        if account_id:
+            self.current_account = account_id
+
+    def apply_account_scoped_config(self):
+        if self._base_config_snapshot is None:
+            self._base_config_snapshot = copy.deepcopy(dict(self.config))
+
+        for key in list(self.config.keys()):
+            if key not in self._base_config_snapshot:
+                self.config.pop(key, None)
+        for key, value in self._base_config_snapshot.items():
+            self.config[key] = copy.deepcopy(value)
+
+        self.multi_account_mode = bool(self.config.get("Multi Account Mode", False))
+        self.multi_account_independent_config = bool(self.config.get("Multi Account Independent Config", False))
+        if not self.multi_account_independent_config:
+            return
+        if not self.current_account and not self.current_account_name:
+            return
+
+        overrides = get_account_task_overrides(
+            self.current_account,
+            self.__class__.__name__,
+            self.current_account_name,
+        )
+        for key, value in (overrides or {}).items():
+            if key in self.default_config and not str(key).startswith("_"):
+                self.config[key] = value
+
     def add_exit_after_config(self):
         self.default_config.update({'Exit After Task': False})
         self.config_description.update(
@@ -1025,6 +1130,9 @@ cdef class BaseTask(OCR):
     def enable(self):
         if not self._enabled:
             self._enabled = True
+            if self.start_account:
+                self.set_current_account(self.start_account)
+            self.apply_account_scoped_config()
             self.info_clear()
             if self.capture_config:
                 self.executor.device_manager.ensure_capture(self.capture_config)
@@ -1133,6 +1241,7 @@ cdef class BaseTask(OCR):
 
     def load_config(self):
         self.config = Config(self.__class__.__name__, self.default_config, validator=self.validate)
+        self._base_config_snapshot = copy.deepcopy(dict(self.config))
 
     def validate(self, key, value):
         message = self.validate_config(key, value)

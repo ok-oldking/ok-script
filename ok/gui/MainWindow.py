@@ -320,8 +320,12 @@ class MainWindow(MSFluentWindow):
                     self.handler.post(lambda: communicate.copyright.emit(), delay=1)
             if args.get('task') > 0:
                 task_index = args.get('task') - 1
-                logger.info(f'start with params {task_index} {args.get("exit")}')
-                self.app.start_controller.start(args.get('task') - 1, exit_after=args.get('exit'))
+                logger.info(f'start with params {task_index} {args.get("exit")} account={args.get("account")}')
+                self.app.start_controller.start(
+                    args.get('task') - 1,
+                    exit_after=args.get('exit'),
+                    account=args.get('account'),
+                )
             elif self.basic_global_config.get('Auto Start Game When App Starts'):
                 self.app.start_controller.start()
             # Check for .okscript file in command line arguments

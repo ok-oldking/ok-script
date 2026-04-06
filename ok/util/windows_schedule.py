@@ -627,7 +627,7 @@ class WindowsScheduleManager:
                     start_hour: int = 9, start_minute: int = 0,
                     auto_exit: bool = True, enabled: bool = True,
                     description: str = "", interval_days: int = 0,
-                    interval_hours: int = 0) -> bool:
+                    interval_hours: int = 0, account: str = "") -> bool:
         """
         创建计划任务
 
@@ -667,13 +667,13 @@ class WindowsScheduleManager:
                     success = self._create_task_via_com(
                         scheduler_task_name, task_index, trigger_type, timeout_hours,
                         start_hour, start_minute, auto_exit, enabled,
-                        description_with_meta, task_path, interval_days, interval_hours)
+                        description_with_meta, task_path, interval_days, interval_hours, account)
                 else:
                     success = self._create_task_via_schtasks(
                         scheduler_task_name, task_index, trigger_type, enabled,
                         task_path, timeout_hours, start_hour, start_minute,
                         auto_exit, interval_days, interval_hours,
-                        description_with_meta)
+                        description_with_meta, account)
 
                 if success:
                     # 更新缓存
@@ -701,8 +701,8 @@ class WindowsScheduleManager:
                              trigger_type: TriggerType, timeout_hours: int,
                              start_hour: int, start_minute: int,
                              auto_exit: bool, enabled: bool, description: str,
-                             task_path: str, interval_days: int = 0,
-                             interval_hours: int = 0) -> bool:
+                              task_path: str, interval_days: int = 0,
+                             interval_hours: int = 0, account: str = "") -> bool:
         """通过 COM API 创建任务"""
         try:
             import win32com.client
@@ -713,13 +713,13 @@ class WindowsScheduleManager:
                 return self._create_task_via_schtasks(
                     task_name, task_index, trigger_type, enabled, task_path,
                     timeout_hours, start_hour, start_minute, auto_exit,
-                    interval_days, interval_hours)
+                    interval_days, interval_hours, account=account)
 
             # 生成 XML 配置
             xml_config = self._generate_task_xml(
                 task_name, task_index, trigger_type, timeout_hours,
                 description, start_hour, start_minute, auto_exit,
-                interval_days, interval_hours)
+                interval_days, interval_hours, account)
 
             # 确保已连接
             self.SCHEDULE_SERVICE.Connect()
@@ -756,7 +756,7 @@ class WindowsScheduleManager:
             return self._create_task_via_schtasks(
                 task_name, task_index, trigger_type, enabled,
                 task_path, timeout_hours, start_hour, start_minute,
-                auto_exit, interval_days, interval_hours)
+                auto_exit, interval_days, interval_hours, account=account)
 
     def _create_task_via_schtasks(self, task_name: str, task_index: int,
                                   trigger_type: TriggerType, enabled: bool,
@@ -765,13 +765,13 @@ class WindowsScheduleManager:
                                   auto_exit: bool = True,
                                   interval_days: int = 0,
                                   interval_hours: int = 0,
-                                  description: str = "") -> bool:
+                                  description: str = "", account: str = "") -> bool:
         """通过 schtasks 命令创建任务（降级方案）"""
         try:
             xml_config = self._generate_task_xml(
                 task_name, task_index, trigger_type, timeout_hours,
                 description, start_hour, start_minute, auto_exit,
-                interval_days, interval_hours)
+                interval_days, interval_hours, account)
             xml_file: Optional[Path] = None
 
             try:
@@ -888,7 +888,7 @@ class WindowsScheduleManager:
                            trigger_type: TriggerType, timeout_hours: int = 0,
                            description: str = "", start_hour: int = 9,
                            start_minute: int = 0, auto_exit: bool = True,
-                           interval_days: int = 0, interval_hours: int = 0) -> str:
+                           interval_days: int = 0, interval_hours: int = 0, account: str = "") -> str:
         """
         生成任务 XML 配置
 
@@ -906,6 +906,9 @@ class WindowsScheduleManager:
         cmd_args = f"-t {task_index}"
         if auto_exit:
             cmd_args += " -e"
+        if account and str(account).strip():
+            escaped = str(account).replace('"', '\\"').strip()
+            cmd_args += f' -a "{escaped}"'
 
         timeout_str = ""
         if timeout_hours > 0:

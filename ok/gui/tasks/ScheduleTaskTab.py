@@ -35,6 +35,7 @@ from qfluentwidgets import (
     ComboBox,
     SpinBox,
     CheckBox,
+    LineEdit,
 )
 
 from ok import Logger, og
@@ -294,8 +295,8 @@ class CreateScheduleTaskDialog(MessageBoxBase):
     """创建计划任务对话框"""
 
     task_created = Signal(
-        str, int, TriggerType, int, int, int, bool, int, int
-    )  # name, task_index, trigger_type, timeout_hours, start_hour, start_minute, auto_exit, interval_days, interval_hours
+        str, int, TriggerType, int, int, int, bool, int, int, str
+    )  # name, task_index, trigger_type, timeout_hours, start_hour, start_minute, auto_exit, interval_days, interval_hours, account
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -319,6 +320,19 @@ class CreateScheduleTaskDialog(MessageBoxBase):
         else:
             self.task_combo.addItem(self.tr("No tasks available"))
             self.task_combo.setEnabled(False)
+
+        # 账号（可选）
+        account_label = QLabel(self.tr("Account (Optional)"))
+        account_label.setMinimumWidth(120)
+        self.account_combo = ComboBox()
+        self.account_combo.setFixedHeight(34)
+        self.account_combo.addItem("")
+        for task in self.tasks:
+            if getattr(task, "support_multi_account", False):
+                for account in task.get_account_list() or []:
+                    username = str(account.get("username", "")).strip()
+                    if username and not any(self.account_combo.itemText(i) == username for i in range(self.account_combo.count())):
+                        self.account_combo.addItem(username)
 
         # 触发类型
         trigger_label = QLabel(self.tr("Trigger Type"))
@@ -433,14 +447,16 @@ class CreateScheduleTaskDialog(MessageBoxBase):
         form_layout.addWidget(self.task_combo, 0, 1)
         form_layout.addWidget(trigger_label, 1, 0)
         form_layout.addWidget(self.trigger_combo, 1, 1)
-        form_layout.addWidget(start_time_label, 2, 0)
-        form_layout.addWidget(start_time_input_widget, 2, 1)
-        form_layout.addWidget(self.interval_label, 3, 0)
-        form_layout.addWidget(self.interval_widget, 3, 1)
-        form_layout.addWidget(timeout_label, 4, 0)
-        form_layout.addWidget(timeout_input_widget, 4, 1)
-        form_layout.addWidget(QLabel(self.tr("Startup Options")), 5, 0)
-        form_layout.addWidget(self.auto_exit_check, 5, 1)
+        form_layout.addWidget(account_label, 2, 0)
+        form_layout.addWidget(self.account_combo, 2, 1)
+        form_layout.addWidget(start_time_label, 3, 0)
+        form_layout.addWidget(start_time_input_widget, 3, 1)
+        form_layout.addWidget(self.interval_label, 4, 0)
+        form_layout.addWidget(self.interval_widget, 4, 1)
+        form_layout.addWidget(timeout_label, 5, 0)
+        form_layout.addWidget(timeout_input_widget, 5, 1)
+        form_layout.addWidget(QLabel(self.tr("Startup Options")), 6, 0)
+        form_layout.addWidget(self.auto_exit_check, 6, 1)
         form_layout.setColumnStretch(1, 1)
 
         # 默认隐藏 interval_label
@@ -500,6 +516,7 @@ class CreateScheduleTaskDialog(MessageBoxBase):
         auto_exit = self.auto_exit_check.isChecked()
         interval_days = self.interval_days_spin.value()
         interval_hours = self.interval_hours_spin.value()
+        account = self.account_combo.currentText().strip() if self.account_combo else ""
 
         self.task_created.emit(
             task_name,
@@ -511,13 +528,14 @@ class CreateScheduleTaskDialog(MessageBoxBase):
             auto_exit,
             interval_days,
             interval_hours,
+            account,
         )
 
 
 class ModifyScheduleTaskDialog(MessageBoxBase):
     """修改计划任务对话框"""
 
-    task_modified = Signal(str, int, TriggerType, int, int, int, bool, int, int)
+    task_modified = Signal(str, int, TriggerType, int, int, int, bool, int, int, str)
 
     # task_name, task_index, trigger_type, timeout_hours, start_hour, start_minute, auto_exit, interval_days, interval_hours
 
@@ -530,7 +548,7 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
             self.viewLayout.setSpacing(12)
             self.viewLayout.setContentsMargins(16, 12, 16, 12)
 
-            self.task_index, auto_exit_default = self._parse_args(task_info.actions)
+            self.task_index, auto_exit_default, account_default = self._parse_args(task_info.actions)
             timeout_default = self._parse_timeout(task_info.xml_config)
             start_hour_default, start_minute_default = self._parse_start_time(task_info.next_run_time)
             interval_days_default, interval_hours_default = self._parse_custom_interval(task_info)
@@ -543,7 +561,7 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
             )
         except Exception as e:
             logger.exception(f"Error parsing task info: {e}")
-            self.task_index, auto_exit_default = 1, False
+            self.task_index, auto_exit_default, account_default = 1, False, ""
             timeout_default = 0
             start_hour_default, start_minute_default = 0, 0
             interval_days_default, interval_hours_default = 0, 0
@@ -560,6 +578,12 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
         task_index_label.setMinimumWidth(140)
         task_index_display = QLabel(str(self.task_index))
         task_index_display.setMinimumWidth(260)
+
+        account_label = QLabel(self.tr("Account (Optional)"))
+        account_label.setMinimumWidth(140)
+        self.account_edit = LineEdit()
+        self.account_edit.setText(account_default or "")
+        self.account_edit.setMinimumWidth(260)
 
         # 触发类型
         trigger_label = QLabel(self.tr("Trigger Type"))
@@ -718,16 +742,18 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
             form_layout.addWidget(task_name_display, 0, 1)
             form_layout.addWidget(task_index_label, 1, 0)
             form_layout.addWidget(task_index_display, 1, 1)
-            form_layout.addWidget(trigger_label, 2, 0)
-            form_layout.addWidget(self.trigger_combo, 2, 1)
-            form_layout.addWidget(start_time_label, 3, 0)
-            form_layout.addWidget(start_time_input_widget, 3, 1)
-            form_layout.addWidget(timeout_label, 4, 0)
-            form_layout.addWidget(timeout_input_widget, 4, 1)
-            form_layout.addWidget(self.interval_label, 5, 0)
-            form_layout.addWidget(self.interval_widget, 5, 1)
-            form_layout.addWidget(QLabel(self.tr("Startup Options")), 6, 0)
-            form_layout.addWidget(self.auto_exit_check, 6, 1)
+            form_layout.addWidget(account_label, 2, 0)
+            form_layout.addWidget(self.account_edit, 2, 1)
+            form_layout.addWidget(trigger_label, 3, 0)
+            form_layout.addWidget(self.trigger_combo, 3, 1)
+            form_layout.addWidget(start_time_label, 4, 0)
+            form_layout.addWidget(start_time_input_widget, 4, 1)
+            form_layout.addWidget(timeout_label, 5, 0)
+            form_layout.addWidget(timeout_input_widget, 5, 1)
+            form_layout.addWidget(self.interval_label, 6, 0)
+            form_layout.addWidget(self.interval_widget, 6, 1)
+            form_layout.addWidget(QLabel(self.tr("Startup Options")), 7, 0)
+            form_layout.addWidget(self.auto_exit_check, 7, 1)
             form_layout.setColumnStretch(1, 1)
 
             self.viewLayout.addWidget(self.titleLabel)
@@ -753,11 +779,12 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
         self.interval_widget.setVisible(is_custom)
         self.interval_label.setVisible(is_custom)
 
-    def _parse_args(self, actions: str) -> tuple[int, bool]:
-        """从 Action 参数解析 -t 与 -e"""
+    def _parse_args(self, actions: str) -> tuple[int, bool, str]:
+        """从 Action 参数解析 -t / -e / -a"""
         args = actions or ""
         task_index = 1
         auto_exit = False
+        account = ""
 
         m = re.search(r"(?:^|\s)-t\s+(\d+)(?:\s|$)", args)
         if m:
@@ -766,7 +793,15 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
         if re.search(r"(?:^|\s)-e(?:\s|$)", args):
             auto_exit = True
 
-        return task_index, auto_exit
+        m_account = re.search(r'(?:^|\s)-a\s+"([^"]+)"(?:\s|$)', args)
+        if m_account:
+            account = m_account.group(1).strip()
+        else:
+            m_account_plain = re.search(r"(?:^|\s)-a\s+([^\s]+)(?:\s|$)", args)
+            if m_account_plain:
+                account = m_account_plain.group(1).strip()
+
+        return task_index, auto_exit, account
 
     def _parse_timeout(self, xml_config: str) -> int:
         """从 XML 配置解析 ExecutionTimeLimit（超时时间）
@@ -843,6 +878,7 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
         # 从 spin 控件获取间隔（支持修改）
         interval_days = self.interval_days_spin.value()
         interval_hours = self.interval_hours_spin.value()
+        account = self.account_edit.text().strip() if self.account_edit else ""
 
         self.task_modified.emit(
             self.task_info.name,
@@ -854,6 +890,7 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
             auto_exit,
             interval_days,
             interval_hours,
+            account,
         )
 
 
@@ -1065,6 +1102,7 @@ class ScheduleTaskTab(Tab):
             auto_exit: bool,
             interval_days: int = 0,
             interval_hours: int = 0,
+            account: str = "",
     ):
         """处理任务修改"""
         try:
@@ -1087,6 +1125,7 @@ class ScheduleTaskTab(Tab):
                 enabled=enabled,
                 interval_days=interval_days,
                 interval_hours=interval_hours,
+                account=account,
             )
             if success:
                 self.load_tasks()
@@ -1144,6 +1183,7 @@ class ScheduleTaskTab(Tab):
             auto_exit: bool,
             interval_days: int = 0,
             interval_hours: int = 0,
+            account: str = "",
     ):
         """处理任务创建"""
         try:
@@ -1158,6 +1198,7 @@ class ScheduleTaskTab(Tab):
                 enabled=True,
                 interval_days=interval_days,
                 interval_hours=interval_hours,
+                account=account,
             )
             if success:
                 self.load_tasks()

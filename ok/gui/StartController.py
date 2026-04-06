@@ -20,10 +20,10 @@ class StartController(QObject):
         self.handler = Handler(exit_event, __name__)
         self.start_timeout = app_config.get('start_timeout', 60)
 
-    def start(self, task=None, exit_after=False):
-        self.handler.post(lambda: self.do_start(task, exit_after))
+    def start(self, task=None, exit_after=False, account=""):
+        self.handler.post(lambda: self.do_start(task, exit_after, account))
 
-    def do_start(self, task=None, exit_after=False):
+    def do_start(self, task=None, exit_after=False, account=""):
         communicate.starting_emulator.emit(False, None, self.start_timeout)
         try:
             logger.info(f'do_start: call do_refresh')
@@ -43,6 +43,8 @@ class StartController(QObject):
                 if exit_after and task:
                     task.exit_after_task = True
                     communicate.task.emit(task)
+                if task and isinstance(account, str) and account.strip():
+                    task.start_account = account.strip()
             if task:
                 task.enable()
                 task.unpause()
