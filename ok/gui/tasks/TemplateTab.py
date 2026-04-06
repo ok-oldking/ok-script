@@ -138,40 +138,46 @@ def _card_style(selected, dark):
 
 
 class ImageLoaderSignals(QObject):
-    finished = Signal(list)
+    finished = Signal(list, int)
 
 class ImageLoaderRunnable(QRunnable):
-    def __init__(self, coco_data, query):
+    def __init__(self, coco_data, query, seq):
         super().__init__()
         self.coco_data = coco_data
         self.query = query
+        self.seq = seq
         self.signals = ImageLoaderSignals()
 
     def run(self):
-        all_images = get_image_files()
-        
-        if self.query:
-            filtered = []
-            for img_path in all_images:
-                name = os.path.splitext(os.path.basename(img_path))[0].lower()
-                cats = get_categories_for_image(self.coco_data, img_path)
-                cat_str = ' '.join(cats).lower()
-                if self.query in name or self.query in cat_str:
-                    filtered.append(img_path)
-            all_images = filtered
+        try:
+            all_images = get_image_files()
+            
+            if self.query:
+                filtered = []
+                for img_path in all_images:
+                    name = os.path.splitext(os.path.basename(img_path))[0].lower()
+                    cats = get_categories_for_image(self.coco_data, img_path)
+                    cat_str = ' '.join(cats).lower()
+                    if self.query in name or self.query in cat_str:
+                        filtered.append(img_path)
+                all_images = filtered
 
-        results = []
-        for img_path in all_images:
-            cats = get_categories_for_image(self.coco_data, img_path)
-            cats_str = ', '.join(cats)
-            qimg = QImage(img_path)
-            if not qimg.isNull():
-                scaled = qimg.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                results.append((img_path, scaled, cats_str))
-            else:
-                results.append((img_path, None, cats_str))
-                
-        self.signals.finished.emit(results)
+            results = []
+            for img_path in all_images:
+                cats = get_categories_for_image(self.coco_data, img_path)
+                cats_str = ', '.join(cats)
+                qimg = QImage(img_path)
+                if not qimg.isNull():
+                    scaled = qimg.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    results.append((img_path, scaled, cats_str))
+                else:
+                    results.append((img_path, None, cats_str))
+            
+            logger.info(f"Image search finished, found {len(results)} items.")
+            self.signals.finished.emit(results, self.seq)
+        except Exception as e:
+            logger.error(f"Image search failed: {e}", exc_info=True)
+            self.signals.finished.emit([], self.seq)
 
 
 class ImageCard(QFrame):
@@ -435,13 +441,17 @@ class TemplateTab(QWidget):
         self.scroll_area.setVisible(False)
         self.empty_widget.setVisible(False)
         self.progress_container.setVisible(True)
+        
+        if hasattr(self, 'search_box'):
+            self.search_box.setEnabled(False)
+            
         self.progress_ring.start()
 
         self._load_sequence += 1
         current_seq = self._load_sequence
         
-        runnable = ImageLoaderRunnable(self.coco_data, query)
-        runnable.signals.finished.connect(lambda items, seq=current_seq: self._on_load_finished(items, seq))
+        runnable = ImageLoaderRunnable(self.coco_data, query, current_seq)
+        runnable.signals.finished.connect(self._on_load_finished)
         QThreadPool.globalInstance().start(runnable)
 
     def _on_load_finished(self, items, seq):
@@ -450,6 +460,9 @@ class TemplateTab(QWidget):
 
         self.progress_ring.stop()
         self.progress_container.setVisible(False)
+        
+        if hasattr(self, 'search_box'):
+            self.search_box.setEnabled(True)
 
         if not items:
             self.empty_widget.setVisible(True)
@@ -480,7 +493,7 @@ class TemplateTab(QWidget):
         self._update_selection_buttons()
 
     def on_search_changed(self, text):
-        self.search_timer.start(300)
+        self.search_timer.start(1000)
 
     def on_card_clicked(self, image_path):
         # Toggle selection

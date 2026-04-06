@@ -182,6 +182,8 @@ class StartController(QObject):
                 started = og.device_manager.adb_ensure_in_front()
                 if not started:
                     return self.tr("Can't start game, make sure the game is installed")
+        except FileNotFoundError as e:
+            raise e
         except Exception as e:
             logger.error(f'check_device_error exception: {str(e)}', e)
             return self.tr(str(e))
