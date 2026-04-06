@@ -628,8 +628,8 @@ class ExecutorOperation:
         ...
 
     def click(self, x: Union[int, "Box", List["Box"]] = -1, y: int = -1, move_back: bool = False,
-              name: Optional[str] = None, interval: int = -1, move: bool = True, down_time: float = 0.01,
-              after_sleep: float = 0, key: str = 'left') -> bool:
+              name: Optional[str] = None, interval: int = -1, move: bool = True, down_time: float = 0.02,
+              after_sleep: float = 0, key: str = 'left', hcenter: bool = False, vcenter: bool = False) -> bool:
         """
         Performs a click action. If x or y is between 0 and 1, it will be treated as relative coordinates and automatically proxy to `click_relative`.
 
@@ -644,6 +644,8 @@ class ExecutorOperation:
         :param down_time: Mouse down time. 鼠标按下时间。
         :param after_sleep: Sleep after click. 点击后睡眠。
         :param key: Mouse button ('left', 'middle', 'right'). 鼠标按钮（'left', 'middle', 'right'）。
+        :param hcenter: If clicking relative coords and True, use screen center as origin. 如果点击相对坐标且为 True，则以屏幕中心为原点。
+        :param vcenter: If clicking relative coords and True, use screen center as origin vertically. 如果点击相对坐标且为 True，则垂直以屏幕中心为原点。
         :return: True if successful. 如果成功返回 True。
         """
         ...
@@ -659,7 +661,8 @@ class ExecutorOperation:
         ...
 
     def middle_click(self, x: Union[int, "Box", List["Box"]] = -1, y: int = -1, move_back: bool = False,
-                     down_time: float = 0.01) -> bool:
+                     name: Optional[str] = None, interval: int = -1, move: bool = True, down_time: float = 0.02,
+                     after_sleep: float = 0, hcenter: bool = False, vcenter: bool = False) -> bool:
         """
         Performs a middle click. Support relative coordinates (0-1).
 
@@ -668,13 +671,20 @@ class ExecutorOperation:
         :param x: X coordinate, Box, List[Box], or relative coordinate (0-1). x 坐标、Box、Box列表或相对坐标 (0-1)。
         :param y: Y coordinate or relative coordinate (0-1). y 坐标或相对坐标 (0-1)。
         :param move_back: Move back after click. 点击后移回。
+        :param name: Name for logging. 日志名称。
+        :param interval: Click interval check. 点击间隔检查。
+        :param move: Move mouse before click. 点击前移动鼠标。
         :param down_time: Mouse down time. 鼠标按下时间。
+        :param after_sleep: Sleep after click. 点击后睡眠。
+        :param hcenter: If clicking relative coords and True, use screen center as origin. 如果点击相对坐标且为 True，则以屏幕中心为原点。
+        :param vcenter: If clicking relative coords and True, use screen center as origin vertically. 如果点击相对坐标且为 True，则垂直以屏幕中心为原点。
         :return: True if successful. 如果成功返回 True。
         """
         ...
 
     def right_click(self, x: Union[int, "Box", List["Box"]] = -1, y: int = -1, move_back: bool = False,
-                    down_time: float = 0.01) -> bool:
+                    name: Optional[str] = None, interval: int = -1, move: bool = True, down_time: float = 0.02,
+                    after_sleep: float = 0, hcenter: bool = False, vcenter: bool = False) -> bool:
         """
         Performs a right click. Support relative coordinates (0-1).
 
@@ -683,7 +693,13 @@ class ExecutorOperation:
         :param x: X coordinate, Box, List[Box], or relative coordinate (0-1). x 坐标、Box、Box列表或相对坐标 (0-1)。
         :param y: Y coordinate or relative coordinate (0-1). y 坐标或相对坐标 (0-1)。
         :param move_back: Move back after click. 点击后移回。
+        :param name: Name for logging. 日志名称。
+        :param interval: Click interval check. 点击间隔检查。
+        :param move: Move mouse before click. 点击前移动鼠标。
         :param down_time: Mouse down time. 鼠标按下时间。
+        :param after_sleep: Sleep after click. 点击后睡眠。
+        :param hcenter: If clicking relative coords and True, use screen center as origin. 如果点击相对坐标且为 True，则以屏幕中心为原点。
+        :param vcenter: If clicking relative coords and True, use screen center as origin vertically. 如果点击相对坐标且为 True，则垂直以屏幕中心为原点。
         :return: True if successful. 如果成功返回 True。
         """
         ...
@@ -1228,7 +1244,8 @@ class ExecutorOperation:
         """
         ...
 
-    def click_relative(self, x: float, y: float, move_back: bool = False, hcenter: bool = False, move: bool = True,
+    def click_relative(self, x: float, y: float, move_back: bool = False, hcenter: bool = False, vcenter: bool = False,
+                       move: bool = True,
                        after_sleep: float = 0, name: Optional[str] = None, interval: int = -1,
                        down_time: float = 0.02, key: str = "left") -> None:
         """
@@ -1240,6 +1257,7 @@ class ExecutorOperation:
         :param y: Relative y-coordinate (0-1). 相对 y 坐标 (0-1)。
         :param move_back: Move back after click. 点击后移回。
         :param hcenter: Horizontal centering. 水平居中。
+        :param vcenter: Vertical centering. 垂直居中。
         :param move: Move mouse. 移动鼠标。
         :param after_sleep: Sleep after click. 点击后睡眠。
         :param name: Logging name. 日志名称。
@@ -1522,6 +1540,7 @@ class OCR(FindFeature):
             match: Optional[Union[str, List[str], Pattern[str], List[Pattern[str]]]] = None, width: int = 0,
             height: int = 0, box: Optional[Union["Box", str]] = None, name: Optional[str] = None, threshold: float = 0,
             frame: Optional[np.ndarray] = None, target_height: int = 0, use_grayscale: bool = False, log: bool = False,
+            screenshot: bool = False,
             frame_processor: Optional[Callable[[np.ndarray], np.ndarray]] = None, lib: str = 'default') -> List["Box"]:
         """
         Performs OCR on region.
@@ -1542,6 +1561,7 @@ class OCR(FindFeature):
         :param target_height: Target height. 目标高度。
         :param use_grayscale: Use grayscale. 使用灰度。
         :param log: Log results. 日志结果。
+        :param screenshot: Save screenshot of the OCR region. 保存 OCR 区域的截图。
         :param frame_processor: Frame processor. 帧处理器。
         :param lib: OCR library. OCR 库。
         :return: Boxes. 框列表。
@@ -1553,7 +1573,7 @@ class OCR(FindFeature):
                        match: Optional[Any] = None, threshold: float = 0, frame: Optional[np.ndarray] = None,
                        target_height: int = 0, time_out: int = 0, raise_if_not_found: bool = False,
                        recheck_time: float = 0, after_sleep: float = 0, post_action: Optional[Callable] = None,
-                       log: bool = False, settle_time: float = -1, lib: str = "default") -> Optional[List["Box"]]:
+                       log: bool = False, screenshot: bool = False, settle_time: float = -1, lib: str = "default") -> Optional[List["Box"]]:
         """
         Waits and clicks OCR result.
 
@@ -1577,6 +1597,7 @@ class OCR(FindFeature):
         :param after_sleep: Sleep after. 后睡眠。
         :param post_action: Post action. 后动作。
         :param log: Log. 日志。
+        :param screenshot: Save screenshot of the OCR region. 保存 OCR 区域的截图。
         :param settle_time: Settle time. 稳定时间。
         :param lib: Library. 库。
         :return: Boxes or None. 框或 None。
@@ -1587,7 +1608,7 @@ class OCR(FindFeature):
                  name: Optional[str] = None, box: Optional["Box"] = None, match: Optional[Any] = None,
                  threshold: float = 0, frame: Optional[np.ndarray] = None, target_height: int = 0, time_out: int = 0,
                  post_action: Optional[Callable] = None, raise_if_not_found: bool = False, log: bool = False,
-                 settle_time: float = -1, lib: str = "default") -> Optional[List["Box"]]:
+                 screenshot: bool = False, settle_time: float = -1, lib: str = "default") -> Optional[List["Box"]]:
         """
         Waits for OCR result.
 
@@ -1609,6 +1630,7 @@ class OCR(FindFeature):
         :param post_action: Post action. 后动作。
         :param raise_if_not_found: Raise if not found. 未找到抛出异常。
         :param log: Log. 日志。
+        :param screenshot: Save screenshot of the OCR region. 保存 OCR 区域的截图。
         :param settle_time: Settle time. 稳定时间。
         :param lib: Library. 库。
         :return: Boxes or None. 框或 None。
