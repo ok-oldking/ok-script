@@ -229,14 +229,14 @@ class ImageCard(QFrame):
         layout.setSpacing(2)
         layout.setAlignment(Qt.AlignCenter)
 
-        self.features_label = QLabel()
+        self.features_label = BodyLabel()
         self.features_label.setAlignment(Qt.AlignCenter)
         self.features_label.setWordWrap(True)
 
         self.thumb_label = QLabel()
         self.thumb_label.setAlignment(Qt.AlignCenter)
 
-        self.name_label = QLabel(os.path.splitext(os.path.basename(image_path))[0])
+        self.name_label = BodyLabel(os.path.splitext(os.path.basename(image_path))[0])
         self.name_label.setAlignment(Qt.AlignCenter)
         self.name_label.setWordWrap(True)
 
