@@ -514,6 +514,7 @@ class AnnotationCanvas(QWidget):
             self.resize_handle = HANDLE_NONE
             self.update()
             self._edit_annotation(idx)
+            return
         super().mouseDoubleClickEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent):
