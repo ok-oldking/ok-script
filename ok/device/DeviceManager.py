@@ -64,31 +64,39 @@ class DeviceManager:
             interaction = self.windows_capture_config.get('interaction')
             if isinstance(interaction, list):
                 if interaction:
-                    interaction_name = interaction[0]
+                    selected_interaction = interaction[0]
                 else:
-                    interaction_name = 'PyDirect'
+                    selected_interaction = 'Pynput'
             else:
-                interaction_name = interaction
+                selected_interaction = interaction
 
             saved_interaction = self.config.get('interaction')
             if saved_interaction:
-                if isinstance(interaction, list) and saved_interaction in interaction:
-                    interaction_name = saved_interaction
-                elif saved_interaction == interaction:
-                    interaction_name = saved_interaction
+                if isinstance(interaction, list):
+                    for item in interaction:
+                        item_name = item.__name__ if isinstance(item, type) else item
+                        if saved_interaction == item_name:
+                            selected_interaction = item
+                            break
+                else:
+                    item_name = interaction.__name__ if isinstance(interaction, type) else interaction
+                    if saved_interaction == item_name:
+                        selected_interaction = interaction
 
-            if interaction_name == 'PostMessage':
+            if selected_interaction == 'PostMessage':
                 self.win_interaction_class = PostMessageInteraction
-            elif interaction_name == 'Genshin':
+            elif selected_interaction == 'Genshin':
                 self.win_interaction_class = GenshinInteraction
-            elif interaction_name == 'ForegroundPostMessage':
+            elif selected_interaction == 'ForegroundPostMessage':
                 self.win_interaction_class = ForegroundPostMessageInteraction
-            elif interaction_name == 'Pynput':
+            elif selected_interaction == 'Pynput':
                 self.win_interaction_class = PynputInteraction
-            elif interaction_name and interaction_name != 'PyDirect':
-                self.win_interaction_class = interaction_name
-            else:
+            elif selected_interaction == 'PyDirect':
                 self.win_interaction_class = PyDirectInteraction
+            elif selected_interaction:
+                self.win_interaction_class = selected_interaction
+            else:
+                self.win_interaction_class = PynputInteraction
         else:
             self.hwnd_window = None
 
@@ -505,10 +513,22 @@ class DeviceManager:
             self.start()
 
     def set_interaction(self, interaction):
-        if self.config.get("interaction") != interaction:
+        interaction_name = interaction.__name__ if isinstance(interaction, type) else interaction
+        
+        config_interaction = self.windows_capture_config.get('interaction') if self.windows_capture_config else None
+        if isinstance(interaction, str):
+            if isinstance(config_interaction, list):
+                for item in config_interaction:
+                    if isinstance(item, type) and item.__name__ == interaction:
+                        interaction = item
+                        break
+            elif isinstance(config_interaction, type) and config_interaction.__name__ == interaction:
+                interaction = config_interaction
+
+        if self.config.get("interaction") != interaction_name:
             if self.executor:
                 self.executor.stop_current_task()
-            self.config['interaction'] = interaction
+            self.config['interaction'] = interaction_name
             if interaction == 'PostMessage':
                 self.win_interaction_class = PostMessageInteraction
             elif interaction == 'Genshin':
