@@ -313,8 +313,18 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         self.cputex = None
         self.contexts = {}
         self.capture_hwnd = 0
+        self.frame_pool = None
+        self.session = None
+        self.item = None
+        self.rtdevice = None
+        self.dxdevice = None
+        self.immediatedc = None
+        self.last_frame = None
+        self.last_size = None
         self.start_or_stop()
 
+    def frame_arrived_callback(self, *args):
+        next_frame = None
         with self.lock:
             if self.exit_event.is_set():
                 logger.warning('frame_arrived_callback exit_event.is_set() return')
@@ -337,8 +347,14 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 with self.lock:
                     self.last_frame = frame
                     self.frame_event.set()
+
+    def convert_dx_frame(self, frame):
         if not frame or self.dxdevice is None or self.immediatedc is None:
             return None
+
+        need_reset_framepool = False
+        need_reset_device = False
+
         if frame.ContentSize.Width != self.last_size.Width or frame.ContentSize.Height != self.last_size.Height:
             need_reset_framepool = True
             self.last_size = frame.ContentSize
@@ -348,6 +364,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             self.reset_framepool(frame.ContentSize)
             return None
 
+        tex = None
         try:
             tex = frame.Surface.astype(self.IDirect3DDxgiInterfaceAccess).GetInterface(
                 self.d3d11.ID3D11Texture2D.GUID).astype(self.d3d11.ID3D11Texture2D)
@@ -380,7 +397,8 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
         if need_reset_framepool:
             self.reset_framepool(frame.ContentSize, need_reset_device)
-            return None
+        return None
+
 
     @property
     def hwnd_window(self):
