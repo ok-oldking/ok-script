@@ -1,5 +1,6 @@
 import json
 import os
+from typing import TypedDict
 
 from PySide6.QtCore import Qt, QRect, QPoint, Signal, QSize, QRectF
 from PySide6.QtGui import (QPainter, QPen, QColor, QPixmap, QMouseEvent,
@@ -11,7 +12,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
 from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
                              LineEdit, MessageBox, BodyLabel, SpinBox,
                              MessageBoxBase, SubtitleLabel, ToolButton,
-                             isDarkTheme, qconfig, SplitTitleBar)
+                             isDarkTheme, qconfig, SplitTitleBar, RoundMenu,
+                             Action)
 
 from ok.gui.widget.BaseWindow import BaseWindow
 
@@ -35,6 +37,7 @@ HANDLE_TR = 6  # top-right corner
 HANDLE_BL = 7  # bottom-left corner
 HANDLE_BR = 8  # bottom-right corner
 
+_COLOR_CACHE = {}
 
 def _detect_handle(pos, rect, margin=EDGE_MARGIN):
     """Detect which resize handle the position is near. rect is in widget coords."""
@@ -80,6 +83,42 @@ def _cursor_for_handle(handle):
     if handle in (HANDLE_LEFT, HANDLE_RIGHT):
         return Qt.SizeHorCursor
     return Qt.ArrowCursor
+
+
+def get_high_contrast_color(ann_id):
+    if ann_id in _COLOR_CACHE:
+        return _COLOR_CACHE[ann_id]
+    
+    val = int(ann_id)
+    
+    # Generate hue using golden ratio conjugate
+    hue = (val * 0.618033988749895) % 1.0
+    
+    # Avoid problematic zones (Red and Blue)
+    if (0.0 <= hue <= 0.15) or (0.55 <= hue <= 0.65):
+        hue = (hue + 0.25) % 1.0
+    
+    # Calculate saturation and value for high contrast
+    s = 0.7 + (val % 3) * 0.1
+    v = 0.6 + (val % 2) * 0.3
+    
+    # Create colors
+    color = QColor.fromHsvF(hue, s, v)
+    bg_color = QColor(color.red(), color.green(), color.blue(), 40)
+    
+    result = (color, bg_color)
+    _COLOR_CACHE[ann_id] = result
+    
+    return result
+
+
+class Annotation(TypedDict):
+    id: int
+    category: str
+    x: float
+    y: float
+    w: float
+    h: float
 
 
 class BBoxDialog(MessageBoxBase):
@@ -188,7 +227,7 @@ class AnnotationCanvas(QWidget):
         self._fit_scale = 1.0   # scale that fits the image to the widget
         self.offset_x = 0       # x offset to center the image
         self.offset_y = 0       # y offset to center the image
-        self.annotations = []   # list of dicts: {id, category, x, y, w, h} in IMAGE coords
+        self.annotations: list[Annotation] = []   # list of dicts: {id, category, x, y, w, h} in IMAGE coords
         self.mode = self.MODE_NONE
         self.selected_ann_index = -1
         self.hovered_ann_index = -1
@@ -216,6 +255,7 @@ class AnnotationCanvas(QWidget):
 
         # Current mouse color info
         self._current_color_text = ""
+        self._category_name_to_id: dict[str, int] = {}
 
         self.setMouseTracking(True)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -297,12 +337,19 @@ class AnnotationCanvas(QWidget):
         self._recalc_offset()
         self.update()
 
-    def set_annotations(self, annotations):
+    def set_annotations(self, annotations: Annotation):
         """Set annotations list. Each: {id, category, x, y, w, h} in image coords."""
         self.annotations = annotations
         self.selected_ann_index = -1
         self.hovered_ann_index = -1
         self.update()
+
+    def set_category_cache(self, coco_data):
+        self._category_name_to_id = {
+            cat['name']: cat['id']
+            for cat in coco_data.get('categories', [])
+            if 'name' in cat and 'id' in cat
+        }
 
     # ---------- coordinate conversion ----------
     def _img_to_widget(self, ix, iy):
@@ -369,8 +416,16 @@ class AnnotationCanvas(QWidget):
                 pen_color = QColor(255, 165, 0)
                 fill = QColor(255, 165, 0, 30)
             else:
-                pen_color = QColor(255, 60, 60)
-                fill = QColor(255, 60, 60, 20)
+                if ann.get("category"):
+                    category_id = self._category_name_to_id.get(ann["category"])
+                    if category_id is not None:
+                        pen_color, fill = get_high_contrast_color(category_id)
+                    else:
+                        pen_color = QColor(255, 60, 60)
+                        fill = QColor(255, 60, 60, 20)
+                else:
+                    pen_color = QColor(255, 60, 60)
+                    fill = QColor(255, 60, 60, 20)
 
             rect = self._ann_widget_rect(ann)
             painter.setPen(QPen(pen_color, 2, Qt.SolidLine))
@@ -437,6 +492,24 @@ class AnnotationCanvas(QWidget):
         pos = event.position().toPoint()
 
         if event.button() == Qt.RightButton:
+            idx = self._find_ann_at(pos)
+            if idx >= 0:
+                event.accept()
+                self.selected_ann_index = idx
+                copyAction = Action(
+                    "Copy annotation", triggered=lambda: self.copy_selected()
+                )
+                pasteAction = Action(
+                    "Copy color",
+                    triggered=lambda: QApplication.clipboard().setText(
+                        self._current_color_text
+                    ),
+                )
+                menu = RoundMenu(parent=self)
+                menu.addAction(copyAction)
+                menu.addAction(pasteAction)
+                menu.exec_(self.mapToGlobal(pos))
+                return
             # Copy current color text to clipboard
             if self._current_color_text:
                 QApplication.clipboard().setText(self._current_color_text)
@@ -505,6 +578,7 @@ class AnnotationCanvas(QWidget):
             self.resize_handle = HANDLE_NONE
             self.update()
             self._edit_annotation(idx)
+            return
         super().mouseDoubleClickEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -608,6 +682,21 @@ class AnnotationCanvas(QWidget):
                 self.hovered_ann_index = -1
                 self.annotations_changed.emit()
                 self.update()
+
+    def copy_selected(self):
+        idx = self.selected_ann_index
+        if idx < 0:
+            return
+        existing_ids = {a.get('id', 0) for a in self.annotations}
+        new_id = 1
+        while new_id in existing_ids:
+            new_id += 1
+        ann = self.annotations[idx].copy()
+        ann.update({'id': new_id, 'x': ann['x'] + 20, 'y': ann['y'] + 20, 'category': ann['category'] + '_copy'})
+        self.annotations.append(ann)
+        self.selected_ann_index = -1
+        self.annotations_changed.emit()
+        self.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         if self.dragging:
@@ -716,12 +805,12 @@ class AnnotationCanvas(QWidget):
         if dialog.exec():
             cat, bx, by, bw, bh = dialog.get_values()
             if cat:
-                max_id = 0
-                for a in self.annotations:
-                    if a.get('id', 0) > max_id:
-                        max_id = a['id']
+                existing_ids = {a.get('id', 0) for a in self.annotations}
+                new_id = 1
+                while new_id in existing_ids:
+                    new_id += 1
                 self.annotations.append({
-                    'id': max_id + 1,
+                    'id': new_id,
                     'category': cat,
                     'x': bx,
                     'y': by,
@@ -959,6 +1048,7 @@ class MarkUpWindow(BaseWindow):
 
         # Load annotations for this image
         self.coco_data = load_coco()
+        self.canvas.set_category_cache(self.coco_data)
         image_id = self._get_image_id(filename)
         annotations = []
         if image_id is not None:
@@ -994,11 +1084,10 @@ class MarkUpWindow(BaseWindow):
             if cat['name'] == name:
                 return cat['id']
         # Create new category
-        max_id = 0
-        for cat in self.coco_data.get('categories', []):
-            if cat['id'] > max_id:
-                max_id = cat['id']
-        new_id = max_id + 1
+        existing_ids = {cat['id'] for cat in self.coco_data.get('categories', [])}
+        new_id = 1
+        while new_id in existing_ids:
+            new_id += 1
         self.coco_data['categories'].append({
             'id': new_id,
             'name': name,
@@ -1038,11 +1127,10 @@ class MarkUpWindow(BaseWindow):
         image_id = self._get_image_id(filename)
         if image_id is None:
             # Add image entry
-            max_id = 0
-            for img in self.coco_data.get('images', []):
-                if img['id'] > max_id:
-                    max_id = img['id']
-            image_id = max_id + 1
+            existing_ids = {img['id'] for img in self.coco_data.get('images', [])}
+            image_id = 1
+            while image_id in existing_ids:
+                image_id += 1
             import cv2
             img = cv2.imread(image_path)
             h, w = (img.shape[:2]) if img is not None else (0, 0)
@@ -1060,23 +1148,23 @@ class MarkUpWindow(BaseWindow):
         ]
 
         # Find max annotation id
-        max_ann_id = 0
-        for ann in self.coco_data.get('annotations', []):
-            if ann['id'] > max_ann_id:
-                max_ann_id = ann['id']
+        existing_ann_ids = {ann['id'] for ann in self.coco_data.get('annotations', [])}
+        next_ann_id = 1
 
         # Add current canvas annotations
         for can_ann in self.canvas.annotations:
-            max_ann_id += 1
+            while next_ann_id in existing_ann_ids:
+                next_ann_id += 1
             cat_id = self._get_or_create_category_id(can_ann['category'])
             self.coco_data['annotations'].append({
-                'id': max_ann_id,
+                'id': next_ann_id,
                 'image_id': image_id,
                 'category_id': cat_id,
                 'bbox': [can_ann['x'], can_ann['y'], can_ann['w'], can_ann['h']],
                 'area': can_ann['w'] * can_ann['h'],
                 'iscrowd': 0
             })
+            existing_ann_ids.add(next_ann_id)
 
         # Clean up orphaned categories
         used_cat_ids = set(ann['category_id'] for ann in self.coco_data.get('annotations', []))
@@ -1086,6 +1174,7 @@ class MarkUpWindow(BaseWindow):
         ]
 
         save_coco(self.coco_data)
+        self.canvas.set_category_cache(self.coco_data)
 
     def end_draw_mode(self):
         """Called after finishing drawing a box to exit draw mode."""
