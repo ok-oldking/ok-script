@@ -28,7 +28,7 @@ class TaskCard(ConfigCard):
         self.instructions_button.clicked.connect(self.show_instructions)
 
         if getattr(self.task, 'is_custom', False):
-            self.edit_button = PushButton(FluentIcon.EDIT, self.tr("Edit"))
+            self.edit_button = PushButton(FluentIcon.EDIT, self.tr("Edit"), self)
             self.edit_button.clicked.connect(self.edit_clicked)
         else:
             self.edit_button = None
@@ -47,7 +47,7 @@ class TaskCard(ConfigCard):
             self.pause_button = None
             self.stop_button = None
             self.start_button = None
-            self.enable_button = SwitchButton()
+            self.enable_button = SwitchButton(parent=self)
             self.enable_button.setOnText(self.tr('Enabled'))
             self.enable_button.setOffText(self.tr('Disabled'))
             self.enable_button.checkedChanged.connect(self.check_changed)
