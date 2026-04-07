@@ -715,14 +715,8 @@ class OCR(FindFeature):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.ocr_default_threshold = 0.8
+        self.ocr_default_threshold = 0.2
         self.ocr_target_height = 0
-
-    def get_threshold(self, lib, threshold):
-        if threshold > 0:
-            return threshold
-        else:
-            return self.executor.config.get('ocr').get(lib).get('default_threshold', 0.8)
 
     def ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None, name=None,
              threshold=0, frame=None, target_height=0, use_grayscale=False, log=False,
@@ -834,6 +828,27 @@ class OCR(FindFeature):
         return match
 
     def fix_texts(self, detected_boxes):
+        ocr_config = self.executor.config.get('ocr', {})
+        
+        auto_simplify = False
+        if isinstance(ocr_config, dict):
+            auto_simplify = ocr_config.get('auto_simplify', False)
+            
+        if auto_simplify:
+            locale_name = self.executor.locale.name()
+            if locale_name.startswith('zh_TW') or locale_name.startswith('zh_HK') or locale_name.startswith('zh_MO'):
+                try:
+                    from opencc import OpenCC
+                    if not hasattr(self, '_cc_jp2t'):
+                        self._cc_jp2t = OpenCC('jp2t')
+                        self._cc_t2s = OpenCC('t2s')
+                        
+                    for detected_box in detected_boxes:
+                        t_name = self._cc_jp2t.convert(detected_box.name)
+                        detected_box.name = self._cc_t2s.convert(t_name)
+                except ImportError:
+                    logger.error("opencc is not installed, but auto_simplify is enabled.")
+
         for detected_box in detected_boxes:
             detected_box.name = detected_box.name.strip()
             if self.executor.ocr_po_translation is not None:
