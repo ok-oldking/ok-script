@@ -1023,6 +1023,14 @@ cdef class BaseTask(OCR):
         self.first_run_alert = first_run_alert
 
     def add_multi_account_config(self):
+        """Add multi-account related keys to default_config / config_description.
+
+        Called automatically from :meth:`after_init` when
+        ``support_multi_account = True``.  Subclasses **must** set
+        ``self.support_multi_account = True`` inside their own ``__init__``
+        (before ``after_init`` is invoked by the task manager) for this to
+        take effect.
+        """
         self.default_config.update({
             "Multi Account Mode": False,
             "Multi Account Independent Config": False,
@@ -1404,9 +1412,6 @@ cdef class BaseTask(OCR):
                 self.do_logout()
 
             prev_account = account
-
-
-        return True
 
     def on_destroy(self):
         pass
