@@ -242,6 +242,9 @@ class EditTaskTab(QWidget):
         self.template_list.setMaximumWidth(250)
         self._populate_template_list("")
         self.template_list.itemClicked.connect(self.on_template_clicked)
+        self.template_list.itemExpanded.connect(self.on_item_expanded_collapsed)
+        self.template_list.itemCollapsed.connect(self.on_item_expanded_collapsed)
+        self._last_toggled_time = 0
         self.template_panel.addWidget(self.template_list)
         
         template_container = QWidget()
@@ -724,9 +727,17 @@ class EditTaskTab(QWidget):
                 from ok.gui.util.Alert import alert_error
                 alert_error(f"Error deleting task: {e}")
 
+    def on_item_expanded_collapsed(self, item):
+        import time
+        self._last_toggled_time = time.time()
+
     def on_template_clicked(self, item, column):
+        import time
         template = item.data(0, Qt.UserRole)
         if not template:
+            # If the item was expanded/collapsed natively by the chevron just now, don't revert it
+            if time.time() - getattr(self, '_last_toggled_time', 0) < 0.1:
+                return
             if item.isExpanded():
                 item.setExpanded(False)
             else:
