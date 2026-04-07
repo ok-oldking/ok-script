@@ -19,7 +19,6 @@ basic_options = ConfigOption('Basic Options', {
                 'Start/Stop': {'type': "drop_down", 'options': ['None', 'F9', 'F10', 'F11', 'F12']}}
                              , config_description={'Use DirectML': 'Use GPU to Improve Performance',
                                                    'Start/Stop': 'HotKey',
-                                                   'Windows Capture': 'Switch between different Windows capture methods',
                                                    'Trigger Interval': 'Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)'},
                              icon=FluentIcon.GAME)
 

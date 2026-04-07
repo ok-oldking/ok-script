@@ -113,7 +113,7 @@ cdef class App:
         else:
             self.to_translate = None
             
-        if self.config.get('debug') or self.ok_config.get('use_overlay', False):
+        if self.ok_config.get('use_overlay', False):
             logger.debug('init overlay')
             from ok.gui.overlay.OverlayWindow import OverlayWindow
             self.overlay_window = OverlayWindow(og.device_manager.hwnd_window)
@@ -312,9 +312,7 @@ class OK:
                         available_methods.append(method)
                 else:
                     available_methods.append(method)
-            if len(available_methods) > 1:
-                basic_options.default_config['Windows Capture'] = available_methods[0]
-                basic_options.config_type['Windows Capture'] = {'type': 'drop_down', 'options': available_methods}
+
         self.global_config.get_config(basic_options)
         og.global_config = self.global_config
         og.set_use_dml()

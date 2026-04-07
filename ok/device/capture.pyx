@@ -757,10 +757,7 @@ cdef class HwndWindow:
         self.thread.start()
 
     def validate_mute_config(self, key, value):
-        if key == 'Windows Capture':
-            logger.info(f'config changed Windows Capture {value}')
-            self.device_manager.use_windows_capture()
-        elif key == 'Mute Game while in Background' and self.hwnd:
+        if key == 'Mute Game while in Background' and self.hwnd:
             logger.info(f'validate_mute_config {value}')
             if value:
                 self.handle_mute(value)

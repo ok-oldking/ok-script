@@ -538,8 +538,7 @@ class DeviceManager:
         selected_method = self.config.get('capture')
         valid_methods = self.windows_capture_config.get('capture_method', [])
         if not selected_method or selected_method not in valid_methods:
-             selected_method = self.global_config.get_config('Basic Options').get('Windows Capture')
-             if selected_method not in valid_methods and valid_methods:
+             if valid_methods:
                  selected_method = valid_methods[0]
         self.capture_method = update_capture_method(self.windows_capture_config, self.capture_method, self.hwnd_window,
                                                     exit_event=self.exit_event, selected_method=selected_method)
