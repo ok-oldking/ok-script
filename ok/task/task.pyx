@@ -979,7 +979,6 @@ cdef class BaseTask(OCR):
         self.current_account_name = ""
         self.multi_account_mode = False
         self.multi_account_independent_config = False
-        self.add_multi_account_config()
 
     def run_task_by_class(self, cls):
         task = self.get_task_by_class(cls)
@@ -1267,7 +1266,146 @@ cdef class BaseTask(OCR):
     def run(self):
         pass
 
-    def trigger(self):
+    # ------------------------------------------------------------------
+    # Multi-account interface
+    # ------------------------------------------------------------------
+
+    def do_login(self, username, password):
+        """Log in to the account identified by *username* and *password*.
+
+        Called by :meth:`run_multi_account` for each account that is not yet
+        the active account according to :meth:`is_logged_in`.
+
+        **MUST be overridden** when ``support_multi_account = True``.
+
+        Returns:
+            bool: ``True`` if login succeeded and the task may proceed;
+                  ``False`` to skip this account and continue with the next one.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} must implement do_login() "
+            "when support_multi_account=True"
+        )
+
+    def is_logged_in(self, username):
+        """Return ``True`` if *username* is the currently active/logged-in account.
+
+        Called by :meth:`run_multi_account` to skip a redundant login when the
+        game is already on the correct account.
+
+        **MUST be overridden** when ``support_multi_account = True``.
+
+        Args:
+            username (str): The account username to check.
+
+        Returns:
+            bool: ``True`` if already logged in as *username*, ``False`` otherwise.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} must implement is_logged_in() "
+            "when support_multi_account=True"
+        )
+
+    def run_one_account(self, account):
+        """Execute the per-account task logic for the current account.
+
+        Called by :meth:`run_multi_account` after a successful login.
+        ``self.config`` has already been updated with any per-account overrides
+        via :meth:`apply_account_scoped_config` before this method is called.
+
+        **MUST be overridden** when ``support_multi_account = True``.
+
+        Args:
+            account (dict): Account info dict with keys:
+                - ``"username"`` (str)
+                - ``"password"`` (str)
+                - ``"account_id"`` (str) — stable registry ID, may be empty if
+                  the account has not been registered yet.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} must implement run_one_account() "
+            "when support_multi_account=True"
+        )
+
+    def do_logout(self):
+        """Log out of the current account before switching to the next one.
+
+        Called by :meth:`run_multi_account` in a ``finally`` block after
+        :meth:`run_one_account` completes (whether it succeeded or raised).
+
+        Override as needed.  The default implementation is a no-op.
+        """
+
+    def on_account_switch(self, old_account, new_account):
+        """Called just before switching from *old_account* to *new_account*.
+
+        Override to perform any game-state preparation needed before the switch
+        (e.g. returning to the main menu).
+
+        Args:
+            old_account (dict): The account that just finished running.
+            new_account (dict): The account that is about to start.
+        """
+
+    def run_multi_account(self):
+        """Template method that drives the full multi-account run loop.
+
+        Iterates through :meth:`get_account_list` and, for each account:
+
+        1. Calls :meth:`set_current_account` + :meth:`apply_account_scoped_config`
+           so ``self.config`` reflects this account's overrides.
+        2. Calls :meth:`on_account_switch` when moving from the previous account.
+        3. Skips :meth:`do_login` if :meth:`is_logged_in` returns ``True``.
+        4. Calls :meth:`do_login`; skips the account on failure.
+        5. Calls :meth:`run_one_account` inside a ``try/finally``.
+        6. Calls :meth:`do_logout` in the ``finally`` block.
+
+        Typical usage inside ``run()``::
+
+            def run(self):
+                if self.multi_account_mode:
+                    self.run_multi_account()
+                else:
+                    # single-account logic
+                    ...
+        """
+        if not self.multi_account_mode:
+            self.log_warning("run_multi_account() called but Multi Account Mode is disabled; skipping")
+            return
+
+        account_list = self.get_account_list()
+        if not account_list:
+            self.log_warning("Multi account mode enabled but account list is empty")
+            return
+
+        prev_account = None
+        for account in account_list:
+            if not self.enabled:
+                break
+
+            self.set_current_account(account["username"])
+            self.apply_account_scoped_config()
+
+            if prev_account is not None:
+                self.on_account_switch(prev_account, account)
+
+            if not self.is_logged_in(account["username"]):
+                success = self.do_login(account["username"], account["password"])
+                if not success:
+                    self.log_warning(
+                        f"Login failed for account '{account['username']}', skipping"
+                    )
+                    prev_account = account
+                    continue
+
+            try:
+                self.run_one_account(account)
+            finally:
+                self.do_logout()
+
+            prev_account = account
+
+
         return True
 
     def on_destroy(self):
@@ -1283,6 +1421,8 @@ cdef class BaseTask(OCR):
             self.scene = scene
         elif self._executor and hasattr(self._executor, 'scene'):
             self.scene = self._executor.scene
+        if self.support_multi_account:
+            self.add_multi_account_config()
         self.load_config()
         self.on_create()
 
