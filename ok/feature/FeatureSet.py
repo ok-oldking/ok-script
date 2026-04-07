@@ -1,4 +1,4 @@
-# FeatureSet.pyx
+# FeatureSet.py
 import glob
 import json
 import math
@@ -19,29 +19,28 @@ from ok.gui.Communicate import communicate
 from ok.util.file import get_path_relative_to_exe
 from ok.util.logger import Logger
 
-cpdef tuple resize_image(object image, int frame_height, int target_height):
+def resize_image(image, frame_height: int, target_height: int) -> tuple:
     """Resizes the image if the original height is significantly larger than the target height."""
-    cdef double scale_factor = 1.0
-    cdef int original_height = image.shape[0]
-    cdef int image_height, image_width, new_width, new_height
+    scale_factor = 1.0
+    original_height = image.shape[0]
 
     if target_height > 0 and frame_height >= 1.5 * target_height:
         image_height, image_width = image.shape[:2]
         scale_factor = target_height / frame_height
-        new_width = <int> round(image_width * scale_factor)
-        new_height = <int> round(image_height * scale_factor)
+        new_width = int(round(image_width * scale_factor))
+        new_height = int(round(image_height * scale_factor))
         image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
     return image, scale_factor
 
-cpdef void scale_box(object box, double scale_factor):
+def scale_box(box, scale_factor: float):
     """Scales the box coordinates by the given scale factor."""
     if scale_factor != 1:
-        box.x = <int> round(box.x / scale_factor)
-        box.y = <int> round(box.y / scale_factor)
-        box.width = <int> round(box.width / scale_factor)
-        box.height = <int> round(box.height / scale_factor)
+        box.x = int(round(box.x / scale_factor))
+        box.y = int(round(box.y / scale_factor))
+        box.width = int(round(box.width / scale_factor))
+        box.height = int(round(box.height / scale_factor))
 
-cpdef str join_list_elements(input_object):
+def join_list_elements(input_object) -> str:
     """Joins the elements of a list into a single string."""
     if input_object is None:
         return ''
@@ -52,14 +51,21 @@ cpdef str join_list_elements(input_object):
 from ok.util.clazz import generate_label_enum
 logger = Logger.get_logger(__name__)
 
-cdef class FeatureSet:
-    cdef public int width, height
-    cdef double default_threshold, default_horizontal_variance, default_vertical_variance
-    cdef str coco_json
-    cdef bint debug, load_success
-    cdef dict feature_dict, box_dict
-    cdef object lock, feature_processor
-    cdef list hcenter_features, vcenter_features
+class FeatureSet:
+    width: int
+    height: int
+    default_threshold: float
+    default_horizontal_variance: float
+    default_vertical_variance: float
+    coco_json: str
+    debug: bool
+    load_success: bool
+    feature_dict: dict
+    box_dict: dict
+    lock: object
+    feature_processor: object
+    hcenter_features: list
+    vcenter_features: list
 
     def __init__(self, debug, coco_json: str, default_horizontal_variance,
                  default_vertical_variance, default_threshold=0.95, feature_processor=None,
@@ -87,10 +93,10 @@ cdef class FeatureSet:
     def feature_exists(self, feature_name: str) -> bool:
         return feature_name in self.feature_dict
 
-    cdef bint empty(self):
+    def empty(self) -> bool:
         return len(self.feature_dict) == 0 and len(self.box_dict) == 0
 
-    cpdef bint check_size(self, object frame):
+    def check_size(self, frame) -> bool:
         with self.lock:
             height, width = frame.shape[:2]
             if (self.width != width or self.height != height) and height > 0 and width > 0:
@@ -102,7 +108,7 @@ cdef class FeatureSet:
                 self.process_data()
         return self.load_success
 
-    cpdef bint process_data(self):
+    def process_data(self) -> bool:
         self.feature_dict, self.box_dict, compressed, self.load_success = read_from_json(self.coco_json, self.width,
                                                                                          self.height,
                                                                                          self.hcenter_features,
@@ -152,11 +158,11 @@ cdef class FeatureSet:
                 self.feature_processor(feature, self.feature_dict[feature])
         return self.load_success
 
-    cpdef object get_box_by_name(self, mat, category_name):
+    def get_box_by_name(self, mat, category_name):
         self.check_size(mat)
         return self.box_dict.get(category_name)
 
-    cdef save_images(self, str target_folder):
+    def save_images(self, target_folder: str):
         os.makedirs(target_folder, exist_ok=True)
 
         for category_name, image in self.feature_dict.items():
@@ -165,7 +171,7 @@ cdef class FeatureSet:
 
             cv2.imwrite(file_path, image.mat)
 
-    cpdef object get_feature_by_name(self, mat, name):
+    def get_feature_by_name(self, mat, name):
         self.check_size(mat)
         return self.feature_dict.get(name)
 
@@ -259,7 +265,7 @@ cdef class FeatureSet:
             logger.error(
                 f'feature template {category_name} {box.name if box else ""} size greater than search area {feature.mat.shape} > {search_area.shape}')
 
-        cdef double scale_factor = 1.0
+        scale_factor = 1.0
         if target_height > 0:
             search_area, scale_factor = resize_image(search_area, mat.shape[0], target_height)
             if scale_factor != 1:

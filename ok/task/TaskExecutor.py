@@ -15,34 +15,36 @@ from ok.util.window import ratio_text_to_number
 
 logger = Logger.get_logger(__name__)
 
-cdef class TaskExecutor:
-    cdef public object _frame
-    cdef public bint paused
-    cdef double pause_start
-    cdef double pause_end_time
-    cdef double _last_frame_time
-    cdef double wait_until_timeout
-    cdef public object device_manager
-    cdef public object feature_set
-    cdef double wait_until_settle_time
-    cdef double wait_scene_timeout
-    cdef public object exit_event
-    cdef public bint debug_mode
-    cdef public bint debug
-    cdef public object global_config
-    cdef public dict _ocr_lib
-    cdef public int ocr_target_height
-    cdef public object current_task
-    cdef str config_folder
-    cdef int trigger_task_index
-    cdef public list trigger_tasks
-    cdef public list onetime_tasks
-    cdef object thread, locale
-    cdef public object scene
-    cdef public dict text_fix
-    cdef public object ocr_po_translation
-    cdef public object config, basic_options
-    cdef object lock
+class TaskExecutor:
+    _frame: object
+    paused: bool
+    pause_start: float
+    pause_end_time: float
+    _last_frame_time: float
+    wait_until_timeout: float
+    device_manager: object
+    feature_set: object
+    wait_until_settle_time: float
+    wait_scene_timeout: float
+    exit_event: object
+    debug_mode: bool
+    debug: bool
+    global_config: object
+    _ocr_lib: dict
+    ocr_target_height: int
+    current_task: object
+    config_folder: str
+    trigger_task_index: int
+    trigger_tasks: list
+    onetime_tasks: list
+    thread: object
+    locale: object
+    scene: object
+    text_fix: dict
+    ocr_po_translation: object
+    config: object
+    basic_options: object
+    lock: object
 
     def __init__(self, device_manager,
                  wait_until_timeout=10, wait_until_settle_time=-1,
@@ -84,7 +86,7 @@ cdef class TaskExecutor:
         self.thread = None
         self.lock = threading.Lock()
 
-    cdef load_tr(self):
+    def load_tr(self):
         locale_name = self.locale.name()
         try:
             from ok.gui.i18n.GettextTranslator import get_ocr_translations
@@ -160,17 +162,17 @@ cdef class TaskExecutor:
             return True, '0x0'
         logger.info(f'start check_frame_and_resolution')
         self.device_manager.update_resolution_for_hwnd()
-        cdef double start = time.time()
-        cdef object frame = None
+        start = time.time()
+        frame = None
         while frame is None and (time.time() - start) < time_out:
             frame = self.method.get_frame()
             time.sleep(0.1)
         if frame is None:
             logger.error(f'check_frame_and_resolution failed can not get frame after {time_out} {time.time() - start}')
             return False, '0x0'
-        cdef int width = self.method.width
-        cdef int height = self.method.height
-        cdef actual_ratio = 0
+        width = self.method.width
+        height = self.method.height
+        actual_ratio = 0
         if height == 0:
             actual_ratio = 0
         else:
@@ -225,7 +227,7 @@ cdef class TaskExecutor:
             self.next_frame()
         return self._frame
 
-    cpdef check_enabled(self, check_pause=True):
+    def check_enabled(self, check_pause=True):
         if check_pause and self.paused:
             self.sleep(1)
         if self.current_task and not self.current_task.enabled:
@@ -233,7 +235,7 @@ cdef class TaskExecutor:
             self.current_task = None
             raise TaskDisabledException()
 
-    cpdef sleep(self, double timeout):
+    def sleep(self, timeout: float):
         """
         Sleeps for the specified timeout, checking for an exit event every 100ms, with adjustments to prevent oversleeping.
 
@@ -246,8 +248,8 @@ cdef class TaskExecutor:
             time.sleep(timeout)
             return
         self.pause_end_time = time.time() + timeout
-        cdef double to_sleep = 0
-        cdef object task
+        to_sleep = 0
+        task = None
         while True:
             self.check_enabled(check_pause=False)
             if self.current_task is not None:
@@ -350,7 +352,7 @@ cdef class TaskExecutor:
         if self.scene:
             self.scene.reset()
 
-    cdef tuple next_task(self):
+    def next_task(self) -> tuple:
         if self.exit_event.is_set():
             logger.error(f"next_task exit_event.is_set exit")
             return None, False, False
@@ -373,14 +375,14 @@ cdef class TaskExecutor:
     def active_trigger_task_count(self):
         return len([x for x in self.trigger_tasks if x.enabled])
 
-    cdef trigger_sleep(self):
+    def trigger_sleep(self):
         if interval := self.basic_options.get('Trigger Interval', 1):
             self.sleep(interval / 1000)
 
-    cdef execute(self):
+    def execute(self):
         logger.info(f"start execute")
-        cdef object task
-        cdef bint cycled
+        task = None
+        cycled = False
         while not self.exit_event.is_set():
             if self.paused:
                 logger.info(f'executor is paused sleep')

@@ -3,8 +3,8 @@ TemplateFactory and TemplateInputDialog for the EditTaskTab.
 
 This module provides:
 - TemplateInputDialog: A dialog for inputting function parameters, each on a separate row.
-- TemplateFactory: Reads function signatures and docs from ok/__init__.pyi and generates
-  template code snippets for use in the code editor.
+- TemplateFactory: Reads function signatures and docs from the Python source files
+  (ok/task/task.py) and generates template code snippets for use in the code editor.
 """
 
 import ast
@@ -130,11 +130,11 @@ class TemplateInputDialog(MessageBoxBase):
         return result
 
 
-def _parse_pyi_functions(pyi_path: str) -> List[Dict]:
-    """Parse the ok/__init__.pyi file and extract function signatures from BaseTask and its parents.
+def _parse_py_functions(py_path: str) -> List[Dict]:
+    """Parse the ok/task/task.py file and extract function signatures from BaseTask and its parents.
 
     Args:
-        pyi_path: Absolute path to the .pyi file.
+        py_path: Absolute path to the task.py source file.
 
     Returns:
         A list of dicts, each with keys:
@@ -146,10 +146,10 @@ def _parse_pyi_functions(pyi_path: str) -> List[Dict]:
         - 'is_property': whether it's a property
         - 'class_name': the class it belongs to
     """
-    if not os.path.exists(pyi_path):
+    if not os.path.exists(py_path):
         return []
 
-    with open(pyi_path, 'r', encoding='utf-8') as f:
+    with open(py_path, 'r', encoding='utf-8') as f:
         source = f.read()
 
     try:
@@ -159,7 +159,7 @@ def _parse_pyi_functions(pyi_path: str) -> List[Dict]:
 
     def _get_category(name: str) -> str:
         name_lower = name.lower()
-        if any(w in name_lower for w in ['run', 'scene', 'on_', 'tigger', '_config', 'set_', '_init', 'exit', 'check_interval', 'should_trigger', '_set_executor']):
+        if any(w in name_lower for w in ['start', 'run', 'get_threshold', 'fix_texts', 'validate', 'ocr_fun', 'get_box', 'fix_match_regex', 'onnx_ocr', 'paddle_ocr', 'duguang_ocr', 'rapid_ocr', 'validate_key', 'scene', 'on_', 'tigger', '_config', 'set_', '_init', 'exit', 'check_interval', 'should_trigger', '_set_executor']):
             return "Skip"
         elif any(w in name_lower for w in ['click', 'scroll', 'mouse', 'swipe', 'move']):
             return "Mouse"
@@ -304,11 +304,11 @@ def _parse_pyi_functions(pyi_path: str) -> List[Dict]:
 
 # Cache parsed templates
 _cached_templates = None
-_cached_pyi_mtime = 0
+_cached_py_mtime = 0
 
 
 def get_templates() -> List[Dict]:
-    """Get all available templates, parsed from ok/__init__.pyi.
+    """Get all available templates, parsed from ok/task/task.py.
 
     Returns cached results if the file hasn't changed.
 
@@ -316,18 +316,18 @@ def get_templates() -> List[Dict]:
         List of template dicts with keys: name, template_name, params, doc, full_doc,
         return_type, is_property, class_name, is_static.
     """
-    global _cached_templates, _cached_pyi_mtime
+    global _cached_templates, _cached_py_mtime
 
-    pyi_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                            '__init__.pyi')
+    py_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                           'task', 'task.py')
     try:
-        current_mtime = os.path.getmtime(pyi_path)
+        current_mtime = os.path.getmtime(py_path)
     except OSError:
         return _cached_templates or []
 
-    if _cached_templates is None or current_mtime != _cached_pyi_mtime:
-        _cached_templates = _parse_pyi_functions(pyi_path)
-        _cached_pyi_mtime = current_mtime
+    if _cached_templates is None or current_mtime != _cached_py_mtime:
+        _cached_templates = _parse_py_functions(py_path)
+        _cached_py_mtime = current_mtime
 
     return _cached_templates
 
@@ -356,7 +356,7 @@ def filter_templates(templates: List[Dict], query: str) -> List[Dict]:
 class TemplateFactory:
     """Factory for handling template selection and code generation.
 
-    Reads function signatures from ok/__init__.pyi and generates
+    Reads function signatures from ok/task/task.py and generates
     properly formatted code snippets with user-provided parameter values.
     """
 
