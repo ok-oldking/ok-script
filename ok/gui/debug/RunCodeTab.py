@@ -9,6 +9,7 @@ from qfluentwidgets import PushButton, TextEdit
 from ok import Config
 from ok.gui.widget.Tab import Tab
 
+
 class RunCodeTab(Tab):
     update_result_text: Signal = Signal(str)
 

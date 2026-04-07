@@ -11,12 +11,12 @@ from ok.feature.Box import find_boxes_by_name, find_boxes_within_boundary, Box, 
     sort_boxes, find_highest_confidence_box
 from ok.feature.FeatureSet import adjust_coordinates, resize_image, scale_box, join_list_elements
 from ok.gui.Communicate import communicate
+from ok.task.exceptions import HotkeyConfigException
 from ok.util.color import calculate_color_percentage
 from ok.util.config import Config
 from ok.util.handler import Handler
 from ok.util.logger import Logger
 from ok.util.process import create_shortcut
-from ok.task.exceptions import HotkeyConfigException
 
 VALID_NAMED_KEYS = {
     'esc', 'tab', 'shift', 'lshift', 'rshift', 'ctrl', 'lctrl', 'rctrl', 'alt', 'lalt', 'ralt',

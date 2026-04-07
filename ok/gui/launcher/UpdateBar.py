@@ -6,7 +6,6 @@ from ok.gui.Communicate import communicate
 from ok.gui.launcher.DownloadBar import DownloadBar
 
 
-
 class UpdateBar(QWidget):
 
     def __init__(self, config, updater):

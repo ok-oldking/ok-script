@@ -1,16 +1,15 @@
 import json
 import os
-import time
 from typing import TypedDict
 
 import cv2
-from PySide6.QtCore import Qt, QSize, Signal, QThread, QTimer, QRunnable, QThreadPool, QObject
-from PySide6.QtGui import QPixmap, QImage, QIcon
+from PySide6.QtCore import Qt, Signal, QTimer, QRunnable, QThreadPool, QObject
+from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                               QScrollArea, QLabel, QSizePolicy, QFrame)
+                               QScrollArea, QLabel, QFrame)
 from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
-                             SearchLineEdit, MessageBox, BodyLabel, isDarkTheme,
-                             qconfig, IndeterminateProgressRing)
+                            SearchLineEdit, MessageBox, BodyLabel, isDarkTheme,
+                            qconfig, IndeterminateProgressRing)
 
 from ok import og
 from ok.util.logger import Logger

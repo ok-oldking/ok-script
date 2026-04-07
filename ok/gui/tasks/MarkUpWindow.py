@@ -1,24 +1,19 @@
-import json
 import os
 from typing import TypedDict
 
-from PySide6.QtCore import Qt, QRect, QPoint, Signal, QSize, QRectF
+from PySide6.QtCore import Qt, QRect, QPoint, Signal, QRectF
 from PySide6.QtGui import (QPainter, QPen, QColor, QPixmap, QMouseEvent,
-                            QKeyEvent, QBrush, QFont, QCursor, QTransform,
-                            QWheelEvent, QImage)
+                           QKeyEvent, QBrush, QFont, QWheelEvent)
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                               QLabel, QScrollArea, QSizePolicy, QDialog,
-                               QFormLayout, QApplication)
+                               QLabel, QSizePolicy, QFormLayout, QApplication)
 from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
-                             LineEdit, MessageBox, BodyLabel, SpinBox,
-                             MessageBoxBase, SubtitleLabel, ToolButton,
-                             isDarkTheme, qconfig, SplitTitleBar, RoundMenu,
-                             Action)
+                            LineEdit, MessageBox, BodyLabel, SpinBox,
+                            MessageBoxBase, SubtitleLabel, ToolButton,
+                            isDarkTheme, SplitTitleBar, RoundMenu,
+                            Action)
 
+from ok.gui.tasks.TemplateTab import (load_coco, save_coco)
 from ok.gui.widget.BaseWindow import BaseWindow
-
-from ok.gui.tasks.TemplateTab import (load_coco, save_coco, ensure_template_folder,
-                                       TEMPLATE_FOLDER)
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)

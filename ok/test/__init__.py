@@ -1,5 +1,5 @@
-from ok import ImageCaptureMethod
 from ok import DoNothingInteraction
+from ok import ImageCaptureMethod
 from ok.util.clazz import init_class_by_name
 
 ok = None

@@ -1,9 +1,11 @@
-from _ctypes import _SimpleCData
-from functools import lru_cache
 import enum
+from functools import lru_cache
+
+from _ctypes import _SimpleCData
 
 from . import roapi
 from .types import *
+
 
 class CtypesEnum(enum.IntEnum):
     """A ctypes-compatible IntEnum superclass."""

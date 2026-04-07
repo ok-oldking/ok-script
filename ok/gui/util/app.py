@@ -2,7 +2,7 @@ import sys
 
 from PySide6.QtCore import Qt, QTranslator, QCoreApplication
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentTranslator, InfoBar, InfoBarPosition, setTheme, Theme
+from qfluentwidgets import FluentTranslator, InfoBar, InfoBarPosition, setTheme
 
 from ok import Logger
 from ok.gui import resources

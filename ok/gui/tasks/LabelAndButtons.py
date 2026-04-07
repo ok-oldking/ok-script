@@ -1,7 +1,8 @@
-from qfluentwidgets import PushButton
 from PySide6.QtWidgets import QHBoxLayout
-from ok.gui.tasks.LabelAndWidget import LabelAndWidget
+from qfluentwidgets import PushButton
+
 from ok import og
+from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
 
 class LabelAndButtons(LabelAndWidget):

@@ -1,6 +1,6 @@
 from .idldsl import define_winrt_com_method, funcwrap, _new_rtobj
-from .winstring import HSTRING
 from .types import *
+from .winstring import HSTRING
 
 CoTaskMemFree = windll.ole32.CoTaskMemFree
 CoTaskMemFree.argtypes = (c_void_p,)

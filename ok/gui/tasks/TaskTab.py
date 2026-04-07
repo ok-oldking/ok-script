@@ -2,7 +2,6 @@ import time
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QTableWidgetItem
-from qfluentwidgets import PushButton
 
 from ok import Logger, og
 from ok.gui.tasks.TooltipTableWidget import TooltipTableWidget

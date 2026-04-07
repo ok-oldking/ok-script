@@ -1,9 +1,11 @@
 import time
+
 import win32gui
 from pynput import mouse, keyboard
-from ok.util.logger import Logger
+
 from ok import og
 from ok.gui.Communicate import communicate
+from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
 

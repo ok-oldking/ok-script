@@ -1,12 +1,11 @@
 import os
-import sys
-from PySide6.QtCore import Qt, Signal, QSize, QRect
-from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QFont, QColor, QPainter, QFontMetrics
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QInputDialog, QMessageBox, QListWidgetItem, QTreeWidgetItem, QAbstractItemView, QFileDialog
-from qfluentwidgets import ListWidget, TextEdit, MessageBox, PlainTextEdit, PushButton, FluentIcon, Dialog, PrimaryPushButton, SearchLineEdit, \
-    BodyLabel, ComboBox, PrimaryDropDownToolButton, RoundMenu, Action, TreeWidget, TreeView, CommandBar, \
-    TransparentDropDownToolButton, TransparentDropDownPushButton, CheckBox
+
 from PySide6.QtCore import QFileSystemWatcher
+from PySide6.QtCore import Qt, QSize, QRect
+from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QFont, QColor, QPainter
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QMessageBox, QTreeWidgetItem, QFileDialog
+from qfluentwidgets import MessageBox, PlainTextEdit, PushButton, FluentIcon, PrimaryPushButton, SearchLineEdit, \
+    BodyLabel, ComboBox, RoundMenu, Action, TreeWidget, TransparentDropDownPushButton, CheckBox
 
 from ok import og
 from ok.gui.tasks.TemplateFactory import TemplateFactory, get_templates, filter_templates
@@ -1032,8 +1031,6 @@ class {class_name}({base_class}):
                 alert_error(f"{self.tr('Export failed')}: {message}")
 
     def show_import_dialog(self):
-        from ok.gui.util.Alert import alert_error
-        from ok.gui.tasks.ScriptPackager import import_script
 
         file_path, _ = QFileDialog.getOpenFileName(
             self, self.tr('Select Script File'), '',

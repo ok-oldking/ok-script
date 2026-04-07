@@ -1,11 +1,6 @@
-import os
-import subprocess
-import zipfile
 from ctypes import windll, wintypes
-from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QHBoxLayout, QWidget
 from _ctypes import byref
 from qfluentwidgets import FluentIcon, SettingCard, PushButton
 
@@ -13,7 +8,6 @@ from ok import Handler
 from ok import Logger
 from ok import og
 from ok.gui.Communicate import communicate
-from ok.gui.debug.DebugTab import capture
 from ok.gui.widget.StatusBar import StatusBar
 
 logger = Logger.get_logger(__name__)

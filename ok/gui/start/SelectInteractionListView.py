@@ -1,6 +1,8 @@
 from PySide6.QtWidgets import QListWidgetItem
 from qfluentwidgets import ListWidget
+
 from ok import og
+
 
 class SelectInteractionListView(ListWidget):
     def __init__(self, index_change_callback):

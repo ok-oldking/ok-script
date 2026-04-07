@@ -1,10 +1,9 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGridLayout, QWidget, QSizePolicy
-from qfluentwidgets import BodyLabel, SettingCardGroup, FluentIcon
+from qfluentwidgets import BodyLabel, SettingCardGroup
 
 from ok.gui.about.ProjectCard import ProjectCard
 from ok.gui.about.VersionCard import VersionCard
-from ok.gui.launcher.UpdateBar import UpdateBar
 from ok.gui.util.app import get_localized_app_config
 from ok.gui.widget.Tab import Tab
 from ok.util.file import get_path_relative_to_exe

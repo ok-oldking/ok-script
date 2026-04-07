@@ -11,7 +11,6 @@ from enum import IntEnum
 
 import cv2
 import numpy as np
-import psutil
 import win32api
 import win32con
 import win32gui
@@ -25,9 +24,8 @@ from ok.util.GlobalConfig import basic_options
 from ok.util.collection import deep_get
 from ok.util.color import is_close_to_pure_color
 from ok.util.logger import Logger
-
 from ok.util.window import WINDOWS_BUILD_NUMBER, WGC_NO_BORDER_MIN_BUILD, show_title_bar, get_window_bounds, \
-    resize_window, get_exe_by_hwnd, windows_graphics_available, find_display, is_foreground_window, find_hwnd
+    resize_window, windows_graphics_available, find_display, is_foreground_window, find_hwnd
 
 logger = Logger.get_logger(__name__)
 

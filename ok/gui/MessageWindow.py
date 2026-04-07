@@ -1,11 +1,9 @@
 from PySide6.QtCore import Qt, QEvent
 from PySide6.QtWidgets import QVBoxLayout, QApplication
 from qfluentwidgets import BodyLabel, PushButton, SplitTitleBar
-from qframelesswindow import StandardTitleBar
 
 from ok import Logger, og
 from ok.gui.Communicate import communicate
-from ok.gui.common.style_sheet import StyleSheet
 from ok.gui.widget.BaseWindow import BaseWindow
 
 logger = Logger.get_logger(__name__)

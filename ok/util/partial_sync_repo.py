@@ -1,10 +1,11 @@
 # index.py
+import argparse
 import os
-import sys
 import shutil
 import subprocess
+import sys
 import uuid
-import argparse
+
 
 def set_output(name, value):
     output_file = os.environ.get('GITHUB_OUTPUT')

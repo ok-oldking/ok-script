@@ -19,6 +19,7 @@ from ok.gui.Communicate import communicate
 from ok.util.file import get_path_relative_to_exe
 from ok.util.logger import Logger
 
+
 def resize_image(image, frame_height: int, target_height: int) -> tuple:
     """Resizes the image if the original height is significantly larger than the target height."""
     scale_factor = 1.0

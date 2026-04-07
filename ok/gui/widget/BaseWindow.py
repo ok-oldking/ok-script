@@ -1,5 +1,4 @@
 # coding:utf-8
-import sys
 
 from PySide6.QtCore import Qt, QSize, QRect
 from PySide6.QtGui import QPainter, QColor
@@ -9,7 +8,6 @@ from qfluentwidgets.common.animation import BackgroundAnimationWidget
 from qfluentwidgets.components.widgets.frameless_window import FramelessWindow
 
 from ok import og
-
 from ok.gui.widget.BaseLoading import BaseLoading
 
 

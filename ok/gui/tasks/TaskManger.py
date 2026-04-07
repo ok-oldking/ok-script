@@ -1,15 +1,14 @@
 import ast
 import glob
 import hashlib
+import importlib.util
 import os.path
+import sys
 
+from ok import og
 from ok.task.task import BaseTask, TriggerTask
 from ok.util.clazz import init_class_by_name
 from ok.util.logger import Logger
-
-import sys
-import importlib.util
-from ok import og
 
 logger = Logger.get_logger(__name__)
 
