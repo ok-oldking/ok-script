@@ -725,12 +725,12 @@ class AnnotationCanvas(QWidget):
         if dialog.exec():
             cat, bx, by, bw, bh = dialog.get_values()
             if cat:
-                max_id = 0
-                for a in self.annotations:
-                    if a.get('id', 0) > max_id:
-                        max_id = a['id']
+                existing_ids = {a.get('id', 0) for a in self.annotations}
+                new_id = 1
+                while new_id in existing_ids:
+                    new_id += 1
                 self.annotations.append({
-                    'id': max_id + 1,
+                    'id': new_id,
                     'category': cat,
                     'x': bx,
                     'y': by,
@@ -1003,11 +1003,10 @@ class MarkUpWindow(BaseWindow):
             if cat['name'] == name:
                 return cat['id']
         # Create new category
-        max_id = 0
-        for cat in self.coco_data.get('categories', []):
-            if cat['id'] > max_id:
-                max_id = cat['id']
-        new_id = max_id + 1
+        existing_ids = {cat['id'] for cat in self.coco_data.get('categories', [])}
+        new_id = 1
+        while new_id in existing_ids:
+            new_id += 1
         self.coco_data['categories'].append({
             'id': new_id,
             'name': name,
@@ -1047,11 +1046,10 @@ class MarkUpWindow(BaseWindow):
         image_id = self._get_image_id(filename)
         if image_id is None:
             # Add image entry
-            max_id = 0
-            for img in self.coco_data.get('images', []):
-                if img['id'] > max_id:
-                    max_id = img['id']
-            image_id = max_id + 1
+            existing_ids = {img['id'] for img in self.coco_data.get('images', [])}
+            image_id = 1
+            while image_id in existing_ids:
+                image_id += 1
             import cv2
             img = cv2.imread(image_path)
             h, w = (img.shape[:2]) if img is not None else (0, 0)
@@ -1069,23 +1067,23 @@ class MarkUpWindow(BaseWindow):
         ]
 
         # Find max annotation id
-        max_ann_id = 0
-        for ann in self.coco_data.get('annotations', []):
-            if ann['id'] > max_ann_id:
-                max_ann_id = ann['id']
+        existing_ann_ids = {ann['id'] for ann in self.coco_data.get('annotations', [])}
+        next_ann_id = 1
 
         # Add current canvas annotations
         for can_ann in self.canvas.annotations:
-            max_ann_id += 1
+            while next_ann_id in existing_ann_ids:
+                next_ann_id += 1
             cat_id = self._get_or_create_category_id(can_ann['category'])
             self.coco_data['annotations'].append({
-                'id': max_ann_id,
+                'id': next_ann_id,
                 'image_id': image_id,
                 'category_id': cat_id,
                 'bbox': [can_ann['x'], can_ann['y'], can_ann['w'], can_ann['h']],
                 'area': can_ann['w'] * can_ann['h'],
                 'iscrowd': 0
             })
+            existing_ann_ids.add(next_ann_id)
 
         # Clean up orphaned categories
         used_cat_ids = set(ann['category_id'] for ann in self.coco_data.get('annotations', []))

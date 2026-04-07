@@ -81,6 +81,9 @@ def load_coco() -> CocoData:
 
 def save_coco(coco_data):
     path = get_coco_path()
+    coco_data['annotations'].sort(key=lambda x: x['id'])
+    coco_data['categories'].sort(key=lambda x: x['id'])
+    coco_data['images'].sort(key=lambda x: x['id'])
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(coco_data, f, indent=2, ensure_ascii=False)
 
