@@ -1,5 +1,6 @@
 import json
 import os
+from typing import TypedDict
 
 from PySide6.QtCore import Qt, QRect, QPoint, Signal, QSize, QRectF
 from PySide6.QtGui import (QPainter, QPen, QColor, QPixmap, QMouseEvent,
@@ -80,6 +81,14 @@ def _cursor_for_handle(handle):
     if handle in (HANDLE_LEFT, HANDLE_RIGHT):
         return Qt.SizeHorCursor
     return Qt.ArrowCursor
+
+class Annotation(TypedDict):
+    id: int
+    category: str
+    x: float
+    y: float
+    w: float
+    h: float
 
 
 class BBoxDialog(MessageBoxBase):
@@ -188,7 +197,7 @@ class AnnotationCanvas(QWidget):
         self._fit_scale = 1.0   # scale that fits the image to the widget
         self.offset_x = 0       # x offset to center the image
         self.offset_y = 0       # y offset to center the image
-        self.annotations = []   # list of dicts: {id, category, x, y, w, h} in IMAGE coords
+        self.annotations: list[Annotation] = []   # list of dicts: {id, category, x, y, w, h} in IMAGE coords
         self.mode = self.MODE_NONE
         self.selected_ann_index = -1
         self.hovered_ann_index = -1
@@ -297,7 +306,7 @@ class AnnotationCanvas(QWidget):
         self._recalc_offset()
         self.update()
 
-    def set_annotations(self, annotations):
+    def set_annotations(self, annotations: Annotation):
         """Set annotations list. Each: {id, category, x, y, w, h} in image coords."""
         self.annotations = annotations
         self.selected_ann_index = -1
