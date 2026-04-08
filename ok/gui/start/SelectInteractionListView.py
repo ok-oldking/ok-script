@@ -31,13 +31,17 @@ class SelectInteractionListView(ListWidget):
                     while self.count() > len(methods):
                         self.takeItem(self.count() - 1)
                     for i, method in enumerate(methods):
+                        method_name = method.__name__ if isinstance(method, type) else str(method)
                         if i < self.count():
-                            self.item(i).setText(self.tr(method))
+                            self.item(i).setText(self.tr(method_name))
                         else:
-                            self.addItem(QListWidgetItem(self.tr(method)))
+                            self.addItem(QListWidgetItem(self.tr(method_name)))
                     current_interaction = og.device_manager.config.get("interaction")
-                    if current_interaction in methods:
-                        selected = methods.index(current_interaction)
+                    for i, method in enumerate(methods):
+                        method_name = method.__name__ if isinstance(method, type) else str(method)
+                        if current_interaction == method_name:
+                            selected = i
+                            break
             elif device['device'] == "adb":
                 title = self.tr("ADBInteraction")
                 self.reduce_row_to_1()
