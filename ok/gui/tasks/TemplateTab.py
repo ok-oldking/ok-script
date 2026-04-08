@@ -680,21 +680,26 @@ class TemplateTab(QWidget):
         dlg = MessageBoxBase(self.window())
         dlg.viewLayout.addWidget(SubtitleLabel(self.tr('Save To'), dlg))
 
+        debug = og.app.debug
         radio_tasks = RadioButton(self.tr('ok_tasks/assets (custom scripts)'), dlg)
-        radio_dev = RadioButton(self.tr('assets (standalone app)'), dlg)
+        radio_dev = None
+        if debug:
+            radio_dev = RadioButton(self.tr('assets (standalone app)'), dlg)
 
         group = QButtonGroup(dlg)
         group.addButton(radio_tasks)
-        group.addButton(radio_dev)
+        if radio_dev:
+            group.addButton(radio_dev)
 
         # Default selection based on environment
-        if os.environ.get("PYAPPIFY_APP_VERSION"):
-            radio_tasks.setChecked(True)
-        else:
+        if debug:
             radio_dev.setChecked(True)
+        else:
+            radio_tasks.setChecked(True)
 
         dlg.viewLayout.addWidget(radio_tasks)
-        dlg.viewLayout.addWidget(radio_dev)
+        if radio_dev:
+            dlg.viewLayout.addWidget(radio_dev)
 
         dlg.yesButton.setText(self.tr('OK'))
         dlg.cancelButton.setText(self.tr('Cancel'))
