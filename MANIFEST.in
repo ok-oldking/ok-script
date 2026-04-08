@@ -1,4 +1,3 @@
-recursive-include ok *.pyd
-recursive-exclude ok *.pyx
-recursive-exclude ok *.cpp
-global-exclude *.cpp
+recursive-include ok *
+global-exclude *.pyc
+global-exclude __pycache__

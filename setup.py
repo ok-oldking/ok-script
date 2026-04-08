@@ -1,16 +1,11 @@
 import os
-
 import setuptools
-from Cython.Build import cythonize
-from distutils.extension import Extension
+import sys
+from get_pypi_latest_version import GetPyPiLatestVersion
 
 os.environ["PYTHONIOENCODING"] = "utf-8"
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
-from setuptools import setup, Extension
-from Cython.Build import cythonize
-import sys
-from get_pypi_latest_version import GetPyPiLatestVersion
 
 MODULE_NAME = "ok-script"
 
@@ -19,43 +14,6 @@ latest_version = obtainer(MODULE_NAME)
 
 VERSION_NUM = obtainer.version_add_one(latest_version, add_patch=True)
 print(f'latest_version is {latest_version} new version is {VERSION_NUM}')
-#VERSION_NUM = "1.0.0"
-# Check if the build command includes --inplace
-if '--inplace' in sys.argv:
-    compiler_directives = {
-        'language_level': "3",
-        'linetrace': False,
-        'embedsignature': False,
-        'binding': False,
-        'profile': False,
-    }
-else:
-    compiler_directives = {
-        'language_level': "3",
-        'linetrace': False,
-        'embedsignature': False,
-        'binding': False,
-        'profile': False,
-    }
-compiler_directives = {
-    'language_level': "3",
-}
-
-def find_pyx_packages(base_dir):
-    extensions = []
-    for dirpath, _, filenames in os.walk(base_dir):
-        for filename in filenames:
-            if filename.endswith(".pyx"):
-                module_path = os.path.join(dirpath, filename).replace('/', '.').replace('\\', '.')
-                module_name = module_path[:-4]  # Remove the .pyx extension
-                extensions.append(
-                    Extension(name=module_name, language="c++", sources=[os.path.join(dirpath, filename)]))
-                print(f'add Extension: {module_name} {[os.path.join(dirpath, filename)]}')
-    return extensions
-
-
-base_dir = "ok"
-extensions = find_pyx_packages(base_dir)
 
 setuptools.setup(
     name=MODULE_NAME,
@@ -86,6 +44,5 @@ setuptools.setup(
         'mouse==0.7.1'
     ],
     python_requires='==3.12.*',
-    ext_modules=cythonize(extensions, compiler_directives=compiler_directives),
     zip_safe=False,
 )

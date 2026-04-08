@@ -21,13 +21,6 @@ Copy-Item -Path "setup.py" -Destination $buildDir -Recurse
 Copy-Item -Path "MANIFEST.in" -Destination $buildDir -Recurse
 Copy-Item -Path "README.md" -Destination $buildDir -Recurse
 
-# Delete all .pyd files in the build directory
-Get-ChildItem -Path $buildDir -Recurse -Filter *.pyd | Remove-Item -Force
-Write-Output "Deleted all .pyd files in the build directory"
-
-Get-ChildItem -Path $buildDir -Recurse -Filter *.cpp | Remove-Item -Force
-Write-Output "Deleted all .cpp files in the build directory"
-
 # Change directory to the build directory
 cd $buildDir
 
