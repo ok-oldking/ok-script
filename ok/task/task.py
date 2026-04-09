@@ -27,6 +27,14 @@ VALID_NAMED_KEYS = {
     'windows', 'command', 'meta'
 }
 
+KEY_NAME_ALIASES = {
+    'control': 'ctrl',
+    'lcontrol': 'lctrl',
+    'rcontrol': 'rctrl',
+    'win': 'windows',
+    'cmd': 'command'
+}
+
 logger = Logger.get_logger(__name__)
 
 class ExecutorOperation:
@@ -53,9 +61,11 @@ class ExecutorOperation:
         if len(k) == 1:
             if not (k.isalnum() or k in ' `~!@#$%^&*()-_=+[{]}\\|;:\'",<.>/?'):
                 raise HotkeyConfigException(key)
-        elif k not in VALID_NAMED_KEYS:
+            return key
+        normalized = KEY_NAME_ALIASES.get(k, k)
+        if normalized not in VALID_NAMED_KEYS:
             raise HotkeyConfigException(key)
-        return key
+        return normalized
 
     def exit_is_set(self):
         """

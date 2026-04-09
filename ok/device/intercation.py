@@ -449,6 +449,8 @@ class PostMessageInteraction(BaseInteraction):
         if key_code := vk_key_dict.get(key.upper()):
             vk_code = key_code
         else:
+            if len(key) != 1:
+                raise ValueError(f'Unsupported key name for PostMessageInteraction: {key}')
             vk_code = win32api.VkKeyScan(key)
         return vk_code
 
@@ -639,14 +641,21 @@ vk_key_dict = {
     'F11': win32con.VK_F11,
     'F12': win32con.VK_F12,
     'ESC': win32con.VK_ESCAPE,
+    'CTRL': win32con.VK_CONTROL,
     'ALT': win32con.VK_MENU,
+    'RALT': win32con.VK_RMENU,
     'LALT': win32con.VK_LMENU,
+    'RCTRL': win32con.VK_RCONTROL,
+    'LCTRL': win32con.VK_LCONTROL,
     'CONTROL': win32con.VK_CONTROL,
+    'RCONTROL': win32con.VK_RCONTROL,
     'LCONTROL': win32con.VK_LCONTROL,
     'SHIFT': win32con.VK_SHIFT,
+    'RSHIFT': win32con.VK_RSHIFT,
     'LSHIFT': win32con.VK_LSHIFT,
     'TAB': win32con.VK_TAB,
     'ENTER': win32con.VK_RETURN,
+    'RETURN': win32con.VK_RETURN,
     'SPACE': win32con.VK_SPACE,
     'LEFT': win32con.VK_LEFT,
     'UP': win32con.VK_UP,
@@ -669,6 +678,18 @@ class BrowserInteraction(BaseInteraction):
             "esc": "Escape",
             "return": "Enter",
             "enter": "Enter",
+            "ctrl": "Control",
+            "lctrl": "Control",
+            "rctrl": "Control",
+            "control": "Control",
+            "lcontrol": "Control",
+            "rcontrol": "Control",
+            "shift": "Shift",
+            "lshift": "Shift",
+            "rshift": "Shift",
+            "alt": "Alt",
+            "lalt": "Alt",
+            "ralt": "Alt",
             "space": "Space",
             "backspace": "Backspace",
             "tab": "Tab",
@@ -677,6 +698,7 @@ class BrowserInteraction(BaseInteraction):
             "up": "ArrowUp",
             "down": "ArrowDown",
             "win": "Meta",
+            "windows": "Meta",
             "command": "Meta"
         }
 
@@ -1036,6 +1058,8 @@ class GenshinInteraction(BaseInteraction):
         if key_code := vk_key_dict.get(key.upper()):
             vk_code = key_code
         else:
+            if len(key) != 1:
+                raise ValueError(f'Unsupported key name for GenshinInteraction: {key}')
             vk_code = win32api.VkKeyScan(key)
         return vk_code
 
