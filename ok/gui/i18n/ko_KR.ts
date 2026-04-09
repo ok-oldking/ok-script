@@ -2124,6 +2124,22 @@
             <source>Save completed successfully to: {}</source>
             <translation>성공적으로 저장됨: {}</translation>
         </message>
+        <message>
+            <source>Generate label enum file</source>
+            <translation>레이블 enum 파일 생성</translation>
+        </message>
+        <message>
+            <source>Relative path, e.g. ok_tasks/LabelEnum.py</source>
+            <translation>상대 경로, 예: ok_tasks/LabelEnum.py</translation>
+        </message>
+        <message>
+            <source>Path is relative to the workspace root.</source>
+            <translation>경로는 워크스페이스 루트를 기준으로 한 상대 경로입니다.</translation>
+        </message>
+        <message>
+            <source>Invalid relative path. Example: ok_tasks/LabelEnum.py</source>
+            <translation>잘못된 상대 경로입니다. 예: ok_tasks/LabelEnum.py</translation>
+        </message>
     </context>
 <context>
     <name>TemplateInputDialog</name>

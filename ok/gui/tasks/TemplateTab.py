@@ -11,7 +11,7 @@ from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
                             SearchLineEdit, MessageBox, BodyLabel, isDarkTheme,
                             qconfig, IndeterminateProgressRing)
 
-from ok import og
+from ok import Config, og
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -355,9 +355,13 @@ class FlowWidget(QWidget):
 
 
 class TemplateTab(QWidget):
-    def __init__(self):
+    def __init__(self, config: Config):
         super().__init__()
         self.setObjectName("TemplateTab")
+        self.template_tab_config = config.get('template_tab', {
+            'generate_label_enum': False,
+            'label_enum_relative_path': 'ok_tasks/LabelEnum.py'
+        })
         self.selected_image = None
         self.image_cards = []
         self.markup_window = None
@@ -580,7 +584,7 @@ class TemplateTab(QWidget):
         except Exception as e:
             logger.error(f"Screenshot error: {e}")
             from ok.gui.util.Alert import alert_error
-            alert_error(f"Screenshot failed: {e}")
+            alert_error(self.tr("Screenshot failed: {e}").format(e=e))
 
     def _add_image_to_coco(self, image_path):
         """Add an image entry to COCO data if not already present."""
@@ -659,7 +663,7 @@ class TemplateTab(QWidget):
             except Exception as e:
                 logger.error(f"Delete error: {e}")
                 from ok.gui.util.Alert import alert_error
-                alert_error(f"Delete failed: {e}")
+                alert_error(self.tr("Delete failed: {e}").format(e=e))
 
     def _normalize_label_enum_relative_path(self, relative_path):
         path = (relative_path or "").strip().replace('\\', '/')
@@ -723,17 +727,22 @@ class TemplateTab(QWidget):
         if radio_dev:
             dlg.viewLayout.addWidget(radio_dev)
 
+        saved_generate_label_enum = bool(self.template_tab_config.get('generate_label_enum', False))
+        saved_enum_relative_path = str(self.template_tab_config.get('label_enum_relative_path', '') or '').strip()
+
         generate_label_enum_checkbox = CheckBox(self.tr('Generate label enum file'), dlg)
+        generate_label_enum_checkbox.setChecked(saved_generate_label_enum)
         dlg.viewLayout.addWidget(generate_label_enum_checkbox)
 
         enum_relative_path_input = LineEdit(dlg)
         enum_relative_path_input.setPlaceholderText(self.tr('Relative path, e.g. ok_tasks/LabelEnum.py'))
-        enum_relative_path_input.setEnabled(False)
+        enum_relative_path_input.setText(saved_enum_relative_path)
+        enum_relative_path_input.setEnabled(saved_generate_label_enum)
         dlg.viewLayout.addWidget(enum_relative_path_input)
 
         enum_path_hint = BodyLabel(self.tr('Path is relative to the workspace root.'))
         enum_path_hint.setStyleSheet("color: gray;")
-        enum_path_hint.setVisible(False)
+        enum_path_hint.setVisible(saved_generate_label_enum)
         dlg.viewLayout.addWidget(enum_path_hint)
 
         def on_generate_label_toggled(checked):
@@ -752,9 +761,13 @@ class TemplateTab(QWidget):
             return
 
         target_folder = tasks_target if radio_tasks.isChecked() else dev_target
+        enum_relative_path_text = enum_relative_path_input.text().strip().replace('\\', '/')
+        self.template_tab_config['generate_label_enum'] = generate_label_enum_checkbox.isChecked()
+        self.template_tab_config['label_enum_relative_path'] = enum_relative_path_text
+
         generate_label_enmu = None
         if generate_label_enum_checkbox.isChecked():
-            generate_label_enmu = self._normalize_label_enum_relative_path(enum_relative_path_input.text())
+            generate_label_enmu = self._normalize_label_enum_relative_path(enum_relative_path_text)
             if not generate_label_enmu:
                 from ok.gui.util.Alert import alert_error
                 alert_error(self.tr("Invalid relative path. Example: ok_tasks/LabelEnum.py"))
@@ -776,7 +789,7 @@ class TemplateTab(QWidget):
         except Exception as e:
             logger.error(f"Save compressed error: {e}", e)
             from ok.gui.util.Alert import alert_error
-            alert_error(f"Save failed: {e}")
+            alert_error(self.tr("Save failed: {e}").format(e=e))
 
     def open_markup(self):
         if not self.selected_image:

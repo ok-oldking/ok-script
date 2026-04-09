@@ -2123,6 +2123,22 @@
             <source>Save completed successfully to: {}</source>
             <translation>Guardado completado con éxito en: {}</translation>
         </message>
+        <message>
+            <source>Generate label enum file</source>
+            <translation>Generar archivo enum de etiquetas</translation>
+        </message>
+        <message>
+            <source>Relative path, e.g. ok_tasks/LabelEnum.py</source>
+            <translation>Ruta relativa, p. ej. ok_tasks/LabelEnum.py</translation>
+        </message>
+        <message>
+            <source>Path is relative to the workspace root.</source>
+            <translation>La ruta es relativa a la raíz del espacio de trabajo.</translation>
+        </message>
+        <message>
+            <source>Invalid relative path. Example: ok_tasks/LabelEnum.py</source>
+            <translation>Ruta relativa no válida. Ejemplo: ok_tasks/LabelEnum.py</translation>
+        </message>
     </context>
 <context>
     <name>TemplateInputDialog</name>

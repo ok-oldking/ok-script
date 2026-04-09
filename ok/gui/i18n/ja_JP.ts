@@ -2115,6 +2115,22 @@
             <source>Save completed successfully to: {}</source>
             <translation>正常に保存されました: {}</translation>
         </message>
+        <message>
+            <source>Generate label enum file</source>
+            <translation>ラベル列挙ファイルを生成</translation>
+        </message>
+        <message>
+            <source>Relative path, e.g. ok_tasks/LabelEnum.py</source>
+            <translation>相対パス（例: ok_tasks/LabelEnum.py）</translation>
+        </message>
+        <message>
+            <source>Path is relative to the workspace root.</source>
+            <translation>パスはワークスペースのルートからの相対パスです。</translation>
+        </message>
+        <message>
+            <source>Invalid relative path. Example: ok_tasks/LabelEnum.py</source>
+            <translation>無効な相対パスです。例: ok_tasks/LabelEnum.py</translation>
+        </message>
     </context>
 <context>
     <name>TemplateInputDialog</name>
