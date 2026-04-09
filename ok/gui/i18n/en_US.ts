@@ -2126,6 +2126,22 @@
         <source>Save completed successfully to: {}</source>
         <translation>Save completed successfully to: {}</translation>
     </message>
+    <message>
+        <source>Generate label enum file</source>
+        <translation>Generate label enum file</translation>
+    </message>
+    <message>
+        <source>Relative path, e.g. ok_tasks/LabelEnum.py</source>
+        <translation>Relative path, e.g. ok_tasks/LabelEnum.py</translation>
+    </message>
+    <message>
+        <source>Path is relative to the workspace root.</source>
+        <translation>Path is relative to the workspace root.</translation>
+    </message>
+    <message>
+        <source>Invalid relative path. Example: ok_tasks/LabelEnum.py</source>
+        <translation>Invalid relative path. Example: ok_tasks/LabelEnum.py</translation>
+    </message>
 </context>
 <context>
     <name>TemplateInputDialog</name>

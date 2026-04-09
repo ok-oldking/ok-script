@@ -146,7 +146,7 @@ class MainWindow(MSFluentWindow):
 
         if og.task_manager.has_custom or debug:
             from ok.gui.tasks.TemplateTab import TemplateTab
-            self.template_tab = TemplateTab()
+            self.template_tab = TemplateTab(config=config)
             self.addSubInterface(self.template_tab, FluentIcon.PHOTO, self.tr('Templates'))
         
         # Initial load of imported tabs
