@@ -661,11 +661,33 @@ class TemplateTab(QWidget):
                 from ok.gui.util.Alert import alert_error
                 alert_error(f"Delete failed: {e}")
 
+    def _normalize_label_enum_relative_path(self, relative_path):
+        path = (relative_path or "").strip().replace('\\', '/')
+        if not path or os.path.isabs(path):
+            return None
+
+        normalized = os.path.normpath(path).replace('\\', '/')
+        if normalized in ('', '.') or normalized == '..' or normalized.startswith('../'):
+            return None
+
+        if normalized.lower().endswith('.py'):
+            normalized = normalized[:-3]
+
+        module_path = normalized.replace('/', '.').strip('.')
+        if not module_path:
+            return None
+
+        parts = module_path.split('.')
+        if any(not part or not part.isidentifier() for part in parts):
+            return None
+
+        return module_path
+
     def save_compressed(self):
         """Show a dialog with radio buttons for save destination."""
         from ok.feature.FeatureSet import compress_copy_coco
         from PySide6.QtWidgets import QButtonGroup
-        from qfluentwidgets import MessageBoxBase, SubtitleLabel, RadioButton
+        from qfluentwidgets import MessageBoxBase, SubtitleLabel, RadioButton, CheckBox, LineEdit
         coco_json_path = get_coco_path()
         image_folder = ensure_template_folder()
 
@@ -701,6 +723,27 @@ class TemplateTab(QWidget):
         if radio_dev:
             dlg.viewLayout.addWidget(radio_dev)
 
+        generate_label_enum_checkbox = CheckBox(self.tr('Generate label enum file'), dlg)
+        dlg.viewLayout.addWidget(generate_label_enum_checkbox)
+
+        enum_relative_path_input = LineEdit(dlg)
+        enum_relative_path_input.setPlaceholderText(self.tr('Relative path, e.g. ok_tasks/LabelEnum.py'))
+        enum_relative_path_input.setEnabled(False)
+        dlg.viewLayout.addWidget(enum_relative_path_input)
+
+        enum_path_hint = BodyLabel(self.tr('Path is relative to the workspace root.'))
+        enum_path_hint.setStyleSheet("color: gray;")
+        enum_path_hint.setVisible(False)
+        dlg.viewLayout.addWidget(enum_path_hint)
+
+        def on_generate_label_toggled(checked):
+            enum_relative_path_input.setEnabled(checked)
+            enum_path_hint.setVisible(checked)
+            if checked:
+                enum_relative_path_input.setFocus()
+
+        generate_label_enum_checkbox.toggled.connect(on_generate_label_toggled)
+
         dlg.yesButton.setText(self.tr('OK'))
         dlg.cancelButton.setText(self.tr('Cancel'))
         dlg.widget.setMinimumWidth(360)
@@ -709,10 +752,17 @@ class TemplateTab(QWidget):
             return
 
         target_folder = tasks_target if radio_tasks.isChecked() else dev_target
+        generate_label_enmu = None
+        if generate_label_enum_checkbox.isChecked():
+            generate_label_enmu = self._normalize_label_enum_relative_path(enum_relative_path_input.text())
+            if not generate_label_enmu:
+                from ok.gui.util.Alert import alert_error
+                alert_error(self.tr("Invalid relative path. Example: ok_tasks/LabelEnum.py"))
+                return
 
         try:
             compress_copy_coco(coco_json_path, target_folder, image_folder,
-                               generate_label_enmu=None)
+                               generate_label_enmu=generate_label_enmu)
 
             # Reload feature set data safely (coco_json may have been cleared)
             try:
