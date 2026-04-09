@@ -1,9 +1,13 @@
 import ast
 import glob
 import hashlib
+import importlib
 import importlib.util
+import inspect
 import os.path
 import sys
+
+from PySide6.QtCore import QFileSystemWatcher
 
 from ok import og
 from ok.task.task import BaseTask, TriggerTask
@@ -17,14 +21,14 @@ class TaskManager:
     def __init__(self, task_executor, app, trigger_tasks=[], onetime_tasks=[], scene=None):
         self.task_executor = task_executor
         self.app = app
+        self.debug = app.debug
         self.custom_tasks_enabled = og.config.get('custom_tasks', False)
+        self.task_folder = None
         if self.custom_tasks_enabled:
             self.task_folder = os.path.join(os.getcwd(), 'ok_tasks')
             if not os.path.exists(self.task_folder):
                 os.makedirs(self.task_folder)
-        else:
-            self.task_folder = os.path.join("user_scripts", "tasks")
-        self.has_custom = self.custom_tasks_enabled or os.path.exists(self.task_folder)
+        self.has_custom = self.custom_tasks_enabled or (self.task_folder and os.path.exists(self.task_folder))
         self.task_map = dict()
         self.task_errors = dict()
         self.imported_scripts = {}  # {file_name: {'folder': ..., 'script_name': ..., 'tasks': [...]}}
@@ -38,6 +42,8 @@ class TaskManager:
             task.post_init()
         self.load_user_tasks()
         self.load_imported_tasks()
+        if self.debug or self.custom_tasks_enabled:
+            self._init_debug_file_watcher()
 
     def init_tasks(self, task_classes):
         tasks = []
@@ -50,7 +56,7 @@ class TaskManager:
         return tasks
 
     def load_user_tasks(self):
-        if os.path.exists(self.task_folder):
+        if self.task_folder and os.path.exists(self.task_folder):
             if self.task_folder not in sys.path:
                 sys.path.append(self.task_folder)
             python_files = glob.glob(os.path.join(self.task_folder, '*.py'))
@@ -78,6 +84,7 @@ class TaskManager:
                 from ok.gui.Communicate import communicate
                 communicate.task.emit(instance)
                 communicate.task_list_updated.emit()
+                self._update_debug_watched_files()
                 return instance
         except Exception as e:
             self.task_errors[python_file] = str(e)
@@ -107,6 +114,7 @@ class TaskManager:
                 self.task_executor.trigger_tasks.remove(task)
             from ok.gui.Communicate import communicate
             communicate.task_list_updated.emit()
+            self._update_debug_watched_files()
 
     def delete_task(self, task):
         python_file, _ = self.task_map.get(task, (None, None))
@@ -228,6 +236,146 @@ class TaskManager:
             
             from ok.gui.Communicate import communicate
             communicate.task_list_updated.emit()
+
+    def _init_debug_file_watcher(self):
+        """Initialize file watcher for auto-reloading task files."""
+        self._debug_watcher = QFileSystemWatcher()
+        self._debug_watcher.fileChanged.connect(self._on_debug_file_changed)
+        self._debug_watcher.directoryChanged.connect(self._on_debug_dir_changed)
+        self._debug_watched_dirs = []
+        self._builtin_task_file_map = {}  # {norm_file_path: [task, ...]}
+        self._builtin_file_md5 = {}  # {norm_file_path: md5}
+        # Watch ok_tasks folder if custom tasks are enabled
+        if self.custom_tasks_enabled:
+            ok_tasks_folder = os.path.join(os.getcwd(), 'ok_tasks')
+            if os.path.exists(ok_tasks_folder):
+                self._debug_watcher.addPath(ok_tasks_folder)
+                self._debug_watched_dirs.append(ok_tasks_folder)
+        # Watch built-in task source files if in debug mode
+        if self.debug:
+            self._build_builtin_task_file_map()
+        self._update_debug_watched_files()
+        logger.info(f"Debug file watcher initialized, watching dirs {self._debug_watched_dirs}, {len(self._debug_watcher.files())} task files")
+
+    def _build_builtin_task_file_map(self):
+        """Map source files to built-in task instances for hot-reload."""
+        self._builtin_task_file_map = {}
+        self._builtin_file_md5 = {}
+        for task in self.task_executor.get_all_tasks():
+            if getattr(task, 'is_custom', False):
+                continue
+            try:
+                source_file = inspect.getfile(task.__class__)
+                norm_path = os.path.normpath(source_file)
+                if norm_path not in self._builtin_task_file_map:
+                    self._builtin_task_file_map[norm_path] = []
+                    self._builtin_file_md5[norm_path] = calculate_md5(source_file)
+                self._builtin_task_file_map[norm_path].append(task)
+            except (TypeError, OSError):
+                pass
+        logger.info(f"Built-in task file map: {len(self._builtin_task_file_map)} files")
+
+    def _update_debug_watched_files(self):
+        """Sync the file watcher with current task_map and built-in task file entries."""
+        if not hasattr(self, '_debug_watcher'):
+            return
+        current_files = self._debug_watcher.files()
+        if current_files:
+            self._debug_watcher.removePaths(current_files)
+        # Watch custom task files
+        for task, (python_file, md5) in self.task_map.items():
+            if os.path.exists(python_file):
+                self._debug_watcher.addPath(python_file)
+        # Watch built-in task source files
+        for file_path in self._builtin_task_file_map:
+            if os.path.exists(file_path):
+                self._debug_watcher.addPath(file_path)
+
+    def _on_debug_file_changed(self, path):
+        """Handle task file changes: reload custom or built-in tasks."""
+        if not os.path.exists(path):
+            return
+        norm_path = os.path.normpath(path)
+        file_name = os.path.basename(path)
+        reloaded = False
+
+        # Check custom tasks (task_map)
+        for task, (python_file, old_md5) in list(self.task_map.items()):
+            if os.path.normpath(python_file) == norm_path:
+                new_md5 = calculate_md5(path)
+                if new_md5 != old_md5:
+                    logger.info(f"Debug file watcher: reloading custom task {file_name}")
+                    self.reload_task_code(task)
+                    from ok.gui.util.Alert import alert_info
+                    alert_info(f"Task reloaded: {file_name}", tray=True)
+                    reloaded = True
+                break
+
+        # Check built-in tasks
+        if not reloaded and norm_path in self._builtin_task_file_map:
+            old_md5 = self._builtin_file_md5.get(norm_path)
+            new_md5 = calculate_md5(path)
+            if new_md5 != old_md5:
+                tasks = list(self._builtin_task_file_map[norm_path])
+                for task in tasks:
+                    self._reload_builtin_task(task)
+                self._build_builtin_task_file_map()
+                from ok.gui.util.Alert import alert_info
+                alert_info(f"Task reloaded: {file_name}")
+
+        # Re-add path (some editors delete & recreate files on save)
+        self._update_debug_watched_files()
+
+    def _reload_builtin_task(self, task):
+        """Reload a built-in task by reloading its module and replacing the instance."""
+        module_name = task.__class__.__module__
+        class_name = task.__class__.__name__
+
+        is_trigger = task in self.task_executor.trigger_tasks
+        task_list = self.task_executor.trigger_tasks if is_trigger else self.task_executor.onetime_tasks
+        try:
+            index = task_list.index(task)
+        except ValueError:
+            logger.error(f"Built-in task {class_name} not found in task list")
+            return
+
+        try:
+            module = sys.modules.get(module_name)
+            if module:
+                importlib.reload(module)
+            else:
+                module = importlib.import_module(module_name)
+
+            cls = getattr(module, class_name)
+            new_task = cls(executor=self.task_executor, app=self.app)
+            new_task.after_init(executor=self.task_executor, scene=self.scene)
+            new_task.post_init()
+
+            task_list[index] = new_task
+
+            from ok.gui.Communicate import communicate
+            communicate.task.emit(new_task)
+            communicate.task_list_updated.emit()
+            logger.info(f"Reloaded built-in task {class_name}")
+        except Exception as e:
+            logger.error(f"Failed to reload built-in task {class_name}: {e}")
+
+    def _on_debug_dir_changed(self, path):
+        """Handle new .py files appearing in a watched task directory."""
+        if not os.path.exists(path):
+            return
+        existing_files = {os.path.normpath(data[0]) for task, data in self.task_map.items()}
+        for file in os.listdir(path):
+            if file.endswith('.py'):
+                full_path = os.path.join(path, file)
+                if os.path.normpath(full_path) not in existing_files:
+                    logger.info(f"Debug file watcher: new task file detected {file} in {path}")
+                    instance = self.load_single_user_task(full_path)
+                    if instance:
+                        from ok.gui.util.Alert import alert_info
+                        alert_info(f"New task loaded: {file}")
+        self._update_debug_watched_files()
+
     # Function to get class definitions and instantiate subclasses of a given class
     def find_and_instantiate_class(self, file_path, base_class):
         with open(file_path, 'r', encoding='utf-8') as file:

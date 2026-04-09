@@ -1,5 +1,5 @@
 ---
-name: deploy pip
+name: deploy
 description: Generate a commit message, commit all changes, run deploy_pip.ps1 to publish to PyPI, and tag HEAD with the deployed version on success
 ---
 
