@@ -1412,7 +1412,6 @@ class ADBCaptureMethod(BaseCaptureMethod):
         self.device_manager = device_manager
 
     def do_get_frame(self):
-        return self.screencap()
         if self.exit_event.is_set():
             return None
         frame = self.device_manager.do_screencap(self.device_manager.device)
@@ -1424,7 +1423,7 @@ class ADBCaptureMethod(BaseCaptureMethod):
 
     def connected(self):
         if not self._connected and self.device_manager.device is not None:
-            self.screencap()
+            self.get_frame()
         return self._connected and self.device_manager.device is not None
 
 class ImageCaptureMethod(BaseCaptureMethod):
