@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QDesktopServices, QClipboard
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QSpacerItem, QSizePolicy
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QSpacerItem, QSizePolicy, QApplication
 from qfluentwidgets import FluentIcon, PushButton, BodyLabel
 
 from ok.gui.common.OKIcon import OKIcon
@@ -58,7 +58,10 @@ class LinksBar(QWidget):
         self.setLayout(self.layout)
 
     def share(self):
-        clipboard = QClipboard()
+        app = QApplication.instance()
+        if app is None:
+            app = QApplication([])
+        clipboard = app.clipboard()
         text = self.get_url('share')
         clipboard.setText(text)
         alert_info(self.tr('Share Link copied to clipboard'))
