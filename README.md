@@ -14,7 +14,7 @@
 7. 支持Github Action一键构建
 8. 支持多语言国际化
 
-## [快速开始](https://github.com/ok-oldking/ok-py)
+## [使用基于ok-script的按键精灵, 快速学习和开始](https://github.com/ok-oldking/ok-py)
 
 **API列表, 脚本录制**
 ![image_scripting](docs/ok_py/image_scripting.png)
