@@ -14,25 +14,28 @@
 7. 支持Github Action一键构建
 8. 支持多语言国际化
 
-### 使用 目前仅支持Python 3.12
+## [快速开始](https://github.com/ok-oldking/ok-py)
+
+**API列表, 脚本录制**
+![image_scripting](docs/ok_py/image_scripting.png)
+
+**支持多种截图以及交互方式**
+![image_screenshot](docs/ok_py/image_capture.png)
+
+**标注管理 (Template Matching)**
+![image_template](docs/ok_py/image_template.png)
+![image_markup](docs/ok_py/image_markup.png)
+
+### 使用 推荐使用Python 3.12
 
 * 在你的项目中通过pip依赖使用
 ```commandline
 pip install ok-script
 ```
-* 本地编译源码使用
-```commandline
-pip install -r requirements.txt # 安装编译ok-script所需的的依赖
-mklink /d "C:\path\to\your-project\ok" "C:\path\to\ok-script\ok" #Windows CMD 创建软链接到你的项目中
-in_place_build.bat #如修改__init__.pyx 需要编译Cython代码
-```
 
 * 编译国际化文件
 ```commandline
-cd ok\gui\i18n
-.\release.cmd
-cd ok\gui
-.\qrc.cmd
+compile_i18n.cmd
 ```
 
 ## 文档和示例代码
@@ -74,3 +77,4 @@ cd ok\gui
 * 二重螺旋 [https://github.com/BnanZ0/ok-duet-night-abyss](https://github.com/BnanZ0/ok-duet-night-abyss)
 * 白荆回廊(停止更新) [https://github.com/ok-oldking/ok-baijing](https://github.com/ok-oldking/ok-baijing)
 * 终末地 [https://github.com/AliceJump/ok-end-field](https://github.com/AliceJump/ok-end-field)
+* 异环 [https://github.com/BnanZ0/ok-nte](https://github.com/BnanZ0/ok-nte)
