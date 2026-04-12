@@ -14,6 +14,11 @@ from ok.task.task import BaseTask, TriggerTask
 from ok.util.clazz import init_class_by_name
 from ok.util.logger import Logger
 
+try:
+    from ok.sandbox.sandbox_runner import SandboxRunner
+except ImportError:
+    SandboxRunner = None
+
 logger = Logger.get_logger(__name__)
 
 
@@ -29,6 +34,7 @@ class TaskManager:
             if not os.path.exists(self.task_folder):
                 os.makedirs(self.task_folder)
         self.has_custom = self.custom_tasks_enabled or (self.task_folder and os.path.exists(self.task_folder))
+        self._sandbox_runner = None
         self.task_map = dict()
         self.task_errors = dict()
         self.imported_scripts = {}  # {file_name: {'folder': ..., 'script_name': ..., 'tasks': [...]}}
@@ -42,6 +48,15 @@ class TaskManager:
             task.post_init()
         self.load_user_tasks()
         self.load_imported_tasks()
+        # Spawn sandbox for custom/imported scripts if needed
+        if self.has_custom and SandboxRunner is not None:
+            try:
+                self._sandbox_runner = SandboxRunner(task_executor, self.task_folder)
+                self._sandbox_runner.spawn()
+                logger.info("Sandbox process spawned for custom scripts")
+            except Exception as e:
+                logger.error(f"Failed to spawn sandbox: {e}")
+                self._sandbox_runner = None
         if self.debug or self.custom_tasks_enabled:
             self._init_debug_file_watcher()
 
@@ -57,12 +72,28 @@ class TaskManager:
 
     def load_user_tasks(self):
         if self.task_folder and os.path.exists(self.task_folder):
-            if self.task_folder not in sys.path:
-                sys.path.append(self.task_folder)
             python_files = glob.glob(os.path.join(self.task_folder, '*.py'))
             logger.info(f"Found tasks: {python_files}")
-            for python_file in python_files:
-                self.load_single_user_task(python_file)
+            if self._sandbox_runner:
+                # Load via sandbox — also load in-process for GUI representation
+                for python_file in python_files:
+                    task_id = os.path.splitext(os.path.basename(python_file))[0]
+                    result, error = self._sandbox_runner.load_script(python_file, task_id)
+                    if error:
+                        self.task_errors[python_file] = error
+                        logger.error(f"Sandbox load error {python_file}: {error}")
+                    elif result:
+                        logger.info(f"Sandbox loaded task {result} from {python_file}")
+                # Also load in-process for GUI (task list, enable/disable UI)
+                if self.task_folder not in sys.path:
+                    sys.path.append(self.task_folder)
+                for python_file in python_files:
+                    self.load_single_user_task(python_file)
+            else:
+                if self.task_folder not in sys.path:
+                    sys.path.append(self.task_folder)
+                for python_file in python_files:
+                    self.load_single_user_task(python_file)
 
     def load_single_user_task(self, python_file, import_namespace=None):
         try:
@@ -172,6 +203,15 @@ class TaskManager:
         loaded_tasks = []
         python_files = glob.glob(os.path.join(folder, '*.py'))
         logger.info(f"Loading imported script '{script_name}' from {folder}, files: {python_files}")
+
+        # Load into sandbox if available
+        if self._sandbox_runner:
+            for python_file in python_files:
+                task_id = f"import:{script_name}"
+                result, error = self._sandbox_runner.load_script(python_file, task_id)
+                if error:
+                    self.task_errors[python_file] = error
+                    logger.error(f"Sandbox import error {python_file}: {error}")
 
         for python_file in python_files:
             task = self.load_single_user_task(python_file, import_namespace=file_name)
@@ -377,6 +417,12 @@ class TaskManager:
         self._update_debug_watched_files()
 
     # Function to get class definitions and instantiate subclasses of a given class
+    def cleanup(self):
+        """Shut down the sandbox process."""
+        if self._sandbox_runner:
+            self._sandbox_runner.shutdown()
+            self._sandbox_runner = None
+
     def find_and_instantiate_class(self, file_path, base_class):
         with open(file_path, 'r', encoding='utf-8') as file:
             tree = ast.parse(file.read(), filename=file_path)
