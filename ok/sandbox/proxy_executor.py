@@ -229,6 +229,14 @@ class ProxyExecutor:
     def reset_scene(self, check_enabled=True):
         return self._call(OP_RESET_SCENE, check_enabled=check_enabled)
 
+    def pause(self, task=None):
+        self.paused = True
+        return self._call("pause")
+
+    def start(self):
+        self.paused = False
+        return self._call("start")
+
     # GUI proxies
     def emit_draw_box(self, name, boxes, color, frame=None, debug=True):
         box_dicts = [b.to_dict() if isinstance(b, Box) else b for b in (boxes or [])]
