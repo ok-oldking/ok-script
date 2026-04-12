@@ -54,6 +54,20 @@ class Box:
         self.confidence = confidence
         self.name = name
 
+    def to_dict(self):
+        return {
+            "x": self.x, "y": self.y,
+            "width": self.width, "height": self.height,
+            "name": self.name, "confidence": self.confidence,
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        if d is None:
+            return None
+        return cls(d["x"], d["y"], d["width"], d["height"],
+                   confidence=d.get("confidence", 1.0), name=d.get("name"))
+
     def __eq__(self, other):
         """
         Checks if two Box instances are equal.
