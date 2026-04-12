@@ -362,18 +362,18 @@
             <translation>일정</translation>
         </message>
         <message>
-        <source>Script</source>
-        <translation>스크립트</translation>
-    </message>
-    <message>
-        <source>Templates</source>
-        <translation>템플릿</translation>
-    </message>
-    <message>
-        <source>Run Code</source>
-        <translation>코드 실행</translation>
-    </message>
-</context>
+            <source>Script</source>
+            <translation>스크립트</translation>
+        </message>
+        <message>
+            <source>Templates</source>
+            <translation>템플릿</translation>
+        </message>
+        <message>
+            <source>Run Code</source>
+            <translation>코드 실행</translation>
+        </message>
+    </context>
     <context>
         <name>MessageWindow</name>
         <message>
@@ -491,26 +491,26 @@
             <source>ADB(Supports Background, Slow, High Compatibility, High Latency)</source>
             <translation>ADB(백그라운드 지원, 느림, 높은 호환성, 높은 지연 시간)</translation>
         </message>
-    <message>
-        <source>Browser Capture</source>
-        <translation>브라우저 캡처</translation>
-    </message>
-    <message>
-        <source>BitBlt_RenderFull</source>
-        <translation>BitBlt_RenderFull - 느림, 가장 호환됨</translation>
-    </message>
-    <message>
-        <source>WGC</source>
-        <translation>WGC - &gt;=Win10, 빠름</translation>
-    </message>
-    <message>
-        <source>BitBlt</source>
-        <translation>BitBlt - 가장 빠름, 호환성 가장 낮음</translation>
-    </message>
-    <message>
-        <source>DXGI</source>
-        <translation>DXGI - 가장 느림, 백업으로 사용</translation>
-    </message>
+        <message>
+            <source>Browser Capture</source>
+            <translation>브라우저 캡처</translation>
+        </message>
+        <message>
+            <source>BitBlt_RenderFull</source>
+            <translation>BitBlt_RenderFull - 느림, 가장 호환됨</translation>
+        </message>
+        <message>
+            <source>WGC</source>
+            <translation>WGC - &gt;=Win10, 빠름</translation>
+        </message>
+        <message>
+            <source>BitBlt</source>
+            <translation>BitBlt - 가장 빠름, 호환성 가장 낮음</translation>
+        </message>
+        <message>
+            <source>DXGI</source>
+            <translation>DXGI - 가장 느림, 백업으로 사용</translation>
+        </message>
     </context>
     <context>
         <name>SettingTab</name>
@@ -834,8 +834,8 @@
             <translation>캡처</translation>
         </message>
         <message>
-             <source>OCR</source>
-             <translation>OCR</translation>
+            <source>OCR</source>
+            <translation>OCR</translation>
         </message>
     </context>
     <context>
@@ -892,30 +892,30 @@
             <translation>정말로 {}을(를) 삭제하시겠습니까?</translation>
         </message>
         <message>
-        <source>Instructions</source>
-        <translation>사용 설명</translation>
-    </message>
-    <message>
-        <source>Edit</source>
-        <translation>편집</translation>
-    </message>
-    <message>
-        <source>Pause</source>
-        <translation>일시정지</translation>
-    </message>
-    <message>
-        <source>Stop</source>
-        <translation>중지</translation>
-    </message>
-    <message>
-        <source>Start</source>
-        <translation>시작</translation>
-    </message>
-    <message>
-        <source>Resume</source>
-        <translation>재개</translation>
-    </message>
-</context>
+            <source>Instructions</source>
+            <translation>사용 설명</translation>
+        </message>
+        <message>
+            <source>Edit</source>
+            <translation>편집</translation>
+        </message>
+        <message>
+            <source>Pause</source>
+            <translation>일시정지</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>중지</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>시작</translation>
+        </message>
+        <message>
+            <source>Resume</source>
+            <translation>재개</translation>
+        </message>
+    </context>
     <context>
         <name>TaskOpButton</name>
         <message>
@@ -1880,118 +1880,438 @@
             <translation>소스 파일 읽기 실패: {}</translation>
         </message>
         <message>
-        <source>Mouse</source>
-        <translation>마우스</translation>
-    </message>
-    <message>
-        <source>Key</source>
-        <translation>키</translation>
-    </message>
-    <message>
-        <source>Control</source>
-        <translation>제어</translation>
-    </message>
-    <message>
-        <source>OCR</source>
-        <translation>OCR</translation>
-    </message>
-    <message>
-        <source>Template Matching</source>
-        <translation>템플릿 매칭</translation>
-    </message>
-    <message>
-        <source>Box</source>
-        <translation>박스</translation>
-    </message>
-    <message>
-        <source>Window</source>
-        <translation>창</translation>
-    </message>
-    <message>
-        <source>ADB</source>
-        <translation>ADB</translation>
-    </message>
-    <message>
-        <source>Logging</source>
-        <translation>로깅</translation>
-    </message>
-    <message>
-        <source>Other</source>
-        <translation>기타</translation>
-    </message>
-<message><source>click</source><translation>click</translation></message><message><source>middle_click</source><translation>middle_click</translation></message><message><source>right_click</source><translation>right_click</translation></message><message><source>mouse_down</source><translation>mouse_down</translation></message><message><source>mouse_up</source><translation>mouse_up</translation></message><message><source>swipe</source><translation>swipe</translation></message><message><source>scroll</source><translation>scroll</translation></message><message><source>send_key</source><translation>send_key</translation></message><message><source>send_key_down</source><translation>send_key_down</translation></message><message><source>send_key_up</source><translation>send_key_up</translation></message><message><source>input_text</source><translation>input_text</translation></message><message><source>sleep</source><translation>sleep</translation></message><message><source>wait_until</source><translation>wait_until</translation></message><message><source>find</source><translation>찾기</translation></message><message><source>box</source><translation>상자</translation></message><message><source>ocr</source><translation>ocr</translation></message><message><source>screenshot</source><translation>screenshot</translation></message><message><source>get_task_by_class</source><translation>get_task_by_class</translation></message><message><source>box_in_horizontal_center</source><translation>box_in_horizontal_center</translation></message><message><source>clipboard</source><translation>clipboard</translation></message><message><source>back</source><translation>back</translation></message><message><source>is_adb</source><translation>is_adb</translation></message><message><source>is_browser</source><translation>is_browser</translation></message><message><source>start_device</source><translation>start_device</translation></message><message><source>swipe_relative</source><translation>swipe_relative</translation></message><message><source>ensure_in_front</source><translation>ensure_in_front</translation></message><message><source>scroll_relative</source><translation>scroll_relative</translation></message><message><source>click_box_if_name_match</source><translation>click_box_if_name_match</translation></message><message><source>out_of_ratio</source><translation>out_of_ratio</translation></message><message><source>click_box</source><translation>click_box</translation></message><message><source>wait_click_box</source><translation>wait_click_box</translation></message><message><source>next_frame</source><translation>next_frame</translation></message><message><source>adb_ui_dump</source><translation>adb_ui_dump</translation></message><message><source>draw_boxes</source><translation>draw_boxes</translation></message><message><source>clear_box</source><translation>clear_box</translation></message><message><source>calculate_color_percentage</source><translation>calculate_color_percentage</translation></message><message><source>adb_shell</source><translation>adb_shell</translation></message><message><source>box_of_screen</source><translation>box_of_screen</translation></message><message><source>box_of_screen_scaled</source><translation>box_of_screen_scaled</translation></message><message><source>width_of_screen</source><translation>width_of_screen</translation></message><message><source>height_of_screen</source><translation>height_of_screen</translation></message><message><source>move</source><translation>move</translation></message><message><source>move_relative</source><translation>move_relative</translation></message><message><source>middle_click_relative</source><translation>middle_click_relative</translation></message><message><source>click_relative</source><translation>click_relative</translation></message><message><source>find_feature</source><translation>find_feature</translation></message><message><source>get_feature_by_name</source><translation>get_feature_by_name</translation></message><message><source>get_box_by_name</source><translation>get_box_by_name</translation></message><message><source>find_feature_and_set</source><translation>find_feature_and_set</translation></message><message><source>wait_feature</source><translation>wait_feature</translation></message><message><source>wait_click_feature</source><translation>wait_click_feature</translation></message><message><source>find_one</source><translation>find_one</translation></message><message><source>feature_exists</source><translation>feature_exists</translation></message><message><source>find_best_match_in_box</source><translation>find_best_match_in_box</translation></message><message><source>find_first_match_in_box</source><translation>find_first_match_in_box</translation></message><message><source>wait_click_ocr</source><translation>wait_click_ocr</translation></message><message><source>wait_ocr</source><translation>wait_ocr</translation></message><message><source>add_text_fix</source><translation>add_text_fix</translation></message><message><source>create_shortcut</source><translation>create_shortcut</translation></message><message><source>sleep_check</source><translation>sleep_check</translation></message><message><source>tr</source><translation>tr</translation></message><message><source>get_status</source><translation>get_status</translation></message><message><source>enable</source><translation>enable</translation></message><message><source>pause</source><translation>pause</translation></message><message><source>unpause</source><translation>unpause</translation></message><message><source>log_info</source><translation>log_info</translation></message><message><source>log_debug</source><translation>log_debug</translation></message><message><source>log_warning</source><translation>log_warning</translation></message><message><source>log_error</source><translation>log_error</translation></message><message><source>go_to_tab</source><translation>go_to_tab</translation></message><message><source>notification</source><translation>notification</translation></message><message><source>info_clear</source><translation>info_clear</translation></message><message><source>info_incr</source><translation>info_incr</translation></message><message><source>info_add_to_list</source><translation>info_add_to_list</translation></message><message><source>info_set</source><translation>info_set</translation></message><message><source>info_get</source><translation>info_get</translation></message><message><source>info_add</source><translation>info_add</translation></message><message><source>disable</source><translation>disable</translation></message><message><source>trigger</source><translation>trigger</translation></message><message><source>find_boxes</source><translation>find_boxes</translation></message>    <message>
-        <source>Export Script</source>
-        <translation>스크립트 내보내기</translation>
-    </message>
-    <message>
-        <source>Import Script</source>
-        <translation>스크립트 가져오기</translation>
-    </message>
-    <message>
-        <source>Select tasks to export:</source>
-        <translation>내보낼 작업 선택:</translation>
-    </message>
-    <message>
-        <source>File Name:</source>
-        <translation>파일 이름:</translation>
-    </message>
-    <message>
-        <source>English, numbers and valid filename chars only</source>
-        <translation>영어, 숫자 및 유효한 파일명 문자만</translation>
-    </message>
-    <message>
-        <source>Script Name:</source>
-        <translation>스크립트 이름:</translation>
-    </message>
-    <message>
-        <source>Display name for the script</source>
-        <translation>스크립트 표시 이름</translation>
-    </message>
-    <message>
-        <source>Version:</source>
-        <translation>버전:</translation>
-    </message>
-    <message>
-        <source>Export</source>
-        <translation>내보내기</translation>
-    </message>
-    <message>
-        <source>No tasks to export.</source>
-        <translation>내보낼 작업이 없습니다.</translation>
-    </message>
-    <message>
-        <source>Invalid file name. Use English letters, numbers, underscores, hyphens only.</source>
-        <translation>잘못된 파일 이름입니다. 영어, 숫자, 밑줄, 하이픈만 사용하세요.</translation>
-    </message>
-    <message>
-        <source>Script name is required.</source>
-        <translation>스크립트 이름은 필수입니다.</translation>
-    </message>
-    <message>
-        <source>Please select at least one task to export.</source>
-        <translation>최소 하나의 작업을 선택하세요.</translation>
-    </message>
-    <message>
-        <source>Script exported successfully to Downloads folder.</source>
-        <translation>스크립트가 다운로드 폴더에 성공적으로 내보내졌습니다.</translation>
-    </message>
-    <message>
-        <source>Export failed</source>
-        <translation>내보내기 실패</translation>
-    </message>
-    <message>
-        <source>Select Script File</source>
-        <translation>스크립트 파일 선택</translation>
-    </message>
-    <message>
-        <source>OKScript Files (*.okscript);;All Files (*)</source>
-        <translation>OKScript 파일 (*.okscript);;모든 파일 (*)</translation>
-    </message>
-    <message>
-        <source>Import failed</source>
-        <translation>가져오기 실패</translation>
-    </message>
-</context>
+            <source>Mouse</source>
+            <translation>마우스</translation>
+        </message>
+        <message>
+            <source>Key</source>
+            <translation>키</translation>
+        </message>
+        <message>
+            <source>Control</source>
+            <translation>제어</translation>
+        </message>
+        <message>
+            <source>OCR</source>
+            <translation>OCR</translation>
+        </message>
+        <message>
+            <source>Template Matching</source>
+            <translation>템플릿 매칭</translation>
+        </message>
+        <message>
+            <source>Box</source>
+            <translation>박스</translation>
+        </message>
+        <message>
+            <source>Window</source>
+            <translation>창</translation>
+        </message>
+        <message>
+            <source>ADB</source>
+            <translation>ADB</translation>
+        </message>
+        <message>
+            <source>Logging</source>
+            <translation>로깅</translation>
+        </message>
+        <message>
+            <source>Other</source>
+            <translation>기타</translation>
+        </message>
+        <message>
+            <source>click</source>
+            <translation>click</translation>
+        </message>
+        <message>
+            <source>middle_click</source>
+            <translation>middle_click</translation>
+        </message>
+        <message>
+            <source>right_click</source>
+            <translation>right_click</translation>
+        </message>
+        <message>
+            <source>mouse_down</source>
+            <translation>mouse_down</translation>
+        </message>
+        <message>
+            <source>mouse_up</source>
+            <translation>mouse_up</translation>
+        </message>
+        <message>
+            <source>swipe</source>
+            <translation>swipe</translation>
+        </message>
+        <message>
+            <source>scroll</source>
+            <translation>scroll</translation>
+        </message>
+        <message>
+            <source>send_key</source>
+            <translation>send_key</translation>
+        </message>
+        <message>
+            <source>send_key_down</source>
+            <translation>send_key_down</translation>
+        </message>
+        <message>
+            <source>send_key_up</source>
+            <translation>send_key_up</translation>
+        </message>
+        <message>
+            <source>input_text</source>
+            <translation>input_text</translation>
+        </message>
+        <message>
+            <source>sleep</source>
+            <translation>sleep</translation>
+        </message>
+        <message>
+            <source>wait_until</source>
+            <translation>wait_until</translation>
+        </message>
+        <message>
+            <source>find</source>
+            <translation>찾기</translation>
+        </message>
+        <message>
+            <source>box</source>
+            <translation>상자</translation>
+        </message>
+        <message>
+            <source>ocr</source>
+            <translation>ocr</translation>
+        </message>
+        <message>
+            <source>screenshot</source>
+            <translation>screenshot</translation>
+        </message>
+        <message>
+            <source>get_task_by_class</source>
+            <translation>get_task_by_class</translation>
+        </message>
+        <message>
+            <source>box_in_horizontal_center</source>
+            <translation>box_in_horizontal_center</translation>
+        </message>
+        <message>
+            <source>clipboard</source>
+            <translation>clipboard</translation>
+        </message>
+        <message>
+            <source>back</source>
+            <translation>back</translation>
+        </message>
+        <message>
+            <source>is_adb</source>
+            <translation>is_adb</translation>
+        </message>
+        <message>
+            <source>is_browser</source>
+            <translation>is_browser</translation>
+        </message>
+        <message>
+            <source>start_device</source>
+            <translation>start_device</translation>
+        </message>
+        <message>
+            <source>swipe_relative</source>
+            <translation>swipe_relative</translation>
+        </message>
+        <message>
+            <source>ensure_in_front</source>
+            <translation>ensure_in_front</translation>
+        </message>
+        <message>
+            <source>scroll_relative</source>
+            <translation>scroll_relative</translation>
+        </message>
+        <message>
+            <source>click_box_if_name_match</source>
+            <translation>click_box_if_name_match</translation>
+        </message>
+        <message>
+            <source>out_of_ratio</source>
+            <translation>out_of_ratio</translation>
+        </message>
+        <message>
+            <source>click_box</source>
+            <translation>click_box</translation>
+        </message>
+        <message>
+            <source>wait_click_box</source>
+            <translation>wait_click_box</translation>
+        </message>
+        <message>
+            <source>next_frame</source>
+            <translation>next_frame</translation>
+        </message>
+        <message>
+            <source>adb_ui_dump</source>
+            <translation>adb_ui_dump</translation>
+        </message>
+        <message>
+            <source>draw_boxes</source>
+            <translation>draw_boxes</translation>
+        </message>
+        <message>
+            <source>clear_box</source>
+            <translation>clear_box</translation>
+        </message>
+        <message>
+            <source>calculate_color_percentage</source>
+            <translation>calculate_color_percentage</translation>
+        </message>
+        <message>
+            <source>adb_shell</source>
+            <translation>adb_shell</translation>
+        </message>
+        <message>
+            <source>box_of_screen</source>
+            <translation>box_of_screen</translation>
+        </message>
+        <message>
+            <source>box_of_screen_scaled</source>
+            <translation>box_of_screen_scaled</translation>
+        </message>
+        <message>
+            <source>width_of_screen</source>
+            <translation>width_of_screen</translation>
+        </message>
+        <message>
+            <source>height_of_screen</source>
+            <translation>height_of_screen</translation>
+        </message>
+        <message>
+            <source>move</source>
+            <translation>move</translation>
+        </message>
+        <message>
+            <source>move_relative</source>
+            <translation>move_relative</translation>
+        </message>
+        <message>
+            <source>middle_click_relative</source>
+            <translation>middle_click_relative</translation>
+        </message>
+        <message>
+            <source>click_relative</source>
+            <translation>click_relative</translation>
+        </message>
+        <message>
+            <source>find_feature</source>
+            <translation>find_feature</translation>
+        </message>
+        <message>
+            <source>get_feature_by_name</source>
+            <translation>get_feature_by_name</translation>
+        </message>
+        <message>
+            <source>get_box_by_name</source>
+            <translation>get_box_by_name</translation>
+        </message>
+        <message>
+            <source>find_feature_and_set</source>
+            <translation>find_feature_and_set</translation>
+        </message>
+        <message>
+            <source>wait_feature</source>
+            <translation>wait_feature</translation>
+        </message>
+        <message>
+            <source>wait_click_feature</source>
+            <translation>wait_click_feature</translation>
+        </message>
+        <message>
+            <source>find_one</source>
+            <translation>find_one</translation>
+        </message>
+        <message>
+            <source>feature_exists</source>
+            <translation>feature_exists</translation>
+        </message>
+        <message>
+            <source>find_best_match_in_box</source>
+            <translation>find_best_match_in_box</translation>
+        </message>
+        <message>
+            <source>find_first_match_in_box</source>
+            <translation>find_first_match_in_box</translation>
+        </message>
+        <message>
+            <source>wait_click_ocr</source>
+            <translation>wait_click_ocr</translation>
+        </message>
+        <message>
+            <source>wait_ocr</source>
+            <translation>wait_ocr</translation>
+        </message>
+        <message>
+            <source>add_text_fix</source>
+            <translation>add_text_fix</translation>
+        </message>
+        <message>
+            <source>create_shortcut</source>
+            <translation>create_shortcut</translation>
+        </message>
+        <message>
+            <source>sleep_check</source>
+            <translation>sleep_check</translation>
+        </message>
+        <message>
+            <source>tr</source>
+            <translation>tr</translation>
+        </message>
+        <message>
+            <source>get_status</source>
+            <translation>get_status</translation>
+        </message>
+        <message>
+            <source>enable</source>
+            <translation>enable</translation>
+        </message>
+        <message>
+            <source>pause</source>
+            <translation>pause</translation>
+        </message>
+        <message>
+            <source>unpause</source>
+            <translation>unpause</translation>
+        </message>
+        <message>
+            <source>log_info</source>
+            <translation>log_info</translation>
+        </message>
+        <message>
+            <source>log_debug</source>
+            <translation>log_debug</translation>
+        </message>
+        <message>
+            <source>log_warning</source>
+            <translation>log_warning</translation>
+        </message>
+        <message>
+            <source>log_error</source>
+            <translation>log_error</translation>
+        </message>
+        <message>
+            <source>go_to_tab</source>
+            <translation>go_to_tab</translation>
+        </message>
+        <message>
+            <source>notification</source>
+            <translation>notification</translation>
+        </message>
+        <message>
+            <source>info_clear</source>
+            <translation>info_clear</translation>
+        </message>
+        <message>
+            <source>info_incr</source>
+            <translation>info_incr</translation>
+        </message>
+        <message>
+            <source>info_add_to_list</source>
+            <translation>info_add_to_list</translation>
+        </message>
+        <message>
+            <source>info_set</source>
+            <translation>info_set</translation>
+        </message>
+        <message>
+            <source>info_get</source>
+            <translation>info_get</translation>
+        </message>
+        <message>
+            <source>info_add</source>
+            <translation>info_add</translation>
+        </message>
+        <message>
+            <source>disable</source>
+            <translation>disable</translation>
+        </message>
+        <message>
+            <source>trigger</source>
+            <translation>trigger</translation>
+        </message>
+        <message>
+            <source>find_boxes</source>
+            <translation>find_boxes</translation>
+        </message>
+        <message>
+            <source>Export Script</source>
+            <translation>스크립트 내보내기</translation>
+        </message>
+        <message>
+            <source>Import Script</source>
+            <translation>스크립트 가져오기</translation>
+        </message>
+        <message>
+            <source>Select tasks to export:</source>
+            <translation>내보낼 작업 선택:</translation>
+        </message>
+        <message>
+            <source>File Name:</source>
+            <translation>파일 이름:</translation>
+        </message>
+        <message>
+            <source>English, numbers and valid filename chars only</source>
+            <translation>영어, 숫자 및 유효한 파일명 문자만</translation>
+        </message>
+        <message>
+            <source>Script Name:</source>
+            <translation>스크립트 이름:</translation>
+        </message>
+        <message>
+            <source>Display name for the script</source>
+            <translation>스크립트 표시 이름</translation>
+        </message>
+        <message>
+            <source>Version:</source>
+            <translation>버전:</translation>
+        </message>
+        <message>
+            <source>Export</source>
+            <translation>내보내기</translation>
+        </message>
+        <message>
+            <source>No tasks to export.</source>
+            <translation>내보낼 작업이 없습니다.</translation>
+        </message>
+        <message>
+            <source>Invalid file name. Use English letters, numbers, underscores, hyphens only.</source>
+            <translation>잘못된 파일 이름입니다. 영어, 숫자, 밑줄, 하이픈만 사용하세요.</translation>
+        </message>
+        <message>
+            <source>Script name is required.</source>
+            <translation>스크립트 이름은 필수입니다.</translation>
+        </message>
+        <message>
+            <source>Please select at least one task to export.</source>
+            <translation>최소 하나의 작업을 선택하세요.</translation>
+        </message>
+        <message>
+            <source>Script exported successfully to Downloads folder.</source>
+            <translation>스크립트가 다운로드 폴더에 성공적으로 내보내졌습니다.</translation>
+        </message>
+        <message>
+            <source>Export failed</source>
+            <translation>내보내기 실패</translation>
+        </message>
+        <message>
+            <source>Select Script File</source>
+            <translation>스크립트 파일 선택</translation>
+        </message>
+        <message>
+            <source>OKScript Files (*.okscript);;All Files (*)</source>
+            <translation>OKScript 파일 (*.okscript);;모든 파일 (*)</translation>
+        </message>
+        <message>
+            <source>Import failed</source>
+            <translation>가져오기 실패</translation>
+        </message>
+    </context>
     <context>
         <name>CreateTaskDialog</name>
         <message>
@@ -2141,15 +2461,83 @@
             <translation>잘못된 상대 경로입니다. 예: ok_tasks/LabelEnum.py</translation>
         </message>
     </context>
-<context>
-    <name>TemplateInputDialog</name>
-    <message>
-        <source>Confirm</source>
-        <translation>확인</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>취소</translation>
-    </message>
-</context>
-<context><name>SelectInteractionListView</name><message><source>Pynput</source><translation>Pynput - 포그라운드, 가장 호환됨</translation></message><message><source>PostMessage</source><translation>PostMessage - 백그라운드, 대부분의 앱 및 일부 게임</translation></message><message><source>PyDirect</source><translation>PyDirect - 포그라운드, Pynput 백업</translation></message><message><source>Genshin</source><translation>Genshin - 백그라운드, 일부 Unity 게임 지원</translation></message><message><source>ADBInteraction</source><translation>ADBInteraction - 백그라운드</translation></message><message><source>BrowserInteraction</source><translation>BrowserInteraction - 백그라운드</translation></message></context><context><name>ImportWarningDialog</name><message><source>Warning</source><translation>경고</translation></message><message><source>Make sure that you trust the script publisher, unverified script can and not limited to steal your account/ data money, destroy your data, harm/ controlling your computer.</source><translation>스크립트 게시자를 신뢰하는지 확인하십시오. 확인되지 않은 스크립트는 계정/데이터/금전 도용, 데이터 파괴, 컴퓨터 손상/제어 등을 포함하되 이에 국한되지 않는 위험이 있습니다.</translation></message><message><source>I understand the risks and want to import this script.</source><translation>위험을 인지하고 이 스크립트를 가져오기를 원합니다.</translation></message><message><source>Confirm</source><translation>확인</translation></message><message><source>Cancel</source><translation>취소</translation></message></context><context><name>AnnotationCanvas</name><message><source>Are you sure you want to delete '{}'?</source><translation>'{}' 을(를) 삭제하시겠습니까?</translation></message><message><source>Confirm Delete</source><translation>삭제 확인</translation></message></context></TS>
+    <context>
+        <name>TemplateInputDialog</name>
+        <message>
+            <source>Confirm</source>
+            <translation>확인</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>취소</translation>
+        </message>
+    </context>
+    <context>
+        <name>SelectInteractionListView</name>
+        <message>
+            <source>Pynput</source>
+            <translation>Pynput - 포그라운드, 가장 호환됨</translation>
+        </message>
+        <message>
+            <source>PostMessage</source>
+            <translation>PostMessage - 백그라운드, 대부분의 앱 및 일부 게임</translation>
+        </message>
+        <message>
+            <source>PyDirect</source>
+            <translation>PyDirect - 포그라운드, Pynput 백업</translation>
+        </message>
+        <message>
+            <source>Genshin</source>
+            <translation>Genshin - 백그라운드, 일부 Unity 게임 지원</translation>
+        </message>
+        <message>
+            <source>ADBInteraction</source>
+            <translation>ADBInteraction - 백그라운드</translation>
+        </message>
+        <message>
+            <source>BrowserInteraction</source>
+            <translation>BrowserInteraction - 백그라운드</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportWarningDialog</name>
+        <message>
+            <source>Warning</source>
+            <translation>경고</translation>
+        </message>
+        <message>
+            <source>Make sure that you trust the script publisher, unverified script can and not limited to steal your account/ data money, destroy your data, harm/ controlling your computer.</source>
+            <translation>스크립트 게시자를 신뢰하는지 확인하십시오. 확인되지 않은 스크립트는 계정/데이터/금전 도용, 데이터 파괴, 컴퓨터 손상/제어 등을 포함하되 이에 국한되지 않는 위험이 있습니다.</translation>
+        </message>
+        <message>
+            <source>I understand the risks and want to import this script.</source>
+            <translation>위험을 인지하고 이 스크립트를 가져오기를 원합니다.</translation>
+        </message>
+        <message>
+            <source>Confirm</source>
+            <translation>확인</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>취소</translation>
+        </message>
+    </context>
+    <context>
+        <name>AnnotationCanvas</name>
+        <message>
+            <source>Are you sure you want to delete '{}'?</source>
+            <translation>'{}' 을(를) 삭제하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>Confirm Delete</source>
+            <translation>삭제 확인</translation>
+        </message>
+    </context>
+    <context>
+        <name>Task</name>
+        <message>
+            <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
+            <translation type="unfinished" />
+        </message>
+    </context>
+</TS>
