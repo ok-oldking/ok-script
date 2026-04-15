@@ -1393,13 +1393,35 @@ class BrowserWGC(WindowsGraphicsCaptureMethod):
             return None
 
         fh, fw = frame.shape[:2]
-        if x < 0 or y < 0 or x + w > fw or y + h > fh:
-            x = max(0, x)
-            y = max(0, y)
-            w = min(w, fw - x)
-            h = min(h, fh - y)
+        target_w = int(getattr(self.hwnd_window, "width", 0) or 0)
+        target_h = int(getattr(self.hwnd_window, "height", 0) or 0)
+        if target_w <= 0 or target_h <= 0:
+            return frame
 
-        return frame[y:y + h, x:x + w]
+        x = int(getattr(self.browser_method, "x_offset", 0) or 0)
+        y = int(getattr(self.browser_method, "y_offset", 0) or 0)
+
+        if 0 <= x and 0 <= y and x + target_w <= fw and y + target_h <= fh:
+            left_extra = x
+            right_extra = fw - (x + target_w)
+            top_extra = y
+            bottom_extra = fh - (y + target_h)
+            if abs(left_extra - right_extra) <= 2 and abs(bottom_extra - left_extra) <= 2:
+                return frame[y:y + target_h, x:x + target_w]
+
+        border, title_height = get_crop_point(fw, fh, target_w, target_h)
+        border = max(0, int(border))
+        title_height = max(0, int(title_height))
+        if border == 0 and title_height == 0:
+            return frame
+
+        x1 = border
+        y1 = title_height
+        x2 = fw - border
+        y2 = fh - border
+        if x2 <= x1 or y2 <= y1:
+            return None
+        return frame[y1:y2, x1:x2]
 
 class ADBCaptureMethod(BaseCaptureMethod):
     name = "ADB command line Capture"
@@ -1522,5 +1544,4 @@ class NemuIpcCaptureMethod(BaseCaptureMethod):
 
     def connected(self):
         return True
-
 
