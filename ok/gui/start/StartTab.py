@@ -5,7 +5,8 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QAbstractItemView, QVBoxLayout, QHBoxLayout, QWidget, QListWidgetItem
-from qfluentwidgets import ListWidget, PushButton, FluentIcon, SwitchButton, SearchLineEdit
+from qfluentwidgets import (ListWidget, PushButton, FluentIcon, SwitchButton, SearchLineEdit,
+                            TogglePushButton)
 
 from ok.gui.Communicate import communicate
 from ok.gui.debug.DebugTab import capture
@@ -78,6 +79,10 @@ class StartTab(Tab):
         self.ocr_button = PushButton(FluentIcon.SEARCH, "OCR")
         self.ocr_button.clicked.connect(self.ocr_log)
         self.debug_layout.addWidget(self.ocr_button)
+
+        self.cursor_tool_button = TogglePushButton(FluentIcon.ADD, "Cursor Tool")
+        self.cursor_tool_button.toggled.connect(self.cursor_tool)
+        self.debug_layout.addWidget(self.cursor_tool_button)
         self.debug_layout.addStretch(1)
 
         self.add_card(self.tr("Debug"), self.debug_widget)
@@ -176,6 +181,19 @@ class StartTab(Tab):
                         zipf.write(file_path, file_path.relative_to(Path.cwd()))
 
         subprocess.run(["explorer", f"/select,{zip_path}"])
+
+    def cursor_tool(self, checked):
+        from ok import og
+        if checked:
+            if not og.app.cursor_overlay_window:
+                from ok.gui.overlay.CursorOverlayWindow import CursorOverlayWindow
+                og.app.cursor_overlay_window = CursorOverlayWindow()
+                og.app.cursor_overlay_window.update_overlay(True)
+        else:
+            if og.app.cursor_overlay_window:
+                og.app.cursor_overlay_window.update_overlay(False)
+                og.app.cursor_overlay_window.close()
+                og.app.cursor_overlay_window = None
 
     def ocr_log_bg(self):
         try:

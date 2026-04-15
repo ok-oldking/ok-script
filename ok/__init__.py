@@ -97,6 +97,7 @@ class App:
 
         self.loading_window = None
         self.overlay_window = None
+        self.cursor_overlay_window = None
         self.main_window = None
         self.exit_event = exit_event
         self.icon = QIcon(get_path_relative_to_exe(config.get('gui_icon')) or ":/icon/icon.ico")
