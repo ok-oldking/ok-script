@@ -138,10 +138,42 @@ class TaskExecutor:
             elif lib == 'onnxocr':
                 from onnxocr.onnx_paddleocr import ONNXPaddleOcr
                 logger.info(f'init onnxocr {config_params}')
+                requested_use_openvino = config_params.get('use_openvino', None)
+
+                def _probe_import(module_name: str) -> bool:
+                    try:
+                        __import__(module_name)
+                        return True
+                    except Exception:
+                        return False
+
+                openvino_available = _probe_import('openvino')
+                onnxruntime_available = _probe_import('onnxruntime')
+
+                if requested_use_openvino is True:
+                    if not openvino_available:
+                        raise Exception('OCR(onnxocr) configured to use OpenVINO, but openvino is not available')
+                    use_openvino = True
+                elif requested_use_openvino is False:
+                    if onnxruntime_available:
+                        use_openvino = False
+                    elif openvino_available:
+                        use_openvino = True
+                    else:
+                        raise Exception('OCR(onnxocr) configured to use onnxruntime, but neither onnxruntime nor openvino is available')
+                else:
+                    if openvino_available:
+                        use_openvino = True
+                    elif onnxruntime_available:
+                        use_openvino = False
+                    else:
+                        raise Exception('OCR(onnxocr) requires openvino or onnxruntime, but neither is available')
                 self._ocr_lib[name] = ONNXPaddleOcr(use_angle_cls=False,
                                                     logger=logger,
-                                                    use_npu=config_params.get('use_npu', True),
-                                                    use_openvino=config_params.get('use_openvino', False))
+                                                    use_gpu=config_params.get('use_gpu', False),
+                                                    use_dml=config_params.get('use_dml', False),
+                                                    use_npu=config_params.get('use_npu', False),
+                                                    use_openvino=use_openvino)
             elif lib == 'rapidocr':
                 from rapidocr import RapidOCR
                 params = {"Global.use_cls": False, "Global.max_side_len": 100000, "Global.min_side_len": 0,
