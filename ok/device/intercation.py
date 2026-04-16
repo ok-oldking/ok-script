@@ -670,7 +670,6 @@ class BrowserInteraction(BaseInteraction):
             "esc": "Escape",
             "return": "Enter",
             "enter": "Enter",
-            "ctrl": "Control",
             "space": "Space",
             "backspace": "Backspace",
             "tab": "Tab",
@@ -679,7 +678,21 @@ class BrowserInteraction(BaseInteraction):
             "up": "ArrowUp",
             "down": "ArrowDown",
             "win": "Meta",
-            "command": "Meta"
+            "windows": "Meta",
+            "command": "Meta",
+            "meta": "Meta",
+            "alt": "Alt",
+            "lalt": "Alt",
+            "ralt": "Alt",
+            "ctrl": "Control",
+            "control": "Control",
+            "lctrl": "Control",
+            "rctrl": "Control",
+            "lcontrol": "Control",
+            "rcontrol": "Control",
+            "shift": "Shift",
+            "lshift": "ShiftLeft",
+            "rshift": "Shift",
         }
 
     def _map_key(self, key):
