@@ -48,7 +48,7 @@ class DebugTab(Tab):
         capture_button.clicked.connect(lambda: self.handler.post(capture))
         layout.addWidget(capture_button)
 
-        ocr_button = PushButton("OCR")
+        ocr_button = PushButton(self.tr("OCR"))
         ocr_button.clicked.connect(lambda: self.handler.post(self.ocr_log))
         layout.addWidget(ocr_button)
 
@@ -200,7 +200,7 @@ class DebugTab(Tab):
         self.target_function_edit.setCompleter(completer)
 
     def select_screenshot(self):
-        file_names, _ = QFileDialog.getOpenFileNames(None, "Open Image", "", "Image Files (*.png *.jpg *.bmp)")
+        file_names, _ = QFileDialog.getOpenFileNames(None, self.tr("Open Image"), "", "Image Files (*.png *.jpg *.bmp)")
 
         if file_names:
             logger.info(f"Selected files: {file_names}")

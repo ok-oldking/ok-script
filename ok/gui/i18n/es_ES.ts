@@ -196,6 +196,14 @@
             <source>No Capture Available or Selected</source>
             <translation>No hay captura disponible o seleccionada</translation>
         </message>
+        <message>
+            <source>OCR</source>
+            <translation>OCR</translation>
+        </message>
+        <message>
+            <source>Open Image</source>
+            <translation>Abrir imagen</translation>
+        </message>
     </context>
     <context>
         <name>DownloadBar</name>
@@ -835,6 +843,14 @@
         <message>
             <source>OCR</source>
             <translation>OCR</translation>
+        </message>
+        <message>
+            <source>Cursor Tool</source>
+            <translation>Herramienta de cursor</translation>
+        </message>
+        <message>
+            <source>Loading</source>
+            <translation>Cargando</translation>
         </message>
     </context>
     <context>
@@ -2573,6 +2589,65 @@
         <message>
             <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
             <translation>¡Error de inferencia de la NPU, es posible que necesite actualizar el controlador de la NPU de Intel!</translation>
+        </message>
+    </context>
+    <context>
+        <name>CursorOverlayWindow</name>
+        <message>
+            <source>Pixel Color</source>
+            <translation>Color de píxel</translation>
+        </message>
+        <message>
+            <source>Coordinates</source>
+            <translation>Coordenadas</translation>
+        </message>
+        <message>
+            <source>Target: {title}</source>
+            <translation>Objetivo: {title}</translation>
+        </message>
+        <message>
+            <source>Shift: Enter/Exit Capture Mode</source>
+            <translation>Shift: Entrar/Salir del modo de captura</translation>
+        </message>
+        <message>
+            <source>Mode: {mode_text} (Capslock to switch)</source>
+            <translation>Modo: {mode_text} (Capslock para cambiar)</translation>
+        </message>
+        <message>
+            <source>Right/Middle click to mark [Max 2]</source>
+            <translation>Clic derecho/medio para marcar [Máx. 2]</translation>
+        </message>
+        <message>
+            <source>Recorded: {count}</source>
+            <translation>Grabados: {count}</translation>
+        </message>
+        <message>
+            <source>Target client rect is invalid</source>
+            <translation>El rectángulo del cliente de destino no es válido</translation>
+        </message>
+        <message>
+            <source>Copied Coordinates:\n{clipboard_text}</source>
+            <translation>Coordenadas copiadas:\n{clipboard_text}</translation>
+        </message>
+        <message>
+            <source>Failed to capture screen image.</source>
+            <translation>Error al capturar la imagen de la pantalla.</translation>
+        </message>
+        <message>
+            <source>Point out of bounds</source>
+            <translation>Punto fuera de límites</translation>
+        </message>
+        <message>
+            <source>Empty region selected</source>
+            <translation>Región vacía seleccionada</translation>
+        </message>
+        <message>
+            <source>Copied Color:\n{clipboard_text}</source>
+            <translation>Color copiado:\n{clipboard_text}</translation>
+        </message>
+        <message>
+            <source>Pixel capture failed: {clipboard_text}</source>
+            <translation>Error en la captura de píxeles: {clipboard_text}</translation>
         </message>
     </context>
 </TS>

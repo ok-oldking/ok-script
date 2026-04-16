@@ -76,11 +76,11 @@ class StartTab(Tab):
         self.export_log_button.clicked.connect(self.export_logs)
         self.debug_layout.addWidget(self.export_log_button)
 
-        self.ocr_button = PushButton(FluentIcon.SEARCH, "OCR")
+        self.ocr_button = PushButton(FluentIcon.SEARCH, self.tr("OCR"))
         self.ocr_button.clicked.connect(self.ocr_log)
         self.debug_layout.addWidget(self.ocr_button)
 
-        self.cursor_tool_button = TogglePushButton(FluentIcon.ADD, "Cursor Tool")
+        self.cursor_tool_button = TogglePushButton(FluentIcon.ADD, self.tr("Cursor Tool"))
         self.cursor_tool_button.toggled.connect(self.cursor_tool)
         self.debug_layout.addWidget(self.cursor_tool_button)
         self.debug_layout.addStretch(1)
@@ -109,7 +109,7 @@ class StartTab(Tab):
         self.add_card(self.tr("Debug Overlay"), self.overlay_widget)
 
         self.closed_by_finish_loading = False
-        self.message = "Loading"
+        self.message = self.tr("Loading")
 
         self.update_capture(True)
         self.refresh_clicked()

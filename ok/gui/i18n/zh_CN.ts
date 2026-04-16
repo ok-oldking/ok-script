@@ -187,6 +187,14 @@
             <source>No Capture Available or Selected</source>
             <translation>截图方式不可用或未选择</translation>
         </message>
+        <message>
+            <source>OCR</source>
+            <translation>OCR</translation>
+        </message>
+        <message>
+            <source>Open Image</source>
+            <translation>打开图片</translation>
+        </message>
     </context>
     <context>
         <name>DownloadBar</name>
@@ -833,6 +841,18 @@
         <message>
             <source>Capture</source>
             <translation>截图</translation>
+        </message>
+        <message>
+            <source>OCR</source>
+            <translation>OCR</translation>
+        </message>
+        <message>
+            <source>Cursor Tool</source>
+            <translation>光标工具</translation>
+        </message>
+        <message>
+            <source>Loading</source>
+            <translation>加载中</translation>
         </message>
     </context>
     <context>
@@ -2571,6 +2591,65 @@
         <message>
             <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
             <translation>NPU推理错误，您可能需要更新Intel NPU驱动！</translation>
+        </message>
+    </context>
+    <context>
+        <name>CursorOverlayWindow</name>
+        <message>
+            <source>Pixel Color</source>
+            <translation>像素颜色</translation>
+        </message>
+        <message>
+            <source>Coordinates</source>
+            <translation>坐标</translation>
+        </message>
+        <message>
+            <source>Target: {title}</source>
+            <translation>目标: {title}</translation>
+        </message>
+        <message>
+            <source>Shift: Enter/Exit Capture Mode</source>
+            <translation>Shift: 进入/退出捕获模式</translation>
+        </message>
+        <message>
+            <source>Mode: {mode_text} (Capslock to switch)</source>
+            <translation>模式: {mode_text} (Capslock 切换)</translation>
+        </message>
+        <message>
+            <source>Right/Middle click to mark [Max 2]</source>
+            <translation>右键/中键标记 [最多2个]</translation>
+        </message>
+        <message>
+            <source>Recorded: {count}</source>
+            <translation>已记录: {count}</translation>
+        </message>
+        <message>
+            <source>Target client rect is invalid</source>
+            <translation>目标窗口区域无效</translation>
+        </message>
+        <message>
+            <source>Copied Coordinates:\n{clipboard_text}</source>
+            <translation>已复制坐标:\n{clipboard_text}</translation>
+        </message>
+        <message>
+            <source>Failed to capture screen image.</source>
+            <translation>截图失败</translation>
+        </message>
+        <message>
+            <source>Point out of bounds</source>
+            <translation>点超出边界</translation>
+        </message>
+        <message>
+            <source>Empty region selected</source>
+            <translation>未选择区域</translation>
+        </message>
+        <message>
+            <source>Copied Color:\n{clipboard_text}</source>
+            <translation>已复制颜色:\n{clipboard_text}</translation>
+        </message>
+        <message>
+            <source>Pixel capture failed: {clipboard_text}</source>
+            <translation>像素捕获失败: {clipboard_text}</translation>
         </message>
     </context>
 </TS>

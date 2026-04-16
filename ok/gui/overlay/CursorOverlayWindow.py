@@ -142,7 +142,7 @@ class CursorOverlayWindow(QWidget):
             client_h = pt_br[1] - pt_tl[1]
 
             if client_w <= 0 or client_h <= 0:
-                self.show_notification("Target client rect is invalid")
+                self.show_notification(self.tr("Target client rect is invalid"))
                 return
         except Exception as e:
             logger.error(f"Cannot get client rect: {e}")
@@ -157,7 +157,7 @@ class CursorOverlayWindow(QWidget):
                 res.append(f"{px_prop:.4f}, {py_prop:.4f}")
             clipboard_text = ", ".join(res)
             QGuiApplication.clipboard().setText(clipboard_text)
-            self.show_notification(f"Copied Coordinates:\n{clipboard_text}")
+            self.show_notification(self.tr("Copied Coordinates:\n{clipboard_text}").format(clipboard_text=clipboard_text))
         else:
             # Pixel Color capture
             self.hide()
@@ -181,7 +181,7 @@ class CursorOverlayWindow(QWidget):
             img_bgra = capture_by_bitblt(ctx, desktop_hwnd, width, height, left, top, False)
 
             if img_bgra is None:
-                self.show_notification("Failed to capture screen image.")
+                self.show_notification(self.tr("Failed to capture screen image."))
                 return
 
             arr_rgb = img_bgra[:, :, :3][:, :, ::-1]  # from BGRA to RGB
@@ -194,7 +194,7 @@ class CursorOverlayWindow(QWidget):
                     # To follow the identical format for 1 point
                     clipboard_text = f"color = {{\n    \"r\": ({int(r)}, {int(r)}),\n    \"g\": ({int(g)}, {int(g)}),\n    \"b\": ({int(b)}, {int(b)}),\n}}"
                 else:
-                    clipboard_text = "Point out of bounds"
+                    clipboard_text = self.tr("Point out of bounds")
             else:
                 p1, p2 = points
                 idx_x1, idx_y1 = p1[0] - left, p1[1] - top
@@ -218,13 +218,13 @@ class CursorOverlayWindow(QWidget):
                     r_h, g_h, b_h = upper
                     clipboard_text = f"color = {{\n    \"r\": ({int(r_l)}, {int(r_h)}),\n    \"g\": ({int(g_l)}, {int(g_h)}),\n    \"b\": ({int(b_l)}, {int(b_h)}),\n}}"
                 else:
-                    clipboard_text = "Empty region selected"
+                    clipboard_text = self.tr("Empty region selected")
 
             if clipboard_text and not clipboard_text.startswith("Point") and not clipboard_text.startswith("Empty"):
                 QGuiApplication.clipboard().setText(clipboard_text)
-                self.show_notification(f"Copied Color:\n{clipboard_text}")
+                self.show_notification(self.tr("Copied Color:\n{clipboard_text}").format(clipboard_text=clipboard_text))
             else:
-                self.show_notification(f"Pixel capture failed: {clipboard_text}")
+                self.show_notification(self.tr("Pixel capture failed: {clipboard_text}").format(clipboard_text=clipboard_text))
         except Exception as e:
             logger.error(f"Error checking pixels: {e}")
         finally:
@@ -262,10 +262,10 @@ class CursorOverlayWindow(QWidget):
         # Determine mode text and color
         caps_on = win32api.GetKeyState(win32con.VK_CAPITAL) & 1
         if caps_on:
-            mode_text = "Pixel Color"
+            mode_text = self.tr("Pixel Color")
             mode_color = QColor(0, 255, 255) # Cyan
         else:
-            mode_text = "Coordinates"
+            mode_text = self.tr("Coordinates")
             mode_color = QColor(0, 255, 0) # Green
 
         crosshair_color = QColor(mode_color.red(), mode_color.green(), mode_color.blue(), 150)
@@ -275,15 +275,15 @@ class CursorOverlayWindow(QWidget):
         if len(title) > 30: title = title[:30] + "..."
 
         texts = [
-            (f"Target: {title}", Qt.yellow),
-            ("Shift: Enter/Exit Capture Mode", Qt.yellow)
+            (self.tr("Target: {title}").format(title=title), Qt.yellow),
+            (self.tr("Shift: Enter/Exit Capture Mode"), Qt.yellow)
         ]
 
         if self.capture_mode:
-            texts.append((f"Mode: {mode_text} (Capslock to switch)", mode_color))
-            texts.append(("Right/Middle click to mark [Max 2]", Qt.yellow))
+            texts.append((self.tr("Mode: {mode_text} (Capslock to switch)").format(mode_text=mode_text), mode_color))
+            texts.append((self.tr("Right/Middle click to mark [Max 2]"), Qt.yellow))
             if self.recorded_points:
-                texts.append((f"Recorded: {len(self.recorded_points)}", Qt.yellow))
+                texts.append((self.tr("Recorded: {count}").format(count=len(self.recorded_points)), Qt.yellow))
 
         # Calculate bounding box for text
         fm = painter.fontMetrics()

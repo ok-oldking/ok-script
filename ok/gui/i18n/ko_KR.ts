@@ -196,6 +196,14 @@
             <source>No Capture Available or Selected</source>
             <translation>캡처 방식을 사용할 수 없거나 선택되지 않음</translation>
         </message>
+        <message>
+            <source>OCR</source>
+            <translation>OCR</translation>
+        </message>
+        <message>
+            <source>Open Image</source>
+            <translation>이미지 열기</translation>
+        </message>
     </context>
     <context>
         <name>DownloadBar</name>
@@ -836,6 +844,14 @@
         <message>
             <source>OCR</source>
             <translation>OCR</translation>
+        </message>
+        <message>
+            <source>Cursor Tool</source>
+            <translation>커서 툴</translation>
+        </message>
+        <message>
+            <source>Loading</source>
+            <translation>로딩 중</translation>
         </message>
     </context>
     <context>
@@ -2574,6 +2590,65 @@
         <message>
             <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
             <translation>NPU 추론 오류, Intel NPU 드라이버를 업데이트해야 할 수 있습니다!</translation>
+        </message>
+    </context>
+    <context>
+        <name>CursorOverlayWindow</name>
+        <message>
+            <source>Pixel Color</source>
+            <translation>픽셀 색상</translation>
+        </message>
+        <message>
+            <source>Coordinates</source>
+            <translation>좌표</translation>
+        </message>
+        <message>
+            <source>Target: {title}</source>
+            <translation>대상: {title}</translation>
+        </message>
+        <message>
+            <source>Shift: Enter/Exit Capture Mode</source>
+            <translation>Shift: 캡처 모드 시작/종료</translation>
+        </message>
+        <message>
+            <source>Mode: {mode_text} (Capslock to switch)</source>
+            <translation>모드: {mode_text} (Capslock으로 전환)</translation>
+        </message>
+        <message>
+            <source>Right/Middle click to mark [Max 2]</source>
+            <translation>오른쪽/가운데 클릭으로 마크 [최대 2개]</translation>
+        </message>
+        <message>
+            <source>Recorded: {count}</source>
+            <translation>기록됨: {count}</translation>
+        </message>
+        <message>
+            <source>Target client rect is invalid</source>
+            <translation>대상 클라이언트 영역이 유효하지 않습니다</translation>
+        </message>
+        <message>
+            <source>Copied Coordinates:\n{clipboard_text}</source>
+            <translation>좌표가 복사되었습니다:\n{clipboard_text}</translation>
+        </message>
+        <message>
+            <source>Failed to capture screen image.</source>
+            <translation>화면 캡처에 실패했습니다</translation>
+        </message>
+        <message>
+            <source>Point out of bounds</source>
+            <translation>점이 범위를 벗어났습니다</translation>
+        </message>
+        <message>
+            <source>Empty region selected</source>
+            <translation>선택된 영역이 없습니다</translation>
+        </message>
+        <message>
+            <source>Copied Color:\n{clipboard_text}</source>
+            <translation>색상이 복사되었습니다:\n{clipboard_text}</translation>
+        </message>
+        <message>
+            <source>Pixel capture failed: {clipboard_text}</source>
+            <translation>픽셀 캡처 실패: {clipboard_text}</translation>
         </message>
     </context>
 </TS>

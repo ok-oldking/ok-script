@@ -196,6 +196,14 @@
             <source>No Capture Available or Selected</source>
             <translation>キャプチャ方法が利用不可または未選択です</translation>
         </message>
+        <message>
+            <source>OCR</source>
+            <translation>OCR</translation>
+        </message>
+        <message>
+            <source>Open Image</source>
+            <translation>画像を開く</translation>
+        </message>
     </context>
     <context>
         <name>DownloadBar</name>
@@ -827,6 +835,18 @@
         <message>
             <source>Capture</source>
             <translation>キャプチャ</translation>
+        </message>
+        <message>
+            <source>OCR</source>
+            <translation>OCR</translation>
+        </message>
+        <message>
+            <source>Cursor Tool</source>
+            <translation>カーソルツール</translation>
+        </message>
+        <message>
+            <source>Loading</source>
+            <translation>読み込み中</translation>
         </message>
     </context>
     <context>
@@ -2565,6 +2585,65 @@
         <message>
             <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
             <translation>NPU推論エラー。Intel NPUドライバーを更新する必要があるかもしれません。</translation>
+        </message>
+    </context>
+    <context>
+        <name>CursorOverlayWindow</name>
+        <message>
+            <source>Pixel Color</source>
+            <translation>ピクセルカラー</translation>
+        </message>
+        <message>
+            <source>Coordinates</source>
+            <translation>座標</translation>
+        </message>
+        <message>
+            <source>Target: {title}</source>
+            <translation>ターゲット: {title}</translation>
+        </message>
+        <message>
+            <source>Shift: Enter/Exit Capture Mode</source>
+            <translation>Shift: キャプチャモードの開始/終了</translation>
+        </message>
+        <message>
+            <source>Mode: {mode_text} (Capslock to switch)</source>
+            <translation>モード: {mode_text} (Capslockで切り替え)</translation>
+        </message>
+        <message>
+            <source>Right/Middle click to mark [Max 2]</source>
+            <translation>右/中クリックでマーク [最大2個]</translation>
+        </message>
+        <message>
+            <source>Recorded: {count}</source>
+            <translation>記録済み: {count}</translation>
+        </message>
+        <message>
+            <source>Target client rect is invalid</source>
+            <translation>ターゲットクライアント領域が無効です</translation>
+        </message>
+        <message>
+            <source>Copied Coordinates:\n{clipboard_text}</source>
+            <translation>座標をコピーしました:\n{clipboard_text}</translation>
+        </message>
+        <message>
+            <source>Failed to capture screen image.</source>
+            <translation>スクリーンのキャプチャに失敗しました</translation>
+        </message>
+        <message>
+            <source>Point out of bounds</source>
+            <translation>点が境界外です</translation>
+        </message>
+        <message>
+            <source>Empty region selected</source>
+            <translation>領域が選択されていません</translation>
+        </message>
+        <message>
+            <source>Copied Color:\n{clipboard_text}</source>
+            <translation>色をコピーしました:\n{clipboard_text}</translation>
+        </message>
+        <message>
+            <source>Pixel capture failed: {clipboard_text}</source>
+            <translation>ピクセルキャプチャに失敗しました: {clipboard_text}</translation>
         </message>
     </context>
 </TS>
