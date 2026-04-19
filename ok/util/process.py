@@ -153,18 +153,35 @@ def execute(game_cmd: str, arguments=None):
                 try:
                     logger.info(f'try execute {game_cmd} {arguments}')
                     game_cmd_stripped = game_cmd.strip()
-                    if game_cmd_stripped.startswith('"'):
-                        cmd = f'start "" /b {game_cmd_stripped}'
+                    args_part = ''
+                    if game_cmd_stripped.startswith('"') and game_cmd_stripped.startswith(f'"{game_path}"'):
+                        args_part = game_cmd_stripped[len(game_path) + 2:].strip()
                     elif game_cmd_stripped.startswith(game_path):
-                        args_part = game_cmd_stripped[len(game_path):]
-                        cmd = f'start "" /b "{game_path}"{args_part}'
-                    else:
-                        cmd = f'start "" /b "{game_cmd_stripped}"'
-                    if arguments:
-                        cmd += f" {arguments}"
-                    subprocess.Popen(cmd, cwd=os.path.dirname(game_path), shell=True,
-                                     creationflags=0x00000008)  # detached process
-                    return True
+                        args_part = game_cmd_stripped[len(game_path):].strip()
+                    params = ' '.join(arg for arg in [args_part, arguments] if arg)
+                    result = ctypes.windll.shell32.ShellExecuteW(
+                        None,
+                        "open",
+                        game_path,
+                        params if params else None,
+                        os.path.dirname(game_path),
+                        1
+                    )
+                    if result > 32:
+                        return True
+                    logger.warning(f'ShellExecute open failed with code {result}, trying runas')
+                    result = ctypes.windll.shell32.ShellExecuteW(
+                        None,
+                        "runas",
+                        game_path,
+                        params if params else None,
+                        os.path.dirname(game_path),
+                        1
+                    )
+                    if result > 32:
+                        return True
+                    logger.error(f'ShellExecute failed with code {result}')
+                    return False
                 except Exception as e:
                     logger.error('execute error', e)
             else:
