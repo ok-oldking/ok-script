@@ -278,6 +278,7 @@ class FeatureSet:
         result = cv2.matchTemplate(search_area, template, match_method,
                                    mask=mask)
         result[np.isinf(result)] = 0
+        result[np.isnan(result)] = 0
         match_time = time.time()
 
         if screenshot:
