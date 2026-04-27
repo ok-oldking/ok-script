@@ -5,7 +5,7 @@ from enum import Enum
 from PySide6.QtCore import QLocale
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
-                            ConfigSerializer, Theme, EnumSerializer)
+                            ConfigSerializer, Theme)
 
 from ok.util.file import get_relative_path
 
@@ -51,12 +51,12 @@ class AppConfig(QConfig):
 
     # software update
     checkUpdateAtStartUp = ConfigItem("Update", "CheckUpdateAtStartUp", True, BoolValidator())
-    themeMode = OptionsConfigItem(
-        "QFluentWidgets", "ThemeMode", Theme.DARK, OptionsValidator(Theme), EnumSerializer(Theme))
 
 
 cfg = AppConfig()
-qconfig.load(get_relative_path('configs', f"ui_config.json"), cfg)
+_ui_config_path = get_relative_path('configs', "ui_config.json")
+cfg.themeMode.value = Theme.DARK
+qconfig.load(_ui_config_path, cfg)
 
 if __name__ == '__main__':
     locale = Language.ENGLISH

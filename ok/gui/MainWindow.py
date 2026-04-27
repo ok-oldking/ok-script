@@ -2,11 +2,12 @@ import os
 import threading
 
 import pyappify
-from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt
+from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer, QThread, Signal
 from PySide6.QtGui import QScreen
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
 from qfluentwidgets import MSFluentWindow, qconfig, FluentIcon, NavigationItemPosition, MessageBox, InfoBar, \
-    InfoBarPosition, SystemThemeListener, Theme, setTheme, MessageBoxBase
+    InfoBarPosition, Theme, MessageBoxBase
+from qfluentwidgets.common.style_sheet import updateStyleSheet
 
 _original_MessageBoxBase_keyPressEvent = MessageBoxBase.keyPressEvent
 
@@ -36,6 +37,19 @@ from ok.util.process import restart_as_admin, parse_arguments_to_map
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
+
+
+class SystemThemeWatcher(QThread):
+    """始终监控系统主题变化的观察者"""
+    themeChanged = Signal(str)
+ 
+    def run(self):
+        import darkdetect
+        # darkdetect.listener 会在系统主题变化时回调，这里转发为信号
+        try:
+            darkdetect.listener(self.themeChanged.emit)
+        except Exception as e:
+            logger.error(f"SystemThemeWatcher error: {e}")
 
 
 class MainWindow(MSFluentWindow):
@@ -188,9 +202,10 @@ class MainWindow(MSFluentWindow):
         self.tray.show()
         self.tray.setToolTip(title)
 
-        self.themeListener = SystemThemeListener(self)
-        self.themeListener.systemThemeChanged.connect(self.on_systemThemeChanged)
-        self.themeListener.start()
+        self.themeWatcher = SystemThemeWatcher(self)
+        self.themeWatcher.themeChanged.connect(self.on_system_theme_changed)
+        self.themeWatcher.start()
+
 
         communicate.capture_error.connect(self.capture_error)
         communicate.notification.connect(self.show_notification)
@@ -233,9 +248,6 @@ class MainWindow(MSFluentWindow):
                         self.addSubInterface(group_tab, group_icon, self.app.tr(script_name))
                     else:
                         self.addSubInterface(group_tab, group_icon, self.app.tr(script_name))
-    def on_systemThemeChanged(self):
-        setTheme(Theme.AUTO)
-        logger.debug("system theme changed, set theme to auto")
 
     def restart_admin(self):
         w = MessageBox(QCoreApplication.translate("app", "Alert"),
@@ -448,11 +460,35 @@ class MainWindow(MSFluentWindow):
                 except Exception as e:
                     logger.error(f'Error importing .okscript file: {e}')
 
+    def on_system_theme_changed(self, system_theme):
+        """Handle system theme change signal."""
+        # 保存新主题名并极速触发更新，以减少背景闪烁时间
+        self._new_system_theme = system_theme
+        QTimer.singleShot(20, self._do_theme_update)
+
+    def _do_theme_update(self):
+        # 根据观察者传回的实时数据快速确定目标颜色
+        new_theme = Theme.DARK if self._new_system_theme.lower() == "dark" else Theme.LIGHT
+        
+        if qconfig.themeMode.value == Theme.AUTO:
+            # 自动模式：同步更新 resolved theme、相关信号和样式表
+            if new_theme != qconfig.theme:
+                qconfig.theme = new_theme
+                qconfig._cfg.themeChanged.emit(Theme.AUTO)
+                updateStyleSheet()
+        
+        # 核心：无论何种模式，只要系统变了，就立刻重申窗口背景属性（Mica）
+        # 缩短延迟后，这一步会更快地覆盖系统的默认行为
+        qconfig.themeChangedFinished.emit()
+        logger.info(f"System theme shift handled quickly (Mode: {qconfig.themeMode.value})")
+
     def closeEvent(self, event):
         if self.app.exit_event.is_set():
             logger.info("Window closed exit_event.is_set")
-            self.themeListener.terminate()
-            self.themeListener.deleteLater()
+            if hasattr(self, 'themeWatcher'):
+                self.themeWatcher.terminate()
+                self.themeWatcher.wait()
+                self.themeWatcher.deleteLater()
             event.accept()
             return
         else:
@@ -469,17 +505,3 @@ class MainWindow(MSFluentWindow):
             if not self.do_not_quit:
                 pyappify.kill_pyappify()
                 QApplication.instance().exit()
-
-
-class ThemeListener(SystemThemeListener):
-    """ System theme listener """
-
-    def _onThemeChanged(self, theme: str):
-        theme = Theme.DARK if theme.lower() == "dark" else Theme.LIGHT
-
-        if theme == qconfig.theme:
-            return
-
-        qconfig.theme = Theme.AUTO
-        qconfig._cfg.themeChanged.emit(Theme.AUTO)
-        self.systemThemeChanged.emit()

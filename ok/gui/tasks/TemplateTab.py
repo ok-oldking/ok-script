@@ -165,6 +165,7 @@ def _card_style(selected, dark):
         ImageCard:hover {
             border: 1px solid rgba(0, 120, 212, 0.5);
             background-color: rgba(0, 120, 212, 0.05);
+        }
     """
 
 
