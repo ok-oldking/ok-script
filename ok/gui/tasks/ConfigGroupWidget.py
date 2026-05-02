@@ -1,5 +1,17 @@
-from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSize
-from PySide6.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout
+from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSize, QEvent
+from PySide6.QtWidgets import (
+    QAbstractButton,
+    QAbstractSpinBox,
+    QComboBox,
+    QHBoxLayout,
+    QLineEdit,
+    QPlainTextEdit,
+    QScrollBar,
+    QSlider,
+    QTextEdit,
+    QWidget,
+    QVBoxLayout,
+)
 from qfluentwidgets import CardWidget, FluentIcon, TransparentToolButton
 
 
@@ -43,8 +55,8 @@ class ConfigGroupWidget(CardWidget):
         self.group_layout.setContentsMargins(10, 8, 10, 8)
         self.group_layout.setSpacing(0)
 
-        header = QWidget(self)
-        header_layout = QHBoxLayout(header)
+        self.header = QWidget(self)
+        header_layout = QHBoxLayout(self.header)
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setSpacing(12)
         header_layout.addWidget(parent_widget, 1)
@@ -73,7 +85,7 @@ class ConfigGroupWidget(CardWidget):
         self.toggle_btn.setToolTip(toggle_tooltip)
         header_layout.addWidget(self.toggle_btn, 0, Qt.AlignRight | Qt.AlignVCenter)
 
-        self.group_layout.addWidget(header, 0)
+        self.group_layout.addWidget(self.header, 0)
 
         self.panel = QWidget(self)
         self.panel_layout = QVBoxLayout(self.panel)
@@ -89,6 +101,7 @@ class ConfigGroupWidget(CardWidget):
         self.animation.valueChanged.connect(self._notify_height_changed)
         self.animation.finished.connect(self._notify_height_changed)
         self.toggle_btn.clicked.connect(self.toggle_children)
+        self._install_toggle_filters(self.header)
 
     def add_child_widget(self, widget):
         self.panel_layout.addWidget(widget)
@@ -111,6 +124,43 @@ class ConfigGroupWidget(CardWidget):
             self.toggle_btn.setIcon(FluentIcon.CARE_UP_SOLID)
 
         self.animation.start()
+
+    def eventFilter(self, obj, event):
+        if (
+            event.type() == QEvent.MouseButtonRelease
+            and event.button() == Qt.LeftButton
+            and self._is_header_widget(obj)
+        ):
+            self.toggle_children()
+            return True
+        return super().eventFilter(obj, event)
+
+    def _install_toggle_filters(self, widget):
+        if self._is_interactive_widget(widget):
+            return
+
+        widget.installEventFilter(self)
+        for child in widget.findChildren(QWidget, options=Qt.FindDirectChildrenOnly):
+            self._install_toggle_filters(child)
+
+    def _is_interactive_widget(self, widget):
+        return isinstance(widget, (
+            QAbstractButton,
+            QAbstractSpinBox,
+            QComboBox,
+            QLineEdit,
+            QPlainTextEdit,
+            QScrollBar,
+            QSlider,
+            QTextEdit,
+        ))
+
+    def _is_header_widget(self, widget):
+        while widget is not None:
+            if widget is self.header:
+                return True
+            widget = widget.parentWidget()
+        return False
 
     def _notify_height_changed(self, *_):
         if self._on_height_changed:
