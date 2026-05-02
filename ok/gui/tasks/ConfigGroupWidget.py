@@ -15,13 +15,11 @@ from PySide6.QtWidgets import (
 from qfluentwidgets import CardWidget, FluentIcon, TransparentToolButton
 
 
-def collect_group_children(config, config_group):
+def collect_group_children(config_group):
     children = set()
-    # Only collect children for groups whose parent key exists in the current config.
-    # This lets a group dissolve automatically if the main option is removed.
-    for parent_key, grouped in config_group.items():
-        if parent_key not in config:
-            continue
+    # A group parent may be a real config item or a title-only header.
+    # In both cases, grouped children should stay inside the group.
+    for grouped in config_group.values():
         if not isinstance(grouped, (list, tuple)):
             continue
         for child_key in grouped:

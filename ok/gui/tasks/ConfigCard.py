@@ -51,13 +51,15 @@ class ConfigCard(ExpandSettingCard):
             self.card.expandButton.hide()
         else:
             added_keys = set()
-            group_children = collect_group_children(self.config, self.config_group)
+            group_children = collect_group_children(self.config_group)
             for key, value in self.config.items():
                 if not key.startswith("_") and key not in group_children:
                     add_to_view = key not in self.config_group
                     parent_widget = self.__addConfig(key, value, add_to_view=add_to_view)
                     added_keys.add(key)
-                    self.__add_grouped_children(key, parent_widget, added_keys)
+                    if key in self.config_group and not self.__add_grouped_children(key, parent_widget, added_keys):
+                        self.viewLayout.addWidget(parent_widget)
+            self.__add_title_only_groups(added_keys)
             if self.config_type:
                 for key, the_type in self.config_type.items():
                     if key not in added_keys and key not in group_children and not key.startswith("_"):
@@ -76,7 +78,7 @@ class ConfigCard(ExpandSettingCard):
     def __add_grouped_children(self, parent_key: str, parent_widget, added_keys: set):
         child_keys = valid_group_child_keys(self.config_group.get(parent_key), self.config, added_keys)
         if not child_keys:
-            return
+            return False
 
         group_widget = ConfigGroupWidget(parent_widget, self.tr("Toggle options"), self._adjustViewSize, self)
         for child_key in child_keys:
@@ -84,6 +86,18 @@ class ConfigCard(ExpandSettingCard):
             group_widget.add_child_widget(child_widget)
             added_keys.add(child_key)
         self.viewLayout.addWidget(group_widget)
+        return True
+
+    def __add_title_only_groups(self, added_keys: set):
+        for parent_key in self.config_group:
+            if not isinstance(parent_key, str) or parent_key.startswith("_"):
+                continue
+            if parent_key in self.config or parent_key in added_keys:
+                continue
+
+            parent_widget = LabelAndWidget(parent_key)
+            if self.__add_grouped_children(parent_key, parent_widget, added_keys):
+                added_keys.add(parent_key)
 
     def update_config(self):
         for widget in self.config_widgets:
