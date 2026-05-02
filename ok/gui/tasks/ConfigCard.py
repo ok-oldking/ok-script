@@ -1,9 +1,9 @@
-from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSize
-from PySide6.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout, QFrame
-from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton, TransparentToolButton, isDarkTheme
-from qfluentwidgets import themeColor
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QHBoxLayout
+from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton
 from ok import og
 from ok.gui.tasks.ConfigItemFactory import config_widget
+from ok.gui.tasks.ConfigGroupWidget import ConfigGroupWidget, collect_group_children, valid_group_child_keys
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
 
@@ -51,7 +51,7 @@ class ConfigCard(ExpandSettingCard):
             self.card.expandButton.hide()
         else:
             added_keys = set()
-            group_children = self.__collect_group_children()
+            group_children = collect_group_children(self.config, self.config_group)
             for key, value in self.config.items():
                 if not key.startswith("_") and key not in group_children:
                     add_to_view = key not in self.config_group
@@ -73,116 +73,17 @@ class ConfigCard(ExpandSettingCard):
             self.viewLayout.addWidget(widget)
         return widget
 
-    def __collect_group_children(self):
-        children = set()
-        # Only collect children for groups whose parent key exists in the current config.
-        # This lets a group "dissolve" automatically if the main option (parent) is removed.
-        for parent_key, grouped in self.config_group.items():
-            if parent_key not in self.config:
-                continue
-            if isinstance(grouped, (list, tuple)):
-                for child_key in grouped:
-                    if isinstance(child_key, str):
-                        children.add(child_key)
-        return children
-
     def __add_grouped_children(self, parent_key: str, parent_widget, added_keys: set):
-        children = self.config_group.get(parent_key)
-        if not isinstance(children, (list, tuple)) or len(children) == 0:
+        child_keys = valid_group_child_keys(self.config_group.get(parent_key), self.config, added_keys)
+        if not child_keys:
             return
 
-        # create framed container for grouped options
-        from qfluentwidgets import CardWidget
-
-        group_frame = CardWidget(self)
-        group_frame.setObjectName("config_group_frame")
-
-        group_layout = QVBoxLayout(group_frame)
-        group_layout.setContentsMargins(10, 8, 10, 8)
-        group_layout.setSpacing(0)
-
-        # header: parent_widget + toggle button
-        header = QWidget(self)
-        header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(0, 0, 0, 0)
-        header_layout.setSpacing(12)
-        header_layout.addWidget(parent_widget, 1)
-
-        toggle_btn = TransparentToolButton(FluentIcon.CHEVRON_DOWN_MED)
-        toggle_btn.setToolButtonStyle(Qt.ToolButtonIconOnly)
-        toggle_btn.setFixedSize(40, 40)
-        toggle_btn.setMinimumSize(40, 40)
-        toggle_btn.setIconSize(QSize(16, 16))
-        toggle_btn.setStyleSheet("""
-            TransparentToolButton {
-                background-color: transparent;
-                border: none;
-                padding: 0px;
-                margin: 0px;
-            }
-            TransparentToolButton:hover {
-                background-color: transparent;
-                border: none;
-            }
-            TransparentToolButton:pressed {
-                background-color: transparent;
-                border: none;
-            }
-        """)
-        toggle_btn.setToolTip(self.tr("Toggle options"))
-        header_layout.addWidget(toggle_btn, 0, Qt.AlignRight | Qt.AlignVCenter)
-
-        group_layout.addWidget(header, 0)
-
-        # children panel (initially hidden, with max height constraint)
-        panel = QWidget(self)
-        panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(12, 6, 0, 0)
-        panel_layout.setSpacing(4)
-        panel.setMaximumHeight(0)
-        panel.setVisible(True)  # keep visible but height=0 for smooth animation
-
-        # track whether any children were actually added
-        added_child = False
-        for child_key in children:
-            if not isinstance(child_key, str):
-                continue
-            if child_key.startswith("_") or child_key in added_keys or child_key not in self.config:
-                continue
+        group_widget = ConfigGroupWidget(parent_widget, self.tr("Toggle options"), self._adjustViewSize, self)
+        for child_key in child_keys:
             child_widget = self.__addConfig(child_key, self.config.get(child_key), add_to_view=False)
-            panel_layout.addWidget(child_widget)
+            group_widget.add_child_widget(child_widget)
             added_keys.add(child_key)
-            added_child = True
-
-        if added_child:
-            group_layout.addWidget(panel, 0)
-
-            # animation for smooth expand/collapse
-            anim = QPropertyAnimation(panel, b"maximumHeight")
-            anim.setDuration(200)
-            anim.setEasingCurve(QEasingCurve.InOutQuad)
-            anim.valueChanged.connect(lambda _: self._adjustViewSize())
-            anim.finished.connect(self._adjustViewSize)
-
-            def on_toggle_clicked():
-                is_expanded = panel.maximumHeight() > 0
-                if is_expanded:
-                    # collapse
-                    anim.setStartValue(panel.height())
-                    anim.setEndValue(0)
-                    anim.start()
-                    toggle_btn.setIcon(FluentIcon.CHEVRON_DOWN_MED)
-                else:
-                    # expand: calculate natural height
-                    panel.setMaximumHeight(16777215)  # temporarily unmask
-                    natural_height = panel.sizeHint().height()
-                    anim.setStartValue(0)
-                    anim.setEndValue(natural_height)
-                    anim.start()
-                    toggle_btn.setIcon(FluentIcon.CARE_UP_SOLID)
-
-            toggle_btn.clicked.connect(on_toggle_clicked)
-            self.viewLayout.addWidget(group_frame)
+        self.viewLayout.addWidget(group_widget)
 
     def update_config(self):
         for widget in self.config_widgets:
