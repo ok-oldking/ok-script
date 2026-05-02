@@ -202,7 +202,7 @@ def get_crop_point(frame_width, frame_height, target_width, target_height):
     y = (frame_height - target_height) - x
     return x, y
 
-def composite_hwnds(bg, hwnd_window, contexts, bg_crop_x, bg_crop_y, render_full):
+def composite_hwnds(bg, hwnd_window, contexts, render_full):
     hwnds = getattr(hwnd_window, 'hwnds', None)
 
     if bg is not None and hwnds and len(hwnds) > 1:
@@ -266,8 +266,8 @@ def composite_hwnds(bg, hwnd_window, contexts, bg_crop_x, bg_crop_y, render_full
                 if ratio != 1.0:
                     img = cv2.resize(img, (w_w, w_h), interpolation=cv2.INTER_LINEAR)
 
-                paste_x = (w_client_x - bg_client_x) - bg_crop_x
-                paste_y = (w_client_y - bg_client_y) - bg_crop_y
+                paste_x = w_client_x - bg_client_x
+                paste_y = w_client_y - bg_client_y
 
                 # logger.debug(
                 #    f'composite_hwnds pasting {w_hwnd} to {paste_x},{paste_y} size={img.shape[1]}x{img.shape[0]} bg_size={width}x{height}')
@@ -557,16 +557,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
             frame = self.crop_image(frame)
 
-            border = 0
-            title_height = 0
-            if frame is not None and getattr(self, 'last_size', None) is not None and getattr(self.hwnd_window, 'width',
-                                                                                              0) > 0:
-                border, title_height = get_crop_point(self.last_size.Width, self.last_size.Height,
-                                                      self.hwnd_window.width, self.hwnd_window.height)
-                if border < 0: border = 0
-                if title_height < 0: title_height = 0
-
-            frame = composite_hwnds(frame, self.hwnd_window, self.contexts, border, title_height, render_full)
+            frame = composite_hwnds(frame, self.hwnd_window, self.contexts, render_full)
 
             if frame is not None:
                 new_height = frame.shape[0]
@@ -636,7 +627,7 @@ class BitBltCaptureMethod(BaseWindowsCaptureMethod):
             height = self.hwnd_window.real_height or self.hwnd_window.height
 
             bg = capture_by_bitblt(self, self.hwnd_window.hwnd, width, height, x, y, render_full)
-            bg = composite_hwnds(bg, self.hwnd_window, self.contexts, x, y, render_full)
+            bg = composite_hwnds(bg, self.hwnd_window, self.contexts, render_full)
 
             return bg
 
@@ -1393,13 +1384,35 @@ class BrowserWGC(WindowsGraphicsCaptureMethod):
             return None
 
         fh, fw = frame.shape[:2]
-        if x < 0 or y < 0 or x + w > fw or y + h > fh:
-            x = max(0, x)
-            y = max(0, y)
-            w = min(w, fw - x)
-            h = min(h, fh - y)
+        target_w = int(getattr(self.hwnd_window, "width", 0) or 0)
+        target_h = int(getattr(self.hwnd_window, "height", 0) or 0)
+        if target_w <= 0 or target_h <= 0:
+            return frame
 
-        return frame[y:y + h, x:x + w]
+        x = int(getattr(self.browser_method, "x_offset", 0) or 0)
+        y = int(getattr(self.browser_method, "y_offset", 0) or 0)
+
+        if 0 <= x and 0 <= y and x + target_w <= fw and y + target_h <= fh:
+            left_extra = x
+            right_extra = fw - (x + target_w)
+            top_extra = y
+            bottom_extra = fh - (y + target_h)
+            if abs(left_extra - right_extra) <= 2 and abs(bottom_extra - left_extra) <= 2:
+                return frame[y:y + target_h, x:x + target_w]
+
+        border, title_height = get_crop_point(fw, fh, target_w, target_h)
+        border = max(0, int(border))
+        title_height = max(0, int(title_height))
+        if border == 0 and title_height == 0:
+            return frame
+
+        x1 = border
+        y1 = title_height
+        x2 = fw - border
+        y2 = fh - border
+        if x2 <= x1 or y2 <= y1:
+            return None
+        return frame[y1:y2, x1:x2]
 
 class ADBCaptureMethod(BaseCaptureMethod):
     name = "ADB command line Capture"
@@ -1412,7 +1425,6 @@ class ADBCaptureMethod(BaseCaptureMethod):
         self.device_manager = device_manager
 
     def do_get_frame(self):
-        return self.screencap()
         if self.exit_event.is_set():
             return None
         frame = self.device_manager.do_screencap(self.device_manager.device)
@@ -1424,7 +1436,7 @@ class ADBCaptureMethod(BaseCaptureMethod):
 
     def connected(self):
         if not self._connected and self.device_manager.device is not None:
-            self.screencap()
+            self.get_frame()
         return self._connected and self.device_manager.device is not None
 
 class ImageCaptureMethod(BaseCaptureMethod):
@@ -1523,5 +1535,4 @@ class NemuIpcCaptureMethod(BaseCaptureMethod):
 
     def connected(self):
         return True
-
 

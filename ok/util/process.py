@@ -153,18 +153,40 @@ def execute(game_cmd: str, arguments=None):
                 try:
                     logger.info(f'try execute {game_cmd} {arguments}')
                     game_cmd_stripped = game_cmd.strip()
+                    args_part = ""
+
+                    # Extract remaining arguments safely if they are bundled in game_cmd
                     if game_cmd_stripped.startswith('"'):
-                        cmd = f'start "" /b {game_cmd_stripped}'
+                        end_quote_idx = game_cmd_stripped.find('"', 1)
+                        if end_quote_idx != -1:
+                            args_part = game_cmd_stripped[end_quote_idx + 1:].strip()
                     elif game_cmd_stripped.startswith(game_path):
-                        args_part = game_cmd_stripped[len(game_path):]
-                        cmd = f'start "" /b "{game_path}"{args_part}'
-                    else:
-                        cmd = f'start "" /b "{game_cmd_stripped}"'
+                        args_part = game_cmd_stripped[len(game_path):].strip()
+
+                    # Combine bundled args with explicit arguments parameter
                     if arguments:
-                        cmd += f" {arguments}"
-                    subprocess.Popen(cmd, cwd=os.path.dirname(game_path), shell=True,
-                                     creationflags=0x00000008)  # detached process
-                    return True
+                        args_part = f"{args_part} {arguments}".strip()
+
+                    working_dir = os.path.dirname(game_path)
+
+                    # Use ShellExecuteW instead of subprocess.Popen to avoid process parent locking
+                    # SW_SHOW = 5 (Activates the window and displays it in its current size and position)
+                    result = ctypes.windll.shell32.ShellExecuteW(
+                        None,  # hwnd
+                        "open",  # lpOperation
+                        game_path,  # lpFile
+                        args_part if args_part else None,  # lpParameters
+                        working_dir,  # lpDirectory
+                        5  # nShowCmd
+                    )
+
+                    # ShellExecuteW returns a value > 32 if successful
+                    if result > 32:
+                        return True
+                    else:
+                        logger.error(f'execute error: ShellExecuteW returned Windows error code {result}')
+                        return False
+
                 except Exception as e:
                     logger.error('execute error', e)
             else:
@@ -319,12 +341,6 @@ def get_current_process_memory_usage():
     return resident_memory_mb, virtual_memory_mb, shared_memory_mb
 
 
-
-
-
-
-
-
 def parse_arguments_to_map(description="main script"):
     """
     Parses command-line arguments using argparse and returns them as a dictionary.
@@ -348,8 +364,6 @@ def parse_arguments_to_map(description="main script"):
     arg_map = vars(args)  # vars() returns the __dict__ attribute of an object
 
     return arg_map
-
-
 
 
 def is_cuda_12_or_above():
@@ -439,5 +453,3 @@ def create_shortcut(exe_path=None, shortcut_name_post=None, description=None, ta
 def prevent_sleeping(yes=True):
     # Prevent the system from sleeping
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000002 if yes else 0x80000000)
-
-

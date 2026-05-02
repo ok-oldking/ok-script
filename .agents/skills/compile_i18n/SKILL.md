@@ -15,12 +15,13 @@ When you are instructed to add or update internationalization (i18n) translation
    - `ko_KR.ts` (Korean)
    - `es_ES.ts` (Spanish)
    - `en_US.ts` (English)
-3. Ensure that your new translations are correctly added under the appropriate `<context>` and `<message>` blocks in each XML file. If you are adding many translations, or just want to minimize errors, use the provided `add_translation.py` script to automate the XML injection:
+3. Ensure that your new translations are correctly added under the appropriate `<context>` and `<message>` blocks in each XML file, without the `type="unfinished"` attribute. If you are adding many translations, or just want to minimize errors, use the provided `add_translation.py` script to automate the XML injection:
    ```powershell
    python .\.agents\skills\compile_i18n\add_translation.py --context "YourContext" --source "Your Source String" --zh_cn "Your Chinese String"
    ```
    **IMPORTANT WARNING: DO NOT use `pyside6-lupdate` as it corrupts and deletes existing translations. Always modify the XML nodes natively or use the python script!**
-4. After updating the `.ts` files, compile them into `.qm` binary format by leveraging the provided script. Run the following command from the workspace root:
+4. Check that there are no unfinished translations in the files. The `compile_i18n.cmd` script will automatically abort if it detects `type="unfinished"` in any translation text. You must replace `<translation type="unfinished" />` with `<translation>Your Translation</translation>`.
+5. After updating the `.ts` files, compile them into `.qm` binary format by leveraging the provided script. Run the following command from the workspace root:
 
 // turbo
 ```powershell

@@ -27,7 +27,7 @@ class Recorder:
                 self.is_active = visible
                 if visible:
                     from ok.gui.util.Alert import alert_info
-                    alert_info(f"Target window active: Recording resumed", tray=True)
+                    alert_info("Target window active: Recording resumed", tray=True)
                     if not self.target_hwnd and getattr(og.device_manager, 'hwnd_window', None):
                         self.target_hwnd = og.device_manager.hwnd_window.hwnd
                     if self.inactive_start_time > 0:
@@ -35,7 +35,7 @@ class Recorder:
                         self.inactive_start_time = 0
                 else:
                     from ok.gui.util.Alert import alert_info
-                    alert_info(f"Target window inactive: Recording paused", tray=True)
+                    alert_info("Target window inactive: Recording paused", tray=True)
                     self.inactive_start_time = time.time()
 
     def start(self, target_title):
@@ -255,14 +255,14 @@ class Recorder:
                 lines.append(line)
                 
         if not lines:
-            run_code = "        pass\n"
+            run_code = "pass"
         else:
-            run_code = "\n".join("        " + line for line in lines) + "\n"
+            run_code = "\n".join(lines)
             
         if not init_lines:
             init_code = ""
         else:
-            init_code = "\n".join("        " + line for line in init_lines) + "\n"
+            init_code = "\n".join(init_lines)
             
         return init_code, run_code
 

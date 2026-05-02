@@ -22,6 +22,7 @@ class AboutTab(Tab):
         self.vBoxLayout.addSpacing(12)
 
         projects = [
+            {"name": "ok-py按键精灵", "url": "https://github.com/ok-oldking/ok-py"},
             {"name": "鸣潮", "url": "https://github.com/ok-oldking/ok-wuthering-waves"},
             {"name": "少前2", "url": "https://github.com/ok-oldking/ok-gf2"},
             {"name": "星痕共鸣", "url": "https://github.com/Sanheiii/ok-star-resonance"},

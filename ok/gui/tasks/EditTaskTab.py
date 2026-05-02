@@ -1,8 +1,8 @@
 import os
 
-from PySide6.QtCore import QFileSystemWatcher
+from PySide6.QtCore import QFileSystemWatcher, QUrl
 from PySide6.QtCore import Qt, QSize, QRect
-from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QFont, QColor, QPainter
+from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QFont, QColor, QPainter, QDesktopServices
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QMessageBox, QTreeWidgetItem, QFileDialog
 from qfluentwidgets import MessageBox, PlainTextEdit, PushButton, FluentIcon, PrimaryPushButton, SearchLineEdit, \
     BodyLabel, ComboBox, RoundMenu, Action, TreeWidget, TransparentDropDownPushButton, CheckBox
@@ -136,6 +136,53 @@ class CodeEditor(PlainTextEdit):
     def set_error_line(self, line_number):
         self.error_line_number = line_number
         self.line_number_area.update()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Tab:
+            cursor = self.textCursor()
+            if cursor.hasSelection():
+                start_block = self.document().findBlock(cursor.selectionStart()).blockNumber()
+                end_block = self.document().findBlock(cursor.selectionEnd()).blockNumber()
+                
+                cursor.beginEditBlock()
+                for i in range(start_block, end_block + 1):
+                    block = self.document().findBlockByNumber(i)
+                    block_cursor = self.textCursor()
+                    block_cursor.setPosition(block.position())
+                    block_cursor.insertText("    ")
+                cursor.endEditBlock()
+                return
+            else:
+                cursor.insertText("    ")
+                return
+        elif event.key() == Qt.Key_Backtab:
+            from PySide6.QtGui import QTextCursor
+            cursor = self.textCursor()
+            start_pos = cursor.selectionStart()
+            end_pos = cursor.selectionEnd()
+            start_block = self.document().findBlock(start_pos).blockNumber()
+            end_block = self.document().findBlock(end_pos).blockNumber()
+            
+            cursor.beginEditBlock()
+            for i in range(start_block, end_block + 1):
+                block = self.document().findBlockByNumber(i)
+                block_cursor = self.textCursor()
+                block_cursor.setPosition(block.position())
+                
+                line_text = block.text()
+                spaces = 0
+                for c in line_text:
+                    if c == ' ' and spaces < 4:
+                        spaces += 1
+                    else:
+                        break
+                if spaces > 0:
+                    block_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, spaces)
+                    block_cursor.removeSelectedText()
+            cursor.endEditBlock()
+            return
+            
+        super().keyPressEvent(event)
 
 
 class EditTaskTab(QWidget):
@@ -322,6 +369,12 @@ class EditTaskTab(QWidget):
         self.record_button.setIcon(FluentIcon.CAMERA)
         self.record_button.clicked.connect(self.toggle_record)
         self.tools_layout.addWidget(self.record_button)
+        
+        self.guide_button = PushButton(self)
+        self.guide_button.setText(self.tr("Guide"))
+        self.guide_button.setIcon(FluentIcon.HELP)
+        self.guide_button.clicked.connect(self.open_guide)
+        self.tools_layout.addWidget(self.guide_button)
         
         self.top_layout.addLayout(self.tools_layout)
         
@@ -550,18 +603,57 @@ class EditTaskTab(QWidget):
         except Exception as e:
             logger.error(f"Error switching tab: {e}")
 
+    def open_guide(self):
+        QDesktopServices.openUrl(QUrl("https://github.com/ok-oldking/ok-py"))
+
     def toggle_record(self):
         from .RecordScript import recorder
-        from qfluentwidgets import MessageBox
+        from qfluentwidgets import MessageBoxBase, SubtitleLabel, BodyLabel, ComboBox, SpinBox
         
         if not recorder.is_recording:
-            w = MessageBox(self.tr('Warning'), 
-                           self.tr("Record will override the current script logic. Continue?"), 
-                           self.window())
+            parent_tab = self
+            
+            class RecordTaskDialog(MessageBoxBase):
+                def __init__(self, parent=None):
+                    super().__init__(parent)
+                    self.titleLabel = SubtitleLabel(parent_tab.tr('Warning'), self)
+                    self.msgLabel = BodyLabel(parent_tab.tr("Record will override the current script logic. Continue?"), self)
+                    
+                    self.loop_combo = ComboBox(self)
+                    self.loop_combo.addItem(parent_tab.tr("No loop"))
+                    self.loop_combo.addItem(parent_tab.tr("Loop x times"))
+                    self.loop_combo.addItem(parent_tab.tr("Loop infinitely"))
+                    
+                    self.loop_count_input = SpinBox(self)
+                    self.loop_count_input.setMinimum(1)
+                    self.loop_count_input.setMaximum(999999)
+                    self.loop_count_input.setValue(10)
+                    self.loop_count_input.setVisible(False)
+                    
+                    self.loop_combo.currentIndexChanged.connect(self.on_combo_changed)
+                    
+                    self.viewLayout.addWidget(self.titleLabel)
+                    self.viewLayout.addWidget(self.msgLabel)
+                    self.viewLayout.addWidget(self.loop_combo)
+                    self.viewLayout.addWidget(self.loop_count_input)
+                    
+                    self.yesButton.setText(parent_tab.tr('OK'))
+                    self.cancelButton.setText(parent_tab.tr('Cancel'))
+                    self.widget.setMinimumWidth(360)
+                    
+                def on_combo_changed(self, index):
+                    self.loop_count_input.setVisible(index == 1)
+
+            w = RecordTaskDialog(self.window())
             if w.exec():
+                self._record_loop_type = w.loop_combo.currentIndex()
+                if self._record_loop_type == 1:
+                    self._record_loop_count = w.loop_count_input.value()
+                        
                 hwnd_name = og.device_manager.get_hwnd_name()
                 from ok.gui.util.Alert import alert_info
-                alert_info(f"Recording will start when window '{hwnd_name}' becomes active.")
+                alert_msg = parent_tab.tr("Recording will start when window '{hwnd_name}' becomes active.")
+                alert_info(alert_msg.replace("{hwnd_name}", hwnd_name))
                 
                 recorder.start(hwnd_name)
                 
@@ -572,6 +664,30 @@ class EditTaskTab(QWidget):
                 self.record_button.setVisible(False)
         else:
             init_code, run_code = recorder.stop()
+            
+            loop_type = getattr(self, '_record_loop_type', 0)
+            if loop_type == 1:
+                loop_count = getattr(self, '_record_loop_count', 1)
+                new_run_code = []
+                new_run_code.append(f"for _ in range({loop_count}):")
+                run_code_lines = [line for line in run_code.strip('\n').split('\n') if line.strip()]
+                if not run_code_lines:
+                    new_run_code.append("    pass")
+                else:
+                    for line in run_code_lines:
+                        new_run_code.append("    " + line)
+                run_code = "\n".join(new_run_code)
+            elif loop_type == 2:
+                new_run_code = []
+                new_run_code.append("while True:")
+                run_code_lines = [line for line in run_code.strip('\n').split('\n') if line.strip()]
+                if not run_code_lines:
+                    new_run_code.append("    pass")
+                else:
+                    for line in run_code_lines:
+                        new_run_code.append("    " + line)
+                run_code = "\n".join(new_run_code)
+                
             self.run_button.setText(self.tr("Run"))
             self.run_button.setIcon(FluentIcon.PLAY)
             self.run_button.clicked.disconnect()
@@ -623,7 +739,7 @@ class EditTaskTab(QWidget):
                 init_lines = init_code.strip('\n').split('\n')
                 formatted_init_code = []
                 for line in init_lines:
-                    formatted_init_code.append(init_indentation + line.strip(' '))
+                    formatted_init_code.append(init_indentation + line.rstrip())
                     
                 if capture_config_start != -1 and capture_config_end != -1:
                     lines = lines[:capture_config_start] + formatted_init_code + lines[capture_config_end + 1:]
@@ -656,7 +772,7 @@ class EditTaskTab(QWidget):
             new_lines = lines[:run_start+1]
             generated_code_lines = run_code.strip('\n').split('\n')
             for line in generated_code_lines:
-                new_lines.append(indentation + line.strip(' '))
+                new_lines.append(indentation + line.rstrip())
             new_lines.extend(lines[run_end:])
             
             cursor = self.editor.textCursor()

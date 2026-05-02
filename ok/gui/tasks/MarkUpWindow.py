@@ -473,11 +473,15 @@ class AnnotationCanvas(QWidget):
             pen = QPen(QColor(0, 200, 0), 2, Qt.DashLine)
             painter.setPen(pen)
             painter.setBrush(QBrush(QColor(0, 200, 0, 30)))
-            # draw_start is widget coords, draw_preview is widget coords
-            x1, y1 = int(self.draw_start.x()), int(self.draw_start.y())
-            x2, y2 = int(self.draw_preview.x()), int(self.draw_preview.y())
-            rect = QRect(QPoint(min(x1, x2), min(y1, y2)),
-                         QPoint(max(x1, x2), max(y1, y2)))
+            # Convert widget coords to image coords and back, matching _finish_drawing logic
+            ix1, iy1 = self._widget_to_img(self.draw_start.x(), self.draw_start.y())
+            ix2, iy2 = self._widget_to_img(self.draw_preview.x(), self.draw_preview.y())
+            px = int(min(ix1, ix2))
+            py = int(min(iy1, iy2))
+            pw = int(abs(ix2 - ix1))
+            ph = int(abs(iy2 - iy1))
+            wx, wy = self._img_to_widget(px, py)
+            rect = QRect(int(wx), int(wy), int(pw * self.scale), int(ph * self.scale))
             painter.drawRect(rect)
 
         painter.end()

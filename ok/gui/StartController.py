@@ -57,7 +57,7 @@ class StartController(QObject):
         device = og.device_manager.get_preferred_device()
         logger.info(f'start_device: {device}')
 
-        if device and not device['connected'] and device.get('full_path'):
+        if device and not device['connected']:
             if device['device'] == "windows" and not is_admin():
                 communicate.starting_emulator.emit(True,
                                                    "PC version requires admin privileges, Please restart this app with admin privileges!",

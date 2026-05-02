@@ -708,6 +708,8 @@ class DeviceManager:
 
     def get_exe_path(self, device):
         path = device.get('full_path')
+        if not path:
+            return None
         if device.get(
                 'device') == 'windows' and self.windows_capture_config:
             if path == "none":
@@ -724,6 +726,7 @@ class DeviceManager:
                     return path
             if os.path.exists(path):
                 return path
+            return None
         elif emulator := device.get('emulator'):
             from ok.alas.platform_windows import get_emulator_exe
             return get_emulator_exe(emulator)

@@ -277,6 +277,8 @@ class FeatureSet:
 
         result = cv2.matchTemplate(search_area, template, match_method,
                                    mask=mask)
+        result[np.isinf(result)] = 0
+        result[np.isnan(result)] = 0
         match_time = time.time()
 
         if screenshot:
@@ -585,7 +587,10 @@ def compress_copy_coco(coco_json, target_folder, image_folder, generate_label_en
 
     for annotation in data['annotations']:
         bbox = annotation['bbox']
-        annotation['bbox'] = [round(bbox[0]), round(bbox[1]), round(bbox[2]), round(bbox[3])]
+        w = round(bbox[2])
+        h = round(bbox[3])
+        annotation['bbox'] = [round(bbox[0]), round(bbox[1]), w, h]
+        annotation['area'] = w * h
 
     target_coco_json = os.path.join(target_folder, os.path.basename(coco_json))
     with open(target_coco_json, 'w') as json_file:
