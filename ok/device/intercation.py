@@ -673,7 +673,6 @@ class BrowserInteraction(BaseInteraction):
             "esc": "Escape",
             "return": "Enter",
             "enter": "Enter",
-            "ctrl": "Control",
             "space": "Space",
             "backspace": "Backspace",
             "tab": "Tab",

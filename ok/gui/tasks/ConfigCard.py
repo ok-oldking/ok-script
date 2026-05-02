@@ -8,19 +8,7 @@ from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
 
 class ConfigCard(ExpandSettingCard):
-    def __init__(
-        self,
-        task,
-        name,
-        config,
-        description,
-        default_config,
-        config_description,
-        config_type,
-        config_icon,
-        config_group=None,
-    ):
-
+    def __init__(self, task, name, config, description, default_config, config_description, config_type, config_icon, config_group=None):
         super().__init__(config_icon or FluentIcon.INFO, og.app.tr(name), og.app.tr(description))
         self.config = config
         self.config_widgets = []
