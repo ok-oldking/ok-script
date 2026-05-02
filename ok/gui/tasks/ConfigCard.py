@@ -1,7 +1,7 @@
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSize
 from PySide6.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout, QFrame
 from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton, TransparentToolButton, isDarkTheme
-
+from qfluentwidgets import themeColor
 from ok import og
 from ok.gui.tasks.ConfigItemFactory import config_widget
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
@@ -104,27 +104,17 @@ class ConfigCard(ExpandSettingCard):
             return
 
         # create framed container for grouped options
-        group_frame = QFrame()
+        from qfluentwidgets import CardWidget
+
+        group_frame = CardWidget(self)
         group_frame.setObjectName("config_group_frame")
-        if isDarkTheme():
-            bg_color = "rgba(255, 255, 255, 13)"
-            border_color = "rgba(0, 0, 0, 50)"
-        else:
-            bg_color = "rgba(255, 255, 255, 170)"
-            border_color = "rgba(0, 0, 0, 19)"
-        group_frame.setStyleSheet(f"""
-            #config_group_frame {{
-                background-color: {bg_color};
-                border: 1px solid {border_color};
-                border-radius: 6px;
-            }}
-        """)
+
         group_layout = QVBoxLayout(group_frame)
         group_layout.setContentsMargins(10, 8, 10, 8)
         group_layout.setSpacing(0)
 
         # header: parent_widget + toggle button
-        header = QWidget()
+        header = QWidget(self)
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setSpacing(12)
@@ -136,32 +126,33 @@ class ConfigCard(ExpandSettingCard):
         toggle_btn.setMinimumSize(40, 40)
         toggle_btn.setIconSize(QSize(16, 16))
         toggle_btn.setStyleSheet("""
-            QToolButton {
+            TransparentToolButton {
                 background-color: transparent;
                 border: none;
                 padding: 0px;
                 margin: 0px;
             }
-            QToolButton:hover {
+            TransparentToolButton:hover {
                 background-color: transparent;
                 border: none;
             }
-            QToolButton:pressed {
+            TransparentToolButton:pressed {
                 background-color: transparent;
                 border: none;
             }
         """)
+        toggle_btn.setToolTip(self.tr("Toggle options"))
         header_layout.addWidget(toggle_btn, 0, Qt.AlignRight | Qt.AlignVCenter)
 
         group_layout.addWidget(header, 0)
 
-        # children panel (initially hidden)
-        panel = QWidget()
-        panel.setStyleSheet("background-color: transparent;")
+        # children panel (initially hidden, with max height constraint)
+        panel = QWidget(self)
         panel_layout = QVBoxLayout(panel)
         panel_layout.setContentsMargins(12, 6, 0, 0)
         panel_layout.setSpacing(4)
-        panel.setVisible(False)
+        panel.setMaximumHeight(0)
+        panel.setVisible(True)  # keep visible but height=0 for smooth animation
 
         # track whether any children were actually added
         added_child = False
@@ -177,11 +168,30 @@ class ConfigCard(ExpandSettingCard):
 
         if added_child:
             group_layout.addWidget(panel, 0)
+
+            # animation for smooth expand/collapse
+            anim = QPropertyAnimation(panel, b"maximumHeight")
+            anim.setDuration(200)
+            anim.setEasingCurve(QEasingCurve.InOutQuad)
+            anim.valueChanged.connect(lambda _: self._adjustViewSize())
+            anim.finished.connect(self._adjustViewSize)
+
             def on_toggle_clicked():
-                is_expanded = panel.isVisible()
-                panel.setVisible(not is_expanded)
-                toggle_btn.setIcon(FluentIcon.CHEVRON_DOWN_MED if is_expanded else FluentIcon.CARE_UP_SOLID)
-                self._adjustViewSize()
+                is_expanded = panel.maximumHeight() > 0
+                if is_expanded:
+                    # collapse
+                    anim.setStartValue(panel.height())
+                    anim.setEndValue(0)
+                    anim.start()
+                    toggle_btn.setIcon(FluentIcon.CHEVRON_DOWN_MED)
+                else:
+                    # expand: calculate natural height
+                    panel.setMaximumHeight(16777215)  # temporarily unmask
+                    natural_height = panel.sizeHint().height()
+                    anim.setStartValue(0)
+                    anim.setEndValue(natural_height)
+                    anim.start()
+                    toggle_btn.setIcon(FluentIcon.CARE_UP_SOLID)
 
             toggle_btn.clicked.connect(on_toggle_clicked)
             self.viewLayout.addWidget(group_frame)
