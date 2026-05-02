@@ -1,7 +1,6 @@
 from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QPalette
 from PySide6.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout, QFrame
-from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton, TransparentToolButton
+from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton, TransparentToolButton, isDarkTheme
 
 from ok import og
 from ok.gui.tasks.ConfigItemFactory import config_widget
@@ -107,9 +106,12 @@ class ConfigCard(ExpandSettingCard):
         # create framed container for grouped options
         group_frame = QFrame()
         group_frame.setObjectName("config_group_frame")
-        palette = group_frame.palette()
-        bg_color = palette.color(QPalette.Window).name()
-        border_color = palette.color(QPalette.Mid).name()
+        if isDarkTheme():
+            bg_color = "rgba(255, 255, 255, 13)"
+            border_color = "rgba(0, 0, 0, 50)"
+        else:
+            bg_color = "rgba(255, 255, 255, 170)"
+            border_color = "rgba(0, 0, 0, 19)"
         group_frame.setStyleSheet(f"""
             #config_group_frame {{
                 background-color: {bg_color};
@@ -155,6 +157,7 @@ class ConfigCard(ExpandSettingCard):
 
         # children panel (initially hidden)
         panel = QWidget()
+        panel.setStyleSheet("background-color: transparent;")
         panel_layout = QVBoxLayout(panel)
         panel_layout.setContentsMargins(12, 6, 0, 0)
         panel_layout.setSpacing(4)
