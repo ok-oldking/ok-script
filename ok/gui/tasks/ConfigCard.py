@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout
+from PySide6.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout, QFrame
 from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton
 
 from ok import og
@@ -88,25 +88,38 @@ class ConfigCard(ExpandSettingCard):
         if not isinstance(children, (list, tuple)) or len(children) == 0:
             return
 
-        toggle_button = PushButton(self.tr('Options'))
-        toggle_button.setFixedHeight(30)
-        parent_widget.add_widget(toggle_button, stretch=0)
+        # create framed container for grouped options
+        group_frame = QFrame()
+        group_frame.setObjectName('config_group_frame')
+        group_frame.setStyleSheet(
+            '#config_group_frame { border: 1px solid #d0d0d0; border-radius: 4px; }'
+        )
+        group_layout = QVBoxLayout(group_frame)
+        group_layout.setContentsMargins(8, 6, 8, 6)
+        group_layout.setSpacing(6)
 
+        # header: parent_widget + toggle button
+        header = QWidget()
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(8)
+        header_layout.addWidget(parent_widget, 1)
+
+        toggle_btn = PushButton(FluentIcon.CHEVRON_DOWN_MED, '')
+        toggle_btn.setFixedSize(28, 28)
+        toggle_btn.setToolTip(self.tr('Toggle options'))
+        header_layout.addWidget(toggle_btn, 0, Qt.AlignRight)
+
+        group_layout.addWidget(header)
+
+        # children panel (initially hidden)
         panel = QWidget()
         panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(24, 0, 0, 0)
+        panel_layout.setContentsMargins(12, 0, 0, 0)
         panel_layout.setSpacing(0)
         panel.setVisible(False)
 
-        def toggle_panel():
-            expanded = not panel.isVisible()
-            panel.setVisible(expanded)
-            toggle_button.setText(self.tr('Options') + (' ▴' if expanded else ' ▾'))
-            self._adjustViewSize()
-
-        toggle_button.clicked.connect(toggle_panel)
-        toggle_button.setText(self.tr('Options') + ' ▾')
-
+        # track whether any children were actually added
         added_child = False
         for child_key in children:
             if not isinstance(child_key, str):
@@ -119,9 +132,17 @@ class ConfigCard(ExpandSettingCard):
             added_child = True
 
         if added_child:
-            self.viewLayout.addWidget(panel)
-        else:
-            toggle_button.hide()
+            group_layout.addWidget(panel)
+
+            # connect toggle logic
+            def on_toggle_clicked():
+                is_expanded = panel.isVisible()
+                panel.setVisible(not is_expanded)
+                toggle_btn.setIcon(FluentIcon.CHEVRON_UP_MED if not is_expanded else FluentIcon.CHEVRON_DOWN_MED)
+                self._adjustViewSize()
+
+            toggle_btn.clicked.connect(on_toggle_clicked)
+            self.viewLayout.addWidget(group_frame)
 
 
     def update_config(self):
