@@ -169,7 +169,8 @@ class ConfigGroupWidget(CardWidget):
                 continue
 
             if child in config_group and child not in added_keys:
-                child_parent_widget = LabelAndWidget(child)
+                child_parent_widget = create_config_widget(child, config.get(child), add_to_view=False) \
+                    if child in config else LabelAndWidget(child)
                 nested_group = ConfigGroupWidget.build_group_widget(
                     child, child_parent_widget, config, config_group, added_keys,
                     create_config_widget, on_height_changed=on_height_changed,
