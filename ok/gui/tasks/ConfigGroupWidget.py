@@ -60,6 +60,15 @@ def valid_group_child_keys(children, config, added_keys):
     ]
 
 
+def _collapse_nested_group(group_widget):
+    try:
+        group_widget.panel.setMaximumHeight(0)
+        group_widget._set_rotated_icon(0)
+        group_widget._icon_angle = 0
+    except Exception:
+        pass
+
+
 class ConfigGroupWidget(CardWidget):
     def __init__(self, parent_widget, toggle_tooltip: str, on_height_changed=None, parent=None):
         super().__init__(parent)
@@ -129,6 +138,8 @@ class ConfigGroupWidget(CardWidget):
         self.animation.setDuration(200)
         self.animation.setEasingCurve(QEasingCurve.InOutQuad)
         self.animation.valueChanged.connect(self._notify_height_changed)
+        # 当本组高度变化时，调整所有祖先组的 max height，防止嵌套展开时被父容器裁剪
+        self.animation.valueChanged.connect(self._adjust_ancestors_height)
         self.animation.finished.connect(self._notify_height_changed)
         self.toggle_btn.clicked.connect(self.toggle_children)
         self._install_toggle_filters(self.header)
@@ -139,6 +150,69 @@ class ConfigGroupWidget(CardWidget):
 
     def has_children(self):
         return self._child_count > 0
+
+    @staticmethod
+    def build_group_widget(parent_key, parent_widget, config, config_group, added_keys,
+                           create_config_widget, on_height_changed=None, parent=None,
+                           toggle_tooltip="Toggle options"):
+        from ok.gui.tasks.LabelAndWidget import LabelAndWidget
+
+        raw_children = config_group.get(parent_key)
+        if not isinstance(raw_children, (list, tuple)):
+            return None
+
+        group_widget = ConfigGroupWidget(parent_widget, toggle_tooltip, on_height_changed, parent)
+        any_added = False
+
+        for child in raw_children:
+            if not isinstance(child, str) or child.startswith("_"):
+                continue
+
+            if child in config_group and child not in added_keys:
+                child_parent_widget = LabelAndWidget(child)
+                nested_group = ConfigGroupWidget.build_group_widget(
+                    child, child_parent_widget, config, config_group, added_keys,
+                    create_config_widget, on_height_changed=on_height_changed,
+                    parent=parent, toggle_tooltip=toggle_tooltip,
+                )
+                if nested_group:
+                    _collapse_nested_group(nested_group)
+                    group_widget.add_child_widget(nested_group)
+                    added_keys.add(child)
+                    any_added = True
+                    continue
+
+            if child in config and child not in added_keys:
+                child_widget = create_config_widget(child, config.get(child), add_to_view=False)
+                group_widget.add_child_widget(child_widget)
+                added_keys.add(child)
+                any_added = True
+
+        if any_added:
+            return group_widget
+        return None
+
+    @staticmethod
+    def add_title_only_groups(view_layout, config_group, config, added_keys,
+                              create_config_widget, on_height_changed=None, parent=None,
+                              toggle_tooltip="Toggle options"):
+        from ok.gui.tasks.LabelAndWidget import LabelAndWidget
+
+        for parent_key in config_group:
+            if not isinstance(parent_key, str) or parent_key.startswith("_"):
+                continue
+            if parent_key in config or parent_key in added_keys:
+                continue
+
+            parent_widget = LabelAndWidget(parent_key)
+            nested = ConfigGroupWidget.build_group_widget(
+                parent_key, parent_widget, config, config_group, added_keys,
+                create_config_widget, on_height_changed=on_height_changed,
+                parent=parent, toggle_tooltip=toggle_tooltip,
+            )
+            if nested:
+                view_layout.addWidget(nested)
+                added_keys.add(parent_key)
 
     def toggle_children(self):
         self.animation.stop()
@@ -152,9 +226,53 @@ class ConfigGroupWidget(CardWidget):
             self._icon_anim.setEndValue(0)
             self._icon_anim.start()
         else:
+            # 先解除最大高度限制，强制布局更新，以便 sizeHint 能包含所有（嵌套）子控件的完整高度
             self.panel.setMaximumHeight(16777215)
-            self.animation.setStartValue(0)
-            self.animation.setEndValue(self.panel.sizeHint().height())
+            try:
+                # 强制布局计算，确保 sizeHint 准确
+                if self.panel.layout():
+                    self.panel.layout().activate()
+                self.panel.updateGeometry()
+                self.panel.adjustSize()
+            except Exception:
+                pass
+            # 为了确保嵌套子组在父组展开时能被正确计算高度，临时激活并展开所有子 ConfigGroupWidget 的 panel
+            try:
+                descendants = self.panel.findChildren(ConfigGroupWidget)
+                prev_max = {}
+                for d in descendants:
+                    try:
+                        prev = d.panel.maximumHeight()
+                        prev_max[d] = prev
+                        # 临时解除限制用于计算
+                        d.panel.setMaximumHeight(16777215)
+                        if d.panel.layout():
+                            d.panel.layout().activate()
+                        d.panel.updateGeometry()
+                        d.panel.adjustSize()
+                    except Exception:
+                        continue
+
+                # 重新激活自身布局并计算目标高度
+                if self.panel.layout():
+                    self.panel.layout().activate()
+                self.panel.updateGeometry()
+                self.panel.adjustSize()
+                target_h = self.panel.sizeHint().height()
+
+                # 恢复子组原来的最大高度设置
+                for d, prev in prev_max.items():
+                    try:
+                        d.panel.setMaximumHeight(prev)
+                    except Exception:
+                        pass
+
+                self.animation.setStartValue(0)
+                self.animation.setEndValue(target_h)
+            except Exception:
+                # 兜底：使用常规 sizeHint
+                self.animation.setStartValue(0)
+                self.animation.setEndValue(self.panel.sizeHint().height())
             # 展开：将原图标反方向旋转 180 度（朝上）
             self._icon_anim.stop()
             self._icon_anim.setStartValue(self._icon_angle)
@@ -236,3 +354,23 @@ class ConfigGroupWidget(CardWidget):
     def _notify_height_changed(self, *_):
         if self._on_height_changed:
             self._on_height_changed()
+
+    def _adjust_ancestors_height(self, *_):
+        try:
+            ancestor = self.parentWidget()
+            while ancestor is not None:
+                if isinstance(ancestor, ConfigGroupWidget):
+                    # 只有在祖先当前为展开状态时才重新计算高度
+                    try:
+                        if ancestor.panel.maximumHeight() > 0:
+                            ancestor.panel.setMaximumHeight(16777215)
+                            if ancestor.panel.layout():
+                                ancestor.panel.layout().activate()
+                            ancestor.panel.updateGeometry()
+                            ancestor.panel.adjustSize()
+                            ancestor.panel.setMaximumHeight(ancestor.panel.sizeHint().height())
+                    except Exception:
+                        pass
+                ancestor = ancestor.parentWidget()
+        except Exception:
+            pass

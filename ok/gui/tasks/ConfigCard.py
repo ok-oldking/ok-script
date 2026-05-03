@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QHBoxLayout
 from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton
 from ok import og
 from ok.gui.tasks.ConfigItemFactory import config_widget
-from ok.gui.tasks.ConfigGroupWidget import ConfigGroupWidget, collect_group_children, valid_group_child_keys
+from ok.gui.tasks.ConfigGroupWidget import ConfigGroupWidget, collect_group_children
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
 
@@ -59,7 +59,9 @@ class ConfigCard(ExpandSettingCard):
                     added_keys.add(key)
                     if key in self.config_group and not self.__add_grouped_children(key, parent_widget, added_keys):
                         self.viewLayout.addWidget(parent_widget)
-            self.__add_title_only_groups(added_keys)
+            ConfigGroupWidget.add_title_only_groups(self.viewLayout, self.config_group, self.config, added_keys,
+                                                    self.__addConfig, on_height_changed=self._adjustViewSize,
+                                                    parent=self, toggle_tooltip=self.tr("Toggle options"))
             if self.config_type:
                 for key, the_type in self.config_type.items():
                     if key not in added_keys and key not in group_children and not key.startswith("_"):
@@ -76,28 +78,14 @@ class ConfigCard(ExpandSettingCard):
         return widget
 
     def __add_grouped_children(self, parent_key: str, parent_widget, added_keys: set):
-        child_keys = valid_group_child_keys(self.config_group.get(parent_key), self.config, added_keys)
-        if not child_keys:
+        nested = ConfigGroupWidget.build_group_widget(parent_key, parent_widget, self.config, self.config_group,
+                                                      added_keys, self.__addConfig,
+                                                      on_height_changed=self._adjustViewSize, parent=self,
+                                                      toggle_tooltip=self.tr("Toggle options"))
+        if not nested:
             return False
-
-        group_widget = ConfigGroupWidget(parent_widget, self.tr("Toggle options"), self._adjustViewSize, self)
-        for child_key in child_keys:
-            child_widget = self.__addConfig(child_key, self.config.get(child_key), add_to_view=False)
-            group_widget.add_child_widget(child_widget)
-            added_keys.add(child_key)
-        self.viewLayout.addWidget(group_widget)
+        self.viewLayout.addWidget(nested)
         return True
-
-    def __add_title_only_groups(self, added_keys: set):
-        for parent_key in self.config_group:
-            if not isinstance(parent_key, str) or parent_key.startswith("_"):
-                continue
-            if parent_key in self.config or parent_key in added_keys:
-                continue
-
-            parent_widget = LabelAndWidget(parent_key)
-            if self.__add_grouped_children(parent_key, parent_widget, added_keys):
-                added_keys.add(parent_key)
 
     def update_config(self):
         for widget in self.config_widgets:
