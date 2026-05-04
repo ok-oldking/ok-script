@@ -8,12 +8,16 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 MODULE_NAME = "ok-script"
+FORCED_VERSION = os.environ.get("OK_SCRIPT_VERSION", "").strip()
 
-obtainer = GetPyPiLatestVersion()
-latest_version = obtainer(MODULE_NAME)
-
-VERSION_NUM = obtainer.version_add_one(latest_version, add_patch=True)
-print(f'latest_version is {latest_version} new version is {VERSION_NUM}')
+if FORCED_VERSION:
+    VERSION_NUM = FORCED_VERSION
+    print(f'forced version is {VERSION_NUM}')
+else:
+    obtainer = GetPyPiLatestVersion()
+    latest_version = obtainer(MODULE_NAME)
+    VERSION_NUM = obtainer.version_add_one(latest_version, add_patch=True)
+    print(f'latest_version is {latest_version} new version is {VERSION_NUM}')
 
 setuptools.setup(
     name=MODULE_NAME,
