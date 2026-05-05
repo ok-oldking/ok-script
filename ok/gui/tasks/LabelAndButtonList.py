@@ -54,7 +54,7 @@ class LabelAndButtonList(ConfigLabelAndWidget):
         buttons_flow.setMinimumHeight(40)
         self.option_buttons = []
         for option in options:
-            btn = PushButton(og.app.tr(option))
+            btn = PushButton(self._translate_option(option))
             btn.clicked.connect(lambda checked=False, opt=option: self.add_item(opt))
             self.option_buttons.append(btn)
             buttons_flow.add_widget(btn)
@@ -122,12 +122,16 @@ class LabelAndButtonList(ConfigLabelAndWidget):
         if value is None:
             display = ""
         elif isinstance(value, list):
-            display = ", ".join(map(str, value))
+            display = ", ".join(self._translate_option(item) for item in value)
         else:
             # fallback for old string-based storage
-            display = str(value)
+            display = self._translate_option(str(value))
         self.display_label.setText(display if display else og.app.tr("(empty)"))
 
     def update_value(self):
         """Update the display when config changes externally"""
         self.update_display_label()
+
+    def _translate_option(self, option):
+        translated = og.app.tr(str(option))
+        return translated if translated else str(option)
