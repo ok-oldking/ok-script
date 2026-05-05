@@ -4,7 +4,7 @@ import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-MODULE_NAME = "ok-script"
+MODULE_NAME = "ok-script-aj-patch"
 
 VERSION_NUM = os.environ.get("OK_SCRIPT_VERSION")
 if not VERSION_NUM:
