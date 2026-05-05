@@ -1141,7 +1141,7 @@ class BaseTask(OCR):
         self.default_config.update({
             "Multi Account Mode": False,
             "Multi Account Independent Config": False,
-            "Account List": "account1,password1\naccount2,password2\naccount3,password3",
+            "Account List": "account1\naccount2,password2\naccount3",
         })
         self.config_description.update({
             "Multi Account Mode": (
@@ -1153,8 +1153,8 @@ class BaseTask(OCR):
                 "When enabled, each account can use different task parameters"
             ),
             "Account List": (
-                "Account and password list\n"
-                "One account per line, split by comma"
+                "Account list, one per line\n"
+                "Format: username or username,password (password is optional)"
             ),
         })
 
@@ -1169,12 +1169,13 @@ class BaseTask(OCR):
             line = line.strip()
             if not line:
                 continue
-            if "," not in line:
-                self.log_info(f"Invalid account format, skipped: {line}")
-                continue
-            username_part, password_part = line.split(",", 1)
-            username = username_part.strip()
-            password = password_part.strip()
+            if "," in line:
+                username_part, password_part = line.split(",", 1)
+                username = username_part.strip()
+                password = password_part.strip()
+            else:
+                username = line
+                password = ""
             if not username:
                 self.log_info(f"Invalid account format, skipped: {line}")
                 continue
@@ -1385,13 +1386,18 @@ class BaseTask(OCR):
     # Multi-account interface
     # ------------------------------------------------------------------
 
-    def do_login(self, username, password):
-        """Log in to the account identified by *username* and *password*.
+    def do_login(self, username, password=""):
+        """Log in to the account identified by *username* and optional *password*.
 
         Called by :meth:`run_multi_account` for each account that is not yet
         the active account according to :meth:`is_logged_in`.
 
         **MUST be overridden** when ``support_multi_account = True``.
+
+        Args:
+            username (str): The account username.
+            password (str): The account password; may be an empty string if the
+                account list entry did not include one.
 
         Returns:
             bool: ``True`` if login succeeded and the task may proceed;
@@ -1433,7 +1439,7 @@ class BaseTask(OCR):
         Args:
             account (dict): Account info dict with keys:
                 - ``"username"`` (str)
-                - ``"password"`` (str)
+                - ``"password"`` (str) — may be empty string if not provided
                 - ``"account_id"`` (str) — stable registry ID, may be empty if
                   the account has not been registered yet.
         """
