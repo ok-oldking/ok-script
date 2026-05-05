@@ -28,13 +28,17 @@ class SelectCaptureListView(ListWidget):
                     while self.count() > len(methods):
                         self.takeItem(self.count() - 1)
                     for i, method in enumerate(methods):
+                        method_name = method.__name__ if isinstance(method, type) else str(method)
                         if i < self.count():
-                            self.item(i).setText(self.tr(method))
+                            self.item(i).setText(self.tr(method_name))
                         else:
-                            self.addItem(QListWidgetItem(self.tr(method)))
+                            self.addItem(QListWidgetItem(self.tr(method_name)))
                     current_capture = og.device_manager.get_preferred_capture()
-                    if current_capture in methods:
-                        selected = methods.index(current_capture)
+                    for i, method in enumerate(methods):
+                        method_name = method.__name__ if isinstance(method, type) else str(method)
+                        if current_capture == method_name:
+                            selected = i
+                            break
             elif device.get('device') == "browser":
                 title = self.tr("Browser Capture")
                 self.reduce_row_to_1()

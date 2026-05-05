@@ -17,11 +17,12 @@ import subprocess
 import tempfile
 import threading
 import time
+from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
-from dataclasses import dataclass, field, asdict
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
+
 from ok.util.config import Config
 
 logger = logging.getLogger(__name__)

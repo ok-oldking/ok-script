@@ -1,6 +1,6 @@
-from paddleocr import PaddleOCR
-
 import os
+
+from paddleocr import PaddleOCR
 
 if __name__ == '__main__':
     lang = 'ch'

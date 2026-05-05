@@ -1,3 +1,4 @@
+from ok.gui.tasks.LabelAndButtons import LabelAndButtons
 from ok.gui.tasks.LabelAndDoubleSpinBox import LabelAndDoubleSpinBox
 from ok.gui.tasks.LabelAndDropDown import LabelAndDropDown
 from ok.gui.tasks.LabelAndGlobal import LabelAndGlobal
@@ -7,7 +8,6 @@ from ok.gui.tasks.LabelAndSpinBox import LabelAndSpinBox
 from ok.gui.tasks.LabelAndSwitchButton import LabelAndSwitchButton
 from ok.gui.tasks.LabelAndTextEdit import LabelAndTextEdit
 from ok.gui.tasks.ModifyListItem import ModifyListItem
-from ok.gui.tasks.LabelAndButtons import LabelAndButtons
 
 
 def config_widget(config_type, config_desc, config, key, value, task):

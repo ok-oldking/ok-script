@@ -10,16 +10,15 @@ Schedule Task Tab - 计划任务管理界面
 6. 实时更新（基于缓存和信号通知）
 """
 
-from typing import Optional, List, Callable
 import re
+from typing import Optional, List, Callable
+
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QWidget,
-    QVBoxLayout,
     QHBoxLayout,
     QGridLayout,
     QLabel,
-    QMessageBox,
     QTableWidgetItem,
     QHeaderView,
 )

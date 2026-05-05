@@ -1,4 +1,12 @@
 @echo off
+echo Checking for unfinished translations...
+findstr /C:"type=\"unfinished\"" ok\gui\i18n\*.ts >nul
+if %errorlevel% equ 0 (
+    echo Error: Unfinished translations found! Please fix them before compiling.
+    findstr /N /C:"type=\"unfinished\"" ok\gui\i18n\*.ts
+    exit /b 1
+)
+
 echo Compiling translations...
 .venv\Scripts\pyside6-lrelease ok\gui\i18n\zh_CN.ts
 .venv\Scripts\pyside6-lrelease ok\gui\i18n\zh_TW.ts

@@ -4,6 +4,7 @@ import threading
 import time
 import copy
 from typing import List
+from PySide6.QtCore import QCoreApplication
 
 import cv2
 from qfluentwidgets import FluentIcon
@@ -12,12 +13,12 @@ from ok.feature.Box import find_boxes_by_name, find_boxes_within_boundary, Box, 
     sort_boxes, find_highest_confidence_box
 from ok.feature.FeatureSet import adjust_coordinates, resize_image, scale_box, join_list_elements
 from ok.gui.Communicate import communicate
+from ok.task.exceptions import HotkeyConfigException
 from ok.util.color import calculate_color_percentage
 from ok.util.config import Config
 from ok.util.handler import Handler
 from ok.util.logger import Logger
 from ok.util.process import create_shortcut
-from ok.task.exceptions import HotkeyConfigException
 from ok.task.account_scope_store import resolve_account_id, get_account_task_overrides
 
 VALID_NAMED_KEYS = {
@@ -31,10 +32,12 @@ VALID_NAMED_KEYS = {
 
 logger = Logger.get_logger(__name__)
 
-cdef class ExecutorOperation:
-    cdef double last_click_time
-    cdef public object _executor
-    cdef public object logger, _app, scene
+class ExecutorOperation:
+    """
+    Base class for operations in the task executor.
+
+    任务执行器中操作的基类。
+    """
 
     def __init__(self, executor, app):
         self._executor = executor
@@ -58,12 +61,36 @@ cdef class ExecutorOperation:
         return key
 
     def exit_is_set(self):
+        """
+        Checks if the exit event is set.
+
+        检查退出事件是否设置。
+
+        :return: True if set, False otherwise. 如果设置返回 True，否则 False。
+        """
         return self.executor.exit_event.is_set()
 
     def get_task_by_class(self, cls):
+        """
+        Gets a task by its class.
+
+        通过类获取任务。
+
+        :param cls: The task class. 任务类。
+        :return: The task instance or None. 任务实例或 None。
+        """
         return self.executor.get_task_by_class(cls)
 
     def box_in_horizontal_center(self, box, off_percent=0.02):
+        """
+        Checks if a box is in the horizontal center.
+
+        检查框是否在水平中心。
+
+        :param box: The box to check. 要检查的框。
+        :param off_percent: Offset percentage tolerance. 偏移百分比容差。
+        :return: True if centered, False otherwise. 如果居中返回 True，否则返回 False。
+        """
         if box is None:
             return False
 
@@ -100,6 +127,22 @@ cdef class ExecutorOperation:
 
     def click(self, x: int | Box | List[Box] = -1, y=-1, move_back=False, name=None, interval=-1, move=True,
               down_time=0.02, after_sleep=0, key='left', hcenter=False, vcenter=False):
+        """
+        Performs a click action. If x or y is between 0 and 1, it will be treated as relative coordinates and automatically proxy to `click_relative`.
+
+        执行点击动作。如果 x 或 y 在 0 到 1 之间，将被视为相对坐标并自动代理到 `click_relative`。
+
+        :param x: X coordinate, Box, List[Box], or relative coordinate (0-1). x 坐标、Box、Box列表或相对坐标 (0-1)。
+        :param y: Y coordinate or relative coordinate (0-1). y 坐标或相对坐标 (0-1)。
+        :param move_back: Move back after click. 点击后移回。
+        :param name: Name for logging. 日志名称。
+        :param interval: Click interval check. 点击间隔检查。
+        :param move: Move mouse before click. 点击前移动鼠标。
+        :param down_time: Mouse down time. 鼠标按下时间。
+        :param after_sleep: Sleep after click. 点击后睡眠。
+        :param key: Mouse button ('left', 'middle', 'right'). 鼠标按钮。
+        :return: True if successful. 如果成功返回 True。
+        """
         if isinstance(x, Box) or isinstance(x, list):
             return self.click_box(x, move_back=move_back, down_time=down_time, after_sleep=after_sleep)
         elif 0 < x < 1 or 0 < y < 1:
@@ -162,6 +205,18 @@ cdef class ExecutorOperation:
         self.executor.reset_scene()
 
     def swipe_relative(self, from_x, from_y, to_x, to_y, duration=0.5, settle_time=0):
+        """
+        Performs a relative swipe.
+
+        执行相对滑动。
+
+        :param from_x: Start relative X. 起始相对 X。
+        :param from_y: Start relative Y. 起始相对 Y。
+        :param to_x: End relative X. 结束相对 X。
+        :param to_y: End relative Y. 结束相对 Y。
+        :param duration: Duration in seconds. 持续时间（秒）。
+        :param settle_time: Settle time after swipe. 滑动后稳定时间。
+        """
         self.swipe(int(self.width * from_x), int(self.height * from_y), int(self.width * to_x),
                    int(self.height * to_y), duration, settle_time=settle_time)
 
@@ -189,6 +244,19 @@ cdef class ExecutorOperation:
         # self.sleep(duration)
 
     def swipe(self, from_x, from_y, to_x, to_y, duration=0.5, after_sleep=0.1, settle_time=0):
+        """
+        Performs swipe gesture.
+
+        执行滑动手势。
+
+        :param from_x: Start X. 起始 X。
+        :param from_y: Start Y. 起始 Y。
+        :param to_x: End X. 结束 X。
+        :param to_y: End Y. 结束 Y。
+        :param duration: Duration. 持续时间。
+        :param after_sleep: Sleep after. 后睡眠。
+        :param settle_time: Settle time. 稳定时间。
+        """
         frame = self.executor.nullable_frame()
         communicate.emit_draw_box("swipe", [
             Box(min(from_x, to_x), min(from_y, to_y), max(abs(from_x - from_x), 10), max(abs(from_y - to_y), 10),
@@ -321,6 +389,20 @@ cdef class ExecutorOperation:
 
     def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=False,
                   move_back=False, down_time=0.01, after_sleep=1):
+        """
+        Clicks on a box.
+
+        点击框。
+
+        :param box: Box or name. 框或名称。
+        :param relative_x: Relative X in box. 框内相对 X。
+        :param relative_y: Relative Y in box. 框内相对 Y。
+        :param raise_if_not_found: Raise if not found. 未找到时抛出异常。
+        :param move_back: Move back after. 点击后移回。
+        :param down_time: Down time. 按下时间。
+        :param after_sleep: Sleep after. 后睡眠。
+        :return: True if clicked. 如果点击返回 True。
+        """
         if isinstance(box, list):
             if len(box) > 0:
                 box = box[0]
@@ -337,13 +419,43 @@ cdef class ExecutorOperation:
         return self.click(x, y, name=box.name, move_back=move_back, down_time=down_time, after_sleep=after_sleep)
 
     def wait_scene(self, scene_type=None, time_out=0, pre_action=None, post_action=None):
+        """
+        Waits for a scene.
+
+        等待场景。
+
+        :param scene_type: Scene type. 场景类型。
+        :param time_out: Timeout. 超时。
+        :param pre_action: Pre action. 前动作。
+        :param post_action: Post action. 后动作。
+        :return: Result. 结果。
+        """
         return self.executor.wait_scene(scene_type, time_out, pre_action, post_action)
 
     def sleep(self, timeout):
+        """
+        Sleeps for a duration.
+
+        睡眠一段时间。
+
+        :param timeout: Sleep time. 睡眠时间。
+        :return: Always True. 总是 True。
+        """
         self.executor.sleep(timeout)
         return True
 
     def send_key(self, key, down_time=0.02, interval=-1, after_sleep=0):
+        """
+        Sends a key event.
+
+        发送键事件。
+
+        :param key: Key to send. 要发送的键。
+        :param down_time: Down time. 按下时间。
+        :param interval: Interval check. 间隔检查。
+        :param after_sleep: Sleep after. 后睡眠。
+        :return: True if sent. 如果发送返回 True。
+        """
         key = self.validate_key(key)
         if not self.check_interval(interval):
             self.executor.reset_scene()
@@ -375,6 +487,19 @@ cdef class ExecutorOperation:
 
     def wait_until(self, condition, time_out=0, pre_action=None, post_action=None, settle_time=-1,
                    raise_if_not_found=False):
+        """
+        Waits until condition is true.
+
+        等待直到条件为真。
+
+        :param condition: Condition function. 条件函数。
+        :param time_out: Timeout. 超时。
+        :param pre_action: Pre action. 前动作。
+        :param post_action: Post action. 后动作。
+        :param settle_time: Settle time. 稳定时间。
+        :param raise_if_not_found: Raise if not found. 未找到抛出异常。
+        :return: Result. 结果。
+        """
         return self.executor.wait_condition(condition, time_out, pre_action, post_action, settle_time=settle_time,
                                             raise_if_not_found=raise_if_not_found)
 
@@ -384,6 +509,13 @@ cdef class ExecutorOperation:
         return target
 
     def next_frame(self):
+        """
+        Gets next frame.
+
+        获取下一帧。
+
+        :return: Frame. 帧。
+        """
         return self.executor.next_frame()
 
     def adb_ui_dump(self):
@@ -408,32 +540,24 @@ cdef class ExecutorOperation:
         return percentage
 
     def adb_shell(self, *args, **kwargs):
+        """
+        Executes ADB shell command.
+
+        执行 ADB shell 命令。
+
+        :param args: Arguments. 参数。
+        :param kwargs: Keyword arguments. 关键字参数。
+        :return: Output or None. 输出或 None。
+        """
         return self.executor.device_manager.shell(*args, **kwargs)
 
-cdef class TriggerTask(BaseTask):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.default_config['_enabled'] = False
-        self.trigger_interval = 0
+class FindFeature(ExecutorOperation):
+    """
+    Class for finding features in images.
 
-    def on_create(self):
-        self._enabled = self.config.get('_enabled', False)
+    在图像中查找特征的类。
+    """
 
-    def get_status(self):
-        if self.enabled:
-            return "Enabled"
-        else:
-            return "Disabled"
-
-    def enable(self):
-        super().enable()
-        self.config['_enabled'] = True
-
-    def disable(self):
-        super().disable()
-        self.config['_enabled'] = False
-
-cdef class FindFeature(ExecutorOperation):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -582,7 +706,7 @@ cdef class FindFeature(ExecutorOperation):
                 logger.debug(f'find_first_match_in_box: {feature}')
                 return feature
 
-cdef class OCR(FindFeature):
+class OCR(FindFeature):
     """
     Optical Character Recognition (OCR) class for detecting and recognizing text within images.
 
@@ -591,24 +715,15 @@ cdef class OCR(FindFeature):
         ocr_target_height (int): The target height for resizing images before OCR.
     """
 
-    cdef public float ocr_default_threshold
-    cdef bint log_debug
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.ocr_default_threshold = 0.2
+        self.ocr_target_height = 0
 
-    def get_threshold(self, lib, threshold):
-        if threshold > 0:
-            return threshold
-        else:
-            return self.executor.config.get('ocr').get(lib).get('default_threshold', 0.8)
-
-    cpdef list ocr(self, double x=0, double y=0, double to_x=1, double to_y=1, match=None,
-                   int width=0, int height=0, object box=None, name=None,
-                   double threshold=0,
-                   object frame=None, int target_height=0, bint use_grayscale=False, bint log=False,
-                   bint screenshot=False,
-                   frame_processor=None, lib='default'):
+    def ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None, name=None,
+             threshold=0, frame=None, target_height=0, use_grayscale=False, log=False,
+             screenshot=False, frame_processor=None, lib='default'):
         """
         Performs OCR on a region of an image.
 
@@ -695,7 +810,7 @@ cdef class OCR(FindFeature):
         else:
             return self.rapid_ocr
 
-    cdef object fix_match_regex(self, match):
+    def fix_match_regex(self, match):
         if match and self.executor.ocr_po_translation:
             if not isinstance(match, list):
                 match = [match]
@@ -715,7 +830,28 @@ cdef class OCR(FindFeature):
                             f"Warning: Translation failed for pattern: {original_pattern_string} {translated_pattern_string}. Keeping original.")
         return match
 
-    cdef str fix_texts(self, detected_boxes):
+    def fix_texts(self, detected_boxes):
+        ocr_config = self.executor.config.get('ocr', {})
+        
+        auto_simplify = False
+        if isinstance(ocr_config, dict):
+            auto_simplify = ocr_config.get('auto_simplify', False)
+            
+        if auto_simplify:
+            locale_name = self.executor.locale.name()
+            if locale_name.startswith('zh_TW') or locale_name.startswith('zh_HK') or locale_name.startswith('zh_MO'):
+                try:
+                    from opencc import OpenCC
+                    if not hasattr(self, '_cc_jp2t'):
+                        self._cc_jp2t = OpenCC('jp2t')
+                        self._cc_t2s = OpenCC('t2s')
+                        
+                    for detected_box in detected_boxes:
+                        t_name = self._cc_jp2t.convert(detected_box.name)
+                        detected_box.name = self._cc_t2s.convert(t_name)
+                except ImportError:
+                    logger.error("opencc is not installed, but auto_simplify is enabled.")
+
         for detected_box in detected_boxes:
             detected_box.name = detected_box.name.strip()
             if self.executor.ocr_po_translation is not None:
@@ -731,18 +867,26 @@ cdef class OCR(FindFeature):
                 logger.debug(f'text_fixed {detected_box.name} -> {fix}')
                 detected_box.name = fix
 
-    cpdef add_text_fix(self, fix):
-        """Adds text fixes to the text_fix dictionary."""
+    def add_text_fix(self, fix):
+        """
+        Adds text fixes to the text_fix dictionary for OCR result correction.
+
+        添加文本修正字典，用于纠正 OCR 识别结果。
+
+        :param fix: A dictionary mapping incorrect OCR text to correct text. 映射错误 OCR 文本到正确文本的字典。
+        """
         self.executor.text_fix.update(fix)
 
-    def onnx_ocr(self, object box, object image, match, double scale_factor, double threshold, lib):
+    def onnx_ocr(self, box, image, match, scale_factor, threshold, lib):
         try:
             result = self.executor.ocr_lib(lib).ocr(image)
         except Exception as e:
             logger.error('onnx_ocr', e)
             self.screenshot('onnx_ocr_exception', frame=image)
+            if 'ZE_RESULT_ERROR_DEVICE_LOST' in str(e):
+                raise Exception(QCoreApplication.translate('Task', 'NPU inferring Error, you might need to update the Intel NPU driver!'))
             raise e
-        cdef list detected_boxes = []
+        detected_boxes = []
         # logger.debug(f'rapid_ocr result {result}')
         # Process the results and create Box objects
         if result[0] is not None:
@@ -764,14 +908,14 @@ cdef class OCR(FindFeature):
             detected_boxes = find_boxes_by_name(detected_boxes, match)
         return detected_boxes, ocr_boxes
 
-    def rapid_ocr(self, object box, object image, match, double scale_factor, double threshold, lib):
+    def rapid_ocr(self, box, image, match, scale_factor, threshold, lib):
         try:
             result = self.executor.ocr_lib(lib)(image, use_det=True, use_cls=False, use_rec=True)
         except Exception as e:
             logger.error('rapid_ocr_exception', e)
             self.screenshot('rapid_ocr_exception', frame=image)
             raise e
-        cdef list detected_boxes = []
+        detected_boxes = []
         # logger.debug(f'rapid_ocr result {result}')
         # Process the results and create Box objects
         if result.boxes is not None:
@@ -793,14 +937,14 @@ cdef class OCR(FindFeature):
             detected_boxes = find_boxes_by_name(detected_boxes, match)
         return detected_boxes, ocr_boxes
 
-    def duguang_ocr(self, object box, object image, match, double scale_factor, double threshold, lib):
+    def duguang_ocr(self, box, image, match, scale_factor, threshold, lib):
         try:
             results = self.executor.ocr_lib(lib).run(image)
         except Exception as e:
             logger.error('duguang_ocr_exception', e)
             self.screenshot('duguang_ocr_exception', frame=image)
             raise e
-        cdef list detected_boxes = []
+        detected_boxes = []
         # logger.debug(f'rapid_ocr result {result}')
         # Process the results and create Box objects
         # duguang_ocr returns a list of per-image results (第1张图片结果, 第2张图片结果, ...)
@@ -825,10 +969,10 @@ cdef class OCR(FindFeature):
             detected_boxes = find_boxes_by_name(detected_boxes, match)
         return detected_boxes, ocr_boxes
 
-    def paddle_ocr(self, object box, object image, match, double scale_factor, double threshold, lib):
+    def paddle_ocr(self, box, image, match, scale_factor, threshold, lib):
         start = time.time()
-        cdef results = self.executor.ocr_lib(lib).predict(image)
-        cdef list detected_boxes = []
+        results = self.executor.ocr_lib(lib).predict(image)
+        detected_boxes = []
         # Process the results and create Box objects
         if results:
             result = results[0]
@@ -855,8 +999,7 @@ cdef class OCR(FindFeature):
             detected_boxes = find_boxes_by_name(detected_boxes, match)
         return detected_boxes, ocr_boxes
 
-    cdef get_box(self, object box, double confidence, int height, pos, double scale_factor, text, double threshold,
-                 int width):
+    def get_box(self, box, confidence, height, pos, scale_factor, text, threshold, width):
         detected_box = None
         if confidence >= threshold:
             detected_box = Box(pos[0][0], pos[0][1], width, height, confidence, text)
@@ -866,12 +1009,7 @@ cdef class OCR(FindFeature):
                 detected_box.y += box.y
         return detected_box
 
-    cpdef wait_click_ocr(self, double x=0, double y=0, double to_x=1, double to_y=1, int width=0, int height=0,
-                         box=None, name=None,
-                         match=None, double threshold=0, frame=None, int target_height=0, int time_out=0,
-                         bint raise_if_not_found=False, recheck_time=0, after_sleep=0, post_action=None, log=False,
-                         bint screenshot=False,
-                         settle_time=-1, lib="default"):
+    def wait_click_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box=None, name=None, match=None, threshold=0, frame=None, target_height=0, time_out=0, raise_if_not_found=False, recheck_time=0, after_sleep=0, post_action=None, log=False, screenshot=False, settle_time=-1, lib="default"):
 
         result = self.wait_ocr(x, y, width=width, height=height, to_x=to_x, to_y=to_y, box=box, name=name, match=match,
                                threshold=threshold, frame=frame, target_height=target_height, time_out=time_out,
@@ -888,10 +1026,7 @@ cdef class OCR(FindFeature):
         else:
             logger.warning(f'wait ocr no box {x} {y} {width} {height} {to_x} {to_y} {match}')
 
-    def wait_ocr(self, double x=0, double y=0, double to_x=1, double to_y=1, int width=0, int height=0, name=None,
-                 box=None,
-                 match=None, double threshold=0, frame=None, int target_height=0, int time_out=0, post_action=None,
-                 bint raise_if_not_found=False, log=False, bint screenshot=False, settle_time=-1, lib="default"):
+    def wait_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, name=None, box=None, match=None, threshold=0, frame=None, target_height=0, time_out=0, post_action=None, raise_if_not_found=False, log=False, screenshot=False, settle_time=-1, lib="default"):
         boxes = self.wait_until(
             lambda: self.ocr(x, y, to_x=to_x, to_y=to_y, width=width, height=height, box=box, name=name,
                              match=match, threshold=threshold, frame=frame, target_height=target_height, log=log,
@@ -906,40 +1041,12 @@ cdef class OCR(FindFeature):
         return boxes
 
 
-cdef class BaseTask(OCR):
-    cdef public str instructions
-    cdef public str name
-    cdef public str description
-    cdef public bint _enabled
-    cdef public object config
-    cdef public object info
-    cdef public dict default_config
-    cdef public dict config_description
-    cdef public dict config_type
-    cdef public bint _paused
-    cdef public object lock
-    cdef public object _handler
-    cdef public bint running
-    cdef public bint exit_after_task
-    cdef public bint trigger_interval
-    cdef public double last_trigger_time
-    cdef public double start_time
-    cdef public object icon
-    cdef public list supported_languages
-    cdef public str group_name
-    cdef public object group_icon
-    cdef public double sleep_check_interval
-    cdef public double last_sleep_check_time
-    cdef public bint support_schedule_task
-    cdef public bint in_sleep_check
-    cdef public dict capture_config
-    cdef public bint support_multi_account
-    cdef public str start_account
-    cdef public str current_account
-    cdef public str current_account_name
-    cdef public bint multi_account_mode
-    cdef public bint multi_account_independent_config
-    cdef public object _base_config_snapshot
+class BaseTask(OCR):
+    """
+    Base class for tasks.
+
+    任务的基类。
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1006,7 +1113,7 @@ cdef class BaseTask(OCR):
         pass
 
     def tr(self, message):
-        return self.app.tr(message)
+        return self._app.tr(message)
 
     def should_trigger(self):
         if self.trigger_interval == 0:
@@ -1194,7 +1301,7 @@ cdef class BaseTask(OCR):
         self.logger.error(message, exception)
         if exception is not None:
             if len(exception.args) > 0:
-                message += exception.args[0]
+                message += str(exception.args[0])
             else:
                 message += str(exception)
         self.info_set("Error", message)
@@ -1438,3 +1545,34 @@ cdef class BaseTask(OCR):
             box = self.get_box_by_name(boundary) if isinstance(boundary, str) else boundary
             boxes = find_boxes_within_boundary(boxes, box)
         return boxes
+
+class TriggerTask(BaseTask):
+    """
+    Trigger task class that can be enabled/disabled and triggered periodically.
+
+    可以启用/禁用并定期触发的触发任务类。
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_config['_enabled'] = False
+        self.trigger_interval = 0
+
+    def on_create(self):
+        self._enabled = self.config.get('_enabled', False)
+
+    def get_status(self):
+        if self.enabled:
+            return "Enabled"
+        else:
+            return "Disabled"
+
+    def enable(self):
+        super().enable()
+        self.config['_enabled'] = True
+
+    def disable(self):
+        super().disable()
+        self.config['_enabled'] = False
+
+

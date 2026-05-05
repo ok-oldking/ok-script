@@ -1,7 +1,4 @@
-from PySide6.QtWidgets import QWidget, QSpacerItem, QSizePolicy, QHBoxLayout, QVBoxLayout, QLayout, QLabel
-from qfluentwidgets import BodyLabel, FluentStyleSheet
-
-from ok.gui.common.style_sheet import StyleSheet
+from PySide6.QtWidgets import QWidget, QSizePolicy, QHBoxLayout, QVBoxLayout, QLayout, QLabel
 
 
 class LabelAndWidget(QWidget):

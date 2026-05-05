@@ -1,7 +1,6 @@
-import sys
-
 import os
 import shutil
+import sys
 
 
 def find_and_copy_site_package():

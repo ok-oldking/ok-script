@@ -5,7 +5,6 @@ from qfluentwidgets import ProgressBar, BodyLabel
 from ok.gui.Communicate import communicate
 
 
-
 class DownloadBar(QWidget):
 
     def __init__(self):

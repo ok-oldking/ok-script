@@ -3,21 +3,17 @@ import subprocess
 import zipfile
 from pathlib import Path
 
-import win32gui
-import win32process
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QAbstractItemView, QVBoxLayout, QHBoxLayout, QWidget, QListWidgetItem
-from qfluentwidgets import ListWidget, PushButton, FluentIcon, SplitTitleBar, SwitchButton, SearchLineEdit
+from qfluentwidgets import ListWidget, PushButton, FluentIcon, SwitchButton, SearchLineEdit
 
 from ok.gui.Communicate import communicate
+from ok.gui.debug.DebugTab import capture
 from ok.gui.start.SelectCaptureListView import SelectCaptureListView
 from ok.gui.start.SelectInteractionListView import SelectInteractionListView
 from ok.gui.start.StartCard import StartCard
-from ok.gui.util.Alert import alert_info
-from ok.gui.widget.BaseWindow import BaseWindow
-from ok.gui.widget.Tab import Tab
 from ok.gui.widget.Card import Card
-from ok.gui.debug.DebugTab import capture
+from ok.gui.widget.Tab import Tab
 
 
 class StartTab(Tab):

@@ -1,17 +1,17 @@
 import json
 import os
-import time
+from typing import TypedDict
 
 import cv2
-from PySide6.QtCore import Qt, QSize, Signal, QThread, QTimer, QRunnable, QThreadPool, QObject
-from PySide6.QtGui import QPixmap, QImage, QIcon
+from PySide6.QtCore import Qt, Signal, QTimer, QRunnable, QThreadPool, QObject
+from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                               QScrollArea, QLabel, QSizePolicy, QFrame)
+                               QScrollArea, QLabel, QFrame)
 from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
-                             SearchLineEdit, MessageBox, BodyLabel, isDarkTheme,
-                             qconfig, IndeterminateProgressRing)
+                            SearchLineEdit, MessageBox, BodyLabel, isDarkTheme,
+                            qconfig, IndeterminateProgressRing)
 
-from ok import og
+from ok import Config, og
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -22,6 +22,34 @@ THUMB_SIZE = 160
 CARD_WIDTH = THUMB_SIZE + 16
 CARD_HEIGHT = THUMB_SIZE + 40
 GRID_SPACING = 8
+
+
+class ImageDict(TypedDict):
+    id: int
+    file_name: str
+    width: int
+    height: int
+
+
+class AnnotationDict(TypedDict):
+    id: int
+    image_id: int
+    category_id: int
+    bbox: list[float]  # [x, y, w, h]
+    area: float
+    iscrowd: int
+
+
+class CategoryDict(TypedDict):
+    id: int
+    name: str
+    supercategory: str
+
+
+class CocoData(TypedDict):
+    images: list[ImageDict]
+    annotations: list[AnnotationDict]
+    categories: list[CategoryDict]
 
 
 def ensure_template_folder():
@@ -35,7 +63,7 @@ def get_coco_path():
     return os.path.join(ensure_template_folder(), COCO_JSON)
 
 
-def load_coco():
+def load_coco() -> CocoData:
     path = get_coco_path()
     if os.path.exists(path):
         try:
@@ -52,6 +80,9 @@ def load_coco():
 
 def save_coco(coco_data):
     path = get_coco_path()
+    coco_data['annotations'].sort(key=lambda x: x['id'])
+    coco_data['categories'].sort(key=lambda x: x['id'])
+    coco_data['images'].sort(key=lambda x: x['id'])
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(coco_data, f, indent=2, ensure_ascii=False)
 
@@ -134,6 +165,7 @@ def _card_style(selected, dark):
         ImageCard:hover {
             border: 1px solid rgba(0, 120, 212, 0.5);
             background-color: rgba(0, 120, 212, 0.05);
+        }
     """
 
 
@@ -198,14 +230,14 @@ class ImageCard(QFrame):
         layout.setSpacing(2)
         layout.setAlignment(Qt.AlignCenter)
 
-        self.features_label = QLabel()
+        self.features_label = BodyLabel()
         self.features_label.setAlignment(Qt.AlignCenter)
         self.features_label.setWordWrap(True)
 
         self.thumb_label = QLabel()
         self.thumb_label.setAlignment(Qt.AlignCenter)
 
-        self.name_label = QLabel(os.path.splitext(os.path.basename(image_path))[0])
+        self.name_label = BodyLabel(os.path.splitext(os.path.basename(image_path))[0])
         self.name_label.setAlignment(Qt.AlignCenter)
         self.name_label.setWordWrap(True)
 
@@ -324,9 +356,13 @@ class FlowWidget(QWidget):
 
 
 class TemplateTab(QWidget):
-    def __init__(self):
+    def __init__(self, config: Config):
         super().__init__()
         self.setObjectName("TemplateTab")
+        self.template_tab_config = Config('template_tab', {
+            'generate_label_enum': False,
+            'label_enum_relative_path': 'ok_tasks/LabelEnum.py'
+        })
         self.selected_image = None
         self.image_cards = []
         self.markup_window = None
@@ -534,6 +570,9 @@ class TemplateTab(QWidget):
                 alert_error(self.tr("Failed to capture frame."))
                 return
 
+            if processor := og.config.get('screenshot_processor'):
+                frame = processor(frame.copy())
+
             folder = ensure_template_folder()
             name = get_next_image_name(folder)
             file_path = os.path.join(folder, f"{name}.png")
@@ -549,7 +588,7 @@ class TemplateTab(QWidget):
         except Exception as e:
             logger.error(f"Screenshot error: {e}")
             from ok.gui.util.Alert import alert_error
-            alert_error(f"Screenshot failed: {e}")
+            alert_error(self.tr("Screenshot failed: {e}").format(e=e))
 
     def _add_image_to_coco(self, image_path):
         """Add an image entry to COCO data if not already present."""
@@ -628,13 +667,35 @@ class TemplateTab(QWidget):
             except Exception as e:
                 logger.error(f"Delete error: {e}")
                 from ok.gui.util.Alert import alert_error
-                alert_error(f"Delete failed: {e}")
+                alert_error(self.tr("Delete failed: {e}").format(e=e))
+
+    def _normalize_label_enum_relative_path(self, relative_path):
+        path = (relative_path or "").strip().replace('\\', '/')
+        if not path or os.path.isabs(path):
+            return None
+
+        normalized = os.path.normpath(path).replace('\\', '/')
+        if normalized in ('', '.') or normalized == '..' or normalized.startswith('../'):
+            return None
+
+        if normalized.lower().endswith('.py'):
+            normalized = normalized[:-3]
+
+        module_path = normalized.replace('/', '.').strip('.')
+        if not module_path:
+            return None
+
+        parts = module_path.split('.')
+        if any(not part or not part.isidentifier() for part in parts):
+            return None
+
+        return module_path
 
     def save_compressed(self):
         """Show a dialog with radio buttons for save destination."""
         from ok.feature.FeatureSet import compress_copy_coco
         from PySide6.QtWidgets import QButtonGroup
-        from qfluentwidgets import MessageBoxBase, SubtitleLabel, RadioButton
+        from qfluentwidgets import MessageBoxBase, SubtitleLabel, RadioButton, CheckBox, LineEdit
         coco_json_path = get_coco_path()
         image_folder = ensure_template_folder()
 
@@ -649,21 +710,52 @@ class TemplateTab(QWidget):
         dlg = MessageBoxBase(self.window())
         dlg.viewLayout.addWidget(SubtitleLabel(self.tr('Save To'), dlg))
 
+        debug = og.app.debug
         radio_tasks = RadioButton(self.tr('ok_tasks/assets (custom scripts)'), dlg)
-        radio_dev = RadioButton(self.tr('assets (standalone app)'), dlg)
+        radio_dev = None
+        if debug:
+            radio_dev = RadioButton(self.tr('assets (standalone app)'), dlg)
 
         group = QButtonGroup(dlg)
         group.addButton(radio_tasks)
-        group.addButton(radio_dev)
+        if radio_dev:
+            group.addButton(radio_dev)
 
         # Default selection based on environment
-        if os.environ.get("PYAPPIFY_APP_VERSION"):
-            radio_tasks.setChecked(True)
-        else:
+        if debug:
             radio_dev.setChecked(True)
+        else:
+            radio_tasks.setChecked(True)
 
         dlg.viewLayout.addWidget(radio_tasks)
-        dlg.viewLayout.addWidget(radio_dev)
+        if radio_dev:
+            dlg.viewLayout.addWidget(radio_dev)
+
+        saved_generate_label_enum = bool(self.template_tab_config.get('generate_label_enum', False))
+        saved_enum_relative_path = str(self.template_tab_config.get('label_enum_relative_path', '') or '').strip()
+
+        generate_label_enum_checkbox = CheckBox(self.tr('Generate label enum file'), dlg)
+        generate_label_enum_checkbox.setChecked(saved_generate_label_enum)
+        dlg.viewLayout.addWidget(generate_label_enum_checkbox)
+
+        enum_relative_path_input = LineEdit(dlg)
+        enum_relative_path_input.setPlaceholderText(self.tr('Relative path, e.g. ok_tasks/LabelEnum.py'))
+        enum_relative_path_input.setText(saved_enum_relative_path)
+        enum_relative_path_input.setEnabled(saved_generate_label_enum)
+        dlg.viewLayout.addWidget(enum_relative_path_input)
+
+        enum_path_hint = BodyLabel(self.tr('Path is relative to the workspace root.'))
+        enum_path_hint.setStyleSheet("color: gray;")
+        enum_path_hint.setVisible(saved_generate_label_enum)
+        dlg.viewLayout.addWidget(enum_path_hint)
+
+        def on_generate_label_toggled(checked):
+            enum_relative_path_input.setEnabled(checked)
+            enum_path_hint.setVisible(checked)
+            if checked:
+                enum_relative_path_input.setFocus()
+
+        generate_label_enum_checkbox.toggled.connect(on_generate_label_toggled)
 
         dlg.yesButton.setText(self.tr('OK'))
         dlg.cancelButton.setText(self.tr('Cancel'))
@@ -673,10 +765,21 @@ class TemplateTab(QWidget):
             return
 
         target_folder = tasks_target if radio_tasks.isChecked() else dev_target
+        enum_relative_path_text = enum_relative_path_input.text().strip().replace('\\', '/')
+        self.template_tab_config['generate_label_enum'] = generate_label_enum_checkbox.isChecked()
+        self.template_tab_config['label_enum_relative_path'] = enum_relative_path_text
+
+        generate_label_enmu = None
+        if generate_label_enum_checkbox.isChecked():
+            generate_label_enmu = self._normalize_label_enum_relative_path(enum_relative_path_text)
+            if not generate_label_enmu:
+                from ok.gui.util.Alert import alert_error
+                alert_error(self.tr("Invalid relative path. Example: ok_tasks/LabelEnum.py"))
+                return
 
         try:
             compress_copy_coco(coco_json_path, target_folder, image_folder,
-                               generate_label_enmu=None)
+                               generate_label_enmu=generate_label_enmu)
 
             # Reload feature set data safely (coco_json may have been cleared)
             try:
@@ -690,7 +793,7 @@ class TemplateTab(QWidget):
         except Exception as e:
             logger.error(f"Save compressed error: {e}", e)
             from ok.gui.util.Alert import alert_error
-            alert_error(f"Save failed: {e}")
+            alert_error(self.tr("Save failed: {e}").format(e=e))
 
     def open_markup(self):
         if not self.selected_image:

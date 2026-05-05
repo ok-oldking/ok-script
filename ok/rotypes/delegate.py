@@ -1,5 +1,6 @@
-from ctypes import WINFUNCTYPE, HRESULT, POINTER, Structure, c_void_p, cast, pointer
 import traceback
+from ctypes import WINFUNCTYPE, HRESULT, POINTER, Structure, c_void_p, cast, pointer
+
 from .inspectable import IUnknown
 from .types import REFGUID, VOIDPP, ULONG, GUID, E_NOINTERFACE, S_OK, E_FAIL
 

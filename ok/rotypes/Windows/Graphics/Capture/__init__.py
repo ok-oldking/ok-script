@@ -1,5 +1,6 @@
 from ctypes import c_bool, c_int32, c_int64
 from ctypes.wintypes import HWND, HMONITOR
+
 from ok.rotypes.Windows.Foundation import IClosable, TypedEventHandler
 from ok.rotypes.Windows.Graphics import SizeInt32
 from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat

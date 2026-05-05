@@ -64,31 +64,39 @@ class DeviceManager:
             interaction = self.windows_capture_config.get('interaction')
             if isinstance(interaction, list):
                 if interaction:
-                    interaction_name = interaction[0]
+                    selected_interaction = interaction[0]
                 else:
-                    interaction_name = 'PyDirect'
+                    selected_interaction = 'Pynput'
             else:
-                interaction_name = interaction
+                selected_interaction = interaction
 
             saved_interaction = self.config.get('interaction')
             if saved_interaction:
-                if isinstance(interaction, list) and saved_interaction in interaction:
-                    interaction_name = saved_interaction
-                elif saved_interaction == interaction:
-                    interaction_name = saved_interaction
+                if isinstance(interaction, list):
+                    for item in interaction:
+                        item_name = item.__name__ if isinstance(item, type) else item
+                        if saved_interaction == item_name:
+                            selected_interaction = item
+                            break
+                else:
+                    item_name = interaction.__name__ if isinstance(interaction, type) else interaction
+                    if saved_interaction == item_name:
+                        selected_interaction = interaction
 
-            if interaction_name == 'PostMessage':
+            if selected_interaction == 'PostMessage':
                 self.win_interaction_class = PostMessageInteraction
-            elif interaction_name == 'Genshin':
+            elif selected_interaction == 'Genshin':
                 self.win_interaction_class = GenshinInteraction
-            elif interaction_name == 'ForegroundPostMessage':
+            elif selected_interaction == 'ForegroundPostMessage':
                 self.win_interaction_class = ForegroundPostMessageInteraction
-            elif interaction_name == 'Pynput':
+            elif selected_interaction == 'Pynput':
                 self.win_interaction_class = PynputInteraction
-            elif interaction_name and interaction_name != 'PyDirect':
-                self.win_interaction_class = interaction_name
-            else:
+            elif selected_interaction == 'PyDirect':
                 self.win_interaction_class = PyDirectInteraction
+            elif selected_interaction:
+                self.win_interaction_class = selected_interaction
+            else:
+                self.win_interaction_class = PynputInteraction
         else:
             self.hwnd_window = None
 
@@ -505,10 +513,22 @@ class DeviceManager:
             self.start()
 
     def set_interaction(self, interaction):
-        if self.config.get("interaction") != interaction:
+        interaction_name = interaction.__name__ if isinstance(interaction, type) else interaction
+        
+        config_interaction = self.windows_capture_config.get('interaction') if self.windows_capture_config else None
+        if isinstance(interaction, str):
+            if isinstance(config_interaction, list):
+                for item in config_interaction:
+                    if isinstance(item, type) and item.__name__ == interaction:
+                        interaction = item
+                        break
+            elif isinstance(config_interaction, type) and config_interaction.__name__ == interaction:
+                interaction = config_interaction
+
+        if self.config.get("interaction") != interaction_name:
             if self.executor:
                 self.executor.stop_current_task()
-            self.config['interaction'] = interaction
+            self.config['interaction'] = interaction_name
             if interaction == 'PostMessage':
                 self.win_interaction_class = PostMessageInteraction
             elif interaction == 'Genshin':
@@ -538,8 +558,7 @@ class DeviceManager:
         selected_method = self.config.get('capture')
         valid_methods = self.windows_capture_config.get('capture_method', [])
         if not selected_method or selected_method not in valid_methods:
-             selected_method = self.global_config.get_config('Basic Options').get('Windows Capture')
-             if selected_method not in valid_methods and valid_methods:
+             if valid_methods:
                  selected_method = valid_methods[0]
         self.capture_method = update_capture_method(self.windows_capture_config, self.capture_method, self.hwnd_window,
                                                     exit_event=self.exit_event, selected_method=selected_method)
@@ -689,6 +708,8 @@ class DeviceManager:
 
     def get_exe_path(self, device):
         path = device.get('full_path')
+        if not path:
+            return None
         if device.get(
                 'device') == 'windows' and self.windows_capture_config:
             if path == "none":
@@ -705,6 +726,7 @@ class DeviceManager:
                     return path
             if os.path.exists(path):
                 return path
+            return None
         elif emulator := device.get('emulator'):
             from ok.alas.platform_windows import get_emulator_exe
             return get_emulator_exe(emulator)

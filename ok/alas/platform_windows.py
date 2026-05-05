@@ -2,6 +2,7 @@ import ctypes
 
 from ok.alas.emulator_windows import Emulator, EmulatorInstance
 
+
 class EmulatorUnknown(Exception):
     pass
 

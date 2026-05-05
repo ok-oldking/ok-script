@@ -1,6 +1,5 @@
 from qfluentwidgets import SettingCard
 
-
 from ok.gui.launcher.LinksBar import LinksBar
 
 

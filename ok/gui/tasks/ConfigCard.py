@@ -1,10 +1,10 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout
-from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton
 
 from ok import og
 from ok.gui.tasks.ConfigItemFactory import config_widget
+from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
 
 class ConfigCard(ExpandSettingCard):

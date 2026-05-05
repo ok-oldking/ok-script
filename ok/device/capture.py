@@ -1,4 +1,4 @@
-# capture.pyx
+# capture.py
 import asyncio
 import ctypes
 import json
@@ -11,7 +11,6 @@ from enum import IntEnum
 
 import cv2
 import numpy as np
-import psutil
 import win32api
 import win32con
 import win32gui
@@ -25,18 +24,17 @@ from ok.util.GlobalConfig import basic_options
 from ok.util.collection import deep_get
 from ok.util.color import is_close_to_pure_color
 from ok.util.logger import Logger
-
 from ok.util.window import WINDOWS_BUILD_NUMBER, WGC_NO_BORDER_MIN_BUILD, show_title_bar, get_window_bounds, \
-    resize_window, get_exe_by_hwnd, windows_graphics_available, find_display, is_foreground_window, find_hwnd
+    resize_window, windows_graphics_available, find_display, is_foreground_window, find_hwnd
 
 logger = Logger.get_logger(__name__)
 
 PW_CLIENT_ONLY = 1 << 0
-cdef int PW_RENDERFULLCONTENT = 0x00000002
+PW_RENDERFULLCONTENT = 0x00000002
 PBYTE = ctypes.POINTER(ctypes.c_ubyte)
-cdef int BGRA_CHANNEL_COUNT = 4
+BGRA_CHANNEL_COUNT = 4
 
-cdef try_delete_dc(dc):
+def try_delete_dc(dc):
     if dc is not None:
         try:
             dc.DeleteDC()
@@ -44,7 +42,7 @@ cdef try_delete_dc(dc):
         except win32ui.error:
             pass
 
-cdef clean_up_bitblt(object context):
+def clean_up_bitblt(context):
     try_delete_dc(context.dc_object)
     try_delete_dc(context.compatible_dc)
     if context.window_dc and context.last_hwnd > 0:
@@ -65,13 +63,12 @@ cdef clean_up_bitblt(object context):
     context.last_width = 0
     context.last_height = 0
 
-cdef object capture_by_bitblt(object context, int hwnd, int width, int height, int x, int y, bint render_full_content):
+def capture_by_bitblt(context, hwnd, width, height, x, y, render_full_content):
     if hwnd <= 0 or width <= 0 or height <= 0:
         logger.error(f'capture_by_bitblt invalid params: hwnd={hwnd}, w={width}, h={height}')
         return None
 
     #logger.debug(f'capture_by_bitblt hwnd={hwnd} size={width}x{height} offset={x},{y} render={render_full_content}')
-    cdef object image = None
 
     try:
         if context.last_hwnd != hwnd or context.last_height != height or context.last_width != width:
@@ -120,11 +117,9 @@ class BitBltCtxDummy:
         self.last_height = 0
 
 
-cdef class BaseCaptureMethod:
+class BaseCaptureMethod:
     name = "None"
     description = ""
-    cdef public tuple _size
-    cdef public object exit_event
 
     def __init__(self):
         self._size = (0, 0)
@@ -149,8 +144,7 @@ cdef class BaseCaptureMethod:
         if self._size[0] == 0:
             self.get_frame()
 
-    cpdef object get_frame(self):
-        cdef object frame
+    def get_frame(self):
         if self.exit_event.is_set():
             return
         try:
@@ -180,10 +174,9 @@ cdef class BaseCaptureMethod:
     def connected(self):
         pass
 
-cdef class BaseWindowsCaptureMethod(BaseCaptureMethod):
-    cdef public object _hwnd_window
+class BaseWindowsCaptureMethod(BaseCaptureMethod):
 
-    def __init__(self, object hwnd_window):
+    def __init__(self, hwnd_window):
         super().__init__()
         self._hwnd_window = hwnd_window
 
@@ -204,18 +197,13 @@ cdef class BaseWindowsCaptureMethod(BaseCaptureMethod):
     def clickable(self):
         return self._hwnd_window is not None and self._hwnd_window.visible
 
-cdef get_crop_point(int frame_width, int frame_height, int target_width, int target_height):
-    cdef int x = round((frame_width - target_width) / 2)
-    cdef int y = (frame_height - target_height) - x
+def get_crop_point(frame_width, frame_height, target_width, target_height):
+    x = round((frame_width - target_width) / 2)
+    y = (frame_height - target_height) - x
     return x, y
 
-cdef composite_hwnds(object bg, object hwnd_window, object contexts, int bg_crop_x, int bg_crop_y, bint render_full):
-    cdef object hwnds = getattr(hwnd_window, 'hwnds', None)
-    cdef int bg_client_x, bg_client_y, height, width
-    cdef int w_hwnd, w_w, w_h, w_client_x, w_client_y
-    cdef int paste_x, paste_y, x1, y1, x2, y2, src_x1, src_y1, src_x2, src_y2, c, off_x, off_y, w_w_to_capture, w_h_to_capture, off_x_to_capture, off_y_to_capture
-    cdef object img
-    cdef double m_scaling, w_scaling, ratio
+def composite_hwnds(bg, hwnd_window, contexts, render_full):
+    hwnds = getattr(hwnd_window, 'hwnds', None)
 
     if bg is not None and hwnds and len(hwnds) > 1:
         bg = bg.copy()
@@ -278,8 +266,8 @@ cdef composite_hwnds(object bg, object hwnd_window, object contexts, int bg_crop
                 if ratio != 1.0:
                     img = cv2.resize(img, (w_w, w_h), interpolation=cv2.INTER_LINEAR)
 
-                paste_x = (w_client_x - bg_client_x) - bg_crop_x
-                paste_y = (w_client_y - bg_client_y) - bg_crop_y
+                paste_x = w_client_x - bg_client_x
+                paste_y = w_client_y - bg_client_y
 
                 # logger.debug(
                 #    f'composite_hwnds pasting {w_hwnd} to {paste_x},{paste_y} size={img.shape[1]}x{img.shape[0]} bg_size={width}x{height}')
@@ -299,7 +287,7 @@ cdef composite_hwnds(object bg, object hwnd_window, object contexts, int bg_crop
                         bg[y1:y2, x1:x2, c] = img[src_y1:src_y2, src_x1:src_x2, c]
     return bg
 
-cdef parse_reg_flag(value, flag_name):
+def parse_reg_flag(value, flag_name):
     if not value or not isinstance(value, str): return None
     parts = value.split(';')
     for part in parts:
@@ -312,29 +300,11 @@ cdef parse_reg_flag(value, flag_name):
                 pass
     return None
 
-cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
+class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     name = "Windows Graphics Capture"
     description = "fast, most compatible, capped at 60fps"
 
-    cdef object last_frame
-    cdef double last_frame_time
-    cdef object frame_pool
-    cdef object item
-    cdef object session
-    cdef object cputex
-    cdef object rtdevice
-    cdef object dxdevice
-    cdef object immediatedc
-    cdef object evtoken
-    cdef object last_size
-    cdef public object lock
-    cdef object d3d11
-    cdef object IDirect3DDxgiInterfaceAccess
-    cdef object frame_event
-    cdef public object contexts
-    cdef int capture_hwnd
-
-    def __init__(self, object hwnd_window):
+    def __init__(self, hwnd_window):
         super().__init__(hwnd_window)
         self.lock = threading.RLock()
         self.frame_event = threading.Event()
@@ -343,12 +313,18 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         self.cputex = None
         self.contexts = {}
         self.capture_hwnd = 0
+        self.frame_pool = None
+        self.session = None
+        self.item = None
+        self.rtdevice = None
+        self.dxdevice = None
+        self.immediatedc = None
+        self.last_frame = None
+        self.last_size = None
         self.start_or_stop()
 
-    cdef frame_arrived_callback(self, x, y):
-        cdef object next_frame = None
-        cdef object frame = None
-
+    def frame_arrived_callback(self, *args):
+        next_frame = None
         with self.lock:
             if self.exit_event.is_set():
                 logger.warning('frame_arrived_callback exit_event.is_set() return')
@@ -372,10 +348,13 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                     self.last_frame = frame
                     self.frame_event.set()
 
-    cdef object convert_dx_frame(self, frame):
+    def convert_dx_frame(self, frame):
         if not frame or self.dxdevice is None or self.immediatedc is None:
             return None
-        cdef bint need_reset_framepool = False
+
+        need_reset_framepool = False
+        need_reset_device = False
+
         if frame.ContentSize.Width != self.last_size.Width or frame.ContentSize.Height != self.last_size.Height:
             need_reset_framepool = True
             self.last_size = frame.ContentSize
@@ -385,12 +364,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             self.reset_framepool(frame.ContentSize)
             return None
 
-        cdef bint need_reset_device = False
-        cdef object tex = None
-        cdef object desc = None
-        cdef object mapinfo = None
-        cdef object img = None
-
+        tex = None
         try:
             tex = frame.Surface.astype(self.IDirect3DDxgiInterfaceAccess).GetInterface(
                 self.d3d11.ID3D11Texture2D.GUID).astype(self.d3d11.ID3D11Texture2D)
@@ -423,7 +397,8 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
         if need_reset_framepool:
             self.reset_framepool(frame.ContentSize, need_reset_device)
-            return None
+        return None
+
 
     @property
     def hwnd_window(self):
@@ -542,10 +517,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 self.cputex = None
             self.capture_hwnd = 0
 
-    cpdef object do_get_frame(self):
-        cdef object frame = None
-        cdef double latency, now, start_wait, timeout_duration
-        cdef int new_height, new_width, border = 0, title_height = 0
+    def do_get_frame(self):
 
         if self.start_or_stop():
             now = time.time()
@@ -585,16 +557,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
             frame = self.crop_image(frame)
 
-            border = 0
-            title_height = 0
-            if frame is not None and getattr(self, 'last_size', None) is not None and getattr(self.hwnd_window, 'width',
-                                                                                              0) > 0:
-                border, title_height = get_crop_point(self.last_size.Width, self.last_size.Height,
-                                                      self.hwnd_window.width, self.hwnd_window.height)
-                if border < 0: border = 0
-                if title_height < 0: title_height = 0
-
-            frame = composite_hwnds(frame, self.hwnd_window, self.contexts, border, title_height, render_full)
+            frame = composite_hwnds(frame, self.hwnd_window, self.contexts, render_full)
 
             if frame is not None:
                 new_height = frame.shape[0]
@@ -616,8 +579,7 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         self.frame_pool.Recreate(self.rtdevice,
                                  DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, size)
 
-    cpdef object crop_image(self, object frame):
-        cdef int border, title_height, height, width, x2, y2
+    def crop_image(self, frame):
         if frame is not None:
             border, title_height = get_crop_point(frame.shape[1], frame.shape[0], self.hwnd_window.width,
                                                   self.hwnd_window.height)
@@ -629,10 +591,9 @@ cdef class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 return frame[title_height:y2, border:x2]
         return frame
 
-cdef bint render_full
 render_full = False
 
-cdef class BitBltCaptureMethod(BaseWindowsCaptureMethod):
+class BitBltCaptureMethod(BaseWindowsCaptureMethod):
     name = "BitBlt"
     short_description = "fastest, least compatible"
     description = (
@@ -641,10 +602,7 @@ cdef class BitBltCaptureMethod(BaseWindowsCaptureMethod):
             + "\nThe smaller the selected region, the more efficient it is. "
     )
 
-    cdef public object dc_object, bitmap, window_dc, compatible_dc, lock, contexts
-    cdef public int last_hwnd, last_width, last_height
-
-    def __init__(self, hwnd_window: HwndWindow):
+    def __init__(self, hwnd_window: 'HwndWindow'):
         super().__init__(hwnd_window)
         self.dc_object = None
         self.bitmap = None
@@ -656,9 +614,7 @@ cdef class BitBltCaptureMethod(BaseWindowsCaptureMethod):
         self.lock = threading.Lock()
         self.contexts = {}
 
-    cpdef object do_get_frame(self):
-        cdef int x, y, width, height
-        cdef object bg = None
+    def do_get_frame(self):
         with self.lock:
             if self.hwnd_window.real_x_offset != 0 or self.hwnd_window.real_y_offset != 0:
                 x = self.hwnd_window.real_x_offset
@@ -671,7 +627,7 @@ cdef class BitBltCaptureMethod(BaseWindowsCaptureMethod):
             height = self.hwnd_window.real_height or self.hwnd_window.height
 
             bg = capture_by_bitblt(self, self.hwnd_window.hwnd, width, height, x, y, render_full)
-            bg = composite_hwnds(bg, self.hwnd_window, self.contexts, x, y, render_full)
+            bg = composite_hwnds(bg, self.hwnd_window, self.contexts, render_full)
 
             return bg
 
@@ -697,14 +653,7 @@ cdef class BitBltCaptureMethod(BaseWindowsCaptureMethod):
             else:
                 return True
 
-cdef class HwndWindow:
-    cdef public object app_exit_event, stop_event, mute_option, thread, device_manager, global_config, hwnd_class, top_hwnd_class
-    cdef public str title, exe_full_path, _hwnd_title
-    cdef public int hwnd, player_id, window_width, window_height, x, y, width, height, frame_width, frame_height, real_width, real_height, real_x_offset, real_y_offset, top_offset_x, top_offset_y, top_hwnd
-    cdef public bint visible, exists, pos_valid, to_handle_mute
-    cdef public double scaling, frame_aspect_ratio, last_mute_check
-    cdef public list monitors_bounds, exe_names, hwnds
-    cdef public list visible_monitors
+class HwndWindow:
 
     def __init__(self, exit_event, title, exe_name=None, frame_width=0, frame_height=0, player_id=-1, hwnd_class=None,
                  global_config=None, device_manager=None, top_hwnd_class=None):
@@ -757,10 +706,7 @@ cdef class HwndWindow:
         self.thread.start()
 
     def validate_mute_config(self, key, value):
-        if key == 'Windows Capture':
-            logger.info(f'config changed Windows Capture {value}')
-            self.device_manager.use_windows_capture()
-        elif key == 'Mute Game while in Background' and self.hwnd:
+        if key == 'Mute Game while in Background' and self.hwnd:
             logger.info(f'validate_mute_config {value}')
             if value:
                 self.handle_mute(value)
@@ -1034,7 +980,7 @@ def set_mute_state(hwnd, mute):
 
 
 
-cdef class DesktopDuplicationCaptureMethod(BaseWindowsCaptureMethod):
+class DesktopDuplicationCaptureMethod(BaseWindowsCaptureMethod):
     name = "Direct3D Desktop Duplication"
     short_description = "slower, bound to display"
     description = (
@@ -1045,14 +991,13 @@ cdef class DesktopDuplicationCaptureMethod(BaseWindowsCaptureMethod):
             + "\nThis option may not be available for hybrid GPU laptops, "
             + "\nsee D3DDD-Note-Laptops.md for a solution. "
     )
-    cdef object desktop_duplication
 
-    def __init__(self, hwnd_window: HwndWindow):
+    def __init__(self, hwnd_window: 'HwndWindow'):
         super().__init__(hwnd_window)
         import d3dshot
         self.desktop_duplication = d3dshot.create(capture_output="numpy")
 
-    cpdef object do_get_frame(self):
+    def do_get_frame(self):
 
         hwnd = self.hwnd_window.hwnd
         if hwnd == 0:
@@ -1063,9 +1008,6 @@ cdef class DesktopDuplicationCaptureMethod(BaseWindowsCaptureMethod):
             return None
 
         self.desktop_duplication.display = find_display(hmonitor, self.desktop_duplication.displays)
-
-        cdef int left, top, right, bottom
-        cdef object screenshot
         left = self.hwnd_window.x
         top = self.hwnd_window.y
         right = left + self.hwnd_window.width
@@ -1154,13 +1096,9 @@ def is_valid_hwnd(hwnd: int):
         return bool(win32gui.IsWindow(hwnd) and win32gui.GetWindowText(hwnd))
     return True
 
-cdef class BrowserCaptureMethod(BaseCaptureMethod):
+class BrowserCaptureMethod(BaseCaptureMethod):
     name = "Browser Capture"
     description = "Capture from Browser using Playwright and Windows Graphics Capture"
-    cdef public object playwright, browser, page, config, loop, loop_thread, latest_frame
-    cdef public object wgc_capture
-    cdef public int hwnd, x_offset, y_offset, last_width, last_height, last_hwnd
-    cdef public str exe_full_path
 
     def __init__(self, config, exit_event):
         super().__init__()
@@ -1373,7 +1311,7 @@ cdef class BrowserCaptureMethod(BaseCaptureMethod):
         self.hwnd = 0
         self.last_hwnd = 0
 
-    cpdef object do_get_frame(self):
+    def do_get_frame(self):
         if self.exit_event.is_set():
             logger.info(f'BrowserCaptureMethod self.exit_event.is_set()')
             self.close()
@@ -1435,35 +1373,50 @@ class BrowserWindowAdapter:
             return x, y
 
 
-cdef class BrowserWGC(WindowsGraphicsCaptureMethod):
-    cdef BrowserCaptureMethod browser_method
+class BrowserWGC(WindowsGraphicsCaptureMethod):
 
-    def __init__(self, BrowserCaptureMethod browser_method):
+    def __init__(self, browser_method):
         self.browser_method = browser_method
         super().__init__(BrowserWindowAdapter(browser_method))
 
     def crop_image(self, frame):
         if frame is None:
             return None
-        cdef int x = self.browser_method.x_offset
-        cdef int y = self.browser_method.y_offset
-        cdef int w = self.browser_method.width
-        cdef int h = self.browser_method.height
 
         fh, fw = frame.shape[:2]
-        if x < 0 or y < 0 or x + w > fw or y + h > fh:
-            x = max(0, x)
-            y = max(0, y)
-            w = min(w, fw - x)
-            h = min(h, fh - y)
+        target_w = int(getattr(self.hwnd_window, "width", 0) or 0)
+        target_h = int(getattr(self.hwnd_window, "height", 0) or 0)
+        if target_w <= 0 or target_h <= 0:
+            return frame
 
-        return frame[y:y + h, x:x + w]
+        x = int(getattr(self.browser_method, "x_offset", 0) or 0)
+        y = int(getattr(self.browser_method, "y_offset", 0) or 0)
 
-cdef class ADBCaptureMethod(BaseCaptureMethod):
+        if 0 <= x and 0 <= y and x + target_w <= fw and y + target_h <= fh:
+            left_extra = x
+            right_extra = fw - (x + target_w)
+            top_extra = y
+            bottom_extra = fh - (y + target_h)
+            if abs(left_extra - right_extra) <= 2 and abs(bottom_extra - left_extra) <= 2:
+                return frame[y:y + target_h, x:x + target_w]
+
+        border, title_height = get_crop_point(fw, fh, target_w, target_h)
+        border = max(0, int(border))
+        title_height = max(0, int(title_height))
+        if border == 0 and title_height == 0:
+            return frame
+
+        x1 = border
+        y1 = title_height
+        x2 = fw - border
+        y2 = fh - border
+        if x2 <= x1 or y2 <= y1:
+            return None
+        return frame[y1:y2, x1:x2]
+
+class ADBCaptureMethod(BaseCaptureMethod):
     name = "ADB command line Capture"
     description = "use the adb screencap command, slow but works when in background/minimized, takes 300ms per frame"
-    cdef bint _connected
-    cdef object device_manager
 
     def __init__(self, device_manager, exit_event, width=0, height=0):
         super().__init__()
@@ -1471,13 +1424,9 @@ cdef class ADBCaptureMethod(BaseCaptureMethod):
         self._connected = (width != 0 and height != 0)
         self.device_manager = device_manager
 
-    cpdef object do_get_frame(self):
-        return self.screencap()
-
-    cdef object screencap(self):
+    def do_get_frame(self):
         if self.exit_event.is_set():
             return None
-        cdef object frame
         frame = self.device_manager.do_screencap(self.device_manager.device)
         if frame is not None:
             self._connected = True
@@ -1487,14 +1436,12 @@ cdef class ADBCaptureMethod(BaseCaptureMethod):
 
     def connected(self):
         if not self._connected and self.device_manager.device is not None:
-            self.screencap()
+            self.get_frame()
         return self._connected and self.device_manager.device is not None
 
-cdef class ImageCaptureMethod(BaseCaptureMethod):
+class ImageCaptureMethod(BaseCaptureMethod):
     name = "Image capture method "
     description = "for debugging"
-    cdef list images
-    cdef int index
 
     def __init__(self, exit_event, images):
         super().__init__()
@@ -1510,8 +1457,7 @@ cdef class ImageCaptureMethod(BaseCaptureMethod):
     def get_abs_cords(self, x, y):
         return x, y
 
-    cpdef object do_get_frame(self):
-        cdef str image_path
+    def do_get_frame(self):
         if len(self.images) > 0:
             image_path = self.images[self.index]
             if image_path:
@@ -1523,11 +1469,9 @@ cdef class ImageCaptureMethod(BaseCaptureMethod):
     def connected(self):
         return True
 
-cdef class NemuIpcCaptureMethod(BaseCaptureMethod):
+class NemuIpcCaptureMethod(BaseCaptureMethod):
     name = "Nemu Ipc Capture"
     description = "mumu player 12 only"
-    cdef bint _connected
-    cdef public object device_manager, nemu_impl, emulator
 
     def __init__(self, device_manager, exit_event, width=0, height=0):
         super().__init__()
@@ -1581,11 +1525,9 @@ cdef class NemuIpcCaptureMethod(BaseCaptureMethod):
             self.nemu_impl.disconnect()
             self.nemu_impl = None
 
-    cpdef object do_get_frame(self):
+    def do_get_frame(self):
         self.init_nemu()
         return self.screencap()
-
-    cdef object screencap(self):
         if self.exit_event.is_set():
             return None
         if self.nemu_impl:
@@ -1593,5 +1535,4 @@ cdef class NemuIpcCaptureMethod(BaseCaptureMethod):
 
     def connected(self):
         return True
-
 

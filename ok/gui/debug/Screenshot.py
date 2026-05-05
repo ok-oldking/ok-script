@@ -11,9 +11,9 @@ from PySide6.QtGui import QColor
 
 from ok import Box, og
 from ok import Logger
+from ok.gui.Communicate import communicate
 from ok.util.file import find_first_existing_file, clear_folder, sanitize_filename, \
     get_relative_path
-from ok.gui.Communicate import communicate
 
 logger = Logger.get_logger(__name__)
 

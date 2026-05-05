@@ -1,11 +1,6 @@
-import os
 import random
-import re
 import socket
 import time
-import typing as t
-
-from adbutils import AdbTimeout
 
 from adbutils import AdbConnection, AdbTimeout
 
