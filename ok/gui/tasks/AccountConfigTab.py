@@ -67,9 +67,9 @@ class AccountConfigTab(CustomTab):
         self._overrides: Dict[str, Any] = {"accounts": {}}
         self._task_map: Dict[str, Any] = {}
         self._current_virtual_config: _InMemoryConfig | None = None
-        self._current_task = None
-        self._current_account_key = ""
-        self._current_account_name = ""
+        self._active_task = None
+        self._active_account_key = ""
+        self._active_account_name = ""
         self._current_editable_keys: list[str] = []
         self._current_base_values: Dict[str, Any] = {}
         self._account_display_to_key: Dict[str, str] = {}
@@ -557,9 +557,9 @@ class AccountConfigTab(CustomTab):
     def _render_task_editor(self):
         self._clear_layout(self._editor_layout)
         self._current_virtual_config = None
-        self._current_task = None
-        self._current_account_key = ""
-        self._current_account_name = ""
+        self._active_task = None
+        self._active_account_key = ""
+        self._active_account_name = ""
         self._current_editable_keys = []
         self._current_base_values = {}
 
@@ -611,9 +611,9 @@ class AccountConfigTab(CustomTab):
         self._editor_layout.addWidget(card)
 
         self._current_virtual_config = virtual_config
-        self._current_task = task
-        self._current_account_key = account_key
-        self._current_account_name = account_name
+        self._active_task = task
+        self._active_account_key = account_key
+        self._active_account_name = account_name
         self._current_editable_keys = editable_keys
         self._current_base_values = base_values
 
@@ -624,8 +624,8 @@ class AccountConfigTab(CustomTab):
     def _on_save_override(self):
         if (
                 self._current_virtual_config is None
-                or self._current_task is None
-                or not self._current_account_key
+                or self._active_task is None
+                or not self._active_account_key
         ):
             self._set_status(self.tr("Please select an account and a task first"))
             return
@@ -638,15 +638,15 @@ class AccountConfigTab(CustomTab):
                 diff[key] = current_value
 
         accounts = self._overrides.setdefault("accounts", {})
-        account_map = accounts.setdefault(self._current_account_key, {})
-        task_class = self._current_task.__class__.__name__
+        account_map = accounts.setdefault(self._active_account_key, {})
+        task_class = self._active_task.__class__.__name__
 
         if diff:
             account_map[task_class] = diff
             self._set_status(
                 self.tr("Saved")
-                + f": {self._current_account_name or self._current_account_key}"
-                + f" / {self._current_task.name}"
+                + f": {self._active_account_name or self._active_account_key}"
+                + f" / {self._active_task.name}"
                 + f" ({len(diff)} "
                 + self.tr("items overridden")
                 + ")"
@@ -655,12 +655,12 @@ class AccountConfigTab(CustomTab):
             account_map.pop(task_class, None)
             self._set_status(
                 self.tr("No diff — override cleared:")
-                + f" {self._current_account_name or self._current_account_key}"
-                + f" / {self._current_task.name}"
+                + f" {self._active_account_name or self._active_account_key}"
+                + f" / {self._active_task.name}"
             )
 
         if not account_map:
-            accounts.pop(self._current_account_key, None)
+            accounts.pop(self._active_account_key, None)
 
         self._overrides = save_overrides(self._overrides)
         self._rebuild_account_selector()
