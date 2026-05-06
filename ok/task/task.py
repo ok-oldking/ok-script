@@ -1211,6 +1211,17 @@ class BaseTask(OCR):
         for key, value in self._base_config_snapshot.items():
             self.config[key] = copy.deepcopy(value)
 
+        # Log before applying multi-account flags for diagnostics
+        try:
+            old_multi = {
+                'Multi Account Mode': self.config.get('Multi Account Mode', None),
+                'Multi Account Independent Config': self.config.get('Multi Account Independent Config', None),
+                'Account List': self.config.get('Account List', None),
+            }
+            logger.debug(f"apply_account_scoped_config: before flags: {old_multi}")
+        except Exception:
+            logger.exception('failed to log pre-multi-account flags')
+
         self.multi_account_mode = bool(self.config.get("Multi Account Mode", False))
         self.multi_account_independent_config = bool(self.config.get("Multi Account Independent Config", False))
         if not self.multi_account_independent_config:
@@ -1223,9 +1234,20 @@ class BaseTask(OCR):
             self.__class__.__name__,
             self.current_account_name,
         )
+        logger.debug(f"apply_account_scoped_config: overrides for account {self.current_account or self.current_account_name}: {overrides}")
         for key, value in (overrides or {}).items():
             if key in self.default_config and not str(key).startswith("_"):
                 self.config[key] = value
+
+        try:
+            new_multi = {
+                'Multi Account Mode': self.config.get('Multi Account Mode', None),
+                'Multi Account Independent Config': self.config.get('Multi Account Independent Config', None),
+                'Account List': self.config.get('Account List', None),
+            }
+            logger.debug(f"apply_account_scoped_config: after apply: {new_multi}")
+        except Exception:
+            logger.exception('failed to log post-multi-account flags')
 
     def add_exit_after_config(self):
         self.default_config.update({'Exit After Task': False})
@@ -1248,6 +1270,8 @@ class BaseTask(OCR):
             self._enabled = True
             if self.start_account:
                 self.set_current_account(self.start_account)
+            # Refresh base snapshot so start-time UI edits are preserved.
+            self._base_config_snapshot = copy.deepcopy(dict(self.config))
             self.apply_account_scoped_config()
             self.info_clear()
             if self.capture_config:
@@ -1416,7 +1440,9 @@ class BaseTask(OCR):
         Called by :meth:`run_multi_account` to skip a redundant login when the
         game is already on the correct account.
 
-        **MUST be overridden** when ``support_multi_account = True``.
+        By default returns ``False``. Subclasses MAY override this method to
+        provide a task-specific logged-in check. If not overridden, the
+        multi-account runner will always attempt to log in the account.
 
         Args:
             username (str): The account username to check.
@@ -1424,10 +1450,7 @@ class BaseTask(OCR):
         Returns:
             bool: ``True`` if already logged in as *username*, ``False`` otherwise.
         """
-        raise NotImplementedError(
-            f"{self.__class__.__name__} must implement is_logged_in() "
-            "when support_multi_account=True"
-        )
+        return False
 
     def run_one_account(self, account):
         """Execute the per-account task logic for the current account.

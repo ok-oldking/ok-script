@@ -160,6 +160,7 @@ def _normalize(data: Any) -> Dict[str, Any]:
     return {
         "account_list_text": _clean_text(data.get("account_list_text", "")),
         "account_registry": _normalize_registry(data.get("account_registry")),
+        # Ensure accounts mapping keys are strings and values dicts
         "accounts": _normalize_accounts(data.get("accounts")),
     }
 
