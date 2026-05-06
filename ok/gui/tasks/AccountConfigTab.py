@@ -552,58 +552,7 @@ class AccountConfigTab(CustomTab):
             base_values[key] = base_value
             editable_keys.append(key)
 
-        config_group = self._filter_config_group(
-            getattr(task, "default_config_group", None),
-            set(editable_keys),
-            _MULTI_ACCOUNT_INTERNAL_KEYS,
-        )
-
-        return _InMemoryConfig(initial, defaults), editable_keys, base_values, total, config_group
-
-    def _filter_config_group(self, config_group, allowed_keys: set[str], excluded_keys: set[str]):
-        if not isinstance(config_group, dict) or not config_group:
-            return {}
-
-        def group_has_allowed(group_key: str) -> bool:
-            children = config_group.get(group_key)
-            if not isinstance(children, (list, tuple)):
-                return False
-            for child in children:
-                if not isinstance(child, str) or child.startswith("_"):
-                    continue
-                if child in excluded_keys:
-                    continue
-                if child in allowed_keys:
-                    return True
-                if child in config_group and group_has_allowed(child):
-                    return True
-            return False
-
-        filtered = {}
-        for parent_key, children in config_group.items():
-            if not isinstance(parent_key, str) or parent_key.startswith("_"):
-                continue
-            if parent_key in excluded_keys:
-                continue
-            if not group_has_allowed(parent_key):
-                continue
-            if not isinstance(children, (list, tuple)):
-                continue
-            filtered_children = []
-            for child in children:
-                if not isinstance(child, str) or child.startswith("_"):
-                    continue
-                if child in excluded_keys:
-                    continue
-                if child in allowed_keys:
-                    filtered_children.append(child)
-                    continue
-                if child in config_group and group_has_allowed(child):
-                    filtered_children.append(child)
-            if filtered_children:
-                filtered[parent_key] = filtered_children
-
-        return filtered
+        return _InMemoryConfig(initial, defaults), editable_keys, base_values, total
 
     def _render_task_editor(self):
         self._clear_layout(self._editor_layout)
@@ -626,7 +575,7 @@ class AccountConfigTab(CustomTab):
             return
 
         only_diff = bool(self.diff_switch.isChecked())
-        virtual_config, editable_keys, base_values, total, config_group = self._build_virtual_config(
+        virtual_config, editable_keys, base_values, total = self._build_virtual_config(
             task, account_key, account_name, only_diff
         )
 
@@ -658,7 +607,6 @@ class AccountConfigTab(CustomTab):
             task.config_description,
             task.config_type,
             getattr(task, "icon", None),
-            config_group=config_group,
         )
         self._editor_layout.addWidget(card)
 
