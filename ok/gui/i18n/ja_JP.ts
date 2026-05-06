@@ -2567,19 +2567,4 @@
             <translation>NPU推論エラー。Intel NPUドライバーを更新する必要があるかもしれません。</translation>
         </message>
     </context>
-    <context>
-        <name>LabelAndButtonList</name>
-        <message>
-            <source>Delete Last Item</source>
-            <translation>最後の項目を削除</translation>
-        </message>
-        <message>
-            <source>(empty)</source>
-            <translation>（空）</translation>
-        </message>
-        <message>
-            <source>Reset</source>
-            <translation>リセット</translation>
-        </message>
-    </context>
 </TS>
