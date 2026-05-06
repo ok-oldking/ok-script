@@ -2576,5 +2576,180 @@
             <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
             <translation>NPU inferring Error, you might need to update the Intel NPU driver!</translation>
         </message>
-    </context>
-</TS>
+      </context>
+        <context>
+            <name>AccountConfigTab</name>
+            <message>
+                <source>Account Config</source>
+                <translation>Account Config</translation>
+            </message>
+            <message>
+                <source>Configure per-account task parameters.
+    Select an account, then select a task — the task's config widgets will appear below.
+    Only tasks with support_multi_account=True are listed.</source>
+                <translation>Configure per-account task parameters.
+    Select an account, then select a task — the task's config widgets will appear below.
+    Only tasks with support_multi_account=True are listed.</translation>
+            </message>
+            <message>
+                <source>Account Config Center</source>
+                <translation>Account Config Center</translation>
+            </message>
+            <message>
+                <source>Account List</source>
+                <translation>Account List</translation>
+            </message>
+            <message>
+                <source>One account per line: username or username,password</source>
+                <translation>One account per line: username or username,password</translation>
+            </message>
+            <message>
+                <source>Account List Actions</source>
+                <translation>Account List Actions</translation>
+            </message>
+            <message>
+                <source>Save Account List</source>
+                <translation>Save Account List</translation>
+            </message>
+            <message>
+                <source>Refresh</source>
+                <translation>Refresh</translation>
+            </message>
+            <message>
+                <source>Account Base Settings</source>
+                <translation>Account Base Settings</translation>
+            </message>
+            <message>
+                <source>Account</source>
+                <translation>Account</translation>
+            </message>
+            <message>
+                <source>Select from account list or existing overrides</source>
+                <translation>Select from account list or existing overrides</translation>
+            </message>
+            <message>
+                <source>Clear All Overrides for Account</source>
+                <translation>Clear All Overrides for Account</translation>
+            </message>
+            <message>
+                <source>Task</source>
+                <translation>Task</translation>
+            </message>
+            <message>
+                <source>Select task to auto-render config widgets</source>
+                <translation>Select task to auto-render config widgets</translation>
+            </message>
+            <message>
+                <source>View</source>
+                <translation>View</translation>
+            </message>
+            <message>
+                <source>Show only items that differ from the base config</source>
+                <translation>Show only items that differ from the base config</translation>
+            </message>
+            <message>
+                <source>Diff Only</source>
+                <translation>Diff Only</translation>
+            </message>
+            <message>
+                <source>All</source>
+                <translation>All</translation>
+            </message>
+            <message>
+                <source>Override Actions</source>
+                <translation>Override Actions</translation>
+            </message>
+            <message>
+                <source>Save Override for Account+Task</source>
+                <translation>Save Override for Account+Task</translation>
+            </message>
+            <message>
+                <source>Clear Override for Task</source>
+                <translation>Clear Override for Task</translation>
+            </message>
+            <message>
+                <source>Account &amp; Task Selector</source>
+                <translation>Account &amp; Task Selector</translation>
+            </message>
+            <message>
+                <source>Please select an account and a task first</source>
+                <translation>Please select an account and a task first</translation>
+            </message>
+            <message>
+                <source>Task Property Editor</source>
+                <translation>Task Property Editor</translation>
+            </message>
+            <message>
+                <source>Ready</source>
+                <translation>Ready</translation>
+            </message>
+            <message>
+                <source>Status</source>
+                <translation>Status</translation>
+            </message>
+            <message>
+                <source>Executor not ready</source>
+                <translation>Executor not ready</translation>
+            </message>
+            <message>
+                <source>No tasks with support_multi_account=True found</source>
+                <translation>No tasks with support_multi_account=True found</translation>
+            </message>
+            <message>
+                <source>Refreshed account and task config</source>
+                <translation>Refreshed account and task config</translation>
+            </message>
+            <message>
+                <source>Account list saved</source>
+                <translation>Account list saved</translation>
+            </message>
+            <message>
+                <source>Please select an account first</source>
+                <translation>Please select an account first</translation>
+            </message>
+            <message>
+                <source>Please select a task first</source>
+                <translation>Please select a task first</translation>
+            </message>
+            <message>
+                <source>No diff items for this account/task</source>
+                <translation>No diff items for this account/task</translation>
+            </message>
+            <message>
+                <source>No editable config for this task</source>
+                <translation>No editable config for this task</translation>
+            </message>
+            <message>
+                <source>View: </source>
+                <translation>View: </translation>
+            </message>
+            <message>
+                <source>items shown</source>
+                <translation>items shown</translation>
+            </message>
+            <message>
+                <source>Override task config for this account. Unset keys fall back to task defaults.</source>
+                <translation>Override task config for this account. Unset keys fall back to task defaults.</translation>
+            </message>
+            <message>
+                <source>Saved</source>
+                <translation>Saved</translation>
+            </message>
+            <message>
+                <source>items overridden</source>
+                <translation>items overridden</translation>
+            </message>
+            <message>
+                <source>No diff — override cleared:</source>
+                <translation>No diff — override cleared:</translation>
+            </message>
+            <message>
+                <source>Override cleared:</source>
+                <translation>Override cleared:</translation>
+            </message>
+            <message>
+                <source>All overrides cleared for account:</source>
+                <translation>All overrides cleared for account:</translation>
+            </message>
+        </context>
+    </TS>

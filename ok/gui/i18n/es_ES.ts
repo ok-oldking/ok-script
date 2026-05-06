@@ -289,6 +289,10 @@
     <context>
         <name>MainWindow</name>
         <message>
+            <source>Account Config</source>
+            <translation>Configuración de Cuenta</translation>
+        </message>
+        <message>
             <source>Tasks</source>
             <translation>Tareas</translation>
         </message>
@@ -2574,5 +2578,176 @@
             <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
             <translation>¡Error de inferencia de la NPU, es posible que necesite actualizar el controlador de la NPU de Intel!</translation>
         </message>
-    </context>
-</TS>
+      </context>
+        <context>
+            <name>AccountConfigTab</name>
+            <message>
+                <source>Configure per-account task parameters.
+    Select an account, then select a task — the task's config widgets will appear below.
+    Only tasks with support_multi_account=True are listed.</source>
+                <translation>Configure los parámetros de tareas por cuenta.
+    Seleccione una cuenta y luego seleccione una tarea — los widgets de configuración de tareas aparecerán a continuación.
+    Solo se enumeran las tareas que cumplen con support_multi_account=True.</translation>
+            </message>
+            <message>
+                <source>Account Config Center</source>
+                <translation>Centro de Configuración de Cuenta</translation>
+            </message>
+            <message>
+                <source>Account List</source>
+                <translation>Lista de Cuentas</translation>
+            </message>
+            <message>
+                <source>One account per line: username or username,password</source>
+                <translation>Una cuenta por línea: nombre de usuario o nombre de usuario,contraseña</translation>
+            </message>
+            <message>
+                <source>Account List Actions</source>
+                <translation>Acciones de Lista de Cuentas</translation>
+            </message>
+            <message>
+                <source>Save Account List</source>
+                <translation>Guardar Lista de Cuentas</translation>
+            </message>
+            <message>
+                <source>Refresh</source>
+                <translation>Actualizar</translation>
+            </message>
+            <message>
+                <source>Account Base Settings</source>
+                <translation>Configuración Base de Cuenta</translation>
+            </message>
+            <message>
+                <source>Account</source>
+                <translation>Cuenta</translation>
+            </message>
+            <message>
+                <source>Select from account list or existing overrides</source>
+                <translation>Seleccione de la lista de cuentas o anulaciones existentes</translation>
+            </message>
+            <message>
+                <source>Clear All Overrides for Account</source>
+                <translation>Borrar Todas las Anulaciones de Cuenta</translation>
+            </message>
+            <message>
+                <source>Task</source>
+                <translation>Tarea</translation>
+            </message>
+            <message>
+                <source>Select task to auto-render config widgets</source>
+                <translation>Seleccione tarea para representar automáticamente los widgets de configuración</translation>
+            </message>
+            <message>
+                <source>View</source>
+                <translation>Vista</translation>
+            </message>
+            <message>
+                <source>Show only items that differ from the base config</source>
+                <translation>Mostrar solo elementos que difieren de la configuración base</translation>
+            </message>
+            <message>
+                <source>Diff Only</source>
+                <translation>Solo Diferencias</translation>
+            </message>
+            <message>
+                <source>All</source>
+                <translation>Todos</translation>
+            </message>
+            <message>
+                <source>Override Actions</source>
+                <translation>Acciones de Anulación</translation>
+            </message>
+            <message>
+                <source>Save Override for Account+Task</source>
+                <translation>Guardar Anulación para Cuenta+Tarea</translation>
+            </message>
+            <message>
+                <source>Clear Override for Task</source>
+                <translation>Borrar Anulación de Tarea</translation>
+            </message>
+            <message>
+                <source>Account &amp; Task Selector</source>
+                <translation>Selector de Cuenta y Tarea</translation>
+            </message>
+            <message>
+                <source>Please select an account and a task first</source>
+                <translation>Seleccione primero una cuenta y una tarea</translation>
+            </message>
+            <message>
+                <source>Task Property Editor</source>
+                <translation>Editor de Propiedades de Tarea</translation>
+            </message>
+            <message>
+                <source>Ready</source>
+                <translation>Listo</translation>
+            </message>
+            <message>
+                <source>Status</source>
+                <translation>Estado</translation>
+            </message>
+            <message>
+                <source>Executor not ready</source>
+                <translation>Ejecutor no está listo</translation>
+            </message>
+            <message>
+                <source>No tasks with support_multi_account=True found</source>
+                <translation>No se encontraron tareas que admitan support_multi_account=True</translation>
+            </message>
+            <message>
+                <source>Refreshed account and task config</source>
+                <translation>Configuración de cuenta y tarea actualizada</translation>
+            </message>
+            <message>
+                <source>Account list saved</source>
+                <translation>Lista de cuentas guardada</translation>
+            </message>
+            <message>
+                <source>Please select an account first</source>
+                <translation>Seleccione primero una cuenta</translation>
+            </message>
+            <message>
+                <source>Please select a task first</source>
+                <translation>Seleccione primero una tarea</translation>
+            </message>
+            <message>
+                <source>No diff items for this account/task</source>
+                <translation>Sin elementos de diferencia para esta cuenta/tarea</translation>
+            </message>
+            <message>
+                <source>No editable config for this task</source>
+                <translation>Sin configuración editable para esta tarea</translation>
+            </message>
+            <message>
+                <source>View: </source>
+                <translation>Vista: </translation>
+            </message>
+            <message>
+                <source>items shown</source>
+                <translation>elementos mostrados</translation>
+            </message>
+            <message>
+                <source>Override task config for this account. Unset keys fall back to task defaults.</source>
+                <translation>Anule la configuración de tareas para esta cuenta. Las claves no configuradas vuelven a los valores predeterminados de tareas.</translation>
+            </message>
+            <message>
+                <source>Saved</source>
+                <translation>Guardado</translation>
+            </message>
+            <message>
+                <source>items overridden</source>
+                <translation>elementos anulados</translation>
+            </message>
+            <message>
+                <source>No diff — override cleared:</source>
+                <translation>Sin diferencia — anulación borrada:</translation>
+            </message>
+            <message>
+                <source>Override cleared:</source>
+                <translation>Anulación borrada:</translation>
+            </message>
+            <message>
+                <source>All overrides cleared for account:</source>
+                <translation>Todas las anulaciones borradas para la cuenta:</translation>
+            </message>
+        </context>
+    </TS>

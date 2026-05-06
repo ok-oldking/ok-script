@@ -289,6 +289,10 @@
     <context>
         <name>MainWindow</name>
         <message>
+            <source>Account Config</source>
+            <translation>계정 설정</translation>
+        </message>
+        <message>
             <source>Tasks</source>
             <translation>작업</translation>
         </message>
@@ -2575,5 +2579,176 @@
             <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
             <translation>NPU 추론 오류, Intel NPU 드라이버를 업데이트해야 할 수 있습니다!</translation>
         </message>
-    </context>
-</TS>
+      </context>
+        <context>
+            <name>AccountConfigTab</name>
+            <message>
+                <source>Configure per-account task parameters.
+    Select an account, then select a task — the task's config widgets will appear below.
+    Only tasks with support_multi_account=True are listed.</source>
+                <translation>계정별 작업 매개변수를 구성합니다.
+    계정을 선택한 다음 작업을 선택하세요 — 작업의 설정 위젯이 아래에 표시됩니다.
+    support_multi_account=True를 지원하는 작업만 나열됩니다.</translation>
+            </message>
+            <message>
+                <source>Account Config Center</source>
+                <translation>계정 설정 센터</translation>
+            </message>
+            <message>
+                <source>Account List</source>
+                <translation>계정 목록</translation>
+            </message>
+            <message>
+                <source>One account per line: username or username,password</source>
+                <translation>한 줄에 하나의 계정: 사용자명 또는 사용자명,비밀번호</translation>
+            </message>
+            <message>
+                <source>Account List Actions</source>
+                <translation>계정 목록 작업</translation>
+            </message>
+            <message>
+                <source>Save Account List</source>
+                <translation>계정 목록 저장</translation>
+            </message>
+            <message>
+                <source>Refresh</source>
+                <translation>새로고침</translation>
+            </message>
+            <message>
+                <source>Account Base Settings</source>
+                <translation>계정 기본 설정</translation>
+            </message>
+            <message>
+                <source>Account</source>
+                <translation>계정</translation>
+            </message>
+            <message>
+                <source>Select from account list or existing overrides</source>
+                <translation>계정 목록 또는 기존 재정의에서 선택</translation>
+            </message>
+            <message>
+                <source>Clear All Overrides for Account</source>
+                <translation>계정의 모든 재정의 지우기</translation>
+            </message>
+            <message>
+                <source>Task</source>
+                <translation>작업</translation>
+            </message>
+            <message>
+                <source>Select task to auto-render config widgets</source>
+                <translation>설정 위젯을 자동 렌더링할 작업 선택</translation>
+            </message>
+            <message>
+                <source>View</source>
+                <translation>보기</translation>
+            </message>
+            <message>
+                <source>Show only items that differ from the base config</source>
+                <translation>기본 설정과 다른 항목만 표시</translation>
+            </message>
+            <message>
+                <source>Diff Only</source>
+                <translation>차이만 표시</translation>
+            </message>
+            <message>
+                <source>All</source>
+                <translation>모두</translation>
+            </message>
+            <message>
+                <source>Override Actions</source>
+                <translation>재정의 작업</translation>
+            </message>
+            <message>
+                <source>Save Override for Account+Task</source>
+                <translation>계정+작업의 재정의 저장</translation>
+            </message>
+            <message>
+                <source>Clear Override for Task</source>
+                <translation>작업의 재정의 지우기</translation>
+            </message>
+            <message>
+                <source>Account &amp; Task Selector</source>
+                <translation>계정 및 작업 선택</translation>
+            </message>
+            <message>
+                <source>Please select an account and a task first</source>
+                <translation>먼저 계정과 작업을 선택하세요</translation>
+            </message>
+            <message>
+                <source>Task Property Editor</source>
+                <translation>작업 속성 편집기</translation>
+            </message>
+            <message>
+                <source>Ready</source>
+                <translation>준비 완료</translation>
+            </message>
+            <message>
+                <source>Status</source>
+                <translation>상태</translation>
+            </message>
+            <message>
+                <source>Executor not ready</source>
+                <translation>실행기가 준비되지 않음</translation>
+            </message>
+            <message>
+                <source>No tasks with support_multi_account=True found</source>
+                <translation>support_multi_account=True를 지원하는 작업을 찾을 수 없습니다</translation>
+            </message>
+            <message>
+                <source>Refreshed account and task config</source>
+                <translation>계정 및 작업 설정이 새로고침되었습니다</translation>
+            </message>
+            <message>
+                <source>Account list saved</source>
+                <translation>계정 목록이 저장되었습니다</translation>
+            </message>
+            <message>
+                <source>Please select an account first</source>
+                <translation>먼저 계정을 선택하세요</translation>
+            </message>
+            <message>
+                <source>Please select a task first</source>
+                <translation>먼저 작업을 선택하세요</translation>
+            </message>
+            <message>
+                <source>No diff items for this account/task</source>
+                <translation>이 계정/작업에 대한 차이 항목이 없습니다</translation>
+            </message>
+            <message>
+                <source>No editable config for this task</source>
+                <translation>이 작업에 대한 편집 가능한 설정이 없습니다</translation>
+            </message>
+            <message>
+                <source>View: </source>
+                <translation>보기: </translation>
+            </message>
+            <message>
+                <source>items shown</source>
+                <translation>항목이 표시됨</translation>
+            </message>
+            <message>
+                <source>Override task config for this account. Unset keys fall back to task defaults.</source>
+                <translation>이 계정에 대한 작업 설정을 재정의합니다. 설정되지 않은 키는 작업 기본값으로 돌아갑니다.</translation>
+            </message>
+            <message>
+                <source>Saved</source>
+                <translation>저장됨</translation>
+            </message>
+            <message>
+                <source>items overridden</source>
+                <translation>항목이 재정의됨</translation>
+            </message>
+            <message>
+                <source>No diff — override cleared:</source>
+                <translation>차이 없음 — 재정의 삭제됨:</translation>
+            </message>
+            <message>
+                <source>Override cleared:</source>
+                <translation>재정의가 삭제됨:</translation>
+            </message>
+            <message>
+                <source>All overrides cleared for account:</source>
+                <translation>계정의 모든 재정의가 삭제됨:</translation>
+            </message>
+        </context>
+    </TS>
