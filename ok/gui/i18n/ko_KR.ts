@@ -1195,6 +1195,36 @@
             <translation>작업 후 종료</translation>
         </message>
         <message>
+            <source>Multi Account Mode</source>
+            <translation>다중 계정 모드</translation>
+        </message>
+        <message>
+            <source>Enable multi-account mode
+Need at least one account already logged in</source>
+            <translation>다중 계정 모드를 사용합니다
+최소 하나의 계정이 이미 로그인되어 있어야 합니다</translation>
+        </message>
+        <message>
+            <source>Multi Account Independent Config</source>
+            <translation>계정별 설정</translation>
+        </message>
+        <message>
+            <source>Enable account-scoped task config overrides
+When enabled, each account can use different task parameters</source>
+            <translation>계정 범위 작업 설정 재정의를 사용합니다
+활성화하면 각 계정이 서로 다른 작업 매개변수를 사용할 수 있습니다</translation>
+        </message>
+        <message>
+            <source>Account List</source>
+            <translation>계정 목록</translation>
+        </message>
+        <message>
+            <source>Account list, one per line
+Format: username or username,password (password is optional)</source>
+            <translation>계정 목록, 한 줄에 하나씩
+형식: 사용자 이름 또는 사용자 이름,비밀번호(비밀번호는 선택 사항)</translation>
+        </message>
+        <message>
             <source>Exit the Game and the App after Successfully Executing the Task</source>
             <translation>작업이 성공적으로 실행된 후 게임과 앱 종료</translation>
         </message>

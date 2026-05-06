@@ -1194,6 +1194,36 @@
             <translation>Salir después de la tarea</translation>
         </message>
         <message>
+            <source>Multi Account Mode</source>
+            <translation>Modo multicuenta</translation>
+        </message>
+        <message>
+            <source>Enable multi-account mode
+Need at least one account already logged in</source>
+            <translation>Habilita el modo multicuenta
+Se requiere al menos una cuenta ya iniciada</translation>
+        </message>
+        <message>
+            <source>Multi Account Independent Config</source>
+            <translation>Configuración independiente por cuenta</translation>
+        </message>
+        <message>
+            <source>Enable account-scoped task config overrides
+When enabled, each account can use different task parameters</source>
+            <translation>Habilita las anulaciones de configuración de tareas por cuenta
+Cuando está habilitado, cada cuenta puede usar parámetros de tarea diferentes</translation>
+        </message>
+        <message>
+            <source>Account List</source>
+            <translation>Lista de cuentas</translation>
+        </message>
+        <message>
+            <source>Account list, one per line
+Format: username or username,password (password is optional)</source>
+            <translation>Lista de cuentas, una por línea
+Formato: nombre de usuario o nombre de usuario,contraseña (la contraseña es opcional)</translation>
+        </message>
+        <message>
             <source>Exit the Game and the App after Successfully Executing the Task</source>
             <translation>Salir del juego y de la aplicación después de ejecutar la tarea con éxito</translation>
         </message>

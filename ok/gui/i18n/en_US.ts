@@ -1192,6 +1192,36 @@
             <translation>Exit After Task</translation>
         </message>
         <message>
+            <source>Multi Account Mode</source>
+            <translation>Multi Account Mode</translation>
+        </message>
+        <message>
+            <source>Enable multi-account mode
+Need at least one account already logged in</source>
+            <translation>Enable multi-account mode
+Need at least one account already logged in</translation>
+        </message>
+        <message>
+            <source>Multi Account Independent Config</source>
+            <translation>Multi Account Independent Config</translation>
+        </message>
+        <message>
+            <source>Enable account-scoped task config overrides
+When enabled, each account can use different task parameters</source>
+            <translation>Enable account-scoped task config overrides
+When enabled, each account can use different task parameters</translation>
+        </message>
+        <message>
+            <source>Account List</source>
+            <translation>Account List</translation>
+        </message>
+        <message>
+            <source>Account list, one per line
+Format: username or username,password (password is optional)</source>
+            <translation>Account list, one per line
+Format: username or username,password (password is optional)</translation>
+        </message>
+        <message>
             <source>Exit the Game and the App after Successfully Executing the Task</source>
             <translation>Exit the Game and the App after Successfully Executing the Task</translation>
         </message>

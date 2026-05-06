@@ -1192,6 +1192,36 @@
             <translation>完成后退出</translation>
         </message>
         <message>
+            <source>Multi Account Mode</source>
+            <translation>多账号模式</translation>
+        </message>
+        <message>
+            <source>Enable multi-account mode
+Need at least one account already logged in</source>
+            <translation>启用多账号模式
+至少需要先登录一个账号</translation>
+        </message>
+        <message>
+            <source>Multi Account Independent Config</source>
+            <translation>账号独立配置</translation>
+        </message>
+        <message>
+            <source>Enable account-scoped task config overrides
+When enabled, each account can use different task parameters</source>
+            <translation>启用账号范围的任务配置覆盖
+启用后，每个账号可以使用不同的任务参数</translation>
+        </message>
+        <message>
+            <source>Account List</source>
+            <translation>账号列表</translation>
+        </message>
+        <message>
+            <source>Account list, one per line
+Format: username or username,password (password is optional)</source>
+            <translation>账号列表，每行一个
+格式：用户名或 用户名,密码（密码可省略）</translation>
+        </message>
+        <message>
             <source>Exit the Game and the App after Successfully Executing the Task</source>
             <translation>完成任务后退出游戏和App</translation>
         </message>

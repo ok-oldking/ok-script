@@ -1182,6 +1182,36 @@
             <translation>タスク後に終了</translation>
         </message>
         <message>
+            <source>Multi Account Mode</source>
+            <translation>マルチアカウントモード</translation>
+        </message>
+        <message>
+            <source>Enable multi-account mode
+Need at least one account already logged in</source>
+            <translation>マルチアカウントモードを有効にします
+少なくとも1つのアカウントがログイン済みである必要があります</translation>
+        </message>
+        <message>
+            <source>Multi Account Independent Config</source>
+            <translation>アカウント別設定</translation>
+        </message>
+        <message>
+            <source>Enable account-scoped task config overrides
+When enabled, each account can use different task parameters</source>
+            <translation>アカウント単位のタスク設定上書きを有効にします
+有効にすると、各アカウントで異なるタスクパラメータを使用できます</translation>
+        </message>
+        <message>
+            <source>Account List</source>
+            <translation>アカウント一覧</translation>
+        </message>
+        <message>
+            <source>Account list, one per line
+Format: username or username,password (password is optional)</source>
+            <translation>アカウント一覧、1行に1件
+形式: ユーザー名 または ユーザー名,パスワード（パスワードは省略可）</translation>
+        </message>
+        <message>
             <source>Exit the Game and the App after Successfully Executing the Task</source>
             <translation>タスクが正常に実行された後、ゲームとアプリを終了する</translation>
         </message>
