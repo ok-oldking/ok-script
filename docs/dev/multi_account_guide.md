@@ -34,6 +34,25 @@ class MyTask(BaseTask):
                 "password": "",
                 "account_id": ""
             })
+
+    def is_logged_in(self, username):
+        """
+        判定当前是否已登录该账号
+        """
+        return False
+
+    def do_login(self, username, password=""):
+        """
+        执行登录逻辑(is_logged_in 返回 False 时执行)
+        """
+        print(f"登录: {username}")
+        return True
+
+    def run_one_account(self, account):
+        """
+        执行单账号任务(自动支持独立配置)
+        """
+        print(f"执行任务: {account['username']}")
 ```
 
 ---
