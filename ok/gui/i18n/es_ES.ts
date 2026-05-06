@@ -2575,4 +2575,19 @@
             <translation>¡Error de inferencia de la NPU, es posible que necesite actualizar el controlador de la NPU de Intel!</translation>
         </message>
     </context>
+    <context>
+        <name>LabelAndButtonList</name>
+        <message>
+            <source>Delete Last Item</source>
+            <translation>Eliminar último elemento</translation>
+        </message>
+        <message>
+            <source>(empty)</source>
+            <translation>（vacío）</translation>
+        </message>
+        <message>
+            <source>Reset</source>
+            <translation>Reiniciar</translation>
+        </message>
+    </context>
 </TS>

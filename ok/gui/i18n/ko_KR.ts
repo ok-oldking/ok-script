@@ -2576,4 +2576,19 @@
             <translation>NPU 추론 오류, Intel NPU 드라이버를 업데이트해야 할 수 있습니다!</translation>
         </message>
     </context>
+    <context>
+        <name>LabelAndButtonList</name>
+        <message>
+            <source>Delete Last Item</source>
+            <translation>마지막 항목 삭제</translation>
+        </message>
+        <message>
+            <source>(empty)</source>
+            <translation>（비어있음）</translation>
+        </message>
+        <message>
+            <source>Reset</source>
+            <translation>재설정</translation>
+        </message>
+    </context>
 </TS>
