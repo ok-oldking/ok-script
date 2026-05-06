@@ -1368,9 +1368,14 @@ class BaseTask(OCR):
         self.info[key] = value
 
     def info_set(self, key, value):
+        actual_key = key
+        if self.multi_account_mode:
+            username = (self.current_account_name or "").strip()
+            if username:
+                actual_key = f"{key}({username[-4:]})"
         if key != 'Log' and key != 'Error':
-            self.logger.info(f'info_set {key} {value}')
-        self.info[key] = value
+            self.logger.info(f'info_set {actual_key} {value}')
+        self.info[actual_key] = value
 
     def info_get(self, *args, **kwargs):
         return self.info.get(*args, **kwargs)
