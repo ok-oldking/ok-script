@@ -583,6 +583,39 @@ class PostMessageInteraction(BaseInteraction):
         try:
             abs_x, abs_y = win32gui.ClientToScreen(base_hwnd, (int(x), int(y)))
             
+            # Validate that the click position falls within the boundary of base_hwnd.
+            # If not, search through the available hwnds list for one that contains it.
+            hwnds = getattr(self.hwnd_window, 'hwnds', [])
+            if hwnds and len(hwnds) > 1:
+                try:
+                    base_rect = win32gui.GetWindowRect(base_hwnd)
+                    in_boundary = base_rect[0] <= abs_x < base_rect[2] and base_rect[1] <= abs_y < base_rect[3]
+                    if not in_boundary:
+                        for hwnd_info in hwnds:
+                            candidate = hwnd_info[0]
+                            if candidate == base_hwnd or not win32gui.IsWindow(candidate):
+                                continue
+                            try:
+                                rect = win32gui.GetWindowRect(candidate)
+                                if rect[0] <= abs_x < rect[2] and rect[1] <= abs_y < rect[3]:
+                                    logger.debug(
+                                        f'update_mouse_pos click ({abs_x},{abs_y}) outside base_hwnd {base_hwnd} rect {base_rect}, switching to hwnd {candidate} rect {rect}')
+                                    base_hwnd = candidate
+                                    # Recompute abs coords relative to the new base_hwnd
+                                    local_candidate_x = hwnd_info[4] if len(hwnd_info) > 4 else 0
+                                    local_candidate_y = hwnd_info[5] if len(hwnd_info) > 5 else 0
+                                    # x,y are in original bg-window coords; translate to candidate client coords
+                                    orig_base_info = next((w for w in hwnds if w[0] == (self.hwnd_window.top_hwnd or self.hwnd_window.hwnd)), None)
+                                    if orig_base_info:
+                                        dx = orig_base_info[4] - local_candidate_x
+                                        dy = orig_base_info[5] - local_candidate_y
+                                        abs_x, abs_y = win32gui.ClientToScreen(candidate, (int(x + dx), int(y + dy)))
+                                    break
+                            except Exception:
+                                continue
+                except Exception:
+                    pass
+            
             found_child = None
             if self.hwnd_window.top_hwnd and self.hwnd_window.top_hwnd != self.hwnd_window.hwnd:
                 def find_child_at_point(child, _):
