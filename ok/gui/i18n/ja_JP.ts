@@ -1182,6 +1182,36 @@
             <translation>タスク後に終了</translation>
         </message>
         <message>
+            <source>Multi Account Mode</source>
+            <translation>マルチアカウントモード</translation>
+        </message>
+        <message>
+            <source>Enable multi-account mode
+Need at least one account already logged in</source>
+            <translation>マルチアカウントモードを有効にします
+少なくとも1つのアカウントがログイン済みである必要があります</translation>
+        </message>
+        <message>
+            <source>Multi Account Independent Config</source>
+            <translation>アカウント別設定</translation>
+        </message>
+        <message>
+            <source>Enable account-scoped task config overrides
+When enabled, each account can use different task parameters</source>
+            <translation>アカウント単位のタスク設定上書きを有効にします
+有効にすると、各アカウントで異なるタスクパラメータを使用できます</translation>
+        </message>
+        <message>
+            <source>Account List</source>
+            <translation>アカウント一覧</translation>
+        </message>
+        <message>
+            <source>Account list, one per line
+Format: username or username,password (password is optional)</source>
+            <translation>アカウント一覧、1行に1件
+形式: ユーザー名 または ユーザー名,パスワード（パスワードは省略可）</translation>
+        </message>
+        <message>
             <source>Exit the Game and the App after Successfully Executing the Task</source>
             <translation>タスクが正常に実行された後、ゲームとアプリを終了する</translation>
         </message>
@@ -2566,5 +2596,176 @@
             <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
             <translation>NPU推論エラー。Intel NPUドライバーを更新する必要があるかもしれません。</translation>
         </message>
-    </context>
-</TS>
+      </context>
+        <context>
+            <name>AccountConfigTab</name>
+            <message>
+                <source>Configure per-account task parameters.
+    Select an account, then select a task — the task's config widgets will appear below.
+    Only tasks with support_multi_account=True are listed.</source>
+                <translation>アカウントごとのタスクパラメータを設定します。
+    アカウントを選択してから、タスクを選択してください — タスクの設定ウィジェットが下に表示されます。
+    support_multi_account=True をサポートするタスクのみがリストされます。</translation>
+            </message>
+            <message>
+                <source>Account Config Center</source>
+                <translation>アカウント設定センター</translation>
+            </message>
+            <message>
+                <source>Account List</source>
+                <translation>アカウントリスト</translation>
+            </message>
+            <message>
+                <source>One account per line: username or username,password</source>
+                <translation>1行に1つのアカウント：ユーザー名またはユーザー名,パスワード</translation>
+            </message>
+            <message>
+                <source>Account List Actions</source>
+                <translation>アカウントリストのアクション</translation>
+            </message>
+            <message>
+                <source>Save Account List</source>
+                <translation>アカウントリストを保存</translation>
+            </message>
+            <message>
+                <source>Refresh</source>
+                <translation>更新</translation>
+            </message>
+            <message>
+                <source>Account Base Settings</source>
+                <translation>アカウント基本設定</translation>
+            </message>
+            <message>
+                <source>Account</source>
+                <translation>アカウント</translation>
+            </message>
+            <message>
+                <source>Select from account list or existing overrides</source>
+                <translation>アカウントリストまたは既存のオーバーライドから選択</translation>
+            </message>
+            <message>
+                <source>Clear All Overrides for Account</source>
+                <translation>アカウントのすべてのオーバーライドをクリア</translation>
+            </message>
+            <message>
+                <source>Task</source>
+                <translation>タスク</translation>
+            </message>
+            <message>
+                <source>Select task to auto-render config widgets</source>
+                <translation>設定ウィジェットを自動レンダリングするタスクを選択</translation>
+            </message>
+            <message>
+                <source>View</source>
+                <translation>表示</translation>
+            </message>
+            <message>
+                <source>Show only items that differ from the base config</source>
+                <translation>ベース設定と異なる項目のみを表示</translation>
+            </message>
+            <message>
+                <source>Diff Only</source>
+                <translation>差分のみ</translation>
+            </message>
+            <message>
+                <source>All</source>
+                <translation>すべて</translation>
+            </message>
+            <message>
+                <source>Override Actions</source>
+                <translation>オーバーライドアクション</translation>
+            </message>
+            <message>
+                <source>Save Override for Account+Task</source>
+                <translation>アカウント+タスクのオーバーライドを保存</translation>
+            </message>
+            <message>
+                <source>Clear Override for Task</source>
+                <translation>タスクのオーバーライドをクリア</translation>
+            </message>
+            <message>
+                <source>Account &amp; Task Selector</source>
+                <translation>アカウント＆タスク選択</translation>
+            </message>
+            <message>
+                <source>Please select an account and a task first</source>
+                <translation>まずアカウントとタスクを選択してください</translation>
+            </message>
+            <message>
+                <source>Task Property Editor</source>
+                <translation>タスクプロパティエディタ</translation>
+            </message>
+            <message>
+                <source>Ready</source>
+                <translation>準備完了</translation>
+            </message>
+            <message>
+                <source>Status</source>
+                <translation>ステータス</translation>
+            </message>
+            <message>
+                <source>Executor not ready</source>
+                <translation>エグゼキューターが準備できていません</translation>
+            </message>
+            <message>
+                <source>No tasks with support_multi_account=True found</source>
+                <translation>support_multi_account=True をサポートするタスクが見つかりません</translation>
+            </message>
+            <message>
+                <source>Refreshed account and task config</source>
+                <translation>アカウントとタスク設定を更新しました</translation>
+            </message>
+            <message>
+                <source>Account list saved</source>
+                <translation>アカウントリストが保存されました</translation>
+            </message>
+            <message>
+                <source>Please select an account first</source>
+                <translation>まずアカウントを選択してください</translation>
+            </message>
+            <message>
+                <source>Please select a task first</source>
+                <translation>まずタスクを選択してください</translation>
+            </message>
+            <message>
+                <source>No diff items for this account/task</source>
+                <translation>このアカウント/タスクの差分項目はありません</translation>
+            </message>
+            <message>
+                <source>No editable config for this task</source>
+                <translation>このタスクの編集可能な設定はありません</translation>
+            </message>
+            <message>
+                <source>View: </source>
+                <translation>表示: </translation>
+            </message>
+            <message>
+                <source>items shown</source>
+                <translation>項目が表示されました</translation>
+            </message>
+            <message>
+                <source>Override task config for this account. Unset keys fall back to task defaults.</source>
+                <translation>このアカウントのタスク設定をオーバーライドします。未設定のキーはタスクのデフォルトに戻ります。</translation>
+            </message>
+            <message>
+                <source>Saved</source>
+                <translation>保存されました</translation>
+            </message>
+            <message>
+                <source>items overridden</source>
+                <translation>項目がオーバーライドされました</translation>
+            </message>
+            <message>
+                <source>No diff — override cleared:</source>
+                <translation>差分なし — オーバーライドがクリアされました：</translation>
+            </message>
+            <message>
+                <source>Override cleared:</source>
+                <translation>オーバーライドがクリアされました：</translation>
+            </message>
+            <message>
+                <source>All overrides cleared for account:</source>
+                <translation>アカウントのすべてのオーバーライドがクリアされました：</translation>
+            </message>
+        </context>
+    </TS>

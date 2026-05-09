@@ -357,6 +357,7 @@ def parse_arguments_to_map(description="main script"):
     # Add your arguments here.  This is just an example - adapt this to your needs!
     parser.add_argument("-t", "--task", help="which task to execute as index starting with 1", type=int, default=0)
     parser.add_argument("-e", "--exit", action="store_true", help="exit after task")
+    parser.add_argument("-a", "--account", help="account identifier for multi-account task run", type=str, default="")
 
     args, _ = parser.parse_known_args()
 

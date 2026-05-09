@@ -62,6 +62,7 @@ compile_i18n.cmd
   - [2. 多语言国际化 (i18n)](docs/after_quick_start/README.md#2-多语言国际化-i18n)
   - [3. 自动化测试](docs/after_quick_start/README.md#3-自动化测试)
   - [4. 使用 GitHub Action 自动化打包与发布](docs/after_quick_start/README.md#4-使用-github-action-自动化打包与发布)
+* [开发文档：多账号系统使用说明](docs/dev/multi_account_guide.md)
 * 开发者群: 938132715
 * pip [https://pypi.org/project/ok-script](https://pypi.org/project/ok-script)
 

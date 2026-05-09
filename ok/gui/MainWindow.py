@@ -173,6 +173,20 @@ class MainWindow(MSFluentWindow):
             from ok.gui.tasks.ScheduleTaskTab import ScheduleTaskTab
             self.schedule_tab = ScheduleTaskTab(config=self.config)
             self.addSubInterface(self.schedule_tab, FluentIcon.CALENDAR, self.tr('Schedule'))
+
+        # 添加多账号配置Tab
+        any_support_multi_account = any(
+            getattr(task, 'support_multi_account', False) for task in executor.onetime_tasks
+        )
+        if any_support_multi_account:
+            from ok.gui.tasks.AccountConfigTab import AccountConfigTab
+            self.account_config_tab = AccountConfigTab()
+            self.account_config_tab.executor = executor
+            self.addSubInterface(
+                self.account_config_tab,
+                FluentIcon.PEOPLE,
+                self.tr('Account Config'),
+            )
         from ok.gui.about.AboutTab import AboutTab
         self.about_tab = AboutTab(config, self.app.updater)
         self.addSubInterface(self.about_tab, FluentIcon.QUESTION, self.tr('About'),
@@ -332,8 +346,12 @@ class MainWindow(MSFluentWindow):
                     self.handler.post(lambda: communicate.copyright.emit(), delay=1)
             if args.get('task') > 0:
                 task_index = args.get('task') - 1
-                logger.info(f'start with params {task_index} {args.get("exit")}')
-                self.app.start_controller.start(args.get('task') - 1, exit_after=args.get('exit'))
+                logger.info(f'start with params {task_index} {args.get("exit")} account={args.get("account")}')
+                self.app.start_controller.start(
+                    args.get('task') - 1,
+                    exit_after=args.get('exit'),
+                    account=args.get('account'),
+                )
             elif self.basic_global_config.get('Auto Start Game When App Starts'):
                 self.app.start_controller.start()
             # Check for .okscript file in command line arguments

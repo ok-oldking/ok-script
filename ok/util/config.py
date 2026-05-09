@@ -59,6 +59,47 @@ class Config(dict):
         except Exception as e:
             logger.error(f'save_file error: {e}')
 
+    def verify_config(self, current, default_config):
+        """
+        Verify the configuration against the default configuration.
+
+        :param default_config: The default configuration.
+        :return: True if the config was modified, False otherwise.
+        """
+        modified = False
+
+        removed_keys = []
+        reset_keys = []
+
+        # Remove entries that do not exist in default_config
+        for key in list(current.keys()):
+            if key not in default_config:
+                del current[key]
+                removed_keys.append(key)
+                modified = True
+
+        for key in list(default_config.keys()):
+            if key not in current or not isinstance(current[key], type(default_config[key])):
+                value = default_config[key]
+                reset_keys.append(key)
+                modified = True
+            elif self.validator is not None:
+                valid = self.validate(key, current[key])
+                if not valid:
+                    value = default_config[key]
+                    reset_keys.append(key)
+                    modified = True
+                else:
+                    value = current[key]
+            else:
+                value = current[key]
+            self[key] = value
+
+        if modified:
+            logger.info(f"verify_config: {self.config_file} modified; removed={removed_keys}, reset={reset_keys}")
+
+        return modified
+
     def get_default(self, key):
         return self.default.get(key)
 

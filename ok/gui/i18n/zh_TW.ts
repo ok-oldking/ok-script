@@ -289,6 +289,10 @@
     <context>
         <name>MainWindow</name>
         <message>
+            <source>Account Config</source>
+            <translation>帳號配置</translation>
+        </message>
+        <message>
             <source>Tasks</source>
             <translation>任務</translation>
         </message>
@@ -1184,6 +1188,36 @@
         <message>
             <source>Exit After Task</source>
             <translation>完成後退出</translation>
+        </message>
+        <message>
+            <source>Multi Account Mode</source>
+            <translation>多帳號模式</translation>
+        </message>
+        <message>
+            <source>Enable multi-account mode
+Need at least one account already logged in</source>
+            <translation>啟用多帳號模式
+至少需要先登入一個帳號</translation>
+        </message>
+        <message>
+            <source>Multi Account Independent Config</source>
+            <translation>帳號獨立配置</translation>
+        </message>
+        <message>
+            <source>Enable account-scoped task config overrides
+When enabled, each account can use different task parameters</source>
+            <translation>啟用帳號範圍的任務配置覆蓋
+啟用後，每個帳號可以使用不同的任務參數</translation>
+        </message>
+        <message>
+            <source>Account List</source>
+            <translation>帳號列表</translation>
+        </message>
+        <message>
+            <source>Account list, one per line
+Format: username or username,password (password is optional)</source>
+            <translation>帳號列表，每行一個
+格式：帳號或 帳號,密碼（密碼可省略）</translation>
         </message>
         <message>
             <source>Exit the Game and the App after Successfully Executing the Task</source>
@@ -2570,5 +2604,176 @@
             <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
             <translation>NPU推理錯誤，您可能需要更新Intel NPU驅動程式！</translation>
         </message>
-    </context>
-</TS>
+      </context>
+        <context>
+            <name>AccountConfigTab</name>
+            <message>
+                <source>Configure per-account task parameters.
+    Select an account, then select a task — the task's config widgets will appear below.
+    Only tasks with support_multi_account=True are listed.</source>
+                <translation>配置每個帳號的任務參數。
+    選擇一個帳號，然後選擇一個任務 — 任務的配置組件將在下方顯示。
+    僅列出支持 support_multi_account=True 的任務。</translation>
+            </message>
+            <message>
+                <source>Account Config Center</source>
+                <translation>帳號配置中心</translation>
+            </message>
+            <message>
+                <source>Account List</source>
+                <translation>帳號列表</translation>
+            </message>
+            <message>
+                <source>One account per line: username or username,password</source>
+                <translation>每行一個帳號: 用戶名或用戶名,密碼</translation>
+            </message>
+            <message>
+                <source>Account List Actions</source>
+                <translation>帳號列表操作</translation>
+            </message>
+            <message>
+                <source>Save Account List</source>
+                <translation>保存帳號列表</translation>
+            </message>
+            <message>
+                <source>Refresh</source>
+                <translation>刷新</translation>
+            </message>
+            <message>
+                <source>Account Base Settings</source>
+                <translation>帳號基礎設置</translation>
+            </message>
+            <message>
+                <source>Account</source>
+                <translation>帳號</translation>
+            </message>
+            <message>
+                <source>Select from account list or existing overrides</source>
+                <translation>從帳號列表或現有覆蓋中選擇</translation>
+            </message>
+            <message>
+                <source>Clear All Overrides for Account</source>
+                <translation>清空該帳號的所有覆蓋</translation>
+            </message>
+            <message>
+                <source>Task</source>
+                <translation>任務</translation>
+            </message>
+            <message>
+                <source>Select task to auto-render config widgets</source>
+                <translation>選擇任務以自動渲染配置組件</translation>
+            </message>
+            <message>
+                <source>View</source>
+                <translation>視圖</translation>
+            </message>
+            <message>
+                <source>Show only items that differ from the base config</source>
+                <translation>僅顯示與基礎配置不同的項目</translation>
+            </message>
+            <message>
+                <source>Diff Only</source>
+                <translation>僅顯示差異</translation>
+            </message>
+            <message>
+                <source>All</source>
+                <translation>全部</translation>
+            </message>
+            <message>
+                <source>Override Actions</source>
+                <translation>覆蓋操作</translation>
+            </message>
+            <message>
+                <source>Save Override for Account+Task</source>
+                <translation>保存帳號+任務的覆蓋配置</translation>
+            </message>
+            <message>
+                <source>Clear Override for Task</source>
+                <translation>清空該任務的覆蓋</translation>
+            </message>
+            <message>
+                <source>Account &amp; Task Selector</source>
+                <translation>帳號和任務選擇器</translation>
+            </message>
+            <message>
+                <source>Please select an account and a task first</source>
+                <translation>請先選擇一個帳號和任務</translation>
+            </message>
+            <message>
+                <source>Task Property Editor</source>
+                <translation>任務屬性編輯器</translation>
+            </message>
+            <message>
+                <source>Ready</source>
+                <translation>就緒</translation>
+            </message>
+            <message>
+                <source>Status</source>
+                <translation>狀態</translation>
+            </message>
+            <message>
+                <source>Executor not ready</source>
+                <translation>執行器未就緒</translation>
+            </message>
+            <message>
+                <source>No tasks with support_multi_account=True found</source>
+                <translation>未找到支持 support_multi_account=True 的任務</translation>
+            </message>
+            <message>
+                <source>Refreshed account and task config</source>
+                <translation>已刷新帳號和任務配置</translation>
+            </message>
+            <message>
+                <source>Account list saved</source>
+                <translation>帳號列表已保存</translation>
+            </message>
+            <message>
+                <source>Please select an account first</source>
+                <translation>請先選擇一個帳號</translation>
+            </message>
+            <message>
+                <source>Please select a task first</source>
+                <translation>請先選擇一個任務</translation>
+            </message>
+            <message>
+                <source>No diff items for this account/task</source>
+                <translation>該帳號/任務沒有差異項</translation>
+            </message>
+            <message>
+                <source>No editable config for this task</source>
+                <translation>該任務沒有可編輯的配置</translation>
+            </message>
+            <message>
+                <source>View: </source>
+                <translation>視圖: </translation>
+            </message>
+            <message>
+                <source>items shown</source>
+                <translation>項目已顯示</translation>
+            </message>
+            <message>
+                <source>Override task config for this account. Unset keys fall back to task defaults.</source>
+                <translation>覆蓋此帳號的任務配置。未設置的鍵將回退到任務默認值。</translation>
+            </message>
+            <message>
+                <source>Saved</source>
+                <translation>已保存</translation>
+            </message>
+            <message>
+                <source>items overridden</source>
+                <translation>項目已覆蓋</translation>
+            </message>
+            <message>
+                <source>No diff — override cleared:</source>
+                <translation>無差異 — 覆蓋已清空：</translation>
+            </message>
+            <message>
+                <source>Override cleared:</source>
+                <translation>覆蓋已清空：</translation>
+            </message>
+            <message>
+                <source>All overrides cleared for account:</source>
+                <translation>該帳號的所有覆蓋已清空：</translation>
+            </message>
+        </context>
+    </TS>

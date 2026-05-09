@@ -353,7 +353,7 @@ def adb_ui_dump(self) -> str
 ### click
 
 ```python
-def click(self, x: int | Box | List[Box] = -1, y=-1, move_back=False, name=None, interval=-1, move=True, down_time=0.01,
+def click(self, x: int | Box | List[Box] = -1, y=-1, move_back=False, name=None, interval=-1, move=True, down_time=0.02,
           after_sleep=0, key='left', hcenter=False, vcenter=False)
 ```
 
@@ -769,8 +769,8 @@ def clear_box(self)
 ### ocr
 
 ```python
-def ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None, threshold=0, frame=None,
-        target_height=0, use_grayscale=False, log=False, frame_processor=None, lib='default')
+def ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None, name=None, threshold=0, frame=None,
+        target_height=0, use_grayscale=False, log=False, screenshot=False, frame_processor=None, lib='default')
 ```
 
 对屏幕指定区域进行光学字符识别（OCR）。
