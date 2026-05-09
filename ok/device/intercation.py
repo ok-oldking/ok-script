@@ -401,7 +401,6 @@ class PostMessageInteraction(BaseInteraction):
         super().__init__(capture)
         self.hwnd_window = hwnd_window
         self.mouse_pos = (0, 0)
-        self.last_activate = 0
         self.activate_interval = 1
         self.lparam = 0x1e0001
         self.activated = 0
@@ -477,11 +476,13 @@ class PostMessageInteraction(BaseInteraction):
         # Send the WM_MOUSEWHEEL message
         self.post(win32con.WM_MOUSEWHEEL, wParam, long_position)
 
-    def post(self, message, wParam=0, lParam=0):
+    def post(self, message, wParam=0, lParam=0, hwnd=None):
+        if hwnd is None:
+            hwnd = self.hwnd
         try:
-            win32gui.PostMessage(self.hwnd, message, wParam, lParam)
+            win32gui.PostMessage(hwnd, message, wParam, lParam)
         except Exception as e:
-            logger.error(f'PostMessage error {self.hwnd}: {e}')
+            logger.error(f'PostMessage error {hwnd}: {e}')
 
     def swipe(self, x1, y1, x2, y2, duration=3, after_sleep=0.1, settle_time=0):
         # Move the mouse to the start point (x1, y1)
@@ -511,17 +512,24 @@ class PostMessageInteraction(BaseInteraction):
         # Release the left mouse button
         self.mouse_up()
 
-    def activate(self):
-        self.post(win32con.WM_ACTIVATE, win32con.WA_ACTIVE, 0)
+    def activate(self, hwnd=None):
+        self.post(win32con.WM_ACTIVATE, win32con.WA_ACTIVE, 0, hwnd=hwnd)
 
-    def deactivate(self):
-        self.post(win32con.WM_ACTIVATE, win32con.WA_INACTIVE, 0)
+    def deactivate(self, hwnd=None):
+        self.post(win32con.WM_ACTIVATE, win32con.WA_INACTIVE, 0, hwnd=hwnd)
 
     def try_activate(self):
         current_hwnd = self.hwnd
         if self.activated != current_hwnd:
-            if not self.hwnd_window.is_foreground():
-                self.activate()
+            hwnds = []
+            curr = current_hwnd
+            while curr:
+                hwnds.append(curr)
+                curr = win32gui.GetParent(curr)
+            
+            for h in reversed(hwnds):
+                self.activate(h)
+                
             self.activated = current_hwnd
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01, move=True, key="left"):
