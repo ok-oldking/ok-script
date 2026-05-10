@@ -192,12 +192,17 @@ class TaskExecutor:
         return support, f"{width}x{height}"
 
     def can_capture(self):
-        return self.method is not None and self.interaction is not None and self.interaction.should_capture()
+        if self.device_manager.get_preferred_device() is None:
+            return False
+        return (self.method is not None and self.method.connected()
+                and self.interaction is not None and self.interaction.should_capture())
 
     def next_frame(self):
         self.reset_scene()
         while not self.exit_event.is_set():
+            tried_capture = False
             if self.can_capture():
+                tried_capture = True
                 frame = self.method.get_frame()
                 if frame is not None:
                     height, width = frame.shape[:2]
@@ -207,7 +212,8 @@ class TaskExecutor:
                     self._last_frame_time = time.time()
                     return self._frame
             self.sleep(1)
-            logger.error("got no frame!")
+            if tried_capture:
+                logger.error("got no frame!")
         raise FinishedException()
 
     def is_executor_thread(self):
