@@ -21,9 +21,11 @@ class TriggerTaskTab(TaskTab):
         self.card_widgets.clear()
         
         for task in og.executor.trigger_tasks:
+            if not getattr(task, 'visible', True):
+                continue
             task_card = TaskCard(task, False)
             self.card_widgets.append(task_card)
             self.add_widget(task_card)
 
     def in_current_list(self, task):
-        return task in og.executor.trigger_tasks
+        return task in og.executor.trigger_tasks and getattr(task, 'visible', True)

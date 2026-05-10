@@ -1076,6 +1076,8 @@ class BaseTask(OCR):
         self.sleep_check_interval = -1
         self.last_sleep_check_time = 0
         self.in_sleep_check = False
+        self.enable_after_start = False
+        self.visible = True
         self.support_schedule_task = False
 
     def run_task_by_class(self, cls):

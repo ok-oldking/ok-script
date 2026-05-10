@@ -26,6 +26,7 @@ class StartController(QObject):
 
     def do_start(self, task=None, exit_after=False):
         communicate.starting_emulator.emit(False, None, self.start_timeout)
+        tasks_to_enable = []
         try:
             logger.info(f'do_start: call do_refresh {self.start_exe}')
             og.device_manager.do_refresh(True)
@@ -43,11 +44,20 @@ class StartController(QObject):
 
             if isinstance(task, int):
                 task = og.executor.onetime_tasks[task]
-                logger.info(f"enable task {task}")
+                logger.info(f"enable param task {task}")
+                tasks_to_enable.append(task)
                 if exit_after and task:
                     task.exit_after_task = True
                     communicate.task.emit(task)
-            if task:
+            elif task:
+                tasks_to_enable.append(task)
+
+            for start_task in og.executor.get_all_tasks():
+                if getattr(start_task, 'enable_after_start', False) and start_task not in tasks_to_enable:
+                    logger.info(f"enable_after_start task {start_task}")
+                    tasks_to_enable.append(start_task)
+
+            for task in tasks_to_enable:
                 task.enable()
                 task.unpause()
 
