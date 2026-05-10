@@ -412,8 +412,6 @@ class DeviceManager:
                 logger.warning(f'no devices')
                 return
         if self.config.get("preferred") != imei:
-            if self.executor:
-                self.executor.stop_current_task()
             logger.info(f'preferred device did change {imei}')
             self.config["preferred"] = imei
             if preferred.get('device') == 'windows' and preferred.get('real_hwnd'):
@@ -507,8 +505,6 @@ class DeviceManager:
 
     def set_capture(self, capture):
         if self.config.get("capture") != capture:
-            if self.executor:
-                self.executor.stop_current_task()
             self.config['capture'] = capture
             self.start()
 
@@ -526,8 +522,6 @@ class DeviceManager:
                 interaction = config_interaction
 
         if self.config.get("interaction") != interaction_name:
-            if self.executor:
-                self.executor.stop_current_task()
             self.config['interaction'] = interaction_name
             if interaction == 'PostMessage':
                 self.win_interaction_class = PostMessageInteraction
