@@ -61,6 +61,8 @@ class OneTimeTaskTab(TaskTab):
         
         self.tasks = []
         for task in og.executor.onetime_tasks:
+            if not getattr(task, 'visible', True):
+                continue
             task_group = getattr(task, 'group_name', None)
             if self.is_standalone and not task_group:
                 self.tasks.append(task)

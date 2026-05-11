@@ -301,6 +301,7 @@ class OK:
         self.global_config = GlobalConfig(config.get('global_configs'))
         windows_config = config.get('windows')
         if windows_config:
+            windows_config.setdefault('start_exe', True)
             capture_methods = windows_config.get('capture_method', [])
             available_methods = []
             for method in capture_methods:

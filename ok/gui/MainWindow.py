@@ -104,13 +104,16 @@ class MainWindow(MSFluentWindow):
         from ok import og
         self.imported_tabs = {}  # {file_name: tab_object}
         
-        if self.executor.onetime_tasks:
+        visible_onetime_tasks = [task for task in self.executor.onetime_tasks if getattr(task, 'visible', True)]
+        visible_trigger_tasks = [task for task in self.executor.trigger_tasks if getattr(task, 'visible', True)]
+
+        if visible_onetime_tasks:
             from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
             from collections import defaultdict
 
             groups = defaultdict(list)
             standalone_tasks = []
-            for task in executor.onetime_tasks:
+            for task in visible_onetime_tasks:
                 if task.group_name:
                     if task.group_name not in [imp['script_name'] for imp in og.task_manager.imported_scripts.values()]:
                         groups[task.group_name].append(task)
@@ -133,7 +136,7 @@ class MainWindow(MSFluentWindow):
                 self.addSubInterface(group_tab, group_icon, self.app.tr(group_name))
                 self.grouped_task_tabs.append(group_tab)
 
-        if len(executor.trigger_tasks) > 0:
+        if len(visible_trigger_tasks) > 0:
             from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
             self.trigger_tab = TriggerTaskTab()
             if self.first_task_tab is None:
@@ -168,7 +171,7 @@ class MainWindow(MSFluentWindow):
         communicate.task_list_updated.connect(self.update_imported_tabs)
 
         # 添加计划任务Tab
-        any_support_schedule = any(task.support_schedule_task for task in executor.onetime_tasks)
+        any_support_schedule = any(task.support_schedule_task for task in visible_onetime_tasks)
         if any_support_schedule:
             from ok.gui.tasks.ScheduleTaskTab import ScheduleTaskTab
             self.schedule_tab = ScheduleTaskTab(config=self.config)
@@ -223,7 +226,12 @@ class MainWindow(MSFluentWindow):
         imported_scripts = og.task_manager.imported_scripts
         
         # Remove tabs for scripts that no longer exist
-        scripts_to_remove = [fn for fn in self.imported_tabs if fn not in imported_scripts]
+        scripts_to_remove = [
+            fn for fn in self.imported_tabs
+            if fn not in imported_scripts or not any(
+                getattr(task, 'visible', True) for task in imported_scripts[fn].get('tasks', [])
+            )
+        ]
         for fn in scripts_to_remove:
             tab = self.imported_tabs.pop(fn)
             # Remove from navigation. MSFluentWindow provides navigation object
@@ -235,7 +243,7 @@ class MainWindow(MSFluentWindow):
         for file_name, imp in imported_scripts.items():
             if file_name not in self.imported_tabs:
                 script_name = imp['script_name']
-                tasks = imp.get('tasks', [])
+                tasks = [task for task in imp.get('tasks', []) if getattr(task, 'visible', True)]
                 if tasks:
                     group_tab = OneTimeTaskTab(is_standalone=False, group_name=script_name)
                     group_icon = tasks[0].group_icon if hasattr(tasks[0], 'group_icon') else FluentIcon.APPLICATION
@@ -386,7 +394,7 @@ class MainWindow(MSFluentWindow):
                 self.emulator_starting_dialog = StartLoadingDialog(seconds_left,
                                                                    self)
             else:
-                self.emulator_starting_dialog.set_seconds_left(seconds_left)
+                self.emulator_starting_dialog.restart_countdown(seconds_left)
             self.emulator_starting_dialog.show()
 
     def config_validation(self, message):

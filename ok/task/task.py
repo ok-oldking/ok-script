@@ -142,7 +142,7 @@ class ExecutorOperation:
         :return: True if successful. 如果成功返回 True。
         """
         if isinstance(x, Box) or isinstance(x, list):
-            return self.click_box(x, move_back=move_back, down_time=down_time, after_sleep=after_sleep)
+            return self.click_box(x, move_back=move_back, move=move, down_time=down_time, after_sleep=after_sleep)
         elif 0 < x < 1 or 0 < y < 1:
             return self.click_relative(x, y, move_back=move_back, move=move, interval=interval, after_sleep=after_sleep,
                                        name=name, down_time=down_time, key=key, hcenter=hcenter, vcenter=vcenter)
@@ -386,7 +386,7 @@ class ExecutorOperation:
         self.executor.reset_scene()
 
     def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=False,
-                  move_back=False, down_time=0.01, after_sleep=1):
+                  move_back=False, move=True, down_time=0.01, after_sleep=1):
         """
         Clicks on a box.
 
@@ -414,7 +414,7 @@ class ExecutorOperation:
                 raise Exception(f"click_box box is None")
             return
         x, y = box.relative_with_variance(relative_x, relative_y)
-        return self.click(x, y, name=box.name, move_back=move_back, down_time=down_time, after_sleep=after_sleep)
+        return self.click(x, y, name=box.name, move_back=move_back, move=move, down_time=down_time, after_sleep=after_sleep)
 
     def wait_scene(self, scene_type=None, time_out=0, pre_action=None, post_action=None):
         """
@@ -1076,6 +1076,8 @@ class BaseTask(OCR):
         self.sleep_check_interval = -1
         self.last_sleep_check_time = 0
         self.in_sleep_check = False
+        self.enable_after_start = False
+        self.visible = True
         self.support_schedule_task = False
 
     def run_task_by_class(self, cls):

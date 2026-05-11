@@ -192,11 +192,18 @@ class TaskExecutor:
         return support, f"{width}x{height}"
 
     def can_capture(self):
-        return self.method is not None and self.interaction is not None and self.interaction.should_capture()
+        if self.device_manager.get_preferred_device() is None:
+            return False
+        return (self.method is not None and self.method.connected()
+                and self.interaction is not None and self.interaction.should_capture())
 
-    def next_frame(self):
+    def next_frame(self, time_out=6):
         self.reset_scene()
+        start = time.time()
         while not self.exit_event.is_set():
+            self.check_enabled()
+            if time_out is not None and time.time() - start >= time_out:
+                return None
             if self.can_capture():
                 frame = self.method.get_frame()
                 if frame is not None:
@@ -206,8 +213,12 @@ class TaskExecutor:
                     self._frame = frame
                     self._last_frame_time = time.time()
                     return self._frame
-            self.sleep(1)
-            logger.error("got no frame!")
+            if time_out is not None and time.time() - start >= time_out:
+                return None
+            sleep_time = 1
+            if time_out is not None:
+                sleep_time = min(sleep_time, max(0, time_out - (time.time() - start)))
+            self.sleep(sleep_time)
         raise FinishedException()
 
     def is_executor_thread(self):
@@ -230,7 +241,7 @@ class TaskExecutor:
     def check_enabled(self, check_pause=True):
         if check_pause and self.paused:
             self.sleep(1)
-        if self.current_task and not self.current_task.enabled:
+        if self.current_task and not self.current_task._enabled:
             logger.info(f'{self.current_task} is disabled, raise Exception')
             self.current_task = None
             raise TaskDisabledException()
@@ -381,8 +392,6 @@ class TaskExecutor:
 
     def execute(self):
         logger.info(f"start execute")
-        task = None
-        cycled = False
         while not self.exit_event.is_set():
             if self.paused:
                 logger.info(f'executor is paused sleep')
@@ -402,7 +411,12 @@ class TaskExecutor:
                 if not is_trigger_task:
                     communicate.task.emit(task)
                 if cycled or self._frame is None:
-                    self.next_frame()
+                    if self.next_frame(time_out=4) is None and is_trigger_task:
+                        logger.info("no frame available, skip remaining trigger tasks")
+                        self.trigger_task_index = len(self.trigger_tasks) - 1
+                        self.current_task = None
+                        task.running = False
+                        continue
                 if is_trigger_task:
                     if task.run():
                         self.trigger_task_index = -1
@@ -453,9 +467,8 @@ class TaskExecutor:
                 else:
                     error = str(e)
                 communicate.notification.emit(error, name, True, True, None, params)
-                tab = "trigger" if is_trigger_task else "onetime"
                 task.info_set(QCoreApplication.tr('app', 'Error'), error)
-                logger.error(f"{name} exception", e)
+                logger.error(f"{name} exception stopped", e)
                 if self._frame is not None:
                     communicate.screenshot.emit(self.frame, name, True, None)
                 self.current_task = None

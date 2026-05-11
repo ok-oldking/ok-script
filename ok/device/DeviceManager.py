@@ -412,8 +412,6 @@ class DeviceManager:
                 logger.warning(f'no devices')
                 return
         if self.config.get("preferred") != imei:
-            if self.executor:
-                self.executor.stop_current_task()
             logger.info(f'preferred device did change {imei}')
             self.config["preferred"] = imei
             if preferred.get('device') == 'windows' and preferred.get('real_hwnd'):
@@ -507,8 +505,6 @@ class DeviceManager:
 
     def set_capture(self, capture):
         if self.config.get("capture") != capture:
-            if self.executor:
-                self.executor.stop_current_task()
             self.config['capture'] = capture
             self.start()
 
@@ -526,8 +522,6 @@ class DeviceManager:
                 interaction = config_interaction
 
         if self.config.get("interaction") != interaction_name:
-            if self.executor:
-                self.executor.stop_current_task()
             self.config['interaction'] = interaction_name
             if interaction == 'PostMessage':
                 self.win_interaction_class = PostMessageInteraction
@@ -686,6 +680,15 @@ class DeviceManager:
     def update_device_list(self):
         pass
 
+    def clear_devices(self):
+        logger.info('clear_devices')
+        self.device_dict.clear()
+        self.config['preferred'] = ''
+        self.config['selected_hwnd'] = 0
+        self.config['pc_full_path'] = ''
+        self._device = None
+        self.resolution_dict.clear()
+
     def shell(self, *args, **kwargs):
         device = self.device
         logger.debug(f'adb shell {device} {args} {kwargs}')
@@ -768,18 +771,18 @@ class DeviceManager:
     def ensure_capture(self, config: dict):
         import time
         logger.info(f'ensure_capture {config}')
+        self.clear_devices()
         if 'windows' in config:
             win_config = config['windows']
+            for key in ('title', 'hwnd_class', 'top_hwnd_class'):
+                if key in win_config:
+                    self.windows_capture_config[key] = win_config[key]
+                else:
+                    self.windows_capture_config.pop(key, None)
             if 'exe' in win_config:
                 exe_val = win_config['exe']
                 self.windows_capture_config['exe'] = [exe_val] if isinstance(exe_val, str) else exe_val
                 self.config['selected_exe'] = exe_val if isinstance(exe_val, str) else exe_val[0]
-            if 'hwnd_class' in win_config:
-                self.windows_capture_config['hwnd_class'] = win_config['hwnd_class']
-            if 'title' in win_config:
-                self.windows_capture_config['title'] = win_config['title']
-            else:
-                self.windows_capture_config.pop('title', None)
                 
             self.config['selected_hwnd'] = 0
                 

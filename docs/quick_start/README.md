@@ -48,6 +48,7 @@ pip install -r requirements.txt
 
 * **`windows`**: 如果您适配的是 **Windows 客户端游戏**，请填写此部分。
     * `exe`: 游戏的可执行文件名列表，例如 `['StarRail.exe']`。
+    * `start_exe`: 是否由脚本启动并检查游戏进程，默认 `True`。设为 `False` 时，启动任务时不会自动启动游戏或检查游戏是否已启动。
     * `interaction`: 交互方式，根据游戏类型选择，例如 `Genshin`, `PostMessage`, `Pynput` 等。
 * **`adb`**: 如果您适配的是 **安卓模拟器或真机游戏**，请填写此部分。
     * `packages`: 游戏的包名列表，例如 `['com.abc.efg1']`。

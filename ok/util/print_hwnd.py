@@ -1,6 +1,7 @@
 import win32gui
 import win32process
 import psutil
+import subprocess
 from collections import defaultdict
 
 
@@ -49,13 +50,17 @@ def print_hwnd_tree():
         except Exception:
             pid = 0
 
-        # Executable Name
+        # Executable Name and Command Line
         exe_name = "Unknown"
+        cmdline = ""
         if pid > 0:
             try:
-                exe_name = psutil.Process(pid).name()
+                process = psutil.Process(pid)
+                exe_name = process.name()
+                cmdline = subprocess.list2cmdline(process.cmdline())
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 exe_name = "Access Denied / Exited"
+                cmdline = ""
 
         # Store node info
         nodes[hwnd] = {
@@ -66,7 +71,8 @@ def print_hwnd_tree():
             "area": area,
             "class": cls_name,
             "pid": pid,
-            "exe": exe_name
+            "exe": exe_name,
+            "cmdline": cmdline
         }
 
         # Determine structural parent
@@ -103,7 +109,8 @@ def print_hwnd_tree():
             size_str = f"{info['width']}x{info['height']}"
 
             print(f"{indent}[HWND: {hwnd_hex}] | {vis_str} | Size: {size_str:<9} (Area: {info['area']:<7}) | "
-                  f"EXE: {info['exe']:<20} | PID: {info['pid']:<6} | Class: {info['class']}")
+                  f"EXE: {info['exe']:<20} | PID: {info['pid']:<6} | Class: {info['class']} | "
+                  f"CMD: {info['cmdline']}")
 
             # Recurse for children of this window
             traverse_and_print(child_hwnd, depth + 1)

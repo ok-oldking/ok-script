@@ -19,14 +19,16 @@ class StartController(QObject):
         self.exit_event = exit_event
         self.handler = Handler(exit_event, __name__)
         self.start_timeout = app_config.get('start_timeout', 60)
+        self.start_exe = (app_config.get('windows') or {}).get('start_exe', True)
 
     def start(self, task=None, exit_after=False):
         self.handler.post(lambda: self.do_start(task, exit_after))
 
     def do_start(self, task=None, exit_after=False):
         communicate.starting_emulator.emit(False, None, self.start_timeout)
+        tasks_to_enable = []
         try:
-            logger.info(f'do_start: call do_refresh')
+            logger.info(f'do_start: call do_refresh {self.start_exe}')
             og.device_manager.do_refresh(True)
         except Exception as e:
             logger.error(f'do_start do_refresh exception: {e}', e)
@@ -34,19 +36,34 @@ class StartController(QObject):
             return
 
         try:
-            if not self.start_device():
-                return
-    
+            if self.start_exe:
+                if not self.start_device():
+                    return
+            else:
+                logger.info('windows.start_exe is False, skip start_device')
+
+            def add_task_to_enable(enable_task):
+                if enable_task and enable_task not in tasks_to_enable:
+                    tasks_to_enable.append(enable_task)
+
+            for start_task in og.executor.get_all_tasks():
+                if getattr(start_task, 'enable_after_start', False):
+                    logger.info(f"enable_after_start task {start_task}")
+                    add_task_to_enable(start_task)
+
             if isinstance(task, int):
                 task = og.executor.onetime_tasks[task]
-                logger.info(f"enable task {task}")
+                logger.info(f"enable param task {task}")
+                add_task_to_enable(task)
                 if exit_after and task:
                     task.exit_after_task = True
                     communicate.task.emit(task)
-            if task:
-                task.enable()
-                task.unpause()
-    
+            elif task:
+                add_task_to_enable(task)
+
+            for task in tasks_to_enable:
+                task._enabled = True
+
             og.executor.start()
             communicate.starting_emulator.emit(True, None, 0)
         except Exception as e:
@@ -153,11 +170,13 @@ class StartController(QObject):
                     hwnd_window = og.device_manager.capture_method.hwnd_window
                     if hwnd_window.hwnd and hwnd_window.window_width > 0 and hwnd_window.window_height > 0:
                         from ok.util.window import resize_window
-                        logger.info(f"Window pos invalid, trying to center window with size {hwnd_window.window_width}x{hwnd_window.window_height}")
+                        logger.info(
+                            f"Window pos invalid, trying to center window with size {hwnd_window.window_width}x{hwnd_window.window_height}")
                         resize_window(hwnd_window.hwnd, hwnd_window.window_width, hwnd_window.window_height)
                         hwnd_window.do_update_window_size()
                     if not og.device_manager.capture_method.hwnd_window.pos_valid:
-                        return self.tr(f'Window is minimized or out of screen, and don\'t use full-screen exclusive mode!')
+                        return self.tr(
+                            f'Window is minimized or out of screen, and don\'t use full-screen exclusive mode!')
             frame = self.try_capture_a_frame()
             if frame is None:
                 logger.error(f'check_device_error: try_capture_a_frame returned None')

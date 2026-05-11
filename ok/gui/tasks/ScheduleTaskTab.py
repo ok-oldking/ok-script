@@ -301,7 +301,10 @@ class CreateScheduleTaskDialog(MessageBoxBase):
         self.titleLabel = SubtitleLabel(self.tr("Create Schedule Task"), self)
 
         # 获取所有 onetime_tasks
-        self.tasks = [task for task in (og.executor.onetime_tasks if og.executor.onetime_tasks else []) if task.support_schedule_task]
+        self.tasks = [
+            task for task in (og.executor.onetime_tasks if og.executor.onetime_tasks else [])
+            if task.support_schedule_task and getattr(task, 'visible', True)
+        ]
         self.task_names = [og.app.tr(task.name) for task in self.tasks]
 
         self.viewLayout.setSpacing(12)

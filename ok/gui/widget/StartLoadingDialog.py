@@ -25,11 +25,7 @@ class StartLoadingDialog(MaskDialogBase):
         self.loading_label.setAlignment(Qt.AlignCenter)
 
         self.timer = None
-        if seconds_left > 0:
-            self.timer = QTimer(self)
-            self.timer.setInterval(1000)
-            self.timer.timeout.connect(self.update_countdown)
-            self.timer.start()
+        self.restart_countdown(seconds_left)
         self.widget.setLayout(layout)
 
         layout.addStretch(1)
@@ -50,6 +46,17 @@ class StartLoadingDialog(MaskDialogBase):
         else:
             text = self.tr('Loading')
         self.loading_label.setText(f'<h2>{text}</h2>')
+
+    def restart_countdown(self, seconds_left: int):
+        self.set_seconds_left(seconds_left)
+        if seconds_left > 0:
+            if self.timer is None:
+                self.timer = QTimer(self)
+                self.timer.setInterval(1000)
+                self.timer.timeout.connect(self.update_countdown)
+            self.timer.start()
+        elif self.timer is not None:
+            self.timer.stop()
 
     def update_countdown(self):
         self.seconds_left -= 1
