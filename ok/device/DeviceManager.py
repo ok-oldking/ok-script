@@ -774,16 +774,15 @@ class DeviceManager:
         self.clear_devices()
         if 'windows' in config:
             win_config = config['windows']
+            for key in ('title', 'hwnd_class', 'top_hwnd_class'):
+                if key in win_config:
+                    self.windows_capture_config[key] = win_config[key]
+                else:
+                    self.windows_capture_config.pop(key, None)
             if 'exe' in win_config:
                 exe_val = win_config['exe']
                 self.windows_capture_config['exe'] = [exe_val] if isinstance(exe_val, str) else exe_val
                 self.config['selected_exe'] = exe_val if isinstance(exe_val, str) else exe_val[0]
-            if 'hwnd_class' in win_config:
-                self.windows_capture_config['hwnd_class'] = win_config['hwnd_class']
-            if 'title' in win_config:
-                self.windows_capture_config['title'] = win_config['title']
-            else:
-                self.windows_capture_config.pop('title', None)
                 
             self.config['selected_hwnd'] = 0
                 
