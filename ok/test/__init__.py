@@ -16,6 +16,17 @@ def init_ok(config):
         ok.task_executor.debug_mode = True
         ok.device_manager.capture_method = ImageCaptureMethod(
             ok.device_manager.exit_event, [])
+        ok.device_manager.device_dict['image'] = {
+            'address': '',
+            'imei': 'image',
+            'device': 'image',
+            'nick': 'Image',
+            'width': 0,
+            'height': 0,
+            'capture': 'image',
+            'connected': True,
+        }
+        ok.device_manager.config['preferred'] = 'image'
         ok.device_manager.interaction = DoNothingInteraction(
             ok.device_manager.capture_method)
         if scene_config := config.get('scene'):

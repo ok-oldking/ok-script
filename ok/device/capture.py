@@ -1462,6 +1462,8 @@ class ImageCaptureMethod(BaseCaptureMethod):
             image_path = self.images[self.index]
             if image_path:
                 frame = cv2.imdecode(np.fromfile(image_path, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+                if frame is None:
+                    raise CaptureException(f'Cannot load image: {image_path}')
                 if self.index < len(self.images) - 1:
                     self.index += 1
                 return frame
