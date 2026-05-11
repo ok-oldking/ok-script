@@ -42,24 +42,27 @@ class StartController(QObject):
             else:
                 logger.info('windows.start_exe is False, skip start_device')
 
+            def add_task_to_enable(enable_task):
+                if enable_task and enable_task not in tasks_to_enable:
+                    tasks_to_enable.append(enable_task)
+
+            for start_task in og.executor.get_all_tasks():
+                if getattr(start_task, 'enable_after_start', False):
+                    logger.info(f"enable_after_start task {start_task}")
+                    add_task_to_enable(start_task)
+
             if isinstance(task, int):
                 task = og.executor.onetime_tasks[task]
                 logger.info(f"enable param task {task}")
-                tasks_to_enable.append(task)
+                add_task_to_enable(task)
                 if exit_after and task:
                     task.exit_after_task = True
                     communicate.task.emit(task)
             elif task:
-                tasks_to_enable.append(task)
-
-            for start_task in og.executor.get_all_tasks():
-                if getattr(start_task, 'enable_after_start', False) and start_task not in tasks_to_enable:
-                    logger.info(f"enable_after_start task {start_task}")
-                    tasks_to_enable.append(start_task)
+                add_task_to_enable(task)
 
             for task in tasks_to_enable:
-                task.enable()
-                task.unpause()
+                task._enabled = True
 
             og.executor.start()
             communicate.starting_emulator.emit(True, None, 0)
