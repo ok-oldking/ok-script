@@ -197,7 +197,7 @@ class TaskExecutor:
         return (self.method is not None and self.method.connected()
                 and self.interaction is not None and self.interaction.should_capture())
 
-    def next_frame(self, time_out=None):
+    def next_frame(self, time_out=6):
         self.reset_scene()
         start = time.time()
         while not self.exit_event.is_set():
@@ -411,7 +411,7 @@ class TaskExecutor:
                 if not is_trigger_task:
                     communicate.task.emit(task)
                 if cycled or self._frame is None:
-                    if self.next_frame(time_out=2) is None and is_trigger_task:
+                    if self.next_frame(time_out=4) is None and is_trigger_task:
                         logger.info("no frame available, skip remaining trigger tasks")
                         self.trigger_task_index = len(self.trigger_tasks) - 1
                         self.current_task = None
