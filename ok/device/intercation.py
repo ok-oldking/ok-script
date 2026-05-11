@@ -401,11 +401,8 @@ class PostMessageInteraction(BaseInteraction):
         super().__init__(capture)
         self.hwnd_window = hwnd_window
         self.mouse_pos = (0, 0)
-        self.activate_interval = 1
         self.lparam = 0x1e0001
-        self.activated = 0
         self._dynamic_target_hwnd = 0
-        self.hwnd_window.visible_monitors.append(self)
 
     @property
     def hwnd(self):
@@ -413,9 +410,6 @@ class PostMessageInteraction(BaseInteraction):
             if win32gui.IsWindow(self._dynamic_target_hwnd):
                 return self._dynamic_target_hwnd
         return self.hwnd_window.top_hwnd if self.hwnd_window.top_hwnd else self.hwnd_window.hwnd
-
-    def on_visible(self, visible):
-        self.activated = visible
 
     def send_key(self, key, down_time=0.01):
         super().send_key(key, down_time)
@@ -519,18 +513,12 @@ class PostMessageInteraction(BaseInteraction):
         self.post(win32con.WM_ACTIVATE, win32con.WA_INACTIVE, 0, hwnd=hwnd)
 
     def try_activate(self):
+        base_hwnd = self.hwnd_window.hwnd
         current_hwnd = self.hwnd
-        if self.activated != current_hwnd:
-            hwnds = []
-            curr = current_hwnd
-            while curr:
-                hwnds.append(curr)
-                curr = win32gui.GetParent(curr)
-            
-            for h in reversed(hwnds):
-                self.activate(h)
-                
-            self.activated = current_hwnd
+
+        self.activate(base_hwnd)
+        if current_hwnd != base_hwnd:
+            self.activate(current_hwnd)
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01, move=True, key="left"):
         super().click(x, y, name=name)
