@@ -680,6 +680,15 @@ class DeviceManager:
     def update_device_list(self):
         pass
 
+    def clear_devices(self):
+        logger.info('clear_devices')
+        self.device_dict.clear()
+        self.config['preferred'] = ''
+        self.config['selected_hwnd'] = 0
+        self.config['pc_full_path'] = ''
+        self._device = None
+        self.resolution_dict.clear()
+
     def shell(self, *args, **kwargs):
         device = self.device
         logger.debug(f'adb shell {device} {args} {kwargs}')
@@ -762,6 +771,7 @@ class DeviceManager:
     def ensure_capture(self, config: dict):
         import time
         logger.info(f'ensure_capture {config}')
+        self.clear_devices()
         if 'windows' in config:
             win_config = config['windows']
             if 'exe' in win_config:
