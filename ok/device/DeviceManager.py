@@ -211,7 +211,6 @@ class DeviceManager:
                             "resolution": f"{width}x{height}"
                         }
                         self.device_dict[imei] = pc_device
-                self.prune_duplicate_exe_devices()
                 return None
 
             name, hwnd, full_path, x, y, width, height, hwnds = find_hwnd(self.windows_capture_config.get('title'),
@@ -246,47 +245,7 @@ class DeviceManager:
             self.device_dict[imei] = pc_device
             if imei != 'pc':
                 self.device_dict.pop('pc', None)
-            self.prune_duplicate_exe_devices()
             return imei
-
-    def _normalized_device_exes(self, device):
-        exe = device.get('exe')
-        if not exe:
-            return set()
-        if isinstance(exe, str):
-            exe = [exe]
-        normalized = set()
-        for item in exe:
-            if item:
-                normalized.add(os.path.normcase(os.path.basename(item)))
-        return normalized
-
-    def prune_duplicate_exe_devices(self):
-        preferred_imei = self.config.get("preferred")
-        exe_devices = {}
-        for imei, device in self.device_dict.items():
-            for exe in self._normalized_device_exes(device):
-                exe_devices.setdefault(exe, []).append((imei, device))
-
-        keys_to_remove = set()
-        preferred_replacement = None
-        for exe, devices in exe_devices.items():
-            connected_devices = [(imei, device) for imei, device in devices if device.get('connected')]
-            if not connected_devices:
-                continue
-            keep_imei = next((imei for imei, _ in connected_devices if imei == preferred_imei), connected_devices[0][0])
-            for imei, _ in devices:
-                if imei != keep_imei:
-                    keys_to_remove.add(imei)
-                    if imei == preferred_imei:
-                        preferred_replacement = keep_imei
-
-        if preferred_replacement is not None:
-            logger.info(f'preferred device will be pruned, switch preferred to {preferred_replacement}')
-            self.set_preferred_device(preferred_replacement)
-        for key in keys_to_remove:
-            logger.info(f'prune duplicate exe device {key}: {self.device_dict.get(key)}')
-            self.device_dict.pop(key, None)
 
     def update_browser_device(self):
         if self.browser_config and windows_graphics_available():
@@ -312,7 +271,6 @@ class DeviceManager:
             self.refresh_phones(current)
             self.update_pc_device()
             self.update_browser_device()
-            self.prune_duplicate_exe_devices()
         except Exception as e:
             logger.error('refresh error', e)
 
