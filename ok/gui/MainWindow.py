@@ -394,7 +394,7 @@ class MainWindow(MSFluentWindow):
                 self.emulator_starting_dialog = StartLoadingDialog(seconds_left,
                                                                    self)
             else:
-                self.emulator_starting_dialog.set_seconds_left(seconds_left)
+                self.emulator_starting_dialog.restart_countdown(seconds_left)
             self.emulator_starting_dialog.show()
 
     def config_validation(self, message):
