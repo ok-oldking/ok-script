@@ -588,22 +588,24 @@ class FindFeature(ExecutorOperation):
             box = self.executor.feature_set.get_box_by_name(self.frame, name)
             if box:
                 return box
-        if name == 'right':
-            return self.box_of_screen(0.5, 0, 1, 1)
+        if name == 'full_screen':
+            return self.box_of_screen(0, 0, 1, 1, name=name)
+        elif name == 'right':
+            return self.box_of_screen(0.5, 0, 1, 1, name=name)
         elif name == 'bottom_right':
-            return self.box_of_screen(0.5, 0.5, 1, 1)
+            return self.box_of_screen(0.5, 0.5, 1, 1, name=name)
         elif name == 'top_right':
-            return self.box_of_screen(0.5, 0, 1, 0.5)
+            return self.box_of_screen(0.5, 0, 1, 0.5, name=name)
         elif name == 'left':
-            return self.box_of_screen(0, 0, 0.5, 1)
+            return self.box_of_screen(0, 0, 0.5, 1, name=name)
         elif name == 'bottom_left':
-            return self.box_of_screen(0, 0.5, 0.5, 1)
+            return self.box_of_screen(0, 0.5, 0.5, 1, name=name)
         elif name == 'top_left':
-            return self.box_of_screen(0, 0, 0.5, 0.5)
+            return self.box_of_screen(0, 0, 0.5, 0.5, name=name)
         elif name == 'bottom':
-            return self.box_of_screen(0, 0.5, 1, 1)
+            return self.box_of_screen(0, 0.5, 1, 1, name=name)
         elif name == 'top':
-            return self.box_of_screen(0, 0, 1, 0.5)
+            return self.box_of_screen(0, 0, 1, 0.5, name=name)
         else:
             raise ValueError(f"No box found for category {name}")
 

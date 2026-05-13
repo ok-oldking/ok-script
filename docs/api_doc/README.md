@@ -895,6 +895,7 @@ def get_box_by_name(self, name) -> Box
 根据名称获取一个预定义的 `Box`。名称可以是定义的特征名，也可以是内置预设区域。
 
 - **可选预设名称:**
+    - `full_screen`
     - `top`, `bottom`, `left`, `right`
     - `top_left`, `top_right`, `bottom_left`, `bottom_right`
 - **返回:**

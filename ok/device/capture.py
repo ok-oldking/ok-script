@@ -321,6 +321,8 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         self.immediatedc = None
         self.last_frame = None
         self.last_size = None
+        self.last_start_failure_key = None
+        self.last_start_failure_time = 0
         self.start_or_stop()
 
     def frame_arrived_callback(self, *args):
@@ -412,6 +414,15 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     def connected(self):
         return self.hwnd_window is not None and self.hwnd_window.exists and self.frame_pool is not None
 
+    def get_capture_hwnd(self):
+        hwnd = getattr(self.hwnd_window, 'hwnd', 0)
+        try:
+            if hwnd and win32gui.IsWindow(hwnd):
+                return hwnd
+        except Exception:
+            pass
+        return 0
+
     def start_or_stop(self, capture_cursor=False):
         with self.lock:
             if self.exit_event.is_set():
@@ -422,12 +433,22 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 logger.warning('start_or_stop not self.hwnd_window.exists')
                 self.close()
                 return False
-            
-            if self.frame_pool is not None and self.capture_hwnd != self.hwnd_window.hwnd:
-                logger.info(f'start_or_stop hwnd changed from {self.capture_hwnd} to {self.hwnd_window.hwnd}')
+
+            capture_hwnd = self.get_capture_hwnd()
+            if not capture_hwnd:
+                logger.warning(f'start_or_stop no valid hwnd: {self.hwnd_window}')
+                self.close()
+                return False
+
+            if self.frame_pool is not None and self.capture_hwnd != capture_hwnd:
+                logger.info(f'start_or_stop hwnd changed from {self.capture_hwnd} to {capture_hwnd}')
                 self.close()
 
-            if self.hwnd_window.hwnd and self.hwnd_window.exists and self.frame_pool is None:
+            failure_key = capture_hwnd
+            if self.frame_pool is None and self.last_start_failure_key == failure_key and time.time() - self.last_start_failure_time < 5:
+                return False
+
+            if self.hwnd_window.exists and self.frame_pool is None:
                 logger.info('start_or_stop start WGC capture')
                 try:
                     from ok.capture.windows import d3d11
@@ -450,8 +471,8 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                     self.dxdevice = self.d3d11.ID3D11Device()
                     self.immediatedc = self.d3d11.ID3D11DeviceContext()
                     self.create_device()
-                    self.capture_hwnd = self.hwnd_window.hwnd
-                    item = interop.CreateForWindow(self.hwnd_window.hwnd, IGraphicsCaptureItem.GUID)
+                    self.capture_hwnd = capture_hwnd
+                    item = interop.CreateForWindow(capture_hwnd, IGraphicsCaptureItem.GUID)
                     self.item = item
                     self.last_size = item.Size
                     delegate = TypedEventHandler(GraphicsCaptureItem, IInspectable).delegate(
@@ -470,8 +491,12 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                     if WINDOWS_BUILD_NUMBER >= WGC_NO_BORDER_MIN_BUILD:
                         self.session.IsBorderRequired = False
                     self.session.StartCapture()
+                    self.last_start_failure_key = None
                     return True
                 except Exception as e:
+                    self.last_start_failure_key = failure_key
+                    self.last_start_failure_time = time.time()
+                    self.close()
                     logger.error(f'start_or_stop failed: {self.hwnd_window}', exception=e)
                     return False
             return self.hwnd_window.exists
@@ -802,11 +827,13 @@ class HwndWindow:
                 selected_hwnd=self.device_manager.config.get('selected_hwnd'),
                 top_hwnd_class=self.top_hwnd_class, last_hwnd=self.hwnd)
 
-            if self.hwnd == 0 and find_hwnd_res > 0:
+            if find_hwnd_res > 0 and self.hwnd != find_hwnd_res:
+                old_hwnd = self.hwnd
                 self.hwnd = find_hwnd_res
                 self.exe_full_path = exe_full_path
+                self._hwnd_title = ""
                 logger.info(
-                    f'do_update_window_size find_hwnd {self.hwnd} top {hwnds[0][0] if hwnds else self.hwnd} {self.exe_full_path} {win32gui.GetClassName(self.hwnd)} real:{real_x_offset},{real_y_offset},{real_width},{real_height}')
+                    f'do_update_window_size hwnd changed from {old_hwnd} to {self.hwnd} top {hwnds[0][0] if hwnds else self.hwnd} {self.exe_full_path} {win32gui.GetClassName(self.hwnd)} real:{real_x_offset},{real_y_offset},{real_width},{real_height}')
                 changed = True
 
             if find_hwnd_res > 0:
