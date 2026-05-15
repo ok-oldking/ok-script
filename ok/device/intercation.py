@@ -15,6 +15,40 @@ from ok.util.process import is_admin
 
 logger = Logger.get_logger(__name__)
 
+PYDIRECT_KEY_MAP = {
+    'alt_l': 'altleft',
+    'alt_r': 'altright',
+    'lalt': 'altleft',
+    'ralt': 'altright',
+    'ctrl_l': 'ctrlleft',
+    'ctrl_r': 'ctrlright',
+    'lctrl': 'ctrlleft',
+    'rctrl': 'ctrlright',
+    'lcontrol': 'ctrlleft',
+    'rcontrol': 'ctrlright',
+    'shift_l': 'shiftleft',
+    'shift_r': 'shiftright',
+    'lshift': 'shiftleft',
+    'rshift': 'shiftright',
+    'page_up': 'pageup',
+    'page_down': 'pagedown',
+    'caps_lock': 'capslock',
+    'num_lock': 'numlock',
+    'scroll_lock': 'scrolllock',
+    'print_screen': 'printscreen',
+    'cmd': 'win',
+    'cmd_l': 'win',
+    'cmd_r': 'win',
+    'command': 'win',
+    'meta': 'win',
+    'windows': 'win',
+}
+
+
+def normalize_pydirect_key(key):
+    key = str(key)
+    return PYDIRECT_KEY_MAP.get(key.lower(), key)
+
 
 class BaseInteraction:
 
@@ -48,10 +82,8 @@ class BaseInteraction:
     def input_text(self, text):
         pass
 
-    def back(self, after_sleep=0):
+    def back(self):
         self.send_key('esc')
-        if after_sleep > 0:
-            time.sleep(after_sleep)
 
     def scroll(self, x, y, scroll_amount):
         pass
@@ -85,15 +117,16 @@ class PyDirectInteraction(BaseInteraction):
         if not self.clickable():
             logger.error(f"can't click on {key}, because capture is not clickable")
             return
-        pydirectinput.keyDown(str(key))
+        key = normalize_pydirect_key(key)
+        pydirectinput.keyDown(key)
         time.sleep(down_time)
-        pydirectinput.keyUp(str(key))
+        pydirectinput.keyUp(key)
 
     def send_key_down(self, key):
         if not self.clickable():
             logger.error(f"can't click on {key}, because capture is not clickable")
             return
-        pydirectinput.keyDown(str(key))
+        pydirectinput.keyDown(normalize_pydirect_key(key))
 
     def scroll(self, x, y, scroll_amount):
         import mouse
@@ -115,7 +148,7 @@ class PyDirectInteraction(BaseInteraction):
         if not self.clickable():
             logger.error(f"can't click on {key}, because capture is not clickable")
             return
-        pydirectinput.keyUp(str(key))
+        pydirectinput.keyUp(normalize_pydirect_key(key))
 
     def move(self, x, y):
         import mouse
@@ -124,7 +157,7 @@ class PyDirectInteraction(BaseInteraction):
         x, y = self.capture.get_abs_cords(x, y)
         mouse.move(x, y)
 
-    def swipe(self, x1, y1, x2, y2, duration, after_sleep=0.1, settle_time=0):
+    def swipe(self, x1, y1, x2, y2, duration, settle_time=0):
         x1, y1 = self.capture.get_abs_cords(x1, y1)
         x2, y2 = self.capture.get_abs_cords(x2, y2)
 
@@ -144,8 +177,6 @@ class PyDirectInteraction(BaseInteraction):
         for i in range(steps):
             pydirectinput.moveTo(x1 + int(i * step_dx), y1 + int(i * step_dy))
             time.sleep(0.01)
-        if after_sleep > 0:
-            time.sleep(after_sleep)
         pydirectinput.mouseUp()
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01, move=False, key="left"):
@@ -202,6 +233,8 @@ class PynputInteraction(BaseInteraction):
         'rctrl': 'ctrl_r',
         'lalt': 'alt_l',
         'ralt': 'alt_r',
+        'lcontrol': 'ctrl_l',
+        'rcontrol': 'ctrl_r',
         'return': 'enter',
         'pageup': 'page_up',
         'pagedown': 'page_down',
@@ -210,6 +243,7 @@ class PynputInteraction(BaseInteraction):
         'scrolllock': 'scroll_lock',
         'printscreen': 'print_screen',
         'windows': 'cmd',
+        'win': 'cmd',
         'command': 'cmd',
         'meta': 'cmd'
     }
@@ -296,7 +330,7 @@ class PynputInteraction(BaseInteraction):
         controller = mouse.Controller()
         controller.position = (abs_x, abs_y)
 
-    def swipe(self, x1, y1, x2, y2, duration, after_sleep=0.1, settle_time=0):
+    def swipe(self, x1, y1, x2, y2, duration, settle_time=0):
         from pynput import mouse
         x1, y1 = self.capture.get_abs_cords(x1, y1)
         x2, y2 = self.capture.get_abs_cords(x2, y2)
@@ -321,9 +355,6 @@ class PynputInteraction(BaseInteraction):
             controller.position = (x1 + int(i * step_dx), y1 + int(i * step_dy))
             time.sleep(0.01)
         controller.position = (x2, y2)
-
-        if after_sleep > 0:
-            time.sleep(after_sleep)
 
         controller.release(mouse.Button.left)
 
@@ -478,7 +509,7 @@ class PostMessageInteraction(BaseInteraction):
         except Exception as e:
             logger.error(f'PostMessage error {hwnd}: {e}')
 
-    def swipe(self, x1, y1, x2, y2, duration=3, after_sleep=0.1, settle_time=0):
+    def swipe(self, x1, y1, x2, y2, duration=3, settle_time=0):
         # Move the mouse to the start point (x1, y1)
         self.move(x1, y1)
         time.sleep(0.1)  # Pause for a moment
@@ -501,8 +532,6 @@ class PostMessageInteraction(BaseInteraction):
         for i in range(steps):
             self.move(x1 + int(i * step_dx), y1 + int(i * step_dy), down_btn=win32con.MK_LBUTTON)
             time.sleep(0.01)  # Sleep for 10ms
-        if after_sleep > 0:
-            time.sleep(after_sleep)
         # Release the left mouse button
         self.mouse_up()
 
@@ -672,20 +701,55 @@ vk_key_dict = {
     'F12': win32con.VK_F12,
     'ESC': win32con.VK_ESCAPE,
     'CTRL': win32con.VK_CONTROL,
+    'CONTROL': win32con.VK_CONTROL,
+    'LCTRL': win32con.VK_LCONTROL,
+    'RCTRL': win32con.VK_RCONTROL,
+    'CTRL_L': win32con.VK_LCONTROL,
+    'CTRL_R': win32con.VK_RCONTROL,
+    'LCONTROL': win32con.VK_LCONTROL,
+    'RCONTROL': win32con.VK_RCONTROL,
     'ALT': win32con.VK_MENU,
     'LALT': win32con.VK_LMENU,
-    'CONTROL': win32con.VK_CONTROL,
-    'LCONTROL': win32con.VK_LCONTROL,
+    'RALT': win32con.VK_RMENU,
+    'ALT_L': win32con.VK_LMENU,
+    'ALT_R': win32con.VK_RMENU,
     'SHIFT': win32con.VK_SHIFT,
     'LSHIFT': win32con.VK_LSHIFT,
+    'RSHIFT': win32con.VK_RSHIFT,
+    'SHIFT_L': win32con.VK_LSHIFT,
+    'SHIFT_R': win32con.VK_RSHIFT,
     'TAB': win32con.VK_TAB,
     'ENTER': win32con.VK_RETURN,
+    'RETURN': win32con.VK_RETURN,
     'SPACE': win32con.VK_SPACE,
     'LEFT': win32con.VK_LEFT,
     'UP': win32con.VK_UP,
     'RIGHT': win32con.VK_RIGHT,
     'DOWN': win32con.VK_DOWN,
     'BACKSPACE': win32con.VK_BACK,
+    'PAGEUP': win32con.VK_PRIOR,
+    'PAGE_UP': win32con.VK_PRIOR,
+    'PAGEDOWN': win32con.VK_NEXT,
+    'PAGE_DOWN': win32con.VK_NEXT,
+    'HOME': win32con.VK_HOME,
+    'END': win32con.VK_END,
+    'INSERT': win32con.VK_INSERT,
+    'DELETE': win32con.VK_DELETE,
+    'CAPSLOCK': win32con.VK_CAPITAL,
+    'CAPS_LOCK': win32con.VK_CAPITAL,
+    'NUMLOCK': win32con.VK_NUMLOCK,
+    'NUM_LOCK': win32con.VK_NUMLOCK,
+    'SCROLLLOCK': win32con.VK_SCROLL,
+    'SCROLL_LOCK': win32con.VK_SCROLL,
+    'PRINTSCREEN': win32con.VK_SNAPSHOT,
+    'PRINT_SCREEN': win32con.VK_SNAPSHOT,
+    'WIN': win32con.VK_LWIN,
+    'WINDOWS': win32con.VK_LWIN,
+    'COMMAND': win32con.VK_LWIN,
+    'CMD': win32con.VK_LWIN,
+    'CMD_L': win32con.VK_LWIN,
+    'CMD_R': win32con.VK_RWIN,
+    'META': win32con.VK_LWIN,
     # Add more keys as needed
 }
 
@@ -712,19 +776,45 @@ class BrowserInteraction(BaseInteraction):
             "win": "Meta",
             "windows": "Meta",
             "command": "Meta",
+            "cmd": "Meta",
+            "cmd_l": "MetaLeft",
+            "cmd_r": "MetaRight",
             "meta": "Meta",
             "alt": "Alt",
             "lalt": "Alt",
             "ralt": "Alt",
+            "alt_l": "AltLeft",
+            "alt_r": "AltRight",
+            "alt_gr": "AltRight",
             "ctrl": "Control",
             "control": "Control",
             "lctrl": "Control",
             "rctrl": "Control",
             "lcontrol": "Control",
             "rcontrol": "Control",
+            "ctrl_l": "ControlLeft",
+            "ctrl_r": "ControlRight",
             "shift": "Shift",
             "lshift": "ShiftLeft",
             "rshift": "Shift",
+            "shift_l": "ShiftLeft",
+            "shift_r": "ShiftRight",
+            "pageup": "PageUp",
+            "pagedown": "PageDown",
+            "page_up": "PageUp",
+            "page_down": "PageDown",
+            "capslock": "CapsLock",
+            "caps_lock": "CapsLock",
+            "numlock": "NumLock",
+            "num_lock": "NumLock",
+            "scrolllock": "ScrollLock",
+            "scroll_lock": "ScrollLock",
+            "printscreen": "PrintScreen",
+            "print_screen": "PrintScreen",
+            "delete": "Delete",
+            "insert": "Insert",
+            "home": "Home",
+            "end": "End",
         }
 
     def _map_key(self, key):
@@ -830,7 +920,7 @@ class BrowserInteraction(BaseInteraction):
 
         self._run_action(_act())
 
-    def swipe(self, x1, y1, x2, y2, duration, after_sleep=0.1, settle_time=0):
+    def swipe(self, x1, y1, x2, y2, duration, settle_time=0):
         async def _act():
             await self.capture.page.mouse.move(x1, y1)
             await self.capture.page.mouse.down()
@@ -849,8 +939,53 @@ class BrowserInteraction(BaseInteraction):
             await self.capture.page.mouse.up()
 
         self._run_action(_act())
-        if after_sleep > 0:
-            time.sleep(after_sleep)
+
+
+ADB_KEY_MAP = {
+    'esc': 'KEYCODE_ESCAPE',
+    'enter': 'KEYCODE_ENTER',
+    'return': 'KEYCODE_ENTER',
+    'space': 'KEYCODE_SPACE',
+    'backspace': 'KEYCODE_DEL',
+    'delete': 'KEYCODE_FORWARD_DEL',
+    'tab': 'KEYCODE_TAB',
+    'home': 'KEYCODE_HOME',
+    'pageup': 'KEYCODE_PAGE_UP',
+    'page_up': 'KEYCODE_PAGE_UP',
+    'pagedown': 'KEYCODE_PAGE_DOWN',
+    'page_down': 'KEYCODE_PAGE_DOWN',
+    'up': 'KEYCODE_DPAD_UP',
+    'down': 'KEYCODE_DPAD_DOWN',
+    'left': 'KEYCODE_DPAD_LEFT',
+    'right': 'KEYCODE_DPAD_RIGHT',
+    'alt': 'KEYCODE_ALT_LEFT',
+    'lalt': 'KEYCODE_ALT_LEFT',
+    'alt_l': 'KEYCODE_ALT_LEFT',
+    'ralt': 'KEYCODE_ALT_RIGHT',
+    'alt_r': 'KEYCODE_ALT_RIGHT',
+    'alt_gr': 'KEYCODE_ALT_RIGHT',
+    'ctrl': 'KEYCODE_CTRL_LEFT',
+    'control': 'KEYCODE_CTRL_LEFT',
+    'lctrl': 'KEYCODE_CTRL_LEFT',
+    'lcontrol': 'KEYCODE_CTRL_LEFT',
+    'ctrl_l': 'KEYCODE_CTRL_LEFT',
+    'rctrl': 'KEYCODE_CTRL_RIGHT',
+    'rcontrol': 'KEYCODE_CTRL_RIGHT',
+    'ctrl_r': 'KEYCODE_CTRL_RIGHT',
+    'shift': 'KEYCODE_SHIFT_LEFT',
+    'lshift': 'KEYCODE_SHIFT_LEFT',
+    'shift_l': 'KEYCODE_SHIFT_LEFT',
+    'rshift': 'KEYCODE_SHIFT_RIGHT',
+    'shift_r': 'KEYCODE_SHIFT_RIGHT',
+    'capslock': 'KEYCODE_CAPS_LOCK',
+    'caps_lock': 'KEYCODE_CAPS_LOCK',
+    'numlock': 'KEYCODE_NUM_LOCK',
+    'num_lock': 'KEYCODE_NUM_LOCK',
+    'scrolllock': 'KEYCODE_SCROLL_LOCK',
+    'scroll_lock': 'KEYCODE_SCROLL_LOCK',
+    'printscreen': 'KEYCODE_SYSRQ',
+    'print_screen': 'KEYCODE_SYSRQ',
+}
 
 
 class ADBInteraction(BaseInteraction):
@@ -862,10 +997,9 @@ class ADBInteraction(BaseInteraction):
         self._u2_device = None
         self.use_u2 = importlib.util.find_spec("uiautomator2")
 
-    def send_key(self, key, down_time=0.02, after_sleep=0):
+    def send_key(self, key, down_time=0.02):
+        key = ADB_KEY_MAP.get(str(key).lower(), key)
         self.device_manager.device.shell(f"input keyevent {key}")
-        if after_sleep > 0:
-            time.sleep(after_sleep)
 
     def input_text(self, text):
         # Convert each character to its Unicode code point
@@ -884,7 +1018,7 @@ class ADBInteraction(BaseInteraction):
             self._u2 = uiautomator2.connect(self._u2_device)
         return self._u2
 
-    def swipe_nemu(self, from_x, from_y, to_x, to_y, duration, after_sleep=0.1, settle_time=0):
+    def swipe_nemu(self, from_x, from_y, to_x, to_y, duration, settle_time=0):
         p2 = (to_x, to_y)
         points = insert_swipe(p0=(from_x, from_y), p3=p2)
 
@@ -901,7 +1035,7 @@ class ADBInteraction(BaseInteraction):
 
         time.sleep(0.1)
 
-    def swipe_u2(self, from_x, from_y, to_x, to_y, duration, after_sleep=0.1, settle_time=0):
+    def swipe_u2(self, from_x, from_y, to_x, to_y, duration, settle_time=0):
         """
         Performs a swipe gesture using low-level touch events, allowing
         a pause ('settle_time') at the end point before lifting the touch.
@@ -942,16 +1076,14 @@ class ADBInteraction(BaseInteraction):
         # Lift the touch up at the ending point
         self.u2.touch.up(to_x, to_y)
 
-    def swipe(self, from_x, from_y, to_x, to_y, duration, after_sleep=0.1, settle_time=0):
+    def swipe(self, from_x, from_y, to_x, to_y, duration, settle_time=0):
         if isinstance(self.capture, NemuIpcCaptureMethod):
-            self.swipe_nemu(from_x, from_y, to_x, to_y, duration, after_sleep, settle_time)
+            self.swipe_nemu(from_x, from_y, to_x, to_y, duration, settle_time)
         elif self.use_u2:
-            self.swipe_u2(from_x, from_y, to_x, to_y, duration, after_sleep, settle_time)
+            self.swipe_u2(from_x, from_y, to_x, to_y, duration, settle_time)
         else:
             self.device_manager.device.shell(
                 f"input swipe {round(from_x)} {round(from_y)} {round(to_x)} {round(to_y)} {duration}")
-        if after_sleep > 0:
-            time.sleep(after_sleep)
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01, move=True, key=None):
         super().click(x, y, name=name)
@@ -962,8 +1094,8 @@ class ADBInteraction(BaseInteraction):
         else:
             self.device_manager.shell(f"input tap {x} {y}")
 
-    def back(self, after_sleep=0):
-        self.send_key('KEYCODE_BACK', after_sleep=after_sleep)
+    def back(self):
+        self.send_key('KEYCODE_BACK')
 
 
 # Define the MOUSEINPUT structure
@@ -1118,7 +1250,7 @@ class GenshinInteraction(BaseInteraction):
     def post(self, message, wParam=0, lParam=0):
         win32gui.PostMessage(self.hwnd, message, wParam, lParam)
 
-    def swipe(self, x1, y1, x2, y2, duration=3, after_sleep=0, settle_time=0.1):
+    def swipe(self, x1, y1, x2, y2, duration=3, settle_time=0.1):
         # Move the mouse to the start point (x1, y1)
         logger.debug(f'genshin swipe start {x1, y1, x2, y2}')
         self.move(x1, y1)

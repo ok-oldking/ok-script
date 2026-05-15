@@ -81,15 +81,35 @@ class Recorder:
         try:
             if getattr(og.device_manager, 'hwnd_window', None) and og.device_manager.hwnd_window.hwnd == self.target_hwnd:
                 hw = og.device_manager.hwnd_window
-                return x - (hw.x + hw.real_x_offset), y - (hw.y + hw.real_y_offset)
-            if not self.target_hwnd:
-                return x, y
-            # Fallback using win32gui for non-HwndWindow cases
-            # ClientToScreen with (0,0) gives the top-left of the content area in screen coordinates
-            client_pos = win32gui.ClientToScreen(self.target_hwnd, (0, 0))
-            return x - client_pos[0], y - client_pos[1]
+                rel_x = x - (hw.x + hw.real_x_offset)
+                rel_y = y - (hw.y + hw.real_y_offset)
+                width = hw.real_width or hw.width
+                height = hw.real_height or hw.height
+                return self.normalize_coords(rel_x, rel_y, width, height)
+            if self.target_hwnd:
+                # ClientToScreen with (0,0) gives the top-left of the content area in screen coordinates
+                client_pos = win32gui.ClientToScreen(self.target_hwnd, (0, 0))
+                left, top, right, bottom = win32gui.GetClientRect(self.target_hwnd)
+                width = right - left
+                height = bottom - top
+                return self.normalize_coords(x - client_pos[0], y - client_pos[1], width, height)
+
+            return self.normalize_coords(x, y, getattr(og.device_manager, 'width', 0),
+                                         getattr(og.device_manager, 'height', 0))
         except:
-            return x, y
+            try:
+                return self.normalize_coords(x, y, getattr(og.device_manager, 'width', 0),
+                                             getattr(og.device_manager, 'height', 0))
+            except:
+                return x, y
+
+    def normalize_coords(self, x, y, width, height):
+        if width > 0 and height > 0:
+            return max(0, min(1, x / width)), max(0, min(1, y / height))
+        return x, y
+
+    def format_coord(self, value):
+        return f"{value:.4f}".rstrip('0').rstrip('.')
 
     def on_click(self, x, y, button, pressed):
         if not self.is_recording or not self.is_active:
@@ -235,22 +255,28 @@ class Recorder:
             init_lines.append("}")
             init_lines.append("")
 
-        for e in self.events:
-            if 'latency' in e and e['latency'] > 0.1:
-                lines.append(f"self.sleep({e['latency']:.2f}) # wait for {e['latency']:.2f}s")
-                
+        action_events = [e for e in self.events if e['type'] in ('click', 'key_press')]
+        for index, e in enumerate(action_events):
+            after_sleep = 0
+            if index + 1 < len(action_events):
+                after_sleep = action_events[index + 1].get('latency', 0)
+
             if e['type'] == 'click':
                 down_time = e.get('down_time', 0.05)
-                line = f"self.click({int(e['x'])}, {int(e['y'])}"
+                line = f"self.click_relative({self.format_coord(e['x'])}, {self.format_coord(e['y'])}"
                 if e["button"] != "left":
                     line += f', key="{e["button"]}"'
                 line += f', down_time={down_time:.2f}'
-                line += f") # {e['button']} click at ({int(e['x'])}, {int(e['y'])})"
+                if after_sleep > 0.1:
+                    line += f', after_sleep={after_sleep:.2f}'
+                line += f") # {e['button']} click at ({self.format_coord(e['x'])}, {self.format_coord(e['y'])})"
                 lines.append(line)
             elif e['type'] == 'key_press':
                 down_time = e.get('down_time', 0.05)
                 line = f"self.send_key('{e['key']}'"
                 line += f", down_time={down_time:.2f}"
+                if after_sleep > 0.1:
+                    line += f", after_sleep={after_sleep:.2f}"
                 line += f") # press key '{e['key']}'"
                 lines.append(line)
                 

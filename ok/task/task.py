@@ -20,12 +20,16 @@ from ok.util.logger import Logger
 from ok.util.process import create_shortcut
 
 VALID_NAMED_KEYS = {
-    'esc', 'tab', 'shift', 'lshift', 'rshift', 'ctrl', 'lctrl', 'rctrl', 'alt', 'lalt', 'ralt',
-    'enter', 'return', 'space', 'backspace', 'up', 'down', 'left', 'right', 'pageup', 'pagedown',
+    'esc', 'tab', 'shift', 'lshift', 'rshift', 'shift_l', 'shift_r',
+    'ctrl', 'control', 'lctrl', 'rctrl', 'lcontrol', 'rcontrol', 'ctrl_l', 'ctrl_r',
+    'alt', 'lalt', 'ralt', 'alt_l', 'alt_r', 'alt_gr',
+    'enter', 'return', 'space', 'backspace', 'up', 'down', 'left', 'right',
+    'pageup', 'pagedown', 'page_up', 'page_down',
     'home', 'end', 'insert', 'delete', 'capslock', 'numlock', 'scrolllock', 'printscreen',
+    'caps_lock', 'num_lock', 'scroll_lock', 'print_screen',
     'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12',
     'num0', 'num1', 'num2', 'num3', 'num4', 'num5', 'num6', 'num7', 'num8', 'num9',
-    'windows', 'command', 'meta'
+    'windows', 'win', 'command', 'cmd', 'cmd_l', 'cmd_r', 'meta'
 }
 
 logger = Logger.get_logger(__name__)
@@ -160,8 +164,10 @@ class ExecutorOperation:
         self.executor.reset_scene()
         return True
 
-    def back(self, *args, **kwargs):
+    def back(self, *args, after_sleep=0, **kwargs):
         self.executor.interaction.back(*args, **kwargs)
+        if after_sleep > 0:
+            self.sleep(after_sleep)
 
     def middle_click(self, *args, **kwargs):
         return self.click(*args, **kwargs, key="middle")
