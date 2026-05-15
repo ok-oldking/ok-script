@@ -36,6 +36,7 @@ class Recorder:
                 else:
                     from ok.gui.util.Alert import alert_info
                     alert_info("Target window inactive: Recording paused", tray=True)
+                    self.drop_pending_inputs()
                     self.inactive_start_time = time.time()
 
     def start(self, target_title):
@@ -65,6 +66,7 @@ class Recorder:
 
     def stop(self):
         self.is_recording = False
+        self.drop_pending_inputs()
         if self.mouse_listener:
             self.mouse_listener.stop()
         if self.keyboard_listener:
@@ -111,6 +113,23 @@ class Recorder:
     def format_coord(self, value):
         return f"{value:.4f}".rstrip('0').rstrip('.')
 
+    def drop_pending_inputs(self):
+        self.events = [
+            e for index, e in enumerate(self.events)
+            if e['type'] != 'mouse_down' and
+               (e['type'] != 'key_down' or self.has_key_up_after(index, e['key']))
+        ]
+
+    def has_key_up_after(self, index, key):
+        return any(e['type'] == 'key_up' and e['key'] == key for e in self.events[index + 1:])
+
+    def find_pending_key_down_index(self, key):
+        for i in range(len(self.events) - 1, -1, -1):
+            e = self.events[i]
+            if e['type'] == 'key_down' and e['key'] == key and not self.has_key_up_after(i, key):
+                return i
+        return None
+
     def on_click(self, x, y, button, pressed):
         if not self.is_recording or not self.is_active:
             return
@@ -146,10 +165,11 @@ class Recorder:
         latency = current_time - self.last_event_time
         
         # Avoid recording repeating keys if already pressed
-        if any(e['type'] == 'key_down' and e['key'] == self._key_to_str(key) for e in self.events):
+        key_str = self._key_to_str(key)
+        if self.find_pending_key_down_index(key_str) is not None:
             return
             
-        self.events.append({'type': 'key_down', 'key': self._key_to_str(key), 'time': current_time, 'latency': latency})
+        self.events.append({'type': 'key_down', 'key': key_str, 'time': current_time, 'latency': latency})
         self.last_event_time = current_time
 
     def on_release(self, key):
@@ -159,12 +179,15 @@ class Recorder:
         current_time = time.time()
         key_str = self._key_to_str(key)
         
-        for i in range(len(self.events) - 1, -1, -1):
+        i = self.find_pending_key_down_index(key_str)
+        if i is not None:
             e = self.events[i]
-            if e['type'] == 'key_down' and e['key'] == key_str:
+            e['down_time'] = current_time - e['time']
+            if i == len(self.events) - 1:
                 e['type'] = 'key_press'
-                e['down_time'] = current_time - e['time']
-                break
+            else:
+                self.events.append({'type': 'key_up', 'key': key_str, 'time': current_time,
+                                    'latency': current_time - self.last_event_time})
         self.last_event_time = current_time
 
     def _key_to_str(self, key):
@@ -255,7 +278,7 @@ class Recorder:
             init_lines.append("}")
             init_lines.append("")
 
-        action_events = [e for e in self.events if e['type'] in ('click', 'key_press')]
+        action_events = [e for e in self.events if e['type'] in ('click', 'key_press', 'key_down', 'key_up')]
         for index, e in enumerate(action_events):
             after_sleep = 0
             if index + 1 < len(action_events):
@@ -278,6 +301,18 @@ class Recorder:
                 if after_sleep > 0.1:
                     line += f", after_sleep={after_sleep:.2f}"
                 line += f") # press key '{e['key']}'"
+                lines.append(line)
+            elif e['type'] == 'key_down':
+                line = f"self.send_key_down('{e['key']}'"
+                if after_sleep > 0.1:
+                    line += f", after_sleep={after_sleep:.2f}"
+                line += f") # key down '{e['key']}'"
+                lines.append(line)
+            elif e['type'] == 'key_up':
+                line = f"self.send_key_up('{e['key']}'"
+                if after_sleep > 0.1:
+                    line += f", after_sleep={after_sleep:.2f}"
+                line += f") # key up '{e['key']}'"
                 lines.append(line)
                 
         if not lines:

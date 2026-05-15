@@ -479,15 +479,19 @@ class ExecutorOperation:
     def get_global_config_desc(self, option):
         return self.executor.global_config.get_config_desc(option)
 
-    def send_key_down(self, key):
+    def send_key_down(self, key, after_sleep=0):
         key = self.validate_key(key)
         self.executor.reset_scene()
         self.executor.interaction.send_key_down(key)
+        if after_sleep > 0:
+            self.sleep(after_sleep)
 
-    def send_key_up(self, key):
+    def send_key_up(self, key, after_sleep=0):
         key = self.validate_key(key)
         self.executor.reset_scene()
         self.executor.interaction.send_key_up(key)
+        if after_sleep > 0:
+            self.sleep(after_sleep)
 
     def wait_until(self, condition, time_out=0, pre_action=None, post_action=None, settle_time=-1,
                    raise_if_not_found=False):
