@@ -2,6 +2,7 @@ import threading
 import time
 
 import win32api
+import win32con
 import win32gui
 import win32process
 
@@ -80,9 +81,43 @@ class HwndWindow:
     def stop(self):
         self.stop_event.set()
 
+    def _front_hwnd_candidates(self):
+        return list(dict.fromkeys(hwnd for hwnd in (self.top_hwnd, self.hwnd) if hwnd))
+
     def bring_to_front(self):
-        if self.hwnd:
-            win32gui.SetForegroundWindow(self.hwnd)
+        errors = []
+        for refreshed in (False, True):
+            hwnds = self._front_hwnd_candidates()
+            if not hwnds:
+                if not refreshed:
+                    self.do_update_window_size()
+                    continue
+                logger.warning('bring_to_front failed: no hwnd found')
+                return False
+
+            invalid_hwnds = []
+            for hwnd in hwnds:
+                try:
+                    if not win32gui.IsWindow(hwnd):
+                        invalid_hwnds.append(hwnd)
+                        continue
+                    if win32gui.IsIconic(hwnd):
+                        win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                    win32gui.BringWindowToTop(hwnd)
+                    win32gui.SetForegroundWindow(hwnd)
+                    return True
+                except Exception as e:
+                    errors.append(f'{hwnd}: {e}')
+
+            if invalid_hwnds and len(invalid_hwnds) == len(hwnds) and not refreshed:
+                self.do_update_window_size()
+                continue
+            if invalid_hwnds:
+                errors.append(f'invalid hwnds: {invalid_hwnds}')
+            break
+
+        logger.warning(f'bring_to_front failed: {", ".join(errors)}')
+        return False
 
     def try_resize_to(self, resize_to):
         if not self.global_config.get_config('Basic Options').get('Auto Resize Game Window'):

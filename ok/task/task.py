@@ -328,7 +328,8 @@ class ExecutorOperation:
         if self.is_adb():
             self.executor.device_manager.adb_ensure_in_front()
         elif self.hwnd:
-            self.hwnd.bring_to_front()
+            if not self.hwnd.bring_to_front():
+                self.logger.warning("ensure_in_front: bring_to_front failed, continuing")
         else:
             self.logger.warning("ensure_in_front: not adb and no hwnd found")
 
