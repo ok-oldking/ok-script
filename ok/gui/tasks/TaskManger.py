@@ -42,7 +42,7 @@ class TaskManager:
             task.post_init()
         self.load_user_tasks()
         self.load_imported_tasks()
-        if self.debug or self.custom_tasks_enabled:
+        if (self.debug or self.custom_tasks_enabled) and not getattr(app, 'headless', False):
             self._init_debug_file_watcher()
 
     def init_tasks(self, task_classes):

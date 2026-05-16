@@ -33,12 +33,12 @@ class StartController(QObject):
         except Exception as e:
             logger.error(f'do_start do_refresh exception: {e}', e)
             communicate.starting_emulator.emit(True, self.tr(str(e)), 0)
-            return
+            return False
 
         try:
             if self.start_exe:
                 if not self.start_device():
-                    return
+                    return False
             else:
                 logger.info('windows.start_exe is False, skip start_device')
 
@@ -66,9 +66,11 @@ class StartController(QObject):
 
             og.executor.start()
             communicate.starting_emulator.emit(True, None, 0)
+            return True
         except Exception as e:
             logger.error(f'do_start exception: {e}', e)
             communicate.starting_emulator.emit(True, self.tr(f'Start failed: {e}'), 0)
+            return False
 
     def start_device(self):
         device = og.device_manager.get_preferred_device()

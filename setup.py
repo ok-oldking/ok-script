@@ -43,6 +43,11 @@ setuptools.setup(
         'pycaw==20240210',
         'mouse==0.7.1'
     ],
+    entry_points={
+        'console_scripts': [
+            'ok=ok.cli:main',
+        ],
+    },
     python_requires='==3.12.*',
     zip_safe=False,
 )
