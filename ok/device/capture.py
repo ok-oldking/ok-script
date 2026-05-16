@@ -105,6 +105,60 @@ def capture_by_bitblt(context, hwnd, width, height, x, y, render_full_content):
     image.shape = (height, width, BGRA_CHANNEL_COUNT)
     return image
 
+def clean_up_desktop_bitblt(context):
+    try_delete_dc(context.dc_object)
+    try_delete_dc(context.compatible_dc)
+    if context.window_dc:
+        try:
+            win32gui.ReleaseDC(0, context.window_dc)
+        except Exception:
+            pass
+    if context.bitmap:
+        try:
+            win32gui.DeleteObject(context.bitmap.GetHandle())
+        except Exception:
+            pass
+    context.window_dc = None
+    context.dc_object = None
+    context.compatible_dc = None
+    context.bitmap = None
+    context.last_width = 0
+    context.last_height = 0
+
+def capture_desktop_by_bitblt(context, width, height, x, y):
+    if width <= 0 or height <= 0:
+        logger.error(f'capture_desktop_by_bitblt invalid params: w={width}, h={height}')
+        return None
+
+    try:
+        if context.last_height != height or context.last_width != width:
+            clean_up_desktop_bitblt(context)
+
+            context.window_dc = win32gui.GetDC(0)
+            context.dc_object = win32ui.CreateDCFromHandle(context.window_dc)
+            context.compatible_dc = context.dc_object.CreateCompatibleDC()
+            context.bitmap = win32ui.CreateBitmap()
+            context.bitmap.CreateCompatibleBitmap(context.dc_object, width, height)
+            context.last_width = width
+            context.last_height = height
+
+        context.compatible_dc.SelectObject(context.bitmap)
+        context.compatible_dc.BitBlt(
+            (0, 0),
+            (width, height),
+            context.dc_object,
+            (x, y),
+            win32con.SRCCOPY,
+        )
+        image = np.frombuffer(context.bitmap.GetBitmapBits(True), dtype=np.uint8)
+    except Exception as e:
+        logger.error(f'capture_desktop_by_bitblt exception: {e}')
+        clean_up_desktop_bitblt(context)
+        return None
+
+    image.shape = (height, width, BGRA_CHANNEL_COUNT)
+    return image
+
 
 class BitBltCtxDummy:
     def __init__(self):
@@ -678,6 +732,40 @@ class BitBltCaptureMethod(BaseWindowsCaptureMethod):
             else:
                 return True
 
+class ForegroundBitBltCaptureMethod(BaseWindowsCaptureMethod):
+    name = "ForegroundBitBlt"
+    short_description = "fastest, foreground only"
+    description = (
+            "\nCaptures the desktop pixels at the game window position. "
+            + "\nThis is designed for foreground-only overlays and upscalers. "
+            + "\nIt is very fast, but the game window must be in front and unobscured. "
+    )
+
+    def __init__(self, hwnd_window: 'HwndWindow'):
+        super().__init__(hwnd_window)
+        self.window_dc = None
+        self.dc_object = None
+        self.compatible_dc = None
+        self.bitmap = None
+        self.last_width = 0
+        self.last_height = 0
+        self.lock = threading.Lock()
+
+    def do_get_frame(self):
+        if not self.hwnd_window.is_foreground():
+            return None
+
+        with self.lock:
+            x = self.hwnd_window.x + self.hwnd_window.real_x_offset
+            y = self.hwnd_window.y + self.hwnd_window.real_y_offset
+            width = self.hwnd_window.real_width or self.hwnd_window.width
+            height = self.hwnd_window.real_height or self.hwnd_window.height
+            return capture_desktop_by_bitblt(self, width, height, x, y)
+
+    def close(self):
+        with self.lock:
+            clean_up_desktop_bitblt(self)
+
 class HwndWindow:
 
     def __init__(self, exit_event, title, exe_name=None, frame_width=0, frame_height=0, player_id=-1, hwnd_class=None,
@@ -1066,6 +1154,10 @@ def update_capture_method(config, capture_method, hwnd, exit_event=None, selecte
 
                 if bitblt_capture := get_capture(capture_method, BitBltCaptureMethod, hwnd, exit_event):
                     return bitblt_capture
+            elif method_name in ('ForegroundBitBlt', 'Foreground BitBlt', 'Foreground', 'LosslessScaling', 'Lossless Scaling'):
+                if foreground_capture := get_capture(capture_method, ForegroundBitBltCaptureMethod, hwnd, exit_event):
+                    logger.info(f'use {method_name} capture')
+                    return foreground_capture
             elif method_name == 'DXGI':
                 if dxgi_capture := get_capture(capture_method, DesktopDuplicationCaptureMethod, hwnd, exit_event):
                     return dxgi_capture

@@ -35,7 +35,7 @@ from ok.device.intercation import DoNothingInteraction, BaseInteraction, Browser
     GenshinInteraction, ForegroundPostMessageInteraction, PyDirectInteraction
 from ok.device.capture import ImageCaptureMethod, BaseCaptureMethod, BrowserCaptureMethod, ADBCaptureMethod, \
     WindowsGraphicsCaptureMethod, BitBltCaptureMethod, NemuIpcCaptureMethod, DesktopDuplicationCaptureMethod, \
-    ImageCaptureMethod
+    ForegroundBitBltCaptureMethod, ImageCaptureMethod
 from ok.task.DiagnosisTask import DiagnosisTask
 from ok.task.task import BaseTask, TriggerTask, FindFeature, OCR
 from ok.feature.Feature import Feature
