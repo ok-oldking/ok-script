@@ -31,7 +31,7 @@ from ok.util.logger import config_logger, Logger
 from ok.util.process import check_mutex, get_first_gpu_free_memory_mib, parse_arguments_to_map
 from ok.util.file import get_path_relative_to_exe, install_path_isascii
 from ok.util.window import windows_graphics_available
-from ok.device.intercation import DoNothingInteraction, BaseInteraction, BrowserInteraction, PostMessageInteraction, \
+from ok.device.interaction import DoNothingInteraction, BaseInteraction, BrowserInteraction, PostMessageInteraction, \
     GenshinInteraction, ForegroundPostMessageInteraction, PyDirectInteraction
 from ok.device.capture import ImageCaptureMethod, BaseCaptureMethod, BrowserCaptureMethod, ADBCaptureMethod, \
     WindowsGraphicsCaptureMethod, BitBltCaptureMethod, NemuIpcCaptureMethod, DesktopDuplicationCaptureMethod, \
