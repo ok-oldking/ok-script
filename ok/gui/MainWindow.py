@@ -281,6 +281,26 @@ class MainWindow(MSFluentWindow):
             self.raise_()
             self.activateWindow()
 
+    def bring_to_front(self):
+        if self.isMinimized():
+            self.showNormal()
+        else:
+            self.show()
+        self.raise_()
+        self.activateWindow()
+        if self.windowHandle():
+            self.windowHandle().requestActivate()
+        if os.name == 'nt':
+            try:
+                import win32con
+                import win32gui
+                hwnd = int(self.winId())
+                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                win32gui.BringWindowToTop(hwnd)
+                win32gui.SetForegroundWindow(hwnd)
+            except Exception as e:
+                logger.debug(f'bring_to_front native activation failed: {e}')
+
     def goto_global_config(self, key):
         self.switchTo(self.setting_tab)
         self.setting_tab.goto_config(key)
@@ -321,7 +341,8 @@ class MainWindow(MSFluentWindow):
         self.switchTo(self.about_tab)
 
     def showEvent(self, event):
-        if event.type() == QEvent.Show and not self.shown:
+        first_show = event.type() == QEvent.Show and not self.shown
+        if first_show:
             self.shown = True
             args = parse_arguments_to_map()
             pyappify.hide_pyappify()
@@ -347,6 +368,8 @@ class MainWindow(MSFluentWindow):
             # Check for .okscript file in command line arguments
             self._check_okscript_args()
         super().showEvent(event)
+        if first_show:
+            QTimer.singleShot(0, self.bring_to_front)
 
     def set_window_size(self, width, height, min_width, min_height):
         screen = QScreen.availableGeometry(self.screen())

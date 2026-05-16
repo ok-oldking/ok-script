@@ -217,8 +217,7 @@ class App:
                 og.my_app.on_show_main_window(self.main_window)
 
         self.main_window.show()
-        self.main_window.raise_()
-        self.main_window.activateWindow()
+        self.main_window.bring_to_front()
 
         logger.debug(f'show_main_window end')
 

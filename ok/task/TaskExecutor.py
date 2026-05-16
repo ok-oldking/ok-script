@@ -15,6 +15,7 @@ from ok.util.window import ratio_text_to_number
 
 logger = Logger.get_logger(__name__)
 
+
 class TaskExecutor:
     _frame: object
     paused: bool
@@ -94,7 +95,7 @@ class TaskExecutor:
             self.ocr_po_translation.install()
             logger.info(f'translation ocr installed for {locale_name}')
         except:
-            logger.error(f'install ocr translations error for {locale_name}')
+            logger.info(f'install ocr translations error for {locale_name}')
             self.ocr_po_translation = None
 
     @property
@@ -512,6 +513,7 @@ class TaskExecutor:
         for trigger_task in self.trigger_tasks:
             if isinstance(trigger_task, cls):
                 return trigger_task
+
 
 def list_or_obj_to_str(val):
     if val is not None:
