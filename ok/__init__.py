@@ -444,18 +444,90 @@ class OK:
 
     def run_task(self, task=1):
         """
-        Run a one-time task without showing the main UI.
+        Run a task without showing the main UI.
 
         Args:
             task: 1-based one-time task index, task name, task class, or task instance.
         """
-        task = self.get_onetime_task(task)
-        logger.info(f'run task without ui: {task.name}')
+        task, is_trigger_task = self.get_task(task)
+        if is_trigger_task:
+            return self.run_trigger_task(task)
+        return self.run_onetime_task(task)
+
+    def run_onetime_task(self, task):
+        logger.info(f'run one-time task without ui: {task.name}')
         started = self.headless_app.start_controller.do_start(task, exit_after=True)
         if not started:
             raise RuntimeError(f'Start task failed: {task.name}')
         self.wait_task(task)
         return True
+
+    def run_trigger_task(self, task):
+        logger.info(f'run trigger task without ui: {task.name}')
+        self.config['trigger_tasks'] = [[task.__class__.__module__, task.__class__.__name__]]
+        for trigger_task in self.task_executor.trigger_tasks:
+            if trigger_task is not task:
+                trigger_task.disable()
+        self.task_executor.trigger_tasks = [task]
+
+        started = self.headless_app.start_controller.do_start(task, exit_after=False)
+        if not started:
+            raise RuntimeError(f'Start trigger task failed: {task.name}')
+        self.wait_task()
+        return True
+
+    def get_task(self, task):
+        if isinstance(task, int):
+            return self.get_onetime_task(task), False
+        if isinstance(task, TriggerTask):
+            return self.get_trigger_task(task), True
+        if isinstance(task, BaseTask):
+            return self.get_onetime_task(task), False
+        if isinstance(task, type):
+            if not issubclass(task, BaseTask):
+                raise ValueError(f'Task class must inherit BaseTask: {task}')
+            if issubclass(task, TriggerTask):
+                return self.get_trigger_task(task), True
+            return self.get_onetime_task(task), False
+        if isinstance(task, str):
+            onetime_task = self.find_task_by_name(self.task_executor.onetime_tasks, task)
+            if onetime_task:
+                return onetime_task, False
+            trigger_task = self.find_task_by_name(self.task_executor.trigger_tasks, task)
+            if trigger_task:
+                return trigger_task, True
+            raise ValueError(f'Task not found: {task}')
+        if task in self.task_executor.trigger_tasks:
+            return self.get_trigger_task(task), True
+        return self.get_onetime_task(task), False
+
+    def find_task_by_name(self, tasks, task):
+        normalized_task = task.lower()
+        exact_matches = [
+            candidate for candidate in tasks
+            if candidate.name.lower() == normalized_task or candidate.__class__.__name__.lower() == normalized_task
+        ]
+        if len(exact_matches) == 1:
+            return exact_matches[0]
+        if len(exact_matches) > 1:
+            names = ', '.join(candidate.__class__.__name__ for candidate in exact_matches)
+            raise ValueError(f'Multiple tasks matched "{task}": {names}')
+
+        partial_matches = [
+            candidate for candidate in tasks
+            if normalized_task in candidate.name.lower()
+            or normalized_task in candidate.__class__.__name__.lower()
+        ]
+        if len(partial_matches) == 1:
+            return partial_matches[0]
+        if len(partial_matches) > 1:
+            names = ', '.join(candidate.__class__.__name__ for candidate in partial_matches)
+            raise ValueError(f'Multiple tasks matched "{task}": {names}')
+
+        for candidate in tasks:
+            if candidate.name == task or candidate.__class__.__name__ == task:
+                return candidate
+        return None
 
     def get_onetime_task(self, task):
         if isinstance(task, int):
@@ -465,31 +537,9 @@ class OK:
                     f'Task index {task} is out of range. Available range is 1-{len(self.task_executor.onetime_tasks)}')
             return self.task_executor.onetime_tasks[task_index]
         if isinstance(task, str):
-            normalized_task = task.lower()
-            exact_matches = [
-                candidate for candidate in self.task_executor.onetime_tasks
-                if candidate.name.lower() == normalized_task or candidate.__class__.__name__.lower() == normalized_task
-            ]
-            if len(exact_matches) == 1:
-                return exact_matches[0]
-            if len(exact_matches) > 1:
-                names = ', '.join(candidate.__class__.__name__ for candidate in exact_matches)
-                raise ValueError(f'Multiple tasks matched "{task}": {names}')
-
-            partial_matches = [
-                candidate for candidate in self.task_executor.onetime_tasks
-                if normalized_task in candidate.name.lower()
-                or normalized_task in candidate.__class__.__name__.lower()
-            ]
-            if len(partial_matches) == 1:
-                return partial_matches[0]
-            if len(partial_matches) > 1:
-                names = ', '.join(candidate.__class__.__name__ for candidate in partial_matches)
-                raise ValueError(f'Multiple tasks matched "{task}": {names}')
-
-            for candidate in self.task_executor.onetime_tasks:
-                if candidate.name == task or candidate.__class__.__name__ == task:
-                    return candidate
+            matched_task = self.find_task_by_name(self.task_executor.onetime_tasks, task)
+            if matched_task:
+                return matched_task
             raise ValueError(f'Task not found: {task}')
         if isinstance(task, type):
             for candidate in self.task_executor.onetime_tasks:
@@ -508,6 +558,34 @@ class OK:
         if task in self.task_executor.onetime_tasks:
             return task
         raise ValueError(f'Unsupported one-time task selector: {task}')
+
+    def get_trigger_task(self, task):
+        if isinstance(task, str):
+            matched_task = self.find_task_by_name(self.task_executor.trigger_tasks, task)
+            if matched_task:
+                return matched_task
+            raise ValueError(f'Trigger task not found: {task}')
+        if isinstance(task, type):
+            for candidate in self.task_executor.trigger_tasks:
+                if isinstance(candidate, task):
+                    return candidate
+            if not issubclass(task, TriggerTask):
+                raise ValueError(f'Trigger task class must inherit TriggerTask: {task}')
+            task_instance = task(executor=self.task_executor, app=self.headless_app)
+            task_instance.after_init(executor=self.task_executor, scene=self.task_executor.scene)
+            task_instance.post_init()
+            self.task_executor.trigger_tasks.append(task_instance)
+            logger.info(f'created headless trigger task from class: {task_instance}')
+            return task_instance
+        if isinstance(task, TriggerTask):
+            if task not in self.task_executor.trigger_tasks:
+                task._executor = self.task_executor
+                task._app = self.headless_app
+                task.after_init(executor=self.task_executor, scene=self.task_executor.scene)
+                task.post_init()
+                self.task_executor.trigger_tasks.append(task)
+            return task
+        raise ValueError(f'Unsupported trigger task selector: {task}')
 
     def do_init(self):
         logger.info(f"do_init, config: {self.config}")
@@ -566,11 +644,13 @@ class OK:
                 time.sleep(1)
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt received, exiting script.")
+            self.exit_event.set()
         finally:
             if task is not None:
                 self.exit_event.set()
-                if self.task_executor.thread and self.task_executor.thread != threading.current_thread():
-                    self.task_executor.thread.join(timeout=10)
+            if (self.exit_event.is_set() and self.task_executor.thread
+                    and self.task_executor.thread != threading.current_thread()):
+                self.task_executor.thread.join(timeout=10)
 
     def console_handler(self, event):
         import win32con
@@ -621,6 +701,10 @@ def run_task(config, task=1, debug=False):
     headless_config = dict(config)
     headless_config["use_gui"] = False
     headless_config["debug"] = debug
+    if isinstance(task, type) and issubclass(task, TriggerTask):
+        headless_config["trigger_tasks"] = [[task.__module__, task.__name__]]
+    elif isinstance(task, TriggerTask):
+        headless_config["trigger_tasks"] = [[task.__class__.__module__, task.__class__.__name__]]
     return OK(headless_config).run_task(task)
 
 

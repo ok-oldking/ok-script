@@ -18,6 +18,7 @@ Write-Output "Copied contents from $sourceDir to $buildDir"
 
 # Copy additional files
 Copy-Item -Path "setup.py" -Destination $buildDir -Recurse
+Copy-Item -Path "get_pypi_latest_version.py" -Destination $buildDir -Recurse
 Copy-Item -Path "MANIFEST.in" -Destination $buildDir -Recurse
 Copy-Item -Path "README.md" -Destination $buildDir -Recurse
 
