@@ -113,6 +113,9 @@ class Recorder:
     def format_coord(self, value):
         return f"{value:.4f}".rstrip('0').rstrip('.')
 
+    def format_literal(self, value):
+        return repr(value)
+
     def drop_pending_inputs(self):
         self.events = [
             e for index, e in enumerate(self.events)
@@ -231,9 +234,9 @@ class Recorder:
                 if hwnd_class:
                     init_lines.append(f"        'hwnd_class': {repr(hwnd_class)},")
                 if interaction:
-                    init_lines.append(f"        'interaction': '{interaction}',")
+                    init_lines.append(f"        'interaction': {self.format_literal(interaction)},")
                 if capture:
-                    init_lines.append(f"        'capture_method': '{capture}',")
+                    init_lines.append(f"        'capture_method': {self.format_literal(capture)},")
                 if resolution and resolution[0] > 0 and resolution[1] > 0:
                     init_lines.append(f"        # 'resolution': ({resolution[0]}, {resolution[1]}),")
                 init_lines.append(f"    }}")
@@ -255,7 +258,7 @@ class Recorder:
                 init_lines.append(f"        'packages': {packages_str},")
                 init_lines.append(f"        'interaction': 'adb',")
                 if capture:
-                    init_lines.append(f"        'capture_method': '{capture}',")
+                    init_lines.append(f"        'capture_method': {self.format_literal(capture)},")
                 if resolution and resolution[0] > 0 and resolution[1] > 0:
                     init_lines.append(f"        # 'resolution': ({resolution[0]}, {resolution[1]}),")
                 init_lines.append(f"    }}")
@@ -269,9 +272,9 @@ class Recorder:
                 if dm.browser_config.get('nick'):
                     init_lines.append(f"        'nick': {nick},")
                 if interaction:
-                    init_lines.append(f"        'interaction': '{interaction}',")
+                    init_lines.append(f"        'interaction': {self.format_literal(interaction)},")
                 if capture:
-                    init_lines.append(f"        'capture_method': '{capture}',")
+                    init_lines.append(f"        'capture_method': {self.format_literal(capture)},")
                 if resolution and resolution[0] > 0 and resolution[1] > 0:
                     init_lines.append(f"        # 'resolution': ({resolution[0]}, {resolution[1]}),")
                 init_lines.append(f"    }}")
@@ -296,23 +299,26 @@ class Recorder:
                 lines.append(line)
             elif e['type'] == 'key_press':
                 down_time = e.get('down_time', 0.05)
-                line = f"self.send_key('{e['key']}'"
+                key = self.format_literal(e['key'])
+                line = f"self.send_key({key}"
                 line += f", down_time={down_time:.2f}"
                 if after_sleep > 0.1:
                     line += f", after_sleep={after_sleep:.2f}"
-                line += f") # press key '{e['key']}'"
+                line += f") # press key {key}"
                 lines.append(line)
             elif e['type'] == 'key_down':
-                line = f"self.send_key_down('{e['key']}'"
+                key = self.format_literal(e['key'])
+                line = f"self.send_key_down({key}"
                 if after_sleep > 0.1:
                     line += f", after_sleep={after_sleep:.2f}"
-                line += f") # key down '{e['key']}'"
+                line += f") # key down {key}"
                 lines.append(line)
             elif e['type'] == 'key_up':
-                line = f"self.send_key_up('{e['key']}'"
+                key = self.format_literal(e['key'])
+                line = f"self.send_key_up({key}"
                 if after_sleep > 0.1:
                     line += f", after_sleep={after_sleep:.2f}"
-                line += f") # key up '{e['key']}'"
+                line += f") # key up {key}"
                 lines.append(line)
                 
         if not lines:
