@@ -100,29 +100,39 @@ def get_image_files():
     return [f[0] for f in files]
 
 
-def get_next_image_name(folder):
+def get_next_image_name(folder, coco_data=None, start_index=0):
     """Find the next available numeric image name."""
     existing = set()
     for f in os.listdir(folder):
         name = os.path.splitext(f)[0]
         if name.isdigit():
             existing.add(int(name))
-    i = 0
+    for img in (coco_data or {}).get('images', []):
+        name = os.path.splitext(os.path.basename(img.get('file_name', '')))[0]
+        if name.isdigit():
+            existing.add(int(name))
+
+    i = max(0, int(start_index or 0))
     while i in existing:
         i += 1
     return str(i)
 
 
+def get_image_entry_for_path(coco_data, image_path):
+    """Find a COCO image entry for a template image path."""
+    filename = os.path.basename(image_path)
+    for img in coco_data.get('images', []):
+        if os.path.basename(img.get('file_name', '')) == filename:
+            return img
+    return None
+
+
 def get_categories_for_image(coco_data, image_path):
     """Get category names associated with an image."""
-    filename = os.path.basename(image_path)
-    image_id = None
-    for img in coco_data.get('images', []):
-        if img['file_name'] == filename:
-            image_id = img['id']
-            break
-    if image_id is None:
+    image_entry = get_image_entry_for_path(coco_data, image_path)
+    if image_entry is None:
         return []
+    image_id = image_entry['id']
     cat_ids = set()
     for ann in coco_data.get('annotations', []):
         if ann['image_id'] == image_id:
@@ -361,7 +371,8 @@ class TemplateTab(QWidget):
         self.setObjectName("TemplateTab")
         self.template_tab_config = Config('template_tab', {
             'generate_label_enum': False,
-            'label_enum_relative_path': 'ok_tasks/LabelEnum.py'
+            'label_enum_relative_path': 'ok_tasks/LabelEnum.py',
+            'next_image_index': 0
         })
         self.selected_image = None
         self.image_cards = []
@@ -574,9 +585,16 @@ class TemplateTab(QWidget):
                 frame = processor(frame.copy())
 
             folder = ensure_template_folder()
-            name = get_next_image_name(folder)
+            self.coco_data = load_coco()
+            name = get_next_image_name(
+                folder,
+                self.coco_data,
+                self.template_tab_config.get('next_image_index', 0)
+            )
             file_path = os.path.join(folder, f"{name}.png")
             cv2.imwrite(file_path, frame)
+            if name.isdigit():
+                self.template_tab_config['next_image_index'] = int(name) + 1
 
             # Add image to COCO data
             self._add_image_to_coco(file_path)
@@ -592,9 +610,10 @@ class TemplateTab(QWidget):
 
     def _add_image_to_coco(self, image_path):
         """Add an image entry to COCO data if not already present."""
+        self.coco_data = load_coco()
         filename = os.path.basename(image_path)
         for img in self.coco_data.get('images', []):
-            if img['file_name'] == filename:
+            if os.path.basename(img.get('file_name', '')) == filename:
                 return  # Already exists
 
         # Read image dimensions
@@ -629,25 +648,26 @@ class TemplateTab(QWidget):
         if w.exec():
             try:
                 filename = os.path.basename(self.selected_image)
+                self.coco_data = load_coco()
 
                 # Remove from filesystem
                 if os.path.exists(self.selected_image):
                     os.remove(self.selected_image)
 
                 # Remove from COCO data
-                image_id = None
-                img_to_remove = None
-                for img in self.coco_data.get('images', []):
-                    if img['file_name'] == filename:
-                        img_to_remove = img
-                        image_id = img['id']
-                        break
-                if img_to_remove:
-                    self.coco_data['images'].remove(img_to_remove)
-                if image_id is not None:
+                image_ids = {
+                    img['id']
+                    for img in self.coco_data.get('images', [])
+                    if os.path.basename(img.get('file_name', '')) == filename
+                }
+                if image_ids:
+                    self.coco_data['images'] = [
+                        img for img in self.coco_data.get('images', [])
+                        if img['id'] not in image_ids
+                    ]
                     self.coco_data['annotations'] = [
                         ann for ann in self.coco_data.get('annotations', [])
-                        if ann['image_id'] != image_id
+                        if ann['image_id'] not in image_ids
                     ]
 
                 # Clean up orphaned categories
@@ -824,4 +844,5 @@ class TemplateTab(QWidget):
 
     def on_markup_closed(self):
         self.markup_window = None
+        self.refresh_grid()
 

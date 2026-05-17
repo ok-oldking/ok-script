@@ -12,7 +12,7 @@ from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
                             isDarkTheme, SplitTitleBar, RoundMenu,
                             Action)
 
-from ok.gui.tasks.TemplateTab import (load_coco, save_coco)
+from ok.gui.tasks.TemplateTab import (load_coco, save_coco, get_image_entry_for_path)
 from ok.gui.widget.BaseWindow import BaseWindow
 from ok.util.logger import Logger
 
@@ -1046,16 +1046,16 @@ class MarkUpWindow(BaseWindow):
         image_path = self.image_list[self.current_index]
         self.canvas.set_image(image_path)
 
-        filename = os.path.basename(image_path)
         resolution_str = ""
         if self.canvas.pixmap and not self.canvas.pixmap.isNull():
             resolution_str = f"({self.canvas.pixmap.width()}x{self.canvas.pixmap.height()})"
+        filename = os.path.basename(image_path)
         self.image_name_label.setText(f"{filename}{resolution_str}")
 
         # Load annotations for this image
         self.coco_data = load_coco()
         self.canvas.set_category_cache(self.coco_data)
-        image_id = self._get_image_id(filename)
+        image_id = self._get_image_id(image_path)
         annotations = []
         if image_id is not None:
             for ann in self.coco_data.get('annotations', []):
@@ -1073,11 +1073,9 @@ class MarkUpWindow(BaseWindow):
         self.canvas.set_annotations(annotations)
         self._update_nav_buttons()
 
-    def _get_image_id(self, filename):
-        for img in self.coco_data.get('images', []):
-            if img['file_name'] == filename:
-                return img['id']
-        return None
+    def _get_image_id(self, image_path):
+        image_entry = get_image_entry_for_path(self.coco_data, image_path)
+        return image_entry['id'] if image_entry is not None else None
 
     def _get_category_name(self, cat_id):
         for cat in self.coco_data.get('categories', []):
@@ -1130,7 +1128,7 @@ class MarkUpWindow(BaseWindow):
         filename = os.path.basename(image_path)
         self.coco_data = load_coco()
 
-        image_id = self._get_image_id(filename)
+        image_id = self._get_image_id(image_path)
         if image_id is None:
             # Add image entry
             existing_ids = {img['id'] for img in self.coco_data.get('images', [])}
