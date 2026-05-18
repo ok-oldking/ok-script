@@ -397,15 +397,16 @@ class OK:
         return self._headless_app
 
     def should_init_task_manager_headless(self):
-        return not self.config.get("use_gui") or self.args.get('task', 0) > 0
+        return not self.config.get("use_gui") or self.args.get('headless', False)
 
     def start(self):
         logger.info(f'OK start id:{id(self)} pid:{os.getpid()}')
         try:
-            if self.args.get('task', 0) > 0:
-                self.run_task(self.args.get('task'))
+            use_gui = self.config.get("use_gui") and not self.args.get('headless', False)
+            if not use_gui and self.args.get('task', 0) > 0:
+                self.run_task(self.args.get('task'), exit_after=self.args.get('exit', False))
                 return
-            if self.config.get("use_gui"):
+            if use_gui:
                 if not self.init_error:
                     self.app.show_main_window()
                 logger.debug('start app.exec()')
@@ -442,21 +443,22 @@ class OK:
             if self._app or self._headless_app:
                 self.quit()
 
-    def run_task(self, task=1):
+    def run_task(self, task=1, exit_after=False):
         """
         Run a task without showing the main UI.
 
         Args:
             task: 1-based one-time task index, task name, task class, or task instance.
+            exit_after: exit the game and app after a successful one-time task.
         """
         task, is_trigger_task = self.get_task(task)
         if is_trigger_task:
             return self.run_trigger_task(task)
-        return self.run_onetime_task(task)
+        return self.run_onetime_task(task, exit_after=exit_after)
 
-    def run_onetime_task(self, task):
+    def run_onetime_task(self, task, exit_after=False):
         logger.info(f'run one-time task without ui: {task.name}')
-        started = self.headless_app.start_controller.do_start(task, exit_after=True)
+        started = self.headless_app.start_controller.do_start(task, exit_after=exit_after)
         if not started:
             raise RuntimeError(f'Start task failed: {task.name}')
         self.wait_task(task)
@@ -687,7 +689,7 @@ class OK:
             og.device_manager = self.device_manager
 
 
-def run_task(config, task=1, debug=False):
+def run_task(config, task=1, debug=False, exit_after=False):
     """
     Convenience entrypoint for scripts that only need to run one task.
 
@@ -705,7 +707,7 @@ def run_task(config, task=1, debug=False):
         headless_config["trigger_tasks"] = [[task.__module__, task.__name__]]
     elif isinstance(task, TriggerTask):
         headless_config["trigger_tasks"] = [[task.__class__.__module__, task.__class__.__name__]]
-    return OK(headless_config).run_task(task)
+    return OK(headless_config).run_task(task, exit_after=exit_after)
 
 
 class BaseScene:

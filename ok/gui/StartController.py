@@ -60,6 +60,8 @@ class StartController(QObject):
                     communicate.task.emit(task)
             elif task:
                 add_task_to_enable(task)
+                if exit_after:
+                    task.exit_after_task = True
 
             for task in tasks_to_enable:
                 task._enabled = True

@@ -352,11 +352,13 @@ def parse_arguments_to_map(description="main script"):
         dict: A dictionary where keys are argument names and values are their parsed values.
     """
 
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description, add_help=False)
 
     # Add your arguments here.  This is just an example - adapt this to your needs!
+    parser.add_argument("--help", action="help", help="show this help message and exit")
     parser.add_argument("-t", "--task", help="which task to execute as index starting with 1", type=int, default=0)
     parser.add_argument("-e", "--exit", action="store_true", help="exit after task")
+    parser.add_argument("-h", "--headless", action="store_true", help="start without ui")
 
     args, _ = parser.parse_known_args()
 
