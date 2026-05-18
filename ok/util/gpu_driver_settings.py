@@ -33,6 +33,10 @@ NV_DRS_DB_PATHS = (
     os.path.join(os.environ.get("ProgramData", ""), "NVIDIA Corporation", "Drs", "nvdrsdb1.bin"),
 )
 
+_NVAPI_INIT_UNAVAILABLE_MESSAGE: Optional[str] = None
+_NVAPI_INIT_UNAVAILABLE_LOGGED = False
+
+
 @dataclass(frozen=True)
 class GpuDriverPostProcessing:
     vendor: str
@@ -255,7 +259,7 @@ def _scan_nvapi_profiles(
                     if status == NVAPI_OK and is_enabled_value(value):
                         hits.append((profile_name, setting_id, value, setting_label))
     except NvApiUnavailable as e:
-        logger.debug(f"NvAPI profile scan skipped: {e}")
+        _log_nvapi_profile_scan_skipped(e)
     return hits
 
 
@@ -348,7 +352,17 @@ def _nv_drs_db_setting_is_on(setting_id: int, is_enabled_value: Callable[[int], 
 
 @contextmanager
 def _nvapi_drs_session():
-    nvapi = _NvApi()
+    global _NVAPI_INIT_UNAVAILABLE_MESSAGE
+
+    if _NVAPI_INIT_UNAVAILABLE_MESSAGE is not None:
+        raise NvApiUnavailable(_NVAPI_INIT_UNAVAILABLE_MESSAGE)
+
+    try:
+        nvapi = _NvApi()
+    except NvApiUnavailable as e:
+        _NVAPI_INIT_UNAVAILABLE_MESSAGE = str(e)
+        raise
+
     session = ctypes.c_void_p()
     status = nvapi.drs_create_session(ctypes.byref(session))
     if status != NVAPI_OK:
@@ -360,6 +374,16 @@ def _nvapi_drs_session():
         yield nvapi, session
     finally:
         nvapi.drs_destroy_session(session)
+
+
+def _log_nvapi_profile_scan_skipped(error: NvApiUnavailable):
+    global _NVAPI_INIT_UNAVAILABLE_LOGGED
+
+    if str(error) == _NVAPI_INIT_UNAVAILABLE_MESSAGE:
+        if _NVAPI_INIT_UNAVAILABLE_LOGGED:
+            return
+        _NVAPI_INIT_UNAVAILABLE_LOGGED = True
+    logger.debug(f"NvAPI profile scan skipped: {error}")
 
 
 def _get_first_adlx_gpu(ADLX, system):
@@ -515,9 +539,6 @@ class _NvApi:
 
 
 def main():
-    from ok.util.logger import config_logger
-
-    config_logger({"debug": True})
     enabled_features = get_enabled_gpu_driver_post_processing()
     enabled = bool(enabled_features)
     logger.info(f"is_gpu_post_processing_enabled={enabled}")
