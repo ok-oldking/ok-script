@@ -92,13 +92,13 @@ def get_enabled_gpu_driver_post_processing():
         if nvidia_quality_upscaling and nvidia_quality_upscaling.enabled:
             enabled.append(nvidia_quality_upscaling)
     except Exception as e:
-        logger.debug(f"NVIDIA driver post-processing check skipped: {e}")
+        logger.info(f"NVIDIA driver post-processing check skipped: {e}")
     try:
         amd_image_sharpening = is_amd_image_sharpening_enabled()
         if amd_image_sharpening and amd_image_sharpening.enabled:
             enabled.append(amd_image_sharpening)
     except Exception as e:
-        logger.debug(f"AMD driver post-processing check skipped: {e}")
+        logger.info(f"AMD driver post-processing check skipped: {e}")
     logger.info(f"GPU driver post-processing detected features: {enabled}")
     return enabled
 
@@ -115,11 +115,16 @@ def is_nvidia_quality_upscaling_enabled():
         if status != NVAPI_OK:
             raise NvApiUnavailable(f"NvAPI_DRS_LoadSettings failed: {status}")
 
+        profile = ctypes.c_void_p()
+        status = nvapi.drs_get_current_global_profile(session, ctypes.byref(profile))
+        if status != NVAPI_OK:
+            raise NvApiUnavailable(f"NvAPI_DRS_GetCurrentGlobalProfile failed: {status}")
+
         setting = NVDRS_SETTING()
         setting.version = NVDRS_SETTING_VER
         status = nvapi.drs_get_setting(
             session,
-            _global_profile_handle(),
+            profile,
             NV_QUALITY_UPSCALING_ID,
             ctypes.byref(setting),
         )
@@ -284,6 +289,12 @@ class _NvApi:
             ctypes.c_int,
             ctypes.c_void_p,
         )
+        self.drs_get_current_global_profile = self._get_function(
+            0x617BFF9F,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.POINTER(ctypes.c_void_p),
+        )
         self.drs_get_setting = self._get_function(
             0x73BF8338,
             ctypes.c_int,
@@ -312,11 +323,6 @@ class _NvApi:
             raise NvApiUnavailable(f"NvAPI function 0x{function_id:08X} not found")
         function = ctypes.CFUNCTYPE(restype, *argtypes)(address)
         return function
-
-
-def _global_profile_handle():
-    pointer_bits = ctypes.sizeof(ctypes.c_void_p) * 8
-    return ctypes.c_void_p((1 << pointer_bits) - 1)
 
 
 def main():
