@@ -75,6 +75,22 @@ class StartController(QObject):
             communicate.starting_emulator.emit(True, self.tr(f'Start failed: {e}'), 0)
             return False
 
+    def _wait_until_device_ready(self):
+        wait_until = time.time() + self.start_timeout
+        while not self.exit_event.is_set():
+            og.device_manager.do_refresh(True)
+            error = self.check_device_error()
+            if error is None:
+                return True
+            logger.error(f'waiting for game to start error {error}')
+            remaining_time = wait_until - time.time()
+            if remaining_time <= 0:
+                communicate.starting_emulator.emit(True, self.tr('Start game timeout!'), 0)
+                return False
+            communicate.starting_emulator.emit(False, None, int(remaining_time))
+            time.sleep(2)
+        return False
+
     def start_device(self):
         device = og.device_manager.get_preferred_device()
         logger.info(f'start_device: {device}')
@@ -96,28 +112,14 @@ class StartController(QObject):
                 if not execute(path, arguments=args):
                     communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
                     return False
-                wait_until = time.time() + self.start_timeout
-                while not self.exit_event.is_set():
-                    og.device_manager.do_refresh(True)
-                    error = self.check_device_error()
-                    if error is None:
-                        break
-                    logger.error(f'waiting for game to start error {error}')
-                    remaining_time = wait_until - time.time()
-                    if remaining_time <= 0:
-                        communicate.starting_emulator.emit(True, self.tr('Start game timeout!'), 0)
-                        return False
-                    communicate.starting_emulator.emit(False, None, int(remaining_time))
-                    time.sleep(2)
+                if not self._wait_until_device_ready():
+                    return False
             else:
                 communicate.starting_emulator.emit(True,
                                                    self.tr('Game path does not exist, Please open game manually!'), 0)
                 return False
-        else:
-            error = self.check_device_error()
-            if error:
-                communicate.starting_emulator.emit(True, error, 0)
-                return False
+        elif not self._wait_until_device_ready():
+            return False
         communicate.starting_emulator.emit(True, None, 0)
         return True
 
