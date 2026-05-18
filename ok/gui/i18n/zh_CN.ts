@@ -744,6 +744,14 @@
             <source>Can't start game, make sure the game is installed</source>
             <translation>无法启动游戏, 请确认游戏已安装!</translation>
         </message>
+        <message>
+            <source>NVIDIA/AMD filters or sharpening are enabled and may cause malfunctions!</source>
+            <translation>NVIDIA/AMD 滤镜或锐化已启用，可能导致功能异常！</translation>
+        </message>
+        <message>
+            <source>GPU Driver Warning</source>
+            <translation>GPU 驱动警告</translation>
+        </message>
     </context>
     <context>
         <name>StartLoadingDialog</name>

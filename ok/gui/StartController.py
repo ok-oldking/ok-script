@@ -41,6 +41,7 @@ class StartController(QObject):
                     return False
             else:
                 logger.info('windows.start_exe is False, skip start_device')
+            self.check_gpu_driver_post_processing()
 
             def add_task_to_enable(enable_task):
                 if enable_task and enable_task not in tasks_to_enable:
@@ -119,6 +120,24 @@ class StartController(QObject):
                 return False
         communicate.starting_emulator.emit(True, None, 0)
         return True
+
+    def check_gpu_driver_post_processing(self):
+        try:
+            from ok.util.gpu_driver_settings import is_gpu_post_processing_enabled
+            enabled = is_gpu_post_processing_enabled()
+        except Exception as e:
+            logger.error(f'check_gpu_driver_post_processing exception: {e}', e)
+            return
+
+        if enabled:
+            communicate.notification.emit(
+                self.tr('NVIDIA/AMD filters or sharpening are enabled and may cause malfunctions!'),
+                self.tr('GPU Driver Warning'),
+                True,
+                True,
+                'start',
+                None,
+            )
 
     def check_resolution(self):
         error = None

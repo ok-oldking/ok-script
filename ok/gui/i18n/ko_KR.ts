@@ -743,6 +743,14 @@
             <source>Can't start game, make sure the game is installed</source>
             <translation>게임을 시작할 수 없습니다. 게임이 설치되었는지 확인하세요</translation>
         </message>
+        <message>
+            <source>NVIDIA/AMD filters or sharpening are enabled and may cause malfunctions!</source>
+            <translation>NVIDIA/AMD 필터 또는 선명화가 활성화되어 있어 오작동을 일으킬 수 있습니다!</translation>
+        </message>
+        <message>
+            <source>GPU Driver Warning</source>
+            <translation>GPU 드라이버 경고</translation>
+        </message>
     </context>
     <context>
         <name>StartLoadingDialog</name>

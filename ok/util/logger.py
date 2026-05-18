@@ -12,10 +12,23 @@ from ok.util.file import ensure_dir_for_file, get_relative_path
 
 _ok_log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(threadName)s %(message)s')
 _ok_logger = logging.getLogger("ok")
+_OK_STDOUT_HANDLER = "_ok_stdout_handler"
+
+
+def _ensure_default_console_logger():
+    if _ok_logger.handlers:
+        return
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    setattr(stdout_handler, _OK_STDOUT_HANDLER, True)
+    stdout_handler.setFormatter(_ok_log_formatter)
+    stdout_handler.setLevel(logging.DEBUG)
+    _ok_logger.addHandler(stdout_handler)
+    _ok_logger.setLevel(logging.DEBUG)
 
 
 class Logger:
     def __init__(self, name: str):
+        _ensure_default_console_logger()
         self.logger = _ok_logger
         self.name = name.split('.')[-1]
 
@@ -111,17 +124,21 @@ def config_logger(config=None, name='ok-script'):
 
     communicate_handler = CommunicateHandler()
     communicate_handler.setFormatter(_ok_log_formatter)
-    _ok_logger.handlers = []
+    existing_stdout_handler = _get_stdout_handler()
+    _ok_logger.handlers = [existing_stdout_handler] if existing_stdout_handler and args.parent_pid == 0 else []
 
     if args.parent_pid == 0:
-        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler = existing_stdout_handler or logging.StreamHandler(sys.stdout)
+        setattr(stdout_handler, _OK_STDOUT_HANDLER, True)
         stdout_handler.setFormatter(_ok_log_formatter)
+        stdout_handler.filters = []
         stdout_handler.addFilter(InfoFilter())
         if config.get('debug'):
             stdout_handler.setLevel(logging.DEBUG)
         else:
             stdout_handler.setLevel(logging.INFO)
-        _ok_logger.addHandler(stdout_handler)
+        if stdout_handler not in _ok_logger.handlers:
+            _ok_logger.addHandler(stdout_handler)
 
     stderr_handler = logging.StreamHandler(sys.stderr)
     stderr_handler.setFormatter(_ok_log_formatter)
@@ -147,3 +164,10 @@ def config_logger(config=None, name='ok-script'):
 
     listener = QueueListener(log_queue, file_handler)
     listener.start()
+
+
+def _get_stdout_handler():
+    for handler in _ok_logger.handlers:
+        if getattr(handler, _OK_STDOUT_HANDLER, False):
+            return handler
+    return None
