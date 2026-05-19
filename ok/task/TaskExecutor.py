@@ -326,7 +326,6 @@ class TaskExecutor:
         if time_out == 0:
             time_out = self.wait_scene_timeout
         settled = 0
-        result = None
         while not self.exit_event.is_set():
             if pre_action is not None:
                 pre_action()
