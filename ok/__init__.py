@@ -75,7 +75,8 @@ class App:
         from ok.gui.util.app import init_app_config
         self.app, self.locale = init_app_config()
         self.ok_config = Config('_ok', {'window_x': -1, 'window_y': -1, 'window_width': -1, 'window_height': -1,
-                                        'window_maximized': False, 'use_overlay': False, 'show_overlay_logs': True})
+                                        'window_maximized': False, 'navigation_expanded': True,
+                                        'use_overlay': False, 'show_overlay_logs': True})
         communicate.quit.connect(self.app.quit)
 
         self.about = self.config.get('about')
