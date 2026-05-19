@@ -11,6 +11,7 @@ from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
+
 class PostMessageInteraction(BaseInteraction):
 
     def __init__(self, capture: BaseCaptureMethod, hwnd_window):
@@ -72,6 +73,7 @@ class PostMessageInteraction(BaseInteraction):
     def move(self, x, y, down_btn=0):
         long_pos = self.update_mouse_pos(x, y, True)
         self.post(win32con.WM_MOUSEMOVE, down_btn, long_pos)
+        return long_pos
 
     def scroll(self, x, y, scroll_amount):
         self.try_activate()
@@ -137,9 +139,10 @@ class PostMessageInteraction(BaseInteraction):
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01, move=True, key="left"):
         super().click(x, y, name=name)
         if move:
-            self.move(x, y)
+            long_position = self.move(x, y)
             time.sleep(down_time)
-        long_position = self.update_mouse_pos(x, y, activate=not move)
+        else:
+            long_position = self.update_mouse_pos(x, y, activate=True)
 
         if key == "left":
             btn_down = win32con.WM_LBUTTONDOWN
@@ -181,75 +184,52 @@ class PostMessageInteraction(BaseInteraction):
 
     def update_mouse_pos(self, x, y, activate=True):
         self.try_activate()
-        
+
         base_hwnd = self.hwnd_window.top_hwnd if self.hwnd_window.top_hwnd else self.hwnd_window.hwnd
-        
+
         if x == -1 or y == -1:
             x, y = getattr(self, 'bg_mouse_pos', (0, 0))
         else:
             x, y = self.hwnd_window.get_top_window_cords(x, y)
             self.bg_mouse_pos = (x, y)
-            
+
         try:
             abs_x, abs_y = win32gui.ClientToScreen(base_hwnd, (int(x), int(y)))
-            
-            # Validate that the click position falls within the boundary of base_hwnd.
-            # If not, search through the available hwnds list for one that contains it.
+
+            target_hwnd = base_hwnd
             hwnds = getattr(self.hwnd_window, 'hwnds', [])
-            if hwnds and len(hwnds) > 1:
+            for hwnd_info in hwnds:
+                candidate = hwnd_info[0]
+                if not win32gui.IsWindow(candidate):
+                    continue
                 try:
-                    base_rect = win32gui.GetWindowRect(base_hwnd)
-                    in_boundary = base_rect[0] <= abs_x < base_rect[2] and base_rect[1] <= abs_y < base_rect[3]
-                    if not in_boundary:
-                        for hwnd_info in hwnds:
-                            candidate = hwnd_info[0]
-                            if candidate == base_hwnd or not win32gui.IsWindow(candidate):
-                                continue
-                            try:
-                                rect = win32gui.GetWindowRect(candidate)
-                                if rect[0] <= abs_x < rect[2] and rect[1] <= abs_y < rect[3]:
-                                    logger.debug(
-                                        f'update_mouse_pos click ({abs_x},{abs_y}) outside base_hwnd {base_hwnd} rect {base_rect}, switching to hwnd {candidate} rect {rect}')
-                                    base_hwnd = candidate
-                                    # Recompute abs coords relative to the new base_hwnd
-                                    local_candidate_x = hwnd_info[4] if len(hwnd_info) > 4 else 0
-                                    local_candidate_y = hwnd_info[5] if len(hwnd_info) > 5 else 0
-                                    # x,y are in original bg-window coords; translate to candidate client coords
-                                    orig_base_info = next((w for w in hwnds if w[0] == (self.hwnd_window.top_hwnd or self.hwnd_window.hwnd)), None)
-                                    if orig_base_info:
-                                        dx = orig_base_info[4] - local_candidate_x
-                                        dy = orig_base_info[5] - local_candidate_y
-                                        abs_x, abs_y = win32gui.ClientToScreen(candidate, (int(x + dx), int(y + dy)))
-                                    break
-                            except Exception:
-                                continue
+                    left = hwnd_info[4]
+                    top = hwnd_info[5]
+                    right = left + hwnd_info[2]
+                    bottom = top + hwnd_info[3]
+                    if left <= abs_x < right and top <= abs_y < bottom:
+                        target_hwnd = candidate
+                        break
                 except Exception:
-                    pass
-            
-            found_child = None
-            if self.hwnd_window.top_hwnd and self.hwnd_window.top_hwnd != self.hwnd_window.hwnd:
-                def find_child_at_point(child, _):
-                    nonlocal found_child
-                    if win32gui.IsWindowVisible(child):
-                        rect = win32gui.GetWindowRect(child)
-                        if rect[0] <= abs_x < rect[2] and rect[1] <= abs_y < rect[3]:
-                            found_child = child
-                            return False
-                    return True
-                    
-                try:
-                    win32gui.EnumChildWindows(base_hwnd, find_child_at_point, None)
-                except Exception: pass
-                logger.debug(f'found_child {found_child}')
-                
-            target_hwnd = found_child if found_child else base_hwnd
+                    continue
             self._dynamic_target_hwnd = target_hwnd
-            
+
             local_x, local_y = win32gui.ScreenToClient(target_hwnd, (abs_x, abs_y))
-            
-            # logger.debug(f'mouse_pos dynamically aimed at {target_hwnd} ({win32gui.GetClassName(target_hwnd)}): {local_x}, {local_y}')
+
+            hwnd_descriptions = []
+            for index, hwnd_info in enumerate(hwnds):
+                candidate = hwnd_info[0]
+                try:
+                    class_name = win32gui.GetClassName(candidate) if win32gui.IsWindow(candidate) else '<invalid>'
+                except Exception as e:
+                    class_name = f'<class error: {e}>'
+                hwnd_descriptions.append(f'{index}:{candidate}({class_name})')
+            logger.debug(
+                f'hwnd_window hwnds hwnd={self.hwnd_window.hwnd} top_hwnd={self.hwnd_window.top_hwnd}: {hwnd_descriptions}')
+            logger.debug(
+                f'mouse_pos dynamically aimed at {target_hwnd} ({win32gui.GetClassName(target_hwnd)}): {local_x}, {local_y}')
             return win32api.MAKELONG(local_x, local_y)
-            
+
         except Exception as e:
             logger.error(f'update_mouse_pos conversion error targeting {base_hwnd}', e)
             self._dynamic_target_hwnd = base_hwnd

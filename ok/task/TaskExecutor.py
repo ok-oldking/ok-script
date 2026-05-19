@@ -333,17 +333,19 @@ class TaskExecutor:
             result = condition()
             result_str = list_or_obj_to_str(result)
             if result:
-                logger.debug(
-                    f"found result {result_str} {(time.time() - start):.3f}")
                 if settle_time == -1:
                     settle_time = self.wait_until_settle_time
                 if settle_time > 0:
-                    if settled > 0 and time.time() - settled > settle_time:
+                    now = time.time()
+                    if settled > 0 and now - settled > settle_time:
+                        logger.debug(f"found result {result_str} {(now - start):.3f}")
                         return result
                     if settled == 0:
-                        settled = time.time()
+                        logger.debug(f"found result {result_str} {(now - start):.3f}")
+                        settled = now
                     continue
                 else:
+                    logger.debug(f"found result {result_str} {(time.time() - start):.3f}")
                     return result
             else:
                 settled = 0

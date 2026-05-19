@@ -84,6 +84,15 @@ class HwndWindow:
     def _front_hwnd_candidates(self):
         return list(dict.fromkeys(hwnd for hwnd in (self.top_hwnd, self.hwnd) if hwnd))
 
+    def _top_hwnd_info(self, hwnds):
+        if not hwnds:
+            return None
+
+        for hwnd_info in hwnds:
+            if hwnd_info[0] != self.hwnd:
+                return hwnd_info
+        return hwnds[0]
+
     def bring_to_front(self):
         errors = []
         for refreshed in (False, True):
@@ -215,14 +224,15 @@ class HwndWindow:
                 self.real_y_offset = real_y_offset
                 self.real_width = real_width
                 self.real_height = real_height
-                self.top_hwnd = hwnds[0][0] if hwnds else self.hwnd
+                top_hwnd_info = self._top_hwnd_info(hwnds)
+                self.top_hwnd = top_hwnd_info[0] if top_hwnd_info else self.hwnd
                 self.top_offset_x = 0
                 self.top_offset_y = 0
-                if hwnds and len(hwnds) > 0:
+                if top_hwnd_info:
                     bg_hwnd_info = next((w for w in hwnds if w[0] == self.hwnd), None)
                     if bg_hwnd_info:
-                        self.top_offset_x = hwnds[0][4] - bg_hwnd_info[4]
-                        self.top_offset_y = hwnds[0][5] - bg_hwnd_info[5]
+                        self.top_offset_x = top_hwnd_info[4] - bg_hwnd_info[4]
+                        self.top_offset_y = top_hwnd_info[5] - bg_hwnd_info[5]
 
             exists = self.hwnd > 0
             if self.hwnd > 0:

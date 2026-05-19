@@ -1,3 +1,5 @@
+import time
+
 import win32gui
 import win32process
 import psutil
@@ -105,10 +107,9 @@ def print_hwnd_tree():
 
             # Formatting variables for clean output
             vis_str = "VIS" if info['visible'] else "INV"
-            hwnd_hex = f"{info['hwnd']:08X}"
             size_str = f"{info['width']}x{info['height']}"
 
-            print(f"{indent}[HWND: {hwnd_hex}] | {vis_str} | Size: {size_str:<9} (Area: {info['area']:<7}) | "
+            print(f"{indent}[HWND: {info['hwnd']}] | {vis_str} | Size: {size_str:<9} (Area: {info['area']:<7}) | "
                   f"EXE: {info['exe']:<20} | PID: {info['pid']:<6} | Class: {info['class']} | "
                   f"CMD: {info['cmdline']}")
 

@@ -122,6 +122,75 @@ def is_foreground_window(hwnd):
     return win32gui.IsWindowVisible(hwnd) and win32gui.GetForegroundWindow() == hwnd
 
 
+def sort_hwnds_top_to_bottom(hwnds):
+    if not hwnds:
+        return hwnds
+
+    hwnd_map = {hwnd_info[0]: hwnd_info for hwnd_info in hwnds}
+    ordered = []
+    seen = set()
+
+    try:
+        hwnd = win32gui.GetTopWindow(0)
+        while hwnd:
+            if hwnd in hwnd_map and hwnd not in seen:
+                ordered.append(hwnd_map[hwnd])
+                seen.add(hwnd)
+                if len(seen) == len(hwnd_map):
+                    break
+            hwnd = win32gui.GetWindow(hwnd, win32con.GW_HWNDNEXT)
+    except Exception as e:
+        logger.debug(f'sort_hwnds_top_to_bottom failed: {e}')
+
+    ordered.extend(hwnd_info for hwnd_info in hwnds if hwnd_info[0] not in seen)
+    return ordered
+
+
+def _hwnd_info(hwnd, full_path=None):
+    x, y, _, _, width, height, m_scaling = get_window_bounds(hwnd)
+    text = win32gui.GetWindowText(hwnd)
+    cname = win32gui.GetClassName(hwnd)
+    return hwnd, full_path, width, height, x, y, text, cname, m_scaling
+
+
+def _clickable_child_hwnds(parent_info, known_hwnds, top_hwnd_class=None):
+    parent_hwnd = parent_info[0]
+    full_path = parent_info[1]
+    clickable = []
+
+    def append_children(parent):
+        child = win32gui.GetTopWindow(parent)
+        while child:
+            if child not in known_hwnds and win32gui.IsWindow(child) and win32gui.IsWindowVisible(child) and win32gui.IsWindowEnabled(child):
+                try:
+                    child_info = _hwnd_info(child, full_path)
+                    if child_info[2] > 0 and child_info[3] > 0:
+                        append_children(child)
+                        if top_hwnd_class is None or _match_class_name(child_info[7], top_hwnd_class) >= 0:
+                            clickable.append(child_info)
+                            known_hwnds.add(child)
+                except Exception:
+                    pass
+            child = win32gui.GetWindow(child, win32con.GW_HWNDNEXT)
+
+    try:
+        append_children(parent_hwnd)
+    except Exception as e:
+        logger.debug(f'_clickable_child_hwnds failed for {parent_hwnd}: {e}')
+    return clickable
+
+
+def expand_clickable_hwnds(hwnds, main_hwnd=0, top_hwnd_class=None):
+    expanded = []
+    known_hwnds = {hwnd_info[0] for hwnd_info in hwnds}
+
+    for hwnd_info in hwnds:
+        if len(hwnds) == 1 or hwnd_info[0] != main_hwnd:
+            expanded.extend(_clickable_child_hwnds(hwnd_info, known_hwnds, top_hwnd_class))
+        expanded.append(hwnd_info)
+    return expanded
+
+
 def show_title_bar(hwnd):
     try:
         current_style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
@@ -351,6 +420,11 @@ def find_hwnd(title, exe_names, frame_width, frame_height, player_id=-1, class_n
             for top_item in reversed(filtered_top):
                 if top_item[0] != biggest[0] and not any(r[0] == top_item[0] for r in results):
                     results.insert(0, top_item[:9] if len(top_item) > 9 else top_item)
+            sorted_results = sort_hwnds_top_to_bottom(results)
+            if [r[0] for r in sorted_results] != [r[0] for r in results]:
+                logger.debug(f'find_hwnd sorted hwnds by z-order {[r[0] for r in sorted_results]}')
+            results = sorted_results
+            results = expand_clickable_hwnds(results, biggest[0], top_hwnd_class)
 
     x_offset, y_offset, real_width, real_height = 0, 0, biggest[2], biggest[3]
     if class_name is None and frame_aspect_ratio != 0:
