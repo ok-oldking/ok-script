@@ -836,6 +836,14 @@
             <source>Capture</source>
             <translation>キャプチャ</translation>
         </message>
+        <message>
+            <source>Screenshot Folder</source>
+            <translation>スクリーンショットフォルダー</translation>
+        </message>
+        <message>
+            <source>Log Folder</source>
+            <translation>ログフォルダー</translation>
+        </message>
     </context>
     <context>
         <name>TaskButtons</name>

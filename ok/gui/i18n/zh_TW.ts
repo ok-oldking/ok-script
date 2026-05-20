@@ -840,6 +840,14 @@
             <source>Capture</source>
             <translation>截圖</translation>
         </message>
+        <message>
+            <source>Screenshot Folder</source>
+            <translation>截圖目錄</translation>
+        </message>
+        <message>
+            <source>Log Folder</source>
+            <translation>日誌目錄</translation>
+        </message>
     </context>
     <context>
         <name>TaskButtons</name>

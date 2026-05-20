@@ -67,13 +67,21 @@ class StartTab(Tab):
         self.debug_layout = QHBoxLayout(self.debug_widget)
         self.debug_layout.setContentsMargins(0, 20, 0, 20)
 
+        self.export_log_button = PushButton(FluentIcon.FEEDBACK, self.tr("Export Logs"))
+        self.export_log_button.clicked.connect(self.export_logs)
+        self.debug_layout.addWidget(self.export_log_button)
+
         self.open_install_folder_button = PushButton(FluentIcon.FOLDER, self.tr("Install Folder"))
         self.open_install_folder_button.clicked.connect(self.open_install_folder)
         self.debug_layout.addWidget(self.open_install_folder_button)
 
-        self.export_log_button = PushButton(FluentIcon.FEEDBACK, self.tr("Export Logs"))
-        self.export_log_button.clicked.connect(self.export_logs)
-        self.debug_layout.addWidget(self.export_log_button)
+        self.open_screenshot_folder_button = PushButton(FluentIcon.FOLDER, self.tr("Screenshot Folder"))
+        self.open_screenshot_folder_button.clicked.connect(self.open_screenshot_folder)
+        self.debug_layout.addWidget(self.open_screenshot_folder_button)
+
+        self.open_log_folder_button = PushButton(FluentIcon.FOLDER, self.tr("Log Folder"))
+        self.open_log_folder_button.clicked.connect(self.open_log_folder)
+        self.debug_layout.addWidget(self.open_log_folder_button)
 
         self.ocr_button = PushButton(FluentIcon.SEARCH, "OCR")
         self.ocr_button.clicked.connect(self.ocr_log)
@@ -157,6 +165,24 @@ class StartTab(Tab):
     def open_install_folder():
         cwd = os.getcwd()
         subprocess.Popen(f'explorer "{cwd}"')
+
+    @staticmethod
+    def open_screenshot_folder():
+        from ok import og
+        folder = getattr(getattr(og.ok, 'screenshot', None), 'screenshot_folder', None)
+        if folder is None:
+            folder = Path.cwd() / "screenshots"
+        StartTab.open_folder(folder)
+
+    @staticmethod
+    def open_log_folder():
+        StartTab.open_folder(Path.cwd() / "logs")
+
+    @staticmethod
+    def open_folder(folder):
+        folder_path = Path(folder)
+        folder_path.mkdir(parents=True, exist_ok=True)
+        subprocess.Popen(["explorer", str(folder_path)])
 
     @staticmethod
     def export_logs():

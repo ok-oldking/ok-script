@@ -844,6 +844,14 @@
             <source>OCR</source>
             <translation>OCR</translation>
         </message>
+        <message>
+            <source>Screenshot Folder</source>
+            <translation>Carpeta de capturas</translation>
+        </message>
+        <message>
+            <source>Log Folder</source>
+            <translation>Carpeta de registros</translation>
+        </message>
     </context>
     <context>
         <name>TaskButtons</name>
