@@ -161,21 +161,29 @@ class StartTab(Tab):
     @staticmethod
     def export_logs():
         from ok import og
+        from ok.gui.util.Alert import alert_error
+        from ok.util.file import get_downloads_folder
         app_name = og.config.get('gui_title')
-        downloads_path = Path.home() / "Downloads"
+        downloads_path = Path(get_downloads_folder())
         zip_path = downloads_path / f"{app_name}-log.zip"
         folders_to_archive = ["screenshots", "logs"]
 
-        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-            for folder in folders_to_archive:
-                source_dir = Path.cwd() / folder
-                if not source_dir.is_dir():
-                    continue
-                for file_path in source_dir.rglob("*"):
-                    if file_path.is_file():
-                        zipf.write(file_path, file_path.relative_to(Path.cwd()))
+        try:
+            downloads_path.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                for folder in folders_to_archive:
+                    source_dir = Path.cwd() / folder
+                    if not source_dir.is_dir():
+                        continue
+                    for file_path in source_dir.rglob("*"):
+                        if file_path.is_file():
+                            zipf.write(file_path, file_path.relative_to(Path.cwd()))
 
-        subprocess.run(["explorer", f"/select,{zip_path}"])
+            subprocess.run(["explorer", f"/select,{zip_path}"])
+        except Exception as e:
+            alert_error(f"{og.app.tr('Export failed')}: {e}", tray=True)
+            from ok import Logger
+            Logger.get_logger(__name__).error('export_logs exception', e)
 
     def ocr_log_bg(self):
         try:

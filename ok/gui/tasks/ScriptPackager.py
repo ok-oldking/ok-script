@@ -4,6 +4,7 @@ import re
 import shutil
 import zipfile
 
+from ok.util.file import get_downloads_folder
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -19,21 +20,6 @@ def get_ok_tasks_folder():
 
 def get_ok_import_folder():
     return os.path.join(os.getcwd(), OK_IMPORT_FOLDER)
-
-
-def get_downloads_folder():
-    """Get the user's Downloads folder."""
-    try:
-        import winreg
-        sub_key = r'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders'
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, sub_key) as key:
-            downloads_path = winreg.QueryValueEx(key, '{374DE290-123F-4565-9164-39C4925E467B}')[0]
-            downloads_path = os.path.expandvars(downloads_path)
-            if os.path.exists(downloads_path):
-                return downloads_path
-    except Exception:
-        pass
-    return os.path.join(os.path.expanduser('~'), 'Downloads')
 
 
 def load_manifest(folder=None):
@@ -104,6 +90,7 @@ def export_script(selected_files, file_name, script_name, version):
 
     # Build zip
     downloads = get_downloads_folder()
+    os.makedirs(downloads, exist_ok=True)
     output_path = os.path.join(downloads, f"{file_name}.okscript")
 
     try:

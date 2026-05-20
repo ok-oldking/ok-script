@@ -84,6 +84,64 @@ def install_path_isascii():
     return isascii, path
 
 
+def get_downloads_folder():
+    """Return the user's Downloads folder, honoring custom Windows locations."""
+    downloads_folder_id = '{374DE290-123F-4565-9164-39C4925E467B}'
+    if sys.platform == 'win32':
+        path = _get_windows_known_folder_path(downloads_folder_id) or _get_windows_user_shell_folder(downloads_folder_id)
+        if path:
+            return os.path.abspath(os.path.expandvars(path))
+    return os.path.abspath(os.path.join(os.path.expanduser('~'), 'Downloads'))
+
+
+def _get_windows_known_folder_path(folder_id):
+    path_ptr = None
+    try:
+        import ctypes
+        import uuid
+        from ctypes import wintypes
+
+        class GUID(ctypes.Structure):
+            _fields_ = [
+                ('Data1', wintypes.DWORD),
+                ('Data2', wintypes.WORD),
+                ('Data3', wintypes.WORD),
+                ('Data4', ctypes.c_ubyte * 8),
+            ]
+
+        folder_guid = GUID.from_buffer_copy(uuid.UUID(folder_id).bytes_le)
+        path_ptr = wintypes.LPWSTR()
+        hr = ctypes.windll.shell32.SHGetKnownFolderPath(
+            ctypes.byref(folder_guid),
+            0,
+            None,
+            ctypes.byref(path_ptr),
+        )
+        if hr == 0 and path_ptr.value:
+            return path_ptr.value
+    except Exception:
+        return None
+    finally:
+        if path_ptr:
+            try:
+                ctypes.windll.ole32.CoTaskMemFree(path_ptr)
+            except Exception:
+                pass
+    return None
+
+
+def _get_windows_user_shell_folder(folder_id):
+    try:
+        import winreg
+
+        sub_key = r'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders'
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, sub_key) as key:
+            path, _ = winreg.QueryValueEx(key, folder_id)
+            return path
+    except Exception:
+        return None
+
+
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     # Get the absolute path of the current script
