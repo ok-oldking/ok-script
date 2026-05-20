@@ -67,6 +67,10 @@ class TaskCard(ConfigCard):
 
     def start_clicked(self):
         self.setExpand(False)
+        if self.task.enabled and self.task.paused:
+            logger.info(f"resume paused task {self.task}")
+            self.task.unpause()
+            return
         if self.task.first_run_alert:
             if not self.task.config.get('_first_run_alert'):
                 title = og.app.tr('Alert')

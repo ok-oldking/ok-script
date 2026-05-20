@@ -28,6 +28,24 @@ class StartController(QObject):
         communicate.starting_emulator.emit(False, None, self.start_timeout)
         tasks_to_enable = []
         try:
+            if isinstance(task, int):
+                task = og.executor.onetime_tasks[task]
+                logger.info(f"enable param task {task}")
+
+            if task and task.enabled and task.paused:
+                logger.info(f"resume paused task {task}")
+                if exit_after:
+                    task.exit_after_task = True
+                    communicate.task.emit(task)
+                task.unpause()
+                communicate.starting_emulator.emit(True, None, 0)
+                return True
+        except Exception as e:
+            logger.error(f'do_start resume exception: {e}', e)
+            communicate.starting_emulator.emit(True, self.tr(f'Start failed: {e}'), 0)
+            return False
+
+        try:
             logger.info(f'do_start: call do_refresh {self.start_exe}')
             og.device_manager.do_refresh(True)
         except Exception as e:
@@ -52,14 +70,7 @@ class StartController(QObject):
                     logger.info(f"enable_after_start task {start_task}")
                     add_task_to_enable(start_task)
 
-            if isinstance(task, int):
-                task = og.executor.onetime_tasks[task]
-                logger.info(f"enable param task {task}")
-                add_task_to_enable(task)
-                if exit_after and task:
-                    task.exit_after_task = True
-                    communicate.task.emit(task)
-            elif task:
+            if task:
                 add_task_to_enable(task)
                 if exit_after:
                     task.exit_after_task = True
