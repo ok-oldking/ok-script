@@ -46,6 +46,8 @@ class TaskExecutor:
     config: object
     basic_options: object
     lock: object
+    _ocr_lib_lock: object
+    _ocr_init_thread: object
 
     def __init__(self, device_manager,
                  wait_until_timeout=10, wait_until_settle_time=-1,
@@ -86,6 +88,9 @@ class TaskExecutor:
         self.onetime_tasks = []
         self.thread = None
         self.lock = threading.Lock()
+        self._ocr_lib_lock = threading.Lock()
+        self._ocr_init_thread = None
+        self.init_default_ocr()
 
     def load_tr(self):
         locale_name = self.locale.name()
@@ -108,52 +113,79 @@ class TaskExecutor:
 
     def ocr_lib(self, name="default"):
         if name not in self._ocr_lib:
-            lib = self.config.get('ocr').get(name).get('lib')
-            to_download = self.config.get('ocr').get(name).get('download_models')
-            if to_download:
-                models = self.config.get('download_models').get(to_download)
-                from ok.gui.util.download import download_models
-                download_models(models)
-
-            config_params = self.config.get('ocr').get(name).get('params')
-            if config_params is None:
-                config_params = {}
-            if lib == 'paddleocr':
-                logger.info('use paddleocr as ocr lib')
-                from paddleocr import PaddleOCR
-                lang = 'ch'
-                config_params['use_textline_orientation'] = False
-                config_params['use_doc_unwarping'] = False
-                config_params['use_doc_orientation_classify'] = False
-                config_params['device'] = "gpu" if is_cuda_12_or_above() else "cpu"
-                logger.info(f'init PaddleOCR with {config_params}')
-                self._ocr_lib[name] = PaddleOCR(**config_params)
-                import logging
-                logging.getLogger('ppocr').setLevel(logging.ERROR)
-                config_logger(self.config)
-            elif lib == 'dgocr':
-                if config_params.get('use_dml', True):
-                    config_params['use_dml'] = True
-                from dgocr import DGOCR
-                self._ocr_lib[name] = DGOCR(**config_params)
-            elif lib == 'onnxocr':
-                from onnxocr.onnx_paddleocr import ONNXPaddleOcr
-                logger.info(f'init onnxocr {config_params}')
-                self._ocr_lib[name] = ONNXPaddleOcr(use_angle_cls=False,
-                                                    logger=logger,
-                                                    use_npu=config_params.get('use_npu', True),
-                                                    use_openvino=config_params.get('use_openvino', False))
-            elif lib == 'rapidocr':
-                from rapidocr import RapidOCR
-                params = {"Global.use_cls": False, "Global.max_side_len": 100000, "Global.min_side_len": 0,
-                          "EngineConfig.onnxruntime.use_dml": False}
-                params.update(config_params)
-                logger.info(f'init rapidocr {params}')
-                self._ocr_lib[name] = RapidOCR(params=params)
-            else:
-                raise Exception(f'ocr lib not supported: {lib}')
-            logger.info(f'ocr_lib init {self._ocr_lib[name]} {lib}')
+            with self._ocr_lib_lock:
+                if name not in self._ocr_lib:
+                    self._ocr_lib[name] = self._create_ocr_lib(name)
         return self._ocr_lib[name]
+
+    def init_default_ocr(self):
+        ocr_config = self.config.get('ocr')
+        if not ocr_config:
+            return
+        default_ocr = ocr_config.get('default')
+        if not default_ocr or not default_ocr.get('lib'):
+            return
+        self._ocr_init_thread = threading.Thread(target=self._init_default_ocr, name="DefaultOCRInit", daemon=True)
+        self._ocr_init_thread.start()
+
+    def _init_default_ocr(self):
+        start = time.time()
+        try:
+            logger.info('start init default ocr')
+            self.ocr_lib()
+            logger.info(f'default ocr init end, cost: {time.time() - start:.2f}s')
+        except Exception as e:
+            logger.error(f'init default ocr error, cost: {time.time() - start:.2f}s', e)
+
+    def _create_ocr_lib(self, name):
+        ocr_config = self.config.get('ocr').get(name)
+        lib = ocr_config.get('lib')
+        to_download = ocr_config.get('download_models')
+        if to_download:
+            models = self.config.get('download_models').get(to_download)
+            from ok.gui.util.download import download_models
+            download_models(models)
+
+        config_params = ocr_config.get('params')
+        if config_params is None:
+            config_params = {}
+        else:
+            config_params = dict(config_params)
+        if lib == 'paddleocr':
+            logger.info('use paddleocr as ocr lib')
+            from paddleocr import PaddleOCR
+            config_params['use_textline_orientation'] = False
+            config_params['use_doc_unwarping'] = False
+            config_params['use_doc_orientation_classify'] = False
+            config_params['device'] = "gpu" if is_cuda_12_or_above() else "cpu"
+            logger.info(f'init PaddleOCR with {config_params}')
+            ocr_lib = PaddleOCR(**config_params)
+            import logging
+            logging.getLogger('ppocr').setLevel(logging.ERROR)
+            config_logger(self.config)
+        elif lib == 'dgocr':
+            if config_params.get('use_dml', True):
+                config_params['use_dml'] = True
+            from dgocr import DGOCR
+            ocr_lib = DGOCR(**config_params)
+        elif lib == 'onnxocr':
+            from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+            logger.info(f'init onnxocr {config_params}')
+            ocr_lib = ONNXPaddleOcr(use_angle_cls=False,
+                                    logger=logger,
+                                    use_npu=config_params.get('use_npu', True),
+                                    use_openvino=config_params.get('use_openvino', False))
+        elif lib == 'rapidocr':
+            from rapidocr import RapidOCR
+            params = {"Global.use_cls": False, "Global.max_side_len": 100000, "Global.min_side_len": 0,
+                      "EngineConfig.onnxruntime.use_dml": False}
+            params.update(config_params)
+            logger.info(f'init rapidocr {params}')
+            ocr_lib = RapidOCR(params=params)
+        else:
+            raise Exception(f'ocr lib not supported: {lib}')
+        logger.info(f'ocr_lib init {ocr_lib} {lib}')
+        return ocr_lib
 
     def nullable_frame(self):
         return self._frame
