@@ -63,12 +63,9 @@ class LabelAndButtonList(ConfigLabelAndWidget):
 
     def add_item(self, item):
         current = self.config.get(self.key)
-        if current is None:
+        # only accept list values; if not a list, initialize to empty list
+        if not isinstance(current, list):
             current = []
-        elif isinstance(current, str):
-            current = [value.strip() for value in current.split(",") if value.strip()]
-        else:
-            current = list(current)
 
         current.append(item)
         self.update_config(current)
@@ -76,18 +73,14 @@ class LabelAndButtonList(ConfigLabelAndWidget):
 
     def delete_last_item(self):
         current = self.config.get(self.key)
-        if not current:
+        # only operate on lists
+        if not isinstance(current, list) or not current:
             return
 
-        if isinstance(current, str):
-            items = [value.strip() for value in current.split(",") if value.strip()]
-        else:
-            items = list(current)
-
-        if items:
-            items.pop()
-            self.update_config(items)
-            self.update_display_label()
+        items = list(current)
+        items.pop()
+        self.update_config(items)
+        self.update_display_label()
 
     def reset_to_empty(self):
         self.update_config([])
@@ -95,15 +88,11 @@ class LabelAndButtonList(ConfigLabelAndWidget):
 
     def update_display_label(self):
         value = self.config.get(self.key)
-        if value is None:
-            display = ""
-        elif isinstance(value, list):
+        # only list values are considered; otherwise display empty
+        if isinstance(value, list):
             display = ", ".join(self._translate_option(item) for item in value)
-        elif isinstance(value, str):
-            items = [item.strip() for item in value.split(",") if item.strip()]
-            display = ", ".join(self._translate_option(item) for item in items)
         else:
-            display = self._translate_option(str(value))
+            display = ""
 
         self.display_label.setText(display if display else self.tr("(empty)"))
 
