@@ -110,6 +110,13 @@ class MainWindow(FluentWindow):
         visible_onetime_tasks = [task for task in self.executor.onetime_tasks if getattr(task, 'visible', True)]
         visible_trigger_tasks = [task for task in self.executor.trigger_tasks if getattr(task, 'visible', True)]
 
+        if len(visible_trigger_tasks) > 0:
+            from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
+            self.trigger_tab = TriggerTaskTab()
+            if self.first_task_tab is None:
+                self.first_task_tab = self.trigger_tab
+            self.addSubInterface(self.trigger_tab, FluentIcon.STOP_WATCH, self.tr('Triggers'))
+
         if visible_onetime_tasks:
             from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
             from collections import defaultdict
@@ -138,13 +145,6 @@ class MainWindow(FluentWindow):
                 logger.debug(f"add grouped_task_tabs {group_name} len {len(tasks_in_group)}")
                 self.addSubInterface(group_tab, group_icon, self.app.tr(group_name))
                 self.grouped_task_tabs.append(group_tab)
-
-        if len(visible_trigger_tasks) > 0:
-            from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
-            self.trigger_tab = TriggerTaskTab()
-            if self.first_task_tab is None:
-                self.first_task_tab = self.trigger_tab
-            self.addSubInterface(self.trigger_tab, FluentIcon.ROBOT, self.tr('Triggers'))
 
         # Add custom tabs that should appear after built-in task tabs
         for tab_obj in after_custom_tabs:

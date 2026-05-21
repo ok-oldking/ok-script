@@ -306,7 +306,7 @@ class TaskExecutor:
                             task.sleep_check()
                             self.reset_scene()
                         except Exception as e:
-                            logger.error(f"sleep_check error {task}", e)
+                            logger.info(f"sleep_check error {task}")
                             raise
                         finally:
                             task.last_sleep_check_time = time.time()

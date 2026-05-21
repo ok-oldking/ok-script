@@ -224,10 +224,10 @@ class PostMessageInteraction(BaseInteraction):
                 except Exception as e:
                     class_name = f'<class error: {e}>'
                 hwnd_descriptions.append(f'{index}:{candidate}({class_name})')
-            logger.debug(
-                f'hwnd_window hwnds hwnd={self.hwnd_window.hwnd} top_hwnd={self.hwnd_window.top_hwnd}: {hwnd_descriptions}')
-            logger.debug(
-                f'mouse_pos dynamically aimed at {target_hwnd} ({win32gui.GetClassName(target_hwnd)}): {local_x}, {local_y}')
+            # logger.debug(
+            #     f'hwnd_window hwnds hwnd={self.hwnd_window.hwnd} top_hwnd={self.hwnd_window.top_hwnd}: {hwnd_descriptions}')
+            # logger.debug(
+            #     f'mouse_pos dynamically aimed at {target_hwnd} ({win32gui.GetClassName(target_hwnd)}): {local_x}, {local_y}')
             return win32api.MAKELONG(local_x, local_y)
 
         except Exception as e:
