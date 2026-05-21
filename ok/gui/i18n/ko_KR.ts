@@ -931,6 +931,10 @@
             <source>Resume</source>
             <translation>재개</translation>
         </message>
+        <message>
+            <source>Waiting for {task_name} task to be completed</source>
+            <translation>{task_name} 작업 완료 대기 중</translation>
+        </message>
     </context>
     <context>
         <name>TaskOpButton</name>

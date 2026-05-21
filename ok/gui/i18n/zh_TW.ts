@@ -926,6 +926,10 @@
             <source>Resume</source>
             <translation>繼續</translation>
         </message>
+        <message>
+            <source>Waiting for {task_name} task to be completed</source>
+            <translation>等待 {task_name} 任務完成</translation>
+        </message>
     </context>
     <context>
         <name>TaskOpButton</name>

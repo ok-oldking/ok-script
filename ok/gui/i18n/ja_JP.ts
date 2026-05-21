@@ -922,6 +922,10 @@
             <source>Resume</source>
             <translation>再開</translation>
         </message>
+        <message>
+            <source>Waiting for {task_name} task to be completed</source>
+            <translation>{task_name} タスクの完了を待機中</translation>
+        </message>
     </context>
     <context>
         <name>TaskOpButton</name>

@@ -38,6 +38,7 @@ class TaskExecutor:
     trigger_task_index: int
     trigger_tasks: list
     onetime_tasks: list
+    onetime_task_queue: list
     thread: object
     locale: object
     scene: object
@@ -86,6 +87,7 @@ class TaskExecutor:
 
         self.trigger_tasks = []
         self.onetime_tasks = []
+        self.onetime_task_queue = []
         self.thread = None
         self.lock = threading.Lock()
         self._ocr_lib_lock = threading.Lock()
@@ -397,10 +399,50 @@ class TaskExecutor:
         if self.scene:
             self.scene.reset()
 
+    def enqueue_onetime_task(self, task):
+        if task not in self.onetime_tasks:
+            return False
+        with self.lock:
+            if task not in self.onetime_task_queue:
+                self.onetime_task_queue.append(task)
+                logger.info(f'queued onetime_task {task.name}')
+        return True
+
+    def remove_onetime_task(self, task):
+        if task not in self.onetime_tasks:
+            return False
+        removed = False
+        with self.lock:
+            while task in self.onetime_task_queue:
+                self.onetime_task_queue.remove(task)
+                removed = True
+        return removed
+
+    def waiting_for_task(self, task):
+        if task not in self.onetime_tasks or not task.enabled or task.running:
+            return None
+        with self.lock:
+            queue = [queued_task for queued_task in self.onetime_task_queue
+                     if queued_task.enabled and not queued_task.running]
+        if task not in queue:
+            return None
+        index = queue.index(task)
+        if index > 0:
+            return queue[index - 1]
+        if self.current_task and self.current_task != task and self.current_task.running:
+            return self.current_task
+        return None
+
     def next_task(self) -> tuple:
         if self.exit_event.is_set():
             logger.error(f"next_task exit_event.is_set exit")
             return None, False, False
+        with self.lock:
+            while self.onetime_task_queue:
+                onetime_task = self.onetime_task_queue.pop(0)
+                if onetime_task.enabled:
+                    logger.info(f'get queued onetime_task {onetime_task.name}')
+                    return onetime_task, True, False
         for onetime_task in self.onetime_tasks:
             if onetime_task.enabled:
                 logger.info(f'get one enabled onetime_task {onetime_task.name}')
@@ -471,27 +513,32 @@ class TaskExecutor:
                         self.device_manager.stop_hwnd()
                         time.sleep(5)
                         communicate.quit.emit()
+                task.running = False
                 self.current_task = None
                 if not is_trigger_task:
                     communicate.task.emit(task)
-                if self.current_task is not None:
-                    self.current_task.running = False
-                    if not is_trigger_task:
-                        communicate.task.emit(self.current_task)
-                    self.current_task = None
             except TaskDisabledException:
                 logger.info(f"TaskDisabledException, continue {task}")
                 from ok import og
+                task.running = False
+                self.current_task = None
+                if not is_trigger_task:
+                    communicate.task.emit(task)
                 communicate.notification.emit('Stopped', task.name, False,
                                               True, "start", None)
                 continue
             except FinishedException:
                 logger.info(f"FinishedException, breaking")
+                task.running = False
+                self.current_task = None
+                if not is_trigger_task:
+                    communicate.task.emit(task)
                 break
             except Exception as e:
                 if isinstance(e, CaptureException):
                     communicate.capture_error.emit()
                 name = task.name
+                task.running = False
                 task.disable()
                 from ok import og
                 params = None

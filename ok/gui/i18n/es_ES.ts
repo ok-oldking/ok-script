@@ -930,6 +930,10 @@
             <source>Resume</source>
             <translation>Reanudar</translation>
         </message>
+        <message>
+            <source>Waiting for {task_name} task to be completed</source>
+            <translation>Esperando a que se complete la tarea {task_name}</translation>
+        </message>
     </context>
     <context>
         <name>TaskOpButton</name>

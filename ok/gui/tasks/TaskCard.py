@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QHBoxLayout, QWidget, QSizePolicy
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget, QSizePolicy
 from qfluentwidgets import FluentIcon, PushButton, SwitchButton, MessageBox
 
 from ok import Logger, BaseTask, og
@@ -23,6 +23,11 @@ class TaskCard(ConfigCard):
         self.button_layout.setSpacing(6)
         self.button_container.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.addWidget(self.button_container)
+
+        self.waiting_label = QLabel(self)
+        self.waiting_label.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        self.waiting_label.setMaximumWidth(360)
+        self.waiting_label.hide()
 
         self.instructions_button = PushButton(FluentIcon.INFO, self.tr("Instructions"), self)
         self.instructions_button.clicked.connect(self.show_instructions)
@@ -54,6 +59,7 @@ class TaskCard(ConfigCard):
 
         # Collect all buttons in display order
         self.all_buttons = [b for b in [
+            self.waiting_label,
             self.instructions_button,
             self.edit_button,
             self.pause_button,
@@ -64,6 +70,18 @@ class TaskCard(ConfigCard):
 
         self.update_buttons(self.task)
         communicate.task.connect(self.update_buttons)
+
+    def update_content(self):
+        content = ""
+        if self.onetime:
+            waiting_for = og.executor.waiting_for_task(self.task)
+            if waiting_for:
+                content = self.tr("Waiting for {task_name} task to be completed").format(
+                    task_name=og.app.tr(waiting_for.name)
+                )
+        self.waiting_label.setText(content)
+        self.waiting_label.setToolTip(content)
+        self.waiting_label.setVisible(bool(content))
 
     def start_clicked(self):
         self.setExpand(False)
@@ -139,10 +157,11 @@ class TaskCard(ConfigCard):
                 self.button_layout.addWidget(btn)
 
     def update_buttons(self, task):
-        if task == self.task:
+        if task == self.task or self.onetime:
             # Determine visibility for instructions button
             has_instructions = bool(getattr(self.task, 'instructions', None))
             self.instructions_button.setVisible(has_instructions)
+            self.update_content()
 
             if self.onetime:
                 if self.task.enabled:

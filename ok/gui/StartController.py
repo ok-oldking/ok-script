@@ -21,6 +21,15 @@ class StartController(QObject):
         self.start_timeout = app_config.get('start_timeout', 60)
         self.start_exe = (app_config.get('windows') or {}).get('start_exe', True)
 
+    @staticmethod
+    def _mark_task_enabled(task):
+        if not task.enabled:
+            task._enabled = True
+            task.info_clear()
+            task.executor.enqueue_onetime_task(task)
+            logger.info(f"enabled task {task}")
+        communicate.task.emit(task)
+
     def start(self, task=None, exit_after=False):
         self.handler.post(lambda: self.do_start(task, exit_after))
 
@@ -38,6 +47,14 @@ class StartController(QObject):
                     task.exit_after_task = True
                     communicate.task.emit(task)
                 task.unpause()
+                communicate.starting_emulator.emit(True, None, 0)
+                return True
+
+            if task and og.executor.current_task and og.executor.current_task != task:
+                logger.info(f"queue task while another task is running {task}")
+                if exit_after:
+                    task.exit_after_task = True
+                self._mark_task_enabled(task)
                 communicate.starting_emulator.emit(True, None, 0)
                 return True
         except Exception as e:
@@ -76,7 +93,7 @@ class StartController(QObject):
                     task.exit_after_task = True
 
             for task in tasks_to_enable:
-                task._enabled = True
+                self._mark_task_enabled(task)
 
             og.executor.start()
             communicate.starting_emulator.emit(True, None, 0)

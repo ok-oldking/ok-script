@@ -1166,6 +1166,7 @@ class BaseTask(OCR):
             self.info_clear()
             self.ensure_capture()
             self.executor.interaction.on_run()
+            self.executor.enqueue_onetime_task(self)
             logger.info(f'enabled task {self}')
         communicate.task.emit(self)
 
@@ -1283,6 +1284,7 @@ class BaseTask(OCR):
 
     def disable(self):
         self._enabled = False
+        self.executor.remove_onetime_task(self)
         communicate.task.emit(self)
 
     @property
