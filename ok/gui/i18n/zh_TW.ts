@@ -249,6 +249,21 @@
         </message>
     </context>
     <context>
+        <name>LabelAndButtonList</name>
+        <message>
+            <source>Delete Last Item</source>
+            <translation>刪除最後一項</translation>
+        </message>
+        <message>
+            <source>Reset</source>
+            <translation>重設</translation>
+        </message>
+        <message>
+            <source>(empty)</source>
+            <translation>（空）</translation>
+        </message>
+    </context>
+    <context>
         <name>LinksBar</name>
         <message>
             <source>GitHub</source>

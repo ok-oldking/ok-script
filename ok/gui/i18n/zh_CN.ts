@@ -240,6 +240,21 @@
         </message>
     </context>
     <context>
+        <name>LabelAndButtonList</name>
+        <message>
+            <source>Delete Last Item</source>
+            <translation>删除最后一项</translation>
+        </message>
+        <message>
+            <source>Reset</source>
+            <translation>重置</translation>
+        </message>
+        <message>
+            <source>(empty)</source>
+            <translation>（空）</translation>
+        </message>
+    </context>
+    <context>
         <name>LinksBar</name>
         <message>
             <source>GitHub</source>

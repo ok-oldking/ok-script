@@ -249,6 +249,21 @@
         </message>
     </context>
     <context>
+        <name>LabelAndButtonList</name>
+        <message>
+            <source>Delete Last Item</source>
+            <translation>마지막 항목 삭제</translation>
+        </message>
+        <message>
+            <source>Reset</source>
+            <translation>초기화</translation>
+        </message>
+        <message>
+            <source>(empty)</source>
+            <translation>(비어 있음)</translation>
+        </message>
+    </context>
+    <context>
         <name>LinksBar</name>
         <message>
             <source>GitHub</source>
