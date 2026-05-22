@@ -10,27 +10,44 @@ from ok.gui.tasks.LabelAndTextEdit import LabelAndTextEdit
 from ok.gui.tasks.ModifyListItem import ModifyListItem
 
 
+def _resolve_type(the_type, default_value):
+    if not isinstance(the_type, dict):
+        return None
+
+    resolved_type = the_type.get('type')
+    if resolved_type:
+        return resolved_type
+    if 'buttons' in the_type or 'callback' in the_type:
+        return 'button'
+    if 'options' in the_type:
+        if isinstance(default_value, list):
+            return 'multi_selection'
+        return 'drop_down'
+    return None
+
+
 def config_widget(config_type, config_desc, config, key, value, task):
     the_type = config_type.get(key) if config_type is not None else None
-    if the_type:
-        if the_type['type'] == 'drop_down':
+    value = config.get_default(key)
+    resolved_type = _resolve_type(the_type, value)
+    if resolved_type:
+        if resolved_type == 'drop_down':
             return LabelAndDropDown(config_desc, the_type['options'], config, key)
-        elif the_type['type'] == 'multi_selection':
+        elif resolved_type == 'multi_selection':
             return LabelAndMultiSelection(config_desc, the_type['options'], config, key)
-        elif the_type['type'] == 'global':
+        elif resolved_type == 'global':
             config = task.get_global_config(key)
             desc = task.get_global_config_desc(key)
             return LabelAndGlobal(desc, config, key)
-        elif the_type['type'] == 'text_edit':
+        elif resolved_type == 'text_edit':
             return LabelAndTextEdit(config_desc, config, key)
-        elif the_type['type'] == 'button':
+        elif resolved_type == 'button':
             buttons = the_type.get('buttons')
             if not buttons:
                 buttons = [the_type]
             return LabelAndButtons(config_desc, key, buttons)
         else:
             raise Exception('Unknown config type')
-    value = config.get_default(key)
     if isinstance(value, bool):
         return LabelAndSwitchButton(config_desc, config, key)
     elif isinstance(value, list):

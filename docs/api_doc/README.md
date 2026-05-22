@@ -677,11 +677,13 @@ def get_global_config_desc(self, option) -> str
 #### 显示指定配置类型 (self.config_type)
 
 如果需要更复杂的控件（如下拉菜单、多选框或按钮），可以使用 `self.config_type` 进行显式定义。
+`type` 是可选的；当配置项提供 `options` 时，会根据默认值自动推断为下拉框或多选框。
 
 目前支持以下类型：
 
 - **`drop_down`**: 下拉选择框。
     - **参数:** `options` (list[str]): 选项列表。
+    - **可选参数:** `sub_configs` (dict[str, list[str]]): 根据当前下拉选项控制其他配置项是否显示。key 是下拉选项值，value 是需要显示的配置项名称列表；这些配置项会按照列表顺序显示在当前配置项下方，未包含在当前选项列表中的配置项会被隐藏。
 - **`multi_selection`**: 多选列表。
     - **参数:** `options` (list[str]): 选项列表。
 - **`text_edit`**: 强制使用多行文本框。
@@ -707,8 +709,10 @@ class MyTask(BaseTask):
         }
         self.config_type = {
             'Mode': {
-                'type': 'drop_down', 
-                'options': ['Default', 'Fast']
+                'options': ['Default', 'Fast'],
+                'sub_configs': {
+                    'Fast': ['Advanced Tool']
+                }
             },
             'Advanced Tool': {
                 'type': 'button',
