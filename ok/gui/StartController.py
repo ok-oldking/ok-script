@@ -13,6 +13,10 @@ logger = Logger.get_logger(__name__)
 
 
 class StartController(QObject):
+    STARTED_WINDOW_MIN_SIZE = (100, 100)
+    STARTED_WINDOW_STABLE_SECONDS = 10
+    STARTED_WINDOW_POLL_INTERVAL = 0.2
+
     def __init__(self, app_config, exit_event):
         super().__init__()
         self.config = app_config
@@ -119,6 +123,37 @@ class StartController(QObject):
             time.sleep(2)
         return False
 
+    def _wait_until_started_window_stable(self):
+        wait_until = time.monotonic() + self.start_timeout
+        stable_size = None
+        stable_since = None
+        min_width, min_height = self.STARTED_WINDOW_MIN_SIZE
+
+        while not self.exit_event.is_set():
+            hwnd_window = getattr(og.device_manager, 'hwnd_window', None)
+            if hwnd_window is not None:
+                hwnd_window.do_update_window_size()
+                size = (hwnd_window.width, hwnd_window.height)
+                if hwnd_window.hwnd and size[0] >= min_width and size[1] >= min_height:
+                    now = time.monotonic()
+                    if size != stable_size:
+                        logger.info(f'waiting for started window to stabilize, current size {size[0]}x{size[1]}')
+                        stable_size = size
+                        stable_since = now
+                    elif now - stable_since >= self.STARTED_WINDOW_STABLE_SECONDS:
+                        logger.info(f'started window size stable for {self.STARTED_WINDOW_STABLE_SECONDS}s: {size[0]}x{size[1]}')
+                        return True
+                else:
+                    stable_size = None
+                    stable_since = None
+
+            remaining_time = wait_until - time.monotonic()
+            if remaining_time <= 0:
+                communicate.starting_emulator.emit(True, self.tr('Start game timeout!'), 0)
+                return False
+            time.sleep(self.STARTED_WINDOW_POLL_INTERVAL)
+        return False
+
     def start_device(self):
         device = og.device_manager.get_preferred_device()
         logger.info(f'start_device: {device}')
@@ -139,6 +174,8 @@ class StartController(QObject):
                     args = "-dx11 -d3d11 -force-d3d11"
                 if not execute(path, arguments=args):
                     communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
+                    return False
+                if device['device'] == "windows" and not self._wait_until_started_window_stable():
                     return False
                 if not self._wait_until_device_ready():
                     return False
