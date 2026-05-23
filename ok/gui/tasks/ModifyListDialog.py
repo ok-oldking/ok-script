@@ -1,5 +1,5 @@
-from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtCore import Signal, Qt
+from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel, FlowLayout, MessageBoxBase, SubtitleLabel, ListWidget, PushButton, FluentIcon,
     LineEdit
@@ -58,7 +58,14 @@ class ModifyListDialog(MessageBoxBase):
             available_layout = QVBoxLayout()
             available_layout.addWidget(SubtitleLabel(self.tr("Available Options"), self))
             available_layout.addWidget(BodyLabel(self.tr("Click an option to add it."), self))
-            available_layout.addWidget(self._create_available_options_widget(), stretch=1)
+            available_scroll_area = QScrollArea(self)
+            available_scroll_area.setWidgetResizable(True)
+            available_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            available_scroll_area.setFrameShape(QScrollArea.NoFrame)
+            available_scroll_area.setStyleSheet("QScrollArea { background-color: transparent; border: none; }")
+            available_scroll_area.viewport().setStyleSheet("background-color: transparent;")
+            available_scroll_area.setWidget(self._create_available_options_widget())
+            available_layout.addWidget(available_scroll_area, stretch=1)
 
             selected_layout = QVBoxLayout()
             selected_layout.addWidget(SubtitleLabel(self.tr("Selected Options"), self))
@@ -95,6 +102,7 @@ class ModifyListDialog(MessageBoxBase):
 
     def _create_available_options_widget(self):
         widget = QWidget()
+        widget.setStyleSheet("background-color: transparent;")
         layout = FlowLayout(widget, False)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setHorizontalSpacing(10)
