@@ -22,7 +22,7 @@ from ok.feature.FeatureSet import FeatureSet
 from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.task.TaskExecutor import TaskExecutor
-from ok.util.Analytics import Analytics
+from ok.notification import notification_config_option
 from ok.util.GlobalConfig import GlobalConfig, register_basic_options
 from ok.util.clazz import init_class_by_name
 from ok.util.config import Config, ConfigOption
@@ -373,6 +373,7 @@ class OK:
                     available_methods.append(method)
 
         register_basic_options(self.global_config, enable_blur=callable(config.get('blur_area')))
+        self.global_config.get_config(notification_config_option)
         og.global_config = self.global_config
         og.set_use_dml()
         try:
