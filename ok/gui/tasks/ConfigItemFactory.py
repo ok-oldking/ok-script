@@ -32,6 +32,11 @@ def config_widget(config_type, config_desc, config, key, value, task):
     resolved_type = _resolve_type(the_type, value)
     if resolved_type:
         if resolved_type == 'drop_down':
+            if isinstance(value, list) and 'options_available' in the_type:
+                return ModifyListItem(
+                    config_desc, config, key, options_available=the_type['options_available'],
+                    allow_duplication=the_type.get('allow_duplication', False)
+                )
             return LabelAndDropDown(config_desc, the_type['options'], config, key)
         elif resolved_type == 'multi_selection':
             return LabelAndMultiSelection(config_desc, the_type['options'], config, key)
@@ -51,7 +56,12 @@ def config_widget(config_type, config_desc, config, key, value, task):
     if isinstance(value, bool):
         return LabelAndSwitchButton(config_desc, config, key)
     elif isinstance(value, list):
-        return ModifyListItem(config_desc, config, key)
+        options_available = the_type.get('options_available') if isinstance(the_type, dict) else None
+        allow_duplication = the_type.get('allow_duplication', False) if isinstance(the_type, dict) else False
+        return ModifyListItem(
+            config_desc, config, key, options_available=options_available,
+            allow_duplication=allow_duplication
+        )
     elif isinstance(value, int):
         return LabelAndSpinBox(config_desc, config, key)
     elif isinstance(value, float):

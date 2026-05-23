@@ -400,6 +400,18 @@
             <source>Cancel</source>
             <translation>取消</translation>
         </message>
+        <message>
+            <source>Available Options</source>
+            <translation>可用选项</translation>
+        </message>
+        <message>
+            <source>Selected Options</source>
+            <translation>已选选项</translation>
+        </message>
+        <message>
+            <source>Click an option to add it.</source>
+            <translation>点击选项以添加。</translation>
+        </message>
     </context>
     <context>
         <name>ModifyListItem</name>

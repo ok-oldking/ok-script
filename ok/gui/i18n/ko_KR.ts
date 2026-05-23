@@ -411,6 +411,18 @@
             <source>Cancel</source>
             <translation>취소</translation>
         </message>
+        <message>
+            <source>Available Options</source>
+            <translation>사용 가능한 옵션</translation>
+        </message>
+        <message>
+            <source>Selected Options</source>
+            <translation>선택한 옵션</translation>
+        </message>
+        <message>
+            <source>Click an option to add it.</source>
+            <translation>추가할 옵션을 클릭하세요.</translation>
+        </message>
     </context>
     <context>
         <name>ModifyListItem</name>

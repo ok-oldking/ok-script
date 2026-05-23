@@ -400,6 +400,18 @@
             <source>Cancel</source>
             <translation>Cancel</translation>
         </message>
+        <message>
+            <source>Available Options</source>
+            <translation>Available Options</translation>
+        </message>
+        <message>
+            <source>Selected Options</source>
+            <translation>Selected Options</translation>
+        </message>
+        <message>
+            <source>Click an option to add it.</source>
+            <translation>Click an option to add it.</translation>
+        </message>
     </context>
     <context>
         <name>ModifyListItem</name>

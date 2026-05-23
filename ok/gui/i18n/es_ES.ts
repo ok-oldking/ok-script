@@ -410,6 +410,18 @@
             <source>Cancel</source>
             <translation>Cancelar</translation>
         </message>
+        <message>
+            <source>Available Options</source>
+            <translation>Opciones disponibles</translation>
+        </message>
+        <message>
+            <source>Selected Options</source>
+            <translation>Opciones seleccionadas</translation>
+        </message>
+        <message>
+            <source>Click an option to add it.</source>
+            <translation>Haz clic en una opción para añadirla.</translation>
+        </message>
     </context>
     <context>
         <name>ModifyListItem</name>

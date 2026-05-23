@@ -410,6 +410,18 @@
             <source>Cancel</source>
             <translation>キャンセル</translation>
         </message>
+        <message>
+            <source>Available Options</source>
+            <translation>利用可能なオプション</translation>
+        </message>
+        <message>
+            <source>Selected Options</source>
+            <translation>選択したオプション</translation>
+        </message>
+        <message>
+            <source>Click an option to add it.</source>
+            <translation>オプションをクリックして追加します。</translation>
+        </message>
     </context>
     <context>
         <name>ModifyListItem</name>

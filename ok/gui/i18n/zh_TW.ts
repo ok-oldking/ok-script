@@ -410,6 +410,18 @@
             <source>Cancel</source>
             <translation>取消</translation>
         </message>
+        <message>
+            <source>Available Options</source>
+            <translation>可用選項</translation>
+        </message>
+        <message>
+            <source>Selected Options</source>
+            <translation>已選選項</translation>
+        </message>
+        <message>
+            <source>Click an option to add it.</source>
+            <translation>點擊選項以新增。</translation>
+        </message>
     </context>
     <context>
         <name>ModifyListItem</name>

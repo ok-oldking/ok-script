@@ -1,17 +1,34 @@
 from PySide6.QtCore import Signal
-from qfluentwidgets import MessageBoxBase, SubtitleLabel, ListWidget, PushButton, FluentIcon, LineEdit
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import (
+    BodyLabel, FlowLayout, MessageBoxBase, SubtitleLabel, ListWidget, PushButton, FluentIcon,
+    LineEdit
+)
+
+from ok import og
 
 
 class ModifyListDialog(MessageBoxBase):
     list_modified = Signal(list)
 
-    def __init__(self, items, parent):
+    def __init__(self, items, parent, options_available=None, allow_duplication=False):
         super().__init__(parent)
-        self.titleLabel = SubtitleLabel(self.tr("Modify"), self)
-        self.viewLayout.addWidget(self.titleLabel)
-        self.original_items = items
+        self.original_items = list(items)
+        self.options_available = list(options_available) if options_available is not None else None
+        self.allow_duplication = allow_duplication
         self.list_widget = ListWidget()
-        self.list_widget.addItems(self.original_items)
+        self.option_buttons = {}
+        self.source_by_display = {}
+
+        if self.options_available is None:
+            self.list_widget.addItems(self.original_items)
+        else:
+            self.source_by_display = {
+                og.app.tr(option): option for option in self.options_available
+            }
+            self.list_widget.addItems([
+                og.app.tr(item) for item in self.original_items if item in self.options_available
+            ])
 
         self.move_up_button = PushButton(FluentIcon.UP, self.tr("Move Up"))
         self.move_up_button.clicked.connect(self.move_up)
@@ -19,23 +36,105 @@ class ModifyListDialog(MessageBoxBase):
         self.move_down_button = PushButton(FluentIcon.DOWN, self.tr("Move Down"))
         self.move_down_button.clicked.connect(self.move_down)
 
-        self.add_button = PushButton(FluentIcon.ADD, self.tr("Add"))
-        self.add_button.clicked.connect(self.add_item)
+        self.add_button = None
+        if self.options_available is None:
+            self.add_button = PushButton(FluentIcon.ADD, self.tr("Add"))
+            self.add_button.clicked.connect(self.add_item)
 
         self.remove_button = PushButton(FluentIcon.REMOVE, self.tr("Remove"))
         self.remove_button.clicked.connect(self.remove_item)
+        self.list_widget.itemSelectionChanged.connect(self.update_list_actions)
+        self._match_list_action_widths()
 
         self.yesButton.clicked.connect(self.confirm)
 
         self.cancelButton.clicked.connect(self.cancel)
 
-        self.viewLayout.addWidget(self.list_widget)
-        self.viewLayout.addWidget(self.move_up_button)
-        self.viewLayout.addWidget(self.move_down_button)
-        self.viewLayout.addWidget(self.add_button)
-        self.viewLayout.addWidget(self.remove_button)
+        list_layout = self._create_selected_list_layout()
+
+        if self.options_available is None:
+            self.viewLayout.addLayout(list_layout)
+        else:
+            available_layout = QVBoxLayout()
+            available_layout.addWidget(SubtitleLabel(self.tr("Available Options"), self))
+            available_layout.addWidget(BodyLabel(self.tr("Click an option to add it."), self))
+            available_layout.addWidget(self._create_available_options_widget(), stretch=1)
+
+            selected_layout = QVBoxLayout()
+            selected_layout.addWidget(SubtitleLabel(self.tr("Selected Options"), self))
+            selected_layout.addLayout(list_layout)
+
+            options_layout = QHBoxLayout()
+            options_layout.addLayout(available_layout, stretch=2)
+            options_layout.addLayout(selected_layout, stretch=1)
+            self.viewLayout.addLayout(options_layout)
+
         self.yesButton.setText(self.tr("Confirm"))
         self.cancelButton.setText(self.tr("Cancel"))
+        self._wrap_dialog_buttons()
+        if self.options_available is None:
+            self.widget.setMinimumHeight(520)
+        else:
+            self.widget.setMinimumSize(840, 600)
+        self.update_list_actions()
+        self.update_option_buttons()
+
+    def _create_selected_list_layout(self):
+        actions_layout = QVBoxLayout()
+        actions_layout.addWidget(self.move_up_button)
+        actions_layout.addWidget(self.move_down_button)
+        if self.options_available is None:
+            actions_layout.addWidget(self.add_button)
+        actions_layout.addWidget(self.remove_button)
+        actions_layout.addStretch(1)
+
+        list_layout = QHBoxLayout()
+        list_layout.addWidget(self.list_widget)
+        list_layout.addLayout(actions_layout)
+        return list_layout
+
+    def _create_available_options_widget(self):
+        widget = QWidget()
+        layout = FlowLayout(widget, False)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setHorizontalSpacing(10)
+        layout.setVerticalSpacing(10)
+        for option in self.options_available:
+            button = PushButton(FluentIcon.ADD, og.app.tr(option))
+            button.clicked.connect(lambda checked=False, value=option: self.add_available_item(value))
+            layout.addWidget(button)
+            self.option_buttons[option] = button
+        return widget
+
+    def _match_list_action_widths(self):
+        buttons = [self.move_up_button, self.move_down_button, self.remove_button]
+        if self.options_available is None:
+            buttons.append(self.add_button)
+        width = max(button.sizeHint().width() for button in buttons)
+        for button in buttons:
+            button.setFixedWidth(width)
+
+    def update_list_actions(self):
+        row = self.list_widget.currentRow()
+        has_selection = row >= 0
+        self.move_up_button.setEnabled(has_selection and row > 0)
+        self.move_down_button.setEnabled(has_selection and row < self.list_widget.count() - 1)
+        self.remove_button.setEnabled(has_selection)
+        self.update_option_buttons()
+
+    def update_option_buttons(self):
+        if self.options_available is None:
+            return
+
+        selected_options = {
+            self.list_widget.item(i).text() for i in range(self.list_widget.count())
+        }
+        for option, button in self.option_buttons.items():
+            button.setEnabled(self.allow_duplication or og.app.tr(option) not in selected_options)
+
+    def _wrap_dialog_buttons(self):
+        self.yesButton.setFixedWidth(self.yesButton.sizeHint().width() * 2)
+        self.cancelButton.setFixedWidth(self.cancelButton.sizeHint().width() * 2)
 
     def move_up(self):
         current_row = self.list_widget.currentRow()
@@ -55,14 +154,27 @@ class ModifyListDialog(MessageBoxBase):
         w = AddTextMessageBox(self.window())
         if w.exec():
             self.list_widget.addItem(w.add_text_edit.text())
+            self.list_widget.setCurrentRow(self.list_widget.count() - 1)
+
+    def add_available_item(self, option):
+        text = og.app.tr(option)
+        if self.allow_duplication or all(
+            self.list_widget.item(i).text() != text for i in range(self.list_widget.count())
+        ):
+            self.list_widget.addItem(text)
+            self.list_widget.setCurrentRow(self.list_widget.count() - 1)
+            self.update_option_buttons()
 
     def remove_item(self):
         current_row = self.list_widget.currentRow()
         if current_row >= 0:
             self.list_widget.takeItem(current_row)
+            self.update_list_actions()
 
     def confirm(self):
         items_text = [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
+        if self.options_available is not None:
+            items_text = [self.source_by_display[text] for text in items_text]
         self.list_modified.emit(items_text)
         self.close()
 
@@ -88,6 +200,8 @@ class AddTextMessageBox(MessageBoxBase):
         # change the text of button
         self.yesButton.setText(self.tr('Confirm'))
         self.cancelButton.setText(self.tr('Cancel'))
+        self.yesButton.setFixedWidth(self.yesButton.sizeHint().width() * 2)
+        self.cancelButton.setFixedWidth(self.cancelButton.sizeHint().width() * 2)
 
         self.widget.setMinimumWidth(360)
         self.yesButton.setDisabled(True)

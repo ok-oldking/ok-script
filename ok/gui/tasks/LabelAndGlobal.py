@@ -16,3 +16,6 @@ class LabelAndGlobal(ConfigLabelAndWidget):
 
     def value_changed(self):
         communicate.global_config.emit(self.key)
+
+    def update_value(self):
+        pass

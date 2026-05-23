@@ -670,6 +670,8 @@ def get_global_config_desc(self, option) -> str
 - `int`: 整数输入框 (SpinBox)
 - `float`: 浮点数输入框 (DoubleSpinBox)
 - `list`: 列表修改项 (ModifyListItem)
+    - 可通过 `config_type` 提供 `options_available` (list[str])，限制列表可添加的选项。
+    - 配合 `options_available` 使用 `allow_duplication` (bool, 默认 `False`) 时，可允许重复添加相同选项。
 - `str`: 
     - 长度 > 16 或包含 `\n`: 多行文本框 (TextEdit)
     - 其他情况: 单行文本框 (LineEdit)
