@@ -2,9 +2,12 @@ import ctypes
 import importlib
 import importlib.util
 import os
+import re
 import struct
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass
+from ctypes import wintypes
 from typing import Callable, Iterable, List, Optional, Tuple
 
 from ok.util.logger import Logger
@@ -27,6 +30,17 @@ NVAPI_DRS_GET_CURRENT_GLOBAL_PROFILE = 0x617BFF9F
 NVAPI_DRS_FIND_PROFILE_BY_NAME = 0x7E4A9A0B
 NVAPI_DRS_ENUM_PROFILES = 0xBC371EE0
 NVAPI_DRS_GET_PROFILE_INFO = 0x61CD6FD6
+
+ERROR_SUCCESS = 0
+ERROR_INSUFFICIENT_BUFFER = 122
+QDC_ONLY_ACTIVE_PATHS = 0x00000002
+DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME = 1
+DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO = 9
+CCHDEVICENAME = 32
+MONITOR_DEFAULTTONEAREST = 2
+NVIDIA_FILTER_PROFILE_LOG_MAX_AGE_SECONDS = 300
+NVIDIA_OVERLAY_LOG_TAIL_BYTES = 2 * 1024 * 1024
+NVIDIA_OVERLAY_TARGET_CONTEXT_LINES = 300
 
 NV_DRS_DB_PATHS = (
     os.path.join(os.environ.get("ProgramData", ""), "NVIDIA Corporation", "Drs", "nvdrsdb0.bin"),
@@ -81,6 +95,151 @@ NVDRS_SETTING_VER = ctypes.sizeof(NVDRS_SETTING) | (1 << 16)
 NVDRS_PROFILE_VER = ctypes.sizeof(NVDRS_PROFILE) | (1 << 16)
 
 
+class LUID(ctypes.Structure):
+    _fields_ = [
+        ("LowPart", wintypes.DWORD),
+        ("HighPart", wintypes.LONG),
+    ]
+
+
+class DISPLAYCONFIG_RATIONAL(ctypes.Structure):
+    _fields_ = [
+        ("Numerator", ctypes.c_uint32),
+        ("Denominator", ctypes.c_uint32),
+    ]
+
+
+class DISPLAYCONFIG_2DREGION(ctypes.Structure):
+    _fields_ = [
+        ("cx", ctypes.c_uint32),
+        ("cy", ctypes.c_uint32),
+    ]
+
+
+class DISPLAYCONFIG_VIDEO_SIGNAL_INFO(ctypes.Structure):
+    _fields_ = [
+        ("pixelRate", ctypes.c_uint64),
+        ("hSyncFreq", DISPLAYCONFIG_RATIONAL),
+        ("vSyncFreq", DISPLAYCONFIG_RATIONAL),
+        ("activeSize", DISPLAYCONFIG_2DREGION),
+        ("totalSize", DISPLAYCONFIG_2DREGION),
+        ("videoStandard", ctypes.c_uint32),
+        ("scanLineOrdering", ctypes.c_uint32),
+    ]
+
+
+class DISPLAYCONFIG_TARGET_MODE(ctypes.Structure):
+    _fields_ = [("targetVideoSignalInfo", DISPLAYCONFIG_VIDEO_SIGNAL_INFO)]
+
+
+class POINTL(ctypes.Structure):
+    _fields_ = [
+        ("x", wintypes.LONG),
+        ("y", wintypes.LONG),
+    ]
+
+
+class DISPLAYCONFIG_SOURCE_MODE(ctypes.Structure):
+    _fields_ = [
+        ("width", ctypes.c_uint32),
+        ("height", ctypes.c_uint32),
+        ("pixelFormat", ctypes.c_uint32),
+        ("position", POINTL),
+    ]
+
+
+class DISPLAYCONFIG_DESKTOP_IMAGE_INFO(ctypes.Structure):
+    _fields_ = [
+        ("pathSourceSize", DISPLAYCONFIG_2DREGION),
+        ("desktopImageRegion", wintypes.RECT),
+        ("desktopImageClip", wintypes.RECT),
+    ]
+
+
+class DISPLAYCONFIG_MODE_INFO_UNION(ctypes.Union):
+    _fields_ = [
+        ("targetMode", DISPLAYCONFIG_TARGET_MODE),
+        ("sourceMode", DISPLAYCONFIG_SOURCE_MODE),
+        ("desktopImageInfo", DISPLAYCONFIG_DESKTOP_IMAGE_INFO),
+    ]
+
+
+class DISPLAYCONFIG_MODE_INFO(ctypes.Structure):
+    _fields_ = [
+        ("infoType", ctypes.c_uint32),
+        ("id", ctypes.c_uint32),
+        ("adapterId", LUID),
+        ("u", DISPLAYCONFIG_MODE_INFO_UNION),
+    ]
+
+
+class DISPLAYCONFIG_PATH_SOURCE_INFO(ctypes.Structure):
+    _fields_ = [
+        ("adapterId", LUID),
+        ("id", ctypes.c_uint32),
+        ("modeInfoIdx", ctypes.c_uint32),
+        ("statusFlags", ctypes.c_uint32),
+    ]
+
+
+class DISPLAYCONFIG_PATH_TARGET_INFO(ctypes.Structure):
+    _fields_ = [
+        ("adapterId", LUID),
+        ("id", ctypes.c_uint32),
+        ("modeInfoIdx", ctypes.c_uint32),
+        ("outputTechnology", ctypes.c_uint32),
+        ("rotation", ctypes.c_uint32),
+        ("scaling", ctypes.c_uint32),
+        ("refreshRate", DISPLAYCONFIG_RATIONAL),
+        ("scanLineOrdering", ctypes.c_uint32),
+        ("targetAvailable", wintypes.BOOL),
+        ("statusFlags", ctypes.c_uint32),
+    ]
+
+
+class DISPLAYCONFIG_PATH_INFO(ctypes.Structure):
+    _fields_ = [
+        ("sourceInfo", DISPLAYCONFIG_PATH_SOURCE_INFO),
+        ("targetInfo", DISPLAYCONFIG_PATH_TARGET_INFO),
+        ("flags", ctypes.c_uint32),
+    ]
+
+
+class DISPLAYCONFIG_DEVICE_INFO_HEADER(ctypes.Structure):
+    _fields_ = [
+        ("type", ctypes.c_uint32),
+        ("size", ctypes.c_uint32),
+        ("adapterId", LUID),
+        ("id", ctypes.c_uint32),
+    ]
+
+
+class DISPLAYCONFIG_SOURCE_DEVICE_NAME(ctypes.Structure):
+    _fields_ = [
+        ("header", DISPLAYCONFIG_DEVICE_INFO_HEADER),
+        ("viewGdiDeviceName", ctypes.c_wchar * CCHDEVICENAME),
+    ]
+
+
+class DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO(ctypes.Structure):
+    _fields_ = [
+        ("header", DISPLAYCONFIG_DEVICE_INFO_HEADER),
+        ("value", ctypes.c_uint32),
+        ("colorEncoding", ctypes.c_uint32),
+        ("bitsPerColorChannel", ctypes.c_uint32),
+    ]
+
+
+class MONITORINFOEXW(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", wintypes.DWORD),
+        ("rcMonitor", wintypes.RECT),
+        ("rcWork", wintypes.RECT),
+        ("dwFlags", wintypes.DWORD),
+        ("szDevice", ctypes.c_wchar * CCHDEVICENAME),
+    ]
+
+
 class NvApiUnavailable(RuntimeError):
     pass
 
@@ -99,7 +258,7 @@ def is_gpu_post_processing_enabled():
         return False
 
 
-def get_enabled_gpu_driver_post_processing():
+def get_enabled_gpu_driver_post_processing(target_exe_path: Optional[str] = None, target_hwnd: Optional[int] = None):
     """
     Return enabled driver-level post-processing features known to alter captured pixels.
     """
@@ -108,54 +267,133 @@ def get_enabled_gpu_driver_post_processing():
         return []
 
     enabled: List[GpuDriverPostProcessing] = []
-    for detector in (
-        is_nvidia_image_sharpening_enabled,
-        is_nvidia_rtx_dynamic_vibrance_enabled,
-        is_nvidia_rtx_hdr_enabled,
-        is_amd_image_sharpening_enabled,
+
+    windows_hdr_result = _run_gpu_feature_detector(
+        "is_windows_hdr_enabled",
+        lambda: is_windows_hdr_enabled(target_hwnd),
+    )
+    windows_hdr_active = bool(windows_hdr_result and windows_hdr_result.enabled)
+    nvidia_filter_profile_active, nvidia_filter_profile_detail = _nvidia_filter_profile_in_use_state(target_exe_path)
+    _log_nvidia_filter_profile_state(nvidia_filter_profile_active, nvidia_filter_profile_detail)
+    if nvidia_filter_profile_active is True:
+        enabled.append(
+            GpuDriverPostProcessing(
+                vendor="NVIDIA",
+                feature="Filter Profile",
+                enabled=True,
+                detail=nvidia_filter_profile_detail,
+            )
+        )
+
+    for detector_name, detector in (
+        ("is_nvidia_image_sharpening_enabled", is_nvidia_image_sharpening_enabled),
+        ("is_amd_image_sharpening_enabled", is_amd_image_sharpening_enabled),
     ):
-        try:
-            result = detector()
-            if result and result.enabled:
-                enabled.append(result)
-        except Exception as e:
-            logger.debug(f"{detector.__name__} skipped: {e}")
+        result = _run_gpu_feature_detector(detector_name, detector)
+        if result and result.enabled:
+            enabled.append(result)
+
+    if nvidia_filter_profile_active is not False:
+        result = _run_gpu_feature_detector(
+            "is_nvidia_rtx_dynamic_vibrance_enabled",
+            is_nvidia_rtx_dynamic_vibrance_enabled,
+        )
+        if result and result.enabled:
+            enabled.append(result)
+    else:
+        logger.info(
+            "NVIDIA RTX Dynamic Vibrance enabled: False "
+            f"(NVIDIA filter profile is not in use: {nvidia_filter_profile_detail})"
+        )
+
+    if not windows_hdr_active:
+        logger.info("NVIDIA RTX HDR enabled: False (Windows HDR is not enabled)")
+    elif nvidia_filter_profile_active is not False:
+        result = _run_gpu_feature_detector(
+            "is_nvidia_rtx_hdr_enabled",
+            lambda: is_nvidia_rtx_hdr_enabled(target_exe_path),
+        )
+        if result and result.enabled:
+            enabled.append(result)
+    else:
+        logger.info(
+            "NVIDIA RTX HDR enabled: False "
+            f"(NVIDIA filter profile is not in use: {nvidia_filter_profile_detail})"
+        )
 
     logger.info(f"GPU driver post-processing detected features: {enabled}")
     return enabled
 
 
+def _run_gpu_feature_detector(detector_name: str, detector: Callable[[], Optional[GpuDriverPostProcessing]]):
+    try:
+        return detector()
+    except Exception as e:
+        logger.debug(f"{detector_name} skipped: {e}")
+        return None
+
+
+def is_windows_hdr_enabled(target_hwnd: Optional[int] = None) -> Optional[GpuDriverPostProcessing]:
+    enabled, detail = _windows_hdr_enabled_state(target_hwnd)
+    logger.info(f"Windows HDR enabled: {enabled} ({detail})")
+    if not enabled:
+        return None
+    return GpuDriverPostProcessing(
+        vendor="Windows",
+        feature="HDR",
+        enabled=True,
+        detail=detail,
+    )
+
+
+def _log_nvidia_filter_profile_state(profile_in_use: Optional[bool], detail: str):
+    state = "Unknown" if profile_in_use is None else str(profile_in_use)
+    logger.info(f"NVIDIA filter profile in use: {state} ({detail})")
+
+
 def is_nvidia_image_sharpening_enabled() -> Optional[GpuDriverPostProcessing]:
-    return _detect_nvidia_drs_flags(
+    result = _detect_nvidia_drs_flags(
         NV_DRS_IMAGE_SHARPENING_IDS,
         lambda value: value == 1,
         "Image Sharpening",
     )
+    _log_feature_enabled("NVIDIA Image Sharpening", result)
+    return result
 
 
 def is_nvidia_rtx_dynamic_vibrance_enabled() -> Optional[GpuDriverPostProcessing]:
-    return _detect_nvidia_drs_flags(
+    result = _detect_nvidia_drs_flags(
         (NV_DRS_RTX_DYNAMIC_VIBRANCE_ENABLE_ID,),
         lambda value: value == 1,
         "RTX Dynamic Vibrance",
     )
+    _log_feature_enabled("NVIDIA RTX Dynamic Vibrance", result)
+    return result
 
 
-def is_nvidia_rtx_hdr_enabled() -> Optional[GpuDriverPostProcessing]:
+def is_nvidia_rtx_hdr_enabled(target_exe_path: Optional[str] = None) -> Optional[GpuDriverPostProcessing]:
     hit = _detect_nvidia_drs_flags(
         (NV_DRS_RTX_HDR_ENABLE_ID,),
         lambda value: value == 1,
         "RTX HDR",
     )
     if hit:
+        _log_feature_enabled("NVIDIA RTX HDR", hit)
         return hit
 
-    return _detect_nvidia_drs_flags(
+    result = _detect_nvidia_drs_flags(
         (NV_DRS_RTX_HDR_DRIVER_FLAGS_ID,),
         lambda value: value != 0,
         "RTX HDR",
         detail_suffix="driver_flags",
     )
+    _log_feature_enabled("NVIDIA RTX HDR", result)
+    return result
+
+
+def _log_feature_enabled(feature_name: str, result: Optional[GpuDriverPostProcessing]):
+    detail = f" ({result.detail})" if result and result.detail else ""
+    logger.info(f"{feature_name} enabled: {bool(result and result.enabled)}{detail}")
 
 
 def is_amd_image_sharpening_enabled() -> Optional[GpuDriverPostProcessing]:
@@ -198,15 +436,292 @@ def is_amd_image_sharpening_enabled() -> Optional[GpuDriverPostProcessing]:
             logger.info("AMD image sharpening check skipped: image sharpening enabled state unavailable")
             return None
 
+        is_enabled = _adlx_bool(enabled)
+        logger.info(f"AMD Radeon Image Sharpening enabled: {is_enabled}")
         return GpuDriverPostProcessing(
             vendor="AMD",
             feature="Radeon Image Sharpening",
-            enabled=_adlx_bool(enabled),
+            enabled=is_enabled,
         )
     finally:
         terminate = getattr(helper, "Terminate", None)
         if terminate:
             terminate()
+
+
+def _windows_hdr_enabled_state(target_hwnd: Optional[int] = None) -> Tuple[bool, str]:
+    if os.name != "nt":
+        return False, "not Windows"
+
+    try:
+        target_device_name = _monitor_device_name_from_hwnd(target_hwnd)
+        paths = _query_active_display_paths()
+        states = []
+
+        for path in paths:
+            source_name = _displayconfig_source_name(path.sourceInfo)
+            if target_device_name and source_name.lower() != target_device_name.lower():
+                continue
+
+            advanced_color = _displayconfig_advanced_color_info(path.targetInfo)
+            if advanced_color is None:
+                continue
+
+            enabled = bool(advanced_color.value & 0x2)
+            supported = bool(advanced_color.value & 0x1)
+            label = source_name or f"target={path.targetInfo.id}"
+            states.append(
+                (
+                    enabled,
+                    f"{label}: enabled={enabled}, supported={supported}, "
+                    f"bits={advanced_color.bitsPerColorChannel}"
+                )
+            )
+
+        if not states:
+            if target_device_name:
+                return False, f"no active HDR display info for {target_device_name}"
+            return False, "no active HDR display info"
+
+        enabled_states = [detail for enabled, detail in states if enabled]
+        if enabled_states:
+            return True, "; ".join(enabled_states)
+        return False, "; ".join(detail for _enabled, detail in states)
+    except Exception as e:
+        logger.debug(f"Windows HDR check failed: {e}")
+        return False, f"check failed: {e}"
+
+
+def _query_active_display_paths() -> List[DISPLAYCONFIG_PATH_INFO]:
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.GetDisplayConfigBufferSizes.argtypes = [
+        ctypes.c_uint32,
+        ctypes.POINTER(ctypes.c_uint32),
+        ctypes.POINTER(ctypes.c_uint32),
+    ]
+    user32.GetDisplayConfigBufferSizes.restype = ctypes.c_long
+    user32.QueryDisplayConfig.argtypes = [
+        ctypes.c_uint32,
+        ctypes.POINTER(ctypes.c_uint32),
+        ctypes.POINTER(DISPLAYCONFIG_PATH_INFO),
+        ctypes.POINTER(ctypes.c_uint32),
+        ctypes.POINTER(DISPLAYCONFIG_MODE_INFO),
+        ctypes.c_void_p,
+    ]
+    user32.QueryDisplayConfig.restype = ctypes.c_long
+
+    for _attempt in range(3):
+        path_count = ctypes.c_uint32(0)
+        mode_count = ctypes.c_uint32(0)
+        status = user32.GetDisplayConfigBufferSizes(
+            QDC_ONLY_ACTIVE_PATHS,
+            ctypes.byref(path_count),
+            ctypes.byref(mode_count),
+        )
+        if status != ERROR_SUCCESS:
+            raise OSError(status, "GetDisplayConfigBufferSizes failed")
+
+        paths = (DISPLAYCONFIG_PATH_INFO * path_count.value)()
+        modes = (DISPLAYCONFIG_MODE_INFO * mode_count.value)()
+        status = user32.QueryDisplayConfig(
+            QDC_ONLY_ACTIVE_PATHS,
+            ctypes.byref(path_count),
+            paths,
+            ctypes.byref(mode_count),
+            modes,
+            None,
+        )
+        if status == ERROR_INSUFFICIENT_BUFFER:
+            continue
+        if status != ERROR_SUCCESS:
+            raise OSError(status, "QueryDisplayConfig failed")
+        return [paths[index] for index in range(path_count.value)]
+
+    raise OSError(ERROR_INSUFFICIENT_BUFFER, "QueryDisplayConfig buffer changed repeatedly")
+
+
+def _monitor_device_name_from_hwnd(target_hwnd: Optional[int]) -> str:
+    if not target_hwnd:
+        return ""
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.MonitorFromWindow.argtypes = [wintypes.HWND, wintypes.DWORD]
+    user32.MonitorFromWindow.restype = wintypes.HANDLE
+    user32.GetMonitorInfoW.argtypes = [wintypes.HANDLE, ctypes.POINTER(MONITORINFOEXW)]
+    user32.GetMonitorInfoW.restype = wintypes.BOOL
+
+    monitor = user32.MonitorFromWindow(wintypes.HWND(target_hwnd), MONITOR_DEFAULTTONEAREST)
+    if not monitor:
+        return ""
+
+    monitor_info = MONITORINFOEXW()
+    monitor_info.cbSize = ctypes.sizeof(MONITORINFOEXW)
+    if not user32.GetMonitorInfoW(monitor, ctypes.byref(monitor_info)):
+        return ""
+    return monitor_info.szDevice or ""
+
+
+def _displayconfig_source_name(source_info: DISPLAYCONFIG_PATH_SOURCE_INFO) -> str:
+    info = DISPLAYCONFIG_SOURCE_DEVICE_NAME()
+    info.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME
+    info.header.size = ctypes.sizeof(DISPLAYCONFIG_SOURCE_DEVICE_NAME)
+    info.header.adapterId = source_info.adapterId
+    info.header.id = source_info.id
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.DisplayConfigGetDeviceInfo.argtypes = [ctypes.POINTER(DISPLAYCONFIG_DEVICE_INFO_HEADER)]
+    user32.DisplayConfigGetDeviceInfo.restype = ctypes.c_long
+    status = user32.DisplayConfigGetDeviceInfo(
+        ctypes.cast(ctypes.byref(info), ctypes.POINTER(DISPLAYCONFIG_DEVICE_INFO_HEADER))
+    )
+    if status != ERROR_SUCCESS:
+        return ""
+    return info.viewGdiDeviceName or ""
+
+
+def _displayconfig_advanced_color_info(
+    target_info: DISPLAYCONFIG_PATH_TARGET_INFO,
+) -> Optional[DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO]:
+    info = DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO()
+    info.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO
+    info.header.size = ctypes.sizeof(DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO)
+    info.header.adapterId = target_info.adapterId
+    info.header.id = target_info.id
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.DisplayConfigGetDeviceInfo.argtypes = [ctypes.POINTER(DISPLAYCONFIG_DEVICE_INFO_HEADER)]
+    user32.DisplayConfigGetDeviceInfo.restype = ctypes.c_long
+    status = user32.DisplayConfigGetDeviceInfo(
+        ctypes.cast(ctypes.byref(info), ctypes.POINTER(DISPLAYCONFIG_DEVICE_INFO_HEADER))
+    )
+    if status != ERROR_SUCCESS:
+        logger.debug(f"DisplayConfigGetDeviceInfo advanced color failed: {status}")
+        return None
+    return info
+
+
+def _nvidia_filter_profile_in_use_state(target_exe_path: Optional[str]) -> Tuple[Optional[bool], str]:
+    if os.name != "nt":
+        return None, "not Windows"
+    if not target_exe_path:
+        return None, "target exe unavailable"
+
+    paths = _fresh_nvidia_overlay_log_paths()
+    if not paths:
+        return None, "fresh NVIDIA Overlay log unavailable"
+
+    last_slot: Optional[int] = None
+    last_detail = ""
+    for path in paths:
+        text = _read_file_tail(path, NVIDIA_OVERLAY_LOG_TAIL_BYTES)
+        if not text:
+            continue
+        slot, detail = _nvidia_filter_profile_slot_from_text(text, target_exe_path, os.path.basename(path))
+        if slot is not None:
+            last_slot = slot
+            last_detail = detail
+
+    if last_slot is None:
+        target_detail = f" for {target_exe_path}" if target_exe_path else ""
+        return None, f"NVIDIA filter profile slot not found{target_detail}"
+    return last_slot > 0, last_detail
+
+
+def _fresh_nvidia_overlay_log_paths() -> List[str]:
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if not local_app_data:
+        return []
+
+    log_dir = os.path.join(local_app_data, "NVIDIA Corporation", "NVIDIA Overlay")
+    candidates = [
+        os.path.join(log_dir, "console.log.bak"),
+        os.path.join(log_dir, "console.log"),
+    ]
+    now = time.time()
+    paths = []
+    for path in candidates:
+        if not os.path.isfile(path):
+            continue
+        try:
+            if now - os.path.getmtime(path) <= NVIDIA_FILTER_PROFILE_LOG_MAX_AGE_SECONDS:
+                paths.append(path)
+        except OSError:
+            continue
+    return paths
+
+
+def _read_file_tail(path: str, max_bytes: int) -> str:
+    try:
+        with open(path, "rb") as handle:
+            handle.seek(0, os.SEEK_END)
+            size = handle.tell()
+            handle.seek(max(0, size - max_bytes), os.SEEK_SET)
+            return handle.read().decode("utf-8", errors="replace")
+    except OSError as e:
+        logger.debug(f"Failed to read NVIDIA Overlay log {path}: {e}")
+        return ""
+
+
+def _nvidia_filter_profile_slot_from_text(
+    text: str,
+    target_exe_path: Optional[str],
+    source_name: str = "NVIDIA Overlay log",
+) -> Tuple[Optional[int], str]:
+    target = _normalize_windows_path(target_exe_path) if target_exe_path else ""
+    last_target_line: Optional[int] = None
+    last_slot: Optional[int] = None
+    last_detail = ""
+
+    for line_number, line in enumerate(text.splitlines(), 1):
+        normalized_line = _normalize_windows_path(line)
+        has_target = bool(target and target in normalized_line)
+        if has_target:
+            last_target_line = line_number
+
+        slot = _nvidia_filter_profile_slot_from_line(line)
+        if slot is None:
+            continue
+
+        lower_line = line.lower()
+        line_has_context = (
+            "gamefilter" in lower_line
+            or "applyslot" in lower_line
+            or "filtersslotchanged" in lower_line
+            or "processingfilter" in lower_line
+        )
+        near_target = (
+            not target
+            or has_target
+            or (
+                last_target_line is not None
+                and line_number - last_target_line <= NVIDIA_OVERLAY_TARGET_CONTEXT_LINES
+            )
+        )
+        if line_has_context and near_target:
+            last_slot = slot
+            last_detail = f"slot={slot}, source={source_name}:{line_number}"
+
+    return last_slot, last_detail
+
+
+def _nvidia_filter_profile_slot_from_line(line: str) -> Optional[int]:
+    telemetry_match = re.search(r'"newSlotID"\s*:\s*(\d+)', line)
+    if telemetry_match:
+        return int(telemetry_match.group(1))
+
+    active_slot_match = re.search(r"current active slot\s*=\s*(\d+)", line, re.IGNORECASE)
+    if active_slot_match:
+        return int(active_slot_match.group(1))
+
+    apply_slot_match = re.search(r"applyslot index:\s*(\d+)", line, re.IGNORECASE)
+    if apply_slot_match:
+        return int(apply_slot_match.group(1))
+
+    return None
+
+
+def _normalize_windows_path(value: Optional[str]) -> str:
+    return (value or "").replace("\\", "/").lower()
 
 
 def _detect_nvidia_drs_flags(
@@ -517,7 +1032,6 @@ class _NvApi:
             ctypes.c_void_p,
             ctypes.POINTER(NVDRS_PROFILE),
         )
-
         status = self.initialize()
         if status == NVAPI_NVIDIA_DEVICE_NOT_FOUND:
             raise NvApiUnavailable("No NVIDIA device found")

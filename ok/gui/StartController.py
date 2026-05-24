@@ -191,7 +191,14 @@ class StartController(QObject):
     def check_gpu_driver_post_processing(self):
         try:
             from ok.util.gpu_driver_settings import get_enabled_gpu_driver_post_processing
-            enabled_features = get_enabled_gpu_driver_post_processing()
+            device_manager = getattr(og, 'device_manager', None)
+            hwnd_window = getattr(device_manager, 'hwnd_window', None)
+            target_exe_path = getattr(hwnd_window, 'exe_full_path', None) if hwnd_window else None
+            target_hwnd = getattr(hwnd_window, 'hwnd', None) if hwnd_window else None
+            if not target_exe_path and device_manager:
+                device = device_manager.get_preferred_device()
+                target_exe_path = device.get('full_path') if device else None
+            enabled_features = get_enabled_gpu_driver_post_processing(target_exe_path, target_hwnd)
         except Exception as e:
             logger.error(f'check_gpu_driver_post_processing exception: {e}', e)
             return
@@ -204,6 +211,7 @@ class StartController(QObject):
                 )
                 for feature in enabled_features
             ]
+            logger.warning('\n'.join(warning_lines))
             communicate.notification.emit(
                 '\n'.join(warning_lines),
                 self.tr('GPU Driver Warning'),

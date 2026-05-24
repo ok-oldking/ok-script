@@ -105,16 +105,21 @@ class TestStartController(unittest.TestCase):
         controller = self.make_controller()
         emit = Mock()
         fake_communicate = SimpleNamespace(notification=SimpleNamespace(emit=emit))
+        fake_og = SimpleNamespace(device_manager=SimpleNamespace(
+            hwnd_window=SimpleNamespace(exe_full_path=r'C:\game.exe', hwnd=123),
+        ))
         enabled_features = [
             GpuDriverPostProcessing("NVIDIA", "RTX HDR", True),
             GpuDriverPostProcessing("AMD", "Radeon Image Sharpening", True),
         ]
 
         with patch.object(start_controller_module, 'communicate', fake_communicate), \
+                patch.object(start_controller_module, 'og', fake_og), \
                 patch('ok.util.gpu_driver_settings.get_enabled_gpu_driver_post_processing',
-                      return_value=enabled_features):
+                      return_value=enabled_features) as get_enabled:
             controller.check_gpu_driver_post_processing()
 
+        get_enabled.assert_called_once_with(r'C:\game.exe', 123)
         warning, title, *args = emit.call_args.args
         self.assertEqual(
             'NVIDIA RTX HDR is enabled and may cause malfunctions!\n'
