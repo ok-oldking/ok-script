@@ -3,7 +3,6 @@ typing-extensions>=4.11.0
 PySide6-Essentials>=6.7.0
 PySideSix-Frameless-Window>=0.3.12
 darkdetect>=0.8.0
-gitpython>=3.1.43
 PySide6-Fluent-Widgets>=1.5.5
 numpy>=1.26.4
 opencv-python>=4.9.0.80
