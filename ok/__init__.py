@@ -330,7 +330,8 @@ class OK:
     init_error = None
 
     def __init__(self, config):
-        check_mutex()
+        if config.get('check_mutex', True):
+            check_mutex()
         og.ok = self
         if pyappify.app_version:
             config['version'] = pyappify.app_version

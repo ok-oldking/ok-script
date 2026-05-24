@@ -190,15 +190,22 @@ class StartController(QObject):
 
     def check_gpu_driver_post_processing(self):
         try:
-            from ok.util.gpu_driver_settings import is_gpu_post_processing_enabled
-            enabled = is_gpu_post_processing_enabled()
+            from ok.util.gpu_driver_settings import get_enabled_gpu_driver_post_processing
+            enabled_features = get_enabled_gpu_driver_post_processing()
         except Exception as e:
             logger.error(f'check_gpu_driver_post_processing exception: {e}', e)
             return
 
-        if enabled:
+        if enabled_features:
+            warning_lines = [
+                self.tr('{vendor} {feature} is enabled and may cause malfunctions!').format(
+                    vendor=feature.vendor,
+                    feature=feature.feature,
+                )
+                for feature in enabled_features
+            ]
             communicate.notification.emit(
-                self.tr('NVIDIA/AMD filters or sharpening are enabled and may cause malfunctions!'),
+                '\n'.join(warning_lines),
                 self.tr('GPU Driver Warning'),
                 True,
                 True,

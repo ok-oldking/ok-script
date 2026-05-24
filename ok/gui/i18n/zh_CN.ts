@@ -757,8 +757,8 @@
             <translation>无法启动游戏, 请确认游戏已安装!</translation>
         </message>
         <message>
-            <source>NVIDIA/AMD filters or sharpening are enabled and may cause malfunctions!</source>
-            <translation>NVIDIA/AMD 滤镜或锐化已启用，可能导致功能异常！</translation>
+            <source>{vendor} {feature} is enabled and may cause malfunctions!</source>
+            <translation>{vendor} {feature} 已启用，可能导致功能异常！</translation>
         </message>
         <message>
             <source>GPU Driver Warning</source>

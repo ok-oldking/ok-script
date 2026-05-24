@@ -755,8 +755,8 @@
             <translation>No se puede iniciar el juego, asegúrate de que el juego está instalado</translation>
         </message>
         <message>
-            <source>NVIDIA/AMD filters or sharpening are enabled and may cause malfunctions!</source>
-            <translation>¡Los filtros o la nitidez de NVIDIA/AMD están activados y pueden causar fallos de funcionamiento!</translation>
+            <source>{vendor} {feature} is enabled and may cause malfunctions!</source>
+            <translation>¡Se ha activado {vendor} {feature} y puede causar fallos de funcionamiento!</translation>
         </message>
         <message>
             <source>GPU Driver Warning</source>

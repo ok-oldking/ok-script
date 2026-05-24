@@ -11,6 +11,7 @@ def init_ok(config):
         from ok import OK
         config['debug'] = True
         config['analytics'] = None
+        config['check_mutex'] = False
         print(f'OKTestRunner init_ok config: {config}')
         ok = OK(config)
         ok.task_executor.debug_mode = True

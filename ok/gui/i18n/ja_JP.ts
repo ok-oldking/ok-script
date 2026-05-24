@@ -755,8 +755,8 @@
             <translation>ゲームを開始できません。ゲームがインストールされていることを確認してください。</translation>
         </message>
         <message>
-            <source>NVIDIA/AMD filters or sharpening are enabled and may cause malfunctions!</source>
-            <translation>NVIDIA/AMD のフィルターまたはシャープ化が有効になっており、誤動作の原因になる可能性があります！</translation>
+            <source>{vendor} {feature} is enabled and may cause malfunctions!</source>
+            <translation>{vendor} {feature} が有効になっており、誤動作の原因になる可能性があります！</translation>
         </message>
         <message>
             <source>GPU Driver Warning</source>

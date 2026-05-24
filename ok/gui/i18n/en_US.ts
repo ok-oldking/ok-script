@@ -757,8 +757,8 @@
             <translation>Can't start game, make sure the game is installed</translation>
         </message>
         <message>
-            <source>NVIDIA/AMD filters or sharpening are enabled and may cause malfunctions!</source>
-            <translation>NVIDIA/AMD filters or sharpening are enabled and may cause malfunctions!</translation>
+            <source>{vendor} {feature} is enabled and may cause malfunctions!</source>
+            <translation>{vendor} {feature} is enabled and may cause malfunctions!</translation>
         </message>
         <message>
             <source>GPU Driver Warning</source>

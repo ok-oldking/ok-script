@@ -129,7 +129,7 @@ def is_nvidia_image_sharpening_enabled() -> Optional[GpuDriverPostProcessing]:
     return _detect_nvidia_drs_flags(
         NV_DRS_IMAGE_SHARPENING_IDS,
         lambda value: value == 1,
-        "NVIDIA Image Sharpening",
+        "Image Sharpening",
     )
 
 
@@ -200,7 +200,7 @@ def is_amd_image_sharpening_enabled() -> Optional[GpuDriverPostProcessing]:
 
         return GpuDriverPostProcessing(
             vendor="AMD",
-            feature="AMD Radeon Image Sharpening",
+            feature="Radeon Image Sharpening",
             enabled=_adlx_bool(enabled),
         )
     finally:
