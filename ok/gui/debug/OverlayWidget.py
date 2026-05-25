@@ -170,6 +170,7 @@ class OverlayWidget(QWidget):
             self.paint_alt_overlay(painter)
             if og.config.get('debug_cover_uid'):
                 self.paint_uid_cover(painter)
+        self.paint_custom(painter)
 
     def set_blur_patches(self, patches):
         images = []
@@ -196,6 +197,16 @@ class OverlayWidget(QWidget):
         for x, y, width, height, image in self.blur_images:
             painter.drawImage(QRectF(x * frame_ratio, y * frame_ratio,
                                      width * frame_ratio, height * frame_ratio), image)
+
+    def paint_custom(self, painter):
+        for key, callback in list(getattr(self, 'custom_painters', {}).items()):
+            painter.save()
+            try:
+                callback(painter, self)
+            except Exception as e:
+                logger.warning(f'custom overlay painter {key} failed: {e}')
+            finally:
+                painter.restore()
 
     def paint_alt_overlay(self, painter):
         if not getattr(self, '_is_alt_down', False):

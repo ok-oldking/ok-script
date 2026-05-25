@@ -777,9 +777,45 @@ def clear_box(self)
 def get_overlay_view(self)
 ```
 
-返回覆盖在捕获窗口上的 Qt overlay widget。`BaseTask` 和 `CustomTab` 可直接调用此方法；配置的
-`my_app` 实例也会获得同名方法。无界面运行时返回 `None`。自定义内容绘制完成后可调用
-`overlay_view.request_show()` 令 overlay 在窗口上显示。
+返回覆盖在捕获窗口上的原始 Qt overlay widget。`BaseTask` 和 `CustomTab` 可直接调用此方法；
+配置的 `my_app` 实例也会获得同名方法。无界面运行时返回 `None`。
+
+任务线程需要通过 `overlay_view.draw(key, callback, duration=None)` 注册自定义绘制。回调会在
+Qt 绘制线程中执行，参数为 `(painter, overlay_view)`，可使用 `QPainter` 绘制任意内容。存在
+自定义绘制内容时 overlay 会自动显示，不受 `Enable Boxes` 开关影响。`duration` 为秒数；不传
+时持续显示，直到调用 `overlay_view.clear_draw(key)` 或 `overlay_view.clear_draw()`：
+
+```python
+from PySide6.QtGui import QColor, QFont, QPen
+from ok import TriggerTask
+
+
+class StatusOverlayTask(TriggerTask):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_config = {'_enabled': True}
+        self.trigger_interval = 0.5
+
+    def run(self):
+        overlay = self.get_overlay_view()
+        if overlay is None:
+            return
+
+        status = "Tracking"
+
+        def paint(painter, view):
+            painter.setPen(QPen(QColor(0, 255, 120), 2))
+            painter.drawRect(30, 30, 240, 64)
+            painter.setFont(QFont("Arial", 16))
+            painter.drawText(48, 70, status)
+
+        overlay.draw("status", paint, duration=1)
+
+    def on_destroy(self):
+        overlay = self.get_overlay_view()
+        if overlay is not None:
+            overlay.clear_draw("status")
+```
 
 应用配置可提供 `blur_area(width, height)` 回调，返回一个 `Box` 或 `list[Box]`，用于遮挡
 游戏 UID 等静态区域：
