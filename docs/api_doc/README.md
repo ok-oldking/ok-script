@@ -49,6 +49,7 @@
     - [任务配置 (Task Configuration)](#任务配置-task-configuration)
     - [屏幕画图 (Screen drawing)](#屏幕画图-screen-drawing)
         - [draw\_boxes](#draw_boxes)
+        - [get\_overlay\_view](#get_overlay_view)
         - [clear\_box](#clear_box)
     - [OCR](#ocr)
         - [ocr](#ocr)
@@ -685,7 +686,7 @@ def get_global_config_desc(self, option) -> str
 
 - **`drop_down`**: 下拉选择框。
     - **参数:** `options` (list[str]): 选项列表。
-    - **可选参数:** `sub_configs` (dict[str, list[str]]): 根据当前下拉选项控制其他配置项是否显示。key 是下拉选项值，value 是需要显示的配置项名称列表；这些配置项会按照列表顺序显示在当前配置项下方，未包含在当前选项列表中的配置项会被隐藏。
+- **`sub_configs`**: 可用于下拉选择框或布尔开关的可选参数。它根据当前值控制其他配置项是否显示；key 是选项值或 `True`/`False`，value 是需要显示的配置项名称列表。这些配置项会按照列表顺序显示在当前配置项下方，未包含在当前值列表中的配置项会被隐藏。
 - **`multi_selection`**: 多选列表。
     - **参数:** `options` (list[str]): 选项列表。
 - **`text_edit`**: 强制使用多行文本框。
@@ -767,6 +768,38 @@ def clear_box(self)
 ```
 
 清除屏幕上由 `draw_boxes` 绘制的所有框。
+
+<a name="get_overlay_view"></a>
+
+### get\_overlay\_view
+
+```python
+def get_overlay_view(self)
+```
+
+返回覆盖在捕获窗口上的 Qt overlay widget。`BaseTask` 和 `CustomTab` 可直接调用此方法；配置的
+`my_app` 实例也会获得同名方法。无界面运行时返回 `None`。自定义内容绘制完成后可调用
+`overlay_view.request_show()` 令 overlay 在窗口上显示。
+
+应用配置可提供 `blur_area(width, height)` 回调，返回一个 `Box` 或 `list[Box]`，用于遮挡
+游戏 UID 等静态区域：
+
+```python
+from ok import Box
+
+def blur_area(width, height):
+    return Box(width - 240, height - 42, 240, 42)
+
+config = {
+    'blur_area': blur_area,
+}
+```
+
+配置后，基本设置中会出现 `Enable Blur` 开关，启用后可通过子配置 `Blur Algorithm` 选择
+`Inpaint`（默认）或 `Blur`。`Inpaint` 会使用区域周围的像素重建内容，适用于从较简单背景上移除 UID。
+开启时 overlay 以最多每秒一次的频率显示处理后的区域；保存截图时始终应用所选算法，与该开关
+无关。若还配置了 `screenshot_processor`，它会在处理完成后执行。调试面板中的 `Enable Boxes`
+仅启用框绘制；overlay 只在有框、处理区域或自定义绘制内容需要显示时出现。
 
 ### OCR
 

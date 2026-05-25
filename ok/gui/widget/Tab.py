@@ -35,6 +35,10 @@ class Tab(ScrollArea):
         from ok import og
         return og.ok.exit_event
 
+    def get_overlay_view(self):
+        from ok import og
+        return og.get_overlay_view()
+
     def show_loading_dialog(self):
         if not self.loading_dialog:
             self.loading_dialog = StartLoadingDialog(-1,

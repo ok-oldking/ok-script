@@ -117,6 +117,12 @@ class ExecutorOperation:
     def start_device(self):
         self._app.start_controller.start_device()
 
+    def get_overlay_view(self):
+        """Return the shared overlay widget when running with the GUI."""
+        if hasattr(self._app, 'get_overlay_view'):
+            return self._app.get_overlay_view()
+        return None
+
     def clipboard(self):
         from ok.third_party.paperclip import paste
         return paste()

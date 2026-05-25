@@ -133,6 +133,9 @@ class ConfigCard(ExpandSettingCard):
             combo_box = getattr(widget, 'combo_box', None)
             if combo_box is not None:
                 combo_box.currentTextChanged.connect(self.__apply_sub_config_visibility)
+            switch_button = getattr(widget, 'switch_button', None)
+            if switch_button is not None:
+                switch_button.checkedChanged.connect(self.__apply_sub_config_visibility)
 
         self.__apply_sub_config_visibility()
 

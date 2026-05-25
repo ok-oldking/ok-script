@@ -23,7 +23,7 @@ from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.task.TaskExecutor import TaskExecutor
 from ok.util.Analytics import Analytics
-from ok.util.GlobalConfig import GlobalConfig, basic_options
+from ok.util.GlobalConfig import GlobalConfig, register_basic_options
 from ok.util.clazz import init_class_by_name
 from ok.util.config import Config, ConfigOption
 from ok.util.handler import Handler, ExitEvent
@@ -109,10 +109,6 @@ class App:
         else:
             self.to_translate = None
             
-        if self.ok_config.get('use_overlay', False):
-            logger.debug('init overlay')
-            from ok.gui.overlay.OverlayWindow import OverlayWindow
-            self.overlay_window = OverlayWindow(og.device_manager.hwnd_window)
         self.po_translation = None
         if not config.get('window_size'):
             logger.info(f'no config.window_size was set use default')
@@ -129,6 +125,8 @@ class App:
 
         if my_app := self.config.get('my_app'):
             og.my_app = init_class_by_name(my_app[0], my_app[1], exit_event)
+            if not hasattr(og.my_app, 'get_overlay_view'):
+                og.my_app.get_overlay_view = self.get_overlay_view
 
         if self.config.get('analytics'):
             self.fire_base_analytics = Analytics(self.config, self.exit_event, og.handler, og.device_manager)
@@ -189,15 +187,24 @@ class App:
         self.show_message_window(title, content)
 
     def update_overlay(self, visible, x, y, window_width, window_height, width, height, scaling):
+        overlay_view = self.get_overlay_view()
+        if overlay_view:
+            overlay_view.update_overlay(visible, x, y, window_width, window_height, width, height, scaling)
 
-        self.overlay_window.update_overlay(visible, x, y, window_width, window_height, width, height, scaling)
+    def get_overlay_view(self):
+        """Return the overlay widget exposed to tasks, custom tabs, and my_app."""
+        if self.overlay_window is None:
+            from ok.gui.overlay.OverlayWindow import OverlayWindow
+            self.overlay_window = OverlayWindow(og.device_manager.hwnd_window)
+            communicate.window.connect(self.overlay_window.update_overlay)
+            self.overlay_window.set_boxes_enabled(self.ok_config.get('use_overlay', False))
+        return self.overlay_window
 
     def show_main_window(self):
         self.do_show_main()
 
     def do_show_main(self):
-        if self.overlay_window:
-            communicate.window.connect(self.overlay_window.update_overlay)
+        self.get_overlay_view()
 
         self.main_window = MainWindow(self, self.config, self.ok_config, self.icon, self.title, self.version,
                                       self.debug,
@@ -263,6 +270,8 @@ class HeadlessApp:
         og.app = self
         if my_app := self.config.get('my_app'):
             og.my_app = init_class_by_name(my_app[0], my_app[1], exit_event)
+            if not hasattr(og.my_app, 'get_overlay_view'):
+                og.my_app.get_overlay_view = self.get_overlay_view
         logger.debug('init headless app end')
 
     def tr(self, key):
@@ -288,6 +297,9 @@ class HeadlessApp:
     def quit(self):
         if self.exit_event:
             self.exit_event.set()
+
+    def get_overlay_view(self):
+        return None
 
 
 def get_my_id():
@@ -365,7 +377,7 @@ class OK:
                 else:
                     available_methods.append(method)
 
-        self.global_config.get_config(basic_options)
+        register_basic_options(self.global_config, enable_blur=callable(config.get('blur_area')))
         og.global_config = self.global_config
         og.set_use_dml()
         try:
@@ -757,6 +769,11 @@ class OkGlobals:
             use_dml = window_build_number >= 18362
         logger.info(f'use_dml result is {use_dml}')
         self.use_dml = use_dml
+
+    def get_overlay_view(self):
+        if self.app and hasattr(self.app, 'get_overlay_view'):
+            return self.app.get_overlay_view()
+        return None
 
     def get_trial_expire_util_str(self):
         # Convert the timestamp to a datetime object

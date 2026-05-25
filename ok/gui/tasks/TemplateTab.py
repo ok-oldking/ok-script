@@ -581,6 +581,9 @@ class TemplateTab(QWidget):
                 alert_error(self.tr("Failed to capture frame."))
                 return
 
+            from ok.util.blur import apply_blur_areas, get_blur_algorithm
+            frame = apply_blur_areas(frame, og.config.get('blur_area'),
+                                     get_blur_algorithm(getattr(og, 'global_config', None)))
             if processor := og.config.get('screenshot_processor'):
                 frame = processor(frame.copy())
 

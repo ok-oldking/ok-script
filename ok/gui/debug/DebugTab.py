@@ -217,12 +217,10 @@ def capture(processor=None):
         try:
             frame = og.device_manager.capture_method.get_frame()
             if frame is not None:
-                if processor:
-                    frame = processor(frame.copy())
                 current_capture = str(og.device_manager.capture_method) + '_' + str(time.time() * 1000)
                 file_path = og.ok.screenshot.generate_screen_shot(frame, og.ok.screenshot.ui_dict,
                                                                   og.ok.screenshot.screenshot_folder,
-                                                                  current_capture, True, None)
+                                                                  current_capture, True, None, processor=processor)
 
                 # Use subprocess.Popen to open the file explorer and select the file
                 subprocess.Popen(r'explorer /select,"{}"'.format(file_path))

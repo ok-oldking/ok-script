@@ -12,6 +12,7 @@ from PySide6.QtGui import QColor
 from ok import Box, og
 from ok import Logger
 from ok.gui.Communicate import communicate
+from ok.util.blur import apply_blur_areas, get_blur_algorithm
 from ok.util.file import find_first_existing_file, clear_folder, sanitize_filename, \
     get_relative_path
 
@@ -126,10 +127,10 @@ class Screenshot(QObject):
             self.generate_screen_shot(task[0], task[1], task[2], task[3], task[4], task[5])
             self.task_queue.task_done()
 
-    def generate_screen_shot(self, frame, ui_dict, folder, name, show_box, frame_box):
+    def generate_screen_shot(self, frame, ui_dict, folder, name, show_box, frame_box, processor=None):
         if folder is None:
             return
-        pil_image = self.to_pil_image(frame)
+        pil_image = self.to_pil_image(frame, processor=processor)
         if pil_image is None:
             return
 
@@ -180,10 +181,14 @@ class Screenshot(QObject):
         if self.task_queue is not None:
             self.task_queue.put(None)
 
-    def to_pil_image(self, frame):
+    def to_pil_image(self, frame, processor=None):
         if frame is None:
             return None
-        if processor := og.config.get('screenshot_processor'):
+        frame = apply_blur_areas(frame, og.config.get('blur_area'),
+                                 get_blur_algorithm(getattr(og, 'global_config', None)))
+        if processor is None:
+            processor = og.config.get('screenshot_processor')
+        if processor:
             frame = processor(frame.copy())
         if len(frame.shape) == 2:
             frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)

@@ -819,12 +819,12 @@
             <translation>Choose Interaction</translation>
         </message>
         <message>
-            <source>Show Overlay</source>
-            <translation>Show Overlay</translation>
+            <source>Enable Boxes</source>
+            <translation>Enable Boxes</translation>
         </message>
         <message>
-            <source>Hide Overlay</source>
-            <translation>Hide Overlay</translation>
+            <source>Disable Boxes</source>
+            <translation>Disable Boxes</translation>
         </message>
         <message>
             <source>Show Log on Overlay</source>
@@ -1170,6 +1170,30 @@
         <message>
             <source>Basic Options</source>
             <translation>Basic Options</translation>
+        </message>
+        <message>
+            <source>Enable Blur</source>
+            <translation>Enable Blur</translation>
+        </message>
+        <message>
+            <source>Blur Game UID etc to enhance OLED life</source>
+            <translation>Blur Game UID etc to enhance OLED life</translation>
+        </message>
+        <message>
+            <source>Blur Algorithm</source>
+            <translation>Blur Algorithm</translation>
+        </message>
+        <message>
+            <source>Method used to obscure configured areas</source>
+            <translation>Method used to obscure configured areas</translation>
+        </message>
+        <message>
+            <source>Blur</source>
+            <translation>Blur</translation>
+        </message>
+        <message>
+            <source>Inpaint</source>
+            <translation>Inpaint</translation>
         </message>
         <message>
             <source>Use DirectML</source>

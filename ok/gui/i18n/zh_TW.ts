@@ -817,12 +817,12 @@
             <translation>選擇互動方式</translation>
         </message>
         <message>
-            <source>Show Overlay</source>
-            <translation>顯示除錯懸浮窗</translation>
+            <source>Enable Boxes</source>
+            <translation>啟用標記框</translation>
         </message>
         <message>
-            <source>Hide Overlay</source>
-            <translation>隱藏除錯懸浮窗</translation>
+            <source>Disable Boxes</source>
+            <translation>停用標記框</translation>
         </message>
         <message>
             <source>Show Log on Overlay</source>
@@ -1164,6 +1164,30 @@
         <message>
             <source>Basic Options</source>
             <translation>基本設定</translation>
+        </message>
+        <message>
+            <source>Enable Blur</source>
+            <translation>啟用模糊遮擋</translation>
+        </message>
+        <message>
+            <source>Blur Game UID etc to enhance OLED life</source>
+            <translation>模糊遊戲 UID 等固定內容以延長 OLED 螢幕壽命</translation>
+        </message>
+        <message>
+            <source>Blur Algorithm</source>
+            <translation>遮擋演算法</translation>
+        </message>
+        <message>
+            <source>Method used to obscure configured areas</source>
+            <translation>用於遮擋設定區域的處理方式</translation>
+        </message>
+        <message>
+            <source>Blur</source>
+            <translation>模糊</translation>
+        </message>
+        <message>
+            <source>Inpaint</source>
+            <translation>內容填補</translation>
         </message>
         <message>
             <source>Use DirectML</source>

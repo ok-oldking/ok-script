@@ -4,7 +4,7 @@ from qfluentwidgets import FluentIcon
 
 from ok.util.config import ConfigOption, Config
 
-basic_options = ConfigOption('Basic Options', {
+_basic_options_default = {
     'Auto Start Game When App Starts': False,
     'Minimize Window to System Tray when Closing': False,
     'Mute Game while in Background': False,
@@ -15,12 +15,36 @@ basic_options = ConfigOption('Basic Options', {
     'Start/Stop': 'F9',
     'Kill Launcher after Start': False,
     'Launch with DX11': False
-}, config_type={'Use DirectML': {'type': "drop_down", 'options': ['Auto', 'Yes', 'No']},
-                'Start/Stop': {'type': "drop_down", 'options': ['None', 'F9', 'F10', 'F11', 'F12']}}
-                             , config_description={'Use DirectML': 'Use GPU to Improve Performance',
-                                                   'Start/Stop': 'HotKey',
-                                                   'Trigger Interval': 'Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)'},
-                             icon=FluentIcon.GAME)
+}
+_basic_options_type = {'Use DirectML': {'type': "drop_down", 'options': ['Auto', 'Yes', 'No']},
+                       'Start/Stop': {'type': "drop_down", 'options': ['None', 'F9', 'F10', 'F11', 'F12']}}
+_basic_options_description = {'Use DirectML': 'Use GPU to Improve Performance',
+                              'Start/Stop': 'HotKey',
+                              'Trigger Interval': 'Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)'}
+_blur_options_default = {'Enable Blur': False, 'Blur Algorithm': 'Inpaint'}
+_blur_options_type = {
+    'Enable Blur': {'sub_configs': {True: ['Blur Algorithm']}},
+    'Blur Algorithm': {'type': 'drop_down', 'options': ['Blur', 'Inpaint']}
+}
+_blur_options_description = {
+    'Enable Blur': 'Blur Game UID etc to enhance OLED life',
+    'Blur Algorithm': 'Method used to obscure configured areas'
+}
+
+
+def create_basic_options(enable_blur=False):
+    default = dict(_basic_options_default)
+    config_type = dict(_basic_options_type)
+    description = dict(_basic_options_description)
+    if enable_blur:
+        default.update(_blur_options_default)
+        config_type.update(_blur_options_type)
+        description.update(_blur_options_description)
+    return ConfigOption('Basic Options', default, config_type=config_type,
+                        config_description=description, icon=FluentIcon.GAME)
+
+
+basic_options = create_basic_options()
 
 
 class GlobalConfig:
@@ -62,3 +86,25 @@ class GlobalConfig:
                 if not k.startswith('_'):
                     configs.append((k, v, self.config_options.get(k)))
             return sorted(configs, key=lambda x: x[0])
+
+
+def register_basic_options(global_config, enable_blur=False):
+    options = create_basic_options(enable_blur=enable_blur)
+    config = global_config.get_config(options)
+    if enable_blur:
+        for key, value in _blur_options_default.items():
+            if key not in config:
+                config.default[key] = value
+                config[key] = value
+        registered = global_config.config_options.get(options.name)
+        if registered:
+            for key, value in _blur_options_default.items():
+                registered.default_config.setdefault(key, value)
+            registered.config_description.update({
+                key: registered.config_description.get(key, value)
+                for key, value in _blur_options_description.items()
+            })
+            if registered.config_type is None:
+                registered.config_type = {}
+            registered.config_type.update(_blur_options_type)
+    return config

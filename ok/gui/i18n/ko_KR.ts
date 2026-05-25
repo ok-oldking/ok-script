@@ -818,12 +818,12 @@
             <translation>상호 작용 선택</translation>
         </message>
         <message>
-            <source>Show Overlay</source>
-            <translation>디버그 오버레이 표시</translation>
+            <source>Enable Boxes</source>
+            <translation>박스 사용</translation>
         </message>
         <message>
-            <source>Hide Overlay</source>
-            <translation>디버그 오버레이 숨기기</translation>
+            <source>Disable Boxes</source>
+            <translation>박스 사용 안 함</translation>
         </message>
         <message>
             <source>Show Log on Overlay</source>
@@ -1169,6 +1169,30 @@
         <message>
             <source>Basic Options</source>
             <translation>기본 옵션</translation>
+        </message>
+        <message>
+            <source>Enable Blur</source>
+            <translation>블러 사용</translation>
+        </message>
+        <message>
+            <source>Blur Game UID etc to enhance OLED life</source>
+            <translation>게임 UID 등을 흐리게 표시하여 OLED 수명을 늘립니다</translation>
+        </message>
+        <message>
+            <source>Blur Algorithm</source>
+            <translation>가림 알고리즘</translation>
+        </message>
+        <message>
+            <source>Method used to obscure configured areas</source>
+            <translation>설정된 영역을 가리는 처리 방법</translation>
+        </message>
+        <message>
+            <source>Blur</source>
+            <translation>블러</translation>
+        </message>
+        <message>
+            <source>Inpaint</source>
+            <translation>인페인트</translation>
         </message>
         <message>
             <source>Use DirectML</source>

@@ -95,10 +95,10 @@ class StartTab(Tab):
         self.overlay_layout.setContentsMargins(0, 20, 0, 20)
 
         self.overlay_switch = SwitchButton()
-        self.overlay_switch.setOnText(self.tr("Show Overlay"))
-        self.overlay_switch.setOffText(self.tr("Hide Overlay"))
+        self.overlay_switch.setOnText(self.tr("Enable Boxes"))
+        self.overlay_switch.setOffText(self.tr("Disable Boxes"))
         self.overlay_switch.setChecked(og.app.ok_config.get('use_overlay', False))
-        self.overlay_switch.checkedChanged.connect(self.on_overlay_toggled)
+        self.overlay_switch.checkedChanged.connect(self.on_overlay_boxes_toggled)
         self.overlay_layout.addWidget(self.overlay_switch)
 
         self.overlay_log_switch = SwitchButton()
@@ -134,20 +134,11 @@ class StartTab(Tab):
                     og.device_manager.set_interaction(methods[i])
             self.start_card.update_status()
 
-    def on_overlay_toggled(self, checked):
+    def on_overlay_boxes_toggled(self, checked):
         from ok import og
         og.app.ok_config['use_overlay'] = checked
         og.app.ok_config.save_file()
-        if checked:
-            if not og.app.overlay_window:
-                from ok.gui.overlay.OverlayWindow import OverlayWindow
-                og.app.overlay_window = OverlayWindow(og.device_manager.hwnd_window)
-                communicate.window.connect(og.app.overlay_window.update_overlay)
-        else:
-            if og.app.overlay_window:
-                communicate.window.disconnect(og.app.overlay_window.update_overlay)
-                og.app.overlay_window.close()
-                og.app.overlay_window = None
+        og.app.get_overlay_view().set_boxes_enabled(checked)
 
     def on_overlay_log_toggled(self, checked):
         from ok import og

@@ -92,6 +92,16 @@ class TaskExecutor:
         self.lock = threading.Lock()
         self._ocr_lib_lock = threading.Lock()
         self._ocr_init_thread = None
+        self.blur_overlay_processor = None
+        if callable(self.config.get('blur_area')):
+            from ok.util.blur import BlurOverlayProcessor, DEFAULT_BLUR_ALGORITHM
+            self.blur_overlay_processor = BlurOverlayProcessor(
+                self.config.get('blur_area'),
+                lambda: bool(self.basic_options.get('Enable Blur', False)),
+                communicate.blur_overlay.emit,
+                communicate.clear_blur_overlay.emit,
+                self.exit_event,
+                algorithm=lambda: self.basic_options.get('Blur Algorithm', DEFAULT_BLUR_ALGORITHM))
         self.init_default_ocr()
 
     def load_tr(self):
@@ -247,6 +257,8 @@ class TaskExecutor:
                         logger.warning(f"captured wrong size frame: {width}x{height}")
                     self._frame = frame
                     self._last_frame_time = time.time()
+                    if self.blur_overlay_processor:
+                        self.blur_overlay_processor.next_frame(frame)
                     return self._frame
             if time_out is not None and time.time() - start >= time_out:
                 return None

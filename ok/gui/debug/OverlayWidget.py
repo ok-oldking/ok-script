@@ -1,6 +1,6 @@
 import win32api
 from PySide6.QtCore import Qt, QPoint, QTimer, QRectF, QRect
-from PySide6.QtGui import QPainter, QColor, QPen, QFont, QGuiApplication, QBrush
+from PySide6.QtGui import QPainter, QColor, QPen, QFont, QGuiApplication, QBrush, QImage
 from PySide6.QtWidgets import QWidget
 
 from ok import Logger
@@ -38,6 +38,7 @@ class OverlayWidget(QWidget):
         screen = QGuiApplication.primaryScreen()
         self.scaling = screen.devicePixelRatio()
         self.logs = []
+        self.blur_images = []
         communicate.log.connect(self.add_log)
 
     def add_log(self, level_no, message):
@@ -159,13 +160,42 @@ class OverlayWidget(QWidget):
         if not self.isVisible():
             return
         painter = QPainter(self)
-        self.paint_border(painter)
-        self.paint_boxes(painter)
-        self.paint_mouse_position(painter)
-        self.paint_logs(painter)
-        self.paint_alt_overlay(painter)
-        if og.config.get('debug_cover_uid'):
-            self.paint_uid_cover(painter)
+        self.paint_blur(painter)
+        boxes_active = getattr(self, '_boxes_enabled', True) and getattr(self, '_boxes_active', False)
+        if boxes_active:
+            self.paint_boxes(painter)
+            self.paint_border(painter)
+            self.paint_mouse_position(painter)
+            self.paint_logs(painter)
+            self.paint_alt_overlay(painter)
+            if og.config.get('debug_cover_uid'):
+                self.paint_uid_cover(painter)
+
+    def set_blur_patches(self, patches):
+        images = []
+        for x, y, width, height, patch in patches:
+            if patch is None or patch.size == 0:
+                continue
+            if len(patch.shape) == 2:
+                image_data = patch.copy()
+                image_format = QImage.Format_Grayscale8
+            else:
+                image_data = patch[:, :, :3][:, :, ::-1].copy()
+                image_format = QImage.Format_RGB888
+            image = QImage(image_data.data, width, height, image_data.strides[0], image_format).copy()
+            images.append((x, y, width, height, image))
+        self.blur_images = images
+        self.update()
+
+    def clear_blur_patches(self):
+        self.blur_images = []
+        self.update()
+
+    def paint_blur(self, painter):
+        frame_ratio = self.frame_ratio()
+        for x, y, width, height, image in self.blur_images:
+            painter.drawImage(QRectF(x * frame_ratio, y * frame_ratio,
+                                     width * frame_ratio, height * frame_ratio), image)
 
     def paint_alt_overlay(self, painter):
         if not getattr(self, '_is_alt_down', False):

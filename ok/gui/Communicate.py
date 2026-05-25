@@ -16,6 +16,8 @@ class Communicate(QObject):
     notification = Signal(str, str, bool, bool, str, object)
     executor_paused: Signal = Signal(bool)
     screenshot = Signal(object, str, bool, object)
+    blur_overlay = Signal(object)
+    clear_blur_overlay = Signal()
     adb_devices: Signal = Signal(bool)
     config_validation: Signal = Signal(str)
     tab = Signal(str)
