@@ -1399,6 +1399,14 @@
             <source>Target window inactive: Recording paused</source>
             <translation>Target window inactive: Recording paused</translation>
         </message>
+        <message>
+            <source>Blur Interval</source>
+            <translation>Blur Interval</translation>
+        </message>
+        <message>
+            <source>Seconds between processed overlay updates</source>
+            <translation>Seconds between processed overlay updates</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

@@ -63,7 +63,7 @@ def config_widget(config_type, config_desc, config, key, value, task):
             allow_duplication=allow_duplication
         )
     elif isinstance(value, int):
-        return LabelAndSpinBox(config_desc, config, key)
+        return LabelAndSpinBox(config_desc, config, key, the_type)
     elif isinstance(value, float):
         return LabelAndDoubleSpinBox(config_desc, config, key)
     elif isinstance(value, str):

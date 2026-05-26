@@ -101,7 +101,9 @@ class TaskExecutor:
                 communicate.blur_overlay.emit,
                 communicate.clear_blur_overlay.emit,
                 self.exit_event,
-                algorithm=lambda: self.basic_options.get('Blur Algorithm', DEFAULT_BLUR_ALGORITHM))
+                algorithm=lambda: self.basic_options.get('Blur Algorithm', DEFAULT_BLUR_ALGORITHM),
+                interval=lambda: self.basic_options.get('Blur Interval', 1))
+            communicate.window.connect(self.blur_overlay_processor.set_visible)
         self.init_default_ocr()
 
     def load_tr(self):

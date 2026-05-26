@@ -9,7 +9,6 @@ from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
-MIN_BLUR_INTERVAL = 1.0
 BLUR_ALGORITHM = 'Blur'
 INPAINT_ALGORITHM = 'Inpaint'
 DEFAULT_BLUR_ALGORITHM = INPAINT_ALGORITHM
@@ -117,17 +116,18 @@ def patches_changed(previous, current):
 
 
 class BlurOverlayProcessor:
-    """Generate overlay patches off the task thread at a limited rate."""
+    """Generate foreground overlay patches off the task thread at a configured rate."""
 
     def __init__(self, blur_area, enabled, emit_patches, clear_patches, exit_event,
-                 interval=MIN_BLUR_INTERVAL, algorithm=None):
+                 algorithm=None, interval=None):
         self.blur_area = blur_area
         self.enabled = enabled
+        self.visible = False
         self.emit_patches = emit_patches
         self.clear_patches = clear_patches
         self.exit_event = exit_event
-        self.interval = max(MIN_BLUR_INTERVAL, interval)
         self.algorithm = algorithm or (lambda: DEFAULT_BLUR_ALGORITHM)
+        self.interval = interval or (lambda: 1)
         self.last_submitted = 0
         self.last_patches = None
         self.overlay_active = False
@@ -136,14 +136,11 @@ class BlurOverlayProcessor:
         self.thread.start()
 
     def next_frame(self, frame):
-        if not self.enabled():
-            if self.overlay_active:
-                self.overlay_active = False
-                self.last_patches = None
-                self.clear_patches()
+        if not self.enabled() or not self.visible:
+            self._clear_overlay()
             return
         now = time.monotonic()
-        if now - self.last_submitted < self.interval:
+        if now - self.last_submitted < max(0.0, float(self.interval())):
             return
         self.last_submitted = now
         try:
@@ -159,6 +156,23 @@ class BlurOverlayProcessor:
             except queue.Full:
                 pass
 
+    def set_visible(self, visible, *args):
+        visible = bool(visible)
+        if self.visible == visible:
+            return
+        self.visible = visible
+        self._clear_overlay()
+
+    def _clear_overlay(self):
+        if self.overlay_active:
+            self.clear_patches()
+        self.overlay_active = False
+        self.last_patches = None
+        self.last_submitted = 0
+
+    def _active(self):
+        return self.enabled() and self.visible
+
     def _worker(self):
         while not self.exit_event.is_set():
             try:
@@ -166,22 +180,15 @@ class BlurOverlayProcessor:
             except queue.Empty:
                 continue
             try:
-                if not self.enabled():
-                    self.overlay_active = False
-                    self.last_patches = None
+                if not self._active():
+                    self._clear_overlay()
                     continue
                 patches = make_blur_patches(frame, self.blur_area, self.algorithm())
                 if not patches:
-                    if self.overlay_active:
-                        self.clear_patches()
-                    self.overlay_active = False
-                    self.last_patches = None
+                    self._clear_overlay()
                 elif patches_changed(self.last_patches, patches):
-                    if not self.enabled():
-                        if self.overlay_active:
-                            self.clear_patches()
-                        self.overlay_active = False
-                        self.last_patches = None
+                    if not self._active():
+                        self._clear_overlay()
                         continue
                     self.emit_patches(patches)
                     self.last_patches = patches

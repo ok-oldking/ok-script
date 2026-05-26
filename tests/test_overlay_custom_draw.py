@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
+import numpy as np
 from PySide6.QtGui import QColor, QPen
 from PySide6.QtWidgets import QApplication
 
@@ -62,4 +63,14 @@ class TestOverlayCustomDraw(unittest.TestCase):
         worker.join()
         QApplication.processEvents()
 
+        self.assertFalse(self.view.isVisible())
+
+    def test_blur_patches_are_cleared_when_game_leaves_foreground(self):
+        patch = np.zeros((10, 20, 3), dtype=np.uint8)
+        self.view.update_blur_patches([(0, 0, 20, 10, patch)])
+        self.assertTrue(self.view.isVisible())
+
+        self.view.update_overlay(False, 0, 0, 100, 100, 100, 100, 1)
+
+        self.assertFalse(self.view.blur_images)
         self.assertFalse(self.view.isVisible())

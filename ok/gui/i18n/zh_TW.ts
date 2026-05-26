@@ -1393,6 +1393,14 @@
             <source>Target window inactive: Recording paused</source>
             <translation>目標窗口非激活：暫停錄製</translation>
         </message>
+        <message>
+            <source>Blur Interval</source>
+            <translation>遮擋檢查間隔</translation>
+        </message>
+        <message>
+            <source>Seconds between processed overlay updates</source>
+            <translation>處理後遮擋層的更新間隔（秒）</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

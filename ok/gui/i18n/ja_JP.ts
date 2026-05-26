@@ -1389,6 +1389,14 @@
             <source>Target window inactive: Recording paused</source>
             <translation>対象ウィンドウで非アクティブ: 録画を一時停止しました</translation>
         </message>
+        <message>
+            <source>Blur Interval</source>
+            <translation>遮蔽チェック間隔</translation>
+        </message>
+        <message>
+            <source>Seconds between processed overlay updates</source>
+            <translation>処理済みオーバーレイの更新間隔（秒）</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

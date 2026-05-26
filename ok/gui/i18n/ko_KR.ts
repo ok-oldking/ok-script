@@ -1398,6 +1398,14 @@
             <source>Target window inactive: Recording paused</source>
             <translation>대상 창 비활성: 녹화 일시 정지됨</translation>
         </message>
+        <message>
+            <source>Blur Interval</source>
+            <translation>가림 확인 간격</translation>
+        </message>
+        <message>
+            <source>Seconds between processed overlay updates</source>
+            <translation>처리된 오버레이 업데이트 간격(초)</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

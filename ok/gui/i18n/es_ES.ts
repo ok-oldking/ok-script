@@ -1397,6 +1397,14 @@
             <source>Target window inactive: Recording paused</source>
             <translation>Ventana de destino inactiva: Grabación pausada</translation>
         </message>
+        <message>
+            <source>Blur Interval</source>
+            <translation>Intervalo de comprobacion del ocultamiento</translation>
+        </message>
+        <message>
+            <source>Seconds between processed overlay updates</source>
+            <translation>Segundos entre actualizaciones de la superposicion procesada</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

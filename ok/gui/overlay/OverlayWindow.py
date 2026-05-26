@@ -55,6 +55,8 @@ class OverlayWindow(OverlayWidget):
         self._source_visible = visible
         if visible:
             self.setGeometry(x / scaling, y / scaling, width / scaling, height / scaling)
+        else:
+            self.clear_blur_patches()
         self.refresh_visibility()
 
     def set_boxes_enabled(self, enabled):

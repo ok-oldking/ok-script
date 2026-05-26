@@ -21,14 +21,16 @@ _basic_options_type = {'Use DirectML': {'type': "drop_down", 'options': ['Auto',
 _basic_options_description = {'Use DirectML': 'Use GPU to Improve Performance',
                               'Start/Stop': 'HotKey',
                               'Trigger Interval': 'Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)'}
-_blur_options_default = {'Enable Blur': False, 'Blur Algorithm': 'Inpaint'}
+_blur_options_default = {'Enable Blur': False, 'Blur Algorithm': 'Inpaint', 'Blur Interval': 1}
 _blur_options_type = {
-    'Enable Blur': {'sub_configs': {True: ['Blur Algorithm']}},
-    'Blur Algorithm': {'type': 'drop_down', 'options': ['Blur', 'Inpaint']}
+    'Enable Blur': {'sub_configs': {True: ['Blur Algorithm', 'Blur Interval']}},
+    'Blur Algorithm': {'type': 'drop_down', 'options': ['Blur', 'Inpaint']},
+    'Blur Interval': {'min': 0}
 }
 _blur_options_description = {
     'Enable Blur': 'Blur Game UID etc to enhance OLED life',
-    'Blur Algorithm': 'Method used to obscure configured areas'
+    'Blur Algorithm': 'Method used to obscure configured areas',
+    'Blur Interval': 'Seconds between processed overlay updates'
 }
 
 

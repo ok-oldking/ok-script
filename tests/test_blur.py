@@ -1,5 +1,6 @@
 import unittest
 import threading
+import time
 
 import numpy as np
 
@@ -18,6 +19,15 @@ from ok.util.blur import (
 
 
 class TestBlurAreas(unittest.TestCase):
+    @staticmethod
+    def wait_for(condition, timeout=1):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if condition():
+                return True
+            time.sleep(0.01)
+        return condition()
+
     def test_get_blur_rects_accepts_single_box_and_clamps_to_frame(self):
         rects = get_blur_rects(lambda width, height: Box(-5, 8, 20, 30), 12, 20)
 
@@ -55,22 +65,52 @@ class TestBlurAreas(unittest.TestCase):
         self.assertFalse(patches_changed([(0, 0, 4, 4, patch)], [(0, 0, 4, 4, small_change)]))
         self.assertTrue(patches_changed([(0, 0, 4, 4, patch)], [(0, 0, 4, 4, large_change)]))
 
-    def test_overlay_processor_emits_from_worker_at_most_once_per_interval(self):
+    def test_overlay_processor_only_emits_while_game_window_is_foreground(self):
         stopped = threading.Event()
         emitted = threading.Event()
+        cleared = threading.Event()
         calls = []
-
         processor = BlurOverlayProcessor(
             lambda width, height: Box(0, 0, width, height),
             lambda: True,
             lambda patches: (calls.append(threading.current_thread().name), emitted.set()),
-            lambda: None,
+            lambda: cleared.set(),
             stopped)
         try:
             processor.next_frame(np.full((8, 8, 3), 30, dtype=np.uint8))
+            self.assertFalse(emitted.wait(timeout=0.05))
+            processor.set_visible(True)
+            processor.next_frame(np.full((8, 8, 3), 30, dtype=np.uint8))
             self.assertTrue(emitted.wait(timeout=1))
-            processor.next_frame(np.full((8, 8, 3), 200, dtype=np.uint8))
             self.assertEqual(['BlurOverlay'], calls)
+            processor.set_visible(False)
+            self.assertTrue(cleared.wait(timeout=1))
+        finally:
+            stopped.set()
+
+    def test_overlay_processor_uses_configured_interval_between_updates(self):
+        stopped = threading.Event()
+        emitted = []
+        current_interval = [17]
+
+        processor = BlurOverlayProcessor(
+            lambda width, height: Box(0, 0, width, height),
+            lambda: True,
+            lambda patches: emitted.append(patches),
+            lambda: None,
+            stopped,
+            interval=lambda: current_interval[0])
+        try:
+            processor.set_visible(True)
+            first = np.full((8, 8, 3), 30, dtype=np.uint8)
+            processor.next_frame(first)
+            self.assertTrue(self.wait_for(lambda: len(emitted) == 1))
+            processor.next_frame(np.full((8, 8, 3), 200, dtype=np.uint8))
+            time.sleep(0.05)
+            self.assertEqual(1, len(emitted))
+            current_interval[0] = 0
+            processor.next_frame(np.full((8, 8, 3), 200, dtype=np.uint8))
+            self.assertTrue(self.wait_for(lambda: len(emitted) == 2))
         finally:
             stopped.set()
 
@@ -89,6 +129,7 @@ class TestBlurAreas(unittest.TestCase):
             stopped,
             algorithm=lambda: INPAINT_ALGORITHM)
         try:
+            processor.set_visible(True)
             processor.next_frame(frame)
             self.assertTrue(emitted.wait(timeout=1))
             self.assertGreater(float(patches[0][4].mean()), 100)

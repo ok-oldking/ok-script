@@ -833,9 +833,10 @@ config = {
 
 配置后，基本设置中会出现 `Enable Blur` 开关，启用后可通过子配置 `Blur Algorithm` 选择
 `Inpaint`（默认）或 `Blur`。`Inpaint` 会使用区域周围的像素重建内容，适用于从较简单背景上移除 UID。
-开启时 overlay 以最多每秒一次的频率显示处理后的区域；保存截图时始终应用所选算法，与该开关
-无关。若还配置了 `screenshot_processor`，它会在处理完成后执行。调试面板中的 `Enable Boxes`
-仅启用框绘制；overlay 只在有框、处理区域或自定义绘制内容需要显示时出现。
+开启时只在游戏窗口位于前台时显示处理后的区域；按 `Blur Interval` 检查变化，默认为 `1`
+秒，设为 `0` 时每个 `next_frame` 均检查。保存截图时始终应用所选算法，与该开关无关。若还配置了
+`screenshot_processor`，它会在处理完成后执行。调试面板中的
+`Enable Boxes` 仅启用框绘制；overlay 只在有框、处理区域或自定义绘制内容需要显示时出现。
 
 ### OCR
 
