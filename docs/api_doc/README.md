@@ -15,6 +15,7 @@
     - [Box.relative\_with\_variance](#boxrelative_with_variance)
     - [Box.find\_closest\_box](#boxfind_closest_box)
 - [BaseTask](#basetask)
+    - [名称匹配规则 (match / names)](#名称匹配规则-match--names)
     - [截图 (Screenshot)](#截图-screenshot)
         - [frame](#frame)
         - [next\_frame](#next_frame)
@@ -224,13 +225,13 @@ def crop_frame(self, frame)
 ### Box.center\_distance
 
 ```python
-def center_distance(self, other_box) -> float
+def center_distance(self, other) -> float
 ```
 
 计算当前矩形与另一个矩形中心点之间的距离。
 
 - **参数:**
-    - `other_box` (Box): 另一个 `Box` 对象。
+    - `other` (Box): 另一个 `Box` 对象。
 - **返回:**
     - `float`: 两个矩形中心点之间的欧几里得距离。
 
@@ -239,7 +240,7 @@ def center_distance(self, other_box) -> float
 ### Box.closest\_distance
 
 ```python
-def closest_distance(self, Box other) -> float
+def closest_distance(self, other) -> float
 ```
 
 计算两个矩形边界之间的最短距离。如果两个矩形相交，则距离为 0。
@@ -288,6 +289,29 @@ def find_closest_box(self, direction, boxes, condition=None)
 
 `BaseTask` 是所有任务类的基类，它提供了任务执行所需的基础功能，如截图、输入、日志记录等。它继承自 `OCR`、`FindFeature` 和
 `ExecutorOperation`，因此包含了这些父类的所有方法。
+
+<a name="名称匹配规则-match--names"></a>
+
+### 名称匹配规则 (match / names)
+
+多个 API 会用 `match` 或 `names` 参数过滤 `Box.name`，例如 `ocr`、`wait_ocr`、`wait_click_ocr`、`find_boxes`
+和 `click_box_if_name_match`。
+
+- `str`: 精确匹配，只有 `box.name == match` 才算匹配。
+- `re.Pattern`: 正则匹配，使用 `re.search(pattern, box.name)`，所以可以匹配文本中的任意一段。
+- `list[str | re.Pattern]`: 可以把字符串和正则任意组合在一个列表里，命中其中任意一个就会保留该 `Box`。
+- 匹配默认区分大小写；需要忽略大小写时，用 `re.compile(..., re.IGNORECASE)`。
+- 这不是模糊匹配，也不会自动做 `contains`。如果要匹配包含某段文字，请用正则，例如 `re.compile("开始|Start")`。
+
+示例：
+
+```python
+import re
+
+self.ocr(match="确定")                         # 只匹配 name 正好是 "确定" 的 OCR 结果
+self.ocr(match=re.compile(r"确定|OK"))         # 匹配包含 "确定" 或 "OK" 的结果
+self.ocr(match=["确定", re.compile(r"^OK$")])  # 字符串和正则可以混用
+```
 
 ### 截图 (Screenshot)
 
@@ -354,7 +378,7 @@ def adb_ui_dump(self) -> str
 ### click
 
 ```python
-def click(self, x: int | Box | List[Box] = -1, y=-1, move_back=False, name=None, interval=-1, move=True, down_time=0.01,
+def click(self, x: int | Box | List[Box] = -1, y=-1, move_back=False, name=None, interval=-1, move=True, down_time=0.02,
           after_sleep=0, key='left', hcenter=False, vcenter=False)
 ```
 
@@ -381,16 +405,19 @@ def click(self, x: int | Box | List[Box] = -1, y=-1, move_back=False, name=None,
 
 ```python
 def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5, raise_if_not_found=False,
-              move_back=False, down_time=0.01, after_sleep=1)
+              move_back=False, move=True, down_time=0.01, after_sleep=1)
 ```
 
-点击一个 `Box` 对象的相对位置。
+点击一个 `Box` 对象的相对位置。`box` 也可以传入 `Box` 列表（点击第一个）或预定义区域/特征名称字符串。
 
 - **参数:**
-    - `box` (Box | list[Box]): 要点击的 `Box` 对象或 `Box` 列表（默认点击第一个）。
+    - `box` (Box | list[Box] | str): 要点击的 `Box` 对象、`Box` 列表（默认点击第一个）或可通过 `get_box_by_name` 找到的名称。
     - `relative_x` (float): 相对于 `Box` 宽度的 x 坐标比例 (0.0 - 1.0)。
     - `relative_y` (float): 相对于 `Box` 高度的 y 坐标比例 (0.0 - 1.0)。
     - `raise_if_not_found` (bool): 如果 `box` 为 `None` 是否抛出异常。
+    - `move_back` (bool): 点击后是否将鼠标移回原位。
+    - `move` (bool): 是否在点击前移动鼠标。
+    - `down_time` (float): 鼠标按下的持续时间（秒）。
     - `after_sleep` (float): 点击后等待的时间（秒）。
 
 <a name="click_box_if_name_match"></a>
@@ -401,11 +428,16 @@ def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5,
 def click_box_if_name_match(self, boxes, names, relative_x=0.5, relative_y=0.5)
 ```
 
-在 `Box` 列表中查找名称匹配的第一个 `Box` 并点击。
+在 `Box` 列表中查找名称匹配的 `Box` 并点击。匹配规则见 [名称匹配规则](#名称匹配规则-match--names)。
+当 `names` 是列表时，列表越靠前优先级越高；如果多个框匹配，会返回并点击优先级最高的匹配项。
 
 - **参数:**
     - `boxes` (list[Box]): `Box` 列表。
-    - `names` (str | list[str] | re.Pattern): 要匹配的名称或模式。
+    - `names` (str | re.Pattern | list[str | re.Pattern]): 要匹配的名称或正则模式，可以混用。
+    - `relative_x` (float): 相对于匹配 `Box` 宽度的 x 坐标比例。
+    - `relative_y` (float): 相对于匹配 `Box` 高度的 y 坐标比例。
+- **返回:**
+    - `Box` 或 `None`: 匹配并点击的 `Box`，未找到时返回 `None`。
 
 <a name="click_relative"></a>
 
@@ -517,7 +549,7 @@ def send_key(self, key, down_time=0.02, interval=-1, after_sleep=0)
 ### send_key_down
 
 ```python
-def send_key_down(self, key)
+def send_key_down(self, key, after_sleep=0)
 ```
 
 模拟按下键盘按键（不释放）。
@@ -527,7 +559,7 @@ def send_key_down(self, key)
 ### send_key_up
 
 ```python
-def send_key_up(self, key)
+def send_key_up(self, key, after_sleep=0)
 ```
 
 模拟释放键盘按键。
@@ -604,7 +636,7 @@ def move_relative(self, x, y)
 ### back
 
 ```python
-def back(self, *args, **kwargs)
+def back(self, *args, after_sleep=0, **kwargs)
 ```
 
 模拟返回操作，通常是发送 'esc' 键（PC）或返回键（Android）。支持 `after_sleep` 参数。
@@ -845,18 +877,27 @@ config = {
 ### ocr
 
 ```python
-def ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None, threshold=0, frame=None,
-        target_height=0, use_grayscale=False, log=False, frame_processor=None, lib='default')
+def ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None, name=None,
+        threshold=0, frame=None, target_height=0, use_grayscale=False, log=False,
+        screenshot=False, frame_processor=None, lib='default')
 ```
 
-对屏幕指定区域进行光学字符识别（OCR）。
+对屏幕指定区域进行光学字符识别（OCR）。如果不传 `match`，返回识别出的全部文本框；如果传了 `match`，只返回名称匹配的文本框。
 
 - **参数:**
-    - `x`, `y`, `to_x`, `to_y` (float): 区域的相对坐标。
-    - `match` (str | re.Pattern | list): 用于匹配识别结果的字符串或正则表达式。
-    - `box` (Box, optional): 指定一个 `Box` 对象作为识别区域。
-    - `threshold` (float): 识别结果的置信度阈值。
-    - `target_height` (int): 识别前将图像缩放到的目标高度，可以提高识别准确率。
+    - `x`, `y`, `to_x`, `to_y` (float): 识别区域的相对坐标；未传 `box` 时使用。
+    - `match` (str | re.Pattern | list[str | re.Pattern] | None): 用于过滤识别结果的名称匹配条件，见 [名称匹配规则](#名称匹配规则-match--names)。
+    - `width`, `height` (float): 识别区域的相对宽高；为 `0` 时使用 `to_x - x`、`to_y - y`。
+    - `box` (Box | str, optional): 指定一个 `Box` 或预定义区域/特征名称作为识别区域，优先级高于相对坐标。
+    - `name` (str, optional): 给识别区域命名，主要用于日志和调试绘制。
+    - `threshold` (float): OCR 结果的置信度阈值；为 `0` 时使用 `self.ocr_default_threshold`。
+    - `frame` (numpy.ndarray, optional): 指定图像帧；不传时使用当前屏幕帧。
+    - `target_height` (int): 识别前将图像缩放到的目标高度，可以提高识别准确率或速度。
+    - `use_grayscale` (bool): 识别前是否转为灰度图。
+    - `log` (bool): 是否输出 OCR 结果日志。
+    - `screenshot` (bool): 是否保存 OCR 调试截图。
+    - `frame_processor` (callable, optional): OCR 前对裁剪图像做自定义处理。
+    - `lib` (str): 使用 `config['ocr']` 中哪个 OCR 配置，默认 `"default"`。
 - **返回:**
     - `list[Box]`: 包含识别结果的 `Box` 对象列表，`Box.name` 为识别出的文本。
 
@@ -865,26 +906,31 @@ def ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None,
 ### wait\_ocr
 
 ```python
-def wait_ocr(self, ..., time_out=0, raise_if_not_found=False, settle_time=-1)
+def wait_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, name=None, box=None, match=None,
+             threshold=0, frame=None, target_height=0, time_out=0, post_action=None,
+             raise_if_not_found=False, log=False, screenshot=False, settle_time=-1, lib="default")
 ```
 
-等待直到在指定区域内 OCR 识别到匹配的文本。参数与 `ocr` 类似。
+等待直到在指定区域内 OCR 识别到文本。大多数参数与 `ocr` 相同；`match` 支持字符串、正则以及两者混合列表，见 [名称匹配规则](#名称匹配规则-match--names)。
 
 - **返回:**
-    - `list[Box]` 或 `None`: 找到的文本 `Box` 列表，或在超时后返回 `None`。
+    - `list[Box]` 或 `None`: 找到的文本 `Box` 列表；超时且未抛异常时返回 `None`。
 
 <a name="wait_click_ocr"></a>
 
 ### wait\_click\_ocr
 
 ```python
-def wait_click_ocr(self, ..., time_out=0, raise_if_not_found=False, after_sleep=0, settle_time=-1)
+def wait_click_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box=None, name=None, match=None,
+                   threshold=0, frame=None, target_height=0, time_out=0, raise_if_not_found=False,
+                   recheck_time=0, after_sleep=0, post_action=None, log=False, screenshot=False,
+                   settle_time=-1, lib="default")
 ```
 
-等待直到 OCR 识别到匹配的文本，并点击第一个找到的结果。参数与 `ocr` 类似。
+等待直到 OCR 识别到匹配的文本，并点击找到的结果中的第一个框。参数与 `ocr` 类似；`recheck_time > 0` 时会在等待命中后短暂等待并再 OCR 一次。
 
 - **返回:**
-    - `Box` 或 `None`: 被点击的 `Box` 对象，如果未找到则返回 `None`。
+    - `list[Box]` 或 `None`: 被点击前得到的 OCR `Box` 列表；未找到时返回 `None`。
 
 <a name="add_text_fix"></a>
 
@@ -906,15 +952,21 @@ def add_text_fix(self, fix)
 ### find\_feature
 
 ```python
-def find_feature(self, feature_name=None, box=None, threshold=0, ...) -> List[Box]
+def find_feature(self, feature_name=None, horizontal_variance=0, vertical_variance=0, threshold=0,
+                 use_gray_scale=False, x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1, box=None,
+                 canny_lower=0, canny_higher=0, frame_processor=None, template=None,
+                 match_method=cv2.TM_CCOEFF_NORMED, screenshot=False, mask_function=None,
+                 frame=None, limit=0, target_height=0) -> List[Box]
 ```
 
 在指定区域内查找一个或多个图像特征。
 
 - **参数:**
     - `feature_name` (str | list[str]): 要查找的特征名称。
-    - `box` (Box | str, optional): 在该 `Box` 区域内进行搜索。
+    - `box` (Box | str, optional): 在该 `Box` 区域内进行搜索；字符串会通过 `get_box_by_name` 转为区域。
     - `threshold` (float): 匹配的置信度阈值。
+    - `limit` (int): 限制返回数量；`0` 表示不限制。
+    - `frame` (numpy.ndarray, optional): 指定搜索帧；不传时使用当前屏幕帧。
 - **返回:**
     - `list[Box]`: 找到的所有匹配特征的 `Box` 对象列表。
 
@@ -923,7 +975,10 @@ def find_feature(self, feature_name=None, box=None, threshold=0, ...) -> List[Bo
 ### find\_one
 
 ```python
-def find_one(self, feature_name=None, ...) -> Box
+def find_one(self, feature_name=None, horizontal_variance=0, vertical_variance=0, threshold=0,
+             use_gray_scale=False, box=None, canny_lower=0, canny_higher=0,
+             frame_processor=None, template=None, mask_function=None, frame=None,
+             match_method=cv2.TM_CCOEFF_NORMED, screenshot=False, limit=1, target_height=0) -> Box
 ```
 
 查找单个图像特征，并返回置信度最高的一个。参数与 `find_feature` 相同。
@@ -936,7 +991,10 @@ def find_one(self, feature_name=None, ...) -> Box
 ### wait\_feature
 
 ```python
-def wait_feature(self, feature, time_out=0, raise_if_not_found=False, settle_time=-1, ...)
+def wait_feature(self, feature, horizontal_variance=0, vertical_variance=0, threshold=0,
+                 time_out=0, pre_action=None, post_action=None, use_gray_scale=False, box=None,
+                 raise_if_not_found=False, canny_lower=0, canny_higher=0, settle_time=-1,
+                 frame_processor=None, target_height=0)
 ```
 
 等待直到在屏幕上找到指定的图像特征。
@@ -952,7 +1010,11 @@ def wait_feature(self, feature, time_out=0, raise_if_not_found=False, settle_tim
 ### wait\_click\_feature
 
 ```python
-def wait_click_feature(self, feature, time_out=0, raise_if_not_found=True, after_sleep=0, ...)
+def wait_click_feature(self, feature, horizontal_variance=0, vertical_variance=0, threshold=0,
+                       relative_x=0.5, relative_y=0.5, time_out=0, pre_action=None,
+                       post_action=None, box=None, raise_if_not_found=True, use_gray_scale=False,
+                       canny_lower=0, canny_higher=0, click_after_delay=0, settle_time=-1,
+                       after_sleep=0, target_height=0)
 ```
 
 等待直到找到指定的图像特征，并对其进行点击。
@@ -1002,7 +1064,7 @@ def feature_exists(self, feature_name: str) -> bool
 ### find\_feature\_and\_set
 
 ```python
-def find_feature_and_set(self, features, threshold=0) -> bool
+def find_feature_and_set(self, features, horizontal_variance=0, vertical_variance=0, threshold=0) -> bool
 ```
 
 查找多个特征并将结果作为同名属性设置到当前任务对象中。
@@ -1017,20 +1079,24 @@ def find_feature_and_set(self, features, threshold=0) -> bool
 ### find\_best\_match\_in\_box
 
 ```python
-def find_best_match_in_box(self, box, to_find, threshold) -> Box
+def find_best_match_in_box(self, box, to_find, threshold, use_gray_scale=False,
+                           canny_lower=0, canny_higher=0,
+                           frame_processor=None, mask_function=None) -> Box
 ```
 
-在给定的 `Box` 内寻找 `to_find` 列表中置信度最高的一个特征。
+在给定的 `Box` 内寻找 `to_find` 列表中置信度最高的一个特征。`to_find` 应为特征名称列表。
 
 <a name="find_first_match_in_box"></a>
 
 ### find\_first\_match\_in\_box
 
 ```python
-def find_first_match_in_box(self, box, to_find, threshold) -> Box
+def find_first_match_in_box(self, box, to_find, threshold, use_gray_scale=False,
+                            canny_lower=0, canny_higher=0,
+                            frame_processor=None, mask_function=None) -> Box
 ```
 
-在给定的 `Box` 内寻找 `to_find` 列表中第一个匹配的特征。
+在给定的 `Box` 内按 `to_find` 顺序查找，第一个找到的特征会被立即返回。
 
 ### 找色 (Color finding)
 
@@ -1057,7 +1123,7 @@ def calculate_color_percentage(self, color, box: Box | str) -> float
 ### notification
 
 ```python
-def notification(self, message, title=None, error=False, tray=False, show_tab=None)
+def notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None)
 ```
 
 在主界面显示一个通知信息条或系统托盘通知。
@@ -1066,6 +1132,7 @@ def notification(self, message, title=None, error=False, tray=False, show_tab=No
     - `message` (str): 通知内容。
     - `tray` (bool): 是否同时显示系统托盘通知。
     - `show_tab` (str): 点击通知时跳转到的 UI 选项卡。
+    - `params` (any): 随通知一起传递给 UI 的附加参数。
 
 <a name="info_set"></a>
 
@@ -1206,20 +1273,28 @@ def ensure_in_front(self)
 ### box\_of\_screen
 
 ```python
-def box_of_screen(self, x, y, to_x=1.0, to_y=1.0, width=0.0, height=0.0, name=None, hcenter=False, vcenter=False) -> Box
+def box_of_screen(self, x, y, to_x=1.0, to_y=1.0, width=0.0, height=0.0, name=None,
+                  hcenter=False, vcenter=False, confidence=1.0) -> Box
 ```
 
 根据相对比例创建一个相对于当前屏幕尺寸的 `Box` 对象。
 
 - **参数:**
     - `x`, `y` (float): 相对于屏幕的相对坐标 (0.0 - 1.0)。
+    - `to_x`, `to_y` (float): 右下角相对坐标；未显式指定 `width`/`height` 时用于计算大小。
+    - `width`, `height` (float): 相对宽高；为 `0` 时根据 `to_x`/`to_y` 计算。
+    - `name` (str, optional): 生成的 `Box` 名称。
+    - `hcenter`, `vcenter` (bool): 在非标准屏幕比例下按水平/垂直居中规则缩放坐标。
+    - `confidence` (float): 写入返回 `Box.confidence` 的置信度。
 
 <a name="box_of_screen_scaled"></a>
 
 ### box\_of\_screen\_scaled
 
 ```python
-def box_of_screen_scaled(self, original_screen_width, original_screen_height, x_original, ...) -> Box
+def box_of_screen_scaled(self, original_screen_width, original_screen_height, x_original, y_original,
+                         to_x=0, to_y=0, width_original=0, height_original=0,
+                         name=None, hcenter=False, vcenter=False, confidence=1.0) -> Box
 ```
 
 根据原始参考屏幕的分辨率，将坐标缩放到当前屏幕分辨率并创建一个 `Box`。
@@ -1349,3 +1424,10 @@ def find_boxes(self, boxes, match=None, boundary=None) -> list[Box]
 ```
 
 对 `Box` 列表进行过滤，支持名称匹配和边界筛选。
+
+- **参数:**
+    - `boxes` (list[Box]): 待过滤的 `Box` 列表。
+    - `match` (str | re.Pattern | list[str | re.Pattern] | None): 名称匹配条件，见 [名称匹配规则](#名称匹配规则-match--names)。
+    - `boundary` (Box | str | None): 只保留完全位于该边界内的 `Box`；字符串会通过 `get_box_by_name` 转为边界。
+- **返回:**
+    - `list[Box]`: 过滤后的 `Box` 列表。
