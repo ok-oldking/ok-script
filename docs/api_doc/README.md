@@ -1266,7 +1266,7 @@ def adb_shell(self, *args, **kwargs) -> str
 def ensure_in_front(self)
 ```
 
-确保游戏窗口或 ADB 模拟器处于前台显示状态。
+确保游戏窗口或 ADB 模拟器处于前台显示状态。只有目标应用或游戏必须在前台才能接收输入时，才需要主动调用此方法；大部分支持后台输入的设备或窗口交互方式不需要调用。
 
 <a name="box_of_screen"></a>
 
