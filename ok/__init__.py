@@ -77,7 +77,7 @@ class App:
         self.ok_config = Config('_ok', {'window_x': -1, 'window_y': -1, 'window_width': -1, 'window_height': -1,
                                         'window_maximized': False, 'navigation_expanded': True,
                                         'use_overlay': False, 'show_overlay_logs': True})
-        communicate.quit.connect(self.app.quit)
+        communicate.quit.connect(self.quit)
 
         self.about = self.config.get('about')
         self.title = self.config.get('gui_title')
@@ -261,6 +261,7 @@ class HeadlessApp:
         self.exit_event = exit_event
         self.po_translation = None
         self.to_translate = None
+        communicate.quit.connect(self.quit)
 
         from ok.gui.common.config import cfg
         self.locale = cfg.get(cfg.language).value

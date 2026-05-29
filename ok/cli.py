@@ -48,7 +48,7 @@ def run_task_command(args):
     from ok import run_task
 
     config = load_config(args.config)
-    run_task(config, task=task, debug=args.debug)
+    run_task(config, task=task, debug=args.debug, exit_after=args.exit_after)
     return 0
 
 
@@ -60,6 +60,15 @@ def build_parser():
     run_task_parser.add_argument("task_name", nargs="?", help="Task name or class name to match")
     run_task_parser.add_argument("-t", "--task", help="Task name or class name to match")
     run_task_parser.add_argument("-d", "--debug", action="store_true", help="Run with debug mode enabled")
+    run_task_parser.add_argument(
+        "-e",
+        "--exit",
+        "--exit-after",
+        "--exit_after",
+        dest="exit_after",
+        action="store_true",
+        help="Exit the game and app after the task completes",
+    )
     run_task_parser.add_argument(
         "-c",
         "--config",

@@ -601,10 +601,6 @@ class FindFeature(ExecutorOperation):
     def get_box_by_name(self, name):
         if isinstance(name, Box):
             return name
-        if self.executor.feature_set:
-            box = self.executor.feature_set.get_box_by_name(self.frame, name)
-            if box:
-                return box
         if name == 'full_screen':
             return self.box_of_screen(0, 0, 1, 1, name=name)
         elif name == 'right':
@@ -623,8 +619,11 @@ class FindFeature(ExecutorOperation):
             return self.box_of_screen(0, 0.5, 1, 1, name=name)
         elif name == 'top':
             return self.box_of_screen(0, 0, 1, 0.5, name=name)
-        else:
-            raise ValueError(f"No box found for category {name}")
+        if self.executor.feature_set:
+            box = self.executor.feature_set.get_box_by_name(self.frame, name)
+            if box:
+                return box
+        raise ValueError(f"No box found for category {name}")
 
     def find_feature_and_set(self, features, horizontal_variance=0, vertical_variance=0, threshold=0):
         ret = True
