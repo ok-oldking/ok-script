@@ -198,13 +198,6 @@
         </message>
     </context>
     <context>
-        <name>DownloadBar</name>
-        <message>
-            <source>Installing {progress} {percent}%</source>
-            <translation>설치 중 {progress} {percent}%</translation>
-        </message>
-    </context>
-    <context>
         <name>GlobalConfigCard</name>
         <message>
             <source>Reset Config</source>
@@ -460,29 +453,6 @@
             <source>app</source>
             <comment>Error</comment>
             <translation>오류</translation>
-        </message>
-    </context>
-    <context>
-        <name>RunBar</name>
-        <message>
-            <source> Current Version: </source>
-            <translation> 현재 버전: </translation>
-        </message>
-        <message>
-            <source>Launcher </source>
-            <translation>런처</translation>
-        </message>
-        <message>
-            <source>Choose Profile:</source>
-            <translation>프로필 선택:</translation>
-        </message>
-        <message>
-            <source>Start</source>
-            <translation>시작</translation>
-        </message>
-        <message>
-            <source>Download Dependencies and Start</source>
-            <translation>의존성 다운로드 후 시작</translation>
         </message>
     </context>
     <context>
@@ -988,57 +958,6 @@
         <message>
             <source>Time Elapsed</source>
             <translation>경과 시간</translation>
-        </message>
-    </context>
-    <context>
-        <name>UpdateBar</name>
-        <message>
-            <source>Current Version: </source>
-            <translation>현재 버전: </translation>
-        </message>
-        <message>
-            <source>Checking for Updates...</source>
-            <translation>업데이트 확인 중...</translation>
-        </message>
-        <message>
-            <source>Delete Downloaded Dependencies</source>
-            <translation>다운로드된 의존성 삭제</translation>
-        </message>
-        <message>
-            <source>Update Source:</source>
-            <translation>업데이트 소스:</translation>
-        </message>
-        <message>
-            <source>Check for Update</source>
-            <translation>업데이트 확인</translation>
-        </message>
-        <message>
-            <source>Current Version:</source>
-            <translation>현재 버전:</translation>
-        </message>
-        <message>
-            <source>TargetVersion:</source>
-            <translation>대상 버전:</translation>
-        </message>
-        <message>
-            <source>Update</source>
-            <translation>업데이트</translation>
-        </message>
-        <message>
-            <source>This is the newest version</source>
-            <translation>최신 버전입니다</translation>
-        </message>
-        <message>
-            <source>Checking for Update...</source>
-            <translation>업데이트 확인 중</translation>
-        </message>
-        <message>
-            <source>Updating</source>
-            <translation>업데이트 중</translation>
-        </message>
-        <message>
-            <source>Downgrade</source>
-            <translation>다운그레이드</translation>
         </message>
     </context>
     <context>

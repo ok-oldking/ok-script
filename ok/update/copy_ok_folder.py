@@ -3,12 +3,8 @@ import shutil
 import sys
 
 
-def find_and_copy_site_package():
-    # Define the folder name you want to find and copy
-    folder_to_copy = "ok"
-
-    # Get the current working directory
-    current_dir = os.getcwd()
+def find_and_copy_site_package(folder_to_copy="ok", destination_root=None):
+    current_dir = destination_root or os.getcwd()
 
     # Define the target directory pattern
     target_pattern = os.path.join('Lib', 'site-packages')
@@ -16,7 +12,7 @@ def find_and_copy_site_package():
 
     if os.path.exists(destination):
         print(f'destination exists: {destination}, skip copying')
-        return
+        return 0
 
     # Loop through all potential site-packages directories
     for path in sys.path:

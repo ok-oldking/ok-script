@@ -5,21 +5,30 @@ from qfluentwidgets import BodyLabel, SettingCardGroup
 from ok.gui.about.ProjectCard import ProjectCard
 from ok.gui.about.VersionCard import VersionCard
 from ok.gui.util.app import get_localized_app_config
+from ok.gui.util.pyappify_startup import get_startup_version_change
 from ok.gui.widget.Tab import Tab
 from ok.util.file import get_path_relative_to_exe
 
 
 class AboutTab(Tab):
-    def __init__(self, config, updater):
+    def __init__(self, config):
         super().__init__()
         self.version_card = VersionCard(config, get_path_relative_to_exe(config.get('gui_icon')),
                                         config.get('gui_title'), config.get('version'),
                                         config.get('debug'), self)
-        self.updater = updater
         self.vBoxLayout.setSpacing(0)
         # Create a QTextEdit instance
         self.add_widget(self.version_card)
         self.vBoxLayout.addSpacing(12)
+
+        if version_change := get_startup_version_change():
+            update_note_label = BodyLabel()
+            update_note_label.setText(version_change.content)
+            update_note_label.setWordWrap(True)
+            update_note_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            update_note_label.setContentsMargins(0, 0, 0, 0)
+            self.add_card(version_change.title, update_note_label)
+            self.vBoxLayout.addSpacing(12)
 
         projects = [
             {"name": "ok-py按键精灵", "url": "https://github.com/ok-oldking/ok-py"},

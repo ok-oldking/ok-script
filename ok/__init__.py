@@ -86,14 +86,6 @@ class App:
         self.version = self.config.get('version')
         self.app.setApplicationVersion(self.version)
         self.debug = self.config.get('debug', False)
-        if self.config.get(
-                'git_update') and not pyappify.app_version and self.version != "dev" and not os.path.exists(
-            '.venv'):
-            from ok.update.GitUpdater import GitUpdater
-            self.updater = GitUpdater(self.config, exit_event)
-        else:
-            self.updater = None
-
         logger.debug(f'locale name {self.locale.name()}')
 
         self.loading_window = None

@@ -1,6 +1,6 @@
 from qfluentwidgets import SettingCard
 
-from ok.gui.launcher.LinksBar import LinksBar
+from ok.gui.about.LinksBar import LinksBar
 
 
 class VersionCard(SettingCard):
@@ -13,7 +13,4 @@ class VersionCard(SettingCard):
         self.hBoxLayout.addWidget(links_bar)
 
     def get_type(self, debug=None):
-        from ok import og
-        if debug is None and og.app.updater.to_update is not None:
-            debug = og.app.updater.to_update.get('debug')
         return self.tr('Debug') if debug else self.tr('Release')

@@ -189,13 +189,6 @@
         </message>
     </context>
     <context>
-        <name>DownloadBar</name>
-        <message>
-            <source>Installing {progress} {percent}%</source>
-            <translation>安装中 {progress} {percent}%</translation>
-        </message>
-    </context>
-    <context>
         <name>GlobalConfigCard</name>
         <message>
             <source>Reset Config</source>
@@ -461,29 +454,6 @@
             <source>app</source>
             <comment>Error</comment>
             <translation>错误</translation>
-        </message>
-    </context>
-    <context>
-        <name>RunBar</name>
-        <message>
-            <source> Current Version: </source>
-            <translation> 当前版本:</translation>
-        </message>
-        <message>
-            <source>Launcher </source>
-            <translation>启动器</translation>
-        </message>
-        <message>
-            <source>Choose Profile:</source>
-            <translation>选择版本:</translation>
-        </message>
-        <message>
-            <source>Start</source>
-            <translation>启动</translation>
-        </message>
-        <message>
-            <source>Download Dependencies and Start</source>
-            <translation>下载依赖并启动</translation>
         </message>
     </context>
     <context>
@@ -985,57 +955,6 @@
         <message>
             <source>Time Elapsed</source>
             <translation>已运行</translation>
-        </message>
-    </context>
-    <context>
-        <name>UpdateBar</name>
-        <message>
-            <source>Current Version: </source>
-            <translation>当前版本</translation>
-        </message>
-        <message>
-            <source>Checking for Updates...</source>
-            <translation>检查更新中...</translation>
-        </message>
-        <message>
-            <source>Delete Downloaded Dependencies</source>
-            <translation>删除已下载依赖</translation>
-        </message>
-        <message>
-            <source>Update Source:</source>
-            <translation>更新源:</translation>
-        </message>
-        <message>
-            <source>Check for Update</source>
-            <translation>检查更新</translation>
-        </message>
-        <message>
-            <source>Current Version:</source>
-            <translation>当前版本</translation>
-        </message>
-        <message>
-            <source>TargetVersion:</source>
-            <translation>目标版本</translation>
-        </message>
-        <message>
-            <source>Update</source>
-            <translation>更新版本</translation>
-        </message>
-        <message>
-            <source>This is the newest version</source>
-            <translation>已经是最新版本</translation>
-        </message>
-        <message>
-            <source>Checking for Update...</source>
-            <translation>检查更新中</translation>
-        </message>
-        <message>
-            <source>Updating</source>
-            <translation>更新中</translation>
-        </message>
-        <message>
-            <source>Downgrade</source>
-            <translation>降级版本</translation>
         </message>
     </context>
     <context>
