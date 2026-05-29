@@ -16,6 +16,7 @@
     - [Box.find\_closest\_box](#boxfind_closest_box)
 - [BaseTask](#basetask)
     - [名称匹配规则 (match / names)](#名称匹配规则-match--names)
+    - [帧刷新与等待](#帧刷新与等待)
     - [截图 (Screenshot)](#截图-screenshot)
         - [frame](#frame)
         - [next\_frame](#next_frame)
@@ -313,6 +314,27 @@ self.ocr(match=re.compile(r"确定|OK"))         # 匹配包含 "确定" 或 "OK
 self.ocr(match=["确定", re.compile(r"^OK$")])  # 字符串和正则可以混用
 ```
 
+在需要检测多个字符串或多个正则时，优先使用 `match=[...]` 一次 OCR 后统一过滤，通常比多次调用 `ocr` 更高效。
+
+<a name="帧刷新与等待"></a>
+
+### 帧刷新与等待
+
+`frame` 是当前缓存的屏幕帧。`next_frame()` 和 `sleep()` 都会重置场景并清空当前缓存帧；带有 `after_sleep`
+参数的方法也会在动作后调用 `sleep`，因此同样会清空当前帧。
+
+当循环检测界面，或点击、滑动、按键后界面可能发生变化时，通常需要等待一下再读取新界面，例如：
+
+```python
+self.click_box(button, after_sleep=0)
+self.sleep(0.5)
+boxes = self.ocr(match="确认")
+```
+
+更推荐的写法是优先使用 `wait_` 开头的方法，例如 `wait_ocr`、`wait_click_ocr`、`wait_feature`
+和 `wait_click_feature`。这些方法会自动循环获取新的 frame，调用前通常不需要额外 `sleep`。编写或生成脚本代码时，能用
+`wait_` 方法表达的等待逻辑，尽量使用 `wait_` 方法。
+
 ### 截图 (Screenshot)
 
 <a name="frame"></a>
@@ -337,7 +359,7 @@ def frame(self)
 def next_frame(self)
 ```
 
-强制获取并返回一个新的屏幕帧。这会立即触发一次截图操作，而不是使用缓存的帧。
+强制获取并返回一个新的屏幕帧。这会先重置场景并清空当前缓存帧，然后触发一次截图操作，而不是直接使用旧缓存。
 
 - **返回:**
     - `numpy.ndarray`: 新捕获的屏幕图像帧。
@@ -393,7 +415,7 @@ def click(self, x: int | Box | List[Box] = -1, y=-1, move_back=False, name=None,
     - `interval` (float): 距离上次点击的最小时间间隔（秒）。
     - `move` (bool): 是否在点击前移动鼠标。
     - `down_time` (float): 鼠标按下的持续时间（秒）。
-    - `after_sleep` (float): 点击后等待的时间（秒）。
+    - `after_sleep` (float): 点击后等待的时间（秒）；会调用 `sleep`，因此会清空当前缓存帧。
     - `key` (str): 要点击的鼠标按键 ('left', 'right', 'middle')。
     - `hcenter`, `vcenter` (bool): 如果点击相对坐标且设为 True，则以屏幕中心为原点。
 - **返回:**
@@ -418,7 +440,7 @@ def click_box(self, box: Box | List[Box] = None, relative_x=0.5, relative_y=0.5,
     - `move_back` (bool): 点击后是否将鼠标移回原位。
     - `move` (bool): 是否在点击前移动鼠标。
     - `down_time` (float): 鼠标按下的持续时间（秒）。
-    - `after_sleep` (float): 点击后等待的时间（秒）。
+    - `after_sleep` (float): 点击后等待的时间（秒）；会调用 `sleep`，因此会清空当前缓存帧。
 
 <a name="click_box_if_name_match"></a>
 
@@ -501,7 +523,7 @@ def swipe(self, from_x, from_y, to_x, to_y, duration=0.5, after_sleep=0.1, settl
     - `from_x`, `from_y` (int): 滑动起点的绝对坐标。
     - `to_x`, `to_y` (int): 滑动终点的绝对坐标。
     - `duration` (float): 滑动持续时间（秒）。
-    - `after_sleep` (float): 滑动后等待的时间（秒）。
+    - `after_sleep` (float): 滑动后等待的时间（秒）；会调用 `sleep`，因此会清空当前缓存帧。
     - `settle_time` (float): 到达终点后，在松开手指前停留的时间（秒）。
 
 <a name="swipe_relative"></a>
@@ -1363,7 +1385,8 @@ def wait_scene(self, scene_type=None, time_out=0, pre_action=None, post_action=N
 def sleep(self, timeout)
 ```
 
-让当前任务休眠指定秒数。休眠期间会处理脚本暂停和 `sleep_check`。
+让当前任务休眠指定秒数。调用时会重置场景并清空当前缓存帧；休眠期间会处理脚本暂停和 `sleep_check`。
+如果刚执行了会改变界面的操作，常用 `sleep(0.5)` 等待界面稳定后再读取新的 `frame`；如果使用 `wait_` 开头的方法，则通常不需要在调用前手动 `sleep`。
 
 <a name="sleep_check"></a>
 
