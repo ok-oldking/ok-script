@@ -1,12 +1,15 @@
 import argparse
 import importlib
 import json
+import logging
 import os
 import sys
 from pathlib import Path
 from typing import NamedTuple, Optional
 
 import pyappify
+
+logger = logging.getLogger("ok")
 
 
 class StartupVersionChange(NamedTuple):
@@ -20,17 +23,25 @@ def get_startup_version_change(pyappify_module=pyappify) -> Optional[StartupVers
         is_updated = bool(pyappify_module.is_app_updated())
         is_downgraded = bool(pyappify_module.is_app_downgraded())
     except Exception:
+        logger.error("pyappify_startup:get_startup_version_change failed to read update state", exc_info=True)
         return None
+
+    from_version = getattr(pyappify_module, "app_starting_version", "") or ""
+    to_version = getattr(pyappify_module, "app_version", "") or ""
+    logger.info(
+        "pyappify_startup:get_startup_version_change "
+        f"from_version={from_version}, to_version={to_version}, "
+        f"is_updated={is_updated}, is_downgraded={is_downgraded}"
+    )
 
     if not is_updated and not is_downgraded:
         return None
 
     action = "update" if is_updated else "downgrade"
-    from_version = getattr(pyappify_module, "app_starting_version", "") or ""
-    to_version = getattr(pyappify_module, "app_version", "") or ""
     try:
         notes = pyappify_module.get_update_notes()
     except Exception:
+        logger.error("pyappify_startup:get_startup_version_change failed to read update notes", exc_info=True)
         notes = []
     content = "\n".join(str(note) for note in notes)
     title = f"{action} success {from_version} -> {to_version}"

@@ -348,6 +348,8 @@ class OK:
         Config.config_folder = config["config_folder"]
         config_logger(self.config)
         logger.info(f"ok-script init {config.get('version')}, {sys.argv}, pid={os.getpid()} config: {config}")
+        for env_key, env_value in sorted(os.environ.items()):
+            logger.info(f"env {env_key}={env_value}")
         pyappify.logger = logger
         logger.info(
             f"pyappify  app_version:{pyappify.app_version}, app_profile:{pyappify.app_profile}, pyappify_version:{pyappify.pyappify_version} pyappify_upgradeable:{pyappify.pyappify_upgradeable}, pyappify_executable:{pyappify.pyappify_executable}")
