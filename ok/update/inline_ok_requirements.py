@@ -13,8 +13,40 @@ INLINED_REQUIREMENTS = {
 }
 
 
-def inline_site_packages(repo_dir):
-    for package_folder in INLINED_REQUIREMENTS.values():
+def _read_deploy_entries(repo_dir):
+    deploy_file = os.path.join(repo_dir, 'deploy.txt')
+    if not os.path.exists(deploy_file):
+        return []
+
+    with open(deploy_file, 'r', encoding='utf-8') as file:
+        return [
+            line.strip().replace('\\', '/').strip('/')
+            for line in file
+            if line.strip() and not line.lstrip().startswith('#')
+        ]
+
+
+def _deploy_includes_folder(deploy_entries, folder):
+    folder = folder.replace('\\', '/').strip('/')
+    return any(entry == folder or entry.startswith(f'{folder}/') for entry in deploy_entries)
+
+
+def _get_inlined_requirement_folders(repo_dir):
+    deploy_entries = _read_deploy_entries(repo_dir)
+    if not deploy_entries:
+        return []
+    return [
+        package_folder
+        for package_folder in INLINED_REQUIREMENTS.values()
+        if _deploy_includes_folder(deploy_entries, package_folder)
+    ]
+
+
+def inline_site_packages(repo_dir, package_folders=None):
+    if package_folders is None:
+        package_folders = INLINED_REQUIREMENTS.values()
+
+    for package_folder in package_folders:
         if os.path.exists(os.path.join(repo_dir, package_folder)):
             logger.info(f'{package_folder} is bundled with source code, skip downloading')
             continue
@@ -24,7 +56,8 @@ def inline_site_packages(repo_dir):
 
 
 def remove_ok_requirements(repo_dir, tag):
-    inline_site_packages(repo_dir)
+    package_folders = _get_inlined_requirement_folders(repo_dir)
+    inline_site_packages(repo_dir, package_folders)
 
     config_file = get_file_in_path_or_cwd(repo_dir, 'config.py')
     with open(config_file, 'r', encoding='utf-8') as file:
@@ -36,8 +69,16 @@ def remove_ok_requirements(repo_dir, tag):
     file_path = os.path.join(repo_dir, 'requirements.txt')
     with open(file_path, 'r', encoding='utf-8') as file:
         lines = file.readlines()
-    requirement_pattern = r'^\s*({})\b'.format('|'.join(re.escape(name) for name in INLINED_REQUIREMENTS))
-    filtered_lines = [line for line in lines if not re.match(requirement_pattern, line, re.IGNORECASE)]
+    inlined_packages = [
+        package_name
+        for package_name, package_folder in INLINED_REQUIREMENTS.items()
+        if package_folder in package_folders
+    ]
+    if inlined_packages:
+        requirement_pattern = r'^\s*({})\b'.format('|'.join(re.escape(name) for name in inlined_packages))
+        filtered_lines = [line for line in lines if not re.match(requirement_pattern, line, re.IGNORECASE)]
+    else:
+        filtered_lines = lines
     with open(file_path, 'w', encoding='utf-8') as file:
         file.writelines(filtered_lines)
 

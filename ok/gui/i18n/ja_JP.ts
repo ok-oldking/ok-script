@@ -37,6 +37,14 @@
             <source>Other Projects</source>
             <translation>関連プロジェクト</translation>
         </message>
+        <message>
+            <source>Update success {from_version} -&gt; {to_version}</source>
+            <translation>アップデート成功 {from_version} -&gt; {to_version}</translation>
+        </message>
+        <message>
+            <source>Downgrade success {from_version} -&gt; {to_version}</source>
+            <translation>ダウングレード成功 {from_version} -&gt; {to_version}</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>

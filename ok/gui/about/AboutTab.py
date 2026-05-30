@@ -27,7 +27,7 @@ class AboutTab(Tab):
             update_note_label.setWordWrap(True)
             update_note_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             update_note_label.setContentsMargins(0, 0, 0, 0)
-            self.add_card(version_change.title, update_note_label)
+            self.add_card(self._startup_version_change_title(version_change), update_note_label)
             self.vBoxLayout.addSpacing(12)
 
         projects = [
@@ -83,3 +83,12 @@ class AboutTab(Tab):
             self.add_widget(about_label)
 
         self.vBoxLayout.addStretch(1)
+
+    def _startup_version_change_title(self, version_change):
+        if version_change.action == "update":
+            title = self.tr("Update success {from_version} -> {to_version}")
+        elif version_change.action == "downgrade":
+            title = self.tr("Downgrade success {from_version} -> {to_version}")
+        else:
+            return version_change.title
+        return title.format(from_version=version_change.from_version, to_version=version_change.to_version)

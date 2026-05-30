@@ -52,14 +52,14 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         with simulated_pyappify_env("1.0.3", "1.0.2", ["Added update notice", "Fixed startup notes"]) as pyappify:
             version_change = load_helper().get_startup_version_change(pyappify)
 
-        self.assertEqual("update success 1.0.2 -> 1.0.3", version_change.title)
+        self.assertEqual("Update success 1.0.2 -> 1.0.3", version_change.title)
         self.assertEqual("Added update notice\nFixed startup notes", version_change.content)
 
     def test_downgrade_env_builds_downgrade_success_dialog_text(self):
         with simulated_pyappify_env("1.0.2", "1.0.3", ["Rolled back unstable release"]) as pyappify:
             version_change = load_helper().get_startup_version_change(pyappify)
 
-        self.assertEqual("downgrade success 1.0.3 -> 1.0.2", version_change.title)
+        self.assertEqual("Downgrade success 1.0.3 -> 1.0.2", version_change.title)
         self.assertEqual("Rolled back unstable release", version_change.content)
 
     def test_same_version_env_does_not_show_dialog(self):
@@ -79,6 +79,19 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
 
         self.assertIsNone(version_change)
 
+    def test_legacy_pyappify_reads_launcher_env_update_note(self):
+        notes = ["更新ok-script版本 (ok-oldking)", "重命名agent文件夹 (ok-oldking)"]
+
+        with simulated_pyappify_env("v3.3.60", "v3.3.56", notes) as pyappify:
+            legacy_pyappify = SimpleNamespace(
+                app_version=pyappify.app_version,
+                is_greater_version=pyappify.is_greater_version,
+            )
+            version_change = load_helper().get_startup_version_change(legacy_pyappify)
+
+        self.assertEqual("Update success v3.3.56 -> v3.3.60", version_change.title)
+        self.assertEqual("\n".join(notes), version_change.content)
+
     def test_chinese_and_extra_long_update_notes_are_preserved(self):
         long_note = "很长的更新说明：" + "修复启动提示、关于页面跳转和更新日志展示。" * 120
         notes = [
@@ -90,7 +103,7 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         with simulated_pyappify_env("1.0.4", "1.0.3", notes) as pyappify:
             version_change = load_helper().get_startup_version_change(pyappify)
 
-        self.assertEqual("update success 1.0.3 -> 1.0.4", version_change.title)
+        self.assertEqual("Update success 1.0.3 -> 1.0.4", version_change.title)
         self.assertEqual("\n".join(notes), version_change.content)
         self.assertIn("新增：升级后自动打开关于页面。", version_change.content)
         self.assertIn(long_note, version_change.content)
@@ -131,7 +144,7 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
             if hasattr(widget, "titleLabel")
         ]
         titles = [widget.titleLabel.text() for widget in titled_widgets]
-        update_index = titles.index("update success 1.0.3 -> 1.0.4")
+        update_index = titles.index("Update success 1.0.3 -> 1.0.4")
         projects_index = titles.index("Other Projects")
 
         self.assertLess(update_index, projects_index)
