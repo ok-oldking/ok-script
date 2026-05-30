@@ -82,9 +82,11 @@ def main(argv=None):
     os.environ["PYAPPIFY_UPDATE_NOTE"] = json.dumps(notes)
     importlib.reload(pyappify)
 
-    project_root = str(Path(__file__).resolve().parents[3])
-    if project_root not in sys.path:
-        sys.path.insert(0, project_root)
+    project_root = Path(__file__).resolve().parents[3]
+    os.chdir(project_root)
+    project_root_str = str(project_root)
+    if project_root_str not in sys.path:
+        sys.path.insert(0, project_root_str)
 
     from ok import OK
 

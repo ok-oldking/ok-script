@@ -190,6 +190,9 @@ def config_logger(config=None, name='ok-script'):
     _ok_logger.addHandler(communicate_handler)
     logging.getLogger().handlers = []
 
+    if _should_skip_file_logging(config):
+        return
+
     logger_file = get_relative_path(os.path.join('logs', name + '.log'))
     ensure_dir_for_file(logger_file)
 
@@ -206,6 +209,12 @@ def config_logger(config=None, name='ok-script'):
 
     listener = QueueListener(log_queue, file_handler)
     listener.start()
+
+
+def _should_skip_file_logging(config):
+    if config and config.get('disable_file_log'):
+        return True
+    return os.environ.get("OK_DISABLE_FILE_LOG") == "1" or "pytest" in sys.modules
 
 
 def _get_stdout_handler():

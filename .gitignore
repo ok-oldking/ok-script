@@ -19,6 +19,7 @@ __pycache__/
 ./config/
 showcase_genshin/config/
 logs/
+**/logs/
 build/
 develop-eggs/
 dist/
