@@ -83,6 +83,11 @@ class StartTab(Tab):
         self.open_log_folder_button.clicked.connect(self.open_log_folder)
         self.debug_layout.addWidget(self.open_log_folder_button)
 
+        self.log_window = None
+        self.open_logs_button = PushButton(FluentIcon.COMMAND_PROMPT, self.tr("View Log"))
+        self.open_logs_button.clicked.connect(self.open_logs)
+        self.debug_layout.addWidget(self.open_logs_button)
+
         self.ocr_button = PushButton(FluentIcon.SEARCH, "OCR")
         self.ocr_button.clicked.connect(self.ocr_log)
         self.debug_layout.addWidget(self.ocr_button)
@@ -168,6 +173,18 @@ class StartTab(Tab):
     @staticmethod
     def open_log_folder():
         StartTab.open_folder(Path.cwd() / "logs")
+
+    def open_logs(self):
+        from ok.gui.start.LogWindow import LogWindow
+        if self.log_window is None:
+            self.log_window = LogWindow()
+            self.log_window.destroyed.connect(self._log_window_closed)
+        self.log_window.show()
+        self.log_window.raise_()
+        self.log_window.activateWindow()
+
+    def _log_window_closed(self, _obj=None):
+        self.log_window = None
 
     @staticmethod
     def open_folder(folder):

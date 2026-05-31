@@ -286,6 +286,50 @@
             <source>Close</source>
             <translation>Cerrar</translation>
         </message>
+        <message>
+            <source>Open Logs</source>
+            <translation>Abrir registros</translation>
+        </message>
+        <message>
+            <source>All Levels</source>
+            <translation>Todos los niveles</translation>
+        </message>
+        <message>
+            <source>Filter logs...</source>
+            <translation>Filtrar registros...</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>Limpiar</translation>
+        </message>
+        <message>
+            <source>Waiting for ok-script.log</source>
+            <translation>Esperando ok-script.log</translation>
+        </message>
+        <message>
+            <source>records</source>
+            <translation>registros</translation>
+        </message>
+        <message>
+            <source>Pause</source>
+            <translation>Pausar</translation>
+        </message>
+        <message>
+            <source>Resume</source>
+            <translation>Reanudar</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>Ver registro</translation>
+        </message>
+        <message>
+            <source>Pin</source>
+            <translation>Fijar</translation>
+        </message>
+        <message>
+            <source>Unpin</source>
+            <translation>Desfijar</translation>
+        </message>
     </context>
     <context>
         <name>MainWindow</name>
@@ -841,6 +885,14 @@
         <message>
             <source>Log Folder</source>
             <translation>Carpeta de registros</translation>
+        </message>
+        <message>
+            <source>Open Logs</source>
+            <translation>Abrir registros</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>Ver registro</translation>
         </message>
     </context>
     <context>

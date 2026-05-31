@@ -286,6 +286,50 @@
             <source>Close</source>
             <translation>닫기</translation>
         </message>
+        <message>
+            <source>Open Logs</source>
+            <translation>로그 열기</translation>
+        </message>
+        <message>
+            <source>All Levels</source>
+            <translation>모든 레벨</translation>
+        </message>
+        <message>
+            <source>Filter logs...</source>
+            <translation>로그 필터...</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>지우기</translation>
+        </message>
+        <message>
+            <source>Waiting for ok-script.log</source>
+            <translation>ok-script.log 대기 중</translation>
+        </message>
+        <message>
+            <source>records</source>
+            <translation>개</translation>
+        </message>
+        <message>
+            <source>Pause</source>
+            <translation>일시정지</translation>
+        </message>
+        <message>
+            <source>Resume</source>
+            <translation>재개</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>로그 보기</translation>
+        </message>
+        <message>
+            <source>Pin</source>
+            <translation>고정</translation>
+        </message>
+        <message>
+            <source>Unpin</source>
+            <translation>고정 해제</translation>
+        </message>
     </context>
     <context>
         <name>MainWindow</name>
@@ -842,6 +886,14 @@
         <message>
             <source>Log Folder</source>
             <translation>로그 폴더</translation>
+        </message>
+        <message>
+            <source>Open Logs</source>
+            <translation>로그 열기</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>로그 보기</translation>
         </message>
     </context>
     <context>

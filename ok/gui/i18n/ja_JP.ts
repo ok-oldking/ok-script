@@ -286,6 +286,50 @@
             <source>Close</source>
             <translation>閉じる</translation>
         </message>
+        <message>
+            <source>Open Logs</source>
+            <translation>ログを開く</translation>
+        </message>
+        <message>
+            <source>All Levels</source>
+            <translation>全レベル</translation>
+        </message>
+        <message>
+            <source>Filter logs...</source>
+            <translation>ログをフィルター...</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>クリア</translation>
+        </message>
+        <message>
+            <source>Waiting for ok-script.log</source>
+            <translation>ok-script.log を待機中</translation>
+        </message>
+        <message>
+            <source>records</source>
+            <translation>件</translation>
+        </message>
+        <message>
+            <source>Pause</source>
+            <translation>一時停止</translation>
+        </message>
+        <message>
+            <source>Resume</source>
+            <translation>再開</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>ログを表示</translation>
+        </message>
+        <message>
+            <source>Pin</source>
+            <translation>固定</translation>
+        </message>
+        <message>
+            <source>Unpin</source>
+            <translation>固定解除</translation>
+        </message>
     </context>
     <context>
         <name>MainWindow</name>
@@ -833,6 +877,14 @@
         <message>
             <source>Log Folder</source>
             <translation>ログフォルダー</translation>
+        </message>
+        <message>
+            <source>Open Logs</source>
+            <translation>ログを開く</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>ログを表示</translation>
         </message>
     </context>
     <context>

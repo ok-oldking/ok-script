@@ -286,6 +286,50 @@
             <source>Close</source>
             <translation>關閉</translation>
         </message>
+        <message>
+            <source>Open Logs</source>
+            <translation>開啟日誌</translation>
+        </message>
+        <message>
+            <source>All Levels</source>
+            <translation>全部級別</translation>
+        </message>
+        <message>
+            <source>Filter logs...</source>
+            <translation>篩選日誌...</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>清除</translation>
+        </message>
+        <message>
+            <source>Waiting for ok-script.log</source>
+            <translation>等待 ok-script.log</translation>
+        </message>
+        <message>
+            <source>records</source>
+            <translation>筆</translation>
+        </message>
+        <message>
+            <source>Pause</source>
+            <translation>暫停</translation>
+        </message>
+        <message>
+            <source>Resume</source>
+            <translation>繼續</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>查看日誌</translation>
+        </message>
+        <message>
+            <source>Pin</source>
+            <translation>置頂</translation>
+        </message>
+        <message>
+            <source>Unpin</source>
+            <translation>取消置頂</translation>
+        </message>
     </context>
     <context>
         <name>MainWindow</name>
@@ -837,6 +881,14 @@
         <message>
             <source>Log Folder</source>
             <translation>日誌目錄</translation>
+        </message>
+        <message>
+            <source>Open Logs</source>
+            <translation>開啟日誌</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>查看日誌</translation>
         </message>
     </context>
     <context>
