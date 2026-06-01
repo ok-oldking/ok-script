@@ -286,6 +286,17 @@ class BrowserWindowAdapter:
     def exe_full_path(self):
         return self.capture.exe_full_path
 
+    @property
+    def capture_target_signature(self):
+        return (
+            self.hwnd,
+            self.width,
+            self.height,
+            self.capture.x_offset,
+            self.capture.y_offset,
+            self.capture.exe_full_path,
+        )
+
     def get_abs_cords(self, x, y):
         try:
             rect = win32gui.GetWindowRect(self.capture.hwnd)

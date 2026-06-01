@@ -37,6 +37,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         self.last_size = None
         self.last_start_failure_key = None
         self.last_start_failure_time = 0
+        self.capture_target_signature = None
         self.start_or_stop()
 
     def frame_arrived_callback(self, *args):
@@ -154,8 +155,10 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 self.close()
                 return False
 
-            if self.frame_pool is not None and self.capture_hwnd != capture_hwnd:
-                logger.info(f'start_or_stop hwnd changed from {self.capture_hwnd} to {capture_hwnd}')
+            target_signature = self.hwnd_window.capture_target_signature
+            if self.frame_pool is not None and self.capture_target_signature != target_signature:
+                logger.info(
+                    f'start_or_stop WGC target changed from {self.capture_target_signature} to {target_signature}')
                 self.close()
 
             failure_key = capture_hwnd
@@ -206,6 +209,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                         self.session.IsBorderRequired = False
                     self.session.StartCapture()
                     self.last_start_failure_key = None
+                    self.capture_target_signature = target_signature
                     return True
                 except Exception as e:
                     self.last_start_failure_key = failure_key
@@ -255,6 +259,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 self.cputex.Release()
                 self.cputex = None
             self.capture_hwnd = 0
+            self.capture_target_signature = None
 
     def do_get_frame(self):
 

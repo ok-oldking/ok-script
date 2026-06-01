@@ -193,6 +193,21 @@ class HwndWindow:
     def get_top_window_cords(self, x, y):
         return x - self.top_offset_x, y - self.top_offset_y
 
+    @property
+    def capture_target_signature(self):
+        hwnds = tuple(hwnd_info[0] for hwnd_info in (self.hwnds or []))
+        return (
+            self.hwnd,
+            self.top_hwnd,
+            self.width,
+            self.height,
+            self.real_x_offset,
+            self.real_y_offset,
+            self.real_width,
+            self.real_height,
+            hwnds,
+        )
+
     def do_update_window_size(self):
         if self.device_manager and getattr(self.device_manager, 'capture_method', None):
             from ok.device.capture_methods.browser import BrowserCaptureMethod
