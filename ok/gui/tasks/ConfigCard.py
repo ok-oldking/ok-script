@@ -7,11 +7,8 @@ from ok.gui.tasks.ConfigItemFactory import config_widget
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
 
-class ConfigCard(ExpandSettingCard):
-    def __init__(self, task, name, config, description, default_config, config_description,
-                 config_type, config_icon):
-
-        super().__init__(config_icon or FluentIcon.INFO, og.app.tr(name), og.app.tr(description))
+class ConfigContentMixin:
+    def _init_config_content(self, task, config, default_config, config_description, config_type):
         self.config = config
         self.config_widgets = []
         self.config_widget_by_key = {}
@@ -56,7 +53,7 @@ class ConfigCard(ExpandSettingCard):
         self.sub_configs_rules = self.__collect_sub_configs_rules()
         self.sub_configs_controlled_keys = self.__collect_sub_configs_controlled_keys()
         if not self.config or not (self.config.has_user_config() or self.default_config or self.config_type):
-            self.card.expandButton.hide()
+            self._on_empty_config_content()
         else:
             added_keys = set()
             for key, value in self.config.items():
@@ -69,7 +66,14 @@ class ConfigCard(ExpandSettingCard):
                             self.__addConfigWithSubConfigs(key, None, added_keys, set())
         self.__setup_sub_configs()
         self.add_buttons()
-        self._adjustViewSize()
+        self._adjust_config_content_size()
+
+    def _on_empty_config_content(self):
+        pass
+
+    def _adjust_config_content_size(self):
+        if hasattr(self, '_adjustViewSize'):
+            self._adjustViewSize()
 
     def __addConfigWithSubConfigs(self, key: str, value, added_keys, adding_keys):
         if key in added_keys or key in adding_keys:
@@ -222,7 +226,7 @@ class ConfigCard(ExpandSettingCard):
             visible = self.__is_sub_configs_group_visible(key)
             for divider in dividers.values():
                 divider.setVisible(visible)
-        self._adjustViewSize()
+        self._adjust_config_content_size()
 
     def __sync_sub_config_order(self):
         for widget in self.config_widget_by_key.values():
@@ -305,3 +309,14 @@ class ConfigCard(ExpandSettingCard):
         for widget in self.config_widgets:
             widget.update_value()
         self.__apply_sub_config_visibility()
+
+
+class ConfigCard(ConfigContentMixin, ExpandSettingCard):
+    def __init__(self, task, name, config, description, default_config, config_description,
+                 config_type, config_icon):
+
+        super().__init__(config_icon or FluentIcon.INFO, og.app.tr(name), og.app.tr(description))
+        self._init_config_content(task, config, default_config, config_description, config_type)
+
+    def _on_empty_config_content(self):
+        self.card.expandButton.hide()

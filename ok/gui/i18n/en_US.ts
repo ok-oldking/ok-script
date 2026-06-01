@@ -2620,4 +2620,11 @@
             <translation>NPU inferring Error, you might need to update the Intel NPU driver!</translation>
         </message>
     </context>
+    <context>
+        <name>GlobalConfigTab</name>
+        <message>
+            <source>Reset Config</source>
+            <translation>Reset Config</translation>
+        </message>
+    </context>
 </TS>

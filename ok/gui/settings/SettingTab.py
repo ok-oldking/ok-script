@@ -64,6 +64,8 @@ class SettingTab(Tab):
         global_configs = og.executor.global_config.get_all_visible_configs()
         if global_configs:
             for name, config, option in global_configs:
+                if getattr(option, 'show_at_tab', False):
+                    continue
                 card = GlobalConfigCard(config, option)
                 self.basic_group.addSettingCard(card)
                 self.config_groups.append(card)

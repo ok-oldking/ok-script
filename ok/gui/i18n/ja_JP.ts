@@ -2610,4 +2610,11 @@
             <translation>NPU推論エラー。Intel NPUドライバーを更新する必要があるかもしれません。</translation>
         </message>
     </context>
+    <context>
+        <name>GlobalConfigTab</name>
+        <message>
+            <source>Reset Config</source>
+            <translation>設定をリセット</translation>
+        </message>
+    </context>
 </TS>

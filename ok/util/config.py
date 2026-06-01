@@ -11,7 +11,7 @@ logger = Logger.get_logger("Config")
 class ConfigOption:
 
     def __init__(self, name, default=None, description="", config_description=None, config_type=None,
-                 validator=None, icon=FluentIcon.INFO):
+                 validator=None, icon=FluentIcon.INFO, show_at_tab=False):
         self.name = name
         self.description = description
         self.default_config = default or {}
@@ -19,6 +19,7 @@ class ConfigOption:
         self.config_type = config_type
         self.validator = validator
         self.icon = icon
+        self.show_at_tab = show_at_tab
 
 
 class Config(dict):

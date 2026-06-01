@@ -2618,4 +2618,11 @@
             <translation>¡Error de inferencia de la NPU, es posible que necesite actualizar el controlador de la NPU de Intel!</translation>
         </message>
     </context>
+    <context>
+        <name>GlobalConfigTab</name>
+        <message>
+            <source>Reset Config</source>
+            <translation>Restablecer configuración</translation>
+        </message>
+    </context>
 </TS>

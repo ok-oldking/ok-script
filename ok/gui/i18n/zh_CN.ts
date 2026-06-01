@@ -2616,4 +2616,11 @@
             <translation>NPU推理错误，您可能需要更新Intel NPU驱动！</translation>
         </message>
     </context>
+    <context>
+        <name>GlobalConfigTab</name>
+        <message>
+            <source>Reset Config</source>
+            <translation>重置配置</translation>
+        </message>
+    </context>
 </TS>

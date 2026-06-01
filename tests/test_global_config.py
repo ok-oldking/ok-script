@@ -31,6 +31,48 @@ class TestBasicOptions(unittest.TestCase):
         self.assertEqual(['Blur', 'Inpaint'], options.config_type['Blur Algorithm']['options'])
         self.assertEqual(0, options.config_type['Blur Interval']['min'])
 
+    def test_config_option_show_at_tab_defaults_to_false(self):
+        option = ConfigOption('Custom Options')
+
+        self.assertFalse(option.show_at_tab)
+
+    def test_config_option_can_request_dedicated_tab(self):
+        option = ConfigOption('Custom Options', show_at_tab=True)
+
+        self.assertTrue(option.show_at_tab)
+
+    def test_global_config_tab_renders_options_without_card_container(self):
+        from ok.gui.settings.GlobalConfigTab import GlobalConfigTab
+
+        original_app = getattr(og, 'app', None)
+        original_folder = Config.config_folder
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                Config.config_folder = folder
+                og.app = SimpleNamespace(tr=lambda text: text)
+                option = ConfigOption(
+                    'Tab Options',
+                    {'Enabled': True},
+                    description='Configure tab options',
+                    show_at_tab=True
+                )
+                config = Config(option.name, option.default_config)
+
+                tab = GlobalConfigTab(config, option)
+
+                self.assertTrue(tab.has_key('Enabled'))
+                self.assertEqual('Tab Options', tab.titleLabel.text())
+                self.assertEqual('viewTitleLabel', tab.titleLabel.objectName())
+                self.assertEqual('Configure tab options', tab.descriptionLabel.text())
+                self.assertEqual('contentLabel', tab.descriptionLabel.objectName())
+                self.assertEqual('configContentFrame', tab.contentFrame.objectName())
+                self.assertIsNot(tab.viewLayout, tab.vBoxLayout)
+                self.assertFalse(hasattr(tab, 'card'))
+                tab.deleteLater()
+        finally:
+            og.app = original_app
+            Config.config_folder = original_folder
+
     def test_blur_option_is_added_to_app_defined_basic_options(self):
         original_folder = Config.config_folder
         try:

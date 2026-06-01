@@ -2619,4 +2619,11 @@
             <translation>NPU 추론 오류, Intel NPU 드라이버를 업데이트해야 할 수 있습니다!</translation>
         </message>
     </context>
+    <context>
+        <name>GlobalConfigTab</name>
+        <message>
+            <source>Reset Config</source>
+            <translation>설정 초기화</translation>
+        </message>
+    </context>
 </TS>

@@ -88,6 +88,7 @@ class MainWindow(FluentWindow):
         self.first_task_tab = None
         self.grouped_task_tabs = []
         self.schedule_tab = None
+        self.global_config_tabs = []
 
         # Prepare custom tabs and separate them by add_after_default_tabs
         before_custom_tabs = []
@@ -180,6 +181,14 @@ class MainWindow(FluentWindow):
             from ok.gui.tasks.ScheduleTaskTab import ScheduleTaskTab
             self.schedule_tab = ScheduleTaskTab(config=self.config)
             self.addSubInterface(self.schedule_tab, FluentIcon.CALENDAR, self.tr('Schedule'))
+
+        for name, config_obj, option in global_config.get_all_visible_configs():
+            if getattr(option, 'show_at_tab', False):
+                from ok.gui.settings.GlobalConfigTab import GlobalConfigTab
+                config_tab = GlobalConfigTab(config_obj, option)
+                self.global_config_tabs.append(config_tab)
+                self.addSubInterface(config_tab, option.icon or FluentIcon.INFO, self.app.tr(option.name))
+
         from ok.gui.about.AboutTab import AboutTab
         self.about_tab = AboutTab(config)
         self.addSubInterface(self.about_tab, FluentIcon.QUESTION, self.tr('About'),
@@ -308,6 +317,10 @@ class MainWindow(FluentWindow):
                 logger.debug(f'bring_to_front native activation failed: {e}')
 
     def goto_global_config(self, key):
+        for config_tab in self.global_config_tabs:
+            if config_tab.has_key(key):
+                self.switchTo(config_tab)
+                return
         self.switchTo(self.setting_tab)
         self.setting_tab.goto_config(key)
 
