@@ -2621,4 +2621,27 @@
             <translation>重設設定</translation>
         </message>
     </context>
+    <context>
+        <name>LabelAndFileSelector</name>
+        <message>
+            <source>Browse</source>
+            <translation>瀏覽</translation>
+        </message>
+        <message>
+            <source>Select File</source>
+            <translation>選擇檔案</translation>
+        </message>
+        <message>
+            <source>Select Folder</source>
+            <translation>選擇資料夾</translation>
+        </message>
+        <message>
+            <source>All Files (*)</source>
+            <translation>所有檔案 (*)</translation>
+        </message>
+        <message>
+            <source>Select File or Folder</source>
+            <translation>選擇檔案或資料夾</translation>
+        </message>
+    </context>
 </TS>

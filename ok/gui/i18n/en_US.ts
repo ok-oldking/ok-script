@@ -2627,4 +2627,27 @@
             <translation>Reset Config</translation>
         </message>
     </context>
+    <context>
+        <name>LabelAndFileSelector</name>
+        <message>
+            <source>Browse</source>
+            <translation>Browse</translation>
+        </message>
+        <message>
+            <source>Select File</source>
+            <translation>Select File</translation>
+        </message>
+        <message>
+            <source>Select Folder</source>
+            <translation>Select Folder</translation>
+        </message>
+        <message>
+            <source>All Files (*)</source>
+            <translation>All Files (*)</translation>
+        </message>
+        <message>
+            <source>Select File or Folder</source>
+            <translation>Select File or Folder</translation>
+        </message>
+    </context>
 </TS>

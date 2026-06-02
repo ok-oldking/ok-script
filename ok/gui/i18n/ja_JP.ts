@@ -2617,4 +2617,27 @@
             <translation>設定をリセット</translation>
         </message>
     </context>
+    <context>
+        <name>LabelAndFileSelector</name>
+        <message>
+            <source>Browse</source>
+            <translation>参照</translation>
+        </message>
+        <message>
+            <source>Select File</source>
+            <translation>ファイルを選択</translation>
+        </message>
+        <message>
+            <source>Select Folder</source>
+            <translation>フォルダーを選択</translation>
+        </message>
+        <message>
+            <source>All Files (*)</source>
+            <translation>すべてのファイル (*)</translation>
+        </message>
+        <message>
+            <source>Select File or Folder</source>
+            <translation>ファイルまたはフォルダーを選択</translation>
+        </message>
+    </context>
 </TS>

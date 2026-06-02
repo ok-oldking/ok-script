@@ -1,6 +1,7 @@
 from ok.gui.tasks.LabelAndButtons import LabelAndButtons
 from ok.gui.tasks.LabelAndDoubleSpinBox import LabelAndDoubleSpinBox
 from ok.gui.tasks.LabelAndDropDown import LabelAndDropDown
+from ok.gui.tasks.LabelAndFileSelector import LabelAndFileSelector
 from ok.gui.tasks.LabelAndGlobal import LabelAndGlobal
 from ok.gui.tasks.LabelAndLineEdit import LabelAndLineEdit
 from ok.gui.tasks.LabelAndMultiSelection import LabelAndMultiSelection
@@ -46,6 +47,10 @@ def config_widget(config_type, config_desc, config, key, value, task):
             return LabelAndGlobal(desc, config, key)
         elif resolved_type == 'text_edit':
             return LabelAndTextEdit(config_desc, config, key)
+        elif resolved_type == 'file_selector':
+            if not isinstance(value, str):
+                raise ValueError("file_selector config type requires a string default value")
+            return LabelAndFileSelector(config_desc, config, key, the_type)
         elif resolved_type == 'button':
             buttons = the_type.get('buttons')
             if not buttons:

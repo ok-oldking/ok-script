@@ -2626,4 +2626,27 @@
             <translation>설정 초기화</translation>
         </message>
     </context>
+    <context>
+        <name>LabelAndFileSelector</name>
+        <message>
+            <source>Browse</source>
+            <translation>찾아보기</translation>
+        </message>
+        <message>
+            <source>Select File</source>
+            <translation>파일 선택</translation>
+        </message>
+        <message>
+            <source>Select Folder</source>
+            <translation>폴더 선택</translation>
+        </message>
+        <message>
+            <source>All Files (*)</source>
+            <translation>모든 파일 (*)</translation>
+        </message>
+        <message>
+            <source>Select File or Folder</source>
+            <translation>파일 또는 폴더 선택</translation>
+        </message>
+    </context>
 </TS>

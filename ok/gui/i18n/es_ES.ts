@@ -2625,4 +2625,27 @@
             <translation>Restablecer configuración</translation>
         </message>
     </context>
+    <context>
+        <name>LabelAndFileSelector</name>
+        <message>
+            <source>Browse</source>
+            <translation>Examinar</translation>
+        </message>
+        <message>
+            <source>Select File</source>
+            <translation>Seleccionar archivo</translation>
+        </message>
+        <message>
+            <source>Select Folder</source>
+            <translation>Seleccionar carpeta</translation>
+        </message>
+        <message>
+            <source>All Files (*)</source>
+            <translation>Todos los archivos (*)</translation>
+        </message>
+        <message>
+            <source>Select File or Folder</source>
+            <translation>Seleccionar archivo o carpeta</translation>
+        </message>
+    </context>
 </TS>

@@ -744,6 +744,10 @@ def get_global_config_desc(self, option) -> str
 - **`multi_selection`**: 多选列表。
     - **参数:** `options` (list[str]): 选项列表。
 - **`text_edit`**: 强制使用多行文本框。
+- **`file_selector`**: 文件或文件夹选择器。配置值必须是 `str`，界面会以只读文本显示当前值并提供按钮打开选择器。
+    - **参数:** `selector_type` (str, 可选): 选择器类型，`"file"` 或 `"folder"`，默认 `"file"`。
+    - **参数:** `dialog_title` (str, 可选): 选择器窗口标题。
+    - **参数:** `filter` (str, 可选): 文件选择器过滤器，例如 `"Images (*.png *.jpg);;All Files (*)"`，仅在 `selector_type` 为 `"file"` 时生效。
 - **`global`**: 引用全局配置项。
 - **`button` (NEW)**: 在配置区域显示一个或多个按钮，用于触发特定方法。
     - **参数:**
@@ -762,6 +766,7 @@ class MyTask(BaseTask):
         self.default_config = {
             'Run Count': 1,
             'Mode': 'Default',
+            'Input Path': '',
             'Advanced Tool': 'Action' # 占位符
         }
         self.config_type = {
@@ -770,6 +775,11 @@ class MyTask(BaseTask):
                 'sub_configs': {
                     'Fast': ['Advanced Tool']
                 }
+            },
+            'Input Path': {
+                'type': 'file_selector',
+                'selector_type': 'folder',
+                'dialog_title': 'Select Input'
             },
             'Advanced Tool': {
                 'type': 'button',
