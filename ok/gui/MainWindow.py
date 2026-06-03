@@ -104,7 +104,7 @@ class MainWindow(FluentWindow):
 
         # Add custom tabs that should appear before built-in task tabs
         for tab_obj in before_custom_tabs:
-            self.addSubInterface(tab_obj, tab_obj.icon, tab_obj.name, position=tab_obj.position)
+            self.addSubInterface(tab_obj, tab_obj.icon, self.app.tr(tab_obj.name), position=tab_obj.position)
 
         from ok import og
         self.imported_tabs = {}  # {file_name: tab_object}
@@ -150,7 +150,7 @@ class MainWindow(FluentWindow):
 
         # Add custom tabs that should appear after built-in task tabs
         for tab_obj in after_custom_tabs:
-            self.addSubInterface(tab_obj, tab_obj.icon, tab_obj.name, position=tab_obj.position)
+            self.addSubInterface(tab_obj, tab_obj.icon, self.app.tr(tab_obj.name), position=tab_obj.position)
         if debug:
             from ok.gui.debug.DebugTab import DebugTab
             debug_tab = DebugTab(config, exit_event)

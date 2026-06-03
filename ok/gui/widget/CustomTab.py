@@ -14,6 +14,12 @@ class CustomTab(Tab):
     def get_task(self, cls):
         return self.executor.get_task_by_class(cls)
 
+    def tr(self, message):
+        from ok import og
+        if og.app:
+            return og.app.tr(message)
+        return super().tr(message)
+
     @property
     def name(self):
         return "CustomTab"

@@ -2,61 +2,18 @@ import os
 
 from PySide6.QtCore import QFileSystemWatcher, QUrl
 from PySide6.QtCore import Qt, QSize, QRect
-from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QFont, QColor, QPainter, QDesktopServices
+from PySide6.QtGui import QFont, QColor, QPainter, QDesktopServices
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QMessageBox, QTreeWidgetItem, QFileDialog
 from qfluentwidgets import MessageBox, PlainTextEdit, PushButton, FluentIcon, PrimaryPushButton, SearchLineEdit, \
     BodyLabel, ComboBox, RoundMenu, Action, TreeWidget, TransparentDropDownPushButton, CheckBox
 
 from ok import og
+from ok.gui.tasks.PythonHighlighter import PythonHighlighter
 from ok.gui.tasks.TemplateFactory import TemplateFactory, get_templates, filter_templates
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
-
-class PythonHighlighter(QSyntaxHighlighter):
-    def __init__(self, document):
-        super().__init__(document)
-        self.highlightingRules = []
-
-        keywordFormat = QTextCharFormat()
-        keywordFormat.setForeground(QColor("#569CD6")) # Visual Studio Code dark blue
-        keywordFormat.setFontWeight(QFont.Bold)
-        keywords = ["and", "as", "assert", "break", "class", "continue", "def",
-                    "del", "elif", "else", "except", "False", "finally", "for",
-                    "from", "global", "if", "import", "in", "is", "lambda", "None",
-                    "nonlocal", "not", "or", "pass", "raise", "return", "True",
-                    "try", "while", "with", "yield"]
-        for word in keywords:
-            pattern = f"\\b{word}\\b"
-            self.highlightingRules.append((pattern, keywordFormat))
-
-        classFormat = QTextCharFormat()
-        classFormat.setForeground(QColor("#4EC9B0"))
-        classFormat.setFontWeight(QFont.Bold)
-        self.highlightingRules.append(("\\b[A-Za-z0-9_]+(?=\\()", classFormat))
-        
-        selfFormat = QTextCharFormat()
-        selfFormat.setForeground(QColor("#A074C4")) # Dark purpleish color
-        selfFormat.setFontItalic(True)
-        self.highlightingRules.append(("\\bself\\b", selfFormat))
-        
-        stringFormat = QTextCharFormat()
-        stringFormat.setForeground(QColor("#D69D85"))
-        self.highlightingRules.append(("\"[^\"]*\"", stringFormat))
-        self.highlightingRules.append(("'[^']*'", stringFormat))
-
-        commentFormat = QTextCharFormat()
-        commentFormat.setForeground(QColor("#57A64A"))
-        self.highlightingRules.append(("#[^\n]*", commentFormat))
-
-        import re
-        self.compiledRules = [(re.compile(pattern), fmt) for pattern, fmt in self.highlightingRules]
-
-    def highlightBlock(self, text):
-        for pattern, format in self.compiledRules:
-            for match in pattern.finditer(text):
-                self.setFormat(match.start(), match.end() - match.start(), format)
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
