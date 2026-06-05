@@ -65,6 +65,35 @@ class TestOverlayCustomDraw(unittest.TestCase):
 
         self.assertFalse(self.view.isVisible())
 
+    def test_enabled_overlay_stays_visible_without_active_content(self):
+        self.assertFalse(self.view.isVisible())
+
+        self.view.set_boxes_enabled(True)
+        QApplication.processEvents()
+
+        self.assertTrue(self.view.isVisible())
+
+        self.view.clear_drawing()
+        QApplication.processEvents()
+
+        self.assertTrue(self.view.isVisible())
+
+        self.view.set_boxes_enabled(False)
+        QApplication.processEvents()
+
+        self.assertFalse(self.view.isVisible())
+
+    def test_enabled_overlay_hides_when_source_window_is_not_visible(self):
+        self.view.set_boxes_enabled(True)
+        QApplication.processEvents()
+
+        self.assertTrue(self.view.isVisible())
+
+        self.view.update_overlay(False, 0, 0, 100, 100, 100, 100, 1)
+        QApplication.processEvents()
+
+        self.assertFalse(self.view.isVisible())
+
     def test_blur_patches_are_cleared_when_game_leaves_foreground(self):
         patch = np.zeros((10, 20, 3), dtype=np.uint8)
         self.view.update_blur_patches([(0, 0, 20, 10, patch)])

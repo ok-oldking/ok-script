@@ -161,9 +161,11 @@ class OverlayWidget(QWidget):
             return
         painter = QPainter(self)
         self.paint_blur(painter)
-        boxes_active = getattr(self, '_boxes_enabled', True) and getattr(self, '_boxes_active', False)
-        if boxes_active:
-            self.paint_boxes(painter)
+        overlay_enabled = getattr(self, '_boxes_enabled', True)
+        boxes_active = overlay_enabled and getattr(self, '_boxes_active', False)
+        if overlay_enabled:
+            if boxes_active:
+                self.paint_boxes(painter)
             self.paint_border(painter)
             self.paint_mouse_position(painter)
             self.paint_logs(painter)

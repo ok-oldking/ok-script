@@ -149,7 +149,7 @@ class OverlayWindow(OverlayWidget):
         self.refresh_visibility()
 
     def refresh_visibility(self):
-        required = (self._boxes_active or self._custom_drawing_active
+        required = (self._boxes_enabled or self._boxes_active or self._custom_drawing_active
                     or bool(self.blur_images) or bool(self.custom_painters))
         if self._source_visible and required and not self.isVisible():
             self.show()
