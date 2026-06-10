@@ -1,3 +1,5 @@
+import time
+
 from ok.util.logger import Logger
 from ok.util.window import windows_graphics_available
 
@@ -7,6 +9,9 @@ from ok.device.capture_methods.desktop_duplication import DesktopDuplicationCapt
 from ok.device.capture_methods.windows_graphics import WindowsGraphicsCaptureMethod
 
 logger = Logger.get_logger(__name__)
+
+WGC_FIRST_FRAME_TIMEOUT = 1.5
+
 
 def update_capture_method(config, capture_method, hwnd, exit_event=None, selected_method=None):
     try:
@@ -38,16 +43,32 @@ def update_capture_method(config, capture_method, hwnd, exit_event=None, selecte
         logger.error(f'update_capture_method exception, return None: {e}')
         return None
 
-
-
 def get_win_graphics_capture(capture_method, hwnd, exit_event):
     if windows_graphics_available():
         target_method = WindowsGraphicsCaptureMethod
         capture_method = get_capture(capture_method, target_method, hwnd, exit_event)
-        if capture_method.start_or_stop():
+        if capture_method.start_or_stop() and _capture_can_produce_frame(capture_method, WGC_FIRST_FRAME_TIMEOUT):
             return capture_method
+        if isinstance(capture_method, WindowsGraphicsCaptureMethod):
+            capture_hwnd = capture_method.get_capture_hwnd()
+            if capture_hwnd:
+                capture_method.last_start_failure_key = capture_hwnd
+                capture_method.last_start_failure_time = time.time()
+            capture_method.close()
 
 
+def _capture_can_produce_frame(capture_method, timeout):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            if capture_method.get_frame() is not None:
+                return True
+        except Exception as e:
+            logger.warning(f'{capture_method.get_name()} did not produce a frame: {e}')
+            return False
+        time.sleep(0.05)
+    logger.warning(f'{capture_method.get_name()} did not produce a frame within {timeout}s')
+    return False
 
 def get_capture(capture_method, target_method, hwnd, exit_event):
     if not isinstance(capture_method, target_method):

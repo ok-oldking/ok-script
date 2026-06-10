@@ -42,6 +42,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
     def frame_arrived_callback(self, *args):
         next_frame = None
+        frame = None
         with self.lock:
             if self.exit_event.is_set():
                 logger.warning('frame_arrived_callback exit_event.is_set() return')
@@ -50,23 +51,23 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 self.last_frame_time = time.time()
                 if self.frame_pool is not None:
                     next_frame = self.frame_pool.TryGetNextFrame()
+                # Keep close() from releasing the D3D context while the frame is mapped.
+                if next_frame is not None:
+                    frame = self.convert_dx_frame(next_frame)
             except Exception as e:
-                logger.error(f"TryGetNextFrame error {e}")
+                logger.error(f"frame_arrived_callback error {e}", e)
                 return
-
-        # Always accept and process the new frame to guarantee lowest latency
-        if next_frame is not None:
-            frame = self.convert_dx_frame(next_frame)
-            if hasattr(next_frame, 'Close'):
-                next_frame.Close()
-
+            finally:
+                if next_frame is not None and hasattr(next_frame, 'Close'):
+                    next_frame.Close()
             if frame is not None:
-                with self.lock:
-                    self.last_frame = frame
-                    self.frame_event.set()
+                self.last_frame = frame
+                self.frame_event.set()
 
     def convert_dx_frame(self, frame):
-        if not frame or self.dxdevice is None or self.immediatedc is None:
+        dxdevice = self.dxdevice
+        immediate_dc = self.immediatedc
+        if not frame or dxdevice is None or immediate_dc is None:
             return None
 
         need_reset_framepool = False
@@ -82,6 +83,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             return None
 
         tex = None
+        mapped = False
         try:
             tex = frame.Surface.astype(self.IDirect3DDxgiInterfaceAccess).GetInterface(
                 self.d3d11.ID3D11Texture2D.GUID).astype(self.d3d11.ID3D11Texture2D)
@@ -92,14 +94,14 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 desc.CPUAccessFlags = self.d3d11.D3D11_CPU_ACCESS_READ
                 desc.BindFlags = 0
                 desc.MiscFlags = 0
-                self.cputex = self.dxdevice.CreateTexture2D(ctypes.byref(desc), None)
+                self.cputex = dxdevice.CreateTexture2D(ctypes.byref(desc), None)
 
-            self.immediatedc.CopyResource(self.cputex, tex)
-            mapinfo = self.immediatedc.Map(self.cputex, 0, self.d3d11.D3D11_MAP_READ, 0)
+            immediate_dc.CopyResource(self.cputex, tex)
+            mapinfo = immediate_dc.Map(self.cputex, 0, self.d3d11.D3D11_MAP_READ, 0)
+            mapped = True
             img = np.ctypeslib.as_array(ctypes.cast(mapinfo.pData, PBYTE),
                                         (self.last_size.Height, mapinfo.RowPitch // 4, 4))[
                 :, :self.last_size.Width].copy()
-            self.immediatedc.Unmap(self.cputex, 0)
             return img
         except OSError as e:
             if e.winerror == self.d3d11.DXGI_ERROR_DEVICE_REMOVED or e.winerror == self.d3d11.DXGI_ERROR_DEVICE_RESET:
@@ -109,6 +111,8 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             else:
                 raise e
         finally:
+            if mapped:
+                immediate_dc.Unmap(self.cputex, 0)
             if tex is not None:
                 tex.Release()
 
