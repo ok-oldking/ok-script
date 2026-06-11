@@ -7,6 +7,7 @@ import unittest
 from types import SimpleNamespace
 from contextlib import contextmanager
 from pathlib import Path
+from unittest.mock import Mock
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -149,6 +150,50 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
 
         self.assertLess(update_index, projects_index)
         self.assertEqual("\n".join(notes), titled_widgets[update_index].widget.text())
+        app.processEvents()
+
+    def test_version_card_shows_update_button_for_pyappify_app_version(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        from ok.gui.about.VersionCard import VersionCard
+
+        app = QApplication.instance() or QApplication([])
+        show_pyappify = Mock()
+        card = VersionCard(
+            {},
+            ":/icon/icon.ico",
+            "demo",
+            "1.0.4",
+            False,
+            pyappify_module=SimpleNamespace(app_version="1.0.4", show_pyappify=show_pyappify),
+        )
+
+        self.assertTrue(hasattr(card, "check_update_button"))
+        self.assertEqual("Check for updates", card.check_update_button.text())
+
+        card.check_update_button.click()
+
+        show_pyappify.assert_called_once_with()
+        card.deleteLater()
+        app.processEvents()
+
+    def test_version_card_hides_update_button_without_pyappify_app_version(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        from ok.gui.about.VersionCard import VersionCard
+
+        app = QApplication.instance() or QApplication([])
+        card = VersionCard(
+            {},
+            ":/icon/icon.ico",
+            "demo",
+            "1.0.4",
+            False,
+            pyappify_module=SimpleNamespace(app_version=None, show_pyappify=Mock()),
+        )
+
+        self.assertFalse(hasattr(card, "check_update_button"))
+        card.deleteLater()
         app.processEvents()
 
 
