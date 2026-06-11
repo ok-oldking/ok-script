@@ -220,6 +220,7 @@ class App:
         self.main_window.bring_to_front()
 
         logger.debug(f'show_main_window end')
+        og.gui_ready.set()
 
     def exec(self):
         logger.info('app.exec()')
@@ -266,6 +267,7 @@ class HeadlessApp:
             if not hasattr(og.my_app, 'get_overlay_view'):
                 og.my_app.get_overlay_view = self.get_overlay_view
         logger.debug('init headless app end')
+        og.gui_ready.set()
 
     def tr(self, key):
         if not key:
@@ -746,6 +748,7 @@ class OkGlobals:
         self.app_path = get_path_relative_to_exe()
         self.use_dml = False
         self.global_config = None
+        self.gui_ready = threading.Event()
         logger.info(f'app path {self.app_path}')
 
     def set_use_dml(self):
