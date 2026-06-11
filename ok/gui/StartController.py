@@ -7,7 +7,7 @@ from ok import Logger
 from ok.device.capture import BaseWindowsCaptureMethod, BrowserCaptureMethod
 from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error
-from ok.util.process import is_admin, execute
+from ok.util.process import is_admin, execute, WINDOWS_START_METHOD_START
 
 logger = Logger.get_logger(__name__)
 
@@ -23,7 +23,9 @@ class StartController(QObject):
         self.exit_event = exit_event
         self.handler = Handler(exit_event, __name__)
         self.start_timeout = app_config.get('start_timeout', 60)
-        self.start_exe = (app_config.get('windows') or {}).get('start_exe', True)
+        windows_config = app_config.get('windows') or {}
+        self.start_exe = windows_config.get('start_exe', True)
+        self.start_method = windows_config.get('start_method', WINDOWS_START_METHOD_START)
 
     @staticmethod
     def _mark_task_enabled(task):
@@ -172,7 +174,7 @@ class StartController(QObject):
                 dx11_config = og.global_config.get_config('Launch with DX11')
                 if dx11_config and dx11_config.get('Launch with DX11'):
                     args = "-dx11 -d3d11 -force-d3d11"
-                if not execute(path, arguments=args):
+                if not execute(path, arguments=args, start_method=self.start_method):
                     communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
                     return False
                 if device['device'] == "windows" and not self._wait_until_started_window_stable():

@@ -38,6 +38,7 @@ class TestStartController(unittest.TestCase):
         controller = StartController.__new__(StartController)
         controller.exit_event = threading.Event()
         controller.start_timeout = 20
+        controller.start_method = 'start'
         controller.STARTED_WINDOW_STABLE_SECONDS = 2
         controller.STARTED_WINDOW_POLL_INTERVAL = 1
         return controller
@@ -92,14 +93,16 @@ class TestStartController(unittest.TestCase):
             side_effect=lambda: call_order.append('stable') or True)
         controller._wait_until_device_ready = Mock(
             side_effect=lambda: call_order.append('ready') or True)
+        controller.start_method = 'os.startfile'
+        execute = Mock(side_effect=lambda *args, **kwargs: call_order.append('execute') or True)
 
         with patch.object(start_controller_module, 'og', fake_og), \
                 patch.object(start_controller_module, 'is_admin', return_value=True), \
-                patch.object(start_controller_module, 'execute',
-                             side_effect=lambda *args, **kwargs: call_order.append('execute') or True):
+                patch.object(start_controller_module, 'execute', execute):
             self.assertTrue(controller.start_device())
 
         self.assertEqual(['execute', 'stable', 'ready'], call_order)
+        execute.assert_called_once_with(r'C:\game.exe', arguments=None, start_method='os.startfile')
 
     def test_gpu_driver_warning_identifies_each_enabled_vendor_feature(self):
         controller = self.make_controller()

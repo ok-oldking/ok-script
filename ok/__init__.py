@@ -28,7 +28,8 @@ from ok.util.clazz import init_class_by_name
 from ok.util.config import Config, ConfigOption
 from ok.util.handler import Handler, ExitEvent
 from ok.util.logger import config_logger, Logger
-from ok.util.process import check_mutex, get_first_gpu_free_memory_mib, parse_arguments_to_map
+from ok.util.process import check_mutex, get_first_gpu_free_memory_mib, parse_arguments_to_map, \
+    WINDOWS_START_METHOD_START
 from ok.util.file import get_path_relative_to_exe, install_path_isascii
 from ok.util.window import windows_graphics_available
 from ok.device.interaction import DoNothingInteraction, BaseInteraction, BrowserInteraction, PostMessageInteraction, \
@@ -363,6 +364,7 @@ class OK:
         windows_config = config.get('windows')
         if windows_config:
             windows_config.setdefault('start_exe', True)
+            windows_config.setdefault('start_method', WINDOWS_START_METHOD_START)
             capture_methods = windows_config.get('capture_method', [])
             available_methods = []
             for method in capture_methods:
