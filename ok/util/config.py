@@ -139,14 +139,6 @@ class Config(dict):
         :return: True if the config was modified, False otherwise.
         """
         modified = False
-        default_keys_by_casefold = {str(key).casefold(): key for key in default_config.keys()}
-
-        for key in list(current.keys()):
-            default_key = default_keys_by_casefold.get(str(key).casefold())
-            if default_key is not None and default_key != key and default_key not in current:
-                current[default_key] = current[key]
-                del current[key]
-                modified = True
 
         # Remove entries that do not exist in default_config
         for key in list(current.keys()):
