@@ -1,6 +1,7 @@
 import unittest
 import tempfile
 import os
+import json
 from types import SimpleNamespace
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
@@ -40,6 +41,22 @@ class TestBasicOptions(unittest.TestCase):
         option = ConfigOption('Custom Options', show_at_tab=True)
 
         self.assertTrue(option.show_at_tab)
+
+    def test_config_preserves_value_when_key_case_changes(self):
+        original_folder = Config.config_folder
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                Config.config_folder = folder
+                config_path = os.path.join(folder, 'Case Options.json')
+                with open(config_path, 'w', encoding='utf-8') as f:
+                    json.dump({'Kill Launcher after Start': False}, f)
+
+                config = Config('Case Options', {'Kill Launcher After Start': True})
+
+                self.assertNotIn('Kill Launcher after Start', config)
+                self.assertFalse(config['Kill Launcher After Start'])
+        finally:
+            Config.config_folder = original_folder
 
     def test_global_config_tab_renders_options_without_card_container(self):
         from ok.gui.settings.GlobalConfigTab import GlobalConfigTab

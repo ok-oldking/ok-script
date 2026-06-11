@@ -1354,7 +1354,7 @@
             <translation>베타 버전</translation>
         </message>
         <message>
-            <source>Kill Launcher after Start</source>
+            <source>Kill Launcher After Start</source>
             <translation>시작 후 런처 종료</translation>
         </message>
         <message>

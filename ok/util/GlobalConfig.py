@@ -13,7 +13,7 @@ _basic_options_default = {
     'Use DirectML': 'Yes',
     'Trigger Interval': 1,
     'Start/Stop': 'F9',
-    'Kill Launcher after Start': False,
+    'Kill Launcher After Start': True,
     'Launch with DX11': False
 }
 _basic_options_type = {'Use DirectML': {'type': "drop_down", 'options': ['Auto', 'Yes', 'No']},

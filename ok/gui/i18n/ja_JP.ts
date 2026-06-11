@@ -1345,7 +1345,7 @@
             <translation>ベータ版</translation>
         </message>
         <message>
-            <source>Kill Launcher after Start</source>
+            <source>Kill Launcher After Start</source>
             <translation>起動後にランチャーを終了する</translation>
         </message>
         <message>

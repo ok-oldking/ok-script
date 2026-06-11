@@ -358,8 +358,8 @@ class MainWindow(FluentWindow):
                                  [update_pyappify.get('zip_url')], self.exit_event)
             logger.info(f"Window has fully displayed {args}")
             communicate.start_success.emit()
-            if self.basic_global_config.get('Kill Launcher after Start'):
-                logger.info(f'MainWindow showEvent Kill Launcher after Start')
+            if self.basic_global_config.get('Kill Launcher After Start'):
+                logger.info(f'MainWindow showEvent Kill Launcher After Start')
                 pyappify.kill_pyappify()
             startup_version_change = get_startup_version_change()
             if self.version != self.main_window_config.get('last_version'):

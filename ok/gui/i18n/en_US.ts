@@ -1367,8 +1367,8 @@
             <translation>Beta Version</translation>
         </message>
         <message>
-            <source>Kill Launcher after Start</source>
-            <translation>Kill Launcher after Start</translation>
+            <source>Kill Launcher After Start</source>
+            <translation>Kill Launcher After Start</translation>
         </message>
         <message>
             <source>Target window active: Recording resumed</source>
