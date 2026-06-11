@@ -1,5 +1,5 @@
 import pyappify
-from PySide6.QtWidgets import QHBoxLayout
+from PySide6.QtCore import Qt
 from qfluentwidgets import FluentIcon, PushButton, SettingCard
 
 from ok.gui.about.LinksBar import LinksBar
@@ -23,17 +23,9 @@ class VersionCard(SettingCard):
         if not getattr(self.pyappify_module, 'app_version', None):
             return
 
-        self.vBoxLayout.removeWidget(self.contentLabel)
-        self.version_row = QHBoxLayout()
-        self.version_row.setContentsMargins(0, 0, 0, 0)
-        self.version_row.setSpacing(8)
-        self.version_row.addWidget(self.contentLabel, 0)
-
         self.check_update_button = PushButton(FluentIcon.UPDATE, self.tr('Check for updates'), self)
         self.check_update_button.clicked.connect(self._show_pyappify)
-        self.version_row.addWidget(self.check_update_button, 0)
-        self.version_row.addStretch(1)
-        self.vBoxLayout.addLayout(self.version_row)
+        self.hBoxLayout.addWidget(self.check_update_button, 0, Qt.AlignVCenter)
 
     def _show_pyappify(self):
         show_pyappify = getattr(self.pyappify_module, 'show_pyappify', None)

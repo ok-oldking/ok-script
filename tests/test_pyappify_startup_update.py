@@ -170,6 +170,7 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
 
         self.assertTrue(hasattr(card, "check_update_button"))
         self.assertEqual("Check for updates", card.check_update_button.text())
+        self.assertIs(card.hBoxLayout.itemAt(card.hBoxLayout.count() - 2).widget(), card.check_update_button)
 
         card.check_update_button.click()
 
