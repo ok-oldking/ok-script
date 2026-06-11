@@ -143,6 +143,13 @@ class TaskExecutor:
         self._ocr_init_thread.start()
 
     def _init_default_ocr(self):
+        try:
+            from ok import og
+            og.gui_ready.wait(timeout=30)
+            time.sleep(1)
+        except Exception as e:
+            logger.error('init default ocr delay error', e)
+
         start = time.time()
         try:
             logger.info('start init default ocr')
