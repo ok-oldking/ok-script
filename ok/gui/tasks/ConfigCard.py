@@ -140,6 +140,9 @@ class ConfigContentMixin:
             switch_button = getattr(widget, 'switch_button', None)
             if switch_button is not None:
                 switch_button.checkedChanged.connect(self.__apply_sub_config_visibility)
+            multi_selection_changed = getattr(widget, 'multi_selection_changed', None)
+            if multi_selection_changed is not None:
+                multi_selection_changed.connect(self.__apply_sub_config_visibility)
 
         self.__apply_sub_config_visibility()
 
@@ -210,9 +213,20 @@ class ConfigContentMixin:
 
     def __get_active_sub_config_keys(self, key):
         try:
-            config_keys = self.sub_configs_rules.get(key, {}).get(self.config.get(key), [])
+            config_value = self.config.get(key)
         except TypeError:
             return []
+
+        rule = self.sub_configs_rules.get(key, {})
+        if isinstance(config_value, list):
+            config_keys = []
+            for selected_value in config_value:
+                for config_key in rule.get(selected_value, []):
+                    if config_key not in config_keys:
+                        config_keys.append(config_key)
+        else:
+            config_keys = rule.get(config_value, [])
+
         return [
             config_key for config_key in config_keys
             if config_key in self.config_widget_by_key
@@ -296,9 +310,18 @@ class ConfigContentMixin:
                 return False
 
             try:
-                visible_config_keys = rule.get(self.config.get(parent_key), [])
+                parent_value = self.config.get(parent_key)
             except TypeError:
                 visible_config_keys = []
+            else:
+                if isinstance(parent_value, list):
+                    visible_config_keys = []
+                    for selected_value in parent_value:
+                        for config_key in rule.get(selected_value, []):
+                            if config_key not in visible_config_keys:
+                                visible_config_keys.append(config_key)
+                else:
+                    visible_config_keys = rule.get(parent_value, [])
 
             if key not in visible_config_keys:
                 return False
