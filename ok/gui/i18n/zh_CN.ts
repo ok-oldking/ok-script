@@ -457,6 +457,10 @@
             <source>Click an option to add it.</source>
             <translation>点击选项以添加。</translation>
         </message>
+        <message>
+            <source>Search options...</source>
+            <translation>搜索选项...</translation>
+        </message>
     </context>
     <context>
         <name>ModifyListItem</name>

@@ -457,6 +457,10 @@
             <source>Click an option to add it.</source>
             <translation>Click an option to add it.</translation>
         </message>
+        <message>
+            <source>Search options...</source>
+            <translation>Search options...</translation>
+        </message>
     </context>
     <context>
         <name>ModifyListItem</name>

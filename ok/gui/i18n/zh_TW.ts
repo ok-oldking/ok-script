@@ -467,6 +467,10 @@
             <source>Click an option to add it.</source>
             <translation>點擊選項以新增。</translation>
         </message>
+        <message>
+            <source>Search options...</source>
+            <translation>搜尋選項...</translation>
+        </message>
     </context>
     <context>
         <name>ModifyListItem</name>
