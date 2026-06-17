@@ -467,6 +467,10 @@
             <source>Click an option to add it.</source>
             <translation>Haz clic en una opción para añadirla.</translation>
         </message>
+        <message>
+            <source>Search options...</source>
+            <translation>Buscar opciones...</translation>
+        </message>
     </context>
     <context>
         <name>ModifyListItem</name>

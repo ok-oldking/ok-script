@@ -467,6 +467,10 @@
             <source>Click an option to add it.</source>
             <translation>オプションをクリックして追加します。</translation>
         </message>
+        <message>
+            <source>Search options...</source>
+            <translation>オプションを検索...</translation>
+        </message>
     </context>
     <context>
         <name>ModifyListItem</name>

@@ -468,6 +468,10 @@
             <source>Click an option to add it.</source>
             <translation>추가할 옵션을 클릭하세요.</translation>
         </message>
+        <message>
+            <source>Search options...</source>
+            <translation>옵션 검색...</translation>
+        </message>
     </context>
     <context>
         <name>ModifyListItem</name>
