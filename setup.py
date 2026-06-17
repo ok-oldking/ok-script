@@ -28,6 +28,10 @@ setuptools.setup(
     include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Operating System :: Microsoft :: Windows",
@@ -48,6 +52,6 @@ setuptools.setup(
             'ok=ok.cli:main',
         ],
     },
-    python_requires='==3.12.*',
+    python_requires='>=3.11',
     zip_safe=False,
 )
