@@ -23,6 +23,7 @@ class ModifyListDialog(MessageBoxBase):
         self.option_buttons = {}
         self.source_by_display = {}
         self.option_search_box = None
+        self._options_container = None
 
         if self.options_available is None:
             self.list_widget.addItems(self.original_items)
@@ -74,7 +75,8 @@ class ModifyListDialog(MessageBoxBase):
             available_scroll_area.setFrameShape(QScrollArea.NoFrame)
             available_scroll_area.setStyleSheet("QScrollArea { background-color: transparent; border: none; }")
             available_scroll_area.viewport().setStyleSheet("background-color: transparent;")
-            available_scroll_area.setWidget(self._create_available_options_widget())
+            self._options_container = self._create_available_options_widget()
+            available_scroll_area.setWidget(self._options_container)
             available_layout.addWidget(available_scroll_area, stretch=1)
 
             selected_layout = QVBoxLayout()
@@ -113,7 +115,7 @@ class ModifyListDialog(MessageBoxBase):
     def _create_available_options_widget(self):
         widget = QWidget()
         widget.setStyleSheet("background-color: transparent;")
-        layout = FlowLayout(widget, False)
+        layout = FlowLayout(widget, False, isTight=True)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setHorizontalSpacing(10)
         layout.setVerticalSpacing(10)
@@ -159,6 +161,12 @@ class ModifyListDialog(MessageBoxBase):
                 or keyword in option.casefold()
                 or keyword in display_text.casefold()
             )
+        # Force the FlowLayout to recalculate and skip hidden widgets (isTight=True)
+        if self._options_container is not None:
+            layout = self._options_container.layout()
+            if layout is not None:
+                layout.setGeometry(self._options_container.geometry())
+                self._options_container.update()
 
     def _wrap_dialog_buttons(self):
         self.yesButton.setFixedWidth(self.yesButton.sizeHint().width() * 2)
