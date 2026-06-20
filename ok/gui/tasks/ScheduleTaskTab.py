@@ -714,14 +714,6 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
         interval_layout.addStretch(1)
         self.interval_widget.setLayout(interval_layout)
 
-        # 初始化时根据当前触发类型显示/隐藏间隔控件
-        try:
-            self._on_trigger_type_changed()
-        except Exception as e:
-            logger.exception(f"Error in _on_trigger_type_changed: {e}")
-            self.interval_widget.setVisible(False)
-            self.interval_label.setVisible(False)
-
         # 启动参数选项
         self.auto_exit_check = CheckBox(self.tr("Auto exit after task done (-e)"))
         try:
@@ -754,6 +746,9 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
 
             self.viewLayout.addWidget(self.titleLabel)
             self.viewLayout.addWidget(form_widget)
+
+            # 表单加入布局后再切换可见性，避免 CUSTOM 初始状态下弹窗尺寸计算异常。
+            self._on_trigger_type_changed()
 
             self.yesButton.setText(self.tr("Modify"))
             self.cancelButton.setText(self.tr("Cancel"))
@@ -1138,9 +1133,9 @@ class ScheduleTaskTab(Tab):
                 self.show_error(self.tr("Task not found in cache"))
                 return
 
-            dialog = ModifyScheduleTaskDialog(task_info, self)
-            dialog.task_modified.connect(self.on_task_modified)
-            dialog.exec()
+            self._modify_dialog = ModifyScheduleTaskDialog(task_info, self)
+            self._modify_dialog.task_modified.connect(self.on_task_modified)
+            self._modify_dialog.exec()
         except Exception as e:
             logger.error(f"Failed to open modify dialog: {e}")
             self.show_error(self.tr("Failed to open modify dialog") + f": {e}")

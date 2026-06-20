@@ -809,7 +809,7 @@ class WindowsScheduleManager:
 
             # 设置启用状态
             if not enabled:
-                self._disable_task_via_schtasks(task_name)
+                self._set_task_enabled(task_path, False)
 
             logger.info(f"Task created via COM: {task_name}")
             return True
@@ -861,7 +861,7 @@ class WindowsScheduleManager:
                     return False
 
                 if not enabled:
-                    self._disable_task_via_schtasks(task_name)
+                    self._set_task_enabled(task_path, False)
 
                 return True
             finally:
@@ -879,82 +879,97 @@ class WindowsScheduleManager:
                     logger.warning(f"Refuse to delete read-only schedule task: {task_name}")
                     return False
                 task_path = self._resolve_task_path(task_name)
-
-                cmd = ["schtasks", "/Delete", "/TN", task_path, "/F"]
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-
-                if result.returncode == 0:
-                    self.cache.remove(task_name)
-                    logger.info(f"Task deleted: {task_name}")
-                    return True
-                else:
-                    logger.error(f"Failed to delete task: {result.stderr}")
-                    return False
             except Exception as e:
-                logger.error(f"Failed to delete task: {e}")
+                logger.error(f"Failed to resolve task before delete: {e}")
                 return False
+
+        try:
+            if self._delete_task_by_path(task_path):
+                self.cache.remove(task_name)
+                logger.info(f"Task deleted: {task_name}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Failed to delete task: {e}")
+            return False
+
+    def _delete_task_by_path(self, task_path: str) -> bool:
+        if self.is_com_available():
+            try:
+                folder_path, task_file_name = task_path.rsplit("\\", 1)
+                folder = self.SCHEDULE_SERVICE.GetFolder(folder_path or "\\")
+                folder.DeleteTask(task_file_name, 0)
+                return True
+            except Exception as e:
+                logger.warning(f"COM delete task failed: {e}, falling back to schtasks")
+
+        cmd = ["schtasks", "/Delete", "/TN", task_path, "/F"]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            return True
+
+        logger.error(f"Failed to delete task: {result.stderr}")
+        return False
 
     def enable_task(self, task_name: str) -> bool:
         """启用任务"""
-        with self.lock:
-            try:
-                if self._is_read_only_task(task_name):
-                    logger.warning(f"Refuse to enable read-only schedule task: {task_name}")
-                    return False
-                task_path = self._resolve_task_path(task_name)
-                cmd = ["schtasks", "/Change", "/ENABLE", "/TN", task_path]
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-
-                if result.returncode == 0:
-                    task_info = self.cache.get(task_name)
-                    if task_info:
-                        task_info.enabled = True
-                        task_info.status = "Ready"
-                        self.cache.add_or_update(task_info)
-                        self._notify_update(task_info)
-                    logger.info(f"Task enabled: {task_name}")
-                    return True
-                else:
-                    logger.error(f"Failed to enable task: {result.stderr}")
-                    return False
-            except Exception as e:
-                logger.error(f"Failed to enable task: {e}")
-                return False
+        return self._change_task_enabled(task_name, True)
 
     def disable_task(self, task_name: str) -> bool:
         """禁用任务"""
+        return self._change_task_enabled(task_name, False)
+
+    def _change_task_enabled(self, task_name: str, enabled: bool) -> bool:
+        action = "enable" if enabled else "disable"
         with self.lock:
             try:
                 if self._is_read_only_task(task_name):
-                    logger.warning(f"Refuse to disable read-only schedule task: {task_name}")
+                    logger.warning(f"Refuse to {action} read-only schedule task: {task_name}")
                     return False
-                return self._disable_task_via_schtasks(task_name)
+                task_path = self._resolve_task_path(task_name)
             except Exception as e:
-                logger.error(f"Failed to disable task: {e}")
+                logger.error(f"Failed to resolve task before {action}: {e}")
                 return False
 
-    def _disable_task_via_schtasks(self, task_name: str) -> bool:
-        """通过 schtasks 禁用任务"""
         try:
-            task_path = self._resolve_task_path(task_name)
-            cmd = ["schtasks", "/Change", "/DISABLE", "/TN", task_path]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-
-            if result.returncode == 0:
-                task_info = self.cache.get(task_name)
-                if task_info:
-                    task_info.enabled = False
-                    task_info.status = "Disabled"
-                    self.cache.add_or_update(task_info)
-                    self._notify_update(task_info)
-                logger.info(f"Task disabled: {task_name}")
+            if self._set_task_enabled(task_path, enabled):
+                self._update_cached_enabled_state(task_name, enabled)
+                logger.info(f"Task {'enabled' if enabled else 'disabled'}: {task_name}")
                 return True
-            else:
-                logger.error(f"Failed to disable task: {result.stderr}")
-                return False
-        except Exception as e:
-            logger.error(f"Failed to disable task: {e}")
             return False
+        except Exception as e:
+            logger.error(f"Failed to {action} task: {e}")
+            return False
+
+    def _set_task_enabled(self, task_path: str, enabled: bool) -> bool:
+        if self.is_com_available():
+            try:
+                folder_path, task_file_name = task_path.rsplit("\\", 1)
+                folder = self.SCHEDULE_SERVICE.GetFolder(folder_path or "\\")
+                task = folder.GetTask(task_file_name)
+                task.Enabled = enabled
+                return True
+            except Exception as e:
+                logger.warning(f"COM change task enabled failed: {e}, falling back to schtasks")
+
+        cmd = [
+            "schtasks", "/Change", "/ENABLE" if enabled else "/DISABLE", "/TN", task_path
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            return True
+
+        logger.error(f"Failed to {'enable' if enabled else 'disable'} task: {result.stderr}")
+        return False
+
+    def _update_cached_enabled_state(self, task_name: str, enabled: bool):
+        with self.lock:
+            task_info = self.cache.get(task_name)
+            if task_info:
+                task_info.enabled = enabled
+                task_info.status = "Ready" if enabled else "Disabled"
+                self.cache.add_or_update(task_info)
+                self._notify_update(task_info)
 
     def _generate_task_xml(self, task_name: str, task_index: int,
                            trigger_type: TriggerType, timeout_hours: int = 0,
