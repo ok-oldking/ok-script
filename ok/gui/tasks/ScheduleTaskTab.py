@@ -171,6 +171,8 @@ def format_next_run_time(next_run_time: str) -> str:
 class ScheduleTaskTable(TableWidget):
     """计划任务表格"""
 
+    MAX_TABLE_HEIGHT = 360
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setColumnCount(6)
@@ -194,10 +196,11 @@ class ScheduleTaskTable(TableWidget):
         header.setSectionResizeMode(5, QHeaderView.ResizeToContents)  # 操作按内容
         header.setStretchLastSection(False)
 
-        # 设置最小高度
-        self.setMinimumHeight(300)
         # 自动调整行高
         self.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.setMinimumHeight(0)
+        self.setMaximumHeight(self.MAX_TABLE_HEIGHT)
+        self.refresh_height()
 
         # 回调字典
         self.delete_callbacks = {}
@@ -208,11 +211,12 @@ class ScheduleTaskTable(TableWidget):
         """添加任务行"""
         row = self.rowCount()
         self.insertRow(row)
+        task_key = task_info.path or task_info.name
 
         # 任务名称
         name_item = QTableWidgetItem(og.app.tr(task_info.name))
-        name_item.setData(Qt.UserRole, task_info.name)
-        name_item.setToolTip(f"{og.app.tr(task_info.name)} ({task_info.name})")
+        name_item.setData(Qt.UserRole, task_key)
+        name_item.setToolTip(task_info.path or f"{og.app.tr(task_info.name)} ({task_info.name})")
         self.setItem(row, 0, name_item)
 
         # 状态
@@ -233,12 +237,13 @@ class ScheduleTaskTable(TableWidget):
         enabled_layout.setContentsMargins(0, 0, 0, 0)
         enabled_switch = SwitchButton()
         enabled_switch.setChecked(task_info.enabled)
+        enabled_switch.setEnabled(not task_info.read_only)
         # 隐藏 on/off 文本（如果组件支持）
         if hasattr(enabled_switch, "setOnText"):
             enabled_switch.setOnText("")
         if hasattr(enabled_switch, "setOffText"):
             enabled_switch.setOffText("")
-        enabled_switch.checkedChanged.connect(lambda checked: on_toggle(task_info.name, checked) if on_toggle else None)
+        enabled_switch.checkedChanged.connect(lambda checked: on_toggle(task_key, checked) if on_toggle else None)
         enabled_layout.addWidget(enabled_switch, alignment=Qt.AlignCenter)
         enabled_widget.setLayout(enabled_layout)
         self.setCellWidget(row, 4, enabled_widget)
@@ -250,24 +255,28 @@ class ScheduleTaskTable(TableWidget):
         actions_layout.setSpacing(5)
 
         view_btn = PushButton(self.tr("Modify"))
-        view_btn.clicked.connect(lambda: on_view(task_info.name) if on_view else None)
+        view_btn.setEnabled(not task_info.read_only)
+        view_btn.clicked.connect(lambda: on_view(task_key) if on_view else None)
         delete_btn = PushButton(self.tr("Delete"))
-        delete_btn.clicked.connect(lambda: on_delete(task_info.name) if on_delete else None)
+        delete_btn.setEnabled(not task_info.read_only)
+        delete_btn.clicked.connect(lambda: on_delete(task_key) if on_delete else None)
 
         actions_layout.addWidget(view_btn)
         actions_layout.addWidget(delete_btn)
         actions_widget.setLayout(actions_layout)
         self.setCellWidget(row, 5, actions_widget)
+        self.refresh_height()
 
         return row
 
     def update_task_row(self, task_info: ScheduleTaskInfo):
         """更新任务行"""
+        task_key = task_info.path or task_info.name
         for row in range(self.rowCount()):
             name_item = self.item(row, 0)
-            if name_item and name_item.data(Qt.UserRole) == task_info.name:
+            if name_item and name_item.data(Qt.UserRole) == task_key:
                 name_item.setText(og.app.tr(task_info.name))
-                name_item.setToolTip(f"{og.app.tr(task_info.name)} ({task_info.name})")
+                name_item.setToolTip(task_info.path or f"{og.app.tr(task_info.name)} ({task_info.name})")
                 self.item(row, 1).setText(self.tr(task_info.status))
                 self.item(row, 2).setText(display_trigger_type_for_task(task_info, self.tr))
                 self.item(row, 3).setText(format_next_run_time(task_info.next_run_time))
@@ -278,6 +287,7 @@ class ScheduleTaskTable(TableWidget):
                     switch = enabled_widget.findChild(SwitchButton)
                     if switch:
                         switch.setChecked(task_info.enabled)
+                self.refresh_height()
                 break
 
     def remove_task_row(self, task_name: str):
@@ -286,7 +296,17 @@ class ScheduleTaskTable(TableWidget):
             name_item = self.item(row, 0)
             if name_item and name_item.data(Qt.UserRole) == task_name:
                 self.removeRow(row)
+                self.refresh_height()
                 break
+
+    def refresh_height(self):
+        header_height = self.horizontalHeader().height() if self.horizontalHeader() else 0
+        frame_height = self.frameWidth() * 2
+        rows_height = sum(self.rowHeight(row) for row in range(self.rowCount()))
+        scrollbar_height = self.horizontalScrollBar().sizeHint().height() if self.horizontalScrollBar().isVisible() else 0
+        target_height = header_height + rows_height + frame_height + scrollbar_height + 4
+        target_height = min(max(target_height, header_height + frame_height + 4), self.MAX_TABLE_HEIGHT)
+        self.setFixedHeight(target_height)
 
 
 class CreateScheduleTaskDialog(MessageBoxBase):
@@ -694,14 +714,6 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
         interval_layout.addStretch(1)
         self.interval_widget.setLayout(interval_layout)
 
-        # 初始化时根据当前触发类型显示/隐藏间隔控件
-        try:
-            self._on_trigger_type_changed()
-        except Exception as e:
-            logger.exception(f"Error in _on_trigger_type_changed: {e}")
-            self.interval_widget.setVisible(False)
-            self.interval_label.setVisible(False)
-
         # 启动参数选项
         self.auto_exit_check = CheckBox(self.tr("Auto exit after task done (-e)"))
         try:
@@ -734,6 +746,9 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
 
             self.viewLayout.addWidget(self.titleLabel)
             self.viewLayout.addWidget(form_widget)
+
+            # 表单加入布局后再切换可见性，避免 CUSTOM 初始状态下弹窗尺寸计算异常。
+            self._on_trigger_type_changed()
 
             self.yesButton.setText(self.tr("Modify"))
             self.cancelButton.setText(self.tr("Cancel"))
@@ -847,7 +862,7 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
         interval_hours = self.interval_hours_spin.value()
 
         self.task_modified.emit(
-            self.task_info.name,
+            self.task_info.path or self.task_info.name,
             self.task_index,
             trigger_type,
             timeout_hours,
@@ -884,6 +899,8 @@ class ScheduleTaskTab(Tab):
         self.config = config
         self.schedule_manager: Optional[WindowsScheduleManager] = None
         self.task_table: Optional[ScheduleTaskTable] = None
+        self.task_tables: dict[str, ScheduleTaskTable] = {}
+        self.task_table_cards: dict[str, QWidget] = {}
         self.refreshing = False
         # 仅通过软件内操作与手动刷新管理任务，不启用自动轮询/后台同步
         self.enable_ui_polling = False
@@ -919,13 +936,8 @@ class ScheduleTaskTab(Tab):
         toolbar_widget.setLayout(toolbar_layout)
         self.add_widget(toolbar_widget)
 
-        # 任务表格
-        self.task_table = ScheduleTaskTable()
-        table_container = self.add_card(self.tr("Schedule Tasks"), self.task_table)
-        self.add_widget(table_container)
-
-        # 连接表格信号
-        self.task_table.itemClicked.connect(self.on_table_item_clicked)
+        self.task_tables = {}
+        self.task_table_cards = {}
 
         # 可选：定时刷新表格（默认关闭，采用手动刷新 + 操作后更新）
         self.timer = QTimer()
@@ -954,59 +966,128 @@ class ScheduleTaskTab(Tab):
 
     def render_tasks(self, tasks: List[ScheduleTaskInfo]):
         """渲染任务列表（智能更新，只在数据变化时重新渲染）"""
-        # 构建新任务字典
-        new_tasks_dict = {task.name: task for task in tasks}
+        grouped_tasks = self._group_tasks_by_app(tasks)
+        ordered_app_names = self._ordered_app_names(grouped_tasks)
 
-        # 获取当前表格中的任务
+        for app_name in list(self.task_tables.keys()):
+            if app_name not in grouped_tasks:
+                self._remove_task_table(app_name)
+
+        for app_name in ordered_app_names:
+            table = self._ensure_task_table(app_name)
+            self._render_table_tasks(table, grouped_tasks[app_name])
+
+        self._reorder_task_cards(ordered_app_names)
+
+    def _group_tasks_by_app(self, tasks: List[ScheduleTaskInfo]) -> dict[str, List[ScheduleTaskInfo]]:
+        grouped_tasks: dict[str, List[ScheduleTaskInfo]] = {}
+        for task_info in tasks:
+            app_name = self._app_name_from_task(task_info)
+            grouped_tasks.setdefault(app_name, []).append(task_info)
+        return grouped_tasks
+
+    def _ordered_app_names(self, grouped_tasks: dict[str, List[ScheduleTaskInfo]]) -> List[str]:
+        own_app_name = self._own_app_name()
+        names = list(grouped_tasks.keys())
+        return sorted(names, key=lambda name: (name != own_app_name, name.lower()))
+
+    def _own_app_name(self) -> str:
+        if self.schedule_manager:
+            return self.schedule_manager.SCHEDULE_ROOT_PATH.strip("\\") or self.tr("Current App")
+        return self.tr("Current App")
+
+    def _app_name_from_task(self, task_info: ScheduleTaskInfo) -> str:
+        task_path = task_info.path or ""
+        normalized_path = task_path.lstrip("\\")
+        if normalized_path:
+            return normalized_path.split("\\", 1)[0] or self._own_app_name()
+        return self._own_app_name()
+
+    def _ensure_task_table(self, app_name: str) -> ScheduleTaskTable:
+        table = self.task_tables.get(app_name)
+        if table:
+            return table
+
+        table = ScheduleTaskTable()
+        table.itemClicked.connect(self.on_table_item_clicked)
+        self.task_tables[app_name] = table
+        self.task_table_cards[app_name] = self.add_card(app_name, table)
+        if app_name == self._own_app_name():
+            self.task_table = table
+        return table
+
+    def _remove_task_table(self, app_name: str):
+        card = self.task_table_cards.pop(app_name, None)
+        table = self.task_tables.pop(app_name, None)
+        if card:
+            self.removeWidget(card)
+            card.deleteLater()
+        if table == self.task_table:
+            self.task_table = None
+
+    def _find_task_table(self, task_key: str) -> Optional[ScheduleTaskTable]:
+        for table in self.task_tables.values():
+            for row in range(table.rowCount()):
+                name_item = table.item(row, 0)
+                if name_item and name_item.data(Qt.UserRole) == task_key:
+                    return table
+        return None
+
+    def _reorder_task_cards(self, ordered_app_names: List[str]):
+        for app_name in ordered_app_names:
+            card = self.task_table_cards.get(app_name)
+            if card:
+                self.removeWidget(card)
+                self.add_widget(card)
+
+    def _render_table_tasks(self, table: ScheduleTaskTable, tasks: List[ScheduleTaskInfo]):
+        new_tasks_dict = {task.path or task.name: task for task in tasks}
         existing_tasks = set()
         rows_to_remove = []
 
-        # 检查现有行，标记需要删除或更新的
-        for row in range(self.task_table.rowCount()):
-            name_item = self.task_table.item(row, 0)
+        for row in range(table.rowCount()):
+            name_item = table.item(row, 0)
             if name_item:
                 task_name = name_item.data(Qt.UserRole) or name_item.text()
                 existing_tasks.add(task_name)
 
                 if task_name not in new_tasks_dict:
-                    # 任务已被删除，标记行待删除
                     rows_to_remove.append(row)
                 else:
-                    # 任务存在，检查是否需要更新
                     new_task = new_tasks_dict[task_name]
-                    if self._task_changed(row, new_task):
-                        self.task_table.update_task_row(new_task)
+                    if self._task_changed(table, row, new_task):
+                        table.update_task_row(new_task)
 
-        # 从后往前删除行（避免索引问题）
         for row in reversed(rows_to_remove):
-            self.task_table.removeRow(row)
+            table.removeRow(row)
 
-        # 添加新任务
         for task_info in tasks:
-            if task_info.name not in existing_tasks:
-                self.task_table.add_task_row(
+            task_key = task_info.path or task_info.name
+            if task_key not in existing_tasks:
+                table.add_task_row(
                     task_info, on_delete=self.on_task_deleted, on_view=self.on_task_view, on_toggle=self.on_task_toggled
                 )
+        table.refresh_height()
 
-    def _task_changed(self, row: int, new_task: ScheduleTaskInfo) -> bool:
+    def _task_changed(self, table: ScheduleTaskTable, row: int, new_task: ScheduleTaskInfo) -> bool:
         """检查任务是否有变化"""
         # 检查状态
-        status_item = self.task_table.item(row, 1)
+        status_item = table.item(row, 1)
         if status_item and status_item.text() != self.tr(new_task.status):
             return True
 
         # 检查触发类型
-        trigger_item = self.task_table.item(row, 2)
+        trigger_item = table.item(row, 2)
         if trigger_item and trigger_item.text() != display_trigger_type_for_task(new_task, self.tr):
             return True
 
         # 检查下次运行时间
-        next_run_item = self.task_table.item(row, 3)
+        next_run_item = table.item(row, 3)
         if next_run_item and next_run_item.text() != format_next_run_time(new_task.next_run_time):
             return True
 
         # 检查启用状态
-        enabled_widget = self.task_table.cellWidget(row, 4)
+        enabled_widget = table.cellWidget(row, 4)
         if enabled_widget:
             switch = enabled_widget.findChild(SwitchButton)
             if switch and switch.isChecked() != new_task.enabled:
@@ -1032,7 +1113,10 @@ class ScheduleTaskTab(Tab):
         try:
             tasks = self.schedule_manager.cache.get_all()
             for task_info in tasks:
-                self.task_table.update_task_row(task_info)
+                app_name = self._app_name_from_task(task_info)
+                table = self.task_tables.get(app_name)
+                if table:
+                    table.update_task_row(task_info)
         except Exception as e:
             logger.error(f"Failed to update table: {e}")
 
@@ -1049,9 +1133,9 @@ class ScheduleTaskTab(Tab):
                 self.show_error(self.tr("Task not found in cache"))
                 return
 
-            dialog = ModifyScheduleTaskDialog(task_info, self)
-            dialog.task_modified.connect(self.on_task_modified)
-            dialog.exec()
+            self._modify_dialog = ModifyScheduleTaskDialog(task_info, self)
+            self._modify_dialog.task_modified.connect(self.on_task_modified)
+            self._modify_dialog.exec()
         except Exception as e:
             logger.error(f"Failed to open modify dialog: {e}")
             self.show_error(self.tr("Failed to open modify dialog") + f": {e}")
@@ -1079,7 +1163,7 @@ class ScheduleTaskTab(Tab):
                 return
 
             success = self.schedule_manager.create_task(
-                task_name=task_name,
+                task_name=current.name if current else task_name,
                 task_index=task_index,
                 trigger_type=trigger_type,
                 timeout_hours=timeout_hours,
@@ -1106,7 +1190,9 @@ class ScheduleTaskTab(Tab):
 
     def on_task_updated_ui(self, task_info: ScheduleTaskInfo):
         """在主线程中更新单行任务信息"""
-        self.task_table.update_task_row(task_info)
+        table = self.task_tables.get(self._app_name_from_task(task_info))
+        if table:
+            table.update_task_row(task_info)
 
     def on_refresh(self):
         """刷新任务列表"""
@@ -1194,7 +1280,9 @@ class ScheduleTaskTab(Tab):
             try:
                 success = self.schedule_manager.delete_task(task_name)
                 if success:
-                    self.task_table.remove_task_row(task_name)
+                    table = self._find_task_table(task_name)
+                    if table:
+                        table.remove_task_row(task_name)
                     self.show_success(self.tr("Task deleted successfully"))
                 else:
                     self.show_error(self.tr("Failed to delete task"))
