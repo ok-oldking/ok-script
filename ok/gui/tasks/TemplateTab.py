@@ -157,20 +157,28 @@ def get_categories_for_image(coco_data, image_path):
 
 def get_categories_by_filename(coco_data):
     """Build a filename -> category names index for list rendering."""
-    category_ids_by_image = {}
+    category_names_by_id = {
+        category['id']: category['name']
+        for category in coco_data.get('categories', [])
+    }
+    image_ids_by_category = {}
     for annotation in coco_data.get('annotations', []):
-        category_ids_by_image.setdefault(annotation['image_id'], set()).add(
-            annotation['category_id'])
+        image_ids_by_category.setdefault(annotation['category_id'], set()).add(
+            annotation['image_id'])
 
-    category_names_by_image = {}
-    for image in coco_data.get('images', []):
-        category_ids = category_ids_by_image.get(image['id'], set())
-        category_names_by_image[os.path.basename(image['file_name'])] = [
-            category['name']
-            for category in coco_data.get('categories', [])
-            if category['id'] in category_ids
-        ]
-    return category_names_by_image
+    category_names_by_image = {
+        image['id']: []
+        for image in coco_data.get('images', [])
+    }
+    for category_id, category_name in category_names_by_id.items():
+        for image_id in image_ids_by_category.get(category_id, ()):
+            if image_id in category_names_by_image:
+                category_names_by_image[image_id].append(category_name)
+
+    return {
+        os.path.basename(image['file_name']): category_names_by_image[image['id']]
+        for image in coco_data.get('images', [])
+    }
 
 
 def _card_style(selected, dark):

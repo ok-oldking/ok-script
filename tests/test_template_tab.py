@@ -10,7 +10,8 @@ from PySide6.QtWidgets import QApplication
 
 from ok import Config, og
 from ok.gui.tasks.MarkUpWindow import MarkUpWindow
-from ok.gui.tasks.TemplateTab import TemplateTab, get_next_image_name
+from ok.gui.tasks.TemplateTab import (TemplateTab, get_categories_by_filename,
+                                      get_next_image_name)
 
 
 class TestTemplateTabCardCollection(unittest.TestCase):
@@ -118,6 +119,28 @@ class TestTemplateTabCardCollection(unittest.TestCase):
         }
 
         self.assertEqual('1', get_next_image_name(self.temp_dir.name, coco_data))
+
+    def test_category_index_preserves_category_order_and_deduplicates_annotations(self):
+        coco_data = {
+            'images': [
+                {'id': 1, 'file_name': 'first.png', 'width': 0, 'height': 0},
+                {'id': 2, 'file_name': 'second.png', 'width': 0, 'height': 0},
+            ],
+            'annotations': [
+                {'id': 1, 'image_id': 1, 'category_id': 1},
+                {'id': 2, 'image_id': 1, 'category_id': 2},
+                {'id': 3, 'image_id': 1, 'category_id': 1},
+            ],
+            'categories': [
+                {'id': 2, 'name': 'second', 'supercategory': ''},
+                {'id': 1, 'name': 'first', 'supercategory': ''},
+            ],
+        }
+
+        self.assertEqual(
+            {'first.png': ['second', 'first'], 'second.png': []},
+            get_categories_by_filename(coco_data),
+        )
 
 
 if __name__ == '__main__':
