@@ -880,7 +880,7 @@ class AnnotationCanvas(QWidget):
 
     def _build_existing_categories_map(self):
         """Build a dict of category_name -> image_filename for all annotations across all images."""
-        coco_data = load_coco()
+        coco_data = self.markup_window.coco_data if self.markup_window else {}
         cat_map = {}
         cat_id_to_name = {cat['id']: cat['name'] for cat in coco_data.get('categories', [])}
         img_id_to_name = {img['id']: img['file_name'] for img in coco_data.get('images', [])}
@@ -935,7 +935,7 @@ class AnnotationCanvas(QWidget):
 
 
 class MarkUpWindow(BaseWindow):
-    closed = Signal()
+    closed = Signal(list, object)
 
     def __init__(self, image_path, image_list, parent=None):
         super().__init__(parent)
@@ -947,6 +947,7 @@ class MarkUpWindow(BaseWindow):
 
         self.image_list = image_list
         self.current_index = 0
+        self._changed_image_paths: set[str] = set()
         if image_path in image_list:
             self.current_index = image_list.index(image_path)
 
@@ -1052,8 +1053,7 @@ class MarkUpWindow(BaseWindow):
         filename = os.path.basename(image_path)
         self.image_name_label.setText(f"{filename}{resolution_str}")
 
-        # Load annotations for this image
-        self.coco_data = load_coco()
+        # Reuse the annotation data loaded when the editor opened.
         self.canvas.set_category_cache(self.coco_data)
         image_id = self._get_image_id(image_path)
         annotations = []
@@ -1126,7 +1126,6 @@ class MarkUpWindow(BaseWindow):
 
         image_path = self.image_list[self.current_index]
         filename = os.path.basename(image_path)
-        self.coco_data = load_coco()
 
         image_id = self._get_image_id(image_path)
         if image_id is None:
@@ -1179,6 +1178,7 @@ class MarkUpWindow(BaseWindow):
 
         save_coco(self.coco_data)
         self.canvas.set_category_cache(self.coco_data)
+        self._changed_image_paths.add(image_path)
 
     def end_draw_mode(self):
         """Called after finishing drawing a box to exit draw mode."""
@@ -1273,5 +1273,5 @@ class MarkUpWindow(BaseWindow):
             super().keyPressEvent(event)
 
     def closeEvent(self, event):
-        self.closed.emit()
+        self.closed.emit(list(self._changed_image_paths), self.coco_data)
         super().closeEvent(event)

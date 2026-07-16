@@ -1,5 +1,6 @@
 import json
 import os
+from time import perf_counter
 from typing import TypedDict
 
 import cv2
@@ -12,6 +13,7 @@ from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
                             qconfig, IndeterminateProgressRing)
 
 from ok import Config, og
+from ok.gui.util.windows_thumbnail import WindowsThumbnailReader
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -22,6 +24,9 @@ THUMB_SIZE = 160
 CARD_WIDTH = THUMB_SIZE + 16
 CARD_HEIGHT = THUMB_SIZE + 40
 GRID_SPACING = 8
+# Temporary benchmark switch.  Set to False after measuring cold Shell
+# extraction performance so normal cache-first behavior resumes.
+FORCE_WINDOWS_THUMBNAIL_EXTRACTION = False
 
 
 class ImageDict(TypedDict):
@@ -50,6 +55,12 @@ class CocoData(TypedDict):
     images: list[ImageDict]
     annotations: list[AnnotationDict]
     categories: list[CategoryDict]
+
+
+class ImageItem(TypedDict):
+    path: str
+    thumbnail: QImage | None
+    categories: list[str]
 
 
 def ensure_template_folder():
@@ -100,7 +111,7 @@ def get_image_files():
     return [f[0] for f in files]
 
 
-def get_next_image_name(folder, coco_data=None, start_index=0):
+def get_next_image_name(folder, coco_data=None):
     """Find the next available numeric image name."""
     existing = set()
     for f in os.listdir(folder):
@@ -112,7 +123,7 @@ def get_next_image_name(folder, coco_data=None, start_index=0):
         if name.isdigit():
             existing.add(int(name))
 
-    i = max(0, int(start_index or 0))
+    i = 0
     while i in existing:
         i += 1
     return str(i)
@@ -142,6 +153,32 @@ def get_categories_for_image(coco_data, image_path):
         if cat['id'] in cat_ids:
             cat_names.append(cat['name'])
     return cat_names
+
+
+def get_categories_by_filename(coco_data):
+    """Build a filename -> category names index for list rendering."""
+    category_names_by_id = {
+        category['id']: category['name']
+        for category in coco_data.get('categories', [])
+    }
+    image_ids_by_category = {}
+    for annotation in coco_data.get('annotations', []):
+        image_ids_by_category.setdefault(annotation['category_id'], set()).add(
+            annotation['image_id'])
+
+    category_names_by_image = {
+        image['id']: []
+        for image in coco_data.get('images', [])
+    }
+    for category_id, category_name in category_names_by_id.items():
+        for image_id in image_ids_by_category.get(category_id, ()):
+            if image_id in category_names_by_image:
+                category_names_by_image[image_id].append(category_name)
+
+    return {
+        os.path.basename(image['file_name']): category_names_by_image[image['id']]
+        for image in coco_data.get('images', [])
+    }
 
 
 def _card_style(selected, dark):
@@ -183,42 +220,115 @@ class ImageLoaderSignals(QObject):
     finished = Signal(list, int)
 
 class ImageLoaderRunnable(QRunnable):
-    def __init__(self, coco_data, query, seq):
+    def __init__(self, coco_data, seq):
         super().__init__()
         self.coco_data = coco_data
-        self.query = query
         self.seq = seq
         self.signals = ImageLoaderSignals()
 
     def run(self):
         try:
+            load_started_at = perf_counter()
+            stage_started_at = perf_counter()
             all_images = get_image_files()
-            
-            if self.query:
-                filtered = []
-                for img_path in all_images:
-                    name = os.path.splitext(os.path.basename(img_path))[0].lower()
-                    cats = get_categories_for_image(self.coco_data, img_path)
-                    cat_str = ' '.join(cats).lower()
-                    if self.query in name or self.query in cat_str:
-                        filtered.append(img_path)
-                all_images = filtered
+            logger.info(
+                f"Template grid timing | scan {len(all_images)} images: "
+                f"{(perf_counter() - stage_started_at) * 1000:.1f} ms")
+
+            stage_started_at = perf_counter()
+            categories_by_filename = get_categories_by_filename(self.coco_data)
+            logger.info(
+                f"Template grid timing | build category index: "
+                f"{(perf_counter() - stage_started_at) * 1000:.1f} ms")
 
             results = []
-            for img_path in all_images:
-                cats = get_categories_for_image(self.coco_data, img_path)
-                cats_str = ', '.join(cats)
-                qimg = QImage(img_path)
-                if not qimg.isNull():
-                    scaled = qimg.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    results.append((img_path, scaled, cats_str))
-                else:
-                    results.append((img_path, None, cats_str))
+            image_decode_ms = 0.0
+            image_scale_ms = 0.0
+            windows_thumbnail_ms = 0.0
+            windows_cache_hits = 0
+            windows_cache_misses = 0
+            windows_extract_ms = 0.0
+            windows_extractions = 0
+            windows_extraction_failures = 0
+            windows_cache_supported = None
+            windows_thumbnail_reader = WindowsThumbnailReader(400)
+            windows_thumbnail_available = windows_thumbnail_reader.open()
+            try:
+                for img_path in all_images:
+                    filename = os.path.basename(img_path)
+                    cats = categories_by_filename.get(filename, [])
+
+                    thumbnail = None
+                    if windows_thumbnail_available and FORCE_WINDOWS_THUMBNAIL_EXTRACTION:
+                        stage_started_at = perf_counter()
+                        thumbnail, _ = windows_thumbnail_reader.extract_thumbnail(img_path, force=True)
+                        windows_extract_ms += (perf_counter() - stage_started_at) * 1000
+                        if thumbnail is not None:
+                            windows_extractions += 1
+                        else:
+                            windows_extraction_failures += 1
+                    elif windows_thumbnail_available and windows_cache_supported is not False:
+                        stage_started_at = perf_counter()
+                        thumbnail, _ = windows_thumbnail_reader.get_thumbnail(img_path)
+                        windows_thumbnail_ms += (perf_counter() - stage_started_at) * 1000
+                        if thumbnail is not None:
+                            windows_cache_hits += 1
+                            windows_cache_supported = True
+                        else:
+                            windows_cache_misses += 1
+                            stage_started_at = perf_counter()
+                            thumbnail, _ = windows_thumbnail_reader.extract_thumbnail(img_path)
+                            windows_extract_ms += (perf_counter() - stage_started_at) * 1000
+                            if thumbnail is not None:
+                                windows_extractions += 1
+                                if windows_cache_supported is None:
+                                    # Verify that a successful extraction is
+                                    # actually persisted before using Shell
+                                    # extraction for every remaining image.
+                                    stage_started_at = perf_counter()
+                                    verified_thumbnail, _ = windows_thumbnail_reader.get_thumbnail(img_path)
+                                    windows_thumbnail_ms += (perf_counter() - stage_started_at) * 1000
+                                    windows_cache_supported = verified_thumbnail is not None
+                            else:
+                                windows_extraction_failures += 1
+
+                    if thumbnail is None:
+                        stage_started_at = perf_counter()
+                        qimg = QImage(img_path)
+                        image_decode_ms += (perf_counter() - stage_started_at) * 1000
+                        if not qimg.isNull():
+                            stage_started_at = perf_counter()
+                            thumbnail = qimg.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                            image_scale_ms += (perf_counter() - stage_started_at) * 1000
+
+                    results.append((img_path, thumbnail, cats))
+
+            finally:
+                windows_thumbnail_reader.close()
             
-            logger.info(f"Image search finished, found {len(results)} items.")
+            if windows_thumbnail_available:
+                cache_status = (
+                    'forced extraction' if FORCE_WINDOWS_THUMBNAIL_EXTRACTION else
+                    'supported' if windows_cache_supported is True else
+                    'not persistent' if windows_cache_supported is False else
+                    'not determined')
+                logger.info(
+                    f"Template grid timing | Windows thumbnails: cached {windows_cache_hits}, "
+                    f"missed {windows_cache_misses}, extracted {windows_extractions}, "
+                    f"failed {windows_extraction_failures}, "
+                    f"cache {cache_status}, cache read {windows_thumbnail_ms:.1f} ms, "
+                    f"extract {windows_extract_ms:.1f} ms")
+            else:
+                logger.info("Template grid timing | Windows thumbnails unavailable; using Qt fallback")
+            logger.info(
+                f"Template grid timing | process {len(results)} thumbnails: "
+                f"decode {image_decode_ms:.1f} ms, scale {image_scale_ms:.1f} ms")
+            logger.info(
+                f"Template grid timing | worker total: "
+                f"{(perf_counter() - load_started_at) * 1000:.1f} ms")
             self.signals.finished.emit(results, self.seq)
         except Exception as e:
-            logger.error(f"Image search failed: {e}", exc_info=True)
+            logger.error(f"Image search failed: {e}")
             self.signals.finished.emit([], self.seq)
 
 
@@ -288,6 +398,15 @@ class ImageCard(QFrame):
         self.selected = selected
         self._apply_style()
 
+    def set_features_text(self, features_text):
+        """Update the annotation labels without recreating the card."""
+        if self._features_text_full == features_text:
+            return
+
+        self._features_text_full = features_text
+        self.features_label.setText(features_text)
+        self.set_card_width(self.width())
+
     def _apply_style(self):
         self.setStyleSheet(_card_style(self.selected, isDarkTheme()))
 
@@ -316,16 +435,35 @@ class FlowWidget(QWidget):
             w.deleteLater()
         self._items.clear()
 
-    def add_item(self, widget):
-        widget.setParent(self)
-        self._items.append(widget)
+    def set_items(self, widgets):
+        """Show exactly these cards while keeping the remaining cards reusable."""
+        widgets = list(widgets)
+        visible_widgets = set(widgets)
+        for widget in self._items:
+            if widget not in visible_widgets:
+                widget.hide()
+
+        for widget in widgets:
+            if widget.parent() is not self:
+                widget.setParent(self)
+
+        self._items = widgets
         self._relayout()
+
+    def remove_item(self, widget):
+        if widget in self._items:
+            self._items.remove(widget)
+        widget.setParent(None)
+        widget.deleteLater()
+        self._relayout()
+        return True
 
     def _relayout(self):
         if not self._items:
             self.setMinimumHeight(0)
             return
 
+        layout_started_at = perf_counter()
         columns = 5
         available_width = max(self.width(), CARD_WIDTH)
         
@@ -359,6 +497,11 @@ class FlowWidget(QWidget):
 
         total_height = y + row_height
         self.setMinimumHeight(total_height)
+        layout_elapsed_ms = (perf_counter() - layout_started_at) * 1000
+        if layout_elapsed_ms >= 10:
+            logger.info(
+                f"Template grid timing | layout {len(self._items)} cards "
+                f"at width {target_card_width}: {layout_elapsed_ms:.1f} ms")
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -371,20 +514,25 @@ class TemplateTab(QWidget):
         self.setObjectName("TemplateTab")
         self.template_tab_config = Config('template_tab', {
             'generate_label_enum': False,
-            'label_enum_relative_path': 'ok_tasks/LabelEnum.py',
-            'next_image_index': 0
+            'label_enum_relative_path': 'ok_tasks/LabelEnum.py'
         })
         self.selected_image = None
         self.image_cards = []
+        self._cards_by_path = {}
+        self._image_items: list[ImageItem] = []
+        self._items_by_path: dict[str, ImageItem] = {}
+        self._visible_image_paths = []
         self.markup_window = None
-        self.coco_data = load_coco()
+        self.coco_data: CocoData = {"images": [], "annotations": [], "categories": []}
         self._loaded = False
+        self._grid_loading = False
         self._load_sequence = 0
+        self._grid_load_started_at = None
         self.init_ui()
 
         self.search_timer = QTimer(self)
         self.search_timer.setSingleShot(True)
-        self.search_timer.timeout.connect(self.refresh_grid)
+        self.search_timer.timeout.connect(self.apply_filter)
 
         # Listen for theme changes
         qconfig.themeChangedFinished.connect(self._on_theme_changed)
@@ -393,7 +541,7 @@ class TemplateTab(QWidget):
         super().showEvent(event)
         if not self._loaded:
             self._loaded = True
-            self.refresh_grid()
+            self.load_initial_grid()
 
     def _on_theme_changed(self):
         """Re-apply styles when the theme changes."""
@@ -475,29 +623,34 @@ class TemplateTab(QWidget):
         main_layout.addWidget(self.progress_container, 1)
         self.progress_container.setVisible(False)
 
-    def refresh_grid(self):
-        """Reload image files and repopulate the grid."""
-        query = self.search_box.text().strip().lower() if hasattr(self, 'search_box') else ""
-        logger.info(f"Refreshing grid with query: '{query}'")
+    def load_initial_grid(self):
+        """Load image data and thumbnails once for this tab session."""
+        logger.info("Loading template grid")
+        self._grid_load_started_at = perf_counter()
+        coco_load_started_at = perf_counter()
         self.coco_data = load_coco()
-
-        # Clear existing cards
+        logger.info(
+            f"Template grid timing | load COCO: {(perf_counter() - coco_load_started_at) * 1000:.1f} ms")
         self.image_cards.clear()
+        self._cards_by_path.clear()
+        self._image_items.clear()
+        self._items_by_path.clear()
+        self._visible_image_paths.clear()
         self.flow_widget.clear_items()
 
         self.scroll_area.setVisible(False)
         self.empty_widget.setVisible(False)
         self.progress_container.setVisible(True)
-        
-        if hasattr(self, 'search_box'):
-            self.search_box.setEnabled(False)
-            
         self.progress_ring.start()
+        self._grid_loading = True
+        self.search_box.setEnabled(False)
+        self.screenshot_btn.setEnabled(False)
+        self.center_screenshot_btn.setEnabled(False)
 
         self._load_sequence += 1
         current_seq = self._load_sequence
-        
-        runnable = ImageLoaderRunnable(self.coco_data, query, current_seq)
+
+        runnable = ImageLoaderRunnable(self.coco_data, current_seq)
         runnable.signals.finished.connect(self._on_load_finished)
         QThreadPool.globalInstance().start(runnable)
 
@@ -507,40 +660,122 @@ class TemplateTab(QWidget):
 
         self.progress_ring.stop()
         self.progress_container.setVisible(False)
-        
-        if hasattr(self, 'search_box'):
-            self.search_box.setEnabled(True)
+        self._grid_loading = False
+        self.search_box.setEnabled(True)
+        self.screenshot_btn.setEnabled(True)
+        self.center_screenshot_btn.setEnabled(True)
 
-        if not items:
-            self.empty_widget.setVisible(True)
-            self.selected_image = None
-            self._update_selection_buttons()
+        card_build_started_at = perf_counter()
+        for img_path, scaled_img, categories in items:
+            item: ImageItem = {
+                'path': img_path,
+                'thumbnail': scaled_img,
+                'categories': categories
+            }
+            self._image_items.append(item)
+            self._items_by_path[img_path] = item
+            card = self._create_image_card(img_path, scaled_img, ', '.join(categories))
+            self._cards_by_path[img_path] = card
+            self.image_cards.append(card)
+        logger.info(
+            f"Template grid timing | create {len(items)} cards: "
+            f"{(perf_counter() - card_build_started_at) * 1000:.1f} ms")
+
+        filter_started_at = perf_counter()
+        self.apply_filter()
+        logger.info(
+            f"Template grid timing | initial filter and display: "
+            f"{(perf_counter() - filter_started_at) * 1000:.1f} ms")
+        if self._grid_load_started_at is not None:
+            logger.info(
+                f"Template grid timing | initial load end-to-end: "
+                f"{(perf_counter() - self._grid_load_started_at) * 1000:.1f} ms")
+            self._grid_load_started_at = None
+
+    def _create_image_card(self, image_path, preloaded_image=None, features_text=""):
+        card = ImageCard(image_path, preloaded_image=preloaded_image, features_text=features_text)
+        card.clicked.connect(self.on_card_clicked)
+        card.double_clicked.connect(self.on_card_double_clicked)
+        return card
+
+    def _image_matches_search(self, image_path, category_names):
+        query = self.search_box.text().strip().lower()
+        if not query:
+            return True
+        name = os.path.splitext(os.path.basename(image_path))[0].lower()
+        return query in name or query in ' '.join(category_names).lower()
+
+    def _create_image_item(self, image_path, category_names=None):
+        qimg = QImage(image_path)
+        thumbnail = qimg.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation) \
+            if not qimg.isNull() else None
+        item: ImageItem = {
+            'path': image_path,
+            'thumbnail': thumbnail,
+            'categories': category_names or []
+        }
+        self._image_items.insert(0, item)
+        self._items_by_path[image_path] = item
+        card = self._create_image_card(image_path, thumbnail, ', '.join(item['categories']))
+        self._cards_by_path[image_path] = card
+        self.image_cards.insert(0, card)
+
+    def _remove_image_item(self, image_path):
+        item = self._items_by_path.pop(image_path, None)
+        card = self._cards_by_path.pop(image_path, None)
+        if item is None or card is None:
             return
 
-        self.scroll_area.setVisible(True)
+        self._image_items.remove(item)
+        self.image_cards.remove(card)
+        self.flow_widget.remove_item(card)
 
-        all_images = []
-        for img_path, scaled_img, cats_str in items:
-            all_images.append(img_path)
-            card = ImageCard(img_path, preloaded_image=scaled_img, features_text=cats_str)
-            card.clicked.connect(self.on_card_clicked)
-            card.double_clicked.connect(self.on_card_double_clicked)
-            self.flow_widget.add_item(card)
-            self.image_cards.append(card)
+    def _sync_item_categories(self, image_paths):
+        categories_by_filename = get_categories_by_filename(self.coco_data)
+        for image_path in image_paths:
+            item = self._items_by_path.get(image_path)
+            card = self._cards_by_path.get(image_path)
+            if item is None or card is None:
+                continue
+            item['categories'] = categories_by_filename.get(os.path.basename(image_path), [])
+            card.set_features_text(', '.join(item['categories']))
 
-        # Restore selection if still exists
-        if self.selected_image and self.selected_image in all_images:
-            for card in self.image_cards:
-                if card.image_path == self.selected_image:
-                    card.set_selected(True)
-                    break
-        else:
+    def apply_filter(self):
+        """Update the visible card set from the in-memory image collection."""
+        if self._grid_loading:
+            return
+        filter_started_at = perf_counter()
+        visible_items = [
+            item for item in self._image_items
+            if self._image_matches_search(item['path'], item['categories'])
+        ]
+        matching_elapsed_ms = (perf_counter() - filter_started_at) * 1000
+        self._visible_image_paths = [item['path'] for item in visible_items]
+        visible_cards = [self._cards_by_path[item['path']] for item in visible_items]
+
+        layout_started_at = perf_counter()
+        self.flow_widget.set_items(visible_cards)
+        layout_elapsed_ms = (perf_counter() - layout_started_at) * 1000
+
+        if self.selected_image not in self._visible_image_paths:
+            previous_card = self._cards_by_path.get(self.selected_image)
+            if previous_card is not None:
+                previous_card.set_selected(False)
             self.selected_image = None
+        elif self.selected_image:
+            self._cards_by_path[self.selected_image].set_selected(True)
 
+        has_items = bool(visible_cards)
+        self.scroll_area.setVisible(has_items)
+        self.empty_widget.setVisible(not has_items)
         self._update_selection_buttons()
+        logger.info(
+            f"Template grid timing | filter {len(self._image_items)} -> {len(visible_cards)} cards: "
+            f"match {matching_elapsed_ms:.1f} ms, display {layout_elapsed_ms:.1f} ms, "
+            f"total {(perf_counter() - filter_started_at) * 1000:.1f} ms")
 
     def on_search_changed(self, text):
-        self.search_timer.start(1000)
+        self.search_timer.start(300)
 
     def on_card_clicked(self, image_path):
         # Toggle selection
@@ -566,6 +801,11 @@ class TemplateTab(QWidget):
         has_sel = self.selected_image is not None
         self.markup_btn.setVisible(has_sel)
         self.delete_btn.setVisible(has_sel)
+        mutations_enabled = not self._grid_loading and self.markup_window is None
+        self.markup_btn.setEnabled(mutations_enabled)
+        self.delete_btn.setEnabled(mutations_enabled)
+        self.screenshot_btn.setEnabled(mutations_enabled)
+        self.center_screenshot_btn.setEnabled(mutations_enabled)
 
     def take_screenshot(self):
         """Capture a frame and save it to ok_templates."""
@@ -588,16 +828,13 @@ class TemplateTab(QWidget):
                 frame = processor(frame.copy())
 
             folder = ensure_template_folder()
-            self.coco_data = load_coco()
             name = get_next_image_name(
                 folder,
-                self.coco_data,
-                self.template_tab_config.get('next_image_index', 0)
+                self.coco_data
             )
             file_path = os.path.join(folder, f"{name}.png")
-            cv2.imwrite(file_path, frame)
-            if name.isdigit():
-                self.template_tab_config['next_image_index'] = int(name) + 1
+            if not cv2.imwrite(file_path, frame):
+                raise RuntimeError(f"Could not write screenshot to {file_path}")
 
             # Add image to COCO data
             self._add_image_to_coco(file_path)
@@ -605,7 +842,8 @@ class TemplateTab(QWidget):
             from ok.gui.util.Alert import alert_info
             alert_info(self.tr("Screenshot saved: {}").format(os.path.basename(file_path)))
 
-            self.refresh_grid()
+            self._create_image_item(file_path)
+            self.apply_filter()
         except Exception as e:
             logger.error(f"Screenshot error: {e}")
             from ok.gui.util.Alert import alert_error
@@ -613,7 +851,6 @@ class TemplateTab(QWidget):
 
     def _add_image_to_coco(self, image_path):
         """Add an image entry to COCO data if not already present."""
-        self.coco_data = load_coco()
         filename = os.path.basename(image_path)
         for img in self.coco_data.get('images', []):
             if os.path.basename(img.get('file_name', '')) == filename:
@@ -650,12 +887,12 @@ class TemplateTab(QWidget):
                        self.window())
         if w.exec():
             try:
-                filename = os.path.basename(self.selected_image)
-                self.coco_data = load_coco()
+                image_path = self.selected_image
+                filename = os.path.basename(image_path)
 
                 # Remove from filesystem
-                if os.path.exists(self.selected_image):
-                    os.remove(self.selected_image)
+                if os.path.exists(image_path):
+                    os.remove(image_path)
 
                 # Remove from COCO data
                 image_ids = {
@@ -683,7 +920,8 @@ class TemplateTab(QWidget):
                 save_coco(self.coco_data)
 
                 self.selected_image = None
-                self.refresh_grid()
+                self._remove_image_item(image_path)
+                self.apply_filter()
 
                 from ok.gui.util.app import show_info_bar
                 show_info_bar(self.window(), self.tr("Image deleted."), title=self.tr("Success"))
@@ -829,23 +1067,13 @@ class TemplateTab(QWidget):
             return
 
         from ok.gui.tasks.MarkUpWindow import MarkUpWindow
-        all_images = get_image_files()
-        query = self.search_box.text().strip().lower()
-        if query:
-            filtered = []
-            for img_path in all_images:
-                name = os.path.splitext(os.path.basename(img_path))[0].lower()
-                cats = get_categories_for_image(self.coco_data, img_path)
-                cat_str = ' '.join(cats).lower()
-                if query in name or query in cat_str:
-                    filtered.append(img_path)
-            all_images = filtered
-
-        self.markup_window = MarkUpWindow(self.selected_image, all_images)
+        self.markup_window = MarkUpWindow(self.selected_image, self._visible_image_paths)
         self.markup_window.closed.connect(self.on_markup_closed)
+        self._update_selection_buttons()
         self.markup_window.show()
 
-    def on_markup_closed(self):
+    def on_markup_closed(self, changed_image_paths, coco_data):
         self.markup_window = None
-        self.refresh_grid()
-
+        self.coco_data = coco_data
+        self._sync_item_categories(changed_image_paths)
+        self.apply_filter()
