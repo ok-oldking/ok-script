@@ -1,5 +1,6 @@
 import json
 import os
+from time import perf_counter
 from typing import TypedDict
 
 import cv2
@@ -12,6 +13,7 @@ from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
                             qconfig, IndeterminateProgressRing)
 
 from ok import Config, og
+from ok.gui.util.windows_thumbnail import WindowsThumbnailReader
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -22,6 +24,9 @@ THUMB_SIZE = 160
 CARD_WIDTH = THUMB_SIZE + 16
 CARD_HEIGHT = THUMB_SIZE + 40
 GRID_SPACING = 8
+# Temporary benchmark switch.  Set to False after measuring cold Shell
+# extraction performance so normal cache-first behavior resumes.
+FORCE_WINDOWS_THUMBNAIL_EXTRACTION = False
 
 
 class ImageDict(TypedDict):
@@ -215,15 +220,104 @@ class ImageLoaderRunnable(QRunnable):
 
     def run(self):
         try:
+            load_started_at = perf_counter()
+            stage_started_at = perf_counter()
             all_images = get_image_files()
+            logger.info(
+                f"Template grid timing | scan {len(all_images)} images: "
+                f"{(perf_counter() - stage_started_at) * 1000:.1f} ms")
+
+            stage_started_at = perf_counter()
             categories_by_filename = get_categories_by_filename(self.coco_data)
+            logger.info(
+                f"Template grid timing | build category index: "
+                f"{(perf_counter() - stage_started_at) * 1000:.1f} ms")
 
             results = []
-            for img_path in all_images:
-                filename = os.path.basename(img_path)
-                cats = categories_by_filename.get(filename, [])
-                qimg = QImage(img_path)
-                if not qimg.isNull():
+            image_decode_ms = 0.0
+            image_scale_ms = 0.0
+            windows_thumbnail_ms = 0.0
+            windows_cache_hits = 0
+            windows_cache_misses = 0
+            windows_extract_ms = 0.0
+            windows_extractions = 0
+            windows_extraction_failures = 0
+            windows_cache_supported = None
+            windows_thumbnail_reader = WindowsThumbnailReader(400)
+            windows_thumbnail_available = windows_thumbnail_reader.open()
+            try:
+                for img_path in all_images:
+                    filename = os.path.basename(img_path)
+                    cats = categories_by_filename.get(filename, [])
+
+                    thumbnail = None
+                    if windows_thumbnail_available and FORCE_WINDOWS_THUMBNAIL_EXTRACTION:
+                        stage_started_at = perf_counter()
+                        thumbnail, _ = windows_thumbnail_reader.extract_thumbnail(img_path, force=True)
+                        windows_extract_ms += (perf_counter() - stage_started_at) * 1000
+                        if thumbnail is not None:
+                            windows_extractions += 1
+                        else:
+                            windows_extraction_failures += 1
+                    elif windows_thumbnail_available and windows_cache_supported is not False:
+                        stage_started_at = perf_counter()
+                        thumbnail, _ = windows_thumbnail_reader.get_thumbnail(img_path)
+                        windows_thumbnail_ms += (perf_counter() - stage_started_at) * 1000
+                        if thumbnail is not None:
+                            windows_cache_hits += 1
+                            windows_cache_supported = True
+                        else:
+                            windows_cache_misses += 1
+                            stage_started_at = perf_counter()
+                            thumbnail, _ = windows_thumbnail_reader.extract_thumbnail(img_path)
+                            windows_extract_ms += (perf_counter() - stage_started_at) * 1000
+                            if thumbnail is not None:
+                                windows_extractions += 1
+                                if windows_cache_supported is None:
+                                    # Verify that a successful extraction is
+                                    # actually persisted before using Shell
+                                    # extraction for every remaining image.
+                                    stage_started_at = perf_counter()
+                                    verified_thumbnail, _ = windows_thumbnail_reader.get_thumbnail(img_path)
+                                    windows_thumbnail_ms += (perf_counter() - stage_started_at) * 1000
+                                    windows_cache_supported = verified_thumbnail is not None
+                            else:
+                                windows_extraction_failures += 1
+
+                    if thumbnail is None:
+                        stage_started_at = perf_counter()
+                        qimg = QImage(img_path)
+                        image_decode_ms += (perf_counter() - stage_started_at) * 1000
+                        if not qimg.isNull():
+                            stage_started_at = perf_counter()
+                            thumbnail = qimg.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                            image_scale_ms += (perf_counter() - stage_started_at) * 1000
+
+                    results.append((img_path, thumbnail, cats))
+
+            finally:
+                windows_thumbnail_reader.close()
+            
+            if windows_thumbnail_available:
+                cache_status = (
+                    'forced extraction' if FORCE_WINDOWS_THUMBNAIL_EXTRACTION else
+                    'supported' if windows_cache_supported is True else
+                    'not persistent' if windows_cache_supported is False else
+                    'not determined')
+                logger.info(
+                    f"Template grid timing | Windows thumbnails: cached {windows_cache_hits}, "
+                    f"missed {windows_cache_misses}, extracted {windows_extractions}, "
+                    f"failed {windows_extraction_failures}, "
+                    f"cache {cache_status}, cache read {windows_thumbnail_ms:.1f} ms, "
+                    f"extract {windows_extract_ms:.1f} ms")
+            else:
+                logger.info("Template grid timing | Windows thumbnails unavailable; using Qt fallback")
+            logger.info(
+                f"Template grid timing | process {len(results)} thumbnails: "
+                f"decode {image_decode_ms:.1f} ms, scale {image_scale_ms:.1f} ms")
+            logger.info(
+                f"Template grid timing | worker total: "
+                f"{(perf_counter() - load_started_at) * 1000:.1f} ms")
             self.signals.finished.emit(results, self.seq)
         except Exception as e:
             logger.error(f"Image search failed: {e}")
@@ -361,6 +455,7 @@ class FlowWidget(QWidget):
             self.setMinimumHeight(0)
             return
 
+        layout_started_at = perf_counter()
         columns = 5
         available_width = max(self.width(), CARD_WIDTH)
         
@@ -394,6 +489,11 @@ class FlowWidget(QWidget):
 
         total_height = y + row_height
         self.setMinimumHeight(total_height)
+        layout_elapsed_ms = (perf_counter() - layout_started_at) * 1000
+        if layout_elapsed_ms >= 10:
+            logger.info(
+                f"Template grid timing | layout {len(self._items)} cards "
+                f"at width {target_card_width}: {layout_elapsed_ms:.1f} ms")
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -419,6 +519,7 @@ class TemplateTab(QWidget):
         self._loaded = False
         self._grid_loading = False
         self._load_sequence = 0
+        self._grid_load_started_at = None
         self.init_ui()
 
         self.search_timer = QTimer(self)
@@ -517,7 +618,11 @@ class TemplateTab(QWidget):
     def load_initial_grid(self):
         """Load image data and thumbnails once for this tab session."""
         logger.info("Loading template grid")
+        self._grid_load_started_at = perf_counter()
+        coco_load_started_at = perf_counter()
         self.coco_data = load_coco()
+        logger.info(
+            f"Template grid timing | load COCO: {(perf_counter() - coco_load_started_at) * 1000:.1f} ms")
         self.image_cards.clear()
         self._cards_by_path.clear()
         self._image_items.clear()
@@ -545,7 +650,6 @@ class TemplateTab(QWidget):
         if seq != getattr(self, '_load_sequence', 0):
             return
 
-        self.coco_data = coco_data
         self.progress_ring.stop()
         self.progress_container.setVisible(False)
         self._grid_loading = False
@@ -553,6 +657,7 @@ class TemplateTab(QWidget):
         self.screenshot_btn.setEnabled(True)
         self.center_screenshot_btn.setEnabled(True)
 
+        card_build_started_at = perf_counter()
         for img_path, scaled_img, categories in items:
             item: ImageItem = {
                 'path': img_path,
@@ -564,8 +669,20 @@ class TemplateTab(QWidget):
             card = self._create_image_card(img_path, scaled_img, ', '.join(categories))
             self._cards_by_path[img_path] = card
             self.image_cards.append(card)
+        logger.info(
+            f"Template grid timing | create {len(items)} cards: "
+            f"{(perf_counter() - card_build_started_at) * 1000:.1f} ms")
 
+        filter_started_at = perf_counter()
         self.apply_filter()
+        logger.info(
+            f"Template grid timing | initial filter and display: "
+            f"{(perf_counter() - filter_started_at) * 1000:.1f} ms")
+        if self._grid_load_started_at is not None:
+            logger.info(
+                f"Template grid timing | initial load end-to-end: "
+                f"{(perf_counter() - self._grid_load_started_at) * 1000:.1f} ms")
+            self._grid_load_started_at = None
 
     def _create_image_card(self, image_path, preloaded_image=None, features_text=""):
         card = ImageCard(image_path, preloaded_image=preloaded_image, features_text=features_text)
@@ -619,13 +736,18 @@ class TemplateTab(QWidget):
         """Update the visible card set from the in-memory image collection."""
         if self._grid_loading:
             return
+        filter_started_at = perf_counter()
         visible_items = [
             item for item in self._image_items
             if self._image_matches_search(item['path'], item['categories'])
         ]
+        matching_elapsed_ms = (perf_counter() - filter_started_at) * 1000
         self._visible_image_paths = [item['path'] for item in visible_items]
         visible_cards = [self._cards_by_path[item['path']] for item in visible_items]
+
+        layout_started_at = perf_counter()
         self.flow_widget.set_items(visible_cards)
+        layout_elapsed_ms = (perf_counter() - layout_started_at) * 1000
 
         if self.selected_image not in self._visible_image_paths:
             previous_card = self._cards_by_path.get(self.selected_image)
@@ -639,6 +761,10 @@ class TemplateTab(QWidget):
         self.scroll_area.setVisible(has_items)
         self.empty_widget.setVisible(not has_items)
         self._update_selection_buttons()
+        logger.info(
+            f"Template grid timing | filter {len(self._image_items)} -> {len(visible_cards)} cards: "
+            f"match {matching_elapsed_ms:.1f} ms, display {layout_elapsed_ms:.1f} ms, "
+            f"total {(perf_counter() - filter_started_at) * 1000:.1f} ms")
 
     def on_search_changed(self, text):
         self.search_timer.start(300)
