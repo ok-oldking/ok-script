@@ -1249,6 +1249,9 @@ class BaseTask(OCR):
 
     def notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None):
         communicate.notification.emit(message, title, error, tray, show_tab, params)
+        from ok.notification.notification_service import notify_from_task
+
+        notify_from_task(self, 'ERROR' if error else 'INFO', message, title=title, params=params)
 
     @property
     def enabled(self):
