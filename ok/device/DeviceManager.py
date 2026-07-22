@@ -190,14 +190,19 @@ class DeviceManager:
             return 3
         return sorted(devices, key=sort_key)
 
+    def _replace_pc_devices(self, pc_devices):
+        """Replace window records from the previous Windows enumeration."""
+        old_pc_keys = [key for key in self.device_dict if key == 'pc' or key.startswith('pc_')]
+        for key in old_pc_keys:
+            del self.device_dict[key]
+        self.device_dict.update(pc_devices)
+
     def update_pc_device(self):
         if self.windows_capture_config is not None:
             if not self.windows_capture_config.get('exe') and not self.windows_capture_config.get('hwnd_class') and not self.windows_capture_config.get('title'):
                 from ok.util.window import find_all_visible_windows, get_window_bounds
                 windows = find_all_visible_windows()
-                keys_to_remove = [k for k in self.device_dict if k.startswith('pc_')]
-                for k in keys_to_remove:
-                    del self.device_dict[k]
+                pc_devices = {}
                 for hwnd, title, exe_name, full_path in windows:
                     x, y, _, _, width, height, m_scaling = get_window_bounds(hwnd)
                     if width > 0 and height > 0:
@@ -210,7 +215,8 @@ class DeviceManager:
                             "real_hwnd": hwnd, "exe": exe_name,
                             "resolution": f"{width}x{height}"
                         }
-                        self.device_dict[imei] = pc_device
+                        pc_devices[imei] = pc_device
+                self._replace_pc_devices(pc_devices)
                 return None
 
             name, hwnd, full_path, x, y, width, height, hwnds = find_hwnd(self.windows_capture_config.get('title'),
@@ -242,9 +248,7 @@ class DeviceManager:
 
             if width != 0:
                 pc_device["resolution"] = f"{width}x{height}"
-            self.device_dict[imei] = pc_device
-            if imei != 'pc':
-                self.device_dict.pop('pc', None)
+            self._replace_pc_devices({imei: pc_device})
             return imei
 
     def update_browser_device(self):
