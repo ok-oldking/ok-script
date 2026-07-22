@@ -208,7 +208,8 @@ class App:
                 logger.error(f'install translations error for {locale_name}')
                 self.po_translation = "Failed"
         if self.po_translation != 'Failed':
-            return self.po_translation.gettext(key)
+            translated = self.po_translation.gettext(key)
+            return translated or key
         else:
             return key
 
@@ -357,7 +358,8 @@ class HeadlessApp:
                 logger.error(f'install headless translations error for {locale_name}')
                 self.po_translation = "Failed"
         if self.po_translation != 'Failed':
-            return self.po_translation.gettext(key)
+            translated = self.po_translation.gettext(key)
+            return translated or key
         return key
 
     def quit(self):
