@@ -76,8 +76,17 @@ def get_relative_path(*files):
     return normalized_path
 
 
+def safe_path_join(base, *relative_path):
+    base = os.path.abspath(base)
+    result = os.path.normpath(os.path.join(base, *relative_path))
+    if os.path.splitdrive(base)[0] != os.path.splitdrive(result)[0] or \
+            os.path.commonpath([base, result]) != base:
+        raise ValueError(f"Path escapes base directory: {relative_path}")
+    return result
+
+
 def get_path_under_app(*relative_path):
-    return os.path.normpath(os.path.join(get_path_relative_to_exe(), *relative_path))
+    return safe_path_join(get_path_relative_to_exe(), *relative_path)
 
 
 def install_path_isascii():
