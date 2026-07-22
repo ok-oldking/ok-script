@@ -1395,16 +1395,16 @@
             <translation>配置应用启动器</translation>
         </message>
         <message>
-            <source>Start Launcher at Login</source>
-            <translation>登录时启动启动器</translation>
+            <source>Auto Start {app_name}</source>
+            <translation>自动启动 {app_name}</translation>
         </message>
         <message>
             <source>Start the launcher automatically when you sign in</source>
             <translation>登录时自动启动应用启动器</translation>
         </message>
         <message>
-            <source>Launcher Updates</source>
-            <translation>启动器更新</translation>
+            <source>Auto Update</source>
+            <translation>自动更新</translation>
         </message>
         <message>
             <source>Choose how the launcher installs updates</source>
@@ -1415,8 +1415,8 @@
             <translation>手动更新</translation>
         </message>
         <message>
-            <source>Automatic Update</source>
-            <translation>自动更新</translation>
+            <source>Automatic Update(Release Only)</source>
+            <translation>自动更新（仅正式版）</translation>
         </message>
         <message>
             <source>Automatic Update (Pre-release)</source>

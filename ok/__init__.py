@@ -445,7 +445,6 @@ class OK:
         self._app = None
         self._headless_app = None
         self.global_config = global_config_class(config.get('global_configs'))
-        register_launcher(self.global_config, pyappify)
         windows_config = config.get('windows')
         if windows_config:
             windows_config.setdefault('start_exe', True)
@@ -460,6 +459,7 @@ class OK:
                     available_methods.append(method)
 
         register_basic(self.global_config, enable_blur=callable(config.get('blur_area')))
+        register_launcher(self.global_config, pyappify)
         og.global_config = self.global_config
         og.set_use_dml()
         try:

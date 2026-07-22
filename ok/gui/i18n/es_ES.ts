@@ -1397,16 +1397,16 @@
             <translation>Configurar el lanzador de aplicaciones</translation>
         </message>
         <message>
-            <source>Start Launcher at Login</source>
-            <translation>Iniciar el lanzador al iniciar sesión</translation>
+            <source>Auto Start {app_name}</source>
+            <translation>Iniciar {app_name} automáticamente</translation>
         </message>
         <message>
             <source>Start the launcher automatically when you sign in</source>
             <translation>Inicia automáticamente el lanzador al iniciar sesión</translation>
         </message>
         <message>
-            <source>Launcher Updates</source>
-            <translation>Actualizaciones del lanzador</translation>
+            <source>Auto Update</source>
+            <translation>Actualización automática</translation>
         </message>
         <message>
             <source>Choose how the launcher installs updates</source>
@@ -1417,8 +1417,8 @@
             <translation>Actualización manual</translation>
         </message>
         <message>
-            <source>Automatic Update</source>
-            <translation>Actualización automática</translation>
+            <source>Automatic Update(Release Only)</source>
+            <translation>Actualización automática (solo versiones estables)</translation>
         </message>
         <message>
             <source>Automatic Update (Pre-release)</source>

@@ -17,6 +17,7 @@ from ok.util.GlobalConfig import (
     APP_LAUNCHER_OPEN,
     APP_LAUNCHER_OPTION_NAME,
     APP_LAUNCHER_UPDATE_METHOD,
+    KILL_LAUNCHER_AFTER_START,
     GlobalConfig,
     create_app_launcher_options,
     create_basic_options,
@@ -187,11 +188,15 @@ class TestBasicOptions(unittest.TestCase):
                 show_pyappify=lambda: launcher_opened.append(True),
             )
             global_config = GlobalConfig(None)
+            basic_option = create_basic_options()
+            basic_config = Config(basic_option.name, basic_option.default_config, folder=folder)
+            global_config.register_config(basic_option, basic_config)
 
             config = register_app_launcher_options(global_config, pyappify_module)
             option = global_config.config_options[APP_LAUNCHER_OPTION_NAME]
 
             self.assertFalse(option.show_at_tab)
+            self.assertFalse(option.default_config)
             self.assertEqual(FluentIcon.APPLICATION, option.icon)
             launcher_button = option.config_type[APP_LAUNCHER_ACTION]
             self.assertEqual(APP_LAUNCHER_OPEN, launcher_button['text'])
@@ -199,10 +204,13 @@ class TestBasicOptions(unittest.TestCase):
             launcher_button['callback']()
             self.assertEqual([True], launcher_opened)
             self.assertFalse(config[APP_LAUNCHER_AUTO_START])
-            self.assertEqual('Automatic Update', config[APP_LAUNCHER_UPDATE_METHOD])
+            self.assertEqual('Automatic Update(Release Only)', config[APP_LAUNCHER_UPDATE_METHOD])
+            self.assertTrue(config[KILL_LAUNCHER_AFTER_START])
+            self.assertTrue(basic_option.config_type[KILL_LAUNCHER_AFTER_START]['hidden'])
 
             config[APP_LAUNCHER_AUTO_START] = True
             config[APP_LAUNCHER_UPDATE_METHOD] = 'Automatic Update (Pre-release)'
+            config[KILL_LAUNCHER_AFTER_START] = False
 
             self.assertEqual(
                 [
@@ -213,6 +221,8 @@ class TestBasicOptions(unittest.TestCase):
             )
             self.assertTrue(config[APP_LAUNCHER_AUTO_START])
             self.assertEqual('Automatic Update (Pre-release)', config[APP_LAUNCHER_UPDATE_METHOD])
+            self.assertFalse(config[KILL_LAUNCHER_AFTER_START])
+            self.assertFalse(basic_config[KILL_LAUNCHER_AFTER_START])
 
             config.reset_to_default()
 
@@ -221,4 +231,28 @@ class TestBasicOptions(unittest.TestCase):
                 updates[-1],
             )
             self.assertFalse(config[APP_LAUNCHER_AUTO_START])
-            self.assertEqual('Automatic Update', config[APP_LAUNCHER_UPDATE_METHOD])
+            self.assertEqual('Automatic Update(Release Only)', config[APP_LAUNCHER_UPDATE_METHOD])
+            self.assertFalse(basic_config[KILL_LAUNCHER_AFTER_START])
+
+            original_app = getattr(og, 'app', None)
+            original_config = getattr(og, 'config', None)
+            try:
+                from ok.gui.settings.GlobalConfigCard import GlobalConfigCard
+
+                og.app = SimpleNamespace(tr=lambda text: text)
+                og.config = {'gui_title': 'Demo App'}
+                launcher_card = GlobalConfigCard(config, option)
+                basic_card = GlobalConfigCard(basic_config, basic_option)
+
+                self.assertIsNone(launcher_card.reset_config)
+                self.assertIn(KILL_LAUNCHER_AFTER_START, launcher_card.config_widget_by_key)
+                self.assertNotIn(KILL_LAUNCHER_AFTER_START, basic_card.config_widget_by_key)
+                self.assertEqual(
+                    'Auto Start Demo App',
+                    launcher_card.config_widget_by_key[APP_LAUNCHER_AUTO_START].title.text(),
+                )
+                launcher_card.deleteLater()
+                basic_card.deleteLater()
+            finally:
+                og.app = original_app
+                og.config = original_config

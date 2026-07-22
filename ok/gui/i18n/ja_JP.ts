@@ -1389,16 +1389,16 @@
             <translation>アプリランチャーを設定</translation>
         </message>
         <message>
-            <source>Start Launcher at Login</source>
-            <translation>ログイン時にランチャーを起動</translation>
+            <source>Auto Start {app_name}</source>
+            <translation>{app_name} を自動起動</translation>
         </message>
         <message>
             <source>Start the launcher automatically when you sign in</source>
             <translation>ログイン時にアプリランチャーを自動的に起動します</translation>
         </message>
         <message>
-            <source>Launcher Updates</source>
-            <translation>ランチャーの更新</translation>
+            <source>Auto Update</source>
+            <translation>自動更新</translation>
         </message>
         <message>
             <source>Choose how the launcher installs updates</source>
@@ -1409,8 +1409,8 @@
             <translation>手動更新</translation>
         </message>
         <message>
-            <source>Automatic Update</source>
-            <translation>自動更新</translation>
+            <source>Automatic Update(Release Only)</source>
+            <translation>自動更新（正式リリースのみ）</translation>
         </message>
         <message>
             <source>Automatic Update (Pre-release)</source>

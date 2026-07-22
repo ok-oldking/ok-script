@@ -1399,16 +1399,16 @@
             <translation>Configure the app launcher</translation>
         </message>
         <message>
-            <source>Start Launcher at Login</source>
-            <translation>Start Launcher at Login</translation>
+            <source>Auto Start {app_name}</source>
+            <translation>Auto Start {app_name}</translation>
         </message>
         <message>
             <source>Start the launcher automatically when you sign in</source>
             <translation>Start the launcher automatically when you sign in</translation>
         </message>
         <message>
-            <source>Launcher Updates</source>
-            <translation>Launcher Updates</translation>
+            <source>Auto Update</source>
+            <translation>Auto Update</translation>
         </message>
         <message>
             <source>Choose how the launcher installs updates</source>
@@ -1419,8 +1419,8 @@
             <translation>Manual Update</translation>
         </message>
         <message>
-            <source>Automatic Update</source>
-            <translation>Automatic Update</translation>
+            <source>Automatic Update(Release Only)</source>
+            <translation>Automatic Update(Release Only)</translation>
         </message>
         <message>
             <source>Automatic Update (Pre-release)</source>

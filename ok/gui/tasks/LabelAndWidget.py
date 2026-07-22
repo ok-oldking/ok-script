@@ -9,7 +9,10 @@ class LabelAndWidget(QWidget):
         self.layout = QHBoxLayout(self)
         self.title_layout = QVBoxLayout()
         self.layout.addLayout(self.title_layout, stretch=0)
-        self.title = QLabel(og.app.tr(title))
+        translated_title = og.app.tr(title)
+        if '{app_name}' in translated_title:
+            translated_title = translated_title.format(app_name=(og.config or {}).get('gui_title', ''))
+        self.title = QLabel(translated_title)
         # self.title.setWordWrap(True)
         self.title.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.title_layout.addWidget(self.title)

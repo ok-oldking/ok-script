@@ -31,7 +31,7 @@ from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error
 from ok.gui.util.pyappify_startup import get_startup_version_change
 from ok.gui.widget.StartLoadingDialog import StartLoadingDialog
-from ok.util.GlobalConfig import basic_options
+from ok.util.GlobalConfig import basic_options, KILL_LAUNCHER_AFTER_START
 from ok.util.clazz import init_class_by_name
 from ok.util.process import restart_as_admin, parse_arguments_to_map
 
@@ -358,7 +358,7 @@ class MainWindow(FluentWindow):
                                  [update_pyappify.get('zip_url')], self.exit_event)
             logger.info(f"Window has fully displayed {args}")
             communicate.start_success.emit()
-            if self.basic_global_config.get('Kill Launcher After Start'):
+            if self.basic_global_config.get(KILL_LAUNCHER_AFTER_START):
                 logger.info(f'MainWindow showEvent Kill Launcher After Start')
                 pyappify.kill_pyappify()
             startup_version_change = get_startup_version_change()

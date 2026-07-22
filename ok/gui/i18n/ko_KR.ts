@@ -1398,16 +1398,16 @@
             <translation>앱 실행기 구성</translation>
         </message>
         <message>
-            <source>Start Launcher at Login</source>
-            <translation>로그인 시 실행기 시작</translation>
+            <source>Auto Start {app_name}</source>
+            <translation>{app_name} 자동 시작</translation>
         </message>
         <message>
             <source>Start the launcher automatically when you sign in</source>
             <translation>로그인할 때 앱 실행기를 자동으로 시작합니다</translation>
         </message>
         <message>
-            <source>Launcher Updates</source>
-            <translation>실행기 업데이트</translation>
+            <source>Auto Update</source>
+            <translation>자동 업데이트</translation>
         </message>
         <message>
             <source>Choose how the launcher installs updates</source>
@@ -1418,8 +1418,8 @@
             <translation>수동 업데이트</translation>
         </message>
         <message>
-            <source>Automatic Update</source>
-            <translation>자동 업데이트</translation>
+            <source>Automatic Update(Release Only)</source>
+            <translation>자동 업데이트(정식 릴리스만)</translation>
         </message>
         <message>
             <source>Automatic Update (Pre-release)</source>
