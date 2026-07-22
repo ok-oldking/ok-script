@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QSizePolicy, QT
 from qfluentwidgets import ComboBox, FluentIcon, FluentWindow, PushButton, SearchLineEdit, isDarkTheme, qconfig
 
 from ok.util.config import Config
+from ok.util.file import get_path_under_app
 
 
 LOG_LINE_PATTERN = re.compile(
@@ -38,7 +39,7 @@ class LogWindow(FluentWindow):
         })
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self._set_app_icon()
-        self.log_file = Path(log_file or Path.cwd() / "logs" / "ok-script.log")
+        self.log_file = Path(log_file or get_path_under_app("logs", "ok-script.log"))
         self.records = []
         self.line_count = 0
         self._position = 0
