@@ -332,6 +332,7 @@ class TaskExecutor:
                         finally:
                             task.last_sleep_check_time = time.time()
                             task.in_sleep_check = False
+                        next_sleep_check = task.sleep_check_interval
                     elif not task.in_sleep_check:
                         next_sleep_check = max(0, task.sleep_check_interval - elapsed)
             if self.exit_event.is_set():
