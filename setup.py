@@ -12,7 +12,7 @@ MODULE_NAME = "ok-script"
 obtainer = GetPyPiLatestVersion()
 latest_version = obtainer(MODULE_NAME)
 
-VERSION_NUM = obtainer.version_add_one(latest_version, add_patch=True)
+VERSION_NUM = os.environ.get('OK_SCRIPT_BUILD_VERSION') or obtainer.version_add_one(latest_version, add_patch=True)
 print(f'latest_version is {latest_version} new version is {VERSION_NUM}')
 
 setuptools.setup(
