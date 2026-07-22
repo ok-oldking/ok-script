@@ -7,10 +7,11 @@ import cv2
 from PySide6.QtCore import Qt, Signal, QTimer, QRunnable, QThreadPool, QObject
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                               QScroller, QScrollArea, QLabel, QFrame)
+                               QScrollArea, QLabel, QFrame)
 from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
                             SearchLineEdit, MessageBox, BodyLabel, isDarkTheme,
                             qconfig, IndeterminateProgressRing)
+from ok.gui.util.touch_scroll import enable_touch_scrolling
 
 from ok import Config, og
 from ok.gui.util.windows_thumbnail import WindowsThumbnailReader
@@ -591,14 +592,10 @@ class TemplateTab(QWidget):
         self.scroll_area.setFrameShape(QFrame.NoFrame)
         self.scroll_area.setStyleSheet("QScrollArea { background: transparent; border: none; }")
         self.scroll_area.viewport().setStyleSheet("background: transparent;")
-        QScroller.grabGesture(
-            self.scroll_area.viewport(),
-            QScroller.ScrollerGestureType.TouchGesture,
-        )
-
         self.flow_widget = FlowWidget()
         self.flow_widget.setStyleSheet("background: transparent;")
         self.scroll_area.setWidget(self.flow_widget)
+        enable_touch_scrolling(self.scroll_area)
         main_layout.addWidget(self.scroll_area, 1)
 
         # Empty state widget (centered screenshot button)

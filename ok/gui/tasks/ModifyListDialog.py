@@ -1,11 +1,12 @@
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtWidgets import QHBoxLayout, QScroller, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel, FlowLayout, MessageBoxBase, SubtitleLabel, ListWidget, PushButton, FluentIcon,
     LineEdit
 )
 
 from ok import og
+from ok.gui.util.touch_scroll import enable_touch_scrolling
 
 
 SHOW_SEARCH_OPTIONS_THRESHOLD = 20
@@ -75,12 +76,9 @@ class ModifyListDialog(MessageBoxBase):
             available_scroll_area.setFrameShape(QScrollArea.NoFrame)
             available_scroll_area.setStyleSheet("QScrollArea { background-color: transparent; border: none; }")
             available_scroll_area.viewport().setStyleSheet("background-color: transparent;")
-            QScroller.grabGesture(
-                available_scroll_area.viewport(),
-                QScroller.ScrollerGestureType.TouchGesture,
-            )
             self._options_container = self._create_available_options_widget()
             available_scroll_area.setWidget(self._options_container)
+            enable_touch_scrolling(available_scroll_area)
             available_layout.addWidget(available_scroll_area, stretch=1)
 
             selected_layout = QVBoxLayout()

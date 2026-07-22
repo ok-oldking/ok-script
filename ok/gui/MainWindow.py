@@ -4,7 +4,7 @@ import threading
 import pyappify
 from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer, QThread, Signal
 from PySide6.QtGui import QColor, QScreen
-from PySide6.QtWidgets import QMenu, QScroller, QSystemTrayIcon, QApplication
+from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
 from qfluentwidgets import MSFluentWindow, qconfig, FluentIcon, NavigationItemPosition, MessageBox, InfoBar, \
     InfoBarPosition, Theme, MessageBoxBase, FluentWindow, NavigationDisplayMode
 from qfluentwidgets.components.widgets.scroll_bar import ScrollBarHandleDisplayMode
@@ -30,6 +30,7 @@ from ok.util.config import Config
 
 from ok.gui.Communicate import communicate
 from ok.gui.util.Alert import alert_error
+from ok.gui.util.touch_scroll import enable_touch_scrolling
 from ok.gui.util.pyappify_startup import get_startup_version_change
 from ok.gui.widget.StartLoadingDialog import StartLoadingDialog
 from ok.util.GlobalConfig import basic_options, KILL_LAUNCHER_AFTER_START
@@ -66,10 +67,7 @@ class MainWindow(FluentWindow):
         self._sync_system_accent_color()
         navigation_scroll_area = self.navigationInterface.panel.scrollArea
         navigation_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        QScroller.grabGesture(
-            navigation_scroll_area.viewport(),
-            QScroller.ScrollerGestureType.TouchGesture,
-        )
+        enable_touch_scrolling(navigation_scroll_area)
         navigation_scroll_area.scrollDelagate.vScrollBar.setHandleDisplayMode(
             ScrollBarHandleDisplayMode.ALWAYS
         )
