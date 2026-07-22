@@ -6,7 +6,7 @@ from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer, QThread,
 from PySide6.QtGui import QColor, QScreen
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
 from qfluentwidgets import MSFluentWindow, qconfig, FluentIcon, NavigationItemPosition, MessageBox, InfoBar, \
-    InfoBarPosition, Theme, MessageBoxBase, FluentWindow, NavigationDisplayMode
+    InfoBarPosition, Theme, MessageBoxBase, FluentWindow, NavigationDisplayMode, isDarkTheme
 from qfluentwidgets.components.widgets.scroll_bar import ScrollBarHandleDisplayMode
 from qfluentwidgets.common.style_sheet import setThemeColor, updateStyleSheet
 
@@ -29,6 +29,7 @@ MessageBoxBase.keyPressEvent = _patched_message_box_base_keyPressEvent
 from ok.util.config import Config
 
 from ok.gui.Communicate import communicate
+from ok.gui.common.accent_color import qfluent_theme_source_color
 from ok.gui.util.Alert import alert_error
 from ok.gui.util.touch_scroll import enable_touch_scrolling
 from ok.gui.util.pyappify_startup import get_startup_version_change
@@ -65,6 +66,7 @@ class MainWindow(FluentWindow):
         super().__init__()
         logger.info('main window __init__')
         self._sync_system_accent_color()
+        qconfig.themeChangedFinished.connect(self._sync_system_accent_color)
         navigation_scroll_area = self.navigationInterface.panel.scrollArea
         navigation_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         enable_touch_scrolling(navigation_scroll_area)
@@ -247,8 +249,9 @@ class MainWindow(FluentWindow):
 
         logger.info('main window __init__ done')
 
-    def get_system_accent_color(self):
-        """Return the Windows system accent color."""
+    @staticmethod
+    def _get_dwm_accent_color():
+        """Return the DWM accent color as a compatibility fallback."""
         try:
             import ctypes
             from ctypes import wintypes
@@ -267,13 +270,36 @@ class MainWindow(FluentWindow):
             logger.exception('Failed to read the Windows system accent color')
             return None
 
+    def get_system_accent_color(self):
+        """Return the base Windows accent color (legacy helper)."""
+        return self._get_dwm_accent_color()
+
+    def get_system_primary_theme_color(self):
+        """Return a qfluent source color matching the Windows primary fill."""
+        dark = isDarkTheme()
+        try:
+            from ok.rotypes.Windows.UI.ViewManagement import UIColorType, get_color_value
+
+            color_type = UIColorType.AccentLight2 if dark else UIColorType.AccentDark1
+            system_color = get_color_value(color_type)
+            red, green, blue = system_color.red, system_color.green, system_color.blue
+        except (ImportError, OSError, TypeError):
+            logger.exception('Failed to read the Windows accent color palette')
+            fallback = self.get_system_accent_color()
+            if fallback is None:
+                return None
+            red, green, blue = fallback.red(), fallback.green(), fallback.blue()
+
+        red, green, blue = qfluent_theme_source_color(red, green, blue, dark)
+        return QColor(red, green, blue)
+
     def _sync_system_accent_color(self):
-        color = self.get_system_accent_color()
+        color = self.get_system_primary_theme_color()
         if color is None or color == qconfig.get(qconfig.themeColor):
             return
 
         setThemeColor(color, save=False)
-        logger.info(f'System accent color applied: {color.name()}')
+        logger.info(f'System primary button color applied: {color.name()}')
 
     def nativeEvent(self, event_type, message):
         try:
