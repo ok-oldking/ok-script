@@ -1,6 +1,6 @@
 # Tab.py
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QVBoxLayout, QWidget, QSizePolicy
+from PySide6.QtWidgets import QScroller, QVBoxLayout, QWidget, QSizePolicy
 from qfluentwidgets import ScrollArea
 
 from ok.gui.common.design_system import configure_page_layout
@@ -21,6 +21,9 @@ class Tab(ScrollArea):
         self.setViewportMargins(0, 0, 0, 0)
         self.setWidget(self.view)
         self.setWidgetResizable(True)
+        QScroller.grabGesture(
+            self.viewport(), QScroller.ScrollerGestureType.TouchGesture
+        )
 
         configure_page_layout(self.vBoxLayout)
         self.vBoxLayout.setAlignment(Qt.AlignTop)

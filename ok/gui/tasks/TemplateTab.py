@@ -7,7 +7,7 @@ import cv2
 from PySide6.QtCore import Qt, Signal, QTimer, QRunnable, QThreadPool, QObject
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                               QScrollArea, QLabel, QFrame)
+                               QScroller, QScrollArea, QLabel, QFrame)
 from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
                             SearchLineEdit, MessageBox, BodyLabel, isDarkTheme,
                             qconfig, IndeterminateProgressRing)
@@ -591,6 +591,10 @@ class TemplateTab(QWidget):
         self.scroll_area.setFrameShape(QFrame.NoFrame)
         self.scroll_area.setStyleSheet("QScrollArea { background: transparent; border: none; }")
         self.scroll_area.viewport().setStyleSheet("background: transparent;")
+        QScroller.grabGesture(
+            self.scroll_area.viewport(),
+            QScroller.ScrollerGestureType.TouchGesture,
+        )
 
         self.flow_widget = FlowWidget()
         self.flow_widget.setStyleSheet("background: transparent;")
