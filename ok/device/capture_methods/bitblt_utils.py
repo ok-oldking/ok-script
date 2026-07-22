@@ -254,8 +254,8 @@ def composite_hwnds(bg, hwnd_window, contexts, render_full):
                 src_y2 = src_y1 + (y2 - y1)
 
                 if x2 > x1 and y2 > y1:
-                    for c in range(0, min(bg.shape[2], img.shape[2])):
-                        bg[y1:y2, x1:x2, c] = img[src_y1:src_y2, src_x1:src_x2, c]
+                    channels = min(bg.shape[2], img.shape[2])
+                    bg[y1:y2, x1:x2, :channels] = img[src_y1:src_y2, src_x1:src_x2, :channels]
     return bg
 
 

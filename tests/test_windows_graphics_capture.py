@@ -66,6 +66,8 @@ class TestWindowsGraphicsCaptureCallback(unittest.TestCase):
         method.lock = threading.RLock()
         method.exit_event = threading.Event()
         method.frame_event = threading.Event()
+        method.frame_requested = threading.Event()
+        method.frame_requested.set()
         method.frame_pool = _FakeFramePool(frame)
         method.last_frame = None
         method.last_frame_time = 0
@@ -88,6 +90,20 @@ class TestWindowsGraphicsCaptureCallback(unittest.TestCase):
         self.assertTrue(lock_state['owned_during_convert'])
         self.assertEqual('converted', method.last_frame)
         self.assertTrue(method.frame_event.is_set())
+        self.assertTrue(frame.closed)
+
+    def test_frame_arrived_skips_cpu_conversion_without_pending_request(self):
+        frame = _FakeFrame()
+        method = self._method_with_frame(frame)
+        method.frame_requested.clear()
+        converted = []
+        method.convert_dx_frame = lambda next_frame: converted.append(next_frame)
+
+        method.frame_arrived_callback()
+
+        self.assertEqual([], converted)
+        self.assertIsNone(method.last_frame)
+        self.assertFalse(method.frame_event.is_set())
         self.assertTrue(frame.closed)
 
     def test_frame_arrived_closes_frame_when_convert_fails(self):

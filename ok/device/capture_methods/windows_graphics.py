@@ -22,6 +22,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         super().__init__(hwnd_window)
         self.lock = threading.RLock()
         self.frame_event = threading.Event()
+        self.frame_requested = threading.Event()
         self.last_frame_time = time.time()
         self.exit_event = hwnd_window.app_exit_event
         self.cputex = None
@@ -52,7 +53,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 if self.frame_pool is not None:
                     next_frame = self.frame_pool.TryGetNextFrame()
                 # Keep close() from releasing the D3D context while the frame is mapped.
-                if next_frame is not None:
+                if next_frame is not None and self.frame_requested.is_set():
                     frame = self.convert_dx_frame(next_frame)
             except Exception as e:
                 logger.error(f"frame_arrived_callback error {e}", e)
@@ -62,6 +63,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                     next_frame.Close()
             if frame is not None:
                 self.last_frame = frame
+                self.frame_requested.clear()
                 self.frame_event.set()
 
     def convert_dx_frame(self, frame):
@@ -243,6 +245,8 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     def close(self):
         with self.lock:
             logger.info('destroy windows capture')
+            self.frame_requested.clear()
+            self.frame_event.set()
             if self.frame_pool is not None:
                 self.frame_pool.Close()
                 self.frame_pool = None
@@ -279,6 +283,8 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 frame = self.last_frame
                 self.last_frame = None  # Pop the frame instantly so we don't get stuck on it next time
                 self.frame_event.clear()
+                if frame is None:
+                    self.frame_requested.set()
 
             start_wait = time.time()
             while frame is None:
@@ -290,12 +296,14 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
                 with self.lock:
                     if self.frame_pool is None:
+                        self.frame_requested.clear()
                         return None
                     frame = self.last_frame
                     self.last_frame = None  # Pop the frame
                     self.frame_event.clear()
 
             if frame is None:
+                self.frame_requested.clear()
                 return None
 
             latency = time.time() - self.last_frame_time

@@ -90,6 +90,10 @@ class TaskExecutor:
         self.onetime_task_queue = []
         self.thread = None
         self.lock = threading.Lock()
+        self._wake_condition = threading.Condition()
+        self._wake_version = 0
+        if hasattr(self.exit_event, 'bind_condition'):
+            self.exit_event.bind_condition(self._wake_condition)
         self._ocr_lib_lock = threading.Lock()
         self._ocr_init_thread = None
         self.blur_overlay_processor = None
@@ -308,14 +312,15 @@ class TaskExecutor:
             time.sleep(timeout)
             return
         self.pause_end_time = time.time() + timeout
-        to_sleep = 0
         task = None
         while True:
             self.check_enabled(check_pause=False)
+            next_sleep_check = None
             if self.current_task is not None:
                 task = self.current_task
                 if task.sleep_check_interval >= 0:
-                    if not task.in_sleep_check and time.time() - task.last_sleep_check_time > task.sleep_check_interval:
+                    elapsed = time.time() - task.last_sleep_check_time
+                    if not task.in_sleep_check and elapsed >= task.sleep_check_interval:
                         task.in_sleep_check = True
                         try:
                             self.next_frame()
@@ -327,6 +332,8 @@ class TaskExecutor:
                         finally:
                             task.last_sleep_check_time = time.time()
                             task.in_sleep_check = False
+                    elif not task.in_sleep_check:
+                        next_sleep_check = max(0, task.sleep_check_interval - elapsed)
             if self.exit_event.is_set():
                 logger.info("sleep Exit event set. Exiting early.")
                 sys.exit(0)
@@ -335,11 +342,38 @@ class TaskExecutor:
                 to_sleep = self.pause_end_time - time.time()
                 if to_sleep <= 0:
                     return
-                if to_sleep > 0.001:
-                    to_sleep = 0.001
-                time.sleep(to_sleep)
+                if next_sleep_check is not None:
+                    to_sleep = min(to_sleep, next_sleep_check)
+                self._wait_for_activity(to_sleep)
             else:
-                time.sleep(0.1)
+                self._wait_for_activity(0.1)
+
+    def _wake_executor(self):
+        condition = getattr(self, '_wake_condition', None)
+        if condition is None:
+            return
+        with condition:
+            self._wake_version += 1
+            condition.notify_all()
+
+    def _get_wake_version(self):
+        condition = getattr(self, '_wake_condition', None)
+        if condition is None:
+            return None
+        with condition:
+            return self._wake_version
+
+    def _wait_for_activity(self, timeout, wake_version=None):
+        if timeout <= 0:
+            return False
+        condition = getattr(self, '_wake_condition', None)
+        if condition is None:
+            time.sleep(timeout)
+            return False
+        with condition:
+            if wake_version is not None and wake_version != self._wake_version:
+                return True
+            return condition.wait(timeout)
 
     def pause(self, task=None):
         if task is not None:
@@ -347,6 +381,7 @@ class TaskExecutor:
                 raise Exception(f"Can only pause current task {self.current_task}")
         elif not self.paused:
             self.paused = True
+            self._wake_executor()
             communicate.executor_paused.emit(self.paused)
             self.reset_scene(check_enabled=False)
             self.pause_start = time.time()
@@ -366,6 +401,7 @@ class TaskExecutor:
                 self.paused = False
                 communicate.executor_paused.emit(self.paused)
                 self.pause_end_time += self.pause_start - time.time()
+            self._wake_executor()
 
     def wait_condition(self, condition, time_out=0, pre_action=None, post_action=None, settle_time=-1,
                        raise_if_not_found=False):
@@ -415,11 +451,13 @@ class TaskExecutor:
 
     def enqueue_onetime_task(self, task):
         if task not in self.onetime_tasks:
+            self._wake_executor()
             return False
         with self.lock:
             if task not in self.onetime_task_queue:
                 self.onetime_task_queue.append(task)
                 logger.info(f'queued onetime_task {task.name}')
+        self._wake_executor()
         return True
 
     def remove_onetime_task(self, task):
@@ -430,6 +468,8 @@ class TaskExecutor:
             while task in self.onetime_task_queue:
                 self.onetime_task_queue.remove(task)
                 removed = True
+        if removed:
+            self._wake_executor()
         return removed
 
     def waiting_for_task(self, task):
@@ -480,15 +520,25 @@ class TaskExecutor:
         if interval := self.basic_options.get('Trigger Interval', 1):
             self.sleep(interval / 1000)
 
+    def next_trigger_delay(self, default=1.0):
+        now = time.time()
+        delays = [
+            max(0, task.trigger_interval - (now - task.last_trigger_time))
+            for task in self.trigger_tasks
+            if task.enabled and task.trigger_interval > 0
+        ]
+        return min(delays, default=default)
+
     def execute(self):
         logger.info(f"start execute")
         while not self.exit_event.is_set():
             if self.paused:
                 logger.info(f'executor is paused sleep')
                 self.sleep(1)
+            wake_version = self._get_wake_version()
             task, cycled, is_trigger_task = self.next_task()
             if not task:
-                time.sleep(1)
+                self._wait_for_activity(self.next_trigger_delay(), wake_version)
                 continue
             if cycled:
                 self.reset_scene()
@@ -573,6 +623,7 @@ class TaskExecutor:
     def stop(self):
         logger.info('stop')
         self.exit_event.set()
+        self._wake_executor()
 
     def destroy(self):
         logger.info(f'Executor destroy')

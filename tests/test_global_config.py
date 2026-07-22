@@ -2,6 +2,7 @@ import unittest
 import tempfile
 import os
 from types import SimpleNamespace
+from unittest.mock import patch
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
@@ -52,6 +53,27 @@ class TestBasicOptions(unittest.TestCase):
         option = ConfigOption('Custom Options', show_at_tab=True)
 
         self.assertTrue(option.show_at_tab)
+
+    def test_loading_valid_config_does_not_rewrite_it_per_key(self):
+        current = {f'key_{index}': index for index in range(20)}
+
+        with patch('ok.util.config.read_json_file', return_value=current), \
+                patch.object(Config, 'save_file') as save_file:
+            config = Config('Existing Config', dict(current))
+
+        self.assertEqual(current, config)
+        save_file.assert_not_called()
+
+    def test_config_migration_is_saved_once(self):
+        current = {'kept': 1, 'removed': True}
+        defaults = {'kept': 1, 'added': 2}
+
+        with patch('ok.util.config.read_json_file', return_value=current), \
+                patch.object(Config, 'save_file') as save_file:
+            config = Config('Migrated Config', defaults)
+
+        self.assertEqual(defaults, config)
+        save_file.assert_called_once_with()
 
     def test_global_config_tab_renders_options_without_card_container(self):
         from ok.gui.settings.GlobalConfigTab import GlobalConfigTab

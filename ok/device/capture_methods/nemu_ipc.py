@@ -28,8 +28,8 @@ class NemuIpcCaptureMethod(BaseCaptureMethod):
             self.nemu_impl = None
 
     def init_nemu(self):
-        self.check_mumu_app_keep_alive_400()
         if not self.nemu_impl:
+            self.check_mumu_app_keep_alive_400()
             from ok.capture.adb.nemu_ipc import NemuIpc
             self.nemu_impl = NemuIpc(
                 nemu_folder=self.base_folder(),
@@ -65,10 +65,9 @@ class NemuIpcCaptureMethod(BaseCaptureMethod):
             self.nemu_impl = None
 
     def do_get_frame(self):
-        self.init_nemu()
-        return self.screencap()
         if self.exit_event.is_set():
             return None
+        self.init_nemu()
         if self.nemu_impl:
             return self.nemu_impl.screenshot(timeout=0.5)
 

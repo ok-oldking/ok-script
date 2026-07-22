@@ -1300,6 +1300,7 @@ class BaseTask(OCR):
     def disable(self):
         self._enabled = False
         self.executor.remove_onetime_task(self)
+        self.executor._wake_executor()
         communicate.task.emit(self)
 
     @property

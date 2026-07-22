@@ -18,6 +18,7 @@ class Feature:
         self.x = round(x)
         self.y = round(y)
         self.mask = None
+        self.template_cache = {}
 
     @property
     def width(self):

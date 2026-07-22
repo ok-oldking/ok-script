@@ -267,17 +267,29 @@ class FeatureSet:
         prepare_time = time.time()
 
         feature_height, feature_width = template.shape[:2]
+        preprocess_key = None
+        if use_gray_scale or (canny_lower != 0 and canny_higher != 0):
+            preprocess_key = (bool(use_gray_scale), canny_lower, canny_higher)
+            cached_template = feature.template_cache.get(preprocess_key) if feature is not None else None
+        else:
+            cached_template = None
+
+        if cached_template is not None:
+            template = cached_template
         if use_gray_scale:
             search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
-            if len(feature.mat.shape) != 2:
+            if cached_template is None and len(template.shape) != 2:
                 template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
         if canny_lower != 0 and canny_higher != 0:
             if len(search_area.shape) != 2:
                 search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
             search_area = cv2.Canny(search_area, canny_lower, canny_higher)
-            if len(template.shape) != 2:
+            if cached_template is None and len(template.shape) != 2:
                 template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+            if cached_template is None:
                 template = cv2.Canny(template, canny_lower, canny_higher)
+        if feature is not None and preprocess_key is not None and cached_template is None:
+            feature.template_cache[preprocess_key] = template
         if feature is not None and feature.mask is None:
             if mask_function is not None:
                 feature.mask = mask_function(feature.mat)
@@ -317,8 +329,7 @@ class FeatureSet:
 
         result = cv2.matchTemplate(search_area, template, match_method,
                                    mask=mask)
-        result[np.isinf(result)] = 0
-        result[np.isnan(result)] = 0
+        np.nan_to_num(result, copy=False, nan=0, posinf=0, neginf=0)
         match_time = time.time()
 
         if screenshot:
@@ -349,13 +360,27 @@ class FeatureSet:
                         f"prepare: {(prepare_time - check_size_time) * 1000:.2f}ms, "
                         f"match: {(match_time - prepare_time) * 1000:.2f}ms, "
                         f"post: {(end_time - match_time) * 1000:.2f}ms)")
-        if category_name:
+        if category_name and self._draw_boxes_enabled():
             communicate.emit_draw_box(category_name, boxes, "red")
             search_name = "search_" + category_name
             communicate.emit_draw_box(search_name,
                                       Box(search_x1, search_y1, search_x2 - search_x1, search_y2 - search_y1,
                                           name=search_name), "blue")
         return boxes
+
+    def _draw_boxes_enabled(self):
+        if self.debug:
+            return True
+        try:
+            from ok import og
+            app = getattr(og, 'app', None)
+            ok_config = getattr(app, 'ok_config', None)
+            if ok_config is not None and ok_config.get('use_overlay', False):
+                return True
+            config = getattr(og, 'config', None) or {}
+            return bool(config.get('screenshots_folder') or config.get('click_screenshots_folder'))
+        except Exception:
+            return False
 
     def find_feature(self, mat: np.ndarray, category_name, horizontal_variance: float = 0,
                      vertical_variance: float = 0, threshold: float = 0, use_gray_scale: bool = False, x=-1, y=-1,
@@ -508,10 +533,11 @@ def replace_extension(filename):
         return filename[:-4] + '.png', True
 
 def filter_and_sort_matches(result, threshold, w, h):
-    loc = np.where(result >= threshold)
+    threshold_mask = result >= threshold
+    loc = np.where(threshold_mask)
     matches = list(zip(*loc[::-1]))
 
-    confidences = result[result >= threshold]
+    confidences = result[threshold_mask]
 
     matches_with_confidence = sorted(zip(matches, confidences), key=lambda x: x[1], reverse=True)
 

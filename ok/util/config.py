@@ -1,7 +1,4 @@
 ## Config.py
-from qfluentwidgets import FluentIcon
-
-from ok.gui.Communicate import communicate
 from ok.util.file import get_relative_path, read_json_file, write_json_file
 from ok.util.logger import Logger
 
@@ -11,7 +8,7 @@ logger = Logger.get_logger("Config")
 class ConfigOption:
 
     def __init__(self, name, default=None, description="", config_description=None, config_type=None,
-                 validator=None, icon=FluentIcon.INFO, show_at_tab=False):
+                 validator=None, icon=None, show_at_tab=False):
         self.name = name
         self.description = description
         self.default_config = default or {}
@@ -127,6 +124,7 @@ class Config(dict):
         if self.validator is not None:
             valid, message = self.validator(key, value)
             if not valid:
+                from ok.gui.Communicate import communicate
                 communicate.config_validation.emit(message)
                 return False
         return True
@@ -138,15 +136,10 @@ class Config(dict):
         :param default_config: The default configuration.
         :return: True if the config was modified, False otherwise.
         """
-        modified = False
+        modified = any(key not in default_config for key in current)
+        verified = {}
 
-        # Remove entries that do not exist in default_config
-        for key in list(current.keys()):
-            if key not in default_config:
-                del current[key]
-                modified = True
-
-        for key in list(default_config.keys()):
+        for key in default_config:
             if key not in current or not isinstance(current[key], type(default_config[key])):
                 value = default_config[key]
                 modified = True
@@ -159,6 +152,12 @@ class Config(dict):
                     value = current[key]
             else:
                 value = current[key]
-            self[key] = value
+            verified[key] = value
+
+        # Avoid __setitem__ while hydrating the object. __setitem__ persists
+        # changes, which previously rewrote the complete JSON file once per
+        # key whenever an existing config was loaded.
+        dict.clear(self)
+        dict.update(self, verified)
 
         return modified

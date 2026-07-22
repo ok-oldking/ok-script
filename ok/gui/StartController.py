@@ -14,7 +14,7 @@ logger = Logger.get_logger(__name__)
 
 class StartController(QObject):
     STARTED_WINDOW_MIN_SIZE = (100, 100)
-    STARTED_WINDOW_STABLE_SECONDS = 10
+    STARTED_WINDOW_STABLE_SECONDS = 2
     STARTED_WINDOW_POLL_INTERVAL = 0.2
 
     def __init__(self, app_config, exit_event):
@@ -78,7 +78,7 @@ class StartController(QObject):
 
         try:
             if self.start_exe:
-                if not self.start_device():
+                if not self.start_device(initial_refresh_done=True):
                     return False
             else:
                 logger.info('windows.start_exe is False, skip start_device')
@@ -109,10 +109,13 @@ class StartController(QObject):
             communicate.starting_emulator.emit(True, self.tr(f'Start failed: {e}'), 0)
             return False
 
-    def _wait_until_device_ready(self):
+    def _wait_until_device_ready(self, refresh_first=True):
         wait_until = time.time() + self.start_timeout
+        first_check = True
         while not self.exit_event.is_set():
-            og.device_manager.do_refresh(True)
+            if refresh_first or not first_check:
+                og.device_manager.do_refresh(True)
+            first_check = False
             error = self.check_device_error()
             if error is None:
                 return True
@@ -156,7 +159,7 @@ class StartController(QObject):
             time.sleep(self.STARTED_WINDOW_POLL_INTERVAL)
         return False
 
-    def start_device(self):
+    def start_device(self, initial_refresh_done=False):
         device = og.device_manager.get_preferred_device()
         logger.info(f'start_device: {device}')
 
@@ -185,7 +188,7 @@ class StartController(QObject):
                 communicate.starting_emulator.emit(True,
                                                    self.tr('Game path does not exist, Please open game manually!'), 0)
                 return False
-        elif not self._wait_until_device_ready():
+        elif not self._wait_until_device_ready(refresh_first=not initial_refresh_done):
             return False
         communicate.starting_emulator.emit(True, None, 0)
         return True

@@ -1,6 +1,10 @@
 import threading
+import time
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
+import ok.task.TaskExecutor as task_executor_module
 from ok.task.TaskExecutor import TaskExecutor
 
 
@@ -19,6 +23,8 @@ class TestTaskExecutorQueue(unittest.TestCase):
     def make_executor(self, tasks):
         executor = TaskExecutor.__new__(TaskExecutor)
         executor.lock = threading.Lock()
+        executor._wake_condition = threading.Condition()
+        executor._wake_version = 0
         executor.exit_event = threading.Event()
         executor.current_task = None
         executor.onetime_tasks = tasks
@@ -26,6 +32,36 @@ class TestTaskExecutorQueue(unittest.TestCase):
         executor.trigger_tasks = []
         executor.trigger_task_index = -1
         return executor
+
+    def test_active_sleep_uses_condition_instead_of_millisecond_polling(self):
+        executor = self.make_executor([])
+        executor.reset_scene = lambda check_enabled=False: None
+        executor.check_enabled = lambda check_pause=False: None
+        executor.debug_mode = False
+        executor.paused = False
+        executor.device_manager = SimpleNamespace(
+            interaction=SimpleNamespace(should_capture=lambda: True))
+
+        with patch.object(task_executor_module.time, 'sleep') as sleep:
+            executor.sleep(0.01)
+
+        sleep.assert_not_called()
+
+    def test_enqueue_wakes_idle_executor(self):
+        task = FakeTask('Task')
+        executor = self.make_executor([task])
+        wake_version = executor._get_wake_version()
+        woke = threading.Event()
+
+        waiter = threading.Thread(
+            target=lambda: (executor._wait_for_activity(1, wake_version), woke.set()))
+        waiter.start()
+        time.sleep(0.01)
+        task._enabled = True
+        executor.enqueue_onetime_task(task)
+        waiter.join(timeout=0.2)
+
+        self.assertTrue(woke.is_set())
 
     def test_onetime_queue_uses_click_order(self):
         task_a = FakeTask("TaskA")

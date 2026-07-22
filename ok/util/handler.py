@@ -9,14 +9,20 @@ logger = Logger.get_logger(__name__)
 
 
 class ExitEvent(threading.Event):
-    queues = set()
-    to_stops = set()
+    def __init__(self):
+        super().__init__()
+        self.queues = set()
+        self.to_stops = set()
+        self.conditions = set()
 
     def bind_queue(self, queue):
         self.queues.add(queue)
 
     def bind_stop(self, to_stop):
         self.to_stops.add(to_stop)
+
+    def bind_condition(self, condition):
+        self.conditions.add(condition)
 
     def set(self):
         super(ExitEvent, self).set()
@@ -26,6 +32,10 @@ class ExitEvent(threading.Event):
 
         for to_stop in self.to_stops:
             to_stop.stop()
+
+        for condition in self.conditions:
+            with condition:
+                condition.notify_all()
 
 
 @dataclass(order=True)

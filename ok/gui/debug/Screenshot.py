@@ -17,6 +17,7 @@ from ok.util.file import find_first_existing_file, clear_folder, sanitize_filena
     get_relative_path
 
 logger = Logger.get_logger(__name__)
+_CLEANUP_FOLDERS = object()
 
 
 class Screenshot(QObject):
@@ -56,19 +57,10 @@ class Screenshot(QObject):
                 logger.debug("load default font")
                 self.pil_font = ImageFont.load_default(30)
 
-            limit = 300 * 1024 * 1024
-
-            if get_folder_size(self.click_screenshot_folder) > limit:
-                clear_folder(self.click_screenshot_folder)
-            else:
-                remove_old_files(self.click_screenshot_folder, 7)
-
-            if self.debug or get_folder_size(self.screenshot_folder) > limit:
-                logger.info(f'clear {self.screenshot_folder}')
-                clear_folder(self.screenshot_folder)
-            else:
-                logger.info(f'remove_old_files {self.screenshot_folder}')
-                remove_old_files(self.screenshot_folder, 7)
+            # Directory walks can be expensive with a large screenshot
+            # history. Run cleanup on the existing worker before processing
+            # the first screenshot instead of blocking application startup.
+            self.task_queue.put(_CLEANUP_FOLDERS)
         else:
             self.task_queue = None
 
@@ -124,8 +116,26 @@ class Screenshot(QObject):
             if task is None:
                 logger.debug("Task queue get is None quit")
                 break
+            if task is _CLEANUP_FOLDERS:
+                self._cleanup_folders()
+                self.task_queue.task_done()
+                continue
             self.generate_screen_shot(task[0], task[1], task[2], task[3], task[4], task[5])
             self.task_queue.task_done()
+
+    def _cleanup_folders(self):
+        limit = 300 * 1024 * 1024
+        if get_folder_size(self.click_screenshot_folder) > limit:
+            clear_folder(self.click_screenshot_folder)
+        else:
+            remove_old_files(self.click_screenshot_folder, 7)
+
+        if self.debug or get_folder_size(self.screenshot_folder) > limit:
+            logger.info(f'clear {self.screenshot_folder}')
+            clear_folder(self.screenshot_folder)
+        else:
+            logger.info(f'remove_old_files {self.screenshot_folder}')
+            remove_old_files(self.screenshot_folder, 7)
 
     def generate_screen_shot(self, frame, ui_dict, folder, name, show_box, frame_box, processor=None):
         if folder is None:
