@@ -3,12 +3,12 @@ import threading
 
 import pyappify
 from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer, QThread, Signal
-from PySide6.QtGui import QScreen
+from PySide6.QtGui import QColor, QScreen
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
 from qfluentwidgets import MSFluentWindow, qconfig, FluentIcon, NavigationItemPosition, MessageBox, InfoBar, \
     InfoBarPosition, Theme, MessageBoxBase, FluentWindow, NavigationDisplayMode
 from qfluentwidgets.components.widgets.scroll_bar import ScrollBarHandleDisplayMode
-from qfluentwidgets.common.style_sheet import updateStyleSheet
+from qfluentwidgets.common.style_sheet import setThemeColor, updateStyleSheet
 
 _original_MessageBoxBase_keyPressEvent = MessageBoxBase.keyPressEvent
 
@@ -63,6 +63,7 @@ class MainWindow(FluentWindow):
                  global_config=None, executor=None, handler=None):
         super().__init__()
         logger.info('main window __init__')
+        self._sync_system_accent_color()
         navigation_scroll_area = self.navigationInterface.panel.scrollArea
         navigation_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         navigation_scroll_area.scrollDelagate.vScrollBar.setHandleDisplayMode(
@@ -244,6 +245,46 @@ class MainWindow(FluentWindow):
         communicate.global_config.connect(self.goto_global_config)
 
         logger.info('main window __init__ done')
+
+    def get_system_accent_color(self):
+        """Return the Windows system accent color."""
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            colorization_color = wintypes.DWORD()
+            opaque_blend = wintypes.BOOL()
+            result = ctypes.windll.dwmapi.DwmGetColorizationColor(
+                ctypes.byref(colorization_color), ctypes.byref(opaque_blend)
+            )
+            if result != 0:
+                return None
+
+            argb = colorization_color.value
+            return QColor((argb >> 16) & 0xff, (argb >> 8) & 0xff, argb & 0xff)
+        except (AttributeError, OSError):
+            logger.exception('Failed to read the Windows system accent color')
+            return None
+
+    def _sync_system_accent_color(self):
+        color = self.get_system_accent_color()
+        if color is None or color == qconfig.get(qconfig.themeColor):
+            return
+
+        setThemeColor(color, save=False)
+        logger.info(f'System accent color applied: {color.name()}')
+
+    def nativeEvent(self, event_type, message):
+        try:
+            from ctypes import wintypes
+
+            native_message = wintypes.MSG.from_address(int(message))
+            if native_message.message == 0x0320:
+                QTimer.singleShot(0, self._sync_system_accent_color)
+        except (TypeError, ValueError):
+            logger.exception('Failed to process Windows accent color change')
+
+        return super().nativeEvent(event_type, message)
 
     def update_imported_tabs(self):
         """Update navigation tabs for imported scripts."""
