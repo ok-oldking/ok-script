@@ -4,10 +4,11 @@ import zipfile
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QAbstractItemView, QVBoxLayout, QHBoxLayout, QWidget, QListWidgetItem
-from qfluentwidgets import ListWidget, PushButton, FluentIcon, SwitchButton, SearchLineEdit
+from PySide6.QtWidgets import QAbstractItemView, QVBoxLayout, QHBoxLayout, QWidget, QListWidgetItem, QSizePolicy
+from qfluentwidgets import FlowLayout, ListWidget, PushButton, FluentIcon, SwitchButton, SearchLineEdit
 
 from ok.gui.Communicate import communicate
+from ok.gui.common.design_system import DesignToken
 from ok.gui.debug.DebugTab import capture
 from ok.gui.start.SelectCaptureListView import SelectCaptureListView
 from ok.gui.start.SelectInteractionListView import SelectInteractionListView
@@ -31,9 +32,13 @@ class StartTab(Tab):
         self.start_card.capture_button.clicked.connect(self.capture)
 
         horizontal_widget = QWidget()
+        horizontal_widget.setMinimumHeight(320)
+        horizontal_widget.setMaximumHeight(440)
+        horizontal_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         horizontal_layout = QHBoxLayout(horizontal_widget)
-        horizontal_layout.setContentsMargins(0, 20, 0, 20)
-        self.add_widget(horizontal_widget, 1)
+        horizontal_layout.setContentsMargins(0, 0, 0, 0)
+        horizontal_layout.setSpacing(DesignToken.SECTION_SPACING)
+        self.add_widget(horizontal_widget)
 
         self.device_search_box = None
         if not config.get('windows') or not config.get('windows').get('exe'):
@@ -64,8 +69,10 @@ class StartTab(Tab):
         from ok import og
 
         self.debug_widget = QWidget()
-        self.debug_layout = QHBoxLayout(self.debug_widget)
-        self.debug_layout.setContentsMargins(0, 20, 0, 20)
+        self.debug_layout = FlowLayout(self.debug_widget, isTight=True)
+        self.debug_layout.setContentsMargins(0, 0, 0, 0)
+        self.debug_layout.setHorizontalSpacing(8)
+        self.debug_layout.setVerticalSpacing(8)
 
         self.export_log_button = PushButton(FluentIcon.FEEDBACK, self.tr("Export Logs"))
         self.export_log_button.clicked.connect(self.export_logs)
@@ -91,13 +98,14 @@ class StartTab(Tab):
         self.ocr_button = PushButton(FluentIcon.SEARCH, "OCR")
         self.ocr_button.clicked.connect(self.ocr_log)
         self.debug_layout.addWidget(self.ocr_button)
-        self.debug_layout.addStretch(1)
 
         self.add_card(self.tr("Debug"), self.debug_widget)
 
         self.overlay_widget = QWidget()
-        self.overlay_layout = QHBoxLayout(self.overlay_widget)
-        self.overlay_layout.setContentsMargins(0, 20, 0, 20)
+        self.overlay_layout = FlowLayout(self.overlay_widget, isTight=True)
+        self.overlay_layout.setContentsMargins(0, 0, 0, 0)
+        self.overlay_layout.setHorizontalSpacing(20)
+        self.overlay_layout.setVerticalSpacing(8)
 
         self.overlay_switch = SwitchButton()
         self.overlay_switch.setOnText(self.tr("Enable Boxes"))
@@ -112,8 +120,6 @@ class StartTab(Tab):
         self.overlay_log_switch.setChecked(og.app.ok_config.get('show_overlay_logs', True))
         self.overlay_log_switch.checkedChanged.connect(self.on_overlay_log_toggled)
         self.overlay_layout.addWidget(self.overlay_log_switch)
-        self.overlay_layout.addStretch(1)
-
         self.add_card(self.tr("Debug Overlay"), self.overlay_widget)
 
         self.closed_by_finish_loading = False

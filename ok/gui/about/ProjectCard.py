@@ -13,7 +13,7 @@ class ProjectCard(SettingCard):
         self.github_button.clicked.connect(self.open_url)
         self.hBoxLayout.addWidget(self.github_button)
         self.hBoxLayout.addSpacing(16)
-        self.setFixedHeight(64)
+        self.setFixedHeight(72)
 
     def open_url(self):
         QDesktopServices.openUrl(QUrl(self.url))

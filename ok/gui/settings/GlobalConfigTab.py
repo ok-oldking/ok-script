@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QFrame, QVBoxLayout
-from qfluentwidgets import BodyLabel, TitleLabel, isDarkTheme
+from qfluentwidgets import BodyLabel, TitleLabel
 
 from ok import Config, ConfigOption, og
 from ok.gui.tasks.ConfigCard import ConfigContentMixin
@@ -23,7 +23,6 @@ class GlobalConfigTab(ConfigContentMixin, Tab):
 
         self.contentFrame = QFrame(self)
         self.contentFrame.setObjectName('configContentFrame')
-        self._apply_content_frame_style()
         self.viewLayout = QVBoxLayout(self.contentFrame)
         self.vBoxLayout.addWidget(self.contentFrame)
         self._init_config_content(
@@ -33,27 +32,12 @@ class GlobalConfigTab(ConfigContentMixin, Tab):
             option.config_description,
             option.config_type
         )
-        self.viewLayout.setContentsMargins(10, 8, 10, 8)
+        self.viewLayout.setContentsMargins(6, 4, 6, 8)
 
     def _translate(self, text):
         if og.app and hasattr(og.app, 'tr'):
             return og.app.tr(text)
         return self.tr(text)
-
-    def _apply_content_frame_style(self):
-        if isDarkTheme():
-            border = "rgba(255, 255, 255, 0.08)"
-            background = "rgba(255, 255, 255, 0.05)"
-        else:
-            border = "rgba(0, 0, 0, 0.08)"
-            background = "rgba(255, 255, 255, 0.5)"
-        self.contentFrame.setStyleSheet(
-            "#configContentFrame {"
-            f"border: 1px solid {border};"
-            "border-radius: 10px;"
-            f"background-color: {background};"
-            "}"
-        )
 
     def reset_clicked(self):
         self.config.reset_to_default()

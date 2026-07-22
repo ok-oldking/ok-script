@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget, QSizePolicy
-from qfluentwidgets import FluentIcon, PushButton, SwitchButton, MessageBox
+from qfluentwidgets import FluentIcon, PrimaryPushButton, PushButton, SwitchButton, MessageBox
 
 from ok import Logger, BaseTask, og
 from ok.gui.Communicate import communicate
@@ -20,7 +20,7 @@ class TaskCard(ConfigCard):
         self.button_container = QWidget()
         self.button_layout = QHBoxLayout(self.button_container)
         self.button_layout.setContentsMargins(0, 0, 0, 0)
-        self.button_layout.setSpacing(6)
+        self.button_layout.setSpacing(8)
         self.button_container.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.addWidget(self.button_container)
 
@@ -45,7 +45,7 @@ class TaskCard(ConfigCard):
             self.stop_button = PushButton(OKIcon.STOP, self.tr("Stop"), self)
             self.stop_button.clicked.connect(self.stop_clicked)
 
-            self.start_button = PushButton(FluentIcon.PLAY, self.tr("Start"), self)
+            self.start_button = PrimaryPushButton(FluentIcon.PLAY, self.tr("Start"), self)
             self.start_button.clicked.connect(self.start_clicked)
             self.enable_button = None
         else:

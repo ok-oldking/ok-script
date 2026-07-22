@@ -2,7 +2,7 @@ from ctypes import windll, wintypes
 
 from PySide6.QtCore import Qt, Signal
 from _ctypes import byref
-from qfluentwidgets import FluentIcon, SettingCard, PushButton
+from qfluentwidgets import FluentIcon, PrimaryPushButton, SettingCard, PushButton
 
 from ok import Handler
 from ok import Logger
@@ -36,7 +36,7 @@ class StartCard(SettingCard):
         self.hBoxLayout.addWidget(self.refresh_button, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(6)
 
-        self.start_button = PushButton(FluentIcon.PLAY, self.tr("Start"), self)
+        self.start_button = PrimaryPushButton(FluentIcon.PLAY, self.tr("Start"), self)
         self.hBoxLayout.addWidget(self.start_button, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(20)
 

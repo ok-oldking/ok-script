@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QVBoxLayout, QWidget, QSizePolicy
 from qfluentwidgets import ScrollArea
 
+from ok.gui.common.design_system import configure_page_layout
 from ok.gui.common.style_sheet import StyleSheet
 from ok.gui.widget.Card import Card
 from ok.gui.widget.StartLoadingDialog import StartLoadingDialog
@@ -21,9 +22,8 @@ class Tab(ScrollArea):
         self.setWidget(self.view)
         self.setWidgetResizable(True)
 
-        self.vBoxLayout.setSpacing(4)
+        configure_page_layout(self.vBoxLayout)
         self.vBoxLayout.setAlignment(Qt.AlignTop)
-        self.vBoxLayout.setContentsMargins(16, 16, 16, 16)
 
         self.view.setObjectName('view')
 

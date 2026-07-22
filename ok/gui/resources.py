@@ -13642,7 +13642,7 @@ C17.5228 22 22 1\
 \x22#000000\x22></path\
 >\x0d\x0a    </g>\x0d\x0a</s\
 vg>\
-\x00\x00\x05I\
+\x00\x00\x06C\
 T\
 ab,\x0aToolBar,\x0aRou\
 ndCornerContaine\
@@ -13666,69 +13666,85 @@ tleLabel,\x0d\x0aStron\
 gBodyLabel {\x0d\x0a  \
   color: black;\x0d\
 \x0a}\x0d\x0a\x0d\x0aCard > #ca\
-rd {\x0d\x0a    border\
-: 1px solid rgba\
-(0, 0, 0, 0.08);\
-\x0d\x0a    border-rad\
-ius: 10px;\x0d\x0a    \
-background-color\
-: rgba(255, 255,\
- 255, 0.5); /* S\
-lightly more opa\
-que background *\
-/\x0d\x0a}\x0d\x0a\x0d\x0aCard > #\
-card:hover {\x0d\x0a  \
-  background-col\
-or: rgba(255, 25\
-5, 255, 0.8);\x0d\x0a \
-   border: 1px s\
+rd {\x0a    border:\
+ 1px solid rgba(\
+0, 0, 0, 0.08);\x0a\
+    border-radiu\
+s: 12px;\x0a    bac\
+kground-color: r\
+gba(255, 255, 25\
+5, 0.62);\x0a}\x0a\x0d\x0aCa\
+rd > #card:hover\
+ {\x0d\x0a    backgrou\
+nd-color: rgba(2\
+55, 255, 255, 0.\
+76);\x0a    border:\
+ 1px solid rgba(\
+0, 0, 0, 0.12);\x0d\
+\x0a}\x0d\x0a\x0d\x0aCard > #ca\
+rd QLabel {\x0d\x0a   \
+ font: 14px 'Seg\
+oe UI', 'Microso\
+ft YaHei', 'Ping\
+Fang SC';\x0d\x0a    c\
+olor: black;\x0d\x0a}\x0d\
+\x0a\x0d\x0aCard> #card I\
+nfoBadge {\x0d\x0a    \
+font-size: 11px;\
+\x0d\x0a}\x0d\x0a\x0d\x0a#sourceWi\
+dget {\x0d\x0a    back\
+ground-color: rg\
+ba(255, 255, 255\
+, 0.667);\x0d\x0a    b\
+order-top: 1px s\
 olid rgba(0, 0, \
-0, 0.12);\x0d\x0a}\x0d\x0a\x0d\x0a\
-Card > #card QLa\
-bel {\x0d\x0a    font:\
- 14px 'Segoe UI'\
-, 'Microsoft YaH\
-ei', 'PingFang S\
-C';\x0d\x0a    color: \
-black;\x0d\x0a}\x0d\x0a\x0d\x0aCar\
-d> #card InfoBad\
-ge {\x0d\x0a    font-s\
-ize: 11px;\x0d\x0a}\x0d\x0a\x0d\
-\x0a#sourceWidget {\
-\x0d\x0a    background\
--color: rgba(255\
-, 255, 255, 0.66\
-7);\x0d\x0a    border-\
-top: 1px solid r\
-gba(0, 0, 0, 0.0\
-5);\x0d\x0a    border-\
-bottom-left-radi\
-us: 10px;\x0d\x0a    b\
-order-bottom-rig\
-ht-radius: 10px;\
-\x0d\x0a}\x0d\x0a\x0d\x0a#titleLab\
-el {\x0d\x0a    color:\
- black;\x0d\x0a    fon\
-t: 14px 'Segoe U\
-I', 'Microsoft Y\
-aHei', 'PingFang\
- SC';\x0d\x0a    font-\
-weight: bold;\x0d\x0a}\
-\x0d\x0a\x0d\x0a#contentLabe\
-l {\x0d\x0a    color: \
-rgb(118, 118, 11\
-8);\x0d\x0a    font: 1\
-2px 'Segoe UI', \
-'Microsoft YaHei\
-', 'PingFang SC'\
-;\x0d\x0a}\x0d\x0a\x0d\x0a#viewTit\
-leLabel {\x0d\x0a    c\
-olor: black;\x0d\x0a  \
-  font: 20px \x22Se\
-goe UI SemiBold\x22\
-, \x22Microsoft YaH\
-ei\x22, 'PingFang S\
-C';\x0d\x0a}\x0d\x0a\
+0, 0.05);\x0d\x0a    b\
+order-bottom-lef\
+t-radius: 10px;\x0d\
+\x0a    border-bott\
+om-right-radius:\
+ 10px;\x0d\x0a}\x0d\x0a\x0d\x0a#ti\
+tleLabel {\x0d\x0a    \
+color: black;\x0d\x0a \
+   font: 14px 'S\
+egoe UI', 'Micro\
+soft YaHei', 'Pi\
+ngFang SC';\x0d\x0a   \
+ font-weight: bo\
+ld;\x0d\x0a}\x0d\x0a\x0d\x0a#conte\
+ntLabel {\x0d\x0a    c\
+olor: rgb(118, 1\
+18, 118);\x0d\x0a    f\
+ont: 12px 'Segoe\
+ UI', 'Microsoft\
+ YaHei', 'PingFa\
+ng SC';\x0d\x0a}\x0d\x0a\x0d\x0a#v\
+iewTitleLabel {\x0a\
+    color: black\
+;\x0a    font: 24px\
+ \x22Segoe UI SemiB\
+old\x22, \x22Microsoft\
+ YaHei\x22, 'PingFa\
+ng SC';\x0a}\x0a\x0a#conf\
+igContentFrame {\
+\x0a    border: 1px\
+ solid rgba(0, 0\
+, 0, 0.08);\x0a    \
+border-radius: 1\
+2px;\x0a    backgro\
+und-color: rgba(\
+255, 255, 255, 0\
+.62);\x0a}\x0a\x0a#config\
+Row {\x0a    backgr\
+ound-color: tran\
+sparent;\x0a    bor\
+der-bottom: 1px \
+solid rgba(0, 0,\
+ 0, 0.055);\x0a}\x0a\x0a#\
+configRow:last-c\
+hild {\x0a    borde\
+r-bottom: none;\x0a\
+}\x0a\
 \x00\x00\x00\xba\
 \x00\
 \x00\x02\xfdx\xda\xed\x90=\x0b\xc20\x10\x86\xf7B\xff\
@@ -14017,7 +14033,7 @@ c-1.172-1.2-2.71\
 \x22 fill=\x22#e74c3c\x22\
 />\x0d\x0a </g>\x0d\x0a</svg\
 >\
-\x00\x00\x05\xf4\
+\x00\x00\x06\xaf\
 T\
 ab,\x0aToolBar,\x0aRou\
 ndCornerContaine\
@@ -14038,83 +14054,94 @@ lor: white;\x0d\x0a}\x0d\x0a\
 trongBodyLabel {\
 \x0d\x0a    color: whi\
 te;\x0d\x0a}\x0d\x0a\x0d\x0aCard>#\
-card {\x0d\x0a    bord\
-er: 1px solid rg\
-ba(255, 255, 255\
-, 0.08); /* More\
- subtle, semi-tr\
-ansparent border\
- */\x0d\x0a    border-\
-radius: 10px;\x0d\x0a \
-   background-co\
-lor: rgba(255, 2\
-55, 255, 0.05); \
-/* Based on Flue\
-nt design materi\
-al */\x0d\x0a}\x0d\x0a\x0d\x0aCard\
->#card:hover {\x0d\x0a\
-    background-c\
-olor: rgba(255, \
-255, 255, 0.08);\
- /* Slightly lig\
-hter on hover */\
+card {\x0a    borde\
+r: 1px solid rgb\
+a(255, 255, 255,\
+ 0.09);\x0a    bord\
+er-radius: 12px;\
+\x0a    background-\
+color: rgba(255,\
+ 255, 255, 0.045\
+);\x0a}\x0a\x0aCard>#card\
+:hover {\x0a    bac\
+kground-color: r\
+gba(255, 255, 25\
+5, 0.055);\x0a    b\
+order: 1px solid\
+ rgba(255, 255, \
+255, 0.11);\x0a}\x0d\x0a\x0d\
+\x0aCard>#card QLab\
+el {\x0d\x0a    font: \
+14px 'Segoe UI',\
+ 'Microsoft YaHe\
+i', 'PingFang SC\
+';\x0d\x0a    color: w\
+hite;\x0d\x0a}\x0d\x0a\x0d\x0aCard\
+>#card InfoBadge\
+ {\x0d\x0a    font-siz\
+e: 11px;\x0d\x0a}\x0d\x0a\x0d\x0aE\
+mptyCard>#card {\
 \x0d\x0a    border: 1p\
-x solid rgba(255\
-, 255, 255, 0.1)\
-;\x0d\x0a}\x0d\x0a\x0d\x0aCard>#ca\
-rd QLabel {\x0d\x0a   \
- font: 14px 'Seg\
-oe UI', 'Microso\
-ft YaHei', 'Ping\
-Fang SC';\x0d\x0a    c\
-olor: white;\x0d\x0a}\x0d\
-\x0a\x0d\x0aCard>#card In\
-foBadge {\x0d\x0a    f\
-ont-size: 11px;\x0d\
-\x0a}\x0d\x0a\x0d\x0aEmptyCard>\
-#card {\x0d\x0a    bor\
-der: 1px solid r\
-gb(36, 36, 36);\x0d\
+x solid rgb(36, \
+36, 36);\x0d\x0a    bo\
+rder-radius: 10p\
+x;\x0d\x0a    backgrou\
+nd-color: rgba(0\
+, 0, 0, 0.1795);\
+\x0d\x0a}\x0d\x0a\x0d\x0a\x0d\x0a\x0d\x0a#sour\
+ceWidget {\x0d\x0a    \
+background-color\
+: rgba(255, 255,\
+ 255, 0.09);\x0d\x0a  \
+  border-top: 1p\
+x solid rgb(36, \
+36, 36);\x0d\x0a    bo\
+rder-bottom-left\
+-radius: 10px;\x0d\x0a\
+    border-botto\
+m-right-radius: \
+10px;\x0d\x0a}\x0d\x0a\x0d\x0a#tit\
+leLabel {\x0d\x0a    c\
+olor: white;\x0d\x0a  \
+  font: 14px 'Se\
+goe UI', 'Micros\
+oft YaHei', 'Pin\
+gFang SC';\x0d\x0a    \
+font-weight: bol\
+d;\x0d\x0a}\x0d\x0a\x0d\x0a#conten\
+tLabel {\x0d\x0a    co\
+lor: rgb(208, 20\
+8, 208);\x0d\x0a    fo\
+nt: 12px 'Segoe \
+UI', 'Microsoft \
+YaHei', 'PingFan\
+g SC';\x0d\x0a}\x0d\x0a\x0d\x0a#vi\
+ewTitleLabel {\x0a \
+   color: white;\
+\x0a    font: 24px \
+\x22Segoe UI SemiBo\
+ld\x22, \x22Microsoft \
+YaHei\x22, 'PingFan\
+g SC';\x0a}\x0a\x0a#confi\
+gContentFrame {\x0a\
+    border: 1px \
+solid rgba(255, \
+255, 255, 0.09);\
 \x0a    border-radi\
-us: 10px;\x0d\x0a    b\
-ackground-color:\
- rgba(0, 0, 0, 0\
-.1795);\x0d\x0a}\x0d\x0a\x0d\x0a\x0d\x0a\
-\x0d\x0a#sourceWidget \
-{\x0d\x0a    backgroun\
-d-color: rgba(25\
-5, 255, 255, 0.0\
-9);\x0d\x0a    border-\
-top: 1px solid r\
-gb(36, 36, 36);\x0d\
-\x0a    border-bott\
-om-left-radius: \
-10px;\x0d\x0a    borde\
-r-bottom-right-r\
-adius: 10px;\x0d\x0a}\x0d\
-\x0a\x0d\x0a#titleLabel {\
-\x0d\x0a    color: whi\
-te;\x0d\x0a    font: 1\
-4px 'Segoe UI', \
-'Microsoft YaHei\
-', 'PingFang SC'\
-;\x0d\x0a    font-weig\
-ht: bold;\x0d\x0a}\x0d\x0a\x0d\x0a\
-#contentLabel {\x0d\
-\x0a    color: rgb(\
-208, 208, 208);\x0d\
-\x0a    font: 12px \
-'Segoe UI', 'Mic\
-rosoft YaHei', '\
-PingFang SC';\x0d\x0a}\
-\x0d\x0a\x0d\x0a#viewTitleLa\
-bel {\x0d\x0a    color\
-: white;\x0d\x0a    fo\
-nt: 20px \x22Segoe \
-UI SemiBold\x22, \x22M\
-icrosoft YaHei\x22,\
- 'PingFang SC';\x0d\
-\x0a}\x0a\
+us: 12px;\x0a    ba\
+ckground-color: \
+rgba(255, 255, 2\
+55, 0.045);\x0a}\x0a\x0a#\
+configRow {\x0a    \
+background-color\
+: transparent;\x0a \
+   border-bottom\
+: 1px solid rgba\
+(255, 255, 255, \
+0.055);\x0a}\x0a\x0a#conf\
+igRow:last-child\
+ {\x0a    border-bo\
+ttom: none;\x0a}\x0a\
 "
 
 qt_resource_name = b"\
@@ -14213,26 +14240,26 @@ qt_resource_struct = b"\
 \x00\x00\x01$\x00\x00\x00\x00\x00\x01\x00\x03M\x8e\
 \x00\x00\x01\x9d\x973\xc5s\
 \x00\x00\x01R\x00\x00\x00\x00\x00\x01\x00\x03R\xac\
-\x00\x00\x01\x9et\x0dYr\
+\x00\x00\x01\x9f\x88Q\xa8\xbe\
 \x00\x00\x01<\x00\x00\x00\x00\x00\x01\x00\x03O\x94\
 \x00\x00\x01\x8f\x05B\xff\xa0\
 \x00\x00\x00\xa6\x00\x01\x00\x00\x00\x01\x00\x03BB\
 \x00\x00\x01\x8f\xc2y\xee\xd0\
 \x00\x00\x00\xec\x00\x00\x00\x00\x00\x01\x00\x03J\xbd\
 \x00\x00\x01\x9c\x95\xa5\x05\x90\
-\x00\x00\x00\xd0\x00\x00\x00\x00\x00\x01\x00\x03X\xb7\
+\x00\x00\x00\xd0\x00\x00\x00\x00\x00\x01\x00\x03Y\xb1\
 \x00\x00\x01\x9d\x973\xc5o\
-\x00\x00\x01\x0e\x00\x00\x00\x00\x00\x01\x00\x03b\x93\
+\x00\x00\x01\x0e\x00\x00\x00\x00\x00\x01\x00\x03c\x8d\
 \x00\x00\x01\x8e\xf7\x00\xd2P\
-\x00\x00\x01$\x00\x00\x00\x00\x00\x01\x00\x03g\x12\
+\x00\x00\x01$\x00\x00\x00\x00\x00\x01\x00\x03h\x0c\
 \x00\x00\x01\x9d\x973\xc5r\
-\x00\x00\x01R\x00\x00\x00\x00\x00\x01\x00\x03i\x18\
-\x00\x00\x01\x9et\x0dYs\
-\x00\x00\x01<\x00\x00\x00\x00\x00\x01\x00\x03c\xfa\
+\x00\x00\x01R\x00\x00\x00\x00\x00\x01\x00\x03j\x12\
+\x00\x00\x01\x9f\x88Q\xa8\xbd\
+\x00\x00\x01<\x00\x00\x00\x00\x00\x01\x00\x03d\xf4\
 \x00\x00\x01\x8f\x05B\x8ap\
-\x00\x00\x00\xa6\x00\x01\x00\x00\x00\x01\x00\x03W\xf9\
+\x00\x00\x00\xa6\x00\x01\x00\x00\x00\x01\x00\x03X\xf3\
 \x00\x00\x01\x8f\xc2y\xc7\xc0\
-\x00\x00\x00\xec\x00\x00\x00\x00\x00\x01\x00\x03`\x95\
+\x00\x00\x00\xec\x00\x00\x00\x00\x00\x01\x00\x03a\x8f\
 \x00\x00\x01\x95\x95\xe22\x00\
 "
 

@@ -2,6 +2,7 @@ from PySide6.QtGui import QFontMetrics  # Needed for width calculation
 from qfluentwidgets import ComboBox
 
 from ok import og
+from ok.gui.common.design_system import control_width
 from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 from ok.util.collection import find_index_in_list
 
@@ -28,7 +29,7 @@ class LabelAndDropDown(ConfigLabelAndWidget):
             # Measure text width
             max_width = max(max_width, fm.horizontalAdvance(option))
 
-        self.combo_box.setFixedWidth(max_width + 50)
+        self.combo_box.setFixedWidth(control_width(max_width + 50))
 
         self.combo_box.currentTextChanged.connect(self.text_changed)
 

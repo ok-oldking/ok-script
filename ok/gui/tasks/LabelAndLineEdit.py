@@ -1,11 +1,12 @@
 from PySide6.QtGui import QFontMetrics
 from qfluentwidgets import LineEdit
 
+from ok.gui.common.design_system import DesignToken, control_width
 from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 
 class LabelAndLineEdit(ConfigLabelAndWidget):
-    MIN_INPUT_WIDTH = 100
+    MIN_INPUT_WIDTH = DesignToken.CONTROL_WIDTH
     HORIZONTAL_PADDING = 32
 
     def __init__(self, config_desc, config, key: str):
@@ -29,4 +30,4 @@ class LabelAndLineEdit(ConfigLabelAndWidget):
     def _update_width(self, value):
         font_metrics = QFontMetrics(self.line_edit.font())
         content_width = font_metrics.horizontalAdvance(value or "") + self.HORIZONTAL_PADDING
-        self.line_edit.setFixedWidth(max(self.MIN_INPUT_WIDTH, content_width))
+        self.line_edit.setFixedWidth(control_width(content_width))

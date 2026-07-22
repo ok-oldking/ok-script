@@ -1,5 +1,6 @@
 from qfluentwidgets import DoubleSpinBox
 
+from ok.gui.common.design_system import DesignToken
 from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 
@@ -11,7 +12,7 @@ class LabelAndDoubleSpinBox(ConfigLabelAndWidget):
         self.spin_box = DoubleSpinBox()
         self.update_value()
         self.spin_box.valueChanged.connect(self.value_changed)
-        self.spin_box.setFixedWidth(180)
+        self.spin_box.setFixedWidth(DesignToken.CONTROL_WIDTH)
         self.add_widget(self.spin_box)
 
     def update_value(self):

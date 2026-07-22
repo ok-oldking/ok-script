@@ -2,6 +2,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QVBoxLayout, QSizePolicy, QWidget, QHBoxLayout, QSpacerItem, QFrame, QLayout
 from qfluentwidgets import StrongBodyLabel
 
+from ok.gui.common.design_system import DesignToken, configure_card_layout
 from ok.gui.common.style_sheet import StyleSheet
 
 
@@ -44,9 +45,9 @@ class Card(QWidget):
         self.cardLayout.setSizeConstraint(QVBoxLayout.SetMinimumSize)
         self.topLayout.setSizeConstraint(QHBoxLayout.SetMinimumSize)
 
-        self.vBoxLayout.setSpacing(12)
+        self.vBoxLayout.setSpacing(8)
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
-        self.topLayout.setContentsMargins(12, 12, 12, 12)
+        configure_card_layout(self.topLayout)
         self.cardLayout.setContentsMargins(0, 0, 0, 0)
         if self.title_layout:
             self.vBoxLayout.addLayout(self.title_layout, 0)
@@ -54,7 +55,7 @@ class Card(QWidget):
         if self.stretch == 0:
             self.vBoxLayout.setAlignment(Qt.AlignTop)
 
-        self.cardLayout.setSpacing(0)
+        self.cardLayout.setSpacing(DesignToken.SECTION_SPACING)
         if self.stretch == 0:
             self.cardLayout.setAlignment(Qt.AlignTop)
         self.cardLayout.addLayout(self.topLayout, self.stretch)

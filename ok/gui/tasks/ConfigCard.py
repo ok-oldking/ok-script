@@ -49,7 +49,7 @@ class ConfigContentMixin:
         # initialize layout
         self.viewLayout.setSpacing(0)
         self.viewLayout.setAlignment(Qt.AlignTop)
-        self.viewLayout.setContentsMargins(10, 0, 10, 0)
+        self.viewLayout.setContentsMargins(6, 4, 6, 8)
         self.sub_configs_rules = self.__collect_sub_configs_rules()
         self.sub_configs_controlled_keys = self.__collect_sub_configs_controlled_keys()
         if not self.config or not (self.config.has_user_config() or self.default_config or self.config_type):
