@@ -1,8 +1,24 @@
+import os
 import threading
 
 from qfluentwidgets import FluentIcon
 
 from ok.util.config import ConfigOption, Config
+from ok.util.logger import Logger
+
+logger = Logger.get_logger("GlobalConfig")
+
+APP_LAUNCHER_OPTION_NAME = 'App Launcher'
+APP_LAUNCHER_AUTO_START = 'Start Launcher at Login'
+APP_LAUNCHER_UPDATE_METHOD = 'Launcher Updates'
+APP_LAUNCHER_ACTION = 'Launcher'
+APP_LAUNCHER_OPEN = 'Open Launcher'
+UPDATE_METHOD_LABELS = {
+    'Manual Update': 'MANUAL_UPDATE',
+    'Automatic Update': 'AUTO_UPDATE',
+    'Automatic Update (Pre-release)': 'AUTO_UPDATE_PRE_RELEASE',
+}
+UPDATE_METHOD_VALUES = {value: label for label, value in UPDATE_METHOD_LABELS.items()}
 
 _basic_options_default = {
     'Auto Start Game When App Starts': False,
@@ -74,6 +90,16 @@ class GlobalConfig:
                 self.config_options[option.name] = option
             return config
 
+    def register_config(self, option, config):
+        """Register a config whose storage is managed outside the normal config folder."""
+        with self.lock:
+            existing = self.configs.get(option.name)
+            if existing is not None:
+                return existing
+            self.configs[option.name] = config
+            self.config_options[option.name] = option
+            return config
+
     def get_config_desc(self, key):
         for config_option in self.config_options.values():
             desc_s = config_option.config_description
@@ -110,3 +136,117 @@ def register_basic_options(global_config, enable_blur=False):
                 registered.config_type = {}
             registered.config_type.update(_blur_options_type)
     return config
+
+
+class AppLauncherConfig(dict):
+    """Config adapter that persists launcher preferences through PyAppify."""
+
+    def __init__(self, pyappify_module, launcher_config):
+        self.pyappify_module = pyappify_module
+        self.default = {
+            APP_LAUNCHER_AUTO_START: False,
+            APP_LAUNCHER_UPDATE_METHOD: UPDATE_METHOD_VALUES['AUTO_UPDATE'],
+        }
+        super().__init__(self._to_display_config(launcher_config))
+
+    @staticmethod
+    def _to_display_config(launcher_config):
+        return {
+            APP_LAUNCHER_AUTO_START: launcher_config['auto_start'],
+            APP_LAUNCHER_UPDATE_METHOD: UPDATE_METHOD_VALUES[launcher_config['update_method']],
+        }
+
+    def get_default(self, key):
+        return self.default.get(key)
+
+    def has_user_config(self):
+        return True
+
+    def reset_to_default(self):
+        self._update_launcher(
+            auto_start=self.default[APP_LAUNCHER_AUTO_START],
+            update_method=UPDATE_METHOD_LABELS[self.default[APP_LAUNCHER_UPDATE_METHOD]],
+        )
+
+    def __setitem__(self, key, value):
+        if value == self.get(key):
+            return
+        if key == APP_LAUNCHER_AUTO_START and isinstance(value, bool):
+            self._update_launcher(auto_start=value)
+        elif key == APP_LAUNCHER_UPDATE_METHOD and value in UPDATE_METHOD_LABELS:
+            self._update_launcher(update_method=UPDATE_METHOD_LABELS[value])
+
+    def _update_launcher(self, **changes):
+        try:
+            launcher_config = self.pyappify_module.update_app_config(**changes)
+            display_config = self._to_display_config(launcher_config)
+        except Exception as e:
+            logger.error('Failed to update app launcher config', e)
+            return False
+        super().clear()
+        super().update(display_config)
+        return True
+
+
+def create_app_launcher_options(pyappify_module):
+    """Return the launcher option and config only when the new API is usable."""
+    get_path = getattr(pyappify_module, 'get_app_json_path', None)
+    get_config = getattr(pyappify_module, 'get_app_config', None)
+    update_config = getattr(pyappify_module, 'update_app_config', None)
+    if not all(callable(function) for function in (get_path, get_config, update_config)):
+        return None
+
+    try:
+        config_path = get_path()
+        if not config_path or not os.path.isfile(config_path):
+            return None
+        launcher_config = get_config()
+        if (
+            not isinstance(launcher_config, dict)
+            or not isinstance(launcher_config.get('auto_start'), bool)
+            or launcher_config.get('update_method') not in UPDATE_METHOD_VALUES
+        ):
+            return None
+    except Exception as e:
+        logger.error('PyAppify app launcher config is unavailable', e)
+        return None
+
+    config_type = {
+        APP_LAUNCHER_UPDATE_METHOD: {
+            'type': 'drop_down',
+            'options': list(UPDATE_METHOD_LABELS),
+        },
+    }
+    show_launcher = getattr(pyappify_module, 'show_pyappify', None)
+    if callable(show_launcher):
+        config_type[APP_LAUNCHER_ACTION] = {
+            'type': 'button',
+            'text': APP_LAUNCHER_OPEN,
+            'icon': FluentIcon.UPDATE,
+            'callback': show_launcher,
+        }
+
+    option = ConfigOption(
+        APP_LAUNCHER_OPTION_NAME,
+        {
+            APP_LAUNCHER_AUTO_START: False,
+            APP_LAUNCHER_UPDATE_METHOD: UPDATE_METHOD_VALUES['AUTO_UPDATE'],
+        },
+        description='Configure the app launcher',
+        config_description={
+            APP_LAUNCHER_AUTO_START: 'Start the launcher automatically when you sign in',
+            APP_LAUNCHER_UPDATE_METHOD: 'Choose how the launcher installs updates',
+            APP_LAUNCHER_ACTION: 'Open the app launcher to manage updates',
+        },
+        config_type=config_type,
+        icon=FluentIcon.APPLICATION,
+    )
+    return option, AppLauncherConfig(pyappify_module, launcher_config)
+
+
+def register_app_launcher_options(global_config, pyappify_module):
+    launcher_options = create_app_launcher_options(pyappify_module)
+    if launcher_options is None:
+        return None
+    option, config = launcher_options
+    return global_config.register_config(option, config)

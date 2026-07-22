@@ -1388,6 +1388,54 @@
             <source>Seconds between processed overlay updates</source>
             <translation>Segundos entre actualizaciones de la superposicion procesada</translation>
         </message>
+        <message>
+            <source>App Launcher</source>
+            <translation>Lanzador de aplicaciones</translation>
+        </message>
+        <message>
+            <source>Configure the app launcher</source>
+            <translation>Configurar el lanzador de aplicaciones</translation>
+        </message>
+        <message>
+            <source>Start Launcher at Login</source>
+            <translation>Iniciar el lanzador al iniciar sesión</translation>
+        </message>
+        <message>
+            <source>Start the launcher automatically when you sign in</source>
+            <translation>Inicia automáticamente el lanzador al iniciar sesión</translation>
+        </message>
+        <message>
+            <source>Launcher Updates</source>
+            <translation>Actualizaciones del lanzador</translation>
+        </message>
+        <message>
+            <source>Choose how the launcher installs updates</source>
+            <translation>Elige cómo instala las actualizaciones el lanzador</translation>
+        </message>
+        <message>
+            <source>Manual Update</source>
+            <translation>Actualización manual</translation>
+        </message>
+        <message>
+            <source>Automatic Update</source>
+            <translation>Actualización automática</translation>
+        </message>
+        <message>
+            <source>Automatic Update (Pre-release)</source>
+            <translation>Actualización automática (versión preliminar)</translation>
+        </message>
+        <message>
+            <source>Launcher</source>
+            <translation>Lanzador</translation>
+        </message>
+        <message>
+            <source>Open Launcher</source>
+            <translation>Abrir el lanzador</translation>
+        </message>
+        <message>
+            <source>Open the app launcher to manage updates</source>
+            <translation>Abre el lanzador de aplicaciones para gestionar las actualizaciones</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

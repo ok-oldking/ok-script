@@ -6,10 +6,22 @@ from types import SimpleNamespace
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
 from PySide6.QtWidgets import QApplication
+from qfluentwidgets import FluentIcon
 
 from ok import og
 from ok.gui.tasks.ConfigItemFactory import config_widget
-from ok.util.GlobalConfig import GlobalConfig, create_basic_options, register_basic_options
+from ok.util.GlobalConfig import (
+    APP_LAUNCHER_ACTION,
+    APP_LAUNCHER_AUTO_START,
+    APP_LAUNCHER_OPEN,
+    APP_LAUNCHER_OPTION_NAME,
+    APP_LAUNCHER_UPDATE_METHOD,
+    GlobalConfig,
+    create_app_launcher_options,
+    create_basic_options,
+    register_app_launcher_options,
+    register_basic_options,
+)
 from ok.util.config import Config, ConfigOption
 
 
@@ -113,3 +125,78 @@ class TestBasicOptions(unittest.TestCase):
         finally:
             og.app = original_app
             Config.config_folder = original_folder
+
+    def test_old_pyappify_does_not_add_app_launcher_options(self):
+        global_config = GlobalConfig(None)
+
+        result = register_app_launcher_options(global_config, SimpleNamespace())
+
+        self.assertIsNone(result)
+        self.assertNotIn(APP_LAUNCHER_OPTION_NAME, global_config.configs)
+
+    def test_app_launcher_options_require_an_existing_config_file(self):
+        with tempfile.TemporaryDirectory() as folder:
+            pyappify_module = SimpleNamespace(
+                get_app_json_path=lambda: os.path.join(folder, 'missing-app.json'),
+                get_app_config=lambda: {'auto_start': False, 'update_method': 'AUTO_UPDATE'},
+                update_app_config=lambda **changes: changes,
+            )
+
+            self.assertIsNone(create_app_launcher_options(pyappify_module))
+
+    def test_app_launcher_options_update_pyappify_config(self):
+        with tempfile.TemporaryDirectory() as folder:
+            config_path = os.path.join(folder, 'app.json')
+            with open(config_path, 'w', encoding='utf-8') as config_file:
+                config_file.write('{}')
+            launcher_config = {'auto_start': False, 'update_method': 'AUTO_UPDATE'}
+            updates = []
+            launcher_opened = []
+
+            def update_app_config(**changes):
+                launcher_config.update(changes)
+                updates.append(changes)
+                return dict(launcher_config)
+
+            pyappify_module = SimpleNamespace(
+                get_app_json_path=lambda: config_path,
+                get_app_config=lambda: dict(launcher_config),
+                update_app_config=update_app_config,
+                show_pyappify=lambda: launcher_opened.append(True),
+            )
+            global_config = GlobalConfig(None)
+
+            config = register_app_launcher_options(global_config, pyappify_module)
+            option = global_config.config_options[APP_LAUNCHER_OPTION_NAME]
+
+            self.assertFalse(option.show_at_tab)
+            self.assertEqual(FluentIcon.APPLICATION, option.icon)
+            launcher_button = option.config_type[APP_LAUNCHER_ACTION]
+            self.assertEqual(APP_LAUNCHER_OPEN, launcher_button['text'])
+            self.assertEqual(FluentIcon.UPDATE, launcher_button['icon'])
+            launcher_button['callback']()
+            self.assertEqual([True], launcher_opened)
+            self.assertFalse(config[APP_LAUNCHER_AUTO_START])
+            self.assertEqual('Automatic Update', config[APP_LAUNCHER_UPDATE_METHOD])
+
+            config[APP_LAUNCHER_AUTO_START] = True
+            config[APP_LAUNCHER_UPDATE_METHOD] = 'Automatic Update (Pre-release)'
+
+            self.assertEqual(
+                [
+                    {'auto_start': True},
+                    {'update_method': 'AUTO_UPDATE_PRE_RELEASE'},
+                ],
+                updates,
+            )
+            self.assertTrue(config[APP_LAUNCHER_AUTO_START])
+            self.assertEqual('Automatic Update (Pre-release)', config[APP_LAUNCHER_UPDATE_METHOD])
+
+            config.reset_to_default()
+
+            self.assertEqual(
+                {'auto_start': False, 'update_method': 'AUTO_UPDATE'},
+                updates[-1],
+            )
+            self.assertFalse(config[APP_LAUNCHER_AUTO_START])
+            self.assertEqual('Automatic Update', config[APP_LAUNCHER_UPDATE_METHOD])

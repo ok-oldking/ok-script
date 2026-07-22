@@ -1380,6 +1380,54 @@
             <source>Seconds between processed overlay updates</source>
             <translation>処理済みオーバーレイの更新間隔（秒）</translation>
         </message>
+        <message>
+            <source>App Launcher</source>
+            <translation>アプリランチャー</translation>
+        </message>
+        <message>
+            <source>Configure the app launcher</source>
+            <translation>アプリランチャーを設定</translation>
+        </message>
+        <message>
+            <source>Start Launcher at Login</source>
+            <translation>ログイン時にランチャーを起動</translation>
+        </message>
+        <message>
+            <source>Start the launcher automatically when you sign in</source>
+            <translation>ログイン時にアプリランチャーを自動的に起動します</translation>
+        </message>
+        <message>
+            <source>Launcher Updates</source>
+            <translation>ランチャーの更新</translation>
+        </message>
+        <message>
+            <source>Choose how the launcher installs updates</source>
+            <translation>ランチャーが更新をインストールする方法を選択します</translation>
+        </message>
+        <message>
+            <source>Manual Update</source>
+            <translation>手動更新</translation>
+        </message>
+        <message>
+            <source>Automatic Update</source>
+            <translation>自動更新</translation>
+        </message>
+        <message>
+            <source>Automatic Update (Pre-release)</source>
+            <translation>自動更新（プレリリース）</translation>
+        </message>
+        <message>
+            <source>Launcher</source>
+            <translation>ランチャー</translation>
+        </message>
+        <message>
+            <source>Open Launcher</source>
+            <translation>ランチャーを開く</translation>
+        </message>
+        <message>
+            <source>Open the app launcher to manage updates</source>
+            <translation>アプリランチャーを開いて更新を管理します</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

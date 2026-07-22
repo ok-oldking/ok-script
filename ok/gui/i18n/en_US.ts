@@ -1390,6 +1390,54 @@
             <source>Seconds between processed overlay updates</source>
             <translation>Seconds between processed overlay updates</translation>
         </message>
+        <message>
+            <source>App Launcher</source>
+            <translation>App Launcher</translation>
+        </message>
+        <message>
+            <source>Configure the app launcher</source>
+            <translation>Configure the app launcher</translation>
+        </message>
+        <message>
+            <source>Start Launcher at Login</source>
+            <translation>Start Launcher at Login</translation>
+        </message>
+        <message>
+            <source>Start the launcher automatically when you sign in</source>
+            <translation>Start the launcher automatically when you sign in</translation>
+        </message>
+        <message>
+            <source>Launcher Updates</source>
+            <translation>Launcher Updates</translation>
+        </message>
+        <message>
+            <source>Choose how the launcher installs updates</source>
+            <translation>Choose how the launcher installs updates</translation>
+        </message>
+        <message>
+            <source>Manual Update</source>
+            <translation>Manual Update</translation>
+        </message>
+        <message>
+            <source>Automatic Update</source>
+            <translation>Automatic Update</translation>
+        </message>
+        <message>
+            <source>Automatic Update (Pre-release)</source>
+            <translation>Automatic Update (Pre-release)</translation>
+        </message>
+        <message>
+            <source>Launcher</source>
+            <translation>Launcher</translation>
+        </message>
+        <message>
+            <source>Open Launcher</source>
+            <translation>Open Launcher</translation>
+        </message>
+        <message>
+            <source>Open the app launcher to manage updates</source>
+            <translation>Open the app launcher to manage updates</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

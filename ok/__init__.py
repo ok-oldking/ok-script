@@ -23,7 +23,7 @@ from ok.gui.Communicate import communicate
 from ok.gui.MainWindow import MainWindow
 from ok.task.TaskExecutor import TaskExecutor
 from ok.util.Analytics import Analytics
-from ok.util.GlobalConfig import GlobalConfig, register_basic_options
+from ok.util.GlobalConfig import GlobalConfig, register_app_launcher_options, register_basic_options
 from ok.util.clazz import init_class_by_name
 from ok.util.config import Config, ConfigOption
 from ok.util.handler import Handler, ExitEvent
@@ -361,6 +361,7 @@ class OK:
         self._headless_app = None
         self.debug = config['debug']
         self.global_config = GlobalConfig(config.get('global_configs'))
+        register_app_launcher_options(self.global_config, pyappify)
         windows_config = config.get('windows')
         if windows_config:
             windows_config.setdefault('start_exe', True)

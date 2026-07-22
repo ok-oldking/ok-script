@@ -38,7 +38,7 @@ setuptools.setup(
     ],
     install_requires=[
         'pywin32>=306',
-        'pyappify>=1.0.5',
+        'pyappify>=1.0.6',
         'PySide6-Fluent-Widgets>=1.8.3',
         'typing-extensions>=4.11.0',
         'requests>=2.32.3',

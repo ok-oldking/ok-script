@@ -1386,6 +1386,54 @@
             <source>Seconds between processed overlay updates</source>
             <translation>处理后遮挡层的更新间隔（秒）</translation>
         </message>
+        <message>
+            <source>App Launcher</source>
+            <translation>应用启动器</translation>
+        </message>
+        <message>
+            <source>Configure the app launcher</source>
+            <translation>配置应用启动器</translation>
+        </message>
+        <message>
+            <source>Start Launcher at Login</source>
+            <translation>登录时启动启动器</translation>
+        </message>
+        <message>
+            <source>Start the launcher automatically when you sign in</source>
+            <translation>登录时自动启动应用启动器</translation>
+        </message>
+        <message>
+            <source>Launcher Updates</source>
+            <translation>启动器更新</translation>
+        </message>
+        <message>
+            <source>Choose how the launcher installs updates</source>
+            <translation>选择启动器安装更新的方式</translation>
+        </message>
+        <message>
+            <source>Manual Update</source>
+            <translation>手动更新</translation>
+        </message>
+        <message>
+            <source>Automatic Update</source>
+            <translation>自动更新</translation>
+        </message>
+        <message>
+            <source>Automatic Update (Pre-release)</source>
+            <translation>自动更新（预发布版）</translation>
+        </message>
+        <message>
+            <source>Launcher</source>
+            <translation>启动器</translation>
+        </message>
+        <message>
+            <source>Open Launcher</source>
+            <translation>打开启动器</translation>
+        </message>
+        <message>
+            <source>Open the app launcher to manage updates</source>
+            <translation>打开应用启动器以管理更新</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

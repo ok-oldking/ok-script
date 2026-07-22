@@ -7,6 +7,7 @@ from ok import og
 from ok.gui.common.config import cfg
 from ok.gui.settings.GlobalConfigCard import GlobalConfigCard
 from ok.gui.widget.Tab import Tab
+from ok.util.GlobalConfig import APP_LAUNCHER_OPTION_NAME
 
 
 class SettingTab(Tab):
@@ -63,6 +64,7 @@ class SettingTab(Tab):
     def add_global_config(self):
         global_configs = og.executor.global_config.get_all_visible_configs()
         if global_configs:
+            global_configs.sort(key=lambda item: item[0] != APP_LAUNCHER_OPTION_NAME)
             for name, config, option in global_configs:
                 if getattr(option, 'show_at_tab', False):
                     continue
