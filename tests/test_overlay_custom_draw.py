@@ -27,8 +27,19 @@ class TestOverlayCustomDraw(unittest.TestCase):
         og.device_manager = SimpleNamespace(width=100, height=100)
         og.ok = SimpleNamespace(screenshot=SimpleNamespace(ui_dict={}))
         og.config = {}
-        self.view = OverlayWindow(None)
-        self.view.update_overlay(True, 0, 0, 100, 100, 100, 100, 1)
+        self.source_window = SimpleNamespace(
+            visible=True,
+            x=10,
+            y=20,
+            real_x_offset=2,
+            real_y_offset=4,
+            window_width=100,
+            window_height=80,
+            width=100,
+            height=80,
+            scaling=2,
+        )
+        self.view = OverlayWindow(self.source_window)
 
     def tearDown(self):
         self.view.close()
@@ -38,6 +49,12 @@ class TestOverlayCustomDraw(unittest.TestCase):
         og.device_manager = self.original_device_manager
         og.ok = self.original_ok
         og.config = self.original_config
+
+    def test_initializes_from_current_source_window_state(self):
+        geometry = self.view.geometry()
+
+        self.assertTrue(self.view._source_visible)
+        self.assertEqual((6, 12, 50, 40), (geometry.x(), geometry.y(), geometry.width(), geometry.height()))
 
     def test_custom_painter_controls_visibility_without_boxes_enabled(self):
         painted = []

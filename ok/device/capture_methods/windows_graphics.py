@@ -21,6 +21,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     def __init__(self, hwnd_window):
         super().__init__(hwnd_window)
         self.lock = threading.RLock()
+        self.get_frame_lock = threading.Lock()
         self.frame_event = threading.Event()
         self.frame_requested = threading.Event()
         self.last_frame_time = time.time()
@@ -270,6 +271,12 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             self.capture_target_signature = None
 
     def do_get_frame(self):
+        # frame_requested and last_frame represent one in-flight request. Keep
+        # concurrent task/UI callers from consuming each other's response.
+        with self.get_frame_lock:
+            return self._do_get_frame()
+
+    def _do_get_frame(self):
 
         if self.start_or_stop():
             now = time.time()
@@ -277,19 +284,31 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 logger.warning('no frame for 10 sec, try to restart')
                 self.close()
                 self.last_frame_time = time.time()
-                return self.do_get_frame()
+                return self._do_get_frame()
 
+            # A frame left by a request that timed out is not necessarily the
+            # latest frame anymore. Every call starts a fresh request instead of
+            # consuming such a frame.
             with self.lock:
-                frame = self.last_frame
-                self.last_frame = None  # Pop the frame instantly so we don't get stuck on it next time
+                frame = None
+                self.last_frame = None
                 self.frame_event.clear()
-                if frame is None:
-                    self.frame_requested.set()
+                self.frame_requested.set()
 
-            start_wait = time.time()
+            deadline = time.monotonic() + 1.0
             while frame is None:
-                timeout_duration = 1.0 - (time.time() - start_wait)
+                timeout_duration = deadline - time.monotonic()
                 if timeout_duration <= 0:
+                    # Serialize cancellation with frame_arrived_callback(). If
+                    # the callback won the race, consume that frame; otherwise
+                    # it will see the cleared request and cannot cache a late,
+                    # stale frame for the next call.
+                    with self.lock:
+                        frame = self.last_frame
+                        self.last_frame = None
+                        self.frame_event.clear()
+                        if frame is None:
+                            self.frame_requested.clear()
                     break
 
                 self.frame_event.wait(timeout_duration)
@@ -303,7 +322,6 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                     self.frame_event.clear()
 
             if frame is None:
-                self.frame_requested.clear()
                 return None
 
             latency = time.time() - self.last_frame_time
