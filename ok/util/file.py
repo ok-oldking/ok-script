@@ -76,6 +76,10 @@ def get_relative_path(*files):
     return normalized_path
 
 
+def get_path_under_app(*relative_path):
+    return os.path.normpath(os.path.join(get_path_relative_to_exe(), *relative_path))
+
+
 def install_path_isascii():
     path = get_path_relative_to_exe('')
 
