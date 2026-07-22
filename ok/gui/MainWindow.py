@@ -220,7 +220,6 @@ class MainWindow(FluentWindow):
 
         communicate.executor_paused.connect(self.executor_paused)
         communicate.tab.connect(self.navigate_tab)
-        communicate.task_done.connect(self.activateWindow)
         menu = QMenu()
         exit_action = menu.addAction(self.tr("Exit"))
         exit_action.triggered.connect(self.tray_quit)
