@@ -9,6 +9,7 @@ import threading
 import time
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 # Fix for PySide6 KeyError: 'PATH'
 if "PATH" not in os.environ:
@@ -18,6 +19,77 @@ from ok.util.handler import Handler, ExitEvent
 from ok.util.logger import Logger
 from ok.util.file import get_path_relative_to_exe
 os.environ["PYTHONIOENCODING"] = "utf-8"
+
+if TYPE_CHECKING:
+    from ok.device.DeviceManager import DeviceManager
+    from ok.device.capture import (
+        ADBCaptureMethod,
+        BaseCaptureMethod,
+        BitBltCaptureMethod,
+        BrowserCaptureMethod,
+        DesktopDuplicationCaptureMethod,
+        ForegroundBitBltCaptureMethod,
+        ImageCaptureMethod,
+        NemuIpcCaptureMethod,
+        WindowsGraphicsCaptureMethod,
+    )
+    from ok.device.interaction import (
+        BaseInteraction,
+        BrowserInteraction,
+        DoNothingInteraction,
+        ForegroundPostMessageInteraction,
+        GenshinInteraction,
+        PostMessageInteraction,
+        PyDirectInteraction,
+    )
+    from ok.feature.Box import (
+        Box,
+        average_width,
+        crop_image,
+        find_box_by_name,
+        find_boxes_by_name,
+        find_boxes_within_boundary,
+        find_highest_confidence_box,
+        get_bounding_box,
+        relative_box,
+        sort_boxes,
+    )
+    from ok.feature.Feature import Feature
+    from ok.feature.FeatureSet import FeatureSet
+    from ok.gui.Communicate import communicate
+    from ok.gui.MainWindow import MainWindow
+    from ok.task.DiagnosisTask import DiagnosisTask
+    from ok.task.TaskExecutor import TaskExecutor
+    from ok.task.exceptions import (
+        CannotFindException,
+        CaptureException,
+        FinishedException,
+        TaskDisabledException,
+        WaitFailedException,
+    )
+    from ok.task.task import BaseTask, FindFeature, OCR, TriggerTask
+    from ok.util.Analytics import Analytics
+    from ok.util.GlobalConfig import GlobalConfig, register_app_launcher_options, register_basic_options
+    from ok.util.clazz import init_class_by_name
+    from ok.util.collection import safe_get
+    from ok.util.color import (
+        calculate_color_percentage,
+        color_range_to_bound,
+        find_color_rectangles,
+        get_mask_in_color_range,
+        is_pure_black,
+        mask_white,
+    )
+    from ok.util.config import Config, ConfigOption
+    from ok.util.file import install_path_isascii
+    from ok.util.logger import config_logger
+    from ok.util.process import (
+        WINDOWS_START_METHOD_START,
+        check_mutex,
+        get_first_gpu_free_memory_mib,
+        parse_arguments_to_map,
+    )
+    from ok.util.window import windows_graphics_available
 
 _LAZY_IMPORTS = {
     'communicate': ('ok.gui.Communicate', 'communicate'),
@@ -84,6 +156,21 @@ _LAZY_IMPORTS = {
     'get_mask_in_color_range': ('ok.util.color', 'get_mask_in_color_range'),
     'is_pure_black': ('ok.util.color', 'is_pure_black'),
 }
+
+__all__ = [
+    'App',
+    'BaseScene',
+    'ExitEvent',
+    'Handler',
+    'HeadlessApp',
+    'Logger',
+    'OK',
+    'OkGlobals',
+    'Response',
+    'og',
+    'run_task',
+    *_LAZY_IMPORTS,
+]
 
 
 def __getattr__(name):
