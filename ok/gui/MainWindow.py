@@ -3,11 +3,12 @@ import threading
 
 import pyappify
 from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer, QThread, Signal
-from PySide6.QtGui import QScreen
+from PySide6.QtGui import QColor, QScreen
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
 from qfluentwidgets import MSFluentWindow, qconfig, FluentIcon, NavigationItemPosition, MessageBox, InfoBar, \
-    InfoBarPosition, Theme, MessageBoxBase, FluentWindow, NavigationDisplayMode
-from qfluentwidgets.common.style_sheet import updateStyleSheet
+    InfoBarPosition, Theme, MessageBoxBase, FluentWindow, NavigationDisplayMode, isDarkTheme
+from qfluentwidgets.components.widgets.scroll_bar import ScrollBarHandleDisplayMode
+from qfluentwidgets.common.style_sheet import setThemeColor, updateStyleSheet
 
 _original_MessageBoxBase_keyPressEvent = MessageBoxBase.keyPressEvent
 
@@ -28,7 +29,9 @@ MessageBoxBase.keyPressEvent = _patched_message_box_base_keyPressEvent
 from ok.util.config import Config
 
 from ok.gui.Communicate import communicate
+from ok.gui.common.accent_color import qfluent_theme_source_color
 from ok.gui.util.Alert import alert_error
+from ok.gui.util.touch_scroll import enable_touch_scrolling
 from ok.gui.util.pyappify_startup import get_startup_version_change
 from ok.gui.widget.StartLoadingDialog import StartLoadingDialog
 from ok.util.GlobalConfig import basic_options, KILL_LAUNCHER_AFTER_START
@@ -62,6 +65,14 @@ class MainWindow(FluentWindow):
                  global_config=None, executor=None, handler=None):
         super().__init__()
         logger.info('main window __init__')
+        self._sync_system_accent_color()
+        qconfig.themeChangedFinished.connect(self._sync_system_accent_color)
+        navigation_scroll_area = self.navigationInterface.panel.scrollArea
+        navigation_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        enable_touch_scrolling(navigation_scroll_area)
+        navigation_scroll_area.scrollDelagate.vScrollBar.setHandleDisplayMode(
+            ScrollBarHandleDisplayMode.ALWAYS
+        )
         self.app = app
         self.executor = executor
         self.handler = handler
@@ -83,7 +94,8 @@ class MainWindow(FluentWindow):
         if config.get('show_update_copyright'):
             communicate.copyright.connect(self.show_update_copyright)
 
-        self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Capture'))
+        self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Capture'),
+                             position=NavigationItemPosition.SCROLL)
 
         self.first_task_tab = None
         self.grouped_task_tabs = []
@@ -117,7 +129,8 @@ class MainWindow(FluentWindow):
             self.trigger_tab = TriggerTaskTab()
             if self.first_task_tab is None:
                 self.first_task_tab = self.trigger_tab
-            self.addSubInterface(self.trigger_tab, FluentIcon.STOP_WATCH, self.tr('Triggers'))
+            self.addSubInterface(self.trigger_tab, FluentIcon.STOP_WATCH, self.tr('Triggers'),
+                                 position=NavigationItemPosition.SCROLL)
 
         if visible_onetime_tasks:
             from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
@@ -137,7 +150,8 @@ class MainWindow(FluentWindow):
                 if self.first_task_tab is None:
                     self.first_task_tab = self.onetime_tab
                 logger.debug(f"add default onetime_tab len {len(standalone_tasks)}")
-                self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('Tasks'))
+                self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('Tasks'),
+                                     position=NavigationItemPosition.SCROLL)
 
             for group_name, tasks_in_group in groups.items():
                 group_tab = OneTimeTaskTab(is_standalone=False, group_name=group_name)
@@ -145,7 +159,8 @@ class MainWindow(FluentWindow):
                 if self.first_task_tab is None:
                     self.first_task_tab = group_tab
                 logger.debug(f"add grouped_task_tabs {group_name} len {len(tasks_in_group)}")
-                self.addSubInterface(group_tab, group_icon, self.app.tr(group_name))
+                self.addSubInterface(group_tab, group_icon, self.app.tr(group_name),
+                                     position=NavigationItemPosition.SCROLL)
                 self.grouped_task_tabs.append(group_tab)
 
         # Add custom tabs that should appear after built-in task tabs
@@ -164,12 +179,14 @@ class MainWindow(FluentWindow):
         if og.task_manager.has_custom:
             from ok.gui.tasks.EditTaskTab import EditTaskTab
             self.edit_task_tab = EditTaskTab()
-            self.addSubInterface(self.edit_task_tab, FluentIcon.EDIT, self.tr('Script'))
+            self.addSubInterface(self.edit_task_tab, FluentIcon.EDIT, self.tr('Script'),
+                                 position=NavigationItemPosition.SCROLL)
 
         if og.task_manager.has_custom or debug:
             from ok.gui.tasks.TemplateTab import TemplateTab
             self.template_tab = TemplateTab(config=config)
-            self.addSubInterface(self.template_tab, FluentIcon.PHOTO, self.tr('Templates'))
+            self.addSubInterface(self.template_tab, FluentIcon.PHOTO, self.tr('Templates'),
+                                 position=NavigationItemPosition.SCROLL)
         
         # Initial load of imported tabs
         self.update_imported_tabs()
@@ -180,14 +197,16 @@ class MainWindow(FluentWindow):
         if any_support_schedule:
             from ok.gui.tasks.ScheduleTaskTab import ScheduleTaskTab
             self.schedule_tab = ScheduleTaskTab(config=self.config)
-            self.addSubInterface(self.schedule_tab, FluentIcon.CALENDAR, self.tr('Schedule'))
+            self.addSubInterface(self.schedule_tab, FluentIcon.CALENDAR, self.tr('Schedule'),
+                                 position=NavigationItemPosition.SCROLL)
 
         for name, config_obj, option in global_config.get_all_visible_configs():
             if getattr(option, 'show_at_tab', False):
                 from ok.gui.settings.GlobalConfigTab import GlobalConfigTab
                 config_tab = GlobalConfigTab(config_obj, option)
                 self.global_config_tabs.append(config_tab)
-                self.addSubInterface(config_tab, option.icon or FluentIcon.INFO, self.app.tr(option.name))
+                self.addSubInterface(config_tab, option.icon or FluentIcon.INFO, self.app.tr(option.name),
+                                     position=NavigationItemPosition.SCROLL)
 
         from ok.gui.about.AboutTab import AboutTab
         self.about_tab = AboutTab(config)
@@ -205,7 +224,6 @@ class MainWindow(FluentWindow):
 
         communicate.executor_paused.connect(self.executor_paused)
         communicate.tab.connect(self.navigate_tab)
-        communicate.task_done.connect(self.activateWindow)
         menu = QMenu()
         exit_action = menu.addAction(self.tr("Exit"))
         exit_action.triggered.connect(self.tray_quit)
@@ -230,6 +248,70 @@ class MainWindow(FluentWindow):
         communicate.global_config.connect(self.goto_global_config)
 
         logger.info('main window __init__ done')
+
+    @staticmethod
+    def _get_dwm_accent_color():
+        """Return the DWM accent color as a compatibility fallback."""
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            colorization_color = wintypes.DWORD()
+            opaque_blend = wintypes.BOOL()
+            result = ctypes.windll.dwmapi.DwmGetColorizationColor(
+                ctypes.byref(colorization_color), ctypes.byref(opaque_blend)
+            )
+            if result != 0:
+                return None
+
+            argb = colorization_color.value
+            return QColor((argb >> 16) & 0xff, (argb >> 8) & 0xff, argb & 0xff)
+        except (AttributeError, OSError):
+            logger.exception('Failed to read the Windows system accent color')
+            return None
+
+    def get_system_accent_color(self):
+        """Return the base Windows accent color (legacy helper)."""
+        return self._get_dwm_accent_color()
+
+    def get_system_primary_theme_color(self):
+        """Return a qfluent source color matching the Windows primary fill."""
+        dark = isDarkTheme()
+        try:
+            from ok.rotypes.Windows.UI.ViewManagement import UIColorType, get_color_value
+
+            color_type = UIColorType.AccentLight2 if dark else UIColorType.AccentDark1
+            system_color = get_color_value(color_type)
+            red, green, blue = system_color.red, system_color.green, system_color.blue
+        except (ImportError, OSError, TypeError):
+            logger.exception('Failed to read the Windows accent color palette')
+            fallback = self.get_system_accent_color()
+            if fallback is None:
+                return None
+            red, green, blue = fallback.red(), fallback.green(), fallback.blue()
+
+        red, green, blue = qfluent_theme_source_color(red, green, blue, dark)
+        return QColor(red, green, blue)
+
+    def _sync_system_accent_color(self):
+        color = self.get_system_primary_theme_color()
+        if color is None or color == qconfig.get(qconfig.themeColor):
+            return
+
+        setThemeColor(color, save=False)
+        logger.info(f'System primary button color applied: {color.name()}')
+
+    def nativeEvent(self, event_type, message):
+        try:
+            from ctypes import wintypes
+
+            native_message = wintypes.MSG.from_address(int(message))
+            if native_message.message == 0x0320:
+                QTimer.singleShot(0, self._sync_system_accent_color)
+        except (TypeError, ValueError):
+            logger.exception('Failed to process Windows accent color change')
+
+        return super().nativeEvent(event_type, message)
 
     def update_imported_tabs(self):
         """Update navigation tabs for imported scripts."""
@@ -266,9 +348,11 @@ class MainWindow(FluentWindow):
                     if hasattr(self, 'template_tab'):
                         # Using our custom logic or standard addSubInterface
                         # qfluentwidgets typically appends to the current section
-                        self.addSubInterface(group_tab, group_icon, self.app.tr(script_name))
+                        self.addSubInterface(group_tab, group_icon, self.app.tr(script_name),
+                                             position=NavigationItemPosition.SCROLL)
                     else:
-                        self.addSubInterface(group_tab, group_icon, self.app.tr(script_name))
+                        self.addSubInterface(group_tab, group_icon, self.app.tr(script_name),
+                                             position=NavigationItemPosition.SCROLL)
 
         self.update_navigation_width()
 

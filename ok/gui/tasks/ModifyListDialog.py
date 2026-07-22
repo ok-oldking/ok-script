@@ -6,6 +6,7 @@ from qfluentwidgets import (
 )
 
 from ok import og
+from ok.gui.util.touch_scroll import enable_touch_scrolling
 
 
 SHOW_SEARCH_OPTIONS_THRESHOLD = 20
@@ -77,6 +78,7 @@ class ModifyListDialog(MessageBoxBase):
             available_scroll_area.viewport().setStyleSheet("background-color: transparent;")
             self._options_container = self._create_available_options_widget()
             available_scroll_area.setWidget(self._options_container)
+            enable_touch_scrolling(available_scroll_area)
             available_layout.addWidget(available_scroll_area, stretch=1)
 
             selected_layout = QVBoxLayout()
