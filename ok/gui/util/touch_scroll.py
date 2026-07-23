@@ -1,5 +1,6 @@
 from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtWidgets import QApplication, QAbstractButton, QScroller, QWidget
+from shiboken6 import isValid
 
 
 _FAKE_RELEASE_COORDINATE_LIMIT = -1_000_000
@@ -13,7 +14,15 @@ class _TouchScrollClickGuard(QObject):
         self.scroll_area = scroll_area
         self.scroller = scroller
         self.dragged = False
+        self._active = True
         scroller.stateChanged.connect(self._on_state_changed)
+        scroll_area.destroyed.connect(self._deactivate)
+
+    def _deactivate(self):
+        # QObject destroys its children after emitting destroyed().  Until this
+        # guard is deleted, QApplication can still call its global event filter
+        # for teardown events even though the scroll area's C++ object is gone.
+        self._active = False
 
     def _on_state_changed(self, state):
         if state in (QScroller.State.Dragging, QScroller.State.Scrolling):
@@ -44,6 +53,13 @@ class _TouchScrollClickGuard(QObject):
             widget.update()
 
     def eventFilter(self, obj, event):
+        if (
+            not self._active
+            or not isValid(self.scroll_area)
+            or not isValid(self.scroller)
+        ):
+            return False
+
         if not self._is_content_widget(obj):
             return False
 
