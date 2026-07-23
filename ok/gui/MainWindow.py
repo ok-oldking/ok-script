@@ -487,7 +487,17 @@ class MainWindow(FluentWindow):
     def apply_navigation_state(self):
         self.update_navigation_width()
         if self.ok_config.get('navigation_expanded', True):
-            self.navigationInterface.expand(False)
+            self._expand_navigation_without_animation()
+
+    def _expand_navigation_without_animation(self):
+        self.navigationInterface.expand(False)
+
+        # NavigationInterface normally mirrors the panel width from its resize
+        # event.  While the window is hidden, Qt defers that event until the
+        # first show, leaving the interface at its compact width for one frame.
+        panel = self.navigationInterface.panel
+        if panel.displayMode == NavigationDisplayMode.EXPAND:
+            self.navigationInterface.setFixedWidth(panel.width())
 
     def update_navigation_width(self):
         panel = self.navigationInterface.panel
@@ -504,7 +514,7 @@ class MainWindow(FluentWindow):
         self.navigationInterface.setExpandWidth(width)
 
         if panel.displayMode in (NavigationDisplayMode.EXPAND, NavigationDisplayMode.MENU):
-            self.navigationInterface.expand(False)
+            self._expand_navigation_without_animation()
 
     def _save_navigation_state(self, display_mode):
         self.ok_config['navigation_expanded'] = display_mode in (
