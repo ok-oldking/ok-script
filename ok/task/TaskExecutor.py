@@ -23,6 +23,7 @@ class TaskExecutor:
     pause_end_time: float
     _last_frame_time: float
     wait_until_timeout: float
+    frame_stall_timeout: float
     device_manager: object
     feature_set: object
     wait_until_settle_time: float
@@ -54,7 +55,8 @@ class TaskExecutor:
                  wait_until_timeout=10, wait_until_settle_time=-1,
                  exit_event=None, feature_set=None,
                  ocr_lib=None,
-                 config_folder=None, debug=False, global_config=None, ocr_target_height=0, config=None):
+                 config_folder=None, debug=False, global_config=None, ocr_target_height=0, config=None,
+                 frame_stall_timeout=60):
         self._frame = None
         device_manager.executor = self
         self.pause_start = time.time()
@@ -73,6 +75,7 @@ class TaskExecutor:
         self.feature_set = feature_set
         self.wait_until_settle_time = wait_until_settle_time
         self.wait_scene_timeout = wait_until_timeout
+        self.frame_stall_timeout = frame_stall_timeout
         self.exit_event = exit_event
         self.debug_mode = False
         self.debug = debug
@@ -287,8 +290,16 @@ class TaskExecutor:
         if self.exit_event.is_set():
             logger.info("frame Exit event set. Exiting early.")
             sys.exit(0)
-        if self._frame is None:
+        start = time.time()
+        while self._frame is None:
             self.next_frame()
+            if self._frame is None:
+                elapsed = time.time() - start
+                if elapsed > self.frame_stall_timeout:
+                    raise CaptureException(
+                        f'Unable to capture frame for {self.frame_stall_timeout} seconds')
+                logger.warning(
+                    f'no frame for {elapsed:.0f}s, retrying capture (timeout {self.frame_stall_timeout}s)')
         return self._frame
 
     def check_enabled(self, check_pause=True):
@@ -616,7 +627,7 @@ class TaskExecutor:
                 task.info_set(QCoreApplication.tr('app', 'Error'), error)
                 logger.error(f"{name} exception stopped", e)
                 if self._frame is not None:
-                    communicate.screenshot.emit(self.frame, name, True, None)
+                    communicate.screenshot.emit(self._frame, name, True, None)
                 self.current_task = None
                 communicate.task.emit(None)
         self.destroy()
