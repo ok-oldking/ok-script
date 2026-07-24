@@ -9,7 +9,7 @@ import traceback
 from logging.handlers import TimedRotatingFileHandler, QueueHandler, QueueListener
 from typing import Optional
 
-from ok.util.file import ensure_dir_for_file, get_relative_path
+from ok.util.file import ensure_dir_for_file, get_path_under_app
 
 _ok_log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(threadName)s %(message)s')
 _ok_logger = logging.getLogger("ok")
@@ -204,7 +204,7 @@ def config_logger(config=None, name='ok-script'):
     if _should_skip_file_logging(config):
         return
 
-    logger_file = get_relative_path(os.path.join('logs', name + '.log'))
+    logger_file = get_path_under_app("logs", f"{name}.log")
     ensure_dir_for_file(logger_file)
 
     log_queue = queue.Queue()
@@ -216,7 +216,7 @@ def config_logger(config=None, name='ok-script'):
     _file_handler.setFormatter(_ok_log_formatter)
     _file_handler.setLevel(logging.DEBUG)
 
-    os.makedirs("logs", exist_ok=True)
+    os.makedirs(get_path_under_app("logs"), exist_ok=True)
 
     _file_listener = QueueListener(log_queue, _file_handler)
     _file_listener.start()

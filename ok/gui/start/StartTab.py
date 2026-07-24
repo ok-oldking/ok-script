@@ -15,6 +15,7 @@ from ok.gui.start.SelectInteractionListView import SelectInteractionListView
 from ok.gui.start.StartCard import StartCard
 from ok.gui.widget.Card import Card
 from ok.gui.widget.Tab import Tab
+from ok.util.file import get_path_under_app
 
 
 class StartTab(Tab):
@@ -178,7 +179,7 @@ class StartTab(Tab):
 
     @staticmethod
     def open_log_folder():
-        StartTab.open_folder(Path.cwd() / "logs")
+        StartTab.open_folder(get_path_under_app("logs"))
 
     def open_logs(self):
         from ok.gui.start.LogWindow import LogWindow
