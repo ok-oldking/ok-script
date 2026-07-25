@@ -6,7 +6,7 @@ from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QScreen
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
 from qfluentwidgets import qconfig, FluentIcon, NavigationItemPosition, MessageBox, InfoBar, \
-    InfoBarPosition, MessageBoxBase, FluentWindow, NavigationDisplayMode, isDarkTheme
+    InfoBarPosition, MessageBoxBase, FluentWindow, NavigationDisplayMode, isDarkTheme, Theme
 from qfluentwidgets.components.widgets.scroll_bar import ScrollBarHandleDisplayMode
 from qfluentwidgets.common.style_sheet import updateStyleSheet
 
@@ -51,9 +51,10 @@ class MainWindow(FluentWindow):
     def __init__(self, app, config, ok_config, icon, title, version, debug=False, about=None, exit_event=None,
                  global_config=None, executor=None, handler=None):
         super().__init__()
+        self._theme_cooldowns = set()
         logger.info('main window __init__')
-        self._sync_system_accent_color()
-        qconfig.themeChanged.connect(lambda _theme: self._sync_system_accent_color())
+        self._sync_system_accent_color(refresh=True)
+        qconfig.themeChanged.connect(self._on_theme_changed)
         navigation_scroll_area = self.navigationInterface.panel.scrollArea
         navigation_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         enable_touch_scrolling(navigation_scroll_area)
@@ -221,7 +222,6 @@ class MainWindow(FluentWindow):
         self.tray.activated.connect(self.on_tray_icon_activated)
         self.tray.show()
         self.tray.setToolTip(title)
-        self._theme_cooldowns = set()
 
         self.navigationInterface.displayModeChanged.connect(self._save_navigation_state)
 
@@ -280,7 +280,7 @@ class MainWindow(FluentWindow):
     def _sync_system_accent_color(self, refresh=False):
         color = self.get_system_primary_theme_color()
         if color is None or color == qconfig.get(qconfig.themeColor):
-            return
+            return False
 
         qconfig.set(qconfig.themeColor, color, save=False)
         if refresh:
@@ -288,44 +288,73 @@ class MainWindow(FluentWindow):
             logger.info(f'Refresh primary button color: {color.name()}')
         else:
             logger.info(f'Prepare primary button color: {color.name()}')
+        return True
+
+    def _on_theme_changed(self, _theme):
+        self._sync_system_accent_color()
+
+    def _apply_system_theme_change(self):
+        """Synchronize qfluentwidgets after a native Windows theme notification."""
+        try:
+            theme_changed = False
+            if qconfig.themeMode.value == Theme.AUTO:
+                previous_theme = qconfig.theme
+                qconfig.theme = Theme.AUTO
+                theme_changed = qconfig.theme != previous_theme
+
+            accent_changed = self._sync_system_accent_color()
+            if theme_changed:
+                qconfig.themeChanged.emit(Theme.AUTO)
+            if theme_changed or accent_changed:
+                updateStyleSheet()
+
+            qconfig.themeChangedFinished.emit()
+            QTimer.singleShot(750, self._refresh_mica)
+            logger.info(
+                f'System theme synchronized: mode={qconfig.themeMode.value}, '
+                f'resolved={qconfig.theme}, accent_changed={accent_changed}'
+            )
+        finally:
+            self._theme_cooldowns.discard('system-theme')
 
     def _refresh_mica(self):
-        """Reapply the window-local Mica effect without refreshing all QSS."""
-        if self.isMicaEffectEnabled():
-            logger.info('refresh Mica effect')
-            self.setMicaEffectEnabled(True)
+        """Rebuild Mica after Windows finishes replacing the system backdrop."""
+        if not self.isMicaEffectEnabled():
+            return
 
-    def _clear_theme_cooldown(self, message_type):
-        self._theme_cooldowns.discard(message_type)
+        logger.info(f'Rebuild Mica effect: dark={isDarkTheme()}')
+        self.setMicaEffectEnabled(False)
+        self.setMicaEffectEnabled(True)
+        self.update()
 
-    def nativeEvent(self, eventType, message):
+    def _schedule_system_theme_change(self):
+        if not hasattr(self, '_theme_cooldowns'):
+            self._theme_cooldowns = set()
+        if 'system-theme' in self._theme_cooldowns:
+            return
+        self._theme_cooldowns.add('system-theme')
+        QTimer.singleShot(250, self._apply_system_theme_change)
+
+    def nativeEvent(self, event_type, message):
         try:
             import ctypes
             from ctypes import wintypes
 
             native_message = wintypes.MSG.from_address(int(message))
-            # if (
-            #     native_message.message == 0x0320  # WM_DWMCOLORIZATIONCOLORCHANGED
-            #     and native_message.message not in self._theme_cooldowns
-            # ):
-            #     self._theme_cooldowns.add(native_message.message)
-            #     logger.info("System colorization colors changed")
-            #     QTimer.singleShot(2000, lambda: self._sync_system_accent_color(refresh=True))
-            #     QTimer.singleShot(2000, lambda: self._clear_theme_cooldown(0x0320))
-            if (
+            if native_message.message == 0x0320:  # WM_DWMCOLORIZATIONCOLORCHANGED
+                logger.info('System colorization colors changed')
+                self._schedule_system_theme_change()
+            elif (
                 native_message.message == 0x001A  # WM_SETTINGCHANGE
                 and native_message.lParam
                 and ctypes.wstring_at(native_message.lParam) == "ImmersiveColorSet"
-                and native_message.message not in self._theme_cooldowns
             ):
-                self._theme_cooldowns.add(native_message.message)
-                logger.info("System theme changed")
-                QTimer.singleShot(1000, self._refresh_mica)
-                QTimer.singleShot(1000, lambda: self._clear_theme_cooldown(0x001A))
+                logger.info('System theme changed')
+                self._schedule_system_theme_change()
         except (OSError, TypeError, ValueError) as e:
             logger.error('Failed to process Windows theme change', e)
 
-        return super().nativeEvent(eventType, message)
+        return super().nativeEvent(event_type, message)
 
     def update_imported_tabs(self):
         """Update navigation tabs for imported scripts."""
