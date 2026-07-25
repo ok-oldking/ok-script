@@ -584,9 +584,12 @@ class FindFeature(ExecutorOperation):
                      canny_higher=0, frame_processor=None, template=None, match_method=cv2.TM_CCOEFF_NORMED,
                      screenshot=False,
                      mask_function=None, frame=None, limit=0, target_height=0) -> List[Box]:
+        image = frame if frame is not None else self.executor.frame
+        if image is None:
+            return []
         if box and isinstance(box, str):
             box = self.get_box_by_name(box)
-        return self.executor.feature_set.find_feature(frame if frame is not None else self.executor.frame, feature_name,
+        return self.executor.feature_set.find_feature(image, feature_name,
                                                       horizontal_variance,
                                                       vertical_variance,
                                                       threshold, use_gray_scale, x, y, to_x, to_y, width, height,
@@ -764,11 +767,11 @@ class OCR(FindFeature):
 
         Returns:
             list: A list of Box objects representing the detected text regions, sorted by y-coordinate.
-                 Returns an empty list if no text is detected or no matches are found.
-
-        Raises:
-            Exception: If no image frame is provided.
+                 Returns an empty list if no frame is available, no text is detected, or no matches are found.
         """
+        image = frame if frame is not None else self.executor.frame
+        if image is None:
+            return []
         if box and isinstance(box, str):
             box = self.get_box_by_name(box)
         if self.executor.paused:
@@ -777,46 +780,39 @@ class OCR(FindFeature):
             threshold = self.ocr_default_threshold
         start = time.time()
         match = self.fix_match_regex(match)
-        if frame is not None:
-            image = frame
-        else:
-            image = self.executor.frame
         frame_height, frame_width = image.shape[0], image.shape[1]
-        if image is None:
-            raise Exception("ocr no frame")
+        if box is None:
+            box = relative_box(frame_width, frame_height, x, y, to_x, to_y, width, height, name)
+        if box is not None:
+            image = image[box.y:box.y + box.height, box.x:box.x + box.width]
+            if not box.name and match:
+                box.name = str(match)
+        if use_grayscale:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        image, scale_factor = resize_image(image, frame_height, target_height)
+        if frame_processor is not None:
+            image = frame_processor(image)
+        detected_boxes, ocr_boxes = self.ocr_fun(lib)(box, image, match, scale_factor, threshold, lib)
+
+        communicate.emit_draw_box("ocr" + join_list_elements(name), detected_boxes, "red")
+        communicate.emit_draw_box("ocr_zone" + join_list_elements(name), [box] if box else [],
+                                  "blue")  # ensure list for drawing
+
+        if screenshot:
+            self.screenshot('ocr', frame=image, show_box=True, frame_box=box)
+        if log:
+            level = logger.info
+        elif self.log_debug and self.debug:
+            level = logger.debug
         else:
-            if box is None:
-                box = relative_box(frame_width, frame_height, x, y, to_x, to_y, width, height, name)
-            if box is not None:
-                image = image[box.y:box.y + box.height, box.x:box.x + box.width]
-                if not box.name and match:
-                    box.name = str(match)
-            if use_grayscale:
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-            image, scale_factor = resize_image(image, frame_height, target_height)
-            if frame_processor is not None:
-                image = frame_processor(image)
-            detected_boxes, ocr_boxes = self.ocr_fun(lib)(box, image, match, scale_factor, threshold, lib)
-
-            communicate.emit_draw_box("ocr" + join_list_elements(name), detected_boxes, "red")
-            communicate.emit_draw_box("ocr_zone" + join_list_elements(name), [box] if box else [],
-                                      "blue")  # ensure list for drawing
-
-            if screenshot:
-                self.screenshot('ocr', frame=image, show_box=True, frame_box=box)
-            if log:
-                level = logger.info
-            elif self.log_debug and self.debug:
-                level = logger.debug
-            else:
-                level = None
-            if level:
-                level(
-                    f"ocr_zone {box} found result: {detected_boxes}) time: {(time.time() - start):.2f} scale_factor: {scale_factor:.2f} target_height:{target_height} resized_shape:{image.shape} all_boxes: {ocr_boxes}")
-            if level and not detected_boxes and ocr_boxes:
-                level(f'ocr detected but no match: {match} {ocr_boxes}')
-            return sort_boxes(detected_boxes)
+            level = None
+        if level:
+            level(
+                f"ocr_zone {box} found result: {detected_boxes}) time: {(time.time() - start):.2f} scale_factor: {scale_factor:.2f} target_height:{target_height} resized_shape:{image.shape} all_boxes: {ocr_boxes}")
+        if level and not detected_boxes and ocr_boxes:
+            level(f'ocr detected but no match: {match} {ocr_boxes}')
+        return sort_boxes(detected_boxes)
 
     def ocr_fun(self, lib):
         lib_name = self.executor.config.get('ocr').get(lib).get('lib')
