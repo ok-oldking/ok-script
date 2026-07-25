@@ -1,5 +1,4 @@
 import os
-import subprocess
 import zipfile
 from pathlib import Path
 
@@ -15,6 +14,7 @@ from ok.gui.start.SelectInteractionListView import SelectInteractionListView
 from ok.gui.start.StartCard import StartCard
 from ok.gui.widget.Card import Card
 from ok.gui.widget.Tab import Tab
+from ok.util.explorer import open_explorer_folder, reveal_in_explorer
 
 
 class StartTab(Tab):
@@ -166,7 +166,7 @@ class StartTab(Tab):
     @staticmethod
     def open_install_folder():
         cwd = os.getcwd()
-        subprocess.Popen(f'explorer "{cwd}"')
+        open_explorer_folder(cwd)
 
     @staticmethod
     def open_screenshot_folder():
@@ -194,9 +194,7 @@ class StartTab(Tab):
 
     @staticmethod
     def open_folder(folder):
-        folder_path = Path(folder)
-        folder_path.mkdir(parents=True, exist_ok=True)
-        subprocess.Popen(["explorer", str(folder_path)])
+        open_explorer_folder(folder)
 
     @staticmethod
     def export_logs():
@@ -219,7 +217,7 @@ class StartTab(Tab):
                         if file_path.is_file():
                             zipf.write(file_path, file_path.relative_to(Path.cwd()))
 
-            subprocess.run(["explorer", f"/select,{zip_path}"])
+            reveal_in_explorer(zip_path)
         except Exception as e:
             alert_error(f"{og.app.tr('Export failed')}: {e}", tray=True)
             from ok import Logger
@@ -244,7 +242,7 @@ class StartTab(Tab):
                     with open(result_path, 'w', encoding='utf-8') as f:
                         for box in result:
                             f.write(f"{box.name}, {box}, {box.confidence}\n")
-                subprocess.Popen(f'explorer "{folder_abs}"')
+                open_explorer_folder(folder_abs)
         except Exception as e:
             self.logger.error('debug ocr_log exception', e)
 

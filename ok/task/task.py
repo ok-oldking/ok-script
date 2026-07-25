@@ -1,5 +1,4 @@
 import re
-import subprocess
 import threading
 import time
 from typing import List
@@ -15,6 +14,7 @@ from ok.gui.Communicate import communicate
 from ok.task.exceptions import HotkeyConfigException
 from ok.util.color import calculate_color_percentage
 from ok.util.config import Config
+from ok.util.explorer import reveal_in_explorer
 from ok.util.handler import Handler
 from ok.util.logger import Logger
 from ok.util.process import create_shortcut
@@ -1128,7 +1128,7 @@ class BaseTask(OCR):
         path = create_shortcut(None, f' {self.name}', arguments=f"-t {index}")
         if path:
             path2 = create_shortcut(None, f' {self.name} exit_after', arguments=f"-t {index} -e")
-            subprocess.Popen(r'explorer /select,"{}"'.format(path))
+            reveal_in_explorer(path)
 
     def sleep_check(self):
         pass
