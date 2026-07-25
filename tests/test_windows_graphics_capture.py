@@ -171,7 +171,7 @@ class TestWindowsGraphicsCaptureGetFrame(unittest.TestCase):
         method = self._method(_FakeFrame())
         method.last_frame = None
 
-        with patch.object(windows_graphics_module.time, 'monotonic', side_effect=[0.0, 2.0]):
+        with patch.object(windows_graphics_module.time, 'monotonic', side_effect=[0.0, 5.0]):
             result = method.do_get_frame()
 
         self.assertIsNone(result)

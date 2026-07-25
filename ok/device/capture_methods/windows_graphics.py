@@ -14,6 +14,9 @@ from ok.device.capture_methods.bitblt_utils import PBYTE, composite_hwnds, get_c
 
 logger = Logger.get_logger(__name__)
 
+WGC_FRAME_WAIT_TIMEOUT = 4.0
+
+
 class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     name = "Windows Graphics Capture"
     description = "fast, most compatible, capped at 60fps"
@@ -295,7 +298,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 self.frame_event.clear()
                 self.frame_requested.set()
 
-            deadline = time.monotonic() + 1.0
+            deadline = time.monotonic() + WGC_FRAME_WAIT_TIMEOUT
             while frame is None:
                 timeout_duration = deadline - time.monotonic()
                 if timeout_duration <= 0:
