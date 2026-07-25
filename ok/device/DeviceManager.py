@@ -721,15 +721,18 @@ class DeviceManager:
                 path = None
             if calculate := self.windows_capture_config.get(
                     'calculate_pc_exe_path'):
+                calculate_path = path
                 if isinstance(calculate, str):
                     path = calculate
                 else:
                     try:
-                        path = calculate(path)
+                        path = calculate(calculate_path)
                     except Exception as e:
-                        logger.error(f'calculate_pc_exe_path failed: {e}', e)
+                        logger.error(
+                            f'calculate_pc_exe_path failed for caller path {calculate_path}: {e}', e)
                         return None
-                logger.info(f'calculate_pc_exe_path {path}')
+                logger.info(
+                    f'calculate_pc_exe_path caller path {calculate_path}, result {path}')
                 if isinstance(path, str) and '://' in path:
                     logger.info(f'path is a url skip checking {path}')
                     return path

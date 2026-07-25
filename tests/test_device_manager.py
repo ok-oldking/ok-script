@@ -49,9 +49,12 @@ class TestDeviceManagerPcWindows(unittest.TestCase):
         device = {'device': 'windows', 'full_path': ''}
 
         with patch('ok.device.DeviceManager.os.path.exists', return_value=True):
-            path = manager.get_exe_path(device)
+            with patch('ok.device.DeviceManager.logger.info') as log:
+                path = manager.get_exe_path(device)
 
         calculate.assert_called_once_with(None)
+        log.assert_any_call(
+            r'calculate_pc_exe_path caller path None, result C:\Game\game.exe')
         self.assertEqual(r'C:\Game\game.exe', path)
 
     def test_get_exe_path_returns_none_when_calculated_path_does_not_exist(self):
