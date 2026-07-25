@@ -55,7 +55,7 @@ class AppConfig(QConfig):
 
 cfg = AppConfig()
 _ui_config_path = get_relative_path('configs', "ui_config.json")
-cfg.themeMode.value = Theme.DARK
+cfg.themeMode.value = Theme.AUTO
 qconfig.load(_ui_config_path, cfg)
 
 if __name__ == '__main__':
