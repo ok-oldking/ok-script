@@ -11,6 +11,7 @@ from qfluentwidgets import FluentIcon
 
 from ok import og
 from ok.gui.tasks.ConfigCard import ConfigCard
+from ok.gui.tasks.LabelAndMultiSelection import LabelAndMultiSelection
 
 
 class FakeConfig(dict):
@@ -72,3 +73,32 @@ class TestConfigCard(unittest.TestCase):
         QApplication.processEvents()
 
         self.assertTrue(card.isExpand)
+
+    def test_multi_selection_choices_are_aligned_to_the_right(self):
+        config = {
+            "Multi Selection Config": [
+                "Multi Selection Value 1",
+                "Multi Selection Value 2",
+            ],
+        }
+        widget = LabelAndMultiSelection(
+            {},
+            [
+                "Multi Selection Value 1",
+                "Multi Selection Value 2",
+                "Multi Selection Value 3",
+            ],
+            config,
+            "Multi Selection Config",
+        )
+        widget.resize(1000, widget.sizeHint().height())
+        widget.show()
+        QApplication.processEvents()
+        self.addCleanup(widget.close)
+
+        choices_right = widget.check_boxes[-1].mapTo(widget, widget.check_boxes[-1].rect().bottomRight()).x()
+        content_right = widget.content_layout.mapTo(
+            widget, widget.content_layout.rect().bottomRight()
+        ).x()
+
+        self.assertLessEqual(content_right - choices_right, 16)

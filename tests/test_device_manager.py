@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from ok.device.DeviceManager import DeviceManager
 
@@ -41,6 +41,41 @@ class TestDeviceManagerPcWindows(unittest.TestCase):
 
         self.assertEqual({'phone', 'pc'}, set(manager.device_dict))
         self.assertFalse(manager.device_dict['pc']['connected'])
+
+    def test_get_exe_path_uses_calculated_path_when_saved_path_is_empty(self):
+        manager = self.make_manager()
+        calculate = Mock(return_value=r'C:\Game\game.exe')
+        manager.windows_capture_config['calculate_pc_exe_path'] = calculate
+        device = {'device': 'windows', 'full_path': ''}
+
+        with patch('ok.device.DeviceManager.os.path.exists', return_value=True):
+            path = manager.get_exe_path(device)
+
+        calculate.assert_called_once_with(None)
+        self.assertEqual(r'C:\Game\game.exe', path)
+
+    def test_get_exe_path_returns_none_when_calculated_path_does_not_exist(self):
+        manager = self.make_manager()
+        calculate = Mock(return_value=r'C:\Game\missing.exe')
+        manager.windows_capture_config['calculate_pc_exe_path'] = calculate
+        device = {'device': 'windows', 'full_path': None}
+
+        with patch('ok.device.DeviceManager.os.path.exists', return_value=False):
+            path = manager.get_exe_path(device)
+
+        calculate.assert_called_once_with(None)
+        self.assertIsNone(path)
+
+    def test_get_exe_path_returns_none_when_calculation_raises(self):
+        manager = self.make_manager()
+        calculate = Mock(side_effect=RuntimeError('registry lookup failed'))
+        manager.windows_capture_config['calculate_pc_exe_path'] = calculate
+        device = {'device': 'windows', 'full_path': None}
+
+        path = manager.get_exe_path(device)
+
+        calculate.assert_called_once_with(None)
+        self.assertIsNone(path)
 
 
 if __name__ == '__main__':

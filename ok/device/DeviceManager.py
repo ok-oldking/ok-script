@@ -715,24 +715,28 @@ class DeviceManager:
 
     def get_exe_path(self, device):
         path = device.get('full_path')
-        if not path:
-            return None
         if device.get(
                 'device') == 'windows' and self.windows_capture_config:
-            if path == "none":
+            if not path or path == "none":
                 path = None
             if calculate := self.windows_capture_config.get(
                     'calculate_pc_exe_path'):
                 if isinstance(calculate, str):
                     path = calculate
                 else:
-                    path = self.windows_capture_config.get('calculate_pc_exe_path')(path)
+                    try:
+                        path = calculate(path)
+                    except Exception as e:
+                        logger.error(f'calculate_pc_exe_path failed: {e}', e)
+                        return None
                 logger.info(f'calculate_pc_exe_path {path}')
-                if '://' in path:
+                if isinstance(path, str) and '://' in path:
                     logger.info(f'path is a url skip checking {path}')
                     return path
-            if os.path.exists(path):
+            if path and os.path.exists(path):
                 return path
+            return None
+        if not path:
             return None
         elif emulator := device.get('emulator'):
             from ok.alas.platform_windows import get_emulator_exe
