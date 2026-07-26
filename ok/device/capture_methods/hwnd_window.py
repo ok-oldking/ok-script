@@ -13,6 +13,7 @@ from ok.util.logger import Logger
 from ok.util.window import show_title_bar, get_window_bounds, resize_window, is_foreground_window, find_hwnd
 
 from ok.device.capture_methods.base import BaseWindowsCaptureMethod
+from ok.device.capture_methods.bitblt_utils import get_crop_point
 
 logger = Logger.get_logger(__name__)
 
@@ -190,6 +191,16 @@ class HwndWindow:
     def get_abs_cords(self, x, y):
         return self.x + x, self.y + y
 
+    def get_capture_origin(self):
+        """Return the screen origin of the cropped game content."""
+        if self.real_x_offset != 0 or self.real_y_offset != 0:
+            offset_x = self.real_x_offset
+            offset_y = self.real_y_offset
+        else:
+            offset_x, offset_y = get_crop_point(
+                self.window_width, self.window_height, self.width, self.height)
+        return self.x + offset_x, self.y + offset_y
+
     def get_top_window_cords(self, x, y):
         return x - self.top_offset_x, y - self.top_offset_y
 
@@ -309,7 +320,8 @@ class HwndWindow:
                         communicate.adb_devices.emit(True)
                     logger.info(
                         f"do_update_window_size changed,visible:{self.visible},exists:{self.exists} x:{self.x} y:{self.y} window:{self.width}x{self.height} self.window:{self.window_width}x{self.window_height} real:{self.real_width}x{self.real_height}")
-                    communicate.window.emit(self.visible, self.x + self.real_x_offset, self.y + self.real_y_offset,
+                    capture_x, capture_y = self.get_capture_origin()
+                    communicate.window.emit(self.visible, capture_x, capture_y,
                                             self.window_width, self.window_height,
                                             self.width,
                                             self.height, self.scaling)

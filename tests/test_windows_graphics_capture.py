@@ -29,6 +29,32 @@ class _FakeFramePool:
 
 
 class TestCaptureTargetSignature(unittest.TestCase):
+    def test_capture_origin_uses_fallback_crop_for_embedded_title_bar(self):
+        window = object.__new__(HwndWindow)
+        window.x = 100
+        window.y = 200
+        window.window_width = 1920
+        window.window_height = 1140
+        window.width = 1920
+        window.height = 1080
+        window.real_x_offset = 0
+        window.real_y_offset = 0
+
+        self.assertEqual((100, 260), window.get_capture_origin())
+
+    def test_capture_origin_prefers_discovered_render_surface_offset(self):
+        window = object.__new__(HwndWindow)
+        window.x = 100
+        window.y = 200
+        window.window_width = 1920
+        window.window_height = 1140
+        window.width = 1920
+        window.height = 1080
+        window.real_x_offset = 8
+        window.real_y_offset = 42
+
+        self.assertEqual((108, 242), window.get_capture_origin())
+
     def test_hwnd_window_signature_tracks_hwnd_tree_and_geometry(self):
         window = object.__new__(HwndWindow)
         window.hwnd = 10
