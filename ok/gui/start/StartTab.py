@@ -15,6 +15,9 @@ from ok.gui.start.StartCard import StartCard
 from ok.gui.widget.Card import Card
 from ok.gui.widget.Tab import Tab
 from ok.util.explorer import open_explorer_folder, reveal_in_explorer
+from ok.util.logger import Logger
+
+logger = Logger.get_logger(__name__)
 
 
 class StartTab(Tab):
@@ -171,9 +174,16 @@ class StartTab(Tab):
     @staticmethod
     def open_screenshot_folder():
         from ok import og
-        folder = getattr(getattr(og.ok, 'screenshot', None), 'screenshot_folder', None)
+        screenshot = getattr(og.ok, 'screenshot', None)
+        folder = getattr(screenshot, 'screenshot_folder', None)
+        configured_folder = og.ok.config.get("screenshots_folder")
+        logger.info(
+            f'open screenshot folder requested: configured={configured_folder!r}, '
+            f'initialized={folder!r}, cwd={os.getcwd()!r}'
+        )
         if folder is None:
             folder = Path.cwd() / "screenshots"
+            logger.info(f'screenshot folder was not initialized; using fallback={str(folder)!r}')
         StartTab.open_folder(folder)
 
     @staticmethod
