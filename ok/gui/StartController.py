@@ -61,6 +61,8 @@ class StartController(QObject):
                 if exit_after:
                     task.exit_after_task = True
                 self._mark_task_enabled(task)
+                if og.executor.paused:
+                    og.executor.start()
                 communicate.starting_emulator.emit(True, None, 0)
                 return True
         except Exception as e:
