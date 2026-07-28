@@ -21,6 +21,23 @@ from ok.util.window import windows_graphics_available, find_hwnd
 
 logger = Logger.get_logger(__name__)
 
+
+def resolve_emulator_window_exe(exe_path, instance_name=None):
+    """Resolve an emulator launcher path to the instance window executable."""
+    if not exe_path:
+        return exe_path
+
+    normalized_path = os.path.normpath(exe_path)
+    if os.path.basename(normalized_path).lower() != 'mumunxmain.exe':
+        return exe_path
+
+    match = re.search(r'-(\d+(?:\.\d+)+)-\d+$', instance_name or '')
+    version = match.group(1) if match else '12.0'
+    install_root = os.path.dirname(os.path.dirname(normalized_path))
+    return os.path.join(
+        install_root, 'nx_device', version, 'shell', 'MuMuNxDevice.exe')
+
+
 class DeviceManager:
 
     def __init__(self, app_config, exit_event=None, global_config=None):
@@ -346,11 +363,11 @@ class DeviceManager:
                 adb_width, adb_height = self.get_resolution(adb_device)
             else:
                 adb_width, adb_height = 0, 0
-            name, hwnd, full_path, x, y, width, height, _ = find_hwnd(None,
-                                                                   emulator.path, adb_width, adb_height,
-                                                                   emulator.player_id)
+            window_exe = resolve_emulator_window_exe(emulator.path, emulator.name)
+            name, hwnd, full_path, x, y, width, height, _ = find_hwnd(
+                None, window_exe, adb_width, adb_height, emulator.player_id)
             logger.info(
-                f'adb_connect emulator result {emulator.path} {emulator.player_id} {emulator.type} {adb_device} hwnd_size {width, height} adb_size {adb_width, adb_height} {name, hwnd}')
+                f'adb_connect emulator result {window_exe} {emulator.player_id} {emulator.type} {adb_device} hwnd_size {width, height} adb_size {adb_width, adb_height} {name, hwnd}')
             connected = adb_device is not None
             emulator_device = {"address": emulator.serial, "device": "adb", "full_path": emulator.path,
                                "connected": connected, "imei": emulator.name, "player_id": emulator.player_id,
@@ -629,8 +646,10 @@ class DeviceManager:
                         logger.info(f'use adb capture {preferred}')
                 if preferred.get('full_path'):
                     logger.info(f'ensure_hwnd for debugging {preferred} {width, height}')
-                    self.ensure_hwnd(None, preferred.get('full_path').replace("nx_main/MuMuNxMain.exe",
-                                                                              "nx_device/12.0/shell/MuMuNxDevice.exe"),
+                    emulator = preferred.get('emulator')
+                    window_exe = resolve_emulator_window_exe(
+                        preferred.get('full_path'), getattr(emulator, 'name', None))
+                    self.ensure_hwnd(None, window_exe,
                                      width, height,
                                      preferred['player_id'])
                 elif self.hwnd_window is not None:

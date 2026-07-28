@@ -35,6 +35,8 @@ class HwndWindow:
         self.player_id = player_id
         self.window_width = 0
         self.window_height = 0
+        self.client_width = 0
+        self.client_height = 0
         self.x = 0
         self.y = 0
         self.width = 0
@@ -198,7 +200,7 @@ class HwndWindow:
             offset_y = self.real_y_offset
         else:
             offset_x, offset_y = get_crop_point(
-                self.window_width, self.window_height, self.width, self.height)
+                self.client_width, self.client_height, self.width, self.height)
         return self.x + offset_x, self.y + offset_y
 
     def get_top_window_cords(self, x, y):
@@ -212,6 +214,8 @@ class HwndWindow:
             self.top_hwnd,
             self.width,
             self.height,
+            self.client_width,
+            self.client_height,
             self.real_x_offset,
             self.real_y_offset,
             self.real_width,
@@ -227,7 +231,10 @@ class HwndWindow:
         try:
             changed = False
             exists = False
-            visible, x, y, window_width, window_height, width, height, scaling = self.visible, self.x, self.y, self.window_width, self.window_height, self.width, self.height, self.scaling
+            visible, x, y = self.visible, self.x, self.y
+            window_width, window_height = self.window_width, self.window_height
+            client_width, client_height = self.client_width, self.client_height
+            width, height, scaling = self.width, self.height, self.scaling
             name, find_hwnd_res, exe_full_path, real_x_offset, real_y_offset, real_width, real_height, hwnds = find_hwnd(
                 self.title,
                 self.exe_names or self.device_manager.config.get('selected_exe'),
@@ -267,6 +274,7 @@ class HwndWindow:
                     visible = self.is_foreground()
                     x, y, window_width, window_height, width, height, scaling = get_window_bounds(
                         self.hwnd)
+                    client_width, client_height = width, height
                     if self.frame_aspect_ratio != 0 and height != 0:
                         window_ratio = width / height
                         if window_ratio < self.frame_aspect_ratio:
@@ -302,9 +310,13 @@ class HwndWindow:
                     self.last_mute_check = time.time()
 
                 if (window_width != self.window_width or window_height != self.window_height or
+                    client_width != self.client_width or client_height != self.client_height or
                     x != self.x or y != self.y or width != self.width or height != self.height or scaling != self.scaling) and (
                         (x >= -1 and y >= -1) or self.visible):
-                    self.x, self.y, self.window_width, self.window_height, self.width, self.height, self.scaling = x, y, window_width, window_height, width, height, scaling
+                    self.x, self.y = x, y
+                    self.window_width, self.window_height = window_width, window_height
+                    self.client_width, self.client_height = client_width, client_height
+                    self.width, self.height, self.scaling = width, height, scaling
                     changed = True
                 if self.exists != exists:
                     self.exists = exists

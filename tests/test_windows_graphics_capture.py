@@ -35,6 +35,8 @@ class TestCaptureTargetSignature(unittest.TestCase):
         window.y = 200
         window.window_width = 1920
         window.window_height = 1140
+        window.client_width = 1920
+        window.client_height = 1140
         window.width = 1920
         window.height = 1080
         window.real_x_offset = 0
@@ -48,10 +50,29 @@ class TestCaptureTargetSignature(unittest.TestCase):
         window.y = 200
         window.window_width = 1920
         window.window_height = 1140
+        window.client_width = 1920
+        window.client_height = 1140
         window.width = 1920
         window.height = 1080
         window.real_x_offset = 8
         window.real_y_offset = 42
+
+        self.assertEqual((108, 242), window.get_capture_origin())
+
+    def test_capture_origin_does_not_double_count_standard_window_decorations(self):
+        window = object.__new__(HwndWindow)
+        # x/y are already the client area's screen origin. The larger outer
+        # dimensions include the standard Windows border and title bar.
+        window.x = 108
+        window.y = 242
+        window.window_width = 1296
+        window.window_height = 759
+        window.client_width = 1280
+        window.client_height = 720
+        window.width = 1280
+        window.height = 720
+        window.real_x_offset = 0
+        window.real_y_offset = 0
 
         self.assertEqual((108, 242), window.get_capture_origin())
 
@@ -61,6 +82,8 @@ class TestCaptureTargetSignature(unittest.TestCase):
         window.top_hwnd = 11
         window.width = 1280
         window.height = 720
+        window.client_width = 1280
+        window.client_height = 752
         window.real_x_offset = 0
         window.real_y_offset = 32
         window.real_width = 1280

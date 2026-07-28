@@ -1,7 +1,33 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from ok.device.DeviceManager import DeviceManager
+from ok.device.DeviceManager import DeviceManager, resolve_emulator_window_exe
+
+
+class TestEmulatorWindowExe(unittest.TestCase):
+    def test_resolves_mumu_15_instance_window(self):
+        launcher = r'C:\Program Files\Netease\MuMu\nx_main\MuMuNxMain.exe'
+
+        result = resolve_emulator_window_exe(launcher, 'MuMuPlayer-15.0-1')
+
+        self.assertEqual(
+            r'C:\Program Files\Netease\MuMu\nx_device\15.0\shell\MuMuNxDevice.exe',
+            result)
+
+    def test_resolves_mumu_12_instance_window(self):
+        launcher = r'C:\MuMu\nx_main\MuMuNxMain.exe'
+
+        result = resolve_emulator_window_exe(launcher, 'MuMuPlayer-12.0-0')
+
+        self.assertEqual(
+            r'C:\MuMu\nx_device\12.0\shell\MuMuNxDevice.exe', result)
+
+    def test_keeps_other_emulator_executable(self):
+        executable = r'C:\LDPlayer\dnplayer.exe'
+
+        self.assertEqual(
+            executable,
+            resolve_emulator_window_exe(executable, 'leidian0'))
 
 
 class TestDeviceManagerPcWindows(unittest.TestCase):
