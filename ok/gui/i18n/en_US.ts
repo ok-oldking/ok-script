@@ -1024,6 +1024,10 @@
             <source>Time Elapsed</source>
             <translation>Time Elapsed</translation>
         </message>
+        <message>
+            <source>Close</source>
+            <translation>Close</translation>
+        </message>
     </context>
     <context>
         <name>VersionCard</name>

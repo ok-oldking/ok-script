@@ -1018,6 +1018,10 @@
             <source>Time Elapsed</source>
             <translation>已執行時間</translation>
         </message>
+        <message>
+            <source>Close</source>
+            <translation>關閉</translation>
+        </message>
     </context>
     <context>
         <name>VersionCard</name>

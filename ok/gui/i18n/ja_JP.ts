@@ -1014,6 +1014,10 @@
             <source>Time Elapsed</source>
             <translation>経過時間</translation>
         </message>
+        <message>
+            <source>Close</source>
+            <translation>閉じる</translation>
+        </message>
     </context>
     <context>
         <name>VersionCard</name>

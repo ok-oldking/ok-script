@@ -1023,6 +1023,10 @@
             <source>Time Elapsed</source>
             <translation>경과 시간</translation>
         </message>
+        <message>
+            <source>Close</source>
+            <translation>닫기</translation>
+        </message>
     </context>
     <context>
         <name>VersionCard</name>
