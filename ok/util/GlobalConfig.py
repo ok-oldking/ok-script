@@ -146,7 +146,7 @@ class AppLauncherConfig(dict):
         self.pyappify_module = pyappify_module
         self.basic_config = basic_config
         self.default = {
-            APP_LAUNCHER_AUTO_START: False,
+            APP_LAUNCHER_AUTO_START: True,
             APP_LAUNCHER_UPDATE_METHOD: UPDATE_METHOD_VALUES['AUTO_UPDATE'],
         }
         super().__init__(self._to_display_config(launcher_config))

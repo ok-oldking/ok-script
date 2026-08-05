@@ -227,10 +227,10 @@ class TestBasicOptions(unittest.TestCase):
             config.reset_to_default()
 
             self.assertEqual(
-                {'auto_start': False, 'update_method': 'AUTO_UPDATE'},
+                {'auto_start': True, 'update_method': 'AUTO_UPDATE'},
                 updates[-1],
             )
-            self.assertFalse(config[APP_LAUNCHER_AUTO_START])
+            self.assertTrue(config[APP_LAUNCHER_AUTO_START])
             self.assertEqual('Automatic Update(Release Only)', config[APP_LAUNCHER_UPDATE_METHOD])
             self.assertFalse(basic_config[KILL_LAUNCHER_AFTER_START])
 
