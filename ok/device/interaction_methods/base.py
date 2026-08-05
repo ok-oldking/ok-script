@@ -1,17 +1,26 @@
+import time
+
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
 class BaseInteraction:
 
+    KEY_LOG_INTERVAL = 1.0
+
     def __init__(self, capture):
         self.capture = capture
+        self._last_key_log_times = {}
 
     def should_capture(self):
         return True
 
     def send_key(self, key, down_time=0.02):
-        logger.debug(f'Sending key {key}')
+        now = time.monotonic()
+        last_log_time = self._last_key_log_times.get(key)
+        if last_log_time is None or now - last_log_time >= self.KEY_LOG_INTERVAL:
+            logger.debug(f'Sending key {key}')
+            self._last_key_log_times[key] = now
 
     def send_key_down(self, key):
         pass
