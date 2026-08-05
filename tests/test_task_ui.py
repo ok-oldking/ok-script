@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
 from ok import og
@@ -19,6 +20,14 @@ class FakeConfig(dict):
 
     def has_user_config(self):
         return False
+
+
+class PopulatedFakeConfig(dict):
+    def get_default(self, key):
+        return self.get(key)
+
+    def has_user_config(self):
+        return True
 
 
 class TestTaskUi(unittest.TestCase):
@@ -67,6 +76,40 @@ class TestTaskUi(unittest.TestCase):
             card.card.titleLabel.geometry().center().y(),
             card.card.contentLabel.geometry().center().y(),
         )
+
+    def test_task_card_with_long_text_collapses_to_header_height(self):
+        values = {f"Option {index}": False for index in range(20)}
+        values["Long text"] = "A configuration value long enough to use the multiline text editor"
+        task = SimpleNamespace(
+            name="Long text task",
+            description="Collapse regression test",
+            config=PopulatedFakeConfig(values),
+            default_config=values,
+            config_description={},
+            config_type={},
+            icon=None,
+            instructions=None,
+            is_custom=False,
+            show_create_shortcut=False,
+            enabled=False,
+        )
+        card = TaskCard(task, onetime=False)
+        card.resize(1200, card.height())
+        card.show()
+        QApplication.processEvents()
+        self.addCleanup(communicate.task.disconnect, card.update_buttons)
+        self.addCleanup(card.close)
+
+        header_height = card.viewportMargins().top()
+        card.setExpand(True)
+        QTest.qWait(300)
+        QApplication.processEvents()
+        self.assertGreater(card.height(), header_height)
+
+        card.setExpand(False)
+        QTest.qWait(300)
+        QApplication.processEvents()
+        self.assertEqual(header_height, card.height())
 
     def test_status_panel_stays_closed_until_a_different_task_starts(self):
         first_task = SimpleNamespace(
