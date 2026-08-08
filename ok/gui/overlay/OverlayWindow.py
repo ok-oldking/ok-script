@@ -66,7 +66,16 @@ class OverlayWindow(OverlayWidget):
         logger.debug(f'update_overlay: {visible}, {x}, {y}, {width}, {height}, {scaling}')
         self._source_visible = visible
         if visible:
-            self.setGeometry(x / scaling, y / scaling, width / scaling, height / scaling)
+            # 混合 DPI 多屏下不能直接 x / scaling：Qt 屏幕逻辑 origin != 物理 origin / 该屏 DPR，
+            # 直接相除会让 overlay 向 x 正方向偏移（实测副屏 125% 时偏移 480px）。
+            from ok.util.screen_coords import physical_rect_to_logical
+            lx, ly, lw, lh = physical_rect_to_logical(x, y, width, height, dpr_hint=scaling)
+            self.setGeometry(
+                int(round(lx)),
+                int(round(ly)),
+                max(1, int(round(lw))),
+                max(1, int(round(lh))),
+            )
         else:
             self.clear_blur_patches()
         self.refresh_visibility()

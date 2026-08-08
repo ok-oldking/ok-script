@@ -51,10 +51,17 @@ class TestOverlayCustomDraw(unittest.TestCase):
         og.config = self.original_config
 
     def test_initializes_from_current_source_window_state(self):
+        # update_overlay 用真实屏幕 DPR 做物理 -> 逻辑换算（修复混合 DPI 多屏偏移），
+        # 期望值由同一换算函数计算，避免在 DPR 不同的主机上断言写死数值；
+        # 同时验证几何确实是该换算的输出（而不是旧的 物理/scaling）。
+        from ok.util.screen_coords import physical_rect_to_logical
+        lx, ly, lw, lh = physical_rect_to_logical(12, 24, 100, 80, dpr_hint=2)
+        expected = (int(round(lx)), int(round(ly)), max(1, int(round(lw))), max(1, int(round(lh))))
+
         geometry = self.view.geometry()
 
         self.assertTrue(self.view._source_visible)
-        self.assertEqual((6, 12, 50, 40), (geometry.x(), geometry.y(), geometry.width(), geometry.height()))
+        self.assertEqual(expected, (geometry.x(), geometry.y(), geometry.width(), geometry.height()))
 
     def test_custom_painter_controls_visibility_without_boxes_enabled(self):
         painted = []
