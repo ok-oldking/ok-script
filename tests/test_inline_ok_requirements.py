@@ -61,3 +61,48 @@ def test_remove_ok_requirements_matches_deploy_subpaths(tmp_path, monkeypatch):
     assert (tmp_path / "requirements.txt").read_text(encoding="utf-8") == (
         "ok-script==1.0.147\nrequests==2.32.3\n"
     )
+
+
+def test_additional_inlined_requirement_is_added_to_deploy_and_removed(tmp_path, monkeypatch):
+    copied_folders = []
+    _write_repo_files(tmp_path, "src")
+    with (tmp_path / "requirements.txt").open("a", encoding="utf-8") as requirements:
+        requirements.write("custom-package==2.0.0\n")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        inline_ok_requirements,
+        "find_and_copy_site_package",
+        lambda folder, repo_dir: copied_folders.append(folder) or 0,
+    )
+
+    inline_ok_requirements.main([
+        "--tag",
+        "v1.2.3",
+        "--add-inlined-requirement",
+        "custom-package=custom_package",
+    ])
+
+    assert copied_folders == ["custom_package"]
+    assert (tmp_path / "deploy.txt").read_text(encoding="utf-8") == "src\ncustom_package\n"
+    assert "custom-package" not in (tmp_path / "requirements.txt").read_text(encoding="utf-8")
+
+
+def test_additional_inlined_requirement_does_not_duplicate_deploy_subpath(tmp_path, monkeypatch):
+    copied_folders = []
+    _write_repo_files(tmp_path, "custom_package/main.py\n")
+    with (tmp_path / "requirements.txt").open("a", encoding="utf-8") as requirements:
+        requirements.write("custom-package==2.0.0\n")
+    monkeypatch.setattr(
+        inline_ok_requirements,
+        "find_and_copy_site_package",
+        lambda folder, repo_dir: copied_folders.append(folder) or 0,
+    )
+
+    inline_ok_requirements.remove_ok_requirements(
+        str(tmp_path),
+        "v1.2.3",
+        {"custom-package": "custom_package"},
+    )
+
+    assert copied_folders == ["custom_package"]
+    assert (tmp_path / "deploy.txt").read_text(encoding="utf-8") == "custom_package/main.py\n"

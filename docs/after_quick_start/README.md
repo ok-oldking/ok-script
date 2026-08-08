@@ -115,6 +115,22 @@ Python 项目打包成独立 Windows 可执行文件的工具，它通过项目�
 6. **打包可执行文件 (`Build with PyAppify Action`)**: 调用 PyAppify 工具将 Python 项目打包成独立的 Windows 可执行文件。
 7. **创建 GitHub Release (`Release`)**: 在 GitHub 上创建新的 Release，使用自动生成的更新日志作为描述，并将打包好的可执行文件作为附件上传。
 
+#### 添加额外的源码内联依赖
+
+`inline_ok_requirements` 默认内联 `ok-script` 和 `pyappify`。可以重复使用可选参数
+`--add-inlined-requirement PACKAGE=FOLDER`，将更新频繁且体积较小的 Python pip 库整合到 Git 代码中。
+这些库之后可以随 Git 仓库一起更新，无需用户单独通过 pip 安装或升级：
+
+```powershell
+python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG" `
+  --add-inlined-requirement custom-package=custom_package `
+  --add-inlined-requirement another-package=another_package
+```
+
+`PACKAGE` 是 `requirements.txt` 中的发行包名称，`FOLDER` 是需要从 `site-packages` 复制并内联到项目中的目录。
+使用 `--tag` 时，已内联的 `PACKAGE` 会从 `requirements.txt` 删除。若 `deploy.txt` 尚未包含 `FOLDER`
+或其子路径，脚本会自动把 `FOLDER` 追加到 `deploy.txt`；已有条目不会重复添加。
+
 ### Sync Repositories 的国内镜像功能
 
 `Sync Repositories` 步骤的一个主要用途是**同步代码到国内镜像仓库**。对于无法流畅访问 GitHub 的国内用户，他们可以通过配置好的国内
