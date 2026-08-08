@@ -5,6 +5,7 @@ from ok.gui.tasks.LabelAndFileSelector import LabelAndFileSelector
 from ok.gui.tasks.LabelAndGlobal import LabelAndGlobal
 from ok.gui.tasks.LabelAndLineEdit import LabelAndLineEdit
 from ok.gui.tasks.LabelAndMultiSelection import LabelAndMultiSelection
+from ok.gui.tasks.LabelAndMultiSelectionDropDown import LabelAndMultiSelectionDropDown
 from ok.gui.tasks.LabelAndSpinBox import LabelAndSpinBox
 from ok.gui.tasks.LabelAndSwitchButton import LabelAndSwitchButton
 from ok.gui.tasks.LabelAndTextEdit import LabelAndTextEdit
@@ -41,6 +42,8 @@ def config_widget(config_type, config_desc, config, key, value, task):
             return LabelAndDropDown(config_desc, the_type['options'], config, key)
         elif resolved_type == 'multi_selection':
             return LabelAndMultiSelection(config_desc, the_type['options'], config, key)
+        elif resolved_type == 'multi_selection_dropdown':
+            return LabelAndMultiSelectionDropDown(config_desc, the_type['options'], config, key)
         elif resolved_type == 'global':
             config = task.get_global_config(key)
             desc = task.get_global_config_desc(key)
