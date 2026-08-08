@@ -435,6 +435,14 @@ class MainWindow(FluentWindow):
         first_show = event.type() == QEvent.Show and not self.shown
         if first_show:
             self.shown = True
+            # 计划任务索引启动时自动校正：以缓存任务名（不随 onetime_tasks 排序变化）为身份，
+            # 修正已创建计划任务的旧 -t 索引。必须在 parse_arguments_to_map 之前执行，
+            # 这样本次启动（-t 旧索引）也会被改写为正确索引。
+            try:
+                from ok.gui.tasks.schedule_index_sync import sync_schedule_task_indexes
+                sync_schedule_task_indexes()
+            except Exception:
+                logger.exception("schedule task index sync failed in showEvent")
             args = parse_arguments_to_map()
             pyappify.hide_pyappify()
             if update_pyappify := self.config.get("update_pyappify"):
