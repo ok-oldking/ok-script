@@ -282,7 +282,9 @@ class App:
         if ok_tr := QCoreApplication.translate("app", key):
             if ok_tr != key:
                 return ok_tr
-        if self.to_translate is not None:
+        # 纯数字配置值（如 self.tr("100")）不是需要翻译的文案，收集前过滤掉，
+        # 避免污染 .po 翻译目录（生成一堆无意义的纯数字 msgid）。
+        if self.to_translate is not None and not (isinstance(key, str) and key.strip().isdigit()):
             self.to_translate.add(key)
         if self.po_translation is None:
             locale_name = self.locale.name()
