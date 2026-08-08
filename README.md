@@ -10,7 +10,7 @@
 3. 一套代码即可支持Windows安卓模拟器/ADB连接的虚拟机, Windows客户端游戏
 4. 自适应分辨率
 5. 使用coco管理图片匹配素材, 仅需一个分辨率下的截图就, 支持不同分辨率自适应
-6. 可打包离线/在线安装setup.exe, 支持通过Pip/Git国内镜像在线增量更新. 在线安装包仅3M
+6. 可打包离线/在线安装setup.exe, 支持通过Pip/Git国内镜像在线增量更新，也可将小型 pip 依赖内联后随 Git 代码更新. 在线安装包仅3M
 7. 支持Github Action一键构建
 8. 支持多语言国际化
 
@@ -62,6 +62,7 @@ compile_i18n.cmd
   - [2. 多语言国际化 (i18n)](docs/after_quick_start/README.md#2-多语言国际化-i18n)
   - [3. 自动化测试](docs/after_quick_start/README.md#3-自动化测试)
   - [4. 使用 GitHub Action 自动化打包与发布](docs/after_quick_start/README.md#4-使用-github-action-自动化打包与发布)
+    - [添加额外的源码内联依赖](docs/after_quick_start/README.md#添加额外的源码内联依赖)
 * 开发者群: 938132715
 * pip [https://pypi.org/project/ok-script](https://pypi.org/project/ok-script)
 

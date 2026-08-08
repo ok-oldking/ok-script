@@ -10,6 +10,7 @@ CI/CD 流程实现项目的自动化管理。
 - [3. 自动化测试](#3-自动化测试)
 - [4. 使用 GitHub Action 自动化打包与发布](#4-使用-github-action-自动化打包与发布)
     - [关键步骤解析](#关键步骤解析)
+        - [添加额外的源码内联依赖](#添加额外的源码内联依赖)
     - [Sync Repositories 的国内镜像功能](#sync-repositories-的国内镜像功能)
     - [配置多地区更新源](#配置多地区更新源)
     - [打包产物说明](#打包产物说明)
@@ -109,7 +110,7 @@ Python 项目打包成独立 Windows 可执行文件的工具，它通过项目�
 
 1. **触发条件 (`on`)**: 工作流由推送 `v*` 格式的 Git 标签触发，是标准的版本发布方式。
 2. **安装依赖与环境设置 (`Install dependencies`)**: 读取 `requirements.txt` 并安装所有依赖，为后续步骤做准备。
-3. **源码内联 (`inline_ok_requirements`)**: 将 `ok-script` 框架源码直接集成到项目中，使得最终打包的 `.exe` 完全自包含，简化用户安装。
+3. **源码内联 (`inline_ok_requirements`)**: 将 `ok-script`、`pyappify` 以及额外配置的小型依赖库整合到 Git 代码中，使其随仓库一起更新，无需单独通过 pip 升级。
 4. **运行自动化测试 (`Run tests`)**: 执行 `tests/` 目录下的所有单元测试，作为发布的“质量门禁”。任何测试失败都会中断流程。
 5. **同步仓库与生成更新日志 (`Sync Repositories`)**: 一个自定义 Action，用于将部分代码同步到轻量级的更新库，并自动生成两个版本标签之间的更新日志。
 6. **打包可执行文件 (`Build with PyAppify Action`)**: 调用 PyAppify 工具将 Python 项目打包成独立的 Windows 可执行文件。
@@ -117,9 +118,8 @@ Python 项目打包成独立 Windows 可执行文件的工具，它通过项目�
 
 #### 添加额外的源码内联依赖
 
-`inline_ok_requirements` 默认内联 `ok-script` 和 `pyappify`。可以重复使用可选参数
-`--add-inlined-requirement PACKAGE=FOLDER`，将更新频繁且体积较小的 Python pip 库整合到 Git 代码中。
-这些库之后可以随 Git 仓库一起更新，无需用户单独通过 pip 安装或升级：
+`inline_ok_requirements` 默认内联 `ok-script` 和 `pyappify`。对于更新频繁且体积较小、希望随 Git
+仓库分发的 Python pip 库，可以重复使用可选参数 `--add-inlined-requirement PACKAGE=FOLDER`：
 
 ```powershell
 python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG" `
@@ -127,9 +127,12 @@ python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG" `
   --add-inlined-requirement another-package=another_package
 ```
 
-`PACKAGE` 是 `requirements.txt` 中的发行包名称，`FOLDER` 是需要从 `site-packages` 复制并内联到项目中的目录。
-使用 `--tag` 时，已内联的 `PACKAGE` 会从 `requirements.txt` 删除。若 `deploy.txt` 尚未包含 `FOLDER`
-或其子路径，脚本会自动把 `FOLDER` 追加到 `deploy.txt`；已有条目不会重复添加。
+- `PACKAGE`：`requirements.txt` 中的 pip 发行包名称，例如 `custom-package`。
+- `FOLDER`：该库在 `site-packages` 中需要复制的源码目录，例如 `custom_package`。
+
+使用 `--tag` 时，脚本会从已安装的依赖中复制 `FOLDER`，并从 `requirements.txt` 删除对应的 `PACKAGE`。
+若 `deploy.txt` 尚未包含 `FOLDER` 或其子路径，脚本会自动追加该目录；已有条目不会重复添加。
+此方式适合纯 Python、小体积依赖；包含大型资源或依赖平台二进制文件的库，应继续通过正常的依赖和打包流程管理。
 
 ### Sync Repositories 的国内镜像功能
 
