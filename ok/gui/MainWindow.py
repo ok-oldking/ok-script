@@ -85,7 +85,6 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Capture'),
                              position=NavigationItemPosition.SCROLL)
 
-        self.first_task_tab = None
         self.grouped_task_tabs = []
         self.schedule_tab = None
         self.global_config_tabs = []
@@ -115,8 +114,6 @@ class MainWindow(FluentWindow):
         if len(visible_trigger_tasks) > 0:
             from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
             self.trigger_tab = TriggerTaskTab()
-            if self.first_task_tab is None:
-                self.first_task_tab = self.trigger_tab
             self.addSubInterface(self.trigger_tab, FluentIcon.STOP_WATCH, self.tr('Triggers'),
                                  position=NavigationItemPosition.SCROLL)
 
@@ -135,8 +132,6 @@ class MainWindow(FluentWindow):
 
             if standalone_tasks:
                 self.onetime_tab = OneTimeTaskTab(is_standalone=True)
-                if self.first_task_tab is None:
-                    self.first_task_tab = self.onetime_tab
                 logger.debug(f"add default onetime_tab len {len(standalone_tasks)}")
                 self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('Tasks'),
                                      position=NavigationItemPosition.SCROLL)
@@ -144,8 +139,6 @@ class MainWindow(FluentWindow):
             for group_name, tasks_in_group in groups.items():
                 group_tab = OneTimeTaskTab(is_standalone=False, group_name=group_name)
                 group_icon = tasks_in_group[0].group_icon
-                if self.first_task_tab is None:
-                    self.first_task_tab = group_tab
                 logger.debug(f"add grouped_task_tabs {group_name} len {len(tasks_in_group)}")
                 self.addSubInterface(group_tab, group_icon, self.app.tr(group_name),
                                      position=NavigationItemPosition.SCROLL)
@@ -641,9 +634,20 @@ class MainWindow(FluentWindow):
         elif index == "about" and self.about_tab is not None:
             self.switchTo(self.about_tab)
 
+    def startup_task_tab(self):
+        """Return the first one-time task tab, falling back to triggers."""
+        if self.onetime_tab is not None:
+            return self.onetime_tab
+        if self.grouped_task_tabs:
+            return self.grouped_task_tabs[0]
+        if self.imported_tabs:
+            return next(iter(self.imported_tabs.values()))
+        return self.trigger_tab
+
     def executor_paused(self, paused):
-        if not paused and self.stackedWidget.currentIndex() == 0 and self.first_task_tab:
-            self.switchTo(self.first_task_tab)
+        task_tab = self.startup_task_tab()
+        if not paused and self.stackedWidget.currentIndex() == 0 and task_tab:
+            self.switchTo(task_tab)
         self.show_notification(self.tr("Start Success.") if not paused else self.tr("Pause Success."), tray=not paused)
 
     def _check_okscript_args(self):
