@@ -1,81 +1,74 @@
 # ok-script
-* ok-script 是基于图像识别技术, 纯Python实现的, 支持Windows窗口和模拟器的自动化测试框架。
-* 框架包含UI, 截图, 输入, 设备控制, OCR, 模板匹配, 框框Debug浮层, 基于Github Action的测试, 打包, 升级/降级。
-* 基于开发一个工业级的自动化软件仅需几百行代码。
 
-## 优势
+[简体中文](README.md) | [English](README_en.md)
 
-1. 纯Python实现, 免费开源, 依赖库均为开源方案
-2. 支持pip install任何第三方库, 可以方便整合yolo等框架
-3. 一套代码即可支持Windows安卓模拟器/ADB连接的虚拟机, Windows客户端游戏
-4. 自适应分辨率
-5. 使用coco管理图片匹配素材, 仅需一个分辨率下的截图就, 支持不同分辨率自适应
-6. 可打包离线/在线安装setup.exe, 支持通过Pip/Git国内镜像在线增量更新，也可将小型 pip 依赖内联后随 Git 代码更新. 在线安装包仅3M
-7. 支持Github Action一键构建
-8. 支持多语言国际化
+[![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)
 
-## [使用基于ok-script的按键精灵, 快速学习和开始](https://github.com/ok-oldking/ok-py)
+基于计算机视觉的 Python 自动化框架，面向 Windows 应用、Windows 游戏、安卓模拟器和 ADB 设备。
 
-**API列表, 脚本录制**
-![image_scripting](docs/ok_py/image_scripting.png)
+ok-script 提供 UI、截图与输入、设备控制、OCR、模板匹配、调试浮层、自动化测试、打包和增量更新能力。它使用 COCO 格式管理模板素材，并支持分辨率自适应与多语言界面。
 
-**支持多种截图以及交互方式**
-![image_screenshot](docs/ok_py/image_capture.png)
+## 特性
 
-**标注管理 (Template Matching)**
-![image_template](docs/ok_py/image_template.png)
-![image_markup](docs/ok_py/image_markup.png)
+- 纯 Python 实现，免费开源，可直接使用 pip 生态中的第三方库
+- 同一套任务代码可支持 Windows 客户端、安卓模拟器和 ADB 设备
+- 支持 OCR、OpenCV 模板匹配以及 YOLO 等视觉方案
+- 基于 COCO 标注管理模板素材，并根据屏幕分辨率自动缩放
+- 内置截图、输入、设备控制和可视化调试工具
+- 支持自动化测试、GitHub Actions 构建和安装包发布
+- 支持多语言国际化和在线增量更新
 
-### 使用 推荐使用Python 3.12
+## 快速安装
 
-* 在你的项目中通过pip依赖使用
-```commandline
-pip install ok-script
+ok-script 支持 Python 3.11 及以上版本，推荐使用 Python 3.12。
+
+```powershell
+python -m pip install ok-script
 ```
 
-* 编译国际化文件
-```commandline
-compile_i18n.cmd
-```
+如果要创建完整的自动化项目，建议从 [`ok-script-boilerplate`](https://github.com/ok-oldking/ok-script-boilerplate) 模板开始，而不是直接在本仓库中编写业务脚本。
 
-## 文档和示例代码
+## 文档
 
-* [游戏自动化入门](docs/intro_to_automation/README.md)
-  - [1、基本原理：计算机如何“玩”游戏](docs/intro_to_automation/README.md#一基本原理计算机如何玩游戏)
-    - [核心循环：三步走](docs/intro_to_automation/README.md#核心循环三步走)
-    - [图像分析：从像素到决策](docs/intro_to_automation/README.md#图像分析从像素到决策)
-        - [传统图色算法 (OpenCV 库)](docs/intro_to_automation/README.md#1-传统图色算法-opencv-库)
-        - [神经网络推理 (Inference)](docs/intro_to_automation/README.md#2-神经网络推理-inference)
-    - [2、编程语言选择](docs/intro_to_automation/README.md#二编程语言选择)
-        - [常用库概览](docs/intro_to_automation/README.md#常用库概览)
-    - [3、开发工具](docs/intro_to_automation/README.md#三开发工具)
-* [快速开始](docs/quick_start/README.md)
-* [API文档](docs/api_doc/README.md)
-  - [Box](docs/api_doc/README.md#box)
-  - [BaseTask](docs/api_doc/README.md#basetask)
-    - [截图 (Screenshot)](docs/api_doc/README.md#截图-screenshot)
-    - [输入 (Input)](docs/api_doc/README.md#输入-input)
-    - [OCR](docs/api_doc/README.md#ocr)
-    - [找图 (Image finding)](docs/api_doc/README.md#找图-image-finding)
-* [进阶使用](docs/after_quick_start/README.md)
-  - [1. 模板匹配 (Template Matching)](docs/after_quick_start/README.md#1-模板匹配-template-matching)
-  - [2. 多语言国际化 (i18n)](docs/after_quick_start/README.md#2-多语言国际化-i18n)
-  - [3. 自动化测试](docs/after_quick_start/README.md#3-自动化测试)
-  - [4. 使用 GitHub Action 自动化打包与发布](docs/after_quick_start/README.md#4-使用-github-action-自动化打包与发布)
-    - [添加额外的源码内联依赖](docs/after_quick_start/README.md#添加额外的源码内联依赖)
-* 开发者群: 938132715
-* pip [https://pypi.org/project/ok-script](https://pypi.org/project/ok-script)
+从[文档中心](docs/README.md)选择适合你的阅读路径：
 
+1. [游戏自动化入门](docs/intro_to_automation/README.md)：了解截图、识别、决策和输入的基本原理
+2. [快速开始](docs/quick_start/README.md)：从模板仓库创建并运行第一个项目
+3. [进阶指南](docs/after_quick_start/README.md)：模板匹配、国际化、测试和发布
+4. [API 参考](docs/api_doc/README.md)：`Box`、`BaseTask` 及常用任务 API
 
-## 使用ok-script的项目：
+想先体验完整工具链，也可以使用基于 ok-script 的按键精灵项目 [`ok-py`](https://github.com/ok-oldking/ok-py)。
 
-* 鸣潮 [https://github.com/ok-oldking/ok-wuthering-wave](https://github.com/ok-oldking/ok-wuthering-waves)
-* 原神(不在维护,
-  但是后台过剧情可用) [https://github.com/ok-oldking/ok-genshin-impact](https://github.com/ok-oldking/ok-genshin-impact)
-* 少前2 [https://github.com/ok-oldking/ok-gf2](https://github.com/ok-oldking/ok-gf2)
-* 星铁 [https://github.com/Shasnow/ok-starrailassistant](https://github.com/Shasnow/ok-starrailassistant)
-* 星痕共鸣 [https://github.com/Sanheiii/ok-star-resonance](https://github.com/Sanheiii/ok-star-resonance)
-* 二重螺旋 [https://github.com/BnanZ0/ok-duet-night-abyss](https://github.com/BnanZ0/ok-duet-night-abyss)
-* 白荆回廊(停止更新) [https://github.com/ok-oldking/ok-baijing](https://github.com/ok-oldking/ok-baijing)
-* 终末地 [https://github.com/AliceJump/ok-end-field](https://github.com/AliceJump/ok-end-field)
-* 异环 [https://github.com/BnanZ0/ok-nte](https://github.com/BnanZ0/ok-nte)
+## 界面预览
+
+| 脚本与 API | 截图与交互 |
+| --- | --- |
+| ![脚本与 API 界面](docs/ok_py/image_scripting.png) | ![截图与交互界面](docs/ok_py/image_capture.png) |
+
+| 模板管理 | 图像标注 |
+| --- | --- |
+| ![模板管理界面](docs/ok_py/image_template.png) | ![图像标注界面](docs/ok_py/image_markup.png) |
+
+## 使用 ok-script 的项目
+
+- [鸣潮](https://github.com/ok-oldking/ok-wuthering-waves)
+- [原神](https://github.com/ok-oldking/ok-genshin-impact)（停止维护，后台过剧情仍可用）
+- [少女前线 2](https://github.com/ok-oldking/ok-gf2)
+- [崩坏：星穹铁道](https://github.com/Shasnow/ok-starrailassistant)
+- [星痕共鸣](https://github.com/Sanheiii/ok-star-resonance)
+- [二重螺旋](https://github.com/BnanZ0/ok-duet-night-abyss)
+- [卡厄思梦境](https://github.com/baoxin1100/ok-kes)
+- [阴阳师](https://github.com/YunLiuZ/ok-Onmyoji)
+- [白荆回廊](https://github.com/ok-oldking/ok-baijing)（停止维护）
+- [明日方舟：终末地](https://github.com/AliceJump/ok-end-field)
+- [异环](https://github.com/BnanZ0/ok-nte)
+
+## 社区与发布
+
+- 开发者 QQ 群：938132715
+- [PyPI](https://pypi.org/project/ok-script/)
+- [GitHub](https://github.com/ok-oldking/ok-script)
+
+## 许可证
+
+本项目采用 [AGPL-3.0 许可证](LICENSE.txt)。

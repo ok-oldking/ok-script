@@ -45,6 +45,42 @@
             <source>Downgrade success {from_version} -&gt; {to_version}</source>
             <translation>다운그레이드 성공 {from_version} -&gt; {to_version}</translation>
         </message>
+        <message>
+            <source>ok-py Automation Tool</source>
+            <translation>ok-py 자동화 도구</translation>
+        </message>
+        <message>
+            <source>Wuthering Waves</source>
+            <translation>명조: 워더링 웨이브</translation>
+        </message>
+        <message>
+            <source>Girls' Frontline 2</source>
+            <translation>소녀전선 2</translation>
+        </message>
+        <message>
+            <source>Star Resonance</source>
+            <translation>별의 공명</translation>
+        </message>
+        <message>
+            <source>Duet Night Abyss</source>
+            <translation>듀엣 나이트 어비스</translation>
+        </message>
+        <message>
+            <source>Chaos Zero Nightmare</source>
+            <translation>카오스 제로 나이트메어</translation>
+        </message>
+        <message>
+            <source>Onmyoji</source>
+            <translation>음양사</translation>
+        </message>
+        <message>
+            <source>Arknights: Endfield</source>
+            <translation>명일방주: 엔드필드</translation>
+        </message>
+        <message>
+            <source>Neverness to Everness</source>
+            <translation>이환</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>

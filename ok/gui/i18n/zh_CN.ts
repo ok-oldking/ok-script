@@ -45,6 +45,42 @@
             <source>Downgrade success {from_version} -&gt; {to_version}</source>
             <translation>降级成功 {from_version} -&gt; {to_version}</translation>
         </message>
+        <message>
+            <source>ok-py Automation Tool</source>
+            <translation>ok-py按键精灵</translation>
+        </message>
+        <message>
+            <source>Wuthering Waves</source>
+            <translation>鸣潮</translation>
+        </message>
+        <message>
+            <source>Girls' Frontline 2</source>
+            <translation>少前2</translation>
+        </message>
+        <message>
+            <source>Star Resonance</source>
+            <translation>星痕共鸣</translation>
+        </message>
+        <message>
+            <source>Duet Night Abyss</source>
+            <translation>二重螺旋</translation>
+        </message>
+        <message>
+            <source>Chaos Zero Nightmare</source>
+            <translation>卡厄思梦境</translation>
+        </message>
+        <message>
+            <source>Onmyoji</source>
+            <translation>阴阳师</translation>
+        </message>
+        <message>
+            <source>Arknights: Endfield</source>
+            <translation>明日方舟：终末地</translation>
+        </message>
+        <message>
+            <source>Neverness to Everness</source>
+            <translation>异环</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>

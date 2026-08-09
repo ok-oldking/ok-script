@@ -45,6 +45,42 @@
             <source>Downgrade success {from_version} -&gt; {to_version}</source>
             <translation>Downgrade success {from_version} -&gt; {to_version}</translation>
         </message>
+        <message>
+            <source>ok-py Automation Tool</source>
+            <translation>ok-py Automation Tool</translation>
+        </message>
+        <message>
+            <source>Wuthering Waves</source>
+            <translation>Wuthering Waves</translation>
+        </message>
+        <message>
+            <source>Girls' Frontline 2</source>
+            <translation>Girls' Frontline 2</translation>
+        </message>
+        <message>
+            <source>Star Resonance</source>
+            <translation>Star Resonance</translation>
+        </message>
+        <message>
+            <source>Duet Night Abyss</source>
+            <translation>Duet Night Abyss</translation>
+        </message>
+        <message>
+            <source>Chaos Zero Nightmare</source>
+            <translation>Chaos Zero Nightmare</translation>
+        </message>
+        <message>
+            <source>Onmyoji</source>
+            <translation>Onmyoji</translation>
+        </message>
+        <message>
+            <source>Arknights: Endfield</source>
+            <translation>Arknights: Endfield</translation>
+        </message>
+        <message>
+            <source>Neverness to Everness</source>
+            <translation>Neverness to Everness</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>

@@ -1,5 +1,7 @@
 # ok-script 进阶使用指南
 
+[English](../en/advanced.md) · [文档中心](../README.md) · [快速开始](../quick_start/README.md) · [API 参考](../api_doc/README.md)
+
 本文档是 [ok-script 自动化脚本开发指南](../quick_start/README.md) 的进阶补充，旨在帮助开发者更深入地利用框架的高级功能，并结合
 CI/CD 流程实现项目的自动化管理。
 
@@ -8,7 +10,7 @@ CI/CD 流程实现项目的自动化管理。
 - [1. 模板匹配 (Template Matching)](#1-模板匹配-template-matching)
 - [2. 多语言国际化 (i18n)](#2-多语言国际化-i18n)
 - [3. 自动化测试](#3-自动化测试)
-- [4. 使用 GitHub Action 自动化打包与发布](#4-使用-github-action-自动化打包与发布)
+- [4. 使用 GitHub Actions 自动化打包与发布](#4-使用-github-actions-自动化打包与发布)
     - [关键步骤解析](#关键步骤解析)
         - [添加额外的源码内联依赖](#添加额外的源码内联依赖)
     - [Sync Repositories 的国内镜像功能](#sync-repositories-的国内镜像功能)
@@ -98,7 +100,7 @@ class TestUserIssue(TaskTestCase):
 **重要提示**：首次在 PyCharm 中运行测试时，需要修改其“运行/调试配置”(Run/Debug Configuration)。请确保**“工作目录”(Working
 directory)** 设置为项目的**根目录**。否则，测试脚本会因为找不到 `tests/images/` 等相对路径下的文件而执行失败。
 
-## 4. 使用 GitHub Action 自动化打包与发布
+## 4. 使用 GitHub Actions 自动化打包与发布
 
 您提供的 `.github/workflows/build.yml` 文件定义了一个完整的自动化流程（CI/CD），它会在您每次推送新的版本标签（如 `v1.0.0`
 ）时，自动完成测试、打包和发布。
@@ -172,7 +174,7 @@ profiles:
 ### 加速构建速度
 
 启动器 `.exe` 文件（即 `ok-ww-win32.zip` 内的文件）通常只在项目图标变更或启动器版本升级时才需要重新打包。在日常仅更新
-`Task` 脚本代码的情况下，我们可以复用上一次发布中的启动器来大幅缩短 GitHub Action 的构建时间。
+`Task` 脚本代码的情况下，我们可以复用上一次发布中的启动器来大幅缩短 GitHub Actions 的构建时间。
 
 为此，可以在 `pyappify-action` 步骤中增加 `use_release` 配置：
 
