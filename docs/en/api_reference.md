@@ -1,8 +1,8 @@
 # API reference
 
-[Documentation](README.md) · [Quick start](quick_start.md) · [Advanced guide](advanced.md) · [简体中文](../api_doc/README.md)
+[Documentation](index.md) · [Quick start](quick_start.md) · [Advanced guide](advanced.md) · [简体中文](../api_doc/README.md)
 
-This is a practical reference for task authors. The implementation is available in [`ok/task/task.py`](../../ok/task/task.py) and [`ok/feature/Box.py`](../../ok/feature/Box.py). Optional parameters are omitted from some summaries; inspect the linked source or your IDE signature help for the complete signature.
+This is a practical reference for task authors. The implementation is available in [`ok/task/task.py`](https://github.com/ok-oldking/ok-script/blob/master/ok/task/task.py) and [`ok/feature/Box.py`](https://github.com/ok-oldking/ok-script/blob/master/ok/feature/Box.py). Optional parameters are omitted from some summaries; inspect the linked source or your IDE signature help for the complete signature.
 
 ## Importing task APIs
 

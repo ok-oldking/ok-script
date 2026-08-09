@@ -30,7 +30,7 @@ To build a complete automation application, start with the [`ok-script-boilerpla
 
 ## Documentation
 
-Visit the [English documentation hub](docs/en/README.md), or follow this path:
+Visit the [English documentation hub](docs/en/index.md), or follow this path:
 
 1. [Introduction to game automation](docs/en/intro_to_automation.md)
 2. [Quick start](docs/en/quick_start.md)
@@ -41,13 +41,15 @@ For a visual scripting experience built on ok-script, see [`ok-py`](https://gith
 
 ## Screenshots
 
-| Scripting and APIs | Capture and interaction |
+| Task configuration | Capture and interaction |
 | --- | --- |
-| ![Scripting and API interface](docs/ok_py/image_scripting.png) | ![Capture and interaction interface](docs/ok_py/image_capture.png) |
+| ![Task configuration interface](docs/ok_py/image_tasks.png) | ![Capture and interaction interface](docs/ok_py/image_capture.png) |
 
-| Template management | Image annotation |
+| Scripting and APIs | Template management |
 | --- | --- |
-| ![Template management interface](docs/ok_py/image_template.png) | ![Image annotation interface](docs/ok_py/image_markup.png) |
+| ![Scripting and API interface](docs/ok_py/image_scripting.png) | ![Template management interface](docs/ok_py/image_template.png) |
+
+[Read the complete interface and developer-tools guide](docs/en/interface.md), including the template-matching debug overlay.
 
 ## Projects built with ok-script
 

@@ -1,6 +1,6 @@
 # 快速开始
 
-[English](../en/quick_start.md) · [文档中心](../README.md) · [进阶指南](../after_quick_start/README.md) · [API 参考](../api_doc/README.md)
+[English](../en/quick_start.md) · [文档中心](../index.md) · [进阶指南](../after_quick_start/README.md) · [API 参考](../api_doc/README.md)
 
 本指南帮助你使用 ok-script 模板项目 `ok-script-boilerplate` 创建并运行自己的自动化项目。完成后，你将能连接 Windows 游戏或安卓设备、运行诊断，并开始编写任务。
 

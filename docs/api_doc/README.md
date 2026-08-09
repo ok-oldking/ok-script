@@ -1,6 +1,6 @@
 # ok-script API 文档
 
-[English](../en/api_reference.md) · [文档中心](../README.md) · [快速开始](../quick_start/README.md) · [进阶指南](../after_quick_start/README.md)
+[English](../en/api_reference.md) · [文档中心](../index.md) · [快速开始](../quick_start/README.md) · [进阶指南](../after_quick_start/README.md)
 
 本文档是任务开发时的 API 参考。第一次使用 ok-script 时，请先完成[快速开始](../quick_start/README.md)；查找具体方法时，可以使用浏览器的页面搜索功能按方法名定位。
 
@@ -339,7 +339,7 @@ boxes = self.ocr(match="确认")
 和 `wait_click_feature`。这些方法会自动循环获取新的 frame，调用前通常不需要额外 `sleep`。编写或生成脚本代码时，能用
 `wait_` 方法表达的等待逻辑，尽量使用 `wait_` 方法。
 
-### 截图 (Screenshot)
+### 截图 (Screenshot) { #截图-screenshot }
 
 <a name="frame"></a>
 
@@ -397,7 +397,7 @@ def adb_ui_dump(self) -> str
 - **返回:**
     - `str`: UI 结构的 XML 字符串。
 
-### 输入 (Input)
+### 输入 (Input) { #输入-input }
 
 <a name="click"></a>
 
@@ -667,7 +667,7 @@ def back(self, *args, after_sleep=0, **kwargs)
 
 模拟返回操作，通常是发送 'esc' 键（PC）或返回键（Android）。支持 `after_sleep` 参数。
 
-### Config 相关
+### Config 相关 { #config-相关 }
 
 <a name="load_config"></a>
 
@@ -717,7 +717,7 @@ def get_global_config_desc(self, option) -> str
 
 ---
 
-### 任务配置 (Task Configuration)
+### 任务配置 (Task Configuration) { #任务配置-task-configuration }
 
 `BaseTask` 允许通过 `default_config` 和 `config_type` 来定义任务在 GUI 界面中的配置表单。
 
@@ -825,7 +825,7 @@ class MyTask(BaseTask):
 
 ---
 
-### 屏幕画图 (Screen drawing)
+### 屏幕画图 (Screen drawing) { #屏幕画图-screen-drawing }
 
 <a name="draw_boxes"></a>
 
@@ -995,7 +995,7 @@ def add_text_fix(self, fix)
 - **参数:**
     - `fix` (dict): 一个字典，键为错误文本，值为正确文本。
 
-### 找图 (Image finding)
+### 找图 (Image finding) { #找图-image-finding }
 
 <a name="find_feature"></a>
 
@@ -1148,7 +1148,7 @@ def find_first_match_in_box(self, box, to_find, threshold, use_gray_scale=False,
 
 在给定的 `Box` 内按 `to_find` 顺序查找，第一个找到的特征会被立即返回。
 
-### 找色 (Color finding)
+### 找色 (Color finding) { #找色-color-finding }
 
 <a name="calculate_color_percentage"></a>
 
@@ -1166,7 +1166,7 @@ def calculate_color_percentage(self, color, box: Box | str) -> float
 - **返回:**
   - `float`: 颜色像素所占的百分比 (0.0 - 1.0)。
 
-### 显示信息 (Display information)
+### 显示信息 (Display information) { #显示信息-display-information }
 
 <a name="notification"></a>
 
@@ -1244,7 +1244,7 @@ def info_clear(self)
 
 清除当前任务的所有监控信息。
 
-### 日志 (Logging)
+### 日志 (Logging) { #日志-logging }
 
 <a name="log_info"></a>
 
@@ -1276,7 +1276,7 @@ def log_error(self, message, exception=None, notify=False)
 
 记录一条错误级别的日志。
 
-### 其他 (Other)
+### 其他 (Other) { #其他-other }
 
 <a name="is_adb"></a>
 

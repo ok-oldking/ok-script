@@ -1,6 +1,6 @@
 # Advanced guide
 
-[Documentation](README.md) · [Quick start](quick_start.md) · [API reference](api_reference.md) · [简体中文](../after_quick_start/README.md)
+[Documentation](index.md) · [Quick start](quick_start.md) · [API reference](api_reference.md) · [简体中文](../after_quick_start/README.md)
 
 This guide covers the workflows normally needed after the template project is running: template assets, localization, repeatable tests, and automated releases.
 

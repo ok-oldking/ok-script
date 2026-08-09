@@ -1,6 +1,6 @@
 # Quick start
 
-[Documentation](README.md) · [Advanced guide](advanced.md) · [API reference](api_reference.md) · [简体中文](../quick_start/README.md)
+[Documentation](index.md) · [Advanced guide](advanced.md) · [API reference](api_reference.md) · [简体中文](../quick_start/README.md)
 
 This guide uses the `ok-script-boilerplate` template to create and run an automation project. By the end, you will have connected a Windows game or Android device, run the diagnostics, and be ready to implement tasks.
 

@@ -30,7 +30,7 @@ python -m pip install ok-script
 
 ## 文档
 
-从[文档中心](docs/README.md)选择适合你的阅读路径：
+从[文档中心](docs/index.md)选择适合你的阅读路径：
 
 1. [游戏自动化入门](docs/intro_to_automation/README.md)：了解截图、识别、决策和输入的基本原理
 2. [快速开始](docs/quick_start/README.md)：从模板仓库创建并运行第一个项目
@@ -41,13 +41,15 @@ python -m pip install ok-script
 
 ## 界面预览
 
-| 脚本与 API | 截图与交互 |
+| 任务配置 | 截图与交互 |
 | --- | --- |
-| ![脚本与 API 界面](docs/ok_py/image_scripting.png) | ![截图与交互界面](docs/ok_py/image_capture.png) |
+| ![任务配置界面](docs/ok_py/image_tasks.png) | ![截图与交互界面](docs/ok_py/image_capture.png) |
 
-| 模板管理 | 图像标注 |
+| 脚本与 API | 模板管理 |
 | --- | --- |
-| ![模板管理界面](docs/ok_py/image_template.png) | ![图像标注界面](docs/ok_py/image_markup.png) |
+| ![脚本与 API 界面](docs/ok_py/image_scripting.png) | ![模板管理界面](docs/ok_py/image_template.png) |
+
+[查看界面与开发工具完整说明](docs/interface.md)，包括模板识别调试浮层。
 
 ## 使用 ok-script 的项目
 

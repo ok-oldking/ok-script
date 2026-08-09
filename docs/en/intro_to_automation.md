@@ -1,6 +1,6 @@
 # Introduction to computer-vision game automation
 
-[Documentation](README.md) · [Quick start](quick_start.md) · [API reference](api_reference.md) · [简体中文](../intro_to_automation/README.md)
+[Documentation](index.md) · [Quick start](quick_start.md) · [API reference](api_reference.md) · [简体中文](../intro_to_automation/README.md)
 
 This guide introduces the basic ideas and tools behind game automation with computer vision. No prior image-processing experience is required.
 

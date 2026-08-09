@@ -1,0 +1,73 @@
+site_name: ok-script
+site_description: Computer-vision automation framework for Python
+repo_url: https://github.com/ok-oldking/ok-script
+repo_name: ok-oldking/ok-script
+edit_uri: edit/master/docs/
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: zh
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: 切换到深色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search:
+      lang:
+        - zh
+        - en
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+nav:
+  - 简体中文:
+      - 文档中心: index.md
+      - 游戏自动化入门: intro_to_automation/README.md
+      - 快速开始: quick_start/README.md
+      - 界面与开发工具: interface.md
+      - 进阶指南: after_quick_start/README.md
+      - API 参考: api_doc/README.md
+      - 构建文档网站: building-site.md
+  - English:
+      - Documentation home: en/index.md
+      - Introduction to automation: en/intro_to_automation.md
+      - Quick start: en/quick_start.md
+      - Interface and developer tools: en/interface.md
+      - Advanced guide: en/advanced.md
+      - API reference: en/api_reference.md
+      - Build the documentation site: en/building-site.md
