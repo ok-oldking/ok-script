@@ -17,7 +17,7 @@
 ## 最短上手路线
 
 1. 安装 Python 3.12（框架最低支持 Python 3.11）。
-2. Fork [`ok-script-boilerplate`](https://github.com/ok-oldking/ok-script-boilerplate)。
+2. 使用 [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) 模板创建仓库。
 3. 按照[快速开始](quick_start/README.md)配置 Windows 游戏或 ADB 设备。
 4. 运行调试模式并完成截图测试。
 5. 参考 [API 文档](api_doc/README.md)实现自己的任务。
@@ -25,7 +25,7 @@
 ## 常用链接
 
 - [ok-script 源码](https://github.com/ok-oldking/ok-script)
-- [模板项目](https://github.com/ok-oldking/ok-script-boilerplate)
+- [ok-script 应用模板](https://github.com/ok-oldking/ok-script-app)
 - [ok-py 可视化脚本工具](https://github.com/ok-oldking/ok-py)
 - [PyPI 发布页](https://pypi.org/project/ok-script/)
 - [文档网站构建说明](building-site.md)

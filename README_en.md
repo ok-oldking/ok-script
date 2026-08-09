@@ -26,7 +26,7 @@ ok-script supports Python 3.11 and later. Python 3.12 is recommended.
 python -m pip install ok-script
 ```
 
-To build a complete automation application, start with the [`ok-script-boilerplate`](https://github.com/ok-oldking/ok-script-boilerplate) template instead of adding application-specific code to this repository.
+To build a complete automation application, start with the [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) template instead of adding application-specific code to this repository.
 
 ## Documentation
 
@@ -53,6 +53,7 @@ For a visual scripting experience built on ok-script, see [`ok-py`](https://gith
 
 ## Projects built with ok-script
 
+- [ok-script App Template](https://github.com/ok-oldking/ok-script-app)
 - [Wuthering Waves](https://github.com/ok-oldking/ok-wuthering-waves)
 - [Genshin Impact](https://github.com/ok-oldking/ok-genshin-impact) (unmaintained; background story automation still works)
 - [Girls' Frontline 2](https://github.com/ok-oldking/ok-gf2)

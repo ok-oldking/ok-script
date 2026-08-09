@@ -2,7 +2,7 @@
 
 [Documentation](index.md) · [Advanced guide](advanced.md) · [API reference](api_reference.md) · [简体中文](../quick_start/README.md)
 
-This guide uses the `ok-script-boilerplate` template to create and run an automation project. By the end, you will have connected a Windows game or Android device, run the diagnostics, and be ready to implement tasks.
+This guide uses the `ok-script-app` template to create and run an automation project. By the end, you will have connected a Windows game or Android device, run the diagnostics, and be ready to implement tasks.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ This guide uses the `ok-script-boilerplate` template to create and run an automa
 
 ## 1. Fork the template
 
-Open [`ok-script-boilerplate`](https://github.com/ok-oldking/ok-script-boilerplate) and select **Fork** to copy the template to your GitHub account.
+Open [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) and select **Use this template** to create a repository in your GitHub account.
 
 ## 2. Clone your project
 

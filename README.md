@@ -26,7 +26,7 @@ ok-script 支持 Python 3.11 及以上版本，推荐使用 Python 3.12。
 python -m pip install ok-script
 ```
 
-如果要创建完整的自动化项目，建议从 [`ok-script-boilerplate`](https://github.com/ok-oldking/ok-script-boilerplate) 模板开始，而不是直接在本仓库中编写业务脚本。
+如果要创建完整的自动化项目，建议从 [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) 模板开始，而不是直接在本仓库中编写业务脚本。
 
 ## 文档
 
@@ -53,6 +53,7 @@ python -m pip install ok-script
 
 ## 使用 ok-script 的项目
 
+- [ok-script 应用模板](https://github.com/ok-oldking/ok-script-app)
 - [鸣潮](https://github.com/ok-oldking/ok-wuthering-waves)
 - [原神](https://github.com/ok-oldking/ok-genshin-impact)（停止维护，后台过剧情仍可用）
 - [少女前线 2](https://github.com/ok-oldking/ok-gf2)

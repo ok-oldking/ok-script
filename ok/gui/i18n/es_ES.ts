@@ -81,6 +81,10 @@
             <source>Neverness to Everness</source>
             <translation>Neverness to Everness</translation>
         </message>
+        <message>
+            <source>ok-script App Template</source>
+            <translation>Plantilla de aplicación ok-script</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
