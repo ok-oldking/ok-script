@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QHBoxLayout
+from PySide6.QtWidgets import QApplication, QFrame, QHBoxLayout
 from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton
 
 from ok import og
@@ -339,17 +339,39 @@ class ConfigCard(ConfigContentMixin, ExpandSettingCard):
         self._expand_enabled = True
         super().__init__(config_icon or FluentIcon.INFO, og.app.tr(name), og.app.tr(description))
         self._init_config_content(task, config, default_config, config_description, config_type)
-        self.expandAni.finished.connect(self._sync_collapsed_height)
 
     def setExpand(self, isExpand: bool):
         if isExpand and not self._expand_enabled:
             return
-        super().setExpand(isExpand)
+        if self.isExpand == isExpand:
+            return
 
-    def _sync_collapsed_height(self):
-        """Prevent dynamic content size hints from leaving a collapsed card partially open."""
-        if not self.isExpand:
-            self.setFixedHeight(self.viewportMargins().top())
+        content_height = self.viewLayout.sizeHint().height()
+        header_height = self.viewportMargins().top()
+        target_height = header_height + content_height if isExpand else header_height
+        parent = self.parentWidget()
+        parent_updates_enabled = parent is not None and parent.updatesEnabled()
+        if parent_updates_enabled:
+            parent.setUpdatesEnabled(False)
+
+        self.expandAni.stop()
+        try:
+            self.spaceWidget.setFixedHeight(content_height)
+            self.verticalScrollBar().setValue(0)
+            self.isExpand = isExpand
+            self.setProperty('isExpand', isExpand)
+            self.setStyle(QApplication.style())
+            self.card.expandButton.setExpand(isExpand)
+            self.setFixedHeight(target_height)
+
+            parent_layout = parent.layout() if parent is not None else None
+            if parent_layout is not None:
+                parent_layout.invalidate()
+                parent_layout.activate()
+        finally:
+            if parent_updates_enabled:
+                parent.setUpdatesEnabled(True)
+                parent.update()
 
     def _on_empty_config_content(self):
         self._expand_enabled = False

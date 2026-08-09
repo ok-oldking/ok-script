@@ -44,7 +44,7 @@ class TaskCard(ConfigCard):
             self.pause_button = PushButton(FluentIcon.PAUSE, self.tr("Pause"), self)
             self.pause_button.clicked.connect(self.pause_clicked)
 
-            self.stop_button = PushButton(OKIcon.STOP, self.tr("Stop"), self)
+            self.stop_button = PrimaryPushButton(OKIcon.STOP, self.tr("Stop"), self)
             self.stop_button.clicked.connect(self.stop_clicked)
 
             self.start_button = PrimaryPushButton(FluentIcon.PLAY, self.tr("Start"), self)

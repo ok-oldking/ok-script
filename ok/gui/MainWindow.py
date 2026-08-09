@@ -51,6 +51,9 @@ class MainWindow(FluentWindow):
     def __init__(self, app, config, ok_config, icon, title, version, debug=False, about=None, exit_event=None,
                  global_config=None, executor=None, handler=None):
         super().__init__()
+        # Page pop transitions move scroll-area contents vertically and can show
+        # a brief top/bottom flash when switching navigation tabs.
+        self.stackedWidget.setAnimationEnabled(False)
         self._theme_cooldowns = set()
         logger.info('main window __init__')
         self._sync_system_accent_color(refresh=True)
