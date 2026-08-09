@@ -740,7 +740,6 @@ def get_global_config_desc(self, option) -> str
 
 - **`drop_down`**: 下拉选择框。
     - **参数:** `options` (list[str]): 选项列表。
-- **`sub_configs`**: 可用于下拉选择框或布尔开关的可选参数。它根据当前值控制其他配置项是否显示；key 是选项值或 `True`/`False`，value 是需要显示的配置项名称列表。这些配置项会按照列表顺序显示在当前配置项下方，未包含在当前值列表中的配置项会被隐藏。
 - **`multi_selection`**: 多选列表。
     - **参数:** `options` (list[str]): 选项列表。
 - **`text_edit`**: 强制使用多行文本框。
@@ -757,6 +756,10 @@ def get_global_config_desc(self, option) -> str
         - `buttons` (list[dict]): 如果需要显示多个按钮，可以提供一个按钮配置列表，每个元素包含上述 `text`, `icon`, `callback`。
     - **注意:** `button` 类型的配置项其 key 和 value 只用于 GUI 渲染展示，**不会** 被保存到本地配置文件中。
 
+通用可选参数：
+
+- **`sub_configs`**: 可用于下拉选择框、布尔开关或多选列表，根据当前值控制其他配置项是否显示。key 是选项值或 `True`/`False`，value 是需要显示的配置项名称列表。对于多选列表，所有已选选项对应的配置项会按选项顺序合并，重复项只显示一次；未选择任何选项时，所有关联配置项都会隐藏。
+
 **示例代码:**
 
 ```python
@@ -766,6 +769,9 @@ class MyTask(BaseTask):
         self.default_config = {
             'Run Count': 1,
             'Mode': 'Default',
+            'Features': ['Logging'],
+            'Log Level': 'Info',
+            'Output Path': '',
             'Input Path': '',
             'Advanced Tool': 'Action' # 占位符
         }
@@ -774,6 +780,14 @@ class MyTask(BaseTask):
                 'options': ['Default', 'Fast'],
                 'sub_configs': {
                     'Fast': ['Advanced Tool']
+                }
+            },
+            'Features': {
+                'type': 'multi_selection',
+                'options': ['Logging', 'Export'],
+                'sub_configs': {
+                    'Logging': ['Log Level'],
+                    'Export': ['Output Path']
                 }
             },
             'Input Path': {

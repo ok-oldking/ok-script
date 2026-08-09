@@ -140,6 +140,8 @@ class ConfigContentMixin:
             switch_button = getattr(widget, 'switch_button', None)
             if switch_button is not None:
                 switch_button.checkedChanged.connect(self.__apply_sub_config_visibility)
+            for check_box in getattr(widget, 'check_boxes', []):
+                check_box.checkStateChanged.connect(self.__apply_sub_config_visibility)
 
         self.__apply_sub_config_visibility()
 
@@ -213,14 +215,32 @@ class ConfigContentMixin:
         return keys
 
     def __get_active_sub_config_keys(self, key):
-        try:
-            config_keys = self.sub_configs_rules.get(key, {}).get(self.config.get(key), [])
-        except TypeError:
-            return []
+        config_keys = self.__resolve_sub_config_keys(
+            self.sub_configs_rules.get(key, {}),
+            self.config.get(key),
+        )
         return [
             config_key for config_key in config_keys
             if config_key in self.config_widget_by_key
         ]
+
+    def __resolve_sub_config_keys(self, rule, value):
+        if not isinstance(value, list):
+            try:
+                return rule.get(value, [])
+            except TypeError:
+                return []
+
+        config_keys = []
+        for selected_value in value:
+            try:
+                selected_config_keys = rule.get(selected_value, [])
+            except TypeError:
+                continue
+            for config_key in selected_config_keys:
+                if config_key not in config_keys:
+                    config_keys.append(config_key)
+        return config_keys
 
     def __apply_sub_config_visibility(self, *args):
         self.__sync_sub_config_order()
@@ -299,10 +319,7 @@ class ConfigContentMixin:
             if not self.__is_config_visible(parent_key, checking):
                 return False
 
-            try:
-                visible_config_keys = rule.get(self.config.get(parent_key), [])
-            except TypeError:
-                visible_config_keys = []
+            visible_config_keys = self.__resolve_sub_config_keys(rule, self.config.get(parent_key))
 
             if key not in visible_config_keys:
                 return False

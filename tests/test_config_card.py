@@ -38,7 +38,7 @@ class TestConfigCard(unittest.TestCase):
     def tearDown(self):
         og.app = self.original_app
 
-    def create_card(self, default):
+    def create_card(self, default, config_type=None):
         config = FakeConfig(default)
         card = ConfigCard(
             task=None,
@@ -47,7 +47,7 @@ class TestConfigCard(unittest.TestCase):
             description="Description",
             default_config=default,
             config_description={},
-            config_type={},
+            config_type=config_type or {},
             config_icon=FluentIcon.INFO,
         )
         card.resize(600, card.height())
@@ -102,3 +102,59 @@ class TestConfigCard(unittest.TestCase):
         ).x()
 
         self.assertLessEqual(content_right - choices_right, 16)
+
+    def test_multi_selection_controls_sub_config_visibility(self):
+        default = {
+            "Features": ["Feature A"],
+            "Feature A Setting": True,
+            "Feature B Setting": True,
+            "Shared Setting": True,
+        }
+        config_type = {
+            "Features": {
+                "type": "multi_selection",
+                "options": ["Feature A", "Feature B"],
+                "sub_configs": {
+                    "Feature A": ["Feature A Setting", "Shared Setting"],
+                    "Feature B": ["Feature B Setting", "Shared Setting"],
+                },
+            },
+        }
+        card = self.create_card(default, config_type)
+
+        self.assertFalse(card.config_widget_by_key["Feature A Setting"].isHidden())
+        self.assertTrue(card.config_widget_by_key["Feature B Setting"].isHidden())
+        self.assertFalse(card.config_widget_by_key["Shared Setting"].isHidden())
+
+        features_widget = card.config_widget_by_key["Features"]
+        feature_a_checkbox = next(
+            checkbox for checkbox in features_widget.check_boxes
+            if checkbox.text() == "Feature A"
+        )
+        feature_b_checkbox = next(
+            checkbox for checkbox in features_widget.check_boxes
+            if checkbox.text() == "Feature B"
+        )
+        QTest.mouseClick(feature_b_checkbox, Qt.LeftButton)
+        QApplication.processEvents()
+
+        self.assertEqual(card.config["Features"], ["Feature A", "Feature B"])
+        self.assertFalse(card.config_widget_by_key["Feature A Setting"].isHidden())
+        self.assertFalse(card.config_widget_by_key["Feature B Setting"].isHidden())
+        self.assertFalse(card.config_widget_by_key["Shared Setting"].isHidden())
+
+        QTest.mouseClick(feature_a_checkbox, Qt.LeftButton)
+        QApplication.processEvents()
+
+        self.assertEqual(card.config["Features"], ["Feature B"])
+        self.assertTrue(card.config_widget_by_key["Feature A Setting"].isHidden())
+        self.assertFalse(card.config_widget_by_key["Feature B Setting"].isHidden())
+        self.assertFalse(card.config_widget_by_key["Shared Setting"].isHidden())
+
+        QTest.mouseClick(feature_b_checkbox, Qt.LeftButton)
+        QApplication.processEvents()
+
+        self.assertEqual(card.config["Features"], [])
+        self.assertTrue(card.config_widget_by_key["Feature A Setting"].isHidden())
+        self.assertTrue(card.config_widget_by_key["Feature B Setting"].isHidden())
+        self.assertTrue(card.config_widget_by_key["Shared Setting"].isHidden())
