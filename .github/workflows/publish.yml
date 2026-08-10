@@ -55,7 +55,24 @@ jobs:
     needs: publish
     runs-on: ubuntu-latest
     steps:
+      - name: Check out release history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        shell: bash
+        run: |
+          previous_tag=$(git tag --sort=-version:refname | awk -v current="$GITHUB_REF_NAME" '$0 != current { print; exit }')
+          if [[ -z "$previous_tag" ]]; then
+            echo "**Release Note $GITHUB_REF_NAME:**" > RELEASE_NOTES.md
+            git log --no-merges --format='- %s' "$GITHUB_REF_NAME" >> RELEASE_NOTES.md
+          else
+            printf '**Release Note %s -> %s:**\n\n' "$previous_tag" "$GITHUB_REF_NAME" > RELEASE_NOTES.md
+            git log --no-merges --format='- %s' "$previous_tag..$GITHUB_REF_NAME" >> RELEASE_NOTES.md
+          fi
+
       - name: Create release for tag
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md
