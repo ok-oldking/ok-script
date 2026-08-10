@@ -1,4 +1,5 @@
 import time
+from typing import cast
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QTableWidgetItem
@@ -6,6 +7,7 @@ from qfluentwidgets import FluentIcon, ToolButton
 
 from ok import Logger, og
 from ok.gui.tasks.TooltipTableWidget import TooltipTableWidget
+from ok.gui.widget.ExpandCardLayout import ExpandCardLayout
 from ok.gui.widget.Tab import Tab
 from ok.gui.widget.UpdateConfigWidgetItem import value_to_string
 
@@ -13,8 +15,12 @@ logger = Logger.get_logger(__name__)
 
 
 class TaskTab(Tab):
+    taskCardLayout: ExpandCardLayout
+
     def __init__(self):
-        super().__init__()
+        # Match the official settings-page construction: ExpandLayout owns the
+        # scroll widget directly, so it is the sole owner of card heights.
+        super().__init__(layout_class=ExpandCardLayout)
         self.keep_info_when_done = False
         self.current_task_name = ""
         self.last_task = None
@@ -28,7 +34,8 @@ class TaskTab(Tab):
         self.close_info_button.setToolTip(self.tr("Close"))
         self.close_info_button.clicked.connect(self.close_task_info)
         self.task_info_container.add_top_widget(self.close_info_button)
-        self.add_widget(self.task_info_container)
+
+        self.taskCardLayout = cast(ExpandCardLayout, self.vBoxLayout)
 
         self.task_info_labels = [self.tr('Info'), self.tr('Value')]
         self.task_info_table.setColumnCount(len(self.task_info_labels))  # Name and Value
@@ -50,6 +57,12 @@ class TaskTab(Tab):
 
     def in_current_list(self, task):
         return True
+
+    def add_task_card(self, card):
+        self.taskCardLayout.addWidget(card)
+
+    def remove_task_card(self, card):
+        self.taskCardLayout.removeWidget(card)
 
     @staticmethod
     def time_elapsed(start_time):

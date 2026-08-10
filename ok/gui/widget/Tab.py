@@ -11,12 +11,12 @@ from ok.gui.widget.StartLoadingDialog import StartLoadingDialog
 
 
 class Tab(ScrollArea):
-    def __init__(self):
+    def __init__(self, layout_class=QVBoxLayout):
         super().__init__()
         self.loading_dialog = None
         self.view = QWidget(self)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.vBoxLayout = QVBoxLayout(self.view)
+        self.vBoxLayout = layout_class(self.view)
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setViewportMargins(0, 0, 0, 0)
