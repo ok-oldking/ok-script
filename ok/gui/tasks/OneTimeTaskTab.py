@@ -34,8 +34,8 @@ class OneTimeTaskTab(TaskTab):
             self.delete_btn.clicked.connect(self.delete_script)
             self.btn_layout.addWidget(self.delete_btn)
             
-            # Keep this footer below the expandable task cards.
-            self.taskCardLayout.addWidget(self.button_container)
+            # Keep this ordinary footer outside the expandable-card layout.
+            self.vBoxLayout.addWidget(self.button_container)
             
         from ok.gui.Communicate import communicate
         communicate.task_list_updated.connect(self.refresh_ui)

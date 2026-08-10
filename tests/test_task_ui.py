@@ -48,7 +48,7 @@ class TestTaskUi(unittest.TestCase):
         og.app = self.original_app
         og.executor = self.original_executor
 
-    def test_config_description_column_uses_available_row_width(self):
+    def test_config_row_uses_a_spacer_for_extra_width(self):
         row = LabelAndWidget(
             'Local Client Notification',
             'Send notifications through local QQ or WeChat clients')
@@ -57,9 +57,11 @@ class TestTaskUi(unittest.TestCase):
         QApplication.processEvents()
         self.addCleanup(row.close)
 
-        self.assertEqual(1, row.layout.stretch(0))
-        self.assertEqual(1, row.layout.count())
-        self.assertGreater(row.title_layout.geometry().width(), 400)
+        self.assertEqual(0, row.layout.stretch(0))
+        self.assertEqual(2, row.layout.count())
+        self.assertEqual(1, row.layout.stretch(1))
+        self.assertIsNotNone(row.layout.itemAt(1).spacerItem())
+        self.assertGreater(row.layout.itemAt(1).spacerItem().geometry().width(), 0)
 
     def test_task_card_uses_single_line_compact_header(self):
         task = SimpleNamespace(
@@ -82,8 +84,8 @@ class TestTaskUi(unittest.TestCase):
         self.addCleanup(communicate.task.disconnect, card.update_buttons)
         self.addCleanup(card.close)
 
-        self.assertEqual(56, card.card.height())
-        self.assertEqual(56, card.height())
+        self.assertEqual(50, card.card.height())
+        self.assertEqual(50, card.height())
         self.assertTrue(card.card.iconLabel.isHidden())
         self.assertIs(card.card.vBoxLayout, card.card.hBoxLayout.itemAt(1).layout())
         self.assertEqual(1, card.card.vBoxLayout.count())
@@ -98,7 +100,8 @@ class TestTaskUi(unittest.TestCase):
         self.addCleanup(tab.close)
 
         self.assertIsInstance(tab.taskCardLayout, ExpandLayout)
-        self.assertIs(tab.taskCardLayout, tab.view.layout())
+        self.assertIs(tab.taskCardLayout, tab.task_cards_view.layout())
+        self.assertIsNot(tab.taskCardLayout, tab.view.layout())
 
     def test_task_card_uses_native_expansion_state(self):
         values = {"Long text": "A configuration value long enough to use the multiline text editor"}
