@@ -1,8 +1,7 @@
 import time
-from typing import cast
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QTableWidgetItem
+from PySide6.QtWidgets import QTableWidgetItem, QWidget
 from qfluentwidgets import FluentIcon, ToolButton
 
 from ok import Logger, og
@@ -15,12 +14,8 @@ logger = Logger.get_logger(__name__)
 
 
 class TaskTab(Tab):
-    taskCardLayout: ExpandCardLayout
-
     def __init__(self):
-        # Match the official settings-page construction: ExpandLayout owns the
-        # scroll widget directly, so it is the sole owner of card heights.
-        super().__init__(layout_class=ExpandCardLayout)
+        super().__init__()
         self.keep_info_when_done = False
         self.current_task_name = ""
         self.last_task = None
@@ -35,7 +30,11 @@ class TaskTab(Tab):
         self.close_info_button.clicked.connect(self.close_task_info)
         self.task_info_container.add_top_widget(self.close_info_button)
 
-        self.taskCardLayout = cast(ExpandCardLayout, self.vBoxLayout)
+        # The official layout owns only expandable cards. Ordinary status and
+        # action widgets stay in the page's regular QVBoxLayout.
+        self.task_cards_view = QWidget(self.view)
+        self.taskCardLayout = ExpandCardLayout(self.task_cards_view)
+        self.vBoxLayout.addWidget(self.task_cards_view)
 
         self.task_info_labels = [self.tr('Info'), self.tr('Value')]
         self.task_info_table.setColumnCount(len(self.task_info_labels))  # Name and Value
