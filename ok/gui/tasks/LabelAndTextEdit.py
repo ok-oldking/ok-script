@@ -21,6 +21,9 @@ class LabelAndTextEdit(ConfigLabelAndWidget):
         self.update_value()
         self.text_edit.textChanged.connect(self.value_changed)
         self.add_widget(self.text_edit, stretch=0)
+        # The editor is six lines high, so this row must not be compressed to
+        # LabelAndWidget's generic one-line minimum inside an ExpandSettingCard.
+        self.setMinimumHeight(self.sizeHint().height())
 
     def update_value(self):
         value = self.config.get(self.key)

@@ -16,7 +16,7 @@ class TriggerTaskTab(TaskTab):
 
     def refresh_ui(self):
         for w in self.card_widgets:
-            self.removeWidget(w)
+            self.remove_task_card(w)
             w.deleteLater()
         self.card_widgets.clear()
         
@@ -25,7 +25,7 @@ class TriggerTaskTab(TaskTab):
                 continue
             task_card = TaskCard(task, False)
             self.card_widgets.append(task_card)
-            self.add_widget(task_card)
+            self.add_task_card(task_card)
 
     def in_current_list(self, task):
         return task in og.executor.trigger_tasks and getattr(task, 'visible', True)

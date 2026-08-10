@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QFrame, QHBoxLayout
+from PySide6.QtWidgets import QFrame, QHBoxLayout
 from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton
 
 from ok import og
@@ -341,37 +341,10 @@ class ConfigCard(ConfigContentMixin, ExpandSettingCard):
         self._init_config_content(task, config, default_config, config_description, config_type)
 
     def setExpand(self, isExpand: bool):
+        """Keep empty cards collapsed while retaining the native animation."""
         if isExpand and not self._expand_enabled:
             return
-        if self.isExpand == isExpand:
-            return
-
-        content_height = self.viewLayout.sizeHint().height()
-        header_height = self.viewportMargins().top()
-        target_height = header_height + content_height if isExpand else header_height
-        parent = self.parentWidget()
-        parent_updates_enabled = parent is not None and parent.updatesEnabled()
-        if parent_updates_enabled:
-            parent.setUpdatesEnabled(False)
-
-        self.expandAni.stop()
-        try:
-            self.spaceWidget.setFixedHeight(content_height)
-            self.verticalScrollBar().setValue(0)
-            self.isExpand = isExpand
-            self.setProperty('isExpand', isExpand)
-            self.setStyle(QApplication.style())
-            self.card.expandButton.setExpand(isExpand)
-            self.setFixedHeight(target_height)
-
-            parent_layout = parent.layout() if parent is not None else None
-            if parent_layout is not None:
-                parent_layout.invalidate()
-                parent_layout.activate()
-        finally:
-            if parent_updates_enabled:
-                parent.setUpdatesEnabled(True)
-                parent.update()
+        super().setExpand(isExpand)
 
     def _on_empty_config_content(self):
         self._expand_enabled = False
