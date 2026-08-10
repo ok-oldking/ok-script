@@ -82,8 +82,8 @@ class TestTaskUi(unittest.TestCase):
         self.addCleanup(communicate.task.disconnect, card.update_buttons)
         self.addCleanup(card.close)
 
-        self.assertEqual(50, card.card.height())
-        self.assertEqual(50, card.height())
+        self.assertEqual(56, card.card.height())
+        self.assertEqual(56, card.height())
         self.assertTrue(card.card.iconLabel.isHidden())
         self.assertIs(card.card.vBoxLayout, card.card.hBoxLayout.itemAt(1).layout())
         self.assertEqual(1, card.card.vBoxLayout.count())

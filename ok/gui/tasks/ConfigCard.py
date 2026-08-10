@@ -299,10 +299,56 @@ class ConfigCard(ConfigContentMixin, ExpandSettingCard):
         self._init_config_content(task, config, default_config, config_description, config_type)
 
     def setExpand(self, isExpand: bool):
-        """Keep empty cards collapsed while retaining the native animation."""
         if isExpand and not self._expand_enabled:
             return
-        super().setExpand(isExpand)
+        if self.isExpand == isExpand:
+            return
+
+        content_height = self._visible_content_height()
+        header_height = self.viewportMargins().top()
+        target_height = header_height + content_height if isExpand else header_height
+        parent = self.parentWidget()
+        parent_updates_enabled = parent is not None and parent.updatesEnabled()
+        if parent_updates_enabled:
+            parent.setUpdatesEnabled(False)
+
+        self.expandAni.stop()
+        try:
+            self.spaceWidget.hide()
+            self.verticalScrollBar().setValue(0)
+            self.isExpand = isExpand
+            self.setProperty('isExpand', isExpand)
+            self.setStyle(QApplication.style())
+            self.card.expandButton.setExpand(isExpand)
+            self.setFixedHeight(target_height)
+
+            parent_layout = parent.layout() if parent is not None else None
+            if parent_layout is not None:
+                parent_layout.invalidate()
+                parent_layout.activate()
+        finally:
+            if parent_updates_enabled:
+                parent.setUpdatesEnabled(True)
+                parent.update()
+
+    def _adjustViewSize(self):
+        """Resize to visible rows only; hidden sub-configs must not reserve space."""
+        self.spaceWidget.hide()
+        if self.isExpand:
+            self.setFixedHeight(self.card.height() + self._visible_content_height())
+
+    def _visible_content_height(self):
+        margins = self.viewLayout.contentsMargins()
+        self.viewLayout.activate()
+        bottom = margins.top()
+        for index in range(self.viewLayout.count()):
+            item = self.viewLayout.itemAt(index)
+            widget = item.widget()
+            if widget is not None and widget.isHidden():
+                continue
+
+            bottom = max(bottom, item.geometry().bottom() + 1)
+        return bottom + margins.bottom()
 
     def _on_empty_config_content(self):
         self._expand_enabled = False
