@@ -584,13 +584,12 @@ class TaskExecutor:
                     communicate.task.emit(task)
             except TaskDisabledException:
                 logger.info(f"TaskDisabledException, continue {task}")
-                from ok import og
                 task.running = False
                 self.current_task = None
                 if not is_trigger_task:
                     communicate.task.emit(task)
                 communicate.notification.emit('Stopped', task.name, False,
-                                              True, None, None, None)
+                                              False, None, None, None)
                 continue
             except FinishedException:
                 logger.info(f"FinishedException, breaking")

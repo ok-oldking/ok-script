@@ -17,6 +17,21 @@ class _NotificationHarness:
         return self
 
 
+class _ExecutorPausedHarness:
+    executor_paused = MainWindow.executor_paused
+
+    def __init__(self):
+        self.stackedWidget = SimpleNamespace(currentIndex=Mock(return_value=1))
+        self.switchTo = Mock()
+        self.show_notification = Mock()
+
+    def startup_task_tab(self):
+        return None
+
+    def tr(self, message):
+        return message
+
+
 class TestMainWindowNotifications(unittest.TestCase):
     def test_task_name_notification_title_uses_app_translation(self):
         harness = _NotificationHarness()
@@ -39,6 +54,20 @@ class TestMainWindowNotifications(unittest.TestCase):
             False,
         )
         self.assertEqual("Translated task name", harness.tray.showMessage.call_args.args[0])
+
+    def test_task_lifecycle_notifications_do_not_use_the_tray(self):
+        harness = _ExecutorPausedHarness()
+
+        harness.executor_paused(False)
+        harness.executor_paused(True)
+
+        self.assertEqual(
+            [
+                (("Start Success.",), {"tray": False}),
+                (("Pause Success.",), {"tray": False}),
+            ],
+            harness.show_notification.call_args_list,
+        )
 
 
 if __name__ == "__main__":

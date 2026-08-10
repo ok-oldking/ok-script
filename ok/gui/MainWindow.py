@@ -666,7 +666,7 @@ class MainWindow(FluentWindow):
         task_tab = self.startup_task_tab()
         if not paused and self.stackedWidget.currentIndex() == 0 and task_tab:
             self.switchTo(task_tab)
-        self.show_notification(self.tr("Start Success.") if not paused else self.tr("Pause Success."), tray=not paused)
+        self.show_notification(self.tr("Start Success.") if not paused else self.tr("Pause Success."), tray=False)
 
     def _check_okscript_args(self):
         """Check sys.argv for .okscript files and import them."""
