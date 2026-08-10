@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QFrame, QHBoxLayout
+from PySide6.QtWidgets import QApplication, QHBoxLayout
 from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton
 
 from ok import og
@@ -19,7 +19,6 @@ class ConfigContentMixin:
         self.config_type = config_type
         self.sub_configs_rules = {}
         self.sub_configs_controlled_keys = {}
-        self.sub_configs_dividers = {}
         self.task = task
         self.reset_config = None
         self.__initWidget()
@@ -81,10 +80,6 @@ class ConfigContentMixin:
             return
 
         adding_keys.add(key)
-        has_sub_configs = self.__has_renderable_sub_configs(key)
-        if has_sub_configs:
-            self.__add_sub_configs_divider(key, 'top')
-
         self.__addConfig(key, value)
         added_keys.add(key)
 
@@ -116,23 +111,13 @@ class ConfigContentMixin:
             widget.setProperty('subConfig', True)
         self.viewLayout.addWidget(widget)
 
-    def __add_sub_configs_divider(self, key, position):
-        divider = QFrame()
-        divider.setFrameShape(QFrame.HLine)
-        divider.setFrameShadow(QFrame.Plain)
-        divider.setObjectName('subConfigsDivider')
-        divider.setFixedHeight(1)
-        divider.setStyleSheet("color: rgba(128, 128, 128, 90); background-color: rgba(128, 128, 128, 90);")
-        self.sub_configs_dividers.setdefault(key, {})[position] = divider
-        self.viewLayout.addWidget(divider)
-
     def __is_button_config(self, the_type):
         return (
-            isinstance(the_type, dict)
-            and (
-                the_type.get('type') == 'button'
-                or ('type' not in the_type and ('buttons' in the_type or 'callback' in the_type))
-            )
+                isinstance(the_type, dict)
+                and (
+                        the_type.get('type') == 'button'
+                        or ('type' not in the_type and ('buttons' in the_type or 'callback' in the_type))
+                )
         )
 
     def __setup_sub_configs(self):
@@ -253,19 +238,11 @@ class ConfigContentMixin:
         self.__sync_sub_config_order()
         for key, widget in self.config_widget_by_key.items():
             widget.setVisible(self.__is_config_visible(key, set()))
-        for key, dividers in self.sub_configs_dividers.items():
-            visible = self.__is_sub_configs_group_visible(key)
-            for divider in dividers.values():
-                divider.setVisible(visible)
         self._adjust_config_content_size()
 
     def __sync_sub_config_order(self):
         for widget in self.config_widget_by_key.values():
             self.viewLayout.removeWidget(widget)
-        for dividers in self.sub_configs_dividers.values():
-            for divider in dividers.values():
-                self.viewLayout.removeWidget(divider)
-
         insert_index = 0
         for key in self.config_keys:
             if self.__is_sub_config_key(key):
@@ -278,13 +255,6 @@ class ConfigContentMixin:
 
         inserting_keys.add(key)
         active_sub_config_keys = self.__get_active_sub_config_keys(key)
-        has_visible_sub_configs = any(
-            self.__is_config_visible(sub_config_key, set())
-            for sub_config_key in active_sub_config_keys
-        )
-
-        if has_visible_sub_configs:
-            insert_index = self.__insert_sub_configs_divider(key, 'top', insert_index)
 
         self.viewLayout.insertWidget(insert_index, self.config_widget_by_key[key])
         insert_index += 1
@@ -294,22 +264,6 @@ class ConfigContentMixin:
 
         inserting_keys.remove(key)
         return insert_index
-
-    def __insert_sub_configs_divider(self, key, position, insert_index):
-        divider = self.sub_configs_dividers.get(key, {}).get(position)
-        if divider is None:
-            return insert_index
-
-        self.viewLayout.insertWidget(insert_index, divider)
-        return insert_index + 1
-
-    def __is_sub_configs_group_visible(self, key):
-        if not self.__is_config_visible(key, set()):
-            return False
-        for sub_config_key in self.__get_active_sub_config_keys(key):
-            if sub_config_key in self.config_widget_by_key and self.__is_config_visible(sub_config_key, set()):
-                return True
-        return False
 
     def __is_config_visible(self, key, checking):
         if key in checking:
