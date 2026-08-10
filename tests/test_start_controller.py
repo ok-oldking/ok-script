@@ -131,6 +131,38 @@ class TestStartController(unittest.TestCase):
         )
         self.assertEqual('GPU Driver Warning', title)
 
+    def test_resolution_mismatch_is_info_only_when_auto_resize_is_disabled(self):
+        controller = self.make_controller()
+        controller.config = {
+            'supported_resolution': {
+                'ratio': '16:9',
+                'min_size': (1280, 720),
+                'resize_to': [(1280, 720)],
+                'force_ratio': True,
+            },
+        }
+        controller.tr = lambda text: text
+        capture_method = object()
+        fake_og = SimpleNamespace(
+            executor=SimpleNamespace(
+                check_frame_and_resolution=Mock(return_value=(False, '1024x768')),
+            ),
+            device_manager=SimpleNamespace(capture_method=capture_method),
+            global_config=SimpleNamespace(
+                get_config=Mock(return_value={'Auto Resize Game Window': False}),
+            ),
+        )
+
+        with patch.object(start_controller_module, 'og', fake_og), \
+                patch.object(start_controller_module, 'BaseWindowsCaptureMethod', object), \
+                patch.object(start_controller_module, 'alert_info') as alert_info, \
+                patch.object(start_controller_module, 'alert_error') as alert_error:
+            self.assertIsNone(controller.check_resolution())
+
+        alert_info.assert_called_once()
+        self.assertFalse(alert_info.call_args.kwargs.get('tray', False))
+        alert_error.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()
