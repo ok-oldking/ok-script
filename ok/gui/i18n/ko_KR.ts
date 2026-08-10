@@ -1481,6 +1481,90 @@
             <source>Open the app launcher to manage updates</source>
             <translation>앱 실행기를 열어 업데이트를 관리합니다</translation>
         </message>
+        <message>
+            <source>Notification</source>
+            <translation>알림</translation>
+        </message>
+        <message>
+            <source>Configure notification providers</source>
+            <translation>알림 공급자 구성</translation>
+        </message>
+        <message>
+            <source>System Notification</source>
+            <translation>시스템 알림</translation>
+        </message>
+        <message>
+            <source>Show notifications using the Windows system tray</source>
+            <translation>Windows 시스템 트레이에서 알림 표시</translation>
+        </message>
+        <message>
+            <source>Discord Notification</source>
+            <translation>Discord 알림</translation>
+        </message>
+        <message>
+            <source>Send notifications to a Discord webhook</source>
+            <translation>Discord 웹후크로 알림 전송</translation>
+        </message>
+        <message>
+            <source>Discord Webhook</source>
+            <translation>Discord 웹후크</translation>
+        </message>
+        <message>
+            <source>Discord channel webhook URL</source>
+            <translation>Discord 채널 웹후크 URL</translation>
+        </message>
+        <message>
+            <source>QQ Notification</source>
+            <translation>QQ 알림</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local QQ contact</source>
+            <translation>로컬 QQ 연락처로 알림 전송</translation>
+        </message>
+        <message>
+            <source>QQ Nickname</source>
+            <translation>QQ 닉네임</translation>
+        </message>
+        <message>
+            <source>Exact QQ contact nickname</source>
+            <translation>QQ 연락처의 정확한 닉네임</translation>
+        </message>
+        <message>
+            <source>WeChat Notification</source>
+            <translation>WeChat 알림</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local WeChat contact</source>
+            <translation>로컬 WeChat 연락처로 알림 전송</translation>
+        </message>
+        <message>
+            <source>WeChat Nickname</source>
+            <translation>WeChat 닉네임</translation>
+        </message>
+        <message>
+            <source>Exact WeChat contact nickname</source>
+            <translation>WeChat 연락처의 정확한 닉네임</translation>
+        </message>
+        <message>
+            <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
+            <translation>알림을 받을 위치를 선택하세요. 알림은 항상 앱에 표시되며, 추가로 받을 공급자를 활성화할 수 있습니다.</translation>
+        </message>
+        <message>
+            <source>Local Client Notification</source>
+            <translation>로컬 클라이언트 알림</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ or WeChat client window to be open and running</source>
+            <translation>로컬 QQ 또는 WeChat 클라이언트 창이 열려 있고 실행 중이어야 합니다</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ client window to be open and running</source>
+            <translation>로컬 QQ 클라이언트 창이 열려 있고 실행 중이어야 합니다</translation>
+        </message>
+        <message>
+            <source>Requires the local WeChat client window to be open and running</source>
+            <translation>로컬 WeChat 클라이언트 창이 열려 있고 실행 중이어야 합니다</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

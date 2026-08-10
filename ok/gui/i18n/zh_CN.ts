@@ -1478,6 +1478,90 @@
             <source>Open the app launcher to manage updates</source>
             <translation>打开应用启动器以管理更新</translation>
         </message>
+        <message>
+            <source>Notification</source>
+            <translation>通知</translation>
+        </message>
+        <message>
+            <source>Configure notification providers</source>
+            <translation>配置通知服务提供商</translation>
+        </message>
+        <message>
+            <source>System Notification</source>
+            <translation>系统通知</translation>
+        </message>
+        <message>
+            <source>Show notifications using the Windows system tray</source>
+            <translation>使用 Windows 系统托盘显示通知</translation>
+        </message>
+        <message>
+            <source>Discord Notification</source>
+            <translation>Discord 通知</translation>
+        </message>
+        <message>
+            <source>Send notifications to a Discord webhook</source>
+            <translation>将通知发送到 Discord Webhook</translation>
+        </message>
+        <message>
+            <source>Discord Webhook</source>
+            <translation>Discord Webhook</translation>
+        </message>
+        <message>
+            <source>Discord channel webhook URL</source>
+            <translation>Discord 频道 Webhook URL</translation>
+        </message>
+        <message>
+            <source>QQ Notification</source>
+            <translation>QQ 通知</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local QQ contact</source>
+            <translation>将通知发送给本地 QQ 联系人</translation>
+        </message>
+        <message>
+            <source>QQ Nickname</source>
+            <translation>QQ 昵称</translation>
+        </message>
+        <message>
+            <source>Exact QQ contact nickname</source>
+            <translation>QQ 联系人的完整昵称</translation>
+        </message>
+        <message>
+            <source>WeChat Notification</source>
+            <translation>微信通知</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local WeChat contact</source>
+            <translation>将通知发送给本地微信联系人</translation>
+        </message>
+        <message>
+            <source>WeChat Nickname</source>
+            <translation>微信昵称</translation>
+        </message>
+        <message>
+            <source>Exact WeChat contact nickname</source>
+            <translation>微信联系人的完整昵称</translation>
+        </message>
+        <message>
+            <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
+            <translation>选择通知的发送位置。通知始终会显示在应用内；请启用您希望额外接收通知的服务。</translation>
+        </message>
+        <message>
+            <source>Local Client Notification</source>
+            <translation>本地客户端通知</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ or WeChat client window to be open and running</source>
+            <translation>需要本地 QQ 或微信客户端窗口保持打开并运行</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ client window to be open and running</source>
+            <translation>需要本地 QQ 客户端窗口保持打开并运行</translation>
+        </message>
+        <message>
+            <source>Requires the local WeChat client window to be open and running</source>
+            <translation>需要本地微信客户端窗口保持打开并运行</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

@@ -14,6 +14,14 @@ APP_LAUNCHER_UPDATE_METHOD = 'Auto Update'
 APP_LAUNCHER_ACTION = 'Launcher'
 APP_LAUNCHER_OPEN = 'Open Launcher'
 KILL_LAUNCHER_AFTER_START = 'Kill Launcher After Start'
+NOTIFICATION_OPTION_NAME = 'Notification'
+SYSTEM_NOTIFICATION_ENABLED = 'System Notification'
+DISCORD_NOTIFICATION_ENABLED = 'Discord Notification'
+DISCORD_WEBHOOK = 'Discord Webhook'
+QQ_NOTIFICATION_ENABLED = 'QQ Notification'
+QQ_NICKNAME = 'QQ Nickname'
+WECHAT_NOTIFICATION_ENABLED = 'WeChat Notification'
+WECHAT_NICKNAME = 'WeChat Nickname'
 UPDATE_METHOD_LABELS = {
     'Manual Update': 'MANUAL_UPDATE',
     'Automatic Update(Release Only)': 'AUTO_UPDATE',
@@ -64,6 +72,54 @@ def create_basic_options(enable_blur=False):
 
 
 basic_options = create_basic_options()
+
+
+def create_notification_options():
+    default = {
+        SYSTEM_NOTIFICATION_ENABLED: True,
+        DISCORD_NOTIFICATION_ENABLED: False,
+        DISCORD_WEBHOOK: '',
+        QQ_NOTIFICATION_ENABLED: False,
+        QQ_NICKNAME: '',
+        WECHAT_NOTIFICATION_ENABLED: False,
+        WECHAT_NICKNAME: '',
+    }
+    config_type = {
+        DISCORD_NOTIFICATION_ENABLED: {'sub_configs': {True: [DISCORD_WEBHOOK]}},
+        DISCORD_WEBHOOK: {
+            'type': 'line_edit', 'minimum_width': 480, 'maximum_width': 640},
+        QQ_NOTIFICATION_ENABLED: {'sub_configs': {True: [QQ_NICKNAME]}},
+        WECHAT_NOTIFICATION_ENABLED: {'sub_configs': {True: [WECHAT_NICKNAME]}},
+    }
+    descriptions = {
+        SYSTEM_NOTIFICATION_ENABLED: 'Show notifications using the Windows system tray',
+        DISCORD_NOTIFICATION_ENABLED: 'Send notifications to a Discord webhook',
+        DISCORD_WEBHOOK: 'Discord channel webhook URL',
+        QQ_NOTIFICATION_ENABLED: (
+            'Requires the local QQ client window to be open and running'),
+        QQ_NICKNAME: 'Exact QQ contact nickname',
+        WECHAT_NOTIFICATION_ENABLED: (
+            'Requires the local WeChat client window to be open and running'),
+        WECHAT_NICKNAME: 'Exact WeChat contact nickname',
+    }
+    return ConfigOption(
+        NOTIFICATION_OPTION_NAME,
+        default,
+        description=(
+            'Choose where notifications are delivered. Notifications always appear in the app; '
+            'enable any additional providers you want to receive them.'),
+        config_description=descriptions,
+        config_type=config_type,
+        icon=FluentIcon.RINGER,
+        show_at_tab=True,
+    )
+
+
+notification_options = create_notification_options()
+
+
+def register_notification_options(global_config):
+    return global_config.get_config(create_notification_options())
 
 
 class GlobalConfig:

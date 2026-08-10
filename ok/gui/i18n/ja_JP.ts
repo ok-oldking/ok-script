@@ -1472,6 +1472,90 @@
             <source>Open the app launcher to manage updates</source>
             <translation>アプリランチャーを開いて更新を管理します</translation>
         </message>
+        <message>
+            <source>Notification</source>
+            <translation>通知</translation>
+        </message>
+        <message>
+            <source>Configure notification providers</source>
+            <translation>通知プロバイダーを設定</translation>
+        </message>
+        <message>
+            <source>System Notification</source>
+            <translation>システム通知</translation>
+        </message>
+        <message>
+            <source>Show notifications using the Windows system tray</source>
+            <translation>Windows システムトレイで通知を表示</translation>
+        </message>
+        <message>
+            <source>Discord Notification</source>
+            <translation>Discord 通知</translation>
+        </message>
+        <message>
+            <source>Send notifications to a Discord webhook</source>
+            <translation>Discord Webhook に通知を送信</translation>
+        </message>
+        <message>
+            <source>Discord Webhook</source>
+            <translation>Discord Webhook</translation>
+        </message>
+        <message>
+            <source>Discord channel webhook URL</source>
+            <translation>Discord チャンネルの Webhook URL</translation>
+        </message>
+        <message>
+            <source>QQ Notification</source>
+            <translation>QQ 通知</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local QQ contact</source>
+            <translation>ローカルの QQ 連絡先に通知を送信</translation>
+        </message>
+        <message>
+            <source>QQ Nickname</source>
+            <translation>QQ ニックネーム</translation>
+        </message>
+        <message>
+            <source>Exact QQ contact nickname</source>
+            <translation>QQ 連絡先の完全一致するニックネーム</translation>
+        </message>
+        <message>
+            <source>WeChat Notification</source>
+            <translation>WeChat 通知</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local WeChat contact</source>
+            <translation>ローカルの WeChat 連絡先に通知を送信</translation>
+        </message>
+        <message>
+            <source>WeChat Nickname</source>
+            <translation>WeChat ニックネーム</translation>
+        </message>
+        <message>
+            <source>Exact WeChat contact nickname</source>
+            <translation>WeChat 連絡先の完全一致するニックネーム</translation>
+        </message>
+        <message>
+            <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
+            <translation>通知の配信先を選択します。通知は常にアプリ内に表示されます。追加で受け取りたいプロバイダーを有効にしてください。</translation>
+        </message>
+        <message>
+            <source>Local Client Notification</source>
+            <translation>ローカルクライアント通知</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ or WeChat client window to be open and running</source>
+            <translation>ローカルの QQ または WeChat クライアントウィンドウを開いて実行しておく必要があります</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ client window to be open and running</source>
+            <translation>ローカルの QQ クライアントウィンドウを開いて実行しておく必要があります</translation>
+        </message>
+        <message>
+            <source>Requires the local WeChat client window to be open and running</source>
+            <translation>ローカルの WeChat クライアントウィンドウを開いて実行しておく必要があります</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

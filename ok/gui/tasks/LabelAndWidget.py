@@ -14,7 +14,9 @@ class LabelAndWidget(QWidget):
         self.title_layout = QVBoxLayout()
         self.title_layout.setContentsMargins(0, 0, 0, 0)
         self.title_layout.setSpacing(2)
-        self.layout.addLayout(self.title_layout, stretch=0)
+        # The description column owns the flexible row width. Controls remain
+        # right-aligned at their requested size without forcing early wrapping.
+        self.layout.addLayout(self.title_layout, stretch=1)
         translated_title = og.app.tr(title)
         if '{app_name}' in translated_title:
             translated_title = translated_title.format(app_name=(og.config or {}).get('gui_title', ''))
@@ -29,7 +31,6 @@ class LabelAndWidget(QWidget):
             self.contentLabel.setWordWrap(True)
             self.title_layout.addWidget(self.contentLabel)
         self.title_layout.setAlignment(Qt.AlignVCenter)
-        self.layout.addStretch()
 
     def add_widget(self, widget: QWidget, stretch=1):
         self.layout.addWidget(widget, stretch=stretch)

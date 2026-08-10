@@ -5,6 +5,7 @@ from typing import List
 from PySide6.QtCore import QCoreApplication
 
 import cv2
+from numpy import ndarray
 from qfluentwidgets import FluentIcon
 
 from ok.feature.Box import find_boxes_by_name, find_boxes_within_boundary, Box, find_box_by_name, relative_box, \
@@ -1207,24 +1208,54 @@ class BaseTask(OCR):
     def paused(self):
         return self._paused
 
-    def log_info(self, message, notify=False):
+    def _notification_images(self, images: ndarray | list[ndarray] | None = None, screenshot: bool = False):
+        if images is None:
+            result = []
+        elif isinstance(images, (list, tuple)):
+            result = [image for image in images if image is not None]
+        else:
+            result = [images]
+        if screenshot:
+            frame = self.executor.nullable_frame()
+            if frame is not None:
+                result.append(frame)
+        return [image.copy() if hasattr(image, 'copy') else image for image in result]
+
+    def _write_log_images(self, message, images: ndarray | list[ndarray] | None = None,
+                          screenshot: bool = False):
+        frames = self._notification_images(images, screenshot)
+        for index, frame in enumerate(frames):
+            communicate.screenshot.emit(frame, f'log/log_{index + 1}', False, None)
+        return frames
+
+    def log_info(self, message, notify=False, images: ndarray | list[ndarray] | None = None,
+                 screenshot: bool = False):
         self.logger.info(message)
         self.info_set("Log", message)
         if notify:
-            self.notification(message, tray=True)
+            self.notification(message, tray=True, images=images, screenshot=screenshot)
+        else:
+            self._write_log_images(message, images, screenshot)
 
-    def log_debug(self, message, notify=False):
+    def log_debug(self, message, notify=False, images: ndarray | list[ndarray] | None = None,
+                  screenshot: bool = False):
         self.logger.debug(message)
         if notify:
-            self.notification(message, tray=True)
+            self.notification(message, tray=True, images=images, screenshot=screenshot)
+        else:
+            self._write_log_images(message, images, screenshot)
 
-    def log_warning(self, message, notify=False):
+    def log_warning(self, message, notify=False, images: ndarray | list[ndarray] | None = None,
+                    screenshot: bool = False):
         self.logger.warning(message)
         self.info_set("Warning", message)
         if notify:
-            self.notification(message, tray=True)
+            self.notification(message, tray=True, images=images, screenshot=screenshot)
+        else:
+            self._write_log_images(message, images, screenshot)
 
-    def log_error(self, message, exception=None, notify=False):
+    def log_error(self, message, exception=None, notify=False, images: ndarray | list[ndarray] | None = None,
+                  screenshot: bool = False):
         self.logger.error(message, exception)
         if exception is not None:
             if len(exception.args) > 0:
@@ -1233,7 +1264,9 @@ class BaseTask(OCR):
                 message += str(exception)
         self.info_set("Error", message)
         if notify:
-            self.notification(message, error=True, tray=True)
+            self.notification(message, error=True, tray=True, images=images, screenshot=True)
+        else:
+            self._write_log_images(message, images, True)
 
     def go_to_tab(self, tab):
         self.log_info(f"go to tab {tab}")
@@ -1243,8 +1276,12 @@ class BaseTask(OCR):
         self.executor.start()
         self.enable()
 
-    def notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None):
-        communicate.notification.emit(message, title, error, tray, show_tab, params)
+    def notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None,
+                     images: ndarray | list[ndarray] | None = None, screenshot: bool = False):
+        frames = self._notification_images(images, screenshot)
+        for index, frame in enumerate(frames):
+            communicate.screenshot.emit(frame, f'notification/notification_{index + 1}', False, None)
+        communicate.notification.emit(message, title, error, tray, show_tab, params, frames)
 
     @property
     def enabled(self):

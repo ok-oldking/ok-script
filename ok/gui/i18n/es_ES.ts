@@ -1480,6 +1480,90 @@
             <source>Open the app launcher to manage updates</source>
             <translation>Abre el lanzador de aplicaciones para gestionar las actualizaciones</translation>
         </message>
+        <message>
+            <source>Notification</source>
+            <translation>Notificación</translation>
+        </message>
+        <message>
+            <source>Configure notification providers</source>
+            <translation>Configurar proveedores de notificaciones</translation>
+        </message>
+        <message>
+            <source>System Notification</source>
+            <translation>Notificación del sistema</translation>
+        </message>
+        <message>
+            <source>Show notifications using the Windows system tray</source>
+            <translation>Mostrar notificaciones mediante la bandeja del sistema de Windows</translation>
+        </message>
+        <message>
+            <source>Discord Notification</source>
+            <translation>Notificación de Discord</translation>
+        </message>
+        <message>
+            <source>Send notifications to a Discord webhook</source>
+            <translation>Enviar notificaciones a un webhook de Discord</translation>
+        </message>
+        <message>
+            <source>Discord Webhook</source>
+            <translation>Webhook de Discord</translation>
+        </message>
+        <message>
+            <source>Discord channel webhook URL</source>
+            <translation>URL del webhook del canal de Discord</translation>
+        </message>
+        <message>
+            <source>QQ Notification</source>
+            <translation>Notificación de QQ</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local QQ contact</source>
+            <translation>Enviar notificaciones a un contacto local de QQ</translation>
+        </message>
+        <message>
+            <source>QQ Nickname</source>
+            <translation>Apodo de QQ</translation>
+        </message>
+        <message>
+            <source>Exact QQ contact nickname</source>
+            <translation>Apodo exacto del contacto de QQ</translation>
+        </message>
+        <message>
+            <source>WeChat Notification</source>
+            <translation>Notificación de WeChat</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local WeChat contact</source>
+            <translation>Enviar notificaciones a un contacto local de WeChat</translation>
+        </message>
+        <message>
+            <source>WeChat Nickname</source>
+            <translation>Apodo de WeChat</translation>
+        </message>
+        <message>
+            <source>Exact WeChat contact nickname</source>
+            <translation>Apodo exacto del contacto de WeChat</translation>
+        </message>
+        <message>
+            <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
+            <translation>Elige dónde se entregan las notificaciones. Siempre aparecen en la aplicación; activa los proveedores adicionales en los que quieras recibirlas.</translation>
+        </message>
+        <message>
+            <source>Local Client Notification</source>
+            <translation>Notificación del cliente local</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ or WeChat client window to be open and running</source>
+            <translation>Requiere que la ventana del cliente local de QQ o WeChat esté abierta y en ejecución</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ client window to be open and running</source>
+            <translation>Requiere que la ventana del cliente local de QQ esté abierta y en ejecución</translation>
+        </message>
+        <message>
+            <source>Requires the local WeChat client window to be open and running</source>
+            <translation>Requiere que la ventana del cliente local de WeChat esté abierta y en ejecución</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

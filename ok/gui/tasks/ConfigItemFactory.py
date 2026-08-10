@@ -47,6 +47,8 @@ def config_widget(config_type, config_desc, config, key, value, task):
             return LabelAndGlobal(desc, config, key)
         elif resolved_type == 'text_edit':
             return LabelAndTextEdit(config_desc, config, key)
+        elif resolved_type == 'line_edit':
+            return LabelAndLineEdit(config_desc, config, key, the_type)
         elif resolved_type == 'file_selector':
             if not isinstance(value, str):
                 raise ValueError("file_selector config type requires a string default value")

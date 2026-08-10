@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QApplication, QFrame, QHBoxLayout
 from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton
 
 from ok import og
+from ok.gui.common.design_system import DesignToken
 from ok.gui.tasks.ConfigItemFactory import config_widget
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
@@ -97,9 +98,6 @@ class ConfigContentMixin:
 
             self.__addConfigWithSubConfigs(sub_config_key, sub_config_value, added_keys, adding_keys)
 
-        if has_sub_configs:
-            self.__add_sub_configs_divider(key, 'bottom')
-
         adding_keys.remove(key)
 
     def __addConfig(self, key: str, value):
@@ -107,6 +105,15 @@ class ConfigContentMixin:
         self.config_widgets.append(widget)
         self.config_widget_by_key[key] = widget
         self.config_keys.append(key)
+        if self.__is_sub_config_key(key):
+            layout = widget.layout
+            margins = layout.contentsMargins()
+            layout.setContentsMargins(
+                margins.left() + DesignToken.SUBCONFIG_INDENT,
+                DesignToken.SUBCONFIG_TOP_PADDING,
+                margins.right(), margins.bottom())
+            widget.setMinimumHeight(DesignToken.SUBCONFIG_MIN_HEIGHT)
+            widget.setProperty('subConfig', True)
         self.viewLayout.addWidget(widget)
 
     def __add_sub_configs_divider(self, key, position):
@@ -284,9 +291,6 @@ class ConfigContentMixin:
 
         for sub_config_key in active_sub_config_keys:
             insert_index = self.__insert_config_group(sub_config_key, insert_index, inserting_keys)
-
-        if has_visible_sub_configs:
-            insert_index = self.__insert_sub_configs_divider(key, 'bottom', insert_index)
 
         inserting_keys.remove(key)
         return insert_index

@@ -287,7 +287,7 @@ class HwndWindow:
                             logger.error(f'og.executor.pause pos_invalid: {x, y, width, height}')
                             communicate.notification.emit('Paused because game window is minimized or out of screen!',
                                                           None,
-                                                          True, True, "start", None)
+                                                          True, True, "start", None, None)
                     if pos_valid != self.pos_valid:
                         self.pos_valid = pos_valid
                 else:
@@ -296,7 +296,7 @@ class HwndWindow:
                         alert_info('Auto exit because game exited', True)
                         communicate.quit.emit()
                     else:
-                        communicate.notification.emit('Game Exited', None, True, True, None, None)
+                        communicate.notification.emit('Game Exited', None, True, True, None, None, None)
                     self.hwnd = 0
                     visible = False
                 if visible != self.visible:

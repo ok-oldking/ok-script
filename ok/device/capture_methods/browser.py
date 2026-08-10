@@ -244,7 +244,7 @@ class BrowserCaptureMethod(BaseCaptureMethod):
                 logger.warning('BrowserCaptureMethod page closed')
                 self.page = None
                 self.browser = None
-                communicate.notification.emit('Paused because browser exited', None, True, True, "start", None)
+                communicate.notification.emit('Paused because browser exited', None, True, True, "start", None, None)
             return None
 
         if self.wgc_capture:

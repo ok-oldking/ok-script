@@ -12,6 +12,7 @@ from ok import og
 from ok.gui.Communicate import communicate
 from ok.gui.tasks.TaskCard import TaskCard
 from ok.gui.tasks.TaskTab import TaskTab
+from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
 
 class FakeConfig(dict):
@@ -44,6 +45,19 @@ class TestTaskUi(unittest.TestCase):
     def tearDown(self):
         og.app = self.original_app
         og.executor = self.original_executor
+
+    def test_config_description_column_uses_available_row_width(self):
+        row = LabelAndWidget(
+            'Local Client Notification',
+            'Send notifications through local QQ or WeChat clients')
+        row.resize(640, 90)
+        row.show()
+        QApplication.processEvents()
+        self.addCleanup(row.close)
+
+        self.assertEqual(1, row.layout.stretch(0))
+        self.assertEqual(1, row.layout.count())
+        self.assertGreater(row.title_layout.geometry().width(), 400)
 
     def test_task_card_uses_single_line_compact_header(self):
         task = SimpleNamespace(

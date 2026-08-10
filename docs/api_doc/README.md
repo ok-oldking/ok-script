@@ -1173,7 +1173,8 @@ def calculate_color_percentage(self, color, box: Box | str) -> float
 ### notification
 
 ```python
-def notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None)
+def notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None,
+                 images=None, screenshot=False)
 ```
 
 在主界面显示一个通知信息条或系统托盘通知。
@@ -1183,6 +1184,8 @@ def notification(self, message, title=None, error=False, tray=False, show_tab=No
     - `tray` (bool): 是否同时显示系统托盘通知。
     - `show_tab` (str): 点击通知时跳转到的 UI 选项卡。
     - `params` (any): 随通知一起传递给 UI 的附加参数。
+    - `images` (numpy.ndarray | list[numpy.ndarray] | None): 可选的单张或多张 OpenCV 图像。图像会异步写入 `screenshots/notification`，并发送给支持图像的通知服务，但不会显示在应用界面中。
+    - `screenshot` (bool): 为 `True` 时，将当前帧追加到 `images`。默认为 `False`。
 
 <a name="info_set"></a>
 
@@ -1251,30 +1254,30 @@ def info_clear(self)
 ### log\_info
 
 ```python
-def log_info(self, message, notify=False)
+def log_info(self, message, notify=False, images=None, screenshot=False)
 ```
 
-记录一条信息级别的日志。
+记录一条信息级别的日志。可选图像和当前帧会异步写入 `screenshots/log`。
 
 <a name="log_debug"></a>
 
 ### log\_debug
 
 ```python
-def log_debug(self, message, notify=False)
+def log_debug(self, message, notify=False, images=None, screenshot=False)
 ```
 
-记录一条调试级别的日志。
+记录一条调试级别的日志。可选图像和当前帧会异步写入 `screenshots/log`。
 
 <a name="log_error"></a>
 
 ### log\_error
 
 ```python
-def log_error(self, message, exception=None, notify=False)
+def log_error(self, message, exception=None, notify=False, images=None, screenshot=False)
 ```
 
-记录一条错误级别的日志。
+记录一条错误级别的日志。无论 `screenshot` 的值为何，都会保存当前帧。
 
 ### 其他 (Other) { #其他-other }
 

@@ -69,7 +69,8 @@ if TYPE_CHECKING:
     )
     from ok.task.task import BaseTask, FindFeature, OCR, TriggerTask
     from ok.util.Analytics import Analytics
-    from ok.util.GlobalConfig import GlobalConfig, register_app_launcher_options, register_basic_options
+    from ok.util.GlobalConfig import (GlobalConfig, register_app_launcher_options,
+                                      register_basic_options, register_notification_options)
     from ok.util.clazz import init_class_by_name
     from ok.util.collection import safe_get
     from ok.util.color import (
@@ -101,6 +102,7 @@ _LAZY_IMPORTS = {
     'GlobalConfig': ('ok.util.GlobalConfig', 'GlobalConfig'),
     'register_app_launcher_options': ('ok.util.GlobalConfig', 'register_app_launcher_options'),
     'register_basic_options': ('ok.util.GlobalConfig', 'register_basic_options'),
+    'register_notification_options': ('ok.util.GlobalConfig', 'register_notification_options'),
     'Config': ('ok.util.config', 'Config'),
     'ConfigOption': ('ok.util.config', 'ConfigOption'),
     'init_class_by_name': ('ok.util.clazz', 'init_class_by_name'),
@@ -505,6 +507,7 @@ class OK:
         global_config_class = _resolve('GlobalConfig')
         register_launcher = _resolve('register_app_launcher_options')
         register_basic = _resolve('register_basic_options')
+        register_notifications = _resolve('register_notification_options')
         parse_arguments = _resolve('parse_arguments_to_map')
         default_start_method = _resolve('WINDOWS_START_METHOD_START')
         wgc_available = _resolve('windows_graphics_available')
@@ -549,6 +552,7 @@ class OK:
 
         register_basic(self.global_config, enable_blur=callable(config.get('blur_area')))
         register_launcher(self.global_config, pyappify)
+        register_notifications(self.global_config)
         og.global_config = self.global_config
         og.set_use_dml()
         try:

@@ -201,10 +201,10 @@ class ExampleTask(BaseTask):
 | `info_add(key, count=1)` | Add to a task counter. |
 | `info_add_to_list(key, item)` | Append one or more items to a task list. |
 | `info_clear()` | Clear all task information. |
-| `log_info(message, notify=False)` | Log an informational message and expose it in task info. |
-| `log_debug(message, notify=False)` | Log a debug message. |
-| `log_error(message, exception=None, notify=False)` | Log an error and optionally notify the user. |
-| `notification(message, title=None, ...)` | Show an application or tray notification. |
+| `log_info(message, notify=False, images=None, screenshot=False)` | Log an informational message; optional OpenCV frames are saved asynchronously. |
+| `log_debug(message, notify=False, images=None, screenshot=False)` | Log a debug message; optional OpenCV frames are saved asynchronously. |
+| `log_error(message, exception=None, notify=False, images=None, screenshot=False)` | Log an error and always save the current frame. |
+| `notification(message, title=None, ..., images=None, screenshot=False)` | Show an application notification, save optional frames, and dispatch enabled providers. |
 | `tr(message)` | Translate a task string through the application translator. |
 | `go_to_tab(tab)` | Navigate the application UI to a tab. |
 

@@ -40,7 +40,9 @@ class Screenshot(QObject):
         self.click_screenshot_folder = get_relative_path(
             og.ok.config.get("click_screenshots_folder")) if og.ok.config.get(
             "click_screenshots_folder") else None
-        self.screenshot_folder = get_relative_path(og.ok.config.get("screenshots_folder"))
+        configured_screenshot_folder = og.ok.config.get("screenshots_folder")
+        self.screenshot_folder_configured = bool(configured_screenshot_folder)
+        self.screenshot_folder = get_relative_path(configured_screenshot_folder or "screenshots")
         logger.debug(f"init Screenshot {self.screenshot_folder} {self.click_screenshot_folder}")
         if self.click_screenshot_folder is not None or self.screenshot_folder is not None:
             self.task_queue = queue.Queue()
@@ -130,7 +132,8 @@ class Screenshot(QObject):
         else:
             remove_old_files(self.click_screenshot_folder, 7)
 
-        if self.debug or get_folder_size(self.screenshot_folder) > limit:
+        if ((self.debug and self.screenshot_folder_configured)
+                or get_folder_size(self.screenshot_folder) > limit):
             logger.info(f'clear {self.screenshot_folder}')
             clear_folder(self.screenshot_folder)
         else:

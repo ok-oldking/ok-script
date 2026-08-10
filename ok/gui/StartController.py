@@ -226,6 +226,7 @@ class StartController(QObject):
                 True,
                 'start',
                 None,
+                None,
             )
 
     def check_resolution(self):
