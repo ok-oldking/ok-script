@@ -2901,4 +2901,127 @@
             <translation>파일 또는 폴더 선택</translation>
         </message>
     </context>
+    <context>
+        <name>WebUI</name>
+        <message>
+            <source>Automation control</source>
+            <translation>자동화 제어</translation>
+        </message>
+        <message>
+            <source>A local command center for tasks, triggers, and runtime events.</source>
+            <translation>작업, 트리거 및 런타임 이벤트를 위한 로컬 제어 센터입니다.</translation>
+        </message>
+        <message>
+            <source>Live</source>
+            <translation>실시간</translation>
+        </message>
+        <message>
+            <source>Reconnecting</source>
+            <translation>재연결 중</translation>
+        </message>
+        <message>
+            <source>Runtime error</source>
+            <translation>런타임 오류</translation>
+        </message>
+        <message>
+            <source>Executor</source>
+            <translation>실행기</translation>
+        </message>
+        <message>
+            <source>Idle</source>
+            <translation>대기</translation>
+        </message>
+        <message>
+            <source>Current task</source>
+            <translation>현재 작업</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>없음</translation>
+        </message>
+        <message>
+            <source>Resume</source>
+            <translation>재개</translation>
+        </message>
+        <message>
+            <source>Pause</source>
+            <translation>일시 중지</translation>
+        </message>
+        <message>
+            <source>Stop task</source>
+            <translation>작업 중지</translation>
+        </message>
+        <message>
+            <source>Tasks</source>
+            <translation>작업</translation>
+        </message>
+        <message>
+            <source>{count} available</source>
+            <translation>{count}개 사용 가능</translation>
+        </message>
+        <message>
+            <source>Filter tasks</source>
+            <translation>작업 필터</translation>
+        </message>
+        <message>
+            <source>Refresh tasks</source>
+            <translation>작업 새로 고침</translation>
+        </message>
+        <message>
+            <source>Refresh</source>
+            <translation>새로 고침</translation>
+        </message>
+        <message>
+            <source>Trigger</source>
+            <translation>트리거</translation>
+        </message>
+        <message>
+            <source>One-time</source>
+            <translation>일회성</translation>
+        </message>
+        <message>
+            <source>Running</source>
+            <translation>실행 중</translation>
+        </message>
+        <message>
+            <source>Paused</source>
+            <translation>일시 중지됨</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>시작</translation>
+        </message>
+        <message>
+            <source>No tasks match “{query}”.</source>
+            <translation>“{query}”와 일치하는 작업이 없습니다.</translation>
+        </message>
+        <message>
+            <source>Live events</source>
+            <translation>실시간 이벤트</translation>
+        </message>
+        <message>
+            <source>Latest 100 messages</source>
+            <translation>최근 메시지 100개</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>지우기</translation>
+        </message>
+        <message>
+            <source>Waiting for runtime events…</source>
+            <translation>런타임 이벤트 대기 중…</translation>
+        </message>
+        <message>
+            <source>Could not reach the automation runtime</source>
+            <translation>자동화 런타임에 연결할 수 없습니다</translation>
+        </message>
+        <message>
+            <source>Request failed</source>
+            <translation>요청 실패</translation>
+        </message>
+        <message>
+            <source>Action failed</source>
+            <translation>작업 실패</translation>
+        </message>
+    </context>
 </TS>

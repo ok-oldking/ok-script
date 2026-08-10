@@ -2896,4 +2896,127 @@
             <translation>選擇檔案或資料夾</translation>
         </message>
     </context>
+    <context>
+        <name>WebUI</name>
+        <message>
+            <source>Automation control</source>
+            <translation>自動化控制</translation>
+        </message>
+        <message>
+            <source>A local command center for tasks, triggers, and runtime events.</source>
+            <translation>用於管理任務、觸發器和執行階段事件的本機控制中心。</translation>
+        </message>
+        <message>
+            <source>Live</source>
+            <translation>即時</translation>
+        </message>
+        <message>
+            <source>Reconnecting</source>
+            <translation>正在重新連線</translation>
+        </message>
+        <message>
+            <source>Runtime error</source>
+            <translation>執行階段錯誤</translation>
+        </message>
+        <message>
+            <source>Executor</source>
+            <translation>執行器</translation>
+        </message>
+        <message>
+            <source>Idle</source>
+            <translation>閒置</translation>
+        </message>
+        <message>
+            <source>Current task</source>
+            <translation>目前任務</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>無</translation>
+        </message>
+        <message>
+            <source>Resume</source>
+            <translation>繼續</translation>
+        </message>
+        <message>
+            <source>Pause</source>
+            <translation>暫停</translation>
+        </message>
+        <message>
+            <source>Stop task</source>
+            <translation>停止任務</translation>
+        </message>
+        <message>
+            <source>Tasks</source>
+            <translation>任務</translation>
+        </message>
+        <message>
+            <source>{count} available</source>
+            <translation>{count} 個可用</translation>
+        </message>
+        <message>
+            <source>Filter tasks</source>
+            <translation>篩選任務</translation>
+        </message>
+        <message>
+            <source>Refresh tasks</source>
+            <translation>重新整理任務</translation>
+        </message>
+        <message>
+            <source>Refresh</source>
+            <translation>重新整理</translation>
+        </message>
+        <message>
+            <source>Trigger</source>
+            <translation>觸發器</translation>
+        </message>
+        <message>
+            <source>One-time</source>
+            <translation>單次</translation>
+        </message>
+        <message>
+            <source>Running</source>
+            <translation>執行中</translation>
+        </message>
+        <message>
+            <source>Paused</source>
+            <translation>已暫停</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>開始</translation>
+        </message>
+        <message>
+            <source>No tasks match “{query}”.</source>
+            <translation>沒有與「{query}」相符的任務。</translation>
+        </message>
+        <message>
+            <source>Live events</source>
+            <translation>即時事件</translation>
+        </message>
+        <message>
+            <source>Latest 100 messages</source>
+            <translation>最近 100 則訊息</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>清除</translation>
+        </message>
+        <message>
+            <source>Waiting for runtime events…</source>
+            <translation>正在等待執行階段事件…</translation>
+        </message>
+        <message>
+            <source>Could not reach the automation runtime</source>
+            <translation>無法連線至自動化執行階段</translation>
+        </message>
+        <message>
+            <source>Request failed</source>
+            <translation>要求失敗</translation>
+        </message>
+        <message>
+            <source>Action failed</source>
+            <translation>操作失敗</translation>
+        </message>
+    </context>
 </TS>

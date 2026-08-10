@@ -53,7 +53,7 @@ def update_translation(ts_path, context_name, source_text, translation_text=None
 
 def main():
     parser = argparse.ArgumentParser(description="Add or update a translation across .ts files.")
-    parser.add_argument("--dir", default="ok/gui/i18n", help="Directory containing .ts files.")
+    parser.add_argument("--dir", default="ok/ui/qt/i18n", help="Directory containing .ts files.")
     parser.add_argument("--context", required=True, help="The context name, e.g., 'MainWindow'")
     parser.add_argument("--source", required=True, help="The source string")
     parser.add_argument("--zh_cn", help="Translation for zh_CN.ts")
@@ -88,7 +88,7 @@ def main():
         print(f"Updating {filename}...")
         update_translation(filepath, args.context, args.source, translation_text)
         
-    print("Done. Use compile_i18n.cmd to compile to .qm files.")
+    print("Done. Use npm run i18n to regenerate the web catalog when WebUI strings change.")
 
 if __name__ == "__main__":
     main()

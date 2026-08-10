@@ -2892,4 +2892,127 @@
             <translation>ファイルまたはフォルダーを選択</translation>
         </message>
     </context>
+    <context>
+        <name>WebUI</name>
+        <message>
+            <source>Automation control</source>
+            <translation>自動化コントロール</translation>
+        </message>
+        <message>
+            <source>A local command center for tasks, triggers, and runtime events.</source>
+            <translation>タスク、トリガー、ランタイムイベントのローカルコントロールセンター。</translation>
+        </message>
+        <message>
+            <source>Live</source>
+            <translation>ライブ</translation>
+        </message>
+        <message>
+            <source>Reconnecting</source>
+            <translation>再接続中</translation>
+        </message>
+        <message>
+            <source>Runtime error</source>
+            <translation>ランタイムエラー</translation>
+        </message>
+        <message>
+            <source>Executor</source>
+            <translation>エグゼキューター</translation>
+        </message>
+        <message>
+            <source>Idle</source>
+            <translation>アイドル</translation>
+        </message>
+        <message>
+            <source>Current task</source>
+            <translation>現在のタスク</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>なし</translation>
+        </message>
+        <message>
+            <source>Resume</source>
+            <translation>再開</translation>
+        </message>
+        <message>
+            <source>Pause</source>
+            <translation>一時停止</translation>
+        </message>
+        <message>
+            <source>Stop task</source>
+            <translation>タスクを停止</translation>
+        </message>
+        <message>
+            <source>Tasks</source>
+            <translation>タスク</translation>
+        </message>
+        <message>
+            <source>{count} available</source>
+            <translation>{count} 件利用可能</translation>
+        </message>
+        <message>
+            <source>Filter tasks</source>
+            <translation>タスクを絞り込む</translation>
+        </message>
+        <message>
+            <source>Refresh tasks</source>
+            <translation>タスクを更新</translation>
+        </message>
+        <message>
+            <source>Refresh</source>
+            <translation>更新</translation>
+        </message>
+        <message>
+            <source>Trigger</source>
+            <translation>トリガー</translation>
+        </message>
+        <message>
+            <source>One-time</source>
+            <translation>1回限り</translation>
+        </message>
+        <message>
+            <source>Running</source>
+            <translation>実行中</translation>
+        </message>
+        <message>
+            <source>Paused</source>
+            <translation>一時停止中</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>開始</translation>
+        </message>
+        <message>
+            <source>No tasks match “{query}”.</source>
+            <translation>「{query}」に一致するタスクはありません。</translation>
+        </message>
+        <message>
+            <source>Live events</source>
+            <translation>ライブイベント</translation>
+        </message>
+        <message>
+            <source>Latest 100 messages</source>
+            <translation>最新100件のメッセージ</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>クリア</translation>
+        </message>
+        <message>
+            <source>Waiting for runtime events…</source>
+            <translation>ランタイムイベントを待機中…</translation>
+        </message>
+        <message>
+            <source>Could not reach the automation runtime</source>
+            <translation>自動化ランタイムに接続できません</translation>
+        </message>
+        <message>
+            <source>Request failed</source>
+            <translation>リクエストに失敗しました</translation>
+        </message>
+        <message>
+            <source>Action failed</source>
+            <translation>操作に失敗しました</translation>
+        </message>
+    </context>
 </TS>

@@ -37,5 +37,20 @@ The web server defaults to loopback. Passing a public host such as `0.0.0.0`
 exposes task controls to the network, so authentication and a reverse proxy
 should be added before doing that on an untrusted network.
 
+The browser UI source is a React + TypeScript + Vite project under the
+repository-level `web_src` folder and uses `@fluentui/react-components`.
+Only its compiled output is stored under `ok/ui/web/static`, so those runtime
+assets are included in the Python wheel. Rebuild them after frontend changes:
+
+```bash
+npm install
+npm run dev
+npm run build
+```
+
+Both commands run from the repository root. They regenerate the web translation
+catalog from the Qt `.ts` files before starting Vite or producing the packaged
+assets.
+
 New desktop imports should use `ok.ui.qt`. Existing `ok.gui` imports remain
 available as a migration shim.

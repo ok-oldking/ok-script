@@ -2902,4 +2902,127 @@
             <translation>Select File or Folder</translation>
         </message>
     </context>
+    <context>
+        <name>WebUI</name>
+        <message>
+            <source>Automation control</source>
+            <translation>Automation control</translation>
+        </message>
+        <message>
+            <source>A local command center for tasks, triggers, and runtime events.</source>
+            <translation>A local command center for tasks, triggers, and runtime events.</translation>
+        </message>
+        <message>
+            <source>Live</source>
+            <translation>Live</translation>
+        </message>
+        <message>
+            <source>Reconnecting</source>
+            <translation>Reconnecting</translation>
+        </message>
+        <message>
+            <source>Runtime error</source>
+            <translation>Runtime error</translation>
+        </message>
+        <message>
+            <source>Executor</source>
+            <translation>Executor</translation>
+        </message>
+        <message>
+            <source>Idle</source>
+            <translation>Idle</translation>
+        </message>
+        <message>
+            <source>Current task</source>
+            <translation>Current task</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>None</translation>
+        </message>
+        <message>
+            <source>Resume</source>
+            <translation>Resume</translation>
+        </message>
+        <message>
+            <source>Pause</source>
+            <translation>Pause</translation>
+        </message>
+        <message>
+            <source>Stop task</source>
+            <translation>Stop task</translation>
+        </message>
+        <message>
+            <source>Tasks</source>
+            <translation>Tasks</translation>
+        </message>
+        <message>
+            <source>{count} available</source>
+            <translation>{count} available</translation>
+        </message>
+        <message>
+            <source>Filter tasks</source>
+            <translation>Filter tasks</translation>
+        </message>
+        <message>
+            <source>Refresh tasks</source>
+            <translation>Refresh tasks</translation>
+        </message>
+        <message>
+            <source>Refresh</source>
+            <translation>Refresh</translation>
+        </message>
+        <message>
+            <source>Trigger</source>
+            <translation>Trigger</translation>
+        </message>
+        <message>
+            <source>One-time</source>
+            <translation>One-time</translation>
+        </message>
+        <message>
+            <source>Running</source>
+            <translation>Running</translation>
+        </message>
+        <message>
+            <source>Paused</source>
+            <translation>Paused</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>Start</translation>
+        </message>
+        <message>
+            <source>No tasks match “{query}”.</source>
+            <translation>No tasks match “{query}”.</translation>
+        </message>
+        <message>
+            <source>Live events</source>
+            <translation>Live events</translation>
+        </message>
+        <message>
+            <source>Latest 100 messages</source>
+            <translation>Latest 100 messages</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>Clear</translation>
+        </message>
+        <message>
+            <source>Waiting for runtime events…</source>
+            <translation>Waiting for runtime events…</translation>
+        </message>
+        <message>
+            <source>Could not reach the automation runtime</source>
+            <translation>Could not reach the automation runtime</translation>
+        </message>
+        <message>
+            <source>Request failed</source>
+            <translation>Request failed</translation>
+        </message>
+        <message>
+            <source>Action failed</source>
+            <translation>Action failed</translation>
+        </message>
+    </context>
 </TS>

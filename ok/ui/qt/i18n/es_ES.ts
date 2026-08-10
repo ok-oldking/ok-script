@@ -2900,4 +2900,127 @@
             <translation>Seleccionar archivo o carpeta</translation>
         </message>
     </context>
+    <context>
+        <name>WebUI</name>
+        <message>
+            <source>Automation control</source>
+            <translation>Control de automatización</translation>
+        </message>
+        <message>
+            <source>A local command center for tasks, triggers, and runtime events.</source>
+            <translation>Un centro de control local para tareas, activadores y eventos de ejecución.</translation>
+        </message>
+        <message>
+            <source>Live</source>
+            <translation>En vivo</translation>
+        </message>
+        <message>
+            <source>Reconnecting</source>
+            <translation>Reconectando</translation>
+        </message>
+        <message>
+            <source>Runtime error</source>
+            <translation>Error de ejecución</translation>
+        </message>
+        <message>
+            <source>Executor</source>
+            <translation>Ejecutor</translation>
+        </message>
+        <message>
+            <source>Idle</source>
+            <translation>Inactivo</translation>
+        </message>
+        <message>
+            <source>Current task</source>
+            <translation>Tarea actual</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>Ninguna</translation>
+        </message>
+        <message>
+            <source>Resume</source>
+            <translation>Reanudar</translation>
+        </message>
+        <message>
+            <source>Pause</source>
+            <translation>Pausar</translation>
+        </message>
+        <message>
+            <source>Stop task</source>
+            <translation>Detener tarea</translation>
+        </message>
+        <message>
+            <source>Tasks</source>
+            <translation>Tareas</translation>
+        </message>
+        <message>
+            <source>{count} available</source>
+            <translation>{count} disponibles</translation>
+        </message>
+        <message>
+            <source>Filter tasks</source>
+            <translation>Filtrar tareas</translation>
+        </message>
+        <message>
+            <source>Refresh tasks</source>
+            <translation>Actualizar tareas</translation>
+        </message>
+        <message>
+            <source>Refresh</source>
+            <translation>Actualizar</translation>
+        </message>
+        <message>
+            <source>Trigger</source>
+            <translation>Activador</translation>
+        </message>
+        <message>
+            <source>One-time</source>
+            <translation>Una vez</translation>
+        </message>
+        <message>
+            <source>Running</source>
+            <translation>En ejecución</translation>
+        </message>
+        <message>
+            <source>Paused</source>
+            <translation>Pausado</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>Iniciar</translation>
+        </message>
+        <message>
+            <source>No tasks match “{query}”.</source>
+            <translation>No hay tareas que coincidan con «{query}».</translation>
+        </message>
+        <message>
+            <source>Live events</source>
+            <translation>Eventos en vivo</translation>
+        </message>
+        <message>
+            <source>Latest 100 messages</source>
+            <translation>Últimos 100 mensajes</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>Borrar</translation>
+        </message>
+        <message>
+            <source>Waiting for runtime events…</source>
+            <translation>Esperando eventos de ejecución…</translation>
+        </message>
+        <message>
+            <source>Could not reach the automation runtime</source>
+            <translation>No se pudo conectar con el entorno de automatización</translation>
+        </message>
+        <message>
+            <source>Request failed</source>
+            <translation>La solicitud falló</translation>
+        </message>
+        <message>
+            <source>Action failed</source>
+            <translation>La acción falló</translation>
+        </message>
+    </context>
 </TS>

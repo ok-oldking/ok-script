@@ -1,0 +1,28 @@
+{
+  "name": "ok-script-web-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "i18n": "node scripts/run_python.mjs scripts/generate_web_i18n.py",
+    "predev": "npm run i18n",
+    "dev": "vite --config web_src/vite.config.ts",
+    "prebuild": "npm run i18n",
+    "build": "tsc -b web_src/tsconfig.app.json web_src/tsconfig.node.json && vite build --config web_src/vite.config.ts",
+    "typecheck": "tsc -b web_src/tsconfig.app.json web_src/tsconfig.node.json --pretty false"
+  },
+  "dependencies": {
+    "@fluentui/react-components": "^9.72.3",
+    "@fluentui/react-icons": "^2.0.313",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.2",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3"
+  }
+}

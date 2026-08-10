@@ -2898,4 +2898,127 @@
             <translation>选择文件或文件夹</translation>
         </message>
     </context>
+    <context>
+        <name>WebUI</name>
+        <message>
+            <source>Automation control</source>
+            <translation>自动化控制</translation>
+        </message>
+        <message>
+            <source>A local command center for tasks, triggers, and runtime events.</source>
+            <translation>用于管理任务、触发器和运行时事件的本地控制中心。</translation>
+        </message>
+        <message>
+            <source>Live</source>
+            <translation>实时</translation>
+        </message>
+        <message>
+            <source>Reconnecting</source>
+            <translation>正在重新连接</translation>
+        </message>
+        <message>
+            <source>Runtime error</source>
+            <translation>运行时错误</translation>
+        </message>
+        <message>
+            <source>Executor</source>
+            <translation>执行器</translation>
+        </message>
+        <message>
+            <source>Idle</source>
+            <translation>空闲</translation>
+        </message>
+        <message>
+            <source>Current task</source>
+            <translation>当前任务</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>无</translation>
+        </message>
+        <message>
+            <source>Resume</source>
+            <translation>继续</translation>
+        </message>
+        <message>
+            <source>Pause</source>
+            <translation>暂停</translation>
+        </message>
+        <message>
+            <source>Stop task</source>
+            <translation>停止任务</translation>
+        </message>
+        <message>
+            <source>Tasks</source>
+            <translation>任务</translation>
+        </message>
+        <message>
+            <source>{count} available</source>
+            <translation>{count} 个可用</translation>
+        </message>
+        <message>
+            <source>Filter tasks</source>
+            <translation>筛选任务</translation>
+        </message>
+        <message>
+            <source>Refresh tasks</source>
+            <translation>刷新任务</translation>
+        </message>
+        <message>
+            <source>Refresh</source>
+            <translation>刷新</translation>
+        </message>
+        <message>
+            <source>Trigger</source>
+            <translation>触发器</translation>
+        </message>
+        <message>
+            <source>One-time</source>
+            <translation>单次</translation>
+        </message>
+        <message>
+            <source>Running</source>
+            <translation>运行中</translation>
+        </message>
+        <message>
+            <source>Paused</source>
+            <translation>已暂停</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>开始</translation>
+        </message>
+        <message>
+            <source>No tasks match “{query}”.</source>
+            <translation>没有与“{query}”匹配的任务。</translation>
+        </message>
+        <message>
+            <source>Live events</source>
+            <translation>实时事件</translation>
+        </message>
+        <message>
+            <source>Latest 100 messages</source>
+            <translation>最近 100 条消息</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>清除</translation>
+        </message>
+        <message>
+            <source>Waiting for runtime events…</source>
+            <translation>正在等待运行时事件…</translation>
+        </message>
+        <message>
+            <source>Could not reach the automation runtime</source>
+            <translation>无法连接自动化运行时</translation>
+        </message>
+        <message>
+            <source>Request failed</source>
+            <translation>请求失败</translation>
+        </message>
+        <message>
+            <source>Action failed</source>
+            <translation>操作失败</translation>
+        </message>
+    </context>
 </TS>
