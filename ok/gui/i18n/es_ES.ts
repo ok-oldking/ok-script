@@ -1513,36 +1513,108 @@
             <translation>URL del webhook del canal de Discord</translation>
         </message>
         <message>
-            <source>QQ Notification</source>
-            <translation>Notificación de QQ</translation>
+            <source>QQ Desktop Notification (Not Reliable)</source>
+            <translation>Notificación de QQ de escritorio (No fiable)</translation>
         </message>
         <message>
             <source>Send notifications to a local QQ contact</source>
             <translation>Enviar notificaciones a un contacto local de QQ</translation>
         </message>
         <message>
-            <source>QQ Nickname</source>
-            <translation>Apodo de QQ</translation>
+            <source>QQ Desktop Nickname</source>
+            <translation>Apodo de QQ de escritorio</translation>
         </message>
         <message>
             <source>Exact QQ contact nickname</source>
             <translation>Apodo exacto del contacto de QQ</translation>
         </message>
         <message>
-            <source>WeChat Notification</source>
-            <translation>Notificación de WeChat</translation>
+            <source>WeChat Desktop Notification (Not Reliable)</source>
+            <translation>Notificación de WeChat de escritorio (No fiable)</translation>
         </message>
         <message>
             <source>Send notifications to a local WeChat contact</source>
             <translation>Enviar notificaciones a un contacto local de WeChat</translation>
         </message>
         <message>
-            <source>WeChat Nickname</source>
-            <translation>Apodo de WeChat</translation>
+            <source>WeChat Desktop Nickname</source>
+            <translation>Apodo de WeChat de escritorio</translation>
         </message>
         <message>
             <source>Exact WeChat contact nickname</source>
             <translation>Apodo exacto del contacto de WeChat</translation>
+        </message>
+        <message>
+            <source>Telegram Notification</source>
+            <translation>Notificación de Telegram</translation>
+        </message>
+        <message>
+            <source>Telegram Bot Token</source>
+            <translation>Token del bot de Telegram</translation>
+        </message>
+        <message>
+            <source>Telegram Chat ID</source>
+            <translation>ID de chat de Telegram</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat Webhook Notification</source>
+            <translation>Notificación de webhook de WeCom</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat Webhook URL</source>
+            <translation>URL del webhook de WeCom</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Notification</source>
+            <translation>Notificación de la API del bot de QQ</translation>
+        </message>
+        <message>
+            <source>QQ Bot API App ID</source>
+            <translation>ID de aplicación del bot de QQ</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Token</source>
+            <translation>Token de aplicación del bot de QQ</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Channel ID</source>
+            <translation>ID de canal del bot de QQ</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Telegram Bot API</source>
+            <translation>Enviar notificaciones mediante la API de bots de Telegram</translation>
+        </message>
+        <message>
+            <source>Telegram bot token from BotFather</source>
+            <translation>Token del bot de Telegram de BotFather</translation>
+        </message>
+        <message>
+            <source>Telegram user, group, or channel chat ID</source>
+            <translation>ID de chat de usuario, grupo o canal de Telegram</translation>
+        </message>
+        <message>
+            <source>Send notifications through an Enterprise WeChat group bot</source>
+            <translation>Enviar notificaciones mediante un bot de grupo de WeCom</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat group bot webhook URL</source>
+            <translation>URL del webhook del bot de grupo de WeCom</translation>
+        </message>
+        <message>
+            <source>Send notifications through the QQ Guild Bot API</source>
+            <translation>Enviar notificaciones mediante la API del bot de QQ</translation>
+        </message>
+        <message>
+            <source>QQ Bot application ID</source>
+            <translation>ID de aplicación del bot de QQ</translation>
+        </message>
+        <message>
+            <source>QQ Bot application token</source>
+            <translation>Token de aplicación del bot de QQ</translation>
+        </message>
+        <message>
+            <source>QQ channel ID to receive notifications</source>
+            <translation>ID del canal de QQ que recibirá las notificaciones</translation>
         </message>
         <message>
             <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>

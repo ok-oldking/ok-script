@@ -1511,36 +1511,108 @@
             <translation>Discord 频道 Webhook URL</translation>
         </message>
         <message>
-            <source>QQ Notification</source>
-            <translation>QQ 通知</translation>
+            <source>QQ Desktop Notification (Not Reliable)</source>
+            <translation>QQ 桌面通知（不可靠）</translation>
         </message>
         <message>
             <source>Send notifications to a local QQ contact</source>
             <translation>将通知发送给本地 QQ 联系人</translation>
         </message>
         <message>
-            <source>QQ Nickname</source>
-            <translation>QQ 昵称</translation>
+            <source>QQ Desktop Nickname</source>
+            <translation>QQ 桌面昵称</translation>
         </message>
         <message>
             <source>Exact QQ contact nickname</source>
             <translation>QQ 联系人的完整昵称</translation>
         </message>
         <message>
-            <source>WeChat Notification</source>
-            <translation>微信通知</translation>
+            <source>WeChat Desktop Notification (Not Reliable)</source>
+            <translation>微信桌面通知（不可靠）</translation>
         </message>
         <message>
             <source>Send notifications to a local WeChat contact</source>
             <translation>将通知发送给本地微信联系人</translation>
         </message>
         <message>
-            <source>WeChat Nickname</source>
-            <translation>微信昵称</translation>
+            <source>WeChat Desktop Nickname</source>
+            <translation>微信桌面昵称</translation>
         </message>
         <message>
             <source>Exact WeChat contact nickname</source>
             <translation>微信联系人的完整昵称</translation>
+        </message>
+        <message>
+            <source>Telegram Notification</source>
+            <translation>Telegram 通知</translation>
+        </message>
+        <message>
+            <source>Telegram Bot Token</source>
+            <translation>Telegram 机器人令牌</translation>
+        </message>
+        <message>
+            <source>Telegram Chat ID</source>
+            <translation>Telegram 聊天 ID</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat Webhook Notification</source>
+            <translation>企业微信 Webhook 通知</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat Webhook URL</source>
+            <translation>企业微信 Webhook 地址</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Notification</source>
+            <translation>QQ 机器人 API 通知</translation>
+        </message>
+        <message>
+            <source>QQ Bot API App ID</source>
+            <translation>QQ 机器人 API 应用 ID</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Token</source>
+            <translation>QQ 机器人 API 令牌</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Channel ID</source>
+            <translation>QQ 机器人 API 频道 ID</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Telegram Bot API</source>
+            <translation>通过 Telegram 机器人 API 发送通知</translation>
+        </message>
+        <message>
+            <source>Telegram bot token from BotFather</source>
+            <translation>从 BotFather 获取的 Telegram 机器人令牌</translation>
+        </message>
+        <message>
+            <source>Telegram user, group, or channel chat ID</source>
+            <translation>Telegram 用户、群组或频道的聊天 ID</translation>
+        </message>
+        <message>
+            <source>Send notifications through an Enterprise WeChat group bot</source>
+            <translation>通过企业微信群机器人发送通知</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat group bot webhook URL</source>
+            <translation>企业微信群机器人 Webhook 地址</translation>
+        </message>
+        <message>
+            <source>Send notifications through the QQ Guild Bot API</source>
+            <translation>通过 QQ 频道机器人 API 发送通知</translation>
+        </message>
+        <message>
+            <source>QQ Bot application ID</source>
+            <translation>QQ 机器人应用 ID</translation>
+        </message>
+        <message>
+            <source>QQ Bot application token</source>
+            <translation>QQ 机器人应用令牌</translation>
+        </message>
+        <message>
+            <source>QQ channel ID to receive notifications</source>
+            <translation>接收通知的 QQ 频道 ID</translation>
         </message>
         <message>
             <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>

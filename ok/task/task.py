@@ -1291,7 +1291,7 @@ class BaseTask(OCR):
         self.info.clear()
 
     def info_incr(self, key, inc=1):
-        # If the key is in the dictionary, get its value. If not, return 0.
+        # If the key is in the dictionary, get its value. If not, return 0.p
         value = self.info.get(key, 0)
         # Increment the value
         value += inc

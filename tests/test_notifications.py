@@ -8,7 +8,8 @@ import numpy as np
 import pytest
 import win32con
 
-from ok.notification.providers import DiscordProvider
+from ok.notification.providers import (
+    DiscordProvider, QQBotProvider, TelegramBotProvider, WeComWebhookProvider)
 from ok.notification.manager import NotificationManager
 from ok.notification.pipeline import NotificationPipeline
 from ok.notification.ppocr import NotificationPPOCR
@@ -23,6 +24,7 @@ from ok.util.GlobalConfig import (
     GlobalConfig, create_notification_options, register_notification_options,
 )
 from ok.util.config import Config
+from ok.util.file import get_relative_path, write_json_file
 
 
 def test_notification_options_have_safe_provider_defaults():
@@ -43,8 +45,15 @@ def test_register_notification_options_creates_persistent_config():
     try:
         with tempfile.TemporaryDirectory() as folder:
             Config.config_folder = folder
+            write_json_file(get_relative_path(folder, 'Notification.json'), {
+                'QQ Notification': True,
+                'QQ Nickname': 'Legacy Contact',
+            })
             config = register_notification_options(GlobalConfig(None))
             assert config[SYSTEM_NOTIFICATION_ENABLED]
+            assert config[QQ_NOTIFICATION_ENABLED]
+            assert config[QQ_NICKNAME] == 'Legacy Contact'
+            assert 'QQ Notification' not in config
     finally:
         Config.config_folder = original_folder
 
@@ -79,6 +88,48 @@ def test_discord_provider_uploads_images():
     assert kwargs['data']['avatar_url'] == 'https://example.invalid/app.png'
     assert kwargs['files'][0][1][2] == 'image/png'
     response.raise_for_status.assert_called_once_with()
+
+
+def test_telegram_bot_provider_sends_text_and_photos():
+    response = Mock()
+    response.json.return_value = {'ok': True}
+    frame = np.zeros((2, 2, 3), dtype=np.uint8)
+    with patch('ok.notification.providers.requests.post', return_value=response) as post:
+        assert TelegramBotProvider().send('token', '123', 'Title', 'Message', [frame])
+
+    assert post.call_args_list[0].args[0] == 'https://api.telegram.org/bottoken/sendMessage'
+    assert post.call_args_list[0].kwargs['json'] == {
+        'chat_id': '123', 'text': 'Title\nMessage'}
+    assert post.call_args_list[1].args[0] == 'https://api.telegram.org/bottoken/sendPhoto'
+    assert post.call_args_list[1].kwargs['data'] == {'chat_id': '123'}
+
+
+def test_wecom_provider_sends_markdown_and_image_payload():
+    response = Mock()
+    response.json.return_value = {'errcode': 0}
+    frame = np.zeros((2, 2, 3), dtype=np.uint8)
+    with patch('ok.notification.providers.requests.post', return_value=response) as post:
+        assert WeComWebhookProvider().send('https://wecom.invalid/hook', 'Title', 'Message', [frame])
+
+    assert post.call_args_list[0].kwargs['json'] == {
+        'msgtype': 'markdown', 'markdown': {'content': 'Title\nMessage'}}
+    image_payload = post.call_args_list[1].kwargs['json']
+    assert image_payload['msgtype'] == 'image'
+    assert image_payload['image']['base64']
+    assert len(image_payload['image']['md5']) == 32
+
+
+def test_qq_bot_provider_uses_bot_authorization_header():
+    response = Mock()
+    response.json.return_value = {}
+    frame = np.zeros((2, 2, 3), dtype=np.uint8)
+    with patch('ok.notification.providers.requests.post', return_value=response) as post:
+        assert QQBotProvider().send('app', 'secret', 'channel', 'Title', 'Message', [frame])
+
+    kwargs = post.call_args.kwargs
+    assert post.call_args.args[0] == 'https://api.sgroup.qq.com/channels/channel/messages'
+    assert kwargs['headers'] == {'Authorization': 'Bot app.secret'}
+    assert kwargs['json']['content'] == 'Title\nMessage\n[1 image(s) attached]'
 
 
 def test_manager_does_not_queue_when_external_providers_are_disabled():

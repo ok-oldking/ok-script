@@ -1,11 +1,15 @@
 from ok.notification.pipeline import NotificationPipeline
 from ok.notification.ppocr import NotificationPPOCR
-from ok.notification.providers import DiscordProvider
+from ok.notification.providers import (
+    DiscordProvider, QQBotProvider, TelegramBotProvider, WeComWebhookProvider)
 from ok.notification.windows_messenger import MessengerAutomation
 from ok.util.GlobalConfig import (
     DISCORD_NOTIFICATION_ENABLED, DISCORD_WEBHOOK, NOTIFICATION_OPTION_NAME,
     QQ_NICKNAME, QQ_NOTIFICATION_ENABLED, SYSTEM_NOTIFICATION_ENABLED,
     WECHAT_NICKNAME, WECHAT_NOTIFICATION_ENABLED,
+    QQ_BOT_APP_ID, QQ_BOT_CHANNEL_ID, QQ_BOT_NOTIFICATION_ENABLED,
+    QQ_BOT_TOKEN, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
+    TELEGRAM_NOTIFICATION_ENABLED, WECOM_NOTIFICATION_ENABLED, WECOM_WEBHOOK,
 )
 from ok.util.logger import Logger
 
@@ -33,6 +37,9 @@ class NotificationManager:
             self.config.get(DISCORD_NOTIFICATION_ENABLED),
             self.config.get(QQ_NOTIFICATION_ENABLED),
             self.config.get(WECHAT_NOTIFICATION_ENABLED),
+            self.config.get(TELEGRAM_NOTIFICATION_ENABLED),
+            self.config.get(WECOM_NOTIFICATION_ENABLED),
+            self.config.get(QQ_BOT_NOTIFICATION_ENABLED),
         ))
 
     def submit(self, title, message, images=None):
@@ -57,6 +64,17 @@ class NotificationManager:
                             self.config.get(DISCORD_WEBHOOK), title, message, images,
                             self.app_name, self.app_icon)
         messenger_message = self._messenger_message(title, message)
+        if self.config.get(TELEGRAM_NOTIFICATION_ENABLED):
+            self._safe_send('Telegram', TelegramBotProvider().send,
+                            self.config.get(TELEGRAM_BOT_TOKEN),
+                            self.config.get(TELEGRAM_CHAT_ID), title, message, images)
+        if self.config.get(WECOM_NOTIFICATION_ENABLED):
+            self._safe_send('WeCom', WeComWebhookProvider().send,
+                            self.config.get(WECOM_WEBHOOK), title, message, images)
+        if self.config.get(QQ_BOT_NOTIFICATION_ENABLED):
+            self._safe_send('QQ Bot', QQBotProvider().send,
+                            self.config.get(QQ_BOT_APP_ID), self.config.get(QQ_BOT_TOKEN),
+                            self.config.get(QQ_BOT_CHANNEL_ID), title, message, images)
         if self.pipeline.stop_event.is_set():
             return False
         if self.config.get(QQ_NOTIFICATION_ENABLED):

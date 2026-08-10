@@ -1505,36 +1505,108 @@
             <translation>Discord チャンネルの Webhook URL</translation>
         </message>
         <message>
-            <source>QQ Notification</source>
-            <translation>QQ 通知</translation>
+            <source>QQ Desktop Notification (Not Reliable)</source>
+            <translation>QQ デスクトップ通知（信頼性が低い）</translation>
         </message>
         <message>
             <source>Send notifications to a local QQ contact</source>
             <translation>ローカルの QQ 連絡先に通知を送信</translation>
         </message>
         <message>
-            <source>QQ Nickname</source>
-            <translation>QQ ニックネーム</translation>
+            <source>QQ Desktop Nickname</source>
+            <translation>QQ デスクトップのニックネーム</translation>
         </message>
         <message>
             <source>Exact QQ contact nickname</source>
             <translation>QQ 連絡先の完全一致するニックネーム</translation>
         </message>
         <message>
-            <source>WeChat Notification</source>
-            <translation>WeChat 通知</translation>
+            <source>WeChat Desktop Notification (Not Reliable)</source>
+            <translation>WeChat デスクトップ通知（信頼性が低い）</translation>
         </message>
         <message>
             <source>Send notifications to a local WeChat contact</source>
             <translation>ローカルの WeChat 連絡先に通知を送信</translation>
         </message>
         <message>
-            <source>WeChat Nickname</source>
-            <translation>WeChat ニックネーム</translation>
+            <source>WeChat Desktop Nickname</source>
+            <translation>WeChat デスクトップのニックネーム</translation>
         </message>
         <message>
             <source>Exact WeChat contact nickname</source>
             <translation>WeChat 連絡先の完全一致するニックネーム</translation>
+        </message>
+        <message>
+            <source>Telegram Notification</source>
+            <translation>Telegram 通知</translation>
+        </message>
+        <message>
+            <source>Telegram Bot Token</source>
+            <translation>Telegram ボットトークン</translation>
+        </message>
+        <message>
+            <source>Telegram Chat ID</source>
+            <translation>Telegram チャット ID</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat Webhook Notification</source>
+            <translation>Enterprise WeChat Webhook 通知</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat Webhook URL</source>
+            <translation>Enterprise WeChat Webhook URL</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Notification</source>
+            <translation>QQ Bot API 通知</translation>
+        </message>
+        <message>
+            <source>QQ Bot API App ID</source>
+            <translation>QQ Bot API アプリ ID</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Token</source>
+            <translation>QQ Bot API トークン</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Channel ID</source>
+            <translation>QQ Bot API チャンネル ID</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Telegram Bot API</source>
+            <translation>Telegram Bot API で通知を送信</translation>
+        </message>
+        <message>
+            <source>Telegram bot token from BotFather</source>
+            <translation>BotFather の Telegram ボットトークン</translation>
+        </message>
+        <message>
+            <source>Telegram user, group, or channel chat ID</source>
+            <translation>Telegram ユーザー、グループ、チャンネルのチャット ID</translation>
+        </message>
+        <message>
+            <source>Send notifications through an Enterprise WeChat group bot</source>
+            <translation>Enterprise WeChat グループボットで通知を送信</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat group bot webhook URL</source>
+            <translation>Enterprise WeChat グループボットの Webhook URL</translation>
+        </message>
+        <message>
+            <source>Send notifications through the QQ Guild Bot API</source>
+            <translation>QQ Guild Bot API で通知を送信</translation>
+        </message>
+        <message>
+            <source>QQ Bot application ID</source>
+            <translation>QQ Bot アプリケーション ID</translation>
+        </message>
+        <message>
+            <source>QQ Bot application token</source>
+            <translation>QQ Bot アプリケーション トークン</translation>
+        </message>
+        <message>
+            <source>QQ channel ID to receive notifications</source>
+            <translation>通知先の QQ チャンネル ID</translation>
         </message>
         <message>
             <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
