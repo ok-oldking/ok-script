@@ -90,7 +90,7 @@ class TaskCard(ConfigCard):
         self.header_text_layout.addWidget(self.card.contentLabel, 1, Qt.AlignVCenter)
         self.card.vBoxLayout.addLayout(self.header_text_layout)
 
-        compact_height = 56
+        compact_height = 50
         self.card.setFixedHeight(compact_height)
         self.setViewportMargins(0, compact_height, 0, 0)
         self.setFixedHeight(compact_height)
