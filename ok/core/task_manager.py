@@ -7,9 +7,9 @@ import inspect
 import os.path
 import sys
 
-from PySide6.QtCore import QFileSystemWatcher
-
 from ok import og
+from ok.core.events import communicate
+from ok.core.notifications import alert_info
 from ok.task.task import BaseTask, TriggerTask
 from ok.util.clazz import init_class_by_name
 from ok.util.logger import Logger
@@ -18,10 +18,12 @@ logger = Logger.get_logger(__name__)
 
 
 class TaskManager:
-    def __init__(self, task_executor, app, trigger_tasks=[], onetime_tasks=[], scene=None):
+    def __init__(self, task_executor, app, trigger_tasks=None, onetime_tasks=None, scene=None,
+                 file_watcher_factory=None):
         self.task_executor = task_executor
         self.app = app
         self.debug = app.debug
+        self.file_watcher_factory = file_watcher_factory
         self.custom_tasks_enabled = og.config.get('custom_tasks', False)
         self.task_folder = None
         if self.custom_tasks_enabled:
@@ -34,15 +36,15 @@ class TaskManager:
         self.imported_scripts = {}  # {file_name: {'folder': ..., 'script_name': ..., 'tasks': [...]}}
         self.scene = init_class_by_name(scene[0], scene[1]) if scene else None
         self.task_executor.scene = self.scene
-        self.task_executor.trigger_tasks = self.init_tasks(trigger_tasks)
-        self.task_executor.onetime_tasks = self.init_tasks(onetime_tasks)
+        self.task_executor.trigger_tasks = self.init_tasks(trigger_tasks or [])
+        self.task_executor.onetime_tasks = self.init_tasks(onetime_tasks or [])
         for task in self.task_executor.trigger_tasks:
             task.post_init()
         for task in self.task_executor.onetime_tasks:
             task.post_init()
         self.load_user_tasks()
         self.load_imported_tasks()
-        if (self.debug or self.custom_tasks_enabled) and not getattr(app, 'headless', False):
+        if (self.debug or self.custom_tasks_enabled) and self.file_watcher_factory is not None:
             self._init_debug_file_watcher()
 
     def init_tasks(self, task_classes):
@@ -50,8 +52,9 @@ class TaskManager:
         for task_class in task_classes:
             task = init_class_by_name(task_class[0], task_class[1], executor=self.task_executor, app=self.app)
             task.after_init(executor=self.task_executor, scene=self.scene)
-            from ok.gui.common.config import cfg
-            if len(task.supported_languages) == 0 or cfg.get(cfg.language).value.name() in task.supported_languages:
+            locale = self.app.locale
+            locale_name = locale.name() if hasattr(locale, "name") else str(locale)
+            if len(task.supported_languages) == 0 or locale_name in task.supported_languages:
                 tasks.append(task)
         return tasks
 
@@ -81,7 +84,6 @@ class TaskManager:
                     self.task_executor.onetime_tasks.append(instance)
                 
                 # Update GUI
-                from ok.gui.Communicate import communicate
                 communicate.task.emit(instance)
                 communicate.task_list_updated.emit()
                 self._update_debug_watched_files()
@@ -112,7 +114,6 @@ class TaskManager:
                 self.task_executor.onetime_tasks.remove(task)
             if task in self.task_executor.trigger_tasks:
                 self.task_executor.trigger_tasks.remove(task)
-            from ok.gui.Communicate import communicate
             communicate.task_list_updated.emit()
             self._update_debug_watched_files()
 
@@ -126,7 +127,7 @@ class TaskManager:
 
     def load_imported_tasks(self):
         """Scan ok_import/ folder and load all valid imported scripts."""
-        from ok.gui.tasks.ScriptPackager import scan_import_folders
+        from ok.core.script_packager import scan_import_folders
         imports = scan_import_folders()
         for imp in imports:
             if imp['file_name'] not in self.imported_scripts:
@@ -148,7 +149,7 @@ class TaskManager:
     def load_import_folder(self, import_folder):
         """Load tasks from a specific import folder (called after import)."""
         self.disable_all_scripts()
-        from ok.gui.tasks.ScriptPackager import scan_import_folders
+        from ok.core.script_packager import scan_import_folders
         imports = scan_import_folders()
         for imp in imports:
             if os.path.normpath(imp['folder']) == os.path.normpath(import_folder):
@@ -191,7 +192,6 @@ class TaskManager:
         if imp.get('has_features', False):
             self._reload_features()
 
-        from ok.gui.Communicate import communicate
         communicate.task_list_updated.emit()
 
     def _reload_features(self):
@@ -234,12 +234,11 @@ class TaskManager:
             # Trigger features reload to remove namespaced features
             self._reload_features()
             
-            from ok.gui.Communicate import communicate
             communicate.task_list_updated.emit()
 
     def _init_debug_file_watcher(self):
         """Initialize file watcher for auto-reloading task files."""
-        self._debug_watcher = QFileSystemWatcher()
+        self._debug_watcher = self.file_watcher_factory()
         self._debug_watcher.fileChanged.connect(self._on_debug_file_changed)
         self._debug_watcher.directoryChanged.connect(self._on_debug_dir_changed)
         self._debug_watched_dirs = []
@@ -310,7 +309,6 @@ class TaskManager:
                 if new_md5 != old_md5:
                     logger.info(f"Debug file watcher: reloading custom task {file_name}")
                     self.reload_task_code(task)
-                    from ok.gui.util.Alert import alert_info
                     alert_info(f"Task reloaded: {file_name}", tray=True)
                     reloaded = True
                 break
@@ -324,7 +322,6 @@ class TaskManager:
                 for task in tasks:
                     self._reload_builtin_task(task)
                 self._build_builtin_task_file_map()
-                from ok.gui.util.Alert import alert_info
                 alert_info(f"Task reloaded: {file_name}")
 
         # Re-add path (some editors delete & recreate files on save)
@@ -357,7 +354,6 @@ class TaskManager:
 
             task_list[index] = new_task
 
-            from ok.gui.Communicate import communicate
             communicate.task.emit(new_task)
             communicate.task_list_updated.emit()
             logger.info(f"Reloaded built-in task {class_name}")
@@ -377,7 +373,6 @@ class TaskManager:
                     logger.info(f"Debug file watcher: new task file detected {file} in {path}")
                     instance = self.load_single_user_task(full_path)
                     if instance:
-                        from ok.gui.util.Alert import alert_info
                         alert_info(f"New task loaded: {file}")
                 else:
                     self._on_debug_file_changed(full_path)

@@ -15,7 +15,7 @@ from PIL.PngImagePlugin import PngInfo
 
 from ok.feature.Box import Box, sort_boxes
 from ok.feature.Feature import Feature
-from ok.gui.Communicate import communicate
+from ok.core.events import communicate
 from ok.util.file import get_path_relative_to_exe
 from ok.util.logger import Logger
 

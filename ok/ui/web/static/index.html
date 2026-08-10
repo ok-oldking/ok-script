@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ok-script</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div><span class="eyebrow">AUTOMATION CONTROL</span><h1>ok-script</h1></div>
+      <span id="connection" class="badge">connecting</span>
+    </header>
+    <section class="status panel">
+      <div><span>Executor</span><strong id="executor">—</strong></div>
+      <div><span>Current task</span><strong id="current">None</strong></div>
+      <div class="actions">
+        <button id="resume">Resume</button><button id="pause" class="secondary">Pause</button>
+        <button id="stop" class="danger">Stop task</button>
+      </div>
+    </section>
+    <section>
+      <div class="section-title"><h2>Tasks</h2><span id="task-count"></span></div>
+      <div id="tasks" class="task-grid"></div>
+    </section>
+    <section class="panel events"><div class="section-title"><h2>Live events</h2><button id="clear" class="text">Clear</button></div><ol id="event-log"></ol></section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

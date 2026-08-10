@@ -7,7 +7,7 @@ from unittest.mock import patch
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon
+from ok.core.icons import Icon
 
 from ok import og
 from ok.gui.tasks.ConfigItemFactory import config_widget
@@ -197,10 +197,10 @@ class TestBasicOptions(unittest.TestCase):
 
             self.assertFalse(option.show_at_tab)
             self.assertFalse(option.default_config)
-            self.assertEqual(FluentIcon.APPLICATION, option.icon)
+            self.assertEqual(Icon.APPLICATION, option.icon)
             launcher_button = option.config_type[APP_LAUNCHER_ACTION]
             self.assertEqual(APP_LAUNCHER_OPEN, launcher_button['text'])
-            self.assertEqual(FluentIcon.UPDATE, launcher_button['icon'])
+            self.assertEqual(Icon.UPDATE, launcher_button['icon'])
             launcher_button['callback']()
             self.assertEqual([True], launcher_opened)
             self.assertFalse(config[APP_LAUNCHER_AUTO_START])

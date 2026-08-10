@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QHBoxLayout
 from qfluentwidgets import PushButton
 
 from ok import og
+from ok.gui.common.icons import resolve_icon
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
 
@@ -21,7 +22,7 @@ class LabelAndButtons(LabelAndWidget):
 
         for btn_info in buttons_config:
             text = btn_info.get('text', key)
-            icon = btn_info.get('icon')
+            icon = resolve_icon(btn_info.get('icon'), fallback=None)
             callback = btn_info.get('callback')
 
             # Translate the button text

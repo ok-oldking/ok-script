@@ -43,7 +43,6 @@ setuptools.setup(
     install_requires=[
         'pywin32>=306',
         'pyappify>=1.0.6',
-        'PySide6-Fluent-Widgets>=1.8.3',
         'typing-extensions>=4.11.0',
         'requests>=2.32.3',
         'psutil>=6.0.0',
@@ -51,6 +50,23 @@ setuptools.setup(
         'pycaw==20240210',
         'mouse==0.7.1'
     ],
+    extras_require={
+        'qt': [
+            'PySide6-Fluent-Widgets>=1.8.3',
+        ],
+        'web': [
+            'fastapi>=0.115.0',
+            'uvicorn[standard]>=0.30.0',
+        ],
+        'all': [
+            'PySide6-Fluent-Widgets>=1.8.3',
+            'fastapi>=0.115.0',
+            'uvicorn[standard]>=0.30.0',
+        ],
+    },
+    package_data={
+        'ok.ui.web': ['static/*.html', 'static/*.js', 'static/*.css'],
+    },
     entry_points={
         'console_scripts': [
             'ok=ok.cli:main',

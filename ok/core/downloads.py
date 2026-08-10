@@ -6,7 +6,7 @@ from typing import Callable, Optional
 import requests
 
 from ok import Logger
-from ok.gui.util.Alert import alert_info
+from ok.core.notifications import alert_info
 
 logger = Logger.get_logger(__name__)
 

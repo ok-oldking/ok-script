@@ -1,24 +1,21 @@
 import time
 
-from PySide6.QtCore import QObject
-
 from ok import Handler, og
 from ok import Logger
 from ok.device.capture import BaseWindowsCaptureMethod, BrowserCaptureMethod
-from ok.gui.Communicate import communicate
-from ok.gui.util.Alert import alert_error, alert_info
+from ok.core.events import communicate
+from ok.core.notifications import alert_error, alert_info
 from ok.util.process import is_admin, execute, WINDOWS_START_METHOD_START
 
 logger = Logger.get_logger(__name__)
 
 
-class StartController(QObject):
+class StartController:
     STARTED_WINDOW_MIN_SIZE = (100, 100)
     STARTED_WINDOW_STABLE_SECONDS = 2
     STARTED_WINDOW_POLL_INTERVAL = 0.2
 
     def __init__(self, app_config, exit_event):
-        super().__init__()
         self.config = app_config
         self.exit_event = exit_event
         self.handler = Handler(exit_event, __name__)
@@ -26,6 +23,10 @@ class StartController(QObject):
         windows_config = app_config.get('windows') or {}
         self.start_exe = windows_config.get('start_exe', True)
         self.start_method = windows_config.get('start_method', WINDOWS_START_METHOD_START)
+
+    def tr(self, message):
+        app = getattr(og, "app", None)
+        return app.tr(message) if app is not None else message
 
     @staticmethod
     def _mark_task_enabled(task):

@@ -259,7 +259,8 @@ class OverlayWidget(QWidget):
         frame_ratio = self.frame_ratio()
         for key, value in og.ok.screenshot.ui_dict.items():
             boxes = value[0]
-            pen.setColor(value[2])
+            color = value[2] if isinstance(value[2], QColor) else QColor(*value[2])
+            pen.setColor(color)
             painter.setPen(pen)
             for box in boxes:
                 width = box.width * frame_ratio
@@ -278,7 +279,7 @@ class OverlayWidget(QWidget):
                 # painter.drawText(text_x, text_y - 0.5, text)
                 painter.drawText(text_x + 0.5, text_y + 0.5, text)
 
-                painter.setPen(value[2])
+                painter.setPen(color)
                 painter.drawText(text_x, text_y, text)
                 painter.restore()
 

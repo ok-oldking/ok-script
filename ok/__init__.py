@@ -11,10 +11,6 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-# Fix for PySide6 KeyError: 'PATH'
-if "PATH" not in os.environ:
-    os.environ["PATH"] = ""
-
 from ok.util.handler import Handler, ExitEvent
 from ok.util.logger import Logger
 from ok.util.file import get_path_relative_to_exe
@@ -56,8 +52,8 @@ if TYPE_CHECKING:
     )
     from ok.feature.Feature import Feature
     from ok.feature.FeatureSet import FeatureSet
-    from ok.gui.Communicate import communicate
-    from ok.gui.MainWindow import MainWindow
+    from ok.core.events import communicate
+    from ok.ui.qt.MainWindow import MainWindow
     from ok.task.DiagnosisTask import DiagnosisTask
     from ok.task.TaskExecutor import TaskExecutor
     from ok.task.exceptions import (
@@ -93,8 +89,8 @@ if TYPE_CHECKING:
     from ok.util.window import windows_graphics_available
 
 _LAZY_IMPORTS = {
-    'communicate': ('ok.gui.Communicate', 'communicate'),
-    'MainWindow': ('ok.gui.MainWindow', 'MainWindow'),
+    'communicate': ('ok.core.events', 'communicate'),
+    'MainWindow': ('ok.ui.qt.MainWindow', 'MainWindow'),
     'TaskExecutor': ('ok.task.TaskExecutor', 'TaskExecutor'),
     'DeviceManager': ('ok.device.DeviceManager', 'DeviceManager'),
     'FeatureSet': ('ok.feature.FeatureSet', 'FeatureSet'),
@@ -196,7 +192,7 @@ logger = Logger.get_logger("ok")
 class CommunicateHandler(logging.Handler):
     def __init__(self):
         super().__init__()
-        from ok.gui.Communicate import communicate
+        from ok.core.events import communicate
         self.communicate = communicate
 
     def emit(self, record):
@@ -208,7 +204,8 @@ class App:
     def __init__(self, config, task_executor,
                  exit_event=None):
         from PySide6.QtGui import QIcon
-        from ok.gui.Communicate import communicate
+        from ok.core.events import communicate
+        from ok.ui.qt.events import install_qt_event_dispatcher
         from ok.util.clazz import init_class_by_name
         from ok.util.config import Config
 
@@ -218,8 +215,12 @@ class App:
         self.config = config
         self.auth_config = None
         self.global_config = task_executor.global_config if task_executor else None
-        from ok.gui.util.app import init_app_config
+        from ok.ui.qt.util.app import init_app_config
         self.app, self.locale = init_app_config()
+        install_qt_event_dispatcher()
+        if task_executor is not None:
+            task_executor.locale = self.locale
+            task_executor.load_tr()
         self.ok_config = Config('_ok', {'window_x': -1, 'window_y': -1, 'window_width': -1, 'window_height': -1,
                                         'window_maximized': False, 'navigation_expanded': True,
                                         'use_overlay': False, 'show_overlay_logs': True})
@@ -240,7 +241,7 @@ class App:
         self.exit_event = exit_event
         self.icon = QIcon(get_path_relative_to_exe(config.get('gui_icon')) or ":/icon/icon.ico")
 
-        from ok.gui.StartController import StartController
+        from ok.core.start_controller import StartController
         self.start_controller = StartController(self.config, exit_event)
         if self.config.get('debug'):
             self.to_translate = set()
@@ -289,7 +290,7 @@ class App:
         if self.po_translation is None:
             locale_name = self.locale.name()
             try:
-                from ok.gui.i18n.GettextTranslator import get_translations
+                from ok.core.translation import get_translations
                 self.po_translation = get_translations(locale_name)
                 self.po_translation.install()
                 logger.info(f'translation installed for {locale_name}')
@@ -304,14 +305,14 @@ class App:
 
     def gen_tr_po_files(self):
         folder = ""
-        from ok.gui.common.config import Language
+        from ok.ui.qt.common.config import Language
         for locale in Language:
-            from ok.gui.i18n.GettextTranslator import update_po_file
+            from ok.core.translation import update_po_file
             folder = update_po_file(self.to_translate, locale.value.name())
         return folder
 
     def show_message_window(self, title, message):
-        from ok.gui.MessageWindow import MessageWindow
+        from ok.ui.qt.MessageWindow import MessageWindow
         message_window = MessageWindow(self.icon, title, message, exit_event=self.exit_event)
         message_window.show()
 
@@ -340,8 +341,8 @@ class App:
     def get_overlay_view(self):
         """Return the overlay widget exposed to tasks, custom tabs, and my_app."""
         if self.overlay_window is None:
-            from ok.gui.Communicate import communicate
-            from ok.gui.overlay.OverlayWindow import OverlayWindow
+            from ok.core.events import communicate
+            from ok.ui.qt.overlay.OverlayWindow import OverlayWindow
             self.overlay_window = OverlayWindow(og.device_manager.hwnd_window)
             communicate.window.connect(self.overlay_window.update_overlay)
             self.overlay_window.set_boxes_enabled(self.ok_config.get('use_overlay', False))
@@ -351,7 +352,7 @@ class App:
         self.do_show_main()
 
     def do_show_main(self):
-        from ok.gui.MainWindow import MainWindow
+        from ok.ui.qt.MainWindow import MainWindow
 
         if self.ok_config.get('use_overlay', False) or callable(self.config.get('blur_area')):
             self.get_overlay_view()
@@ -401,7 +402,8 @@ class HeadlessApp:
     """Small app facade for running tasks without creating any UI windows."""
 
     def __init__(self, config, exit_event=None):
-        from ok.gui.Communicate import communicate
+        from ok.core.events import communicate
+        from ok.core.translation import LocaleName
         from ok.util.clazz import init_class_by_name
 
         og.exit_event = exit_event
@@ -416,9 +418,8 @@ class HeadlessApp:
         self.to_translate = None
         communicate.quit.connect(self.quit)
 
-        from ok.gui.common.config import cfg
-        self.locale = cfg.get(cfg.language).value
-        from ok.gui.StartController import StartController
+        self.locale = LocaleName(config.get("locale", "en_US"))
+        from ok.core.start_controller import StartController
         self.start_controller = StartController(self.config, exit_event)
 
         og.app = self
@@ -429,17 +430,12 @@ class HeadlessApp:
         logger.debug('init headless app end')
 
     def tr(self, key):
-        from PySide6.QtCore import QCoreApplication
-
         if not key:
             return key
-        if ok_tr := QCoreApplication.translate("app", key):
-            if ok_tr != key:
-                return ok_tr
         if self.po_translation is None:
             locale_name = self.locale.name()
             try:
-                from ok.gui.i18n.GettextTranslator import get_translations
+                from ok.core.translation import get_translations
                 self.po_translation = get_translations(locale_name)
                 self.po_translation.install()
                 logger.info(f'headless translation installed for {locale_name}')
@@ -602,31 +598,15 @@ class OK:
                 self.app.exec()
             else:
                 self.task_executor.start()
-                if self.config.get("debug"):
-                    from ok.gui.Communicate import communicate
-                    from PySide6.QtWidgets import QApplication
-                    app = QApplication(sys.argv)
-                    from ok.gui.overlay.OverlayWindow import OverlayWindow
-                    self.overlay_window = OverlayWindow(og.device_manager.hwnd_window)
-                    communicate.window.connect(self.overlay_window.update_overlay)
-                    app.exec()
-                else:
-                    try:
-                        # Starting the task in a separate thread (optional)
-                        # This allows the main thread to remain responsive to keyboard interrupts
-                        task_thread = threading.Thread(target=self.wait_task)
-                        task_thread.start()
-
-                        # Wait for the task thread to end (which it won't, in this case, without an interrupt)
-                        task_thread.join()
-                    except KeyboardInterrupt:
-                        self.exit_event.set()
-                        logger.info("Keyboard interrupt received, exiting script.")
-                    finally:
-                        # Clean-up code goes here (if any)
-                        # This block ensures that the script terminates gracefully,
-                        # releasing resources or performing necessary clean-up operations.
-                        logger.info("Script has terminated.")
+                try:
+                    task_thread = threading.Thread(target=self.wait_task)
+                    task_thread.start()
+                    task_thread.join()
+                except KeyboardInterrupt:
+                    self.exit_event.set()
+                    logger.info("Keyboard interrupt received, exiting script.")
+                finally:
+                    logger.info("Script has terminated.")
         except Exception as e:
             logger.error("start error", e)
             self.exit_event.set()
@@ -792,7 +772,7 @@ class OK:
 
         logger.info(f"do_init, config: {self.config}")
         self.init_device_manager()
-        from ok.gui.debug.Screenshot import Screenshot
+        from ok.core.screenshot import Screenshot
         self.screenshot = Screenshot(self.exit_event, self.debug)
 
         template_matching = self.config.get('template_matching')
@@ -827,7 +807,10 @@ class OK:
                                           config_folder=self.config.get("config_folder"), debug=self.debug,
                                           global_config=self.global_config, ocr_target_height=ocr_target_height,
                                           config=self.config)
-        from ok.gui.tasks.TaskManger import TaskManager
+        if self.should_init_task_manager_headless():
+            from ok.core.task_manager import TaskManager
+        else:
+            from ok.ui.qt.tasks.TaskManger import TaskManager
         task_app = self.headless_app if self.should_init_task_manager_headless() else self.app
         og.task_manager = TaskManager(task_executor=self.task_executor, app=task_app,
                                       onetime_tasks=self.config.get('onetime_tasks', []),

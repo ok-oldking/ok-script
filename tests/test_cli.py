@@ -5,6 +5,13 @@ import ok.cli as cli
 
 
 class TestCli(unittest.TestCase):
+    def test_parser_exposes_all_runtime_modes(self):
+        parser = cli.build_parser()
+
+        self.assertEqual("gui", parser.parse_args(["gui"]).command)
+        web = parser.parse_args(["web", "--host", "0.0.0.0", "--port", "9000"])
+        self.assertEqual(("web", "0.0.0.0", 9000), (web.command, web.host, web.port))
+
     def test_run_task_forwards_exit_after_flag(self):
         config = {"use_gui": False}
 

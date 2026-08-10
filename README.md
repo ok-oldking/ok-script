@@ -1,5 +1,12 @@
 # ok-script
 
+## 无界面、桌面与 Web 模式
+
+自动化核心现已与 Qt 解耦。使用 `ok-script` 可无界面运行，使用
+`ok-script[qt]` 启用原有桌面界面，或使用 `ok-script[web]` 启用 FastAPI
+浏览器界面；对应命令为 `ok run_task`、`ok gui` 和 `ok web`。详见
+[运行时架构](docs/architecture.md)。
+
 [简体中文](README.md) | [English](README_en.md)
 
 [![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)

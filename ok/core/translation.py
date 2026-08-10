@@ -6,6 +6,11 @@ from ok.util.file import ensure_dir_for_file, get_path_relative_to_exe, delete_i
 from ok.util.i18n import get_language_fallbacks
 
 
+class LocaleName(str):
+    def name(self):
+        return str(self)
+
+
 def __get_root():
     return get_path_relative_to_exe('i18n')
 

@@ -6,12 +6,9 @@ from datetime import datetime
 
 import cv2
 from PIL import Image, ImageFont, ImageDraw
-from PySide6.QtCore import QObject
-from PySide6.QtGui import QColor
-
 from ok import Box, og
 from ok import Logger
-from ok.gui.Communicate import communicate
+from ok.core.events import communicate
 from ok.util.blur import apply_blur_areas, get_blur_algorithm
 from ok.util.file import find_first_existing_file, clear_folder, sanitize_filename, \
     get_relative_path
@@ -20,17 +17,16 @@ logger = Logger.get_logger(__name__)
 _CLEANUP_FOLDERS = object()
 
 
-class Screenshot(QObject):
+class Screenshot:
 
     def __init__(self, exit_event, debug):
-        super().__init__()
         self.queue = []
         self.time_to_expire = 4
         self.ui_dict = {}
         self.color_map = {
-            "red": QColor(255, 60, 60),
-            "green": QColor(60, 255, 60),
-            "blue": QColor(60, 60, 255)
+            "red": (255, 60, 60, 255),
+            "green": (60, 255, 60, 255),
+            "blue": (60, 60, 255, 255)
         }
         self.exit_event = exit_event
         self.debug = debug
@@ -159,7 +155,7 @@ class Screenshot(QObject):
 
             for key, value in ui_dict.items():
                 boxes = value[0]
-                color = tuple([int(x) for x in value[2].getRgb()])
+                color = value[2]
                 for box in boxes:
                     width = box.width
                     height = box.height

@@ -10,7 +10,7 @@ from ok.device.capture import HwndWindow, BrowserCaptureMethod, update_capture_m
     ADBCaptureMethod
 from ok.device.interaction import PostMessageInteraction, GenshinInteraction, ForegroundPostMessageInteraction, \
     PynputInteraction, PyDirectInteraction, BrowserInteraction, ADBInteraction
-from ok.gui.Communicate import communicate
+from ok.core.events import communicate
 from ok.util.collection import parse_ratio
 from ok.util.config import Config
 from ok.util.file import delete_if_exists

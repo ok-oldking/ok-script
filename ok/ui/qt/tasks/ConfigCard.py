@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QHBoxLayout
 from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton
+from ok.gui.common.icons import resolve_icon
 
 from ok import og
 from ok.gui.common.design_system import DesignToken
@@ -295,7 +296,7 @@ class ConfigCard(ConfigContentMixin, ExpandSettingCard):
                  config_type, config_icon):
 
         self._expand_enabled = True
-        super().__init__(config_icon or FluentIcon.INFO, og.app.tr(name), og.app.tr(description))
+        super().__init__(resolve_icon(config_icon), og.app.tr(name), og.app.tr(description))
         self._init_config_content(task, config, default_config, config_description, config_type)
 
     def setExpand(self, isExpand: bool):

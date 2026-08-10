@@ -99,12 +99,14 @@ class Analytics:
         return self._config.get('client_id')
 
     def send_alive(self):
-        from ok.gui.common.config import cfg
+        from ok import og
+        locale = getattr(getattr(og, "app", None), "locale", self.app_config.get("locale", "en_US"))
+        locale_name = locale.name() if hasattr(locale, "name") else str(locale)
         params = {
             "device_id": self.client_id,
             "app_version": self.app_config.get('version'),
             "app_name": self.app_config.get('app_id') or self.app_config.get('gui_title'),
-            'locale': cfg.get(cfg.language).value.name(),
+            'locale': locale_name,
             'sr': get_screen_resolution(),
             "os": 'windows',
         }

@@ -2,16 +2,14 @@ import re
 import threading
 import time
 from typing import List
-from PySide6.QtCore import QCoreApplication
-
 import cv2
 from numpy import ndarray
-from qfluentwidgets import FluentIcon
 
+from ok.core.events import communicate
+from ok.core.icons import Icon
 from ok.feature.Box import find_boxes_by_name, find_boxes_within_boundary, Box, find_box_by_name, relative_box, \
     sort_boxes, find_highest_confidence_box
 from ok.feature.FeatureSet import adjust_coordinates, resize_image, scale_box, join_list_elements
-from ok.gui.Communicate import communicate
 from ok.task.exceptions import HotkeyConfigException
 from ok.util.color import calculate_color_percentage
 from ok.util.config import Config
@@ -900,8 +898,8 @@ class OCR(FindFeature):
             logger.error('onnx_ocr', e)
             self.screenshot('onnx_ocr_exception', frame=image)
             if 'ZE_RESULT_ERROR_DEVICE_LOST' in str(e):
-                raise Exception(QCoreApplication.translate('Task',
-                                                           'NPU inferring Error, you might need to update the Intel NPU driver!'))
+                raise Exception(self._app.tr(
+                    'NPU inferring Error, you might need to update the Intel NPU driver!'))
             raise e
         detected_boxes = []
         # logger.debug(f'rapid_ocr result {result}')
@@ -1095,7 +1093,7 @@ class BaseTask(OCR):
         self.start_time = 0
         self.icon = None
         self.group_name = None
-        self.group_icon = FluentIcon.SYNC
+        self.group_icon = Icon.SYNC
         self.first_run_alert = None
         self.show_create_shortcut = False
         self.sleep_check_interval = -1

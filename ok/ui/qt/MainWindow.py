@@ -30,6 +30,7 @@ from ok.util.config import Config
 
 from ok.gui.Communicate import communicate
 from ok.gui.common.accent_color import qfluent_theme_source_color
+from ok.gui.common.icons import resolve_icon
 from ok.gui.util.Alert import alert_error
 from ok.gui.util.touch_scroll import enable_touch_scrolling
 from ok.gui.util.pyappify_startup import get_startup_version_change
@@ -196,7 +197,7 @@ class MainWindow(FluentWindow):
                 if name == NOTIFICATION_OPTION_NAME:
                     notification_tab = config_tab
                 else:
-                    self.addSubInterface(config_tab, option.icon or FluentIcon.INFO, self.app.tr(option.name),
+                    self.addSubInterface(config_tab, resolve_icon(option.icon), self.app.tr(option.name),
                                          position=NavigationItemPosition.SCROLL)
 
         if notification_tab is not None:
@@ -392,7 +393,8 @@ class MainWindow(FluentWindow):
                 tasks = [task for task in imp.get('tasks', []) if getattr(task, 'visible', True)]
                 if tasks:
                     group_tab = OneTimeTaskTab(is_standalone=False, group_name=script_name)
-                    group_icon = tasks[0].group_icon if hasattr(tasks[0], 'group_icon') else FluentIcon.APPLICATION
+                    group_icon = resolve_icon(
+                        tasks[0].group_icon if hasattr(tasks[0], 'group_icon') else FluentIcon.APPLICATION)
                     self.imported_tabs[file_name] = group_tab
                     
                     # Inserting after TemplateTab if it exists

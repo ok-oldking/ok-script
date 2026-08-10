@@ -6,8 +6,8 @@ import win32con
 import win32gui
 import win32process
 
-from ok.gui.Communicate import communicate
-from ok.gui.util.Alert import alert_info
+from ok.core.events import communicate
+from ok.core.notifications import alert_info
 from ok.util.GlobalConfig import basic_options
 from ok.util.logger import Logger
 from ok.util.window import show_title_bar, get_window_bounds, resize_window, is_foreground_window, find_hwnd

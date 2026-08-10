@@ -40,7 +40,7 @@ i18n/
 
 After editing translations, use **Compile i18n** in the application's developer tools to generate the binary files loaded at runtime.
 
-For changes to ok-script itself, update every language file under `ok/gui/i18n/`, ensure no translation remains unfinished, and run:
+For changes to ok-script itself, update every language file under `ok/ui/qt/i18n/`, ensure no translation remains unfinished, and run:
 
 ```powershell
 .\compile_i18n.cmd

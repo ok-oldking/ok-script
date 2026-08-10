@@ -1,5 +1,12 @@
 # ok-script
 
+## Headless, desktop, and web modes
+
+The automation runtime is independent from Qt. Install `ok-script` for
+headless use, `ok-script[qt]` for the existing desktop UI, or `ok-script[web]`
+for the FastAPI browser UI. Run them with `ok run_task`, `ok gui`, and `ok web`
+respectively. See [the runtime architecture](docs/architecture.md) for details.
+
 [简体中文](README.md) | **English**
 
 [![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)

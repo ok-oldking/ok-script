@@ -52,6 +52,31 @@ def run_task_command(args):
     return 0
 
 
+def run_gui_command(args):
+    from ok import OK
+
+    config = dict(load_config(args.config))
+    config["use_gui"] = True
+    OK(config).start()
+    return 0
+
+
+def run_web_command(args):
+    try:
+        import uvicorn
+    except ImportError as exc:
+        raise RuntimeError(
+            "The web UI requires FastAPI and Uvicorn. Install ok-script[web]."
+        ) from exc
+
+    from ok.ui.web import create_web_app
+
+    config = dict(load_config(args.config))
+    config["use_gui"] = False
+    uvicorn.run(create_web_app(config), host=args.host, port=args.port)
+    return 0
+
+
 def build_parser():
     parser = argparse.ArgumentParser(prog="ok")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -75,6 +100,16 @@ def build_parser():
         help="Config import target, for example src.config:config or config:config",
     )
     run_task_parser.set_defaults(func=run_task_command)
+
+    gui_parser = subparsers.add_parser("gui", help="Run the Qt desktop UI")
+    gui_parser.add_argument("-c", "--config", help="Config import target")
+    gui_parser.set_defaults(func=run_gui_command)
+
+    web_parser = subparsers.add_parser("web", help="Run the FastAPI browser UI")
+    web_parser.add_argument("-c", "--config", help="Config import target")
+    web_parser.add_argument("--host", default="127.0.0.1")
+    web_parser.add_argument("--port", type=int, default=8000)
+    web_parser.set_defaults(func=run_web_command)
 
     return parser
 

@@ -5,7 +5,7 @@ import threading
 
 import win32gui
 
-from ok.gui.Communicate import communicate
+from ok.core.events import communicate
 from ok.task.exceptions import CaptureException
 from ok.util.logger import Logger
 from ok.util.window import resize_window, windows_graphics_available, find_hwnd
