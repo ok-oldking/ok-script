@@ -3022,5 +3022,189 @@
             <source>Action failed</source>
             <translation>La acción falló</translation>
         </message>
+        <message>
+            <source>Back</source>
+            <translation>Atrás</translation>
+        </message>
+        <message>
+            <source>Capture</source>
+            <translation>Captura</translation>
+        </message>
+        <message>
+            <source>Capture Method</source>
+            <translation>Método de captura</translation>
+        </message>
+        <message>
+            <source>Choose Interaction</source>
+            <translation>Elegir interacción</translation>
+        </message>
+        <message>
+            <source>Choose Window</source>
+            <translation>Elegir ventana</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <translation>Cerrar</translation>
+        </message>
+        <message>
+            <source>Debug</source>
+            <translation>Depurar</translation>
+        </message>
+        <message>
+            <source>Debug Overlay</source>
+            <translation>Superposición de depuración</translation>
+        </message>
+        <message>
+            <source>Disable Boxes</source>
+            <translation>Desactivar cuadros</translation>
+        </message>
+        <message>
+            <source>Disconnected</source>
+            <translation>Desconectado</translation>
+        </message>
+        <message>
+            <source>Enable Boxes</source>
+            <translation>Activar cuadros</translation>
+        </message>
+        <message>
+            <source>Export Logs</source>
+            <translation>Exportar registros</translation>
+        </message>
+        <message>
+            <source>Hide Log on Overlay</source>
+            <translation>Ocultar registro en superposición</translation>
+        </message>
+        <message>
+            <source>Install Folder</source>
+            <translation>Carpeta de instalación</translation>
+        </message>
+        <message>
+            <source>Loading</source>
+            <translation>Cargando</translation>
+        </message>
+        <message>
+            <source>Log Folder</source>
+            <translation>Carpeta de registros</translation>
+        </message>
+        <message>
+            <source>Maximize</source>
+            <translation>Maximizar</translation>
+        </message>
+        <message>
+            <source>Minimize</source>
+            <translation>Minimizar</translation>
+        </message>
+        <message>
+            <source>No options available</source>
+            <translation>No hay opciones disponibles</translation>
+        </message>
+        <message>
+            <source>No windows found</source>
+            <translation>No se encontraron ventanas</translation>
+        </message>
+        <message>
+            <source>Refreshing</source>
+            <translation>Actualizando</translation>
+        </message>
+        <message>
+            <source>Screenshot Folder</source>
+            <translation>Carpeta de capturas</translation>
+        </message>
+        <message>
+            <source>Search title or exe...</source>
+            <translation>Buscar título o ejecutable...</translation>
+        </message>
+        <message>
+            <source>Show Log on Overlay</source>
+            <translation>Mostrar registro en superposición</translation>
+        </message>
+        <message>
+            <source>Toggle navigation</source>
+            <translation>Alternar navegación</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>Ver registro</translation>
+        </message>
+        <message>
+            <source>{page} is not available in the web UI yet.</source>
+            <translation>{page} aún no está disponible en la interfaz web.</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>Acerca de</translation>
+        </message>
+        <message>
+            <source>Character Code</source>
+            <translation>Código del personaje</translation>
+        </message>
+        <message>
+            <source>Character Settings</source>
+            <translation>Ajustes del personaje</translation>
+        </message>
+        <message>
+            <source>Game Hotkeys</source>
+            <translation>Atajos del juego</translation>
+        </message>
+        <message>
+            <source>Notifications</source>
+            <translation>Notificaciones</translation>
+        </message>
+        <message>
+            <source>Schedule</source>
+            <translation>Programa</translation>
+        </message>
+        <message>
+            <source>Script</source>
+            <translation>Script</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>Ajustes</translation>
+        </message>
+        <message>
+            <source>Templates</source>
+            <translation>Plantillas</translation>
+        </message>
+        <message>
+            <source>Triggers</source>
+            <translation>Disparadores</translation>
+        </message>
+        <message>
+            <source>All Levels</source>
+            <translation>Todos los niveles</translation>
+        </message>
+        <message>
+            <source>Capture Preview</source>
+            <translation>Vista previa de captura</translation>
+        </message>
+        <message>
+            <source>Captured game frame</source>
+            <translation>Fotograma del juego capturado</translation>
+        </message>
+        <message>
+            <source>Could not load logs</source>
+            <translation>No se pudieron cargar los registros</translation>
+        </message>
+        <message>
+            <source>Filter logs...</source>
+            <translation>Filtrar registros...</translation>
+        </message>
+        <message>
+            <source>Log level</source>
+            <translation>Nivel de registro</translation>
+        </message>
+        <message>
+            <source>Waiting for ok-script.log</source>
+            <translation>Esperando ok-script.log</translation>
+        </message>
+        <message>
+            <source>lines</source>
+            <translation>líneas</translation>
+        </message>
+        <message>
+            <source>Open Screenshot Folder</source>
+            <translation>Abrir carpeta de capturas</translation>
+        </message>
     </context>
 </TS>

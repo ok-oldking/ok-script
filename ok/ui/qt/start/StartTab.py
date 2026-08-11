@@ -129,7 +129,6 @@ class StartTab(Tab):
         self.message = "Loading"
 
         self.update_capture(True)
-        self.refresh_clicked()
         self.update_selection()
         communicate.executor_paused.connect(self.update_selection)
 

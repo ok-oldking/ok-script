@@ -1,172 +1,140 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Badge,
-  Button,
-  Card,
-  CardFooter,
-  CardHeader,
-  Caption1,
-  Divider,
-  MessageBar,
-  MessageBarBody,
-  MessageBarTitle,
-  SearchBox,
-  Skeleton,
-  SkeletonItem,
-  Spinner,
-  Subtitle1,
-  Text,
-  Title1,
-  Tooltip,
-  makeStyles,
-  mergeClasses,
-  shorthands,
-  tokens
-} from "@fluentui/react-components";
-import {
+  Alert20Regular,
   ArrowClockwise20Regular,
-  Circle20Filled,
+  Calendar20Regular,
+  Camera20Regular,
+  CheckmarkCircle20Regular,
+  Code20Regular,
+  DeveloperBoard20Regular,
   Dismiss20Regular,
-  Pause20Filled,
-  Play20Filled,
-  RecordStop20Filled
+  DocumentText20Regular,
+  Edit20Regular,
+  ErrorCircle20Regular,
+  Folder20Regular,
+  Games20Regular,
+  Image20Regular,
+  Info20Regular,
+  Navigation20Regular,
+  People20Regular,
+  Play20Regular,
+  QuestionCircle20Regular,
+  Search20Regular,
+  Settings20Regular,
+  TaskListSquareLtr20Regular,
+  Timer20Regular,
+  Pause20Regular,
+  WeatherMoon20Regular,
+  Window20Regular
 } from "@fluentui/react-icons";
 import { runtimeApi } from "./api";
 import { t } from "./i18n";
-import type { AutomationTask, EventRecord, ExecutorStatus, RuntimeEvent } from "./types";
+import type { CaptureUiState, LogResponse, MethodOption } from "./types";
 
-const useStyles = makeStyles({
-  shell: {
-    minHeight: "100vh",
-    backgroundColor: "#0b1118",
-    color: tokens.colorNeutralForeground1
-  },
-  main: {
-    width: "min(1180px, calc(100% - 32px))",
-    margin: "0 auto",
-    paddingTop: "40px",
-    paddingBottom: "64px"
-  },
-  header: {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: "24px",
-    marginBottom: "28px"
-  },
-  eyebrow: {
-    color: tokens.colorBrandForeground1,
-    letterSpacing: "0.16em",
-    textTransform: "uppercase"
-  },
-  title: { display: "block", marginTop: "4px", letterSpacing: "-0.035em" },
-  subtitle: { display: "block", color: tokens.colorNeutralForeground3, marginTop: "8px" },
-  connection: { display: "flex", alignItems: "center", gap: "7px", marginTop: "8px" },
-  connectionDot: { color: tokens.colorPaletteYellowForeground1, fontSize: "9px" },
-  connectionDotLive: { color: tokens.colorPaletteGreenForeground1 },
-  statusCard: {
-    ...shorthands.border("1px", "solid", tokens.colorNeutralStroke2),
-    backgroundColor: "#121b25",
-    marginBottom: "32px"
-  },
-  statusGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(130px, 1fr)) auto",
-    alignItems: "center",
-    gap: "24px",
-    padding: "22px"
-  },
-  metric: { display: "grid", gap: "4px" },
-  muted: { color: tokens.colorNeutralForeground3 },
-  actions: { display: "flex", justifyContent: "flex-end", flexWrap: "wrap", gap: "8px" },
-  error: { marginBottom: "24px" },
-  sectionHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "16px",
-    marginBottom: "14px"
-  },
-  taskTools: { display: "flex", alignItems: "center", gap: "8px" },
-  search: { width: "min(320px, 48vw)" },
-  taskGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-    gap: "12px",
-    marginBottom: "36px"
-  },
-  taskCard: {
-    ...shorthands.border("1px", "solid", tokens.colorNeutralStroke2),
-    backgroundColor: "#121b25",
-    minHeight: "174px"
-  },
-  taskRunning: { ...shorthands.borderColor(tokens.colorBrandStroke1) },
-  taskHeader: { minHeight: "74px" },
-  taskMeta: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" },
-  taskDescription: {
-    color: tokens.colorNeutralForeground3,
-    display: "-webkit-box",
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden"
-  },
-  taskFooter: { justifyContent: "space-between", marginTop: "auto" },
-  empty: { color: tokens.colorNeutralForeground3, padding: "32px 4px" },
-  eventsCard: {
-    ...shorthands.border("1px", "solid", tokens.colorNeutralStroke2),
-    backgroundColor: "#121b25"
-  },
-  eventHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px" },
-  eventList: { listStyleType: "none", margin: 0, padding: "0 20px 12px", maxHeight: "330px", overflowY: "auto" },
-  eventRow: {
-    display: "grid",
-    gridTemplateColumns: "86px 150px minmax(0, 1fr)",
-    gap: "12px",
-    alignItems: "baseline",
-    paddingTop: "10px",
-    paddingBottom: "10px"
-  },
-  eventValue: { color: tokens.colorNeutralForeground3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  skeleton: { display: "grid", gap: "12px" },
-  skeletonRow: { height: "174px" },
-  mobile: {
-    "@media (max-width: 720px)": {
-      gridTemplateColumns: "1fr",
-      alignItems: "stretch"
-    }
-  },
-  mobileActions: {
-    "@media (max-width: 720px)": { justifyContent: "stretch", "& > button": { flexGrow: 1 } }
-  },
-  mobileEvent: {
-    "@media (max-width: 620px)": { gridTemplateColumns: "68px minmax(0, 1fr)", "& > :last-child": { gridColumnStart: 1, gridColumnEnd: 3 } }
-  }
-});
+type IconComponent = typeof Play20Regular;
+type Notice = { message: string; intent: "success" | "info" };
 
-const refreshEvents = new Set(["task", "task_done", "executor_paused", "task_list_updated"]);
+const primaryNavigation: Array<[string, IconComponent]> = [
+  ["Capture", Play20Regular],
+  ["Triggers", Timer20Regular],
+  ["Tasks", TaskListSquareLtr20Regular],
+  ["Character Code", Code20Regular],
+  ["Script", Edit20Regular],
+  ["Templates", Image20Regular],
+  ["Schedule", Calendar20Regular],
+  ["Character Settings", People20Regular],
+  ["Game Hotkeys", Games20Regular]
+];
 
-function stringify(value: unknown): string {
-  if (typeof value === "string") return value;
-  try { return JSON.stringify(value); } catch { return String(value); }
+const secondaryNavigation: Array<[string, IconComponent]> = [
+  ["Notifications", Alert20Regular],
+  ["Settings", Settings20Regular],
+  ["About", QuestionCircle20Regular]
+];
+
+// Most runtime events (box drawing, screenshots, progress, logs) do not alter
+// StartTab controls. Refreshing for every event can produce hundreds of HTTP
+// requests per second while automation is active.
+const captureStateEvents = new Set([
+  "adb_devices",
+  "executor_paused",
+  "starting_emulator",
+  "task",
+  "task_list_updated"
+]);
+
+function MethodList({ items, onSelect, disabled }: {
+  items: MethodOption[];
+  onSelect: (id: string) => void;
+  disabled: boolean;
+}) {
+  return <div className="option-list" role="listbox">
+    {items.map((item) => <button
+      type="button"
+      role="option"
+      aria-selected={item.selected}
+      className={`option-row ${item.selected ? "selected" : ""}`}
+      disabled={disabled}
+      key={item.id}
+      onClick={() => onSelect(item.id)}
+    >{item.label}</button>)}
+    {!items.length && <div className="empty-option">{t("No options available")}</div>}
+  </div>;
+}
+
+function Switch({ checked, label, disabled, onChange }: {
+  checked: boolean;
+  label: string;
+  disabled: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return <label className="switch-control">
+    <input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} />
+    <span className="switch-track"><span className="switch-thumb" /></span>
+    <span>{label}</span>
+  </label>;
 }
 
 export default function App() {
-  const styles = useStyles();
-  const [status, setStatus] = useState<ExecutorStatus | null>(null);
-  const [tasks, setTasks] = useState<AutomationTask[]>([]);
-  const [events, setEvents] = useState<EventRecord[]>([]);
-  const [query, setQuery] = useState("");
-  const [connected, setConnected] = useState(false);
+  useEffect(() => {
+    const updateDesktopScale = () => {
+      // Edge can expose a several-thousand-pixel CSS viewport in desktop mode
+      // when browser/display scaling is reduced. Scale the complete desktop UI
+      // against the layout's reference viewport so controls remain usable.
+      const widthScale = window.innerWidth / 1536;
+      const heightScale = window.innerHeight / 864;
+      const scale = Math.min(5, Math.max(1.25, Math.min(widthScale, heightScale)));
+      document.documentElement.style.setProperty("--desktop-scale", scale.toFixed(3));
+    };
+
+    updateDesktopScale();
+    window.addEventListener("resize", updateDesktopScale);
+    window.visualViewport?.addEventListener("resize", updateDesktopScale);
+    return () => {
+      window.removeEventListener("resize", updateDesktopScale);
+      window.visualViewport?.removeEventListener("resize", updateDesktopScale);
+      document.documentElement.style.removeProperty("--desktop-scale");
+    };
+  }, []);
+
+  const [ui, setUi] = useState<CaptureUiState | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [notice, setNotice] = useState<Notice | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const eventId = useRef(0);
+  const [collapsed, setCollapsed] = useState(false);
+  const [captureUrl, setCaptureUrl] = useState<string | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [logsPaused, setLogsPaused] = useState(false);
+  const [logLevel, setLogLevel] = useState("ALL");
+  const [logQuery, setLogQuery] = useState("");
+  const [logData, setLogData] = useState<LogResponse | null>(null);
+  const logConsole = useRef<HTMLPreElement>(null);
 
-  const refresh = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
-      const [nextStatus, nextTasks] = await Promise.all([runtimeApi.status(), runtimeApi.tasks()]);
-      setStatus(nextStatus);
-      setTasks(nextTasks);
+      setUi(await runtimeApi.captureUi());
       setError(null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : t("Could not reach the automation runtime"));
@@ -175,109 +143,209 @@ export default function App() {
     }
   }, []);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    if (!logsOpen || logsPaused) return;
+    let stopped = false;
+    let timer: number | undefined;
+    const refreshLogs = async () => {
+      try {
+        const data = await runtimeApi.logs(logLevel, logQuery);
+        if (!stopped) setLogData(data);
+      } catch (reason) {
+        if (!stopped) setError(reason instanceof Error ? reason.message : t("Could not load logs"));
+      } finally {
+        if (!stopped) timer = window.setTimeout(refreshLogs, 750);
+      }
+    };
+    void refreshLogs();
+    return () => { stopped = true; if (timer) clearTimeout(timer); };
+  }, [logLevel, logQuery, logsOpen, logsPaused]);
+
+  useEffect(() => {
+    const consoleElement = logConsole.current;
+    if (consoleElement && !logsPaused) consoleElement.scrollTop = consoleElement.scrollHeight;
+  }, [logData, logsPaused]);
+
+  useEffect(() => {
+    const closeModal = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setCaptureUrl(null); setLogsOpen(false); }
+    };
+    window.addEventListener("keydown", closeModal);
+    return () => window.removeEventListener("keydown", closeModal);
+  }, []);
 
   useEffect(() => {
     let socket: WebSocket | null = null;
-    let reconnectTimer: number | undefined;
+    let timer: number | undefined;
     let stopped = false;
-
     const connect = () => {
-      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-      socket = new WebSocket(`${protocol}://${window.location.host}/api/events`);
-      socket.onopen = () => setConnected(true);
+      const protocol = location.protocol === "https:" ? "wss" : "ws";
+      socket = new WebSocket(`${protocol}://${location.host}/api/events`);
       socket.onmessage = ({ data }) => {
-        const message = JSON.parse(data) as RuntimeEvent;
-        setEvents((current) => [{ ...message, id: ++eventId.current, timestamp: new Date() }, ...current].slice(0, 100));
-        if (refreshEvents.has(message.event)) void refresh();
+        let event: { event?: string; ui?: CaptureUiState };
+        try { event = JSON.parse(data) as { event?: string; ui?: CaptureUiState }; }
+        catch { return; }
+        if (!event.event || !captureStateEvents.has(event.event)) return;
+        // The server attaches the new UI state for relevant events. Do not
+        // follow every event with another HTTP request.
+        if (event.ui) setUi(event.ui);
+        if (event.event === "adb_devices") setPending((current) => current === "refresh" ? null : current);
       };
+      socket.onclose = () => { if (!stopped) timer = window.setTimeout(connect, 1500); };
       socket.onerror = () => socket?.close();
-      socket.onclose = () => {
-        setConnected(false);
-        if (!stopped) reconnectTimer = window.setTimeout(connect, 1500);
-      };
     };
     connect();
     return () => {
       stopped = true;
-      if (reconnectTimer) window.clearTimeout(reconnectTimer);
+      if (timer) clearTimeout(timer);
       socket?.close();
     };
-  }, [refresh]);
+  }, [load]);
 
-  const perform = async (name: string, action: () => Promise<unknown>) => {
+  const perform = async (name: string, action: () => Promise<CaptureUiState>) => {
     setPending(name);
-    try { await action(); await refresh(); setError(null); }
+    try { setUi(await action()); setError(null); }
     catch (reason) { setError(reason instanceof Error ? reason.message : t("Action failed")); }
     finally { setPending(null); }
   };
 
-  const visibleTasks = useMemo(() => {
+  const tool = async (name: string) => {
+    setPending(name);
+    try {
+      const result = await runtimeApi.tool(name);
+      setNotice({ message: result.message, intent: "success" });
+      if (result.kind === "capture" && result.resource_url) setCaptureUrl(result.resource_url);
+      setError(null);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : t("Action failed")); }
+    finally { setPending(null); }
+  };
+
+  const refreshDevices = async () => {
+    setPending("refresh");
+    try {
+      await runtimeApi.refreshDevices();
+      setError(null);
+      // Completion and the updated device list arrive through adb_devices.
+    } catch (reason) {
+      setPending(null);
+      setError(reason instanceof Error ? reason.message : t("Action failed"));
+    }
+  };
+
+  const devices = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
-    if (!normalized) return tasks;
-    return tasks.filter((task) => [task.name, task.class_name, task.description].some((value) => value.toLocaleLowerCase().includes(normalized)));
-  }, [query, tasks]);
+    return (ui?.devices ?? []).filter((device) => !normalized || `${device.label} ${device.keywords}`.toLocaleLowerCase().includes(normalized));
+  }, [query, ui?.devices]);
 
-  return (
-    <div className={styles.shell}>
-      <main className={styles.main}>
-        <header className={styles.header}>
-          <div>
-            <Caption1 className={styles.eyebrow}>{t("Automation control")}</Caption1>
-            <Title1 className={styles.title}>ok-script</Title1>
-            <Text className={styles.subtitle}>{t("A local command center for tasks, triggers, and runtime events.")}</Text>
-          </div>
-          <div className={styles.connection} aria-live="polite">
-            <Circle20Filled className={mergeClasses(styles.connectionDot, connected && styles.connectionDotLive)} />
-            <Badge appearance="outline" color={connected ? "success" : "warning"}>{connected ? t("Live") : t("Reconnecting")}</Badge>
-          </div>
-        </header>
+  const status = ui?.status;
+  const startLabel = status?.paused === false ? t("Pause") : `${t("Start")}${status?.hotkey ? `(${status.hotkey})` : ""}`;
+  const StartStateIcon = status?.paused === false ? Pause20Regular : Play20Regular;
 
-        {error && <MessageBar className={styles.error} intent="error"><MessageBarBody><MessageBarTitle>{t("Runtime error")}</MessageBarTitle>{error}</MessageBarBody></MessageBar>}
+  return <div className={`desktop ${collapsed ? "nav-collapsed" : ""}`}>
+    <aside className="sidebar">
+      <button type="button" className="nav-toggle" aria-label={t("Toggle navigation")} onClick={() => setCollapsed((value) => !value)}><Navigation20Regular /></button>
+      <nav className="nav-primary">
+        {primaryNavigation.map(([label, Icon], index) => <button
+          type="button"
+          key={label}
+          className={`nav-item ${index === 0 ? "active" : ""}`}
+          title={t(label)}
+          onClick={() => index !== 0 && setNotice({ message: t("{page} is not available in the web UI yet.", { page: t(label) }), intent: "info" })}
+        ><Icon /><span>{t(label)}</span></button>)}
+      </nav>
+      <nav className="nav-secondary">
+        {secondaryNavigation.map(([label, Icon]) => <button type="button" key={label} className="nav-item" title={t(label)} onClick={() => setNotice({ message: t("{page} is not available in the web UI yet.", { page: t(label) }), intent: "info" })}><Icon /><span>{t(label)}</span></button>)}
+      </nav>
+    </aside>
 
-        <Card className={styles.statusCard}>
-          <div className={mergeClasses(styles.statusGrid, styles.mobile)}>
-            <div className={styles.metric}><Caption1 className={styles.muted}>{t("Executor")}</Caption1><Subtitle1>{status?.running ? (status.paused ? t("Paused") : t("Running")) : t("Idle")}</Subtitle1></div>
-            <div className={styles.metric}><Caption1 className={styles.muted}>{t("Current task")}</Caption1><Subtitle1>{status?.current_task || t("None")}</Subtitle1></div>
-            <div className={mergeClasses(styles.actions, styles.mobileActions)}>
-              <Button icon={<Play20Filled />} appearance="primary" disabled={pending !== null} onClick={() => void perform("resume", runtimeApi.resume)}>{t("Resume")}</Button>
-              <Button icon={<Pause20Filled />} disabled={pending !== null} onClick={() => void perform("pause", runtimeApi.pause)}>{t("Pause")}</Button>
-              <Button icon={<RecordStop20Filled />} appearance="subtle" disabled={pending !== null || !status?.current_task} onClick={() => void perform("stop", runtimeApi.stopTask)}>{t("Stop task")}</Button>
-            </div>
-          </div>
-        </Card>
-
-        <section aria-labelledby="tasks-title">
-          <div className={styles.sectionHeader}>
-            <div><Subtitle1 id="tasks-title">{t("Tasks")}</Subtitle1><Caption1 className={styles.muted}> {t("{count} available", { count: status?.task_count ?? tasks.length })}</Caption1></div>
-            <div className={styles.taskTools}>
-              <SearchBox className={styles.search} aria-label={t("Filter tasks")} placeholder={t("Filter tasks")} value={query} onChange={(_, data) => setQuery(data.value)} />
-              <Tooltip content={t("Refresh")} relationship="label"><Button aria-label={t("Refresh tasks")} icon={<ArrowClockwise20Regular />} onClick={() => void refresh()} /></Tooltip>
-            </div>
-          </div>
-          {loading ? (
-            <div className={styles.taskGrid}>{[0, 1, 2].map((item) => <Skeleton key={item} className={styles.skeleton}><SkeletonItem className={styles.skeletonRow} /></Skeleton>)}</div>
-          ) : visibleTasks.length ? (
-            <div className={styles.taskGrid}>
-              {visibleTasks.map((task) => (
-                <Card key={task.class_name} className={mergeClasses(styles.taskCard, task.running && styles.taskRunning)}>
-                  <CardHeader className={styles.taskHeader} header={<Text weight="semibold">{task.name}</Text>} description={<Text className={styles.taskDescription}>{task.description || task.class_name}</Text>} />
-                  <div className={styles.taskMeta}><Badge appearance="outline" color={task.trigger ? "brand" : "informative"}>{task.trigger ? t("Trigger") : t("One-time")}</Badge>{task.running && <Badge color="success">{t("Running")}</Badge>}{task.paused && <Badge color="warning">{t("Paused")}</Badge>}</div>
-                  <CardFooter className={styles.taskFooter}><Caption1 className={styles.muted}>{task.class_name}</Caption1><Button appearance="primary" icon={pending === task.name ? <Spinner size="tiny" /> : <Play20Filled />} disabled={pending !== null || task.running} onClick={() => void perform(task.name, () => runtimeApi.startTask(task.name))}>{t("Start")}</Button></CardFooter>
-                </Card>
-              ))}
-            </div>
-          ) : <Text className={styles.empty}>{t("No tasks match “{query}”.", { query })}</Text>}
-        </section>
-
-        <Card className={styles.eventsCard}>
-          <div className={styles.eventHeader}><div><Subtitle1>{t("Live events")}</Subtitle1><Caption1 className={styles.muted}> {t("Latest 100 messages")}</Caption1></div><Button appearance="subtle" icon={<Dismiss20Regular />} onClick={() => setEvents([])}>{t("Clear")}</Button></div>
-          <Divider />
-          <ol className={styles.eventList} aria-live="polite">
-            {events.length ? events.map((event) => <li key={event.id} className={mergeClasses(styles.eventRow, styles.mobileEvent)}><Caption1 className={styles.muted}>{event.timestamp.toLocaleTimeString()}</Caption1><Text weight="semibold">{event.event}</Text><Caption1 className={styles.eventValue} title={stringify(event.args)}>{stringify(event.args)}</Caption1></li>) : <li className={styles.eventRow}><Caption1 className={styles.muted}>{t("Waiting for runtime events…")}</Caption1></li>}
-          </ol>
-        </Card>
-      </main>
+    <div className="toast-stack" aria-live="polite">
+      {error && <div className="toast toast-error" role="alert"><ErrorCircle20Regular /><span>{error}</span><button type="button" aria-label={t("Close")} onClick={() => setError(null)}><Dismiss20Regular /></button></div>}
+      {notice && <div className={`toast toast-${notice.intent}`} role="status">{notice.intent === "success" ? <CheckmarkCircle20Regular /> : <Info20Regular />}<span>{notice.message}</span><button type="button" aria-label={t("Close")} onClick={() => setNotice(null)}><Dismiss20Regular /></button></div>}
     </div>
-  );
+
+    <main className="content">
+      <section className="start-card surface-card">
+        <div className="app-identity"><div className="app-avatar">{ui?.icon_url ? <img src={ui.icon_url} alt="" /> : "OK"}</div><div><strong>{ui?.title || "OK-WW"}</strong><small>{ui?.version || "dev"}</small></div></div>
+        <div className="start-actions">
+          <button type="button" disabled={pending !== null} onClick={() => void tool("capture")}><Camera20Regular />{t("Capture")}</button>
+          <button type="button" disabled={pending !== null} onClick={() => void refreshDevices()}><ArrowClockwise20Regular />{pending === "refresh" ? t("Refreshing") : t("Refresh")}</button>
+          <button className="primary-button" type="button" disabled={pending !== null || loading} onClick={() => void perform("start", status?.paused === false ? async () => { await runtimeApi.pause(); return runtimeApi.captureUi(); } : async () => { await runtimeApi.resume(); return runtimeApi.captureUi(); })}><StartStateIcon />{startLabel}</button>
+        </div>
+      </section>
+
+      <section className="selectors">
+        <div className="selector-column window-column">
+          <h2>{t("Choose Window")}</h2>
+          <div className="surface-card selector-card">
+            <label className="device-search"><Search20Regular /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search title or exe...")} /></label>
+            <div className="option-list" role="listbox">
+              {devices.map((device) => <button
+                type="button"
+                role="option"
+                aria-selected={device.selected}
+                className={`option-row ${device.selected ? "selected" : ""}`}
+                disabled={pending !== null}
+                key={device.id}
+                onClick={() => void perform("device", () => runtimeApi.selectDevice(device.id))}
+              ><span>{device.label}</span>{!device.connected && <small>{t("Disconnected")}</small>}</button>)}
+              {!devices.length && <div className="empty-option">{loading ? t("Loading") : t("No windows found")}</div>}
+            </div>
+          </div>
+        </div>
+        <div className="selector-column">
+          <h2>{t("Capture Method")}</h2>
+          <div className="surface-card selector-card"><MethodList items={ui?.capture_methods ?? []} disabled={pending !== null} onSelect={(id) => void perform("capture-method", () => runtimeApi.selectCapture(id))} /></div>
+        </div>
+        <div className="selector-column">
+          <h2>{t("Choose Interaction")}</h2>
+          <div className="surface-card selector-card"><MethodList items={ui?.interaction_methods ?? []} disabled={pending !== null} onSelect={(id) => void perform("interaction-method", () => runtimeApi.selectInteraction(id))} /></div>
+        </div>
+      </section>
+
+      <section className="page-section">
+        <h2>{t("Debug")}</h2>
+        <div className="surface-card tool-card">
+          <button type="button" disabled={pending !== null} onClick={() => void tool("export-logs")}><DocumentText20Regular />{t("Export Logs")}</button>
+          <button type="button" disabled={pending !== null} onClick={() => void tool("install-folder")}><Folder20Regular />{t("Install Folder")}</button>
+          <button type="button" disabled={pending !== null} onClick={() => void tool("screenshot-folder")}><Folder20Regular />{t("Screenshot Folder")}</button>
+          <button type="button" disabled={pending !== null} onClick={() => void tool("log-folder")}><Folder20Regular />{t("Log Folder")}</button>
+          <button type="button" disabled={pending !== null} onClick={() => setLogsOpen(true)}><DeveloperBoard20Regular />{t("View Log")}</button>
+          <button type="button" disabled={pending !== null} onClick={() => void tool("ocr")}><Search20Regular />OCR</button>
+        </div>
+      </section>
+
+      <section className="page-section overlay-section">
+        <h2>{t("Debug Overlay")}</h2>
+        <div className="surface-card switch-card">
+          <Switch checked={ui?.overlay.boxes ?? false} disabled={pending !== null || !ui} label={(ui?.overlay.boxes ?? false) ? t("Enable Boxes") : t("Disable Boxes")} onChange={(value) => void perform("overlay", () => runtimeApi.setOverlay("boxes", value))} />
+          <Switch checked={ui?.overlay.logs ?? false} disabled={pending !== null || !ui} label={(ui?.overlay.logs ?? false) ? t("Show Log on Overlay") : t("Hide Log on Overlay")} onChange={(value) => void perform("overlay", () => runtimeApi.setOverlay("logs", value))} />
+        </div>
+      </section>
+      <div className="content-spacer" />
+    </main>
+    {captureUrl && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setCaptureUrl(null)}>
+      <section className="modal capture-modal" role="dialog" aria-modal="true" aria-label={t("Capture Preview")}>
+        <header><strong>{t("Capture Preview")}</strong><div className="modal-header-actions"><button className="modal-text-button" type="button" onClick={() => void tool("screenshot-folder")}><Folder20Regular />{t("Open Screenshot Folder")}</button><button type="button" aria-label={t("Close")} onClick={() => setCaptureUrl(null)}><Dismiss20Regular /></button></div></header>
+        <div className="capture-preview"><img src={captureUrl} alt={t("Captured game frame")} /></div>
+      </section>
+    </div>}
+    {logsOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setLogsOpen(false)}>
+      <section className="modal log-modal" role="dialog" aria-modal="true" aria-label={t("View Log")}>
+        <header><strong>{t("View Log")}</strong><button type="button" aria-label={t("Close")} onClick={() => setLogsOpen(false)}><Dismiss20Regular /></button></header>
+        <div className="log-toolbar">
+          <select aria-label={t("Log level")} value={logLevel} onChange={(event) => setLogLevel(event.target.value)}>
+            <option value="ALL">{t("All Levels")}</option><option>DEBUG</option><option>INFO</option><option>WARNING</option><option>ERROR</option><option>CRITICAL</option>
+          </select>
+          <label><Search20Regular /><input value={logQuery} onChange={(event) => setLogQuery(event.target.value)} placeholder={t("Filter logs...")} /></label>
+          <button type="button" onClick={() => setLogsPaused((value) => !value)}>{logsPaused ? <Play20Regular /> : <Pause20Regular />}{logsPaused ? t("Resume") : t("Pause")}</button>
+          <button type="button" onClick={() => { setLogsPaused(true); setLogData((current) => current ? { ...current, text: "", line_count: 0 } : current); }}><Dismiss20Regular />{t("Clear")}</button>
+        </div>
+        <pre ref={logConsole} className="log-console">{logData?.text || t("Waiting for ok-script.log")}</pre>
+        <footer>{logData?.path || "logs/ok-script.log"} · {logData?.line_count ?? 0} {t("lines")}</footer>
+      </section>
+    </div>}
+    <div className="theme-mark"><WeatherMoon20Regular /><Window20Regular /></div>
+  </div>;
 }

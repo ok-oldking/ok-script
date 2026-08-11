@@ -3018,5 +3018,189 @@
             <source>Action failed</source>
             <translation>操作失敗</translation>
         </message>
+        <message>
+            <source>Back</source>
+            <translation>返回</translation>
+        </message>
+        <message>
+            <source>Capture</source>
+            <translation>截圖方式</translation>
+        </message>
+        <message>
+            <source>Capture Method</source>
+            <translation>截圖方式</translation>
+        </message>
+        <message>
+            <source>Choose Interaction</source>
+            <translation>選擇互動方式</translation>
+        </message>
+        <message>
+            <source>Choose Window</source>
+            <translation>選取視窗</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <translation>關閉</translation>
+        </message>
+        <message>
+            <source>Debug</source>
+            <translation>開發工具</translation>
+        </message>
+        <message>
+            <source>Debug Overlay</source>
+            <translation>除錯懸浮窗</translation>
+        </message>
+        <message>
+            <source>Disable Boxes</source>
+            <translation>停用標記框</translation>
+        </message>
+        <message>
+            <source>Disconnected</source>
+            <translation>已離線</translation>
+        </message>
+        <message>
+            <source>Enable Boxes</source>
+            <translation>啟用標記框</translation>
+        </message>
+        <message>
+            <source>Export Logs</source>
+            <translation>匯出日誌</translation>
+        </message>
+        <message>
+            <source>Hide Log on Overlay</source>
+            <translation>隱藏懸浮窗日誌</translation>
+        </message>
+        <message>
+            <source>Install Folder</source>
+            <translation>安裝目錄</translation>
+        </message>
+        <message>
+            <source>Loading</source>
+            <translation>載入中</translation>
+        </message>
+        <message>
+            <source>Log Folder</source>
+            <translation>日誌目錄</translation>
+        </message>
+        <message>
+            <source>Maximize</source>
+            <translation>最大化</translation>
+        </message>
+        <message>
+            <source>Minimize</source>
+            <translation>最小化</translation>
+        </message>
+        <message>
+            <source>No options available</source>
+            <translation>沒有可用選項</translation>
+        </message>
+        <message>
+            <source>No windows found</source>
+            <translation>找不到視窗</translation>
+        </message>
+        <message>
+            <source>Refreshing</source>
+            <translation>正在重新整理</translation>
+        </message>
+        <message>
+            <source>Screenshot Folder</source>
+            <translation>截圖目錄</translation>
+        </message>
+        <message>
+            <source>Search title or exe...</source>
+            <translation>搜尋標題或程式...</translation>
+        </message>
+        <message>
+            <source>Show Log on Overlay</source>
+            <translation>在懸浮窗顯示日誌</translation>
+        </message>
+        <message>
+            <source>Toggle navigation</source>
+            <translation>切換導覽列</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>查看日誌</translation>
+        </message>
+        <message>
+            <source>{page} is not available in the web UI yet.</source>
+            <translation>頁面「{page}」尚未在 Web UI 中提供。</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>關於</translation>
+        </message>
+        <message>
+            <source>Character Code</source>
+            <translation>角色代碼</translation>
+        </message>
+        <message>
+            <source>Character Settings</source>
+            <translation>角色設定</translation>
+        </message>
+        <message>
+            <source>Game Hotkeys</source>
+            <translation>遊戲快捷鍵</translation>
+        </message>
+        <message>
+            <source>Notifications</source>
+            <translation>通知</translation>
+        </message>
+        <message>
+            <source>Schedule</source>
+            <translation>計劃任務</translation>
+        </message>
+        <message>
+            <source>Script</source>
+            <translation>腳本</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>設定</translation>
+        </message>
+        <message>
+            <source>Templates</source>
+            <translation>模板</translation>
+        </message>
+        <message>
+            <source>Triggers</source>
+            <translation>即時觸發</translation>
+        </message>
+        <message>
+            <source>All Levels</source>
+            <translation>全部級別</translation>
+        </message>
+        <message>
+            <source>Capture Preview</source>
+            <translation>截圖預覽</translation>
+        </message>
+        <message>
+            <source>Captured game frame</source>
+            <translation>擷取的遊戲畫面</translation>
+        </message>
+        <message>
+            <source>Could not load logs</source>
+            <translation>無法載入日誌</translation>
+        </message>
+        <message>
+            <source>Filter logs...</source>
+            <translation>篩選日誌...</translation>
+        </message>
+        <message>
+            <source>Log level</source>
+            <translation>日誌級別</translation>
+        </message>
+        <message>
+            <source>Waiting for ok-script.log</source>
+            <translation>等待 ok-script.log</translation>
+        </message>
+        <message>
+            <source>lines</source>
+            <translation>行</translation>
+        </message>
+        <message>
+            <source>Open Screenshot Folder</source>
+            <translation>開啟截圖目錄</translation>
+        </message>
     </context>
 </TS>

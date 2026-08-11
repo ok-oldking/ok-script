@@ -168,10 +168,10 @@ def main(argv=None):
         "gui_icon": ":/icon/icon.ico",
         "version": args.to_version,
         "window_size": {
-            "width": 1000,
+            "width": 1200,
             "height": 800,
-            "min_width": 600,
-            "min_height": 450,
+            "min_width": 1200,
+            "min_height": 800,
         },
         "onetime_tasks": [],
         "trigger_tasks": [],

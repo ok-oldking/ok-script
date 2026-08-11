@@ -131,7 +131,7 @@ class DeviceManager:
 
     def refresh(self):
         logger.debug('calling refresh')
-        self.handler.post(self.do_refresh, remove_existing=True, skip_if_running=True)
+        return self.handler.post(self.do_refresh, remove_existing=True, skip_if_running=True)
 
     @property
     def adb(self):
@@ -297,7 +297,10 @@ class DeviceManager:
 
         if self.exit_event.is_set():
             return
-        self.do_start()
+        try:
+            self.do_start(notify=False)
+        finally:
+            communicate.adb_devices.emit(True)
 
         logger.debug(f'refresh {self.device_dict}')
 
@@ -587,12 +590,14 @@ class DeviceManager:
     def start(self):
         self.handler.post(self.do_start, remove_existing=True, skip_if_running=True)
 
-    def do_start(self):
+    def do_start(self, notify=True):
         logger.debug(f'do_start')
         preferred = self.get_preferred_device()
         if preferred is None:
             if self.device_dict:
                 self.set_preferred_device()
+            if notify:
+                communicate.adb_devices.emit(True)
             return
 
         if preferred['device'] == 'windows':
@@ -662,7 +667,8 @@ class DeviceManager:
                     self.interaction.width = width
                     self.interaction.height = height
 
-        communicate.adb_devices.emit(True)
+        if notify:
+            communicate.adb_devices.emit(True)
 
     def update_resolution_for_hwnd(self):
         if self.hwnd_window is not None and self.hwnd_window.frame_aspect_ratio == 0 and self.adb_capture_config:

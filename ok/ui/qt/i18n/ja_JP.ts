@@ -3014,5 +3014,189 @@
             <source>Action failed</source>
             <translation>操作に失敗しました</translation>
         </message>
+        <message>
+            <source>Back</source>
+            <translation>戻る</translation>
+        </message>
+        <message>
+            <source>Capture</source>
+            <translation>キャプチャ</translation>
+        </message>
+        <message>
+            <source>Capture Method</source>
+            <translation>キャプチャ方法</translation>
+        </message>
+        <message>
+            <source>Choose Interaction</source>
+            <translation>操作方法の選択</translation>
+        </message>
+        <message>
+            <source>Choose Window</source>
+            <translation>ウィンドウを選択</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <translation>閉じる</translation>
+        </message>
+        <message>
+            <source>Debug</source>
+            <translation>デバッグ</translation>
+        </message>
+        <message>
+            <source>Debug Overlay</source>
+            <translation>デバッグオーバーレイ</translation>
+        </message>
+        <message>
+            <source>Disable Boxes</source>
+            <translation>ボックスを無効化</translation>
+        </message>
+        <message>
+            <source>Disconnected</source>
+            <translation>切断</translation>
+        </message>
+        <message>
+            <source>Enable Boxes</source>
+            <translation>ボックスを有効化</translation>
+        </message>
+        <message>
+            <source>Export Logs</source>
+            <translation>ログをエクスポート</translation>
+        </message>
+        <message>
+            <source>Hide Log on Overlay</source>
+            <translation>オーバーレイのログを隠す</translation>
+        </message>
+        <message>
+            <source>Install Folder</source>
+            <translation>インストールフォルダ</translation>
+        </message>
+        <message>
+            <source>Loading</source>
+            <translation>ロード中</translation>
+        </message>
+        <message>
+            <source>Log Folder</source>
+            <translation>ログフォルダー</translation>
+        </message>
+        <message>
+            <source>Maximize</source>
+            <translation>最大化</translation>
+        </message>
+        <message>
+            <source>Minimize</source>
+            <translation>最小化</translation>
+        </message>
+        <message>
+            <source>No options available</source>
+            <translation>利用可能なオプションがありません</translation>
+        </message>
+        <message>
+            <source>No windows found</source>
+            <translation>ウィンドウが見つかりません</translation>
+        </message>
+        <message>
+            <source>Refreshing</source>
+            <translation>更新中</translation>
+        </message>
+        <message>
+            <source>Screenshot Folder</source>
+            <translation>スクリーンショットフォルダー</translation>
+        </message>
+        <message>
+            <source>Search title or exe...</source>
+            <translation>タイトルまたは実行ファイルを検索...</translation>
+        </message>
+        <message>
+            <source>Show Log on Overlay</source>
+            <translation>オーバーレイにログを表示</translation>
+        </message>
+        <message>
+            <source>Toggle navigation</source>
+            <translation>ナビゲーションを切り替える</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>ログを表示</translation>
+        </message>
+        <message>
+            <source>{page} is not available in the web UI yet.</source>
+            <translation>{page} はまだ Web UI で利用できません。</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>概要</translation>
+        </message>
+        <message>
+            <source>Character Code</source>
+            <translation>キャラクターコード</translation>
+        </message>
+        <message>
+            <source>Character Settings</source>
+            <translation>キャラクター設定</translation>
+        </message>
+        <message>
+            <source>Game Hotkeys</source>
+            <translation>ゲームホットキー</translation>
+        </message>
+        <message>
+            <source>Notifications</source>
+            <translation>通知</translation>
+        </message>
+        <message>
+            <source>Schedule</source>
+            <translation>スケジュール</translation>
+        </message>
+        <message>
+            <source>Script</source>
+            <translation>スクリプト</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>設定</translation>
+        </message>
+        <message>
+            <source>Templates</source>
+            <translation>テンプレート</translation>
+        </message>
+        <message>
+            <source>Triggers</source>
+            <translation>トリガー</translation>
+        </message>
+        <message>
+            <source>All Levels</source>
+            <translation>全レベル</translation>
+        </message>
+        <message>
+            <source>Capture Preview</source>
+            <translation>キャプチャプレビュー</translation>
+        </message>
+        <message>
+            <source>Captured game frame</source>
+            <translation>キャプチャしたゲーム画面</translation>
+        </message>
+        <message>
+            <source>Could not load logs</source>
+            <translation>ログを読み込めません</translation>
+        </message>
+        <message>
+            <source>Filter logs...</source>
+            <translation>ログをフィルター...</translation>
+        </message>
+        <message>
+            <source>Log level</source>
+            <translation>ログレベル</translation>
+        </message>
+        <message>
+            <source>Waiting for ok-script.log</source>
+            <translation>ok-script.log を待機中</translation>
+        </message>
+        <message>
+            <source>lines</source>
+            <translation>行</translation>
+        </message>
+        <message>
+            <source>Open Screenshot Folder</source>
+            <translation>スクリーンショットフォルダーを開く</translation>
+        </message>
     </context>
 </TS>

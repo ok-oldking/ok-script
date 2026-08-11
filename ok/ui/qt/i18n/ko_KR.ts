@@ -3023,5 +3023,189 @@
             <source>Action failed</source>
             <translation>작업 실패</translation>
         </message>
+        <message>
+            <source>Back</source>
+            <translation>뒤로</translation>
+        </message>
+        <message>
+            <source>Capture</source>
+            <translation>캡처 방식</translation>
+        </message>
+        <message>
+            <source>Capture Method</source>
+            <translation>캡처 방식</translation>
+        </message>
+        <message>
+            <source>Choose Interaction</source>
+            <translation>상호 작용 선택</translation>
+        </message>
+        <message>
+            <source>Choose Window</source>
+            <translation>창 선택</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <translation>닫기</translation>
+        </message>
+        <message>
+            <source>Debug</source>
+            <translation>개발 도구</translation>
+        </message>
+        <message>
+            <source>Debug Overlay</source>
+            <translation>디버그 오버레이</translation>
+        </message>
+        <message>
+            <source>Disable Boxes</source>
+            <translation>박스 사용 안 함</translation>
+        </message>
+        <message>
+            <source>Disconnected</source>
+            <translation>연결 끊김</translation>
+        </message>
+        <message>
+            <source>Enable Boxes</source>
+            <translation>박스 사용</translation>
+        </message>
+        <message>
+            <source>Export Logs</source>
+            <translation>로그 내보내기</translation>
+        </message>
+        <message>
+            <source>Hide Log on Overlay</source>
+            <translation>오버레이에 로그 숨기기</translation>
+        </message>
+        <message>
+            <source>Install Folder</source>
+            <translation>설치 폴더</translation>
+        </message>
+        <message>
+            <source>Loading</source>
+            <translation>로딩 중</translation>
+        </message>
+        <message>
+            <source>Log Folder</source>
+            <translation>로그 폴더</translation>
+        </message>
+        <message>
+            <source>Maximize</source>
+            <translation>최대화</translation>
+        </message>
+        <message>
+            <source>Minimize</source>
+            <translation>최소화</translation>
+        </message>
+        <message>
+            <source>No options available</source>
+            <translation>사용할 수 있는 옵션이 없습니다</translation>
+        </message>
+        <message>
+            <source>No windows found</source>
+            <translation>창을 찾을 수 없습니다</translation>
+        </message>
+        <message>
+            <source>Refreshing</source>
+            <translation>새로고침 중</translation>
+        </message>
+        <message>
+            <source>Screenshot Folder</source>
+            <translation>스크린샷 폴더</translation>
+        </message>
+        <message>
+            <source>Search title or exe...</source>
+            <translation>제목 또는 실행 파일 검색...</translation>
+        </message>
+        <message>
+            <source>Show Log on Overlay</source>
+            <translation>오버레이에 로그 표시</translation>
+        </message>
+        <message>
+            <source>Toggle navigation</source>
+            <translation>탐색 메뉴 전환</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>로그 보기</translation>
+        </message>
+        <message>
+            <source>{page} is not available in the web UI yet.</source>
+            <translation>{page} 페이지는 아직 Web UI에서 사용할 수 없습니다.</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>정보</translation>
+        </message>
+        <message>
+            <source>Character Code</source>
+            <translation>캐릭터 코드</translation>
+        </message>
+        <message>
+            <source>Character Settings</source>
+            <translation>캐릭터 설정</translation>
+        </message>
+        <message>
+            <source>Game Hotkeys</source>
+            <translation>게임 단축키</translation>
+        </message>
+        <message>
+            <source>Notifications</source>
+            <translation>알림</translation>
+        </message>
+        <message>
+            <source>Schedule</source>
+            <translation>일정</translation>
+        </message>
+        <message>
+            <source>Script</source>
+            <translation>스크립트</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>설정</translation>
+        </message>
+        <message>
+            <source>Templates</source>
+            <translation>템플릿</translation>
+        </message>
+        <message>
+            <source>Triggers</source>
+            <translation>실시간 트리거</translation>
+        </message>
+        <message>
+            <source>All Levels</source>
+            <translation>모든 레벨</translation>
+        </message>
+        <message>
+            <source>Capture Preview</source>
+            <translation>캡처 미리보기</translation>
+        </message>
+        <message>
+            <source>Captured game frame</source>
+            <translation>캡처된 게임 화면</translation>
+        </message>
+        <message>
+            <source>Could not load logs</source>
+            <translation>로그를 불러올 수 없습니다</translation>
+        </message>
+        <message>
+            <source>Filter logs...</source>
+            <translation>로그 필터...</translation>
+        </message>
+        <message>
+            <source>Log level</source>
+            <translation>로그 레벨</translation>
+        </message>
+        <message>
+            <source>Waiting for ok-script.log</source>
+            <translation>ok-script.log 대기 중</translation>
+        </message>
+        <message>
+            <source>lines</source>
+            <translation>줄</translation>
+        </message>
+        <message>
+            <source>Open Screenshot Folder</source>
+            <translation>스크린샷 폴더 열기</translation>
+        </message>
     </context>
 </TS>

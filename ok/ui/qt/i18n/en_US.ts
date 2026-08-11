@@ -3024,5 +3024,189 @@
             <source>Action failed</source>
             <translation>Action failed</translation>
         </message>
+        <message>
+            <source>Back</source>
+            <translation>Back</translation>
+        </message>
+        <message>
+            <source>Capture</source>
+            <translation>Capture</translation>
+        </message>
+        <message>
+            <source>Capture Method</source>
+            <translation>Capture Method</translation>
+        </message>
+        <message>
+            <source>Choose Interaction</source>
+            <translation>Choose Interaction</translation>
+        </message>
+        <message>
+            <source>Choose Window</source>
+            <translation>Choose Window</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <translation>Close</translation>
+        </message>
+        <message>
+            <source>Debug</source>
+            <translation>Debug</translation>
+        </message>
+        <message>
+            <source>Debug Overlay</source>
+            <translation>Debug Overlay</translation>
+        </message>
+        <message>
+            <source>Disable Boxes</source>
+            <translation>Disable Boxes</translation>
+        </message>
+        <message>
+            <source>Disconnected</source>
+            <translation>Disconnected</translation>
+        </message>
+        <message>
+            <source>Enable Boxes</source>
+            <translation>Enable Boxes</translation>
+        </message>
+        <message>
+            <source>Export Logs</source>
+            <translation>Export Logs</translation>
+        </message>
+        <message>
+            <source>Hide Log on Overlay</source>
+            <translation>Hide Log on Overlay</translation>
+        </message>
+        <message>
+            <source>Install Folder</source>
+            <translation>Install Folder</translation>
+        </message>
+        <message>
+            <source>Loading</source>
+            <translation>Loading</translation>
+        </message>
+        <message>
+            <source>Log Folder</source>
+            <translation>Log Folder</translation>
+        </message>
+        <message>
+            <source>Maximize</source>
+            <translation>Maximize</translation>
+        </message>
+        <message>
+            <source>Minimize</source>
+            <translation>Minimize</translation>
+        </message>
+        <message>
+            <source>No options available</source>
+            <translation>No options available</translation>
+        </message>
+        <message>
+            <source>No windows found</source>
+            <translation>No windows found</translation>
+        </message>
+        <message>
+            <source>Refreshing</source>
+            <translation>Refreshing</translation>
+        </message>
+        <message>
+            <source>Screenshot Folder</source>
+            <translation>Screenshot Folder</translation>
+        </message>
+        <message>
+            <source>Search title or exe...</source>
+            <translation>Search title or exe...</translation>
+        </message>
+        <message>
+            <source>Show Log on Overlay</source>
+            <translation>Show Log on Overlay</translation>
+        </message>
+        <message>
+            <source>Toggle navigation</source>
+            <translation>Toggle navigation</translation>
+        </message>
+        <message>
+            <source>View Log</source>
+            <translation>View Log</translation>
+        </message>
+        <message>
+            <source>{page} is not available in the web UI yet.</source>
+            <translation>{page} is not available in the web UI yet.</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>About</translation>
+        </message>
+        <message>
+            <source>Character Code</source>
+            <translation>Character Code</translation>
+        </message>
+        <message>
+            <source>Character Settings</source>
+            <translation>Character Settings</translation>
+        </message>
+        <message>
+            <source>Game Hotkeys</source>
+            <translation>Game Hotkeys</translation>
+        </message>
+        <message>
+            <source>Notifications</source>
+            <translation>Notifications</translation>
+        </message>
+        <message>
+            <source>Schedule</source>
+            <translation>Schedule</translation>
+        </message>
+        <message>
+            <source>Script</source>
+            <translation>Script</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>Settings</translation>
+        </message>
+        <message>
+            <source>Templates</source>
+            <translation>Templates</translation>
+        </message>
+        <message>
+            <source>Triggers</source>
+            <translation>Triggers</translation>
+        </message>
+        <message>
+            <source>All Levels</source>
+            <translation>All Levels</translation>
+        </message>
+        <message>
+            <source>Capture Preview</source>
+            <translation>Capture Preview</translation>
+        </message>
+        <message>
+            <source>Captured game frame</source>
+            <translation>Captured game frame</translation>
+        </message>
+        <message>
+            <source>Could not load logs</source>
+            <translation>Could not load logs</translation>
+        </message>
+        <message>
+            <source>Filter logs...</source>
+            <translation>Filter logs...</translation>
+        </message>
+        <message>
+            <source>Log level</source>
+            <translation>Log level</translation>
+        </message>
+        <message>
+            <source>Waiting for ok-script.log</source>
+            <translation>Waiting for ok-script.log</translation>
+        </message>
+        <message>
+            <source>lines</source>
+            <translation>lines</translation>
+        </message>
+        <message>
+            <source>Open Screenshot Folder</source>
+            <translation>Open Screenshot Folder</translation>
+        </message>
     </context>
 </TS>

@@ -37,7 +37,7 @@ from ok.gui.util.pyappify_startup import get_startup_version_change
 from ok.gui.widget.StartLoadingDialog import StartLoadingDialog
 from ok.util.GlobalConfig import basic_options, KILL_LAUNCHER_AFTER_START, NOTIFICATION_OPTION_NAME
 from ok.util.clazz import init_class_by_name
-from ok.util.process import restart_as_admin, parse_arguments_to_map
+from ok.util.process import restart_as_admin
 
 from ok.util.logger import Logger
 
@@ -488,13 +488,13 @@ class MainWindow(FluentWindow):
         first_show = event.type() == QEvent.Show and not self.shown
         if first_show:
             self.shown = True
-            args = parse_arguments_to_map()
             pyappify.hide_pyappify()
             if update_pyappify := self.config.get("update_pyappify"):
                 pyappify.upgrade(update_pyappify.get('to_version'), update_pyappify.get('sha256'),
                                  [update_pyappify.get('zip_url')], self.exit_event)
-            logger.info(f"Window has fully displayed {args}")
-            communicate.start_success.emit()
+            logger.info("Window has fully displayed")
+            from ok import og
+            og.ok.start_runtime()
             if self.basic_global_config.get(KILL_LAUNCHER_AFTER_START):
                 logger.info(f'MainWindow showEvent Kill Launcher After Start')
                 pyappify.kill_pyappify()
@@ -506,12 +506,6 @@ class MainWindow(FluentWindow):
                     self.handler.post(lambda: communicate.copyright.emit(), delay=1)
                 elif startup_version_change:
                     logger.info('skip copyright dialog because startup version change is shown on about tab')
-            if args.get('task') > 0:
-                task_index = args.get('task') - 1
-                logger.info(f'start with params {task_index} {args.get("exit")}')
-                self.app.start_controller.start(args.get('task') - 1, exit_after=args.get('exit'))
-            elif self.basic_global_config.get('Auto Start Game When App Starts'):
-                self.app.start_controller.start()
             # Check for .okscript file in command line arguments
             self._check_okscript_args()
         super().showEvent(event)
