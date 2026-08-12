@@ -11,6 +11,7 @@ class _NotificationHarness:
 
     def __init__(self):
         self.tray = SimpleNamespace(showMessage=Mock())
+        self.notification_manager = Mock()
         self.navigate_tab = Mock()
 
     def window(self):
@@ -53,7 +54,8 @@ class TestMainWindowNotifications(unittest.TestCase):
             "Translated task name",
             False,
         )
-        self.assertEqual("Translated task name", harness.tray.showMessage.call_args.args[0])
+        harness.notification_manager.notify_system.assert_called_once_with(
+            "Translated task name", "Translated status", False, True)
 
     def test_task_lifecycle_notifications_do_not_use_the_tray(self):
         harness = _ExecutorPausedHarness()

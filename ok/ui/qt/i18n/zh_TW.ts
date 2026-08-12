@@ -3502,5 +3502,61 @@
             <source>Website</source>
             <translation>網站</translation>
         </message>
+        <message>
+            <source>ok-py Automation Tool</source>
+            <translation>ok-py按鍵精靈</translation>
+        </message>
+        <message>
+            <source>ok-script App Template</source>
+            <translation>ok-script 應用範本</translation>
+        </message>
+        <message>
+            <source>Wuthering Waves</source>
+            <translation>鳴潮</translation>
+        </message>
+        <message>
+            <source>Girls' Frontline 2</source>
+            <translation>少前2</translation>
+        </message>
+        <message>
+            <source>Star Resonance</source>
+            <translation>星痕共鳴</translation>
+        </message>
+        <message>
+            <source>Duet Night Abyss</source>
+            <translation>二重螺旋</translation>
+        </message>
+        <message>
+            <source>Chaos Zero Nightmare</source>
+            <translation>卡厄思夢境</translation>
+        </message>
+        <message>
+            <source>Onmyoji</source>
+            <translation>陰陽師</translation>
+        </message>
+        <message>
+            <source>Arknights: Endfield</source>
+            <translation>明日方舟：終末地</translation>
+        </message>
+        <message>
+            <source>Neverness to Everness</source>
+            <translation>異環</translation>
+        </message>
+        <message>
+            <source>Discord</source>
+            <translation>Discord</translation>
+        </message>
+        <message>
+            <source>Share</source>
+            <translation>分享下載連結</translation>
+        </message>
+        <message>
+            <source>Sponsor</source>
+            <translation>贊助</translation>
+        </message>
+        <message>
+            <source>Share Link copied to clipboard</source>
+            <translation>分享連結已複製到剪貼簿</translation>
+        </message>
     </context>
 </TS>

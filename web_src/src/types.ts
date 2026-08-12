@@ -25,6 +25,8 @@ export type MethodOption = {
 export type CaptureUiState = {
   title: string;
   version: string;
+  debug: boolean;
+  event_session_key: string;
   icon_url: string | null;
   status: ExecutorStatus;
   devices: DeviceOption[];
@@ -77,6 +79,7 @@ export type TaskConfigField = {
   allow_duplication: boolean;
   minimum: number | null;
   maximum: number | null;
+  sub_config: boolean;
 };
 
 export type SettingsGroup = {

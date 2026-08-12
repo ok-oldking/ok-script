@@ -57,6 +57,30 @@ def test_about_omits_the_current_project_from_other_projects(tmp_path):
     assert "https://github.com/ok-oldking/ok-wuthering-waves" not in project_urls
 
 
+def test_about_supports_qt_locale_first_links_config(tmp_path):
+    runtime = make_runtime(tmp_path)
+    runtime.ok.config["links"] = {
+        "default": {
+            "github": "https://github.com/ok-oldking/ok-wuthering-waves",
+            "discord": "https://discord.gg/example",
+        },
+        "zh_CN": {"github": "https://github.com/ok-oldking/ok-wuthering-waves"},
+    }
+
+    about = runtime.about()
+
+    assert about["links"]["default"]["discord"] == "https://discord.gg/example"
+    assert "https://github.com/ok-oldking/ok-wuthering-waves" not in [project["url"] for project in about["projects"]]
+
+
+def test_web_client_routes_tray_events_to_browser_notifications():
+    source = (Path(__file__).parents[1] / "web_src" / "src" / "App.tsx").read_text(encoding="utf-8")
+
+    assert 'event.args[3] === true && systemNotificationsEnabled' in source
+    assert 'new Notification(title, { body: message, icon: iconUrl || undefined })' in source
+    assert 'Notification.requestPermission()' in source
+
+
 def test_script_crud_stays_inside_custom_task_folder(tmp_path):
     runtime = make_runtime(tmp_path)
 

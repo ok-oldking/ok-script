@@ -249,7 +249,7 @@ class Win32GdiOverlay:
             f"owner={self._owner_hwnd}")
 
         if hwnd_window is not None:
-            self._seed_source_window(hwnd_window)
+            self.sync_source_window(hwnd_window)
 
     @staticmethod
     def _config_value(name, default):
@@ -268,6 +268,14 @@ class Win32GdiOverlay:
                             getattr(hwnd_window, "window_width", 0), getattr(hwnd_window, "window_height", 0),
                             getattr(hwnd_window, "width", 0), getattr(hwnd_window, "height", 0),
                             getattr(hwnd_window, "scaling", 1.0) or 1.0)
+
+    def sync_source_window(self, hwnd_window=None):
+        """Seed geometry and visibility from the latest capture window state."""
+        if hwnd_window is None:
+            device_manager = getattr(og, "device_manager", None)
+            hwnd_window = getattr(device_manager, "hwnd_window", None)
+        if hwnd_window is not None:
+            self._seed_source_window(hwnd_window)
 
     def update_overlay(self, visible, x, y, _window_width, _window_height, width, height, _scaling):
         with self._lock:

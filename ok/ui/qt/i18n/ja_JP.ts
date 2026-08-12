@@ -3498,5 +3498,61 @@
             <source>Website</source>
             <translation>ウェブサイト</translation>
         </message>
+        <message>
+            <source>ok-py Automation Tool</source>
+            <translation>ok-py 自動化ツール</translation>
+        </message>
+        <message>
+            <source>ok-script App Template</source>
+            <translation>ok-script アプリテンプレート</translation>
+        </message>
+        <message>
+            <source>Wuthering Waves</source>
+            <translation>鳴潮</translation>
+        </message>
+        <message>
+            <source>Girls' Frontline 2</source>
+            <translation>ドールズフロントライン2</translation>
+        </message>
+        <message>
+            <source>Star Resonance</source>
+            <translation>星痕共鳴</translation>
+        </message>
+        <message>
+            <source>Duet Night Abyss</source>
+            <translation>デュエットナイトアビス</translation>
+        </message>
+        <message>
+            <source>Chaos Zero Nightmare</source>
+            <translation>カオスゼロナイトメア</translation>
+        </message>
+        <message>
+            <source>Onmyoji</source>
+            <translation>陰陽師</translation>
+        </message>
+        <message>
+            <source>Arknights: Endfield</source>
+            <translation>アークナイツ：エンドフィールド</translation>
+        </message>
+        <message>
+            <source>Neverness to Everness</source>
+            <translation>Neverness to Everness</translation>
+        </message>
+        <message>
+            <source>Discord</source>
+            <translation>Discord</translation>
+        </message>
+        <message>
+            <source>Share</source>
+            <translation>ダウンロードリンクを共有</translation>
+        </message>
+        <message>
+            <source>Sponsor</source>
+            <translation>スポンサー</translation>
+        </message>
+        <message>
+            <source>Share Link copied to clipboard</source>
+            <translation>共有リンクをクリップボードにコピーしました</translation>
+        </message>
     </context>
 </TS>

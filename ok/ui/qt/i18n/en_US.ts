@@ -3508,5 +3508,61 @@
             <source>Website</source>
             <translation>Website</translation>
         </message>
+        <message>
+            <source>ok-py Automation Tool</source>
+            <translation>ok-py Automation Tool</translation>
+        </message>
+        <message>
+            <source>ok-script App Template</source>
+            <translation>ok-script App Template</translation>
+        </message>
+        <message>
+            <source>Wuthering Waves</source>
+            <translation>Wuthering Waves</translation>
+        </message>
+        <message>
+            <source>Girls' Frontline 2</source>
+            <translation>Girls' Frontline 2</translation>
+        </message>
+        <message>
+            <source>Star Resonance</source>
+            <translation>Star Resonance</translation>
+        </message>
+        <message>
+            <source>Duet Night Abyss</source>
+            <translation>Duet Night Abyss</translation>
+        </message>
+        <message>
+            <source>Chaos Zero Nightmare</source>
+            <translation>Chaos Zero Nightmare</translation>
+        </message>
+        <message>
+            <source>Onmyoji</source>
+            <translation>Onmyoji</translation>
+        </message>
+        <message>
+            <source>Arknights: Endfield</source>
+            <translation>Arknights: Endfield</translation>
+        </message>
+        <message>
+            <source>Neverness to Everness</source>
+            <translation>Neverness to Everness</translation>
+        </message>
+        <message>
+            <source>Discord</source>
+            <translation>Discord</translation>
+        </message>
+        <message>
+            <source>Share</source>
+            <translation>Share</translation>
+        </message>
+        <message>
+            <source>Sponsor</source>
+            <translation>Sponsor</translation>
+        </message>
+        <message>
+            <source>Share Link copied to clipboard</source>
+            <translation>Share Link copied to clipboard</translation>
+        </message>
     </context>
 </TS>

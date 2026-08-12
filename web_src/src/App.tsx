@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
-import { Dropdown, FluentProvider, Input, Option, SpinButton, webDarkTheme, webLightTheme } from "@fluentui/react-components";
+import { Button, Dropdown, FluentProvider, Input, Option, SpinButton, webDarkTheme, webLightTheme } from "@fluentui/react-components";
 import {
   Alert20Regular,
   Add20Regular,
@@ -37,7 +37,7 @@ import {
   Window20Regular
 } from "@fluentui/react-icons";
 import { runtimeApi } from "./api";
-import { setLocale, t } from "./i18n";
+import { locale, setLocale, t } from "./i18n";
 import type { AboutInfo, AutomationTask, CaptureUiState, LogResponse, MethodOption, NavigationCapabilities, RuntimeEvent, ScheduleData, ScheduledTask, ScriptDocument, ScriptSummary, ScriptTemplate, SettingsGroup, TaskConfigField, TemplateAnnotations, TemplateImage } from "./types";
 
 type IconComponent = typeof Play20Regular;
@@ -46,6 +46,28 @@ type AppTheme = "Light" | "Dark" | "Auto";
 type SystemAccent = { light: string; dark: string };
 
 const WINDOWS_STANDARD_BLUE = "#60cdff";
+const SYSTEM_NOTIFICATION_KEY = "System Notification";
+
+function requestBrowserNotificationPermission() {
+  if (!("Notification" in window)) return Promise.resolve("denied" as NotificationPermission);
+  if (Notification.permission !== "default") {
+    return Promise.resolve(Notification.permission);
+  }
+  return Notification.requestPermission();
+}
+
+function showBrowserNotification(title: string, message: string, iconUrl?: string | null) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return false;
+  new Notification(title, { body: message, icon: iconUrl || undefined });
+  return true;
+}
+
+function formatEventText(message: string, params: unknown) {
+  if (!params || typeof params !== "object") return message;
+  return Object.entries(params as Record<string, unknown>).reduce(
+    (text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), message
+  );
+}
 
 const languageOptions = [
   ["zh_CN", "简体中文"], ["zh_TW", "繁體中文"], ["en_US", "English"],
@@ -272,7 +294,7 @@ function TaskConfigControl({ field, disabled, onCommit }: {
       value={String(field.value ?? "")}
       selectedOptions={[JSON.stringify(field.value)]}
       onOptionSelect={(_event, data) => data.optionValue !== undefined && onCommit(JSON.parse(data.optionValue))}
-    >{(field.options ?? []).map((option, index) => <Option key={index} value={JSON.stringify(option)} text={String(option)}>{String(option)}</Option>)}</Dropdown></div>;
+    >{(field.options ?? []).map((option, index) => <Option className="task-config-option" key={index} value={JSON.stringify(option)} text={String(option)}>{String(option)}</Option>)}</Dropdown></div>;
   }
   if (field.kind === "multi_selection") {
     const values = Array.isArray(field.value) ? field.value : [];
@@ -357,7 +379,7 @@ function SettingsPage({ groups, loading, pending, theme, language, onTheme, onLa
             const next = new Set(current); if (next.has(group.name)) next.delete(group.name); else next.add(group.name); return next;
           })}><span><strong>{t(group.name)}</strong><small>{t(group.description)}</small></span><ChevronDown20Regular /></button></div>
           {open && <div className="task-config">
-            {group.fields.map((field) => <div className="task-config-row" key={field.key}>
+            {group.fields.map((field) => <div className={`task-config-row ${field.sub_config ? "sub-config" : ""}`} key={field.key}>
               <span><strong>{t(field.key)}</strong>{field.description && <small>{t(field.description)}</small>}</span>
               <TaskConfigControl field={field} disabled={busy} onCommit={(value) => {
                 if (JSON.stringify(value) !== JSON.stringify(field.value)) onUpdate(group, field, value);
@@ -385,7 +407,7 @@ function TopLevelSettingsPage({ group, loading, pending, onUpdate, onReset }: {
     {group.description && <p className="settings-description">{t(group.description)}</p>}
     <div className="surface-card top-level-settings-card">
       <div className="task-config">
-        {group.fields.map((field) => <div className="task-config-row" key={field.key}>
+        {group.fields.map((field) => <div className={`task-config-row ${field.sub_config ? "sub-config" : ""}`} key={field.key}>
           <span><strong>{t(field.key)}</strong>{field.description && <small>{t(field.description)}</small>}</span>
           <TaskConfigControl field={field} disabled={busy} onCommit={(value) => {
             if (JSON.stringify(value) !== JSON.stringify(field.value)) onUpdate(group, field, value);
@@ -401,6 +423,54 @@ type ToastSink = (message: string, intent: ToastMessage["intent"]) => void;
 
 function GithubMark() {
   return <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor"><path d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.18.55-.39v-1.49c-2.23.49-2.7-.95-2.7-.95-.36-.93-.89-1.18-.89-1.18-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.23 1.88.87 2.34.67.07-.52.28-.87.51-1.07-1.78-.2-3.65-.89-3.65-3.96 0-.88.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.22 2.2.82A7.65 7.65 0 0 1 8 3.84c.68 0 1.35.09 1.98.27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.08-1.87 3.75-3.66 3.95.29.25.54.74.54 1.5v2.22c0 .21.15.46.55.38A8 8 0 0 0 8 0Z" /></svg>;
+}
+
+function HeartMark() {
+  return <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor"><path d="M8 14.2 2.1 8.6A4 4 0 0 1 7.8 3l.2.2.2-.2a4 4 0 0 1 5.7 5.6L8 14.2Z" /></svg>;
+}
+
+function ChatMark() {
+  return <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M2.2 3.2h11.6v8H7l-3.4 2v-2H2.2z" /><path d="M5 6.3h6M5 8.3h4" /></svg>;
+}
+
+function DiscordMark() {
+  return <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor"><path d="M12.9 3.2A11 11 0 0 0 10.3 2l-.4.8a9 9 0 0 0-3.8 0L5.7 2a11 11 0 0 0-2.6 1.2C1.5 5.6 1 7.9 1.2 10.1a10.5 10.5 0 0 0 3.2 1.7l.8-1.1-.8-.4.2-.2c2.2 1 4.6 1 6.8 0l.2.2-.8.4.8 1.1a10.5 10.5 0 0 0 3.2-1.7c.3-2.6-.5-4.9-1.9-6.9ZM5.8 9.1c-.7 0-1.2-.6-1.2-1.4s.5-1.4 1.2-1.4S7 7 7 7.7s-.5 1.4-1.2 1.4Zm4.4 0C9.5 9.1 9 8.5 9 7.7s.5-1.4 1.2-1.4 1.2.7 1.2 1.4-.5 1.4-1.2 1.4Z" /></svg>;
+}
+
+function ShareMark() {
+  return <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.4"><circle cx="4" cy="8" r="1.7" /><circle cx="12" cy="4" r="1.7" /><circle cx="12" cy="12" r="1.7" /><path d="m5.5 7.2 5-2.4m-5 4 5 2.4" /></svg>;
+}
+
+const aboutLinkOrder = ["github", "discord", "qq_group", "qq_channel", "faq", "share", "sponsor"] as const;
+
+function localizedLink(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object") return null;
+  const values = value as Record<string, unknown>;
+  const preferred = values[locale] ?? values[locale.split("_")[0]] ?? values.en_US ?? values.default;
+  if (preferred !== undefined) return localizedLink(preferred);
+  return Object.values(values).map(localizedLink).find(Boolean) ?? null;
+}
+
+function configuredAboutLink(links: Record<string, unknown>, name: typeof aboutLinkOrder[number]): string | null {
+  const direct = localizedLink(links[name]);
+  if (direct) return direct;
+  const language = locale.split("_")[0];
+  const localizedGroup = links[locale] ?? links[language] ?? links.default ?? links.en_US;
+  if (localizedGroup && typeof localizedGroup === "object") {
+    return localizedLink((localizedGroup as Record<string, unknown>)[name]);
+  }
+  return null;
+}
+
+function AboutLinkIcon({ name }: { name: typeof aboutLinkOrder[number] }) {
+  if (name === "github") return <GithubMark />;
+  if (name === "discord") return <DiscordMark />;
+  if (name === "qq_group" || name === "qq_channel") return <ChatMark />;
+  if (name === "faq") return <QuestionCircle20Regular />;
+  if (name === "sponsor") return <HeartMark />;
+  if (name === "share") return <ShareMark />;
+  return <Info20Regular />;
 }
 
 function sanitizedAboutHtml(html: string) {
@@ -431,17 +501,17 @@ function sanitizedAboutHtml(html: string) {
 function AboutPage({ notify }: { notify: ToastSink }) {
   const [info, setInfo] = useState<AboutInfo | null>(null);
   useEffect(() => { runtimeApi.about().then(setInfo).catch((reason) => notify(reason instanceof Error ? reason.message : t("Action failed"), "error")); }, [notify]);
-  const links = Object.entries(info?.links ?? {}).flatMap(([name, value]) => {
-    const findUrl = (item: unknown): string | null => typeof item === "string" ? item : item && typeof item === "object" ? Object.values(item).map(findUrl).find(Boolean) ?? null : null;
-    const url = findUrl(value);
+  const links = aboutLinkOrder.flatMap((name) => {
+    const url = configuredAboutLink(info?.links ?? {}, name);
     return url ? [[name, url] as const] : [];
   });
+  const linkLabel = (name: typeof aboutLinkOrder[number]) => name === "github" ? "GitHub" : name === "discord" ? "Discord" : name === "qq_group" ? "QQ群" : name === "qq_channel" ? "QQ频道" : name === "faq" ? "FAQ" : name === "share" ? "Share" : "Sponsor";
   return <section className="settings-page about-page">
     {!info ? <div className="task-empty">{t("Loading")}</div> : <>
       <div className="surface-card about-identity">
         <div className="app-avatar">{info.icon_url ? <img src={info.icon_url} alt="" /> : "OK"}</div>
         <div><h1>{info.title}</h1><p>{info.version} · {t(info.debug ? "Debug" : "Release")}</p></div>
-        {links.length > 0 && <div className="about-identity-links">{links.map(([name, url]) => <a key={name} href={url} target="_blank" rel="noreferrer noopener">{name === "github" && <GithubMark />}{t(name === "github" ? "GitHub" : name === "faq" ? "FAQ" : name.replaceAll("_", " "))}</a>)}</div>}
+        {links.length > 0 && <div className="about-identity-links">{links.map(([name, url]) => name === "share" ? <button type="button" key={name} onClick={() => void navigator.clipboard.writeText(url).then(() => notify(t("Share Link copied to clipboard"), "success")).catch(() => notify(t("Action failed"), "error"))}><AboutLinkIcon name={name} />{t(linkLabel(name))}</button> : <a key={name} href={url} target="_blank" rel="noreferrer noopener"><AboutLinkIcon name={name} />{t(linkLabel(name))}</a>)}</div>}
       </div>
       {info.projects.length > 0 && <section className="about-projects"><h2>{t("Other Projects")}</h2><div>{info.projects.map((project) => <article className="surface-card" key={project.url}><div><strong>{t(project.name)}</strong><small>{project.url.replace("https://github.com/", "")}</small></div><nav><a href={project.url} target="_blank" rel="noreferrer noopener"><GithubMark />{t("GitHub")}</a>{project.website && <a href={project.website} target="_blank" rel="noreferrer noopener"><Globe20Regular />{t("Website")}</a>}</nav></article>)}</div></section>}
       {info.about && <div className="surface-card about-copy" dangerouslySetInnerHTML={{ __html: sanitizedAboutHtml(info.about) }} />}
@@ -507,14 +577,14 @@ function ScriptPage({ notify }: { notify: ToastSink }) {
     <div className="script-workspace">
       <aside className="script-template-panel"><label className="page-search"><Search20Regular /><input value={templateQuery} onChange={(event) => setTemplateQuery(event.target.value)} placeholder={t("Search templates...")} /></label><div className="surface-card template-tree">{Object.entries(groupedTemplates).map(([category, items]) => <details key={category}><summary>{t(category)}</summary>{items.map((item) => <button type="button" key={`${item.class_name}.${item.name}`} title={item.full_doc} onClick={() => insertTemplate(item)}>{t(item.template_name)}</button>)}</details>)}</div></aside>
       <div className="script-editor-panel">
-        <header className="script-toolbar"><label>{t("Choose Task:")}<select value={document?.name ?? ""} onChange={(event) => event.target.value && void open(event.target.value)}><option value="">{t("Select task to edit")}</option>{scripts.map((script) => <option key={script.name}>{script.name}</option>)}</select></label><details className="file-menu"><summary>{t("File")}</summary><div><button type="button" disabled={!document || busy} onClick={() => void save()}><Save20Regular />{t("Save")}</button><button type="button" onClick={() => setCreating((value) => !value)}><Add20Regular />{t("Create Task")}</button><button type="button" disabled={!document} onClick={() => document && void runtimeApi.copyScript(document.name).then(async (next) => { setDocument(next); setCode(next.code); await refresh(); }).catch((reason) => notify(reason.message, "error"))}>{t("Copy Task")}</button><button type="button" disabled={!document} onClick={() => { if (document && window.confirm(`${t("Confirm Delete")}: ${document.name}?`)) void runtimeApi.deleteScript(document.name).then(async () => { setDocument(null); setCode(""); await refresh(); }).catch((reason) => notify(reason.message, "error")); }}><Delete20Regular />{t("Delete Task")}</button></div></details><span className="toolbar-spacer" /><button type="button" className="primary-button" disabled={!document || busy} onClick={() => { if (!document) return; setBusy(true); void runtimeApi.runScript(document.name, code).then((next) => { setDocument(next); if (next.error) notify(next.error, "error"); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }}><Play20Regular />{t("Run")}</button><a className="toolbar-button" href="https://github.com/ok-oldking/ok-py" target="_blank" rel="noreferrer"><QuestionCircle20Regular />{t("Guide")}</a></header>
+        <header className="script-toolbar"><label>{t("Choose Task:")}<Dropdown className="script-task-dropdown" aria-label={t("Choose Task:")} inlinePopup placeholder={t("Select task to edit")} value={document?.name ?? ""} selectedOptions={document ? [document.name] : []} onOptionSelect={(_event, data) => data.optionValue && void open(data.optionValue)}>{scripts.map((script) => <Option key={script.name} value={script.name} text={script.name}>{script.name}</Option>)}</Dropdown></label><details className="file-menu"><summary>{t("File")}</summary><div><button type="button" disabled={!document || busy} onClick={() => void save()}><Save20Regular />{t("Save")}</button><button type="button" onClick={() => setCreating((value) => !value)}><Add20Regular />{t("Create Task")}</button><button type="button" disabled={!document} onClick={() => document && void runtimeApi.copyScript(document.name).then(async (next) => { setDocument(next); setCode(next.code); await refresh(); }).catch((reason) => notify(reason.message, "error"))}>{t("Copy Task")}</button><button type="button" disabled={!document} onClick={() => { if (document && window.confirm(`${t("Confirm Delete")}: ${document.name}?`)) void runtimeApi.deleteScript(document.name).then(async () => { setDocument(null); setCode(""); await refresh(); }).catch((reason) => notify(reason.message, "error")); }}><Delete20Regular />{t("Delete Task")}</button></div></details><span className="toolbar-spacer" /><button type="button" className="primary-button" disabled={!document || busy} onClick={() => { if (!document) return; setBusy(true); void runtimeApi.runScript(document.name, code).then((next) => { setDocument(next); if (next.error) notify(next.error, "error"); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }}><Play20Regular />{t("Run")}</button><a className="toolbar-button" href="https://github.com/ok-oldking/ok-py" target="_blank" rel="noreferrer"><QuestionCircle20Regular />{t("Guide")}</a></header>
     {creating && <form className="surface-card inline-create-form" onSubmit={(event) => { event.preventDefault(); setBusy(true); void runtimeApi.createScript(className, taskName, description).then(async (next) => { setDocument(next); setCode(next.code); setCreating(false); setClassName(""); setTaskName(""); setDescription(""); await refresh(); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }}>
       <Input required placeholder={t("Class Name (English only)")} value={className} onChange={(event) => setClassName(event.target.value)} />
       <Input required placeholder={t("Task Name")} value={taskName} onChange={(event) => setTaskName(event.target.value)} />
       <Input placeholder={t("Description (Optional)")} value={description} onChange={(event) => setDescription(event.target.value)} />
       <button type="submit" disabled={busy}>{t("Create")}</button>
     </form>}
-        <div className="surface-card code-editor-wrap">{document ? <><textarea ref={editorRef} spellCheck={false} value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={(event) => { if (event.ctrlKey && event.key.toLocaleLowerCase() === "s") { event.preventDefault(); void save(); } }} />{document.error && <div className="script-error">{document.error}</div>}</> : <div className="script-empty"><button type="button" className="primary-button" onClick={() => setCreating(true)}><Add20Regular />{t("Create New Task")}</button></div>}</div>
+        <div className="surface-card code-editor-wrap">{document ? <><textarea ref={editorRef} spellCheck={false} value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={(event) => { if (event.ctrlKey && event.key.toLocaleLowerCase() === "s") { event.preventDefault(); void save(); } }} />{document.error && <div className="script-error">{document.error}</div>}</> : <div className="script-empty"><Button appearance="primary" icon={<Add20Regular />} onClick={() => setCreating(true)}>{t("Create New Task")}</Button></div>}</div>
       </div>
     </div>
   </section>;
@@ -638,6 +708,12 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   const toastTimers = useRef<Map<number, number>>(new Map());
   const toastKeys = useRef<Map<number, string>>(new Map());
   const activeToastMessages = useRef<Set<string>>(new Set());
+  const eventSessionKey = ui?.event_session_key;
+  const systemNotificationsEnabled = settings.some((group) =>
+    group.name === "Notification" && group.fields.some((field) =>
+      field.key === SYSTEM_NOTIFICATION_KEY && field.value === true
+    )
+  );
   const closeCapture = useCallback(() => setCaptureUrl(null), []);
   const closeLogs = useCallback(() => setLogsOpen(false), []);
   const closeInstructions = useCallback(() => setInstructionsTask(null), []);
@@ -714,6 +790,17 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
     void loadSettings();
     runtimeApi.navigation().then(setCapabilities).catch((reason) => pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error"));
   }, [load, loadSettings, pushToast]);
+
+  useEffect(() => {
+    if (!systemNotificationsEnabled || !("Notification" in window) || Notification.permission !== "default") return;
+    const requestPermission = () => { void requestBrowserNotificationPermission(); };
+    window.addEventListener("pointerdown", requestPermission, { once: true });
+    window.addEventListener("keydown", requestPermission, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", requestPermission);
+      window.removeEventListener("keydown", requestPermission);
+    };
+  }, [systemNotificationsEnabled]);
   useEffect(() => {
     if (activePage === "Tasks" || activePage === "Triggers") void loadTasks(true);
     if (activePage === "Settings") void loadSettings();
@@ -749,19 +836,26 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   }, [logData, logsPaused]);
 
   useEffect(() => {
+    if (!eventSessionKey) return;
     let socket: WebSocket | null = null;
     let timer: number | undefined;
     let stopped = false;
     const connect = () => {
       const protocol = location.protocol === "https:" ? "wss" : "ws";
-      socket = new WebSocket(`${protocol}://${location.host}/api/events`);
+      socket = new WebSocket(`${protocol}://${location.host}/api/events?session_key=${encodeURIComponent(eventSessionKey)}`);
       socket.onmessage = ({ data }) => {
         let event: RuntimeEvent;
         try { event = JSON.parse(data) as RuntimeEvent; }
         catch { return; }
         if (event.event === "notification") {
-          const message = typeof event.args[0] === "string" ? event.args[0] : String(event.args[0] ?? "");
-          pushToast(t(message), event.args[2] === true ? "error" : "info");
+          const rawMessage = typeof event.args[0] === "string" ? event.args[0] : String(event.args[0] ?? "");
+          const message = formatEventText(t(rawMessage), event.args[5]);
+          const rawTitle = typeof event.args[1] === "string" ? event.args[1] : "";
+          const title = rawTitle ? t(rawTitle) : (ui?.title || "ok-script");
+          pushToast(message, event.args[2] === true ? "error" : "info");
+          if (event.args[3] === true && systemNotificationsEnabled) {
+            showBrowserNotification(title, message, ui?.icon_url);
+          }
         }
         if (captureStateEvents.has(event.event)) {
           // The server attaches the new UI state for relevant events. Do not
@@ -785,7 +879,7 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
       if (timer) clearTimeout(timer);
       socket?.close();
     };
-  }, [load, loadTasks, pushToast]);
+  }, [eventSessionKey, load, loadTasks, pushToast, systemNotificationsEnabled, ui?.icon_url, ui?.title]);
 
   const perform = async (name: string, action: () => Promise<CaptureUiState>) => {
     setPending(name);
@@ -863,7 +957,12 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
     setSettings((current) => current.map((item) => item.name === group.name ? {
       ...item, fields: item.fields.map((itemField) => itemField.key === field.key ? { ...itemField, value } : itemField)
     } : item));
-    try { replaceSettingsGroup(await runtimeApi.setSetting(group.name, field.key, value)); }
+    try {
+      if (group.name === "Notification" && field.key === SYSTEM_NOTIFICATION_KEY && value === true) {
+        await requestBrowserNotificationPermission();
+      }
+      replaceSettingsGroup(await runtimeApi.setSetting(group.name, field.key, value));
+    }
     catch (reason) { pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error"); void loadSettings(); }
     finally { setPending(null); }
   };
@@ -935,8 +1034,8 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
 
     <main className={`content ${activePage !== "Capture" ? "task-content" : ""}`}>
       {activePage === "Capture" ? <>
-      <section className="start-card surface-card">
-        <div className="app-identity"><div className="app-avatar">{ui?.icon_url ? <img src={ui.icon_url} alt="" /> : "OK"}</div><div><strong>{ui?.title || "OK-WW"}</strong><small>{ui?.version || "dev"}</small></div></div>
+      <section className="start-card about-identity surface-card">
+        <div className="app-avatar">{ui?.icon_url ? <img src={ui.icon_url} alt="" /> : "OK"}</div><div><h1>{ui?.title || "OK-WW"}</h1><p>{ui?.version || "dev"} · {t(ui?.debug ? "Debug" : "Release")}</p></div>
         <div className="start-actions">
           <button type="button" disabled={pending !== null} onClick={() => void tool("capture")}><Camera20Regular />{t("Capture")}</button>
           <button type="button" disabled={pending !== null} onClick={() => void refreshDevices()}><ArrowClockwise20Regular />{pending === "refresh" ? t("Refreshing") : t("Refresh")}</button>
@@ -1042,7 +1141,7 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
                 {task.config.length > 0 && <button type="button" className="task-expand-indicator" aria-label={task.name} aria-expanded={expanded} onClick={toggleExpanded}><ChevronDown20Regular /></button>}
               </div>
               {expanded && task.config.length > 0 && <div className="task-config">
-                {task.config.map((field) => <div className="task-config-row" key={field.key}>
+                {task.config.map((field) => <div className={`task-config-row ${field.sub_config ? "sub-config" : ""}`} key={field.key}>
                   <span><strong>{field.key}</strong>{field.description && <small>{field.description}</small>}</span>
                   <TaskConfigControl field={field} disabled={busy} onCommit={(value) => {
                     if (JSON.stringify(value) !== JSON.stringify(field.value)) void updateTaskConfig(task, field, value);

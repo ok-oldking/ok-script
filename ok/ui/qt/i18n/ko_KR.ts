@@ -3507,5 +3507,61 @@
             <source>Website</source>
             <translation>웹사이트</translation>
         </message>
+        <message>
+            <source>ok-py Automation Tool</source>
+            <translation>ok-py 자동화 도구</translation>
+        </message>
+        <message>
+            <source>ok-script App Template</source>
+            <translation>ok-script 앱 템플릿</translation>
+        </message>
+        <message>
+            <source>Wuthering Waves</source>
+            <translation>명조: 워더링 웨이브</translation>
+        </message>
+        <message>
+            <source>Girls' Frontline 2</source>
+            <translation>소녀전선 2</translation>
+        </message>
+        <message>
+            <source>Star Resonance</source>
+            <translation>별의 공명</translation>
+        </message>
+        <message>
+            <source>Duet Night Abyss</source>
+            <translation>듀엣 나이트 어비스</translation>
+        </message>
+        <message>
+            <source>Chaos Zero Nightmare</source>
+            <translation>카오스 제로 나이트메어</translation>
+        </message>
+        <message>
+            <source>Onmyoji</source>
+            <translation>음양사</translation>
+        </message>
+        <message>
+            <source>Arknights: Endfield</source>
+            <translation>명일방주: 엔드필드</translation>
+        </message>
+        <message>
+            <source>Neverness to Everness</source>
+            <translation>이환</translation>
+        </message>
+        <message>
+            <source>Discord</source>
+            <translation>Discord</translation>
+        </message>
+        <message>
+            <source>Share</source>
+            <translation>다운로드 링크 공유</translation>
+        </message>
+        <message>
+            <source>Sponsor</source>
+            <translation>후원</translation>
+        </message>
+        <message>
+            <source>Share Link copied to clipboard</source>
+            <translation>공유 링크가 클립보드에 복사되었습니다</translation>
+        </message>
     </context>
 </TS>

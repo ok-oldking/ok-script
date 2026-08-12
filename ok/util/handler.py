@@ -14,26 +14,38 @@ class ExitEvent(threading.Event):
         self.queues = set()
         self.to_stops = set()
         self.conditions = set()
+        self.bindings_lock = threading.Lock()
 
     def bind_queue(self, queue):
-        self.queues.add(queue)
+        with self.bindings_lock:
+            self.queues.add(queue)
 
     def bind_stop(self, to_stop):
-        self.to_stops.add(to_stop)
+        with self.bindings_lock:
+            self.to_stops.add(to_stop)
+
+    def unbind_stop(self, to_stop):
+        with self.bindings_lock:
+            self.to_stops.discard(to_stop)
 
     def bind_condition(self, condition):
-        self.conditions.add(condition)
+        with self.bindings_lock:
+            self.conditions.add(condition)
 
     def set(self):
         super(ExitEvent, self).set()
-        logger.debug(f"ExitEvent set event empty queues {self.queues} to_stops: {self.to_stops}")
-        for queue in self.queues:
+        with self.bindings_lock:
+            queues = tuple(self.queues)
+            to_stops = tuple(self.to_stops)
+            conditions = tuple(self.conditions)
+        logger.debug(f"ExitEvent set event empty queues {queues} to_stops: {to_stops}")
+        for queue in queues:
             queue.put(None)
 
-        for to_stop in self.to_stops:
+        for to_stop in to_stops:
             to_stop.stop()
 
-        for condition in self.conditions:
+        for condition in conditions:
             with condition:
                 condition.notify_all()
 

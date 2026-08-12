@@ -5,7 +5,9 @@ import ast
 import dataclasses
 import json
 import re
+import secrets
 import shutil
+import threading
 import zipfile
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -22,6 +24,66 @@ LOG_LINE_PATTERN = re.compile(
 LOG_LEVELS = {"ALL": 0, "DEBUG": 10, "INFO": 20, "WARNING": 30, "ERROR": 40, "CRITICAL": 50}
 SCRIPT_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*\.py$")
 TEMPLATE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
+EVENT_SESSION_KEY_PATTERN = re.compile(r"^[A-Za-z0-9_-]{16,128}$")
+
+
+class _EventSessionRegistry:
+    """Keep only the newest event stream for each browser session key."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._active = {}
+
+    def register(self, session_key, wake):
+        token = object()
+        with self._lock:
+            previous = self._active.get(session_key)
+            self._active[session_key] = (token, wake)
+        if previous is not None:
+            previous[1]()
+        return token
+
+    def is_active(self, session_key, token):
+        with self._lock:
+            current = self._active.get(session_key)
+            return current is not None and current[0] is token
+
+    def unregister(self, session_key, token):
+        with self._lock:
+            current = self._active.get(session_key)
+            if current is not None and current[0] is token:
+                self._active.pop(session_key, None)
+
+
+async def _send_websocket_payload(websocket, payload):
+    """Send an event, treating Starlette's post-close race as disconnect."""
+    try:
+        await websocket.send_json(payload)
+    except RuntimeError as error:
+        message = str(error)
+        if ("Unexpected ASGI message 'websocket.send'" in message
+                and "after sending 'websocket.close'" in message):
+            return False
+        raise
+    return True
+
+
+async def _wait_for_websocket_disconnect(websocket):
+    """Consume inbound frames so ASGI can deliver an idle client's disconnect."""
+    while True:
+        message = await websocket.receive()
+        if message.get("type") == "websocket.disconnect":
+            return
+
+
+class _ExitWake:
+    """Adapt the core ExitEvent stop protocol to an event-loop callback."""
+
+    def __init__(self, wake):
+        self.wake = wake
+
+    def stop(self):
+        self.wake()
 
 
 def _script_templates():
@@ -154,6 +216,16 @@ def _config_fields(config, descriptions=None, config_types=None, defaults=None):
     config_types = config_types or {}
     defaults = defaults or {}
 
+    sub_config_keys = set()
+    for parent_type in config_types.values():
+        rules = parent_type.get("sub_configs") if isinstance(parent_type, dict) else None
+        if not isinstance(rules, dict):
+            continue
+        for controlled_keys in rules.values():
+            sub_config_keys.update(
+                [controlled_keys] if isinstance(controlled_keys, str) else list(controlled_keys or [])
+            )
+
     def normalize_keys(keys):
         if keys is None:
             return []
@@ -225,6 +297,7 @@ def _config_fields(config, descriptions=None, config_types=None, defaults=None):
             "allow_duplication": bool(field_type.get("allow_duplication", False)) if isinstance(field_type, dict) else False,
             "minimum": field_type.get("min") if isinstance(field_type, dict) else None,
             "maximum": field_type.get("max") if isinstance(field_type, dict) else None,
+            "sub_config": key in sub_config_keys,
         })
     return fields
 
@@ -343,10 +416,15 @@ class WebRuntime:
 
         web_config = dict(config)
         web_config["use_gui"] = False
+        # Browser clients own Windows-visible notifications. A server-side
+        # tray icon is unreliable when Uvicorn runs in a non-interactive
+        # session and would duplicate browser notifications when it works.
+        web_config["web_ui"] = True
         self.ok = OK(web_config)
         self.last_capture_path = None
         self.icon_url = icon_url
         self._schedule_manager = None
+        self.event_session_key = secrets.token_urlsafe(32)
 
     @property
     def executor(self):
@@ -429,6 +507,8 @@ class WebRuntime:
         return {
             "title": self.ok.config.get("gui_title", "ok-script"),
             "version": self.ok.config.get("version") or "dev",
+            "debug": bool(self.ok.config.get("debug")),
+            "event_session_key": self.event_session_key,
             "icon_url": self.icon_url,
             "status": self.status(),
             "devices": [_device_payload(device, preferred_id) for device in self.device_manager.get_devices()],
@@ -618,7 +698,13 @@ class WebRuntime:
                 return next((url for item in value.values() if (url := first_url(item))), "")
             return ""
 
-        current_github = first_url(links.get("github")).strip().lower().rstrip("/")
+        current_github = first_url(links.get("github"))
+        if not current_github:
+            current_github = next((
+                first_url(group.get("github")) for group in links.values()
+                if isinstance(group, dict) and first_url(group.get("github"))
+            ), "")
+        current_github = current_github.strip().lower().rstrip("/")
         return {
             "title": self.ok.config.get("gui_title", "ok-script"),
             "version": self.ok.config.get("version") or "dev",
@@ -1040,6 +1126,7 @@ def create_web_app(config):
     static_dir = Path(__file__).with_name("static")
     icon_url = _copy_web_icon(config, static_dir)
     runtime = WebRuntime(config, icon_url=icon_url)
+    event_sessions = _EventSessionRegistry()
 
     @asynccontextmanager
     async def lifespan(_app):
@@ -1330,10 +1417,31 @@ def create_web_app(config):
         return runtime.stop_task()
 
     @app.websocket("/api/events")
-    async def events(websocket: WebSocket):
+    async def events(websocket: WebSocket, session_key: str = ""):
         await websocket.accept()
+        if (not EVENT_SESSION_KEY_PATTERN.fullmatch(session_key)
+                or not secrets.compare_digest(session_key, runtime.event_session_key)):
+            await websocket.close(code=1008, reason="A valid event session key is required")
+            return
         loop = asyncio.get_running_loop()
-        queue: asyncio.Queue[EventMessage] = asyncio.Queue(maxsize=200)
+        queue: asyncio.Queue[EventMessage | None] = asyncio.Queue(maxsize=200)
+
+        def wake():
+            def enqueue_stop():
+                if queue.full():
+                    queue.get_nowait()
+                queue.put_nowait(None)
+            try:
+                loop.call_soon_threadsafe(enqueue_stop)
+            except RuntimeError:
+                # The superseded connection's event loop has already closed.
+                pass
+
+        session_token = event_sessions.register(session_key, wake)
+        exit_event = runtime.ok.exit_event
+        exit_wake = _ExitWake(wake)
+        if hasattr(exit_event, "bind_stop"):
+            exit_event.bind_stop(exit_wake)
 
         def receive(message):
             def enqueue():
@@ -1343,9 +1451,28 @@ def create_web_app(config):
             loop.call_soon_threadsafe(enqueue)
 
         communicate.any.connect(receive)
+        disconnect_task = asyncio.create_task(_wait_for_websocket_disconnect(websocket))
+        queue_task = None
         try:
             while True:
-                message = await queue.get()
+                queue_task = asyncio.create_task(queue.get())
+                done, _pending = await asyncio.wait(
+                    (queue_task, disconnect_task),
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if disconnect_task in done:
+                    queue_task.cancel()
+                    try:
+                        await queue_task
+                    except asyncio.CancelledError:
+                        pass
+                    queue_task = None
+                    disconnect_task.result()
+                    break
+                message = queue_task.result()
+                queue_task = None
+                if message is None or not event_sessions.is_active(session_key, session_token):
+                    break
                 payload = {
                     "event": message.name,
                     "args": _json_value(message.args),
@@ -1356,10 +1483,25 @@ def create_web_app(config):
                     "task", "task_list_updated",
                 }:
                     payload["ui"] = await asyncio.to_thread(runtime.capture_ui)
-                await websocket.send_json(payload)
+                if not event_sessions.is_active(session_key, session_token):
+                    break
+                if not await _send_websocket_payload(websocket, payload):
+                    break
         except WebSocketDisconnect:
             pass
         finally:
+            if queue_task is not None:
+                queue_task.cancel()
+            disconnect_task.cancel()
+            for task in (queue_task, disconnect_task):
+                if task is not None:
+                    try:
+                        await task
+                    except (asyncio.CancelledError, WebSocketDisconnect, RuntimeError):
+                        pass
             communicate.any.disconnect(receive)
+            if hasattr(exit_event, "unbind_stop"):
+                exit_event.unbind_stop(exit_wake)
+            event_sessions.unregister(session_key, session_token)
 
     return app

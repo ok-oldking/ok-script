@@ -81,10 +81,6 @@ class MainWindow(FluentWindow):
         self.do_not_quit = False
         self.config = config
         self.shown = False
-        from ok.notification import NotificationManager
-        self.notification_manager = NotificationManager(
-            global_config, executor, exit_event, app_name=title, app_icon=config.get('gui_icon'))
-
         communicate.restart_admin.connect(self.restart_admin)
         if config.get('show_update_copyright'):
             communicate.copyright.connect(self.show_update_copyright)
@@ -231,6 +227,11 @@ class MainWindow(FluentWindow):
         self.tray.activated.connect(self.on_tray_icon_activated)
         self.tray.show()
         self.tray.setToolTip(title)
+        from ok.notification import NotificationManager, TraySystemNotifier
+        self.notification_manager = NotificationManager(
+            global_config, executor, exit_event, app_name=title, app_icon=config.get('gui_icon'),
+            system_notifier=TraySystemNotifier(
+                self.tray, QSystemTrayIcon.Information, QSystemTrayIcon.Critical))
 
         self.navigationInterface.displayModeChanged.connect(self._save_navigation_state)
 
@@ -623,11 +624,9 @@ class MainWindow(FluentWindow):
         translated_title = og.app.tr(title) if title else ""
         show_info_bar(self.window(), translated_message, translated_title, error)
         notification_manager = getattr(self, 'notification_manager', None)
-        if tray and (notification_manager is None or notification_manager.system_enabled):
-            self.tray.showMessage(translated_title, translated_message,
-                                  QSystemTrayIcon.Critical if error else QSystemTrayIcon.Information,
-                                  5000)
         if notification_manager is not None:
+            notification_manager.notify_system(
+                translated_title, translated_message, error, tray)
             notification_manager.submit(translated_title, translated_message, images)
         self.navigate_tab(show_tab)
 

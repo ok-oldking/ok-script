@@ -1,10 +1,16 @@
+import asyncio
 from pathlib import Path
-from unittest.mock import Mock
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
 from ok import App, HeadlessApp, _create_ok_config
-from ok.ui.web.app import WebRuntime, _color_hex, _copy_web_icon, _device_payload, _read_log
+from ok.ui.web.app import (
+    WebRuntime, _color_hex, _copy_web_icon, _device_payload, _read_log,
+    _EventSessionRegistry, _send_websocket_payload,
+    _wait_for_websocket_disconnect,
+)
 from ok.util.config import Config
 
 
@@ -47,6 +53,15 @@ def test_theme_ui_exposes_system_accent_palette(monkeypatch):
 
     assert _color_hex(0, 103, 192) == "#0067c0"
     assert object.__new__(WebRuntime).theme_ui() == {"system_accent": palette}
+
+
+def test_web_runtime_issues_url_safe_event_session_key(monkeypatch):
+    monkeypatch.setattr("ok.OK", Mock(return_value=Mock()))
+
+    runtime = WebRuntime({})
+
+    assert len(runtime.event_session_key) >= 16
+    assert runtime.event_session_key.replace("-", "").replace("_", "").isalnum()
 
 
 def test_read_log_filters_complete_records(tmp_path: Path):
@@ -99,3 +114,97 @@ def test_all_ui_facades_initialize_overlay_from_core_state(app_type):
 
     app.get_overlay_view.assert_called_once_with()
     overlay.set_boxes_enabled.assert_called_once_with(True)
+
+
+def test_web_overlay_toggle_resyncs_latest_capture_window():
+    app = object.__new__(HeadlessApp)
+    app.config = {}
+    app.ok_config = {"use_overlay": False, "show_overlay_logs": True}
+    app.overlay_window = Mock()
+    app.get_overlay_view = Mock(return_value=app.overlay_window)
+
+    from ok import og
+    previous_device_manager = getattr(og, "device_manager", None)
+    source_window = object()
+    og.device_manager = SimpleNamespace(hwnd_window=source_window)
+    try:
+        app.set_overlay_setting("boxes", True)
+    finally:
+        og.device_manager = previous_device_manager
+
+    app.overlay_window.sync_source_window.assert_called_once_with(source_window)
+    app.overlay_window.set_boxes_enabled.assert_called_once_with(True)
+
+
+def test_headless_notification_formats_and_submits_to_manager():
+    app = object.__new__(HeadlessApp)
+    app.notification_manager = Mock()
+    app.tr = lambda value: f"translated:{value}"
+    images = [object()]
+
+    app.show_notification("Failed {count}", "Task", True, True, None,
+                          {"count": 2}, images)
+
+    app.notification_manager.submit.assert_called_once_with(
+        "translated:Task", "translated:Failed 2", images)
+    app.notification_manager.notify_system.assert_called_once_with(
+        "translated:Task", "translated:Failed 2", True, True)
+
+
+def test_headless_notification_respects_system_notification_setting():
+    app = object.__new__(HeadlessApp)
+    app.notification_manager = Mock()
+    app.tr = lambda value: value
+
+    app.show_notification("Done", "Task", False, True)
+
+    app.notification_manager.notify_system.assert_called_once_with(
+        "Task", "Done", False, True)
+
+
+def test_websocket_post_close_send_ends_event_stream_cleanly():
+    websocket = SimpleNamespace(send_json=AsyncMock(side_effect=RuntimeError(
+        "Unexpected ASGI message 'websocket.send', after sending 'websocket.close'."
+    )))
+
+    sent = asyncio.run(_send_websocket_payload(websocket, {"event": "notification"}))
+
+    assert sent is False
+
+
+def test_websocket_send_does_not_hide_unrelated_runtime_errors():
+    websocket = SimpleNamespace(send_json=AsyncMock(side_effect=RuntimeError("serialization failed")))
+
+    with pytest.raises(RuntimeError, match="serialization failed"):
+        asyncio.run(_send_websocket_payload(websocket, {"event": "notification"}))
+
+
+def test_websocket_disconnect_listener_consumes_idle_disconnect():
+    websocket = SimpleNamespace(receive=AsyncMock(side_effect=[
+        {"type": "websocket.receive", "text": "ignored"},
+        {"type": "websocket.disconnect", "code": 1001},
+    ]))
+
+    asyncio.run(_wait_for_websocket_disconnect(websocket))
+
+    assert websocket.receive.await_count == 2
+
+
+def test_new_event_session_supersedes_old_connection_safely():
+    registry = _EventSessionRegistry()
+    old_wake = Mock()
+    new_wake = Mock()
+
+    old_token = registry.register("browser-session-key", old_wake)
+    new_token = registry.register("browser-session-key", new_wake)
+
+    old_wake.assert_called_once_with()
+    new_wake.assert_not_called()
+    assert registry.is_active("browser-session-key", old_token) is False
+    assert registry.is_active("browser-session-key", new_token) is True
+
+    registry.unregister("browser-session-key", old_token)
+    assert registry.is_active("browser-session-key", new_token) is True
+
+    registry.unregister("browser-session-key", new_token)
+    assert registry.is_active("browser-session-key", new_token) is False

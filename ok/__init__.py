@@ -238,6 +238,14 @@ class _OverlayConfigMixin:
             overlay = self.get_overlay_view()
             overlay.set_boxes_enabled(self.ok_config.get('use_overlay', False))
 
+    def sync_overlay_source(self, *_args):
+        """Refresh a lazy overlay from the currently selected capture window."""
+        overlay = self.overlay_window
+        if overlay is None:
+            return
+        device_manager = getattr(og, 'device_manager', None)
+        overlay.sync_source_window(getattr(device_manager, 'hwnd_window', None))
+
     def set_overlay_setting(self, name, value):
         key = {'boxes': 'use_overlay', 'logs': 'show_overlay_logs'}.get(name)
         if key is None:
@@ -248,6 +256,7 @@ class _OverlayConfigMixin:
         if name == 'boxes' and value:
             overlay = self.get_overlay_view()
         if overlay is not None:
+            self.sync_overlay_source()
             # This also schedules a repaint so a changed log setting takes
             # effect immediately in the native overlay.
             overlay.set_boxes_enabled(self.ok_config.get('use_overlay', False))
@@ -451,7 +460,7 @@ class App(_OverlayConfigMixin):
 class HeadlessApp(_OverlayConfigMixin):
     """Small app facade for running tasks without creating any UI windows."""
 
-    def __init__(self, config, exit_event=None):
+    def __init__(self, config, exit_event=None, task_executor=None):
         from ok.core.events import communicate
         from ok.core.translation import LocaleName
         from ok.util.clazz import init_class_by_name
@@ -469,10 +478,21 @@ class HeadlessApp(_OverlayConfigMixin):
         self.po_translation = None
         self.to_translate = None
         communicate.quit.connect(self.quit)
+        communicate.adb_devices.connect(self.sync_overlay_source)
 
         self.locale = LocaleName(config.get("locale", "en_US"))
         from ok.core.start_controller import StartController
         self.start_controller = StartController(self.config, exit_event)
+
+        self.notification_manager = None
+        if task_executor is not None:
+            from ok.notification import NotificationManager
+            notification_kwargs = {'system_notifier': None} if config.get('web_ui') else {}
+            self.notification_manager = NotificationManager(
+                self.global_config, task_executor, exit_event,
+                app_name=config.get('gui_title'), app_icon=config.get('gui_icon'),
+                **notification_kwargs)
+        communicate.notification.connect(self.show_notification)
 
         og.app = self
         if my_app := self.config.get('my_app'):
@@ -500,10 +520,27 @@ class HeadlessApp(_OverlayConfigMixin):
         return key
 
     def quit(self):
+        from ok.core.events import communicate
+        communicate.adb_devices.disconnect(self.sync_overlay_source)
+        communicate.notification.disconnect(self.show_notification)
+        if self.notification_manager is not None:
+            self.notification_manager.stop()
         if self.overlay_window is not None:
             self.overlay_window.close()
         if self.exit_event:
             self.exit_event.set()
+
+    def show_notification(self, message, title=None, error=False, tray=False,
+                          _show_tab=None, params=None, images=None):
+        """Deliver configured notifications when no Qt MainWindow exists."""
+        translated_message = self.tr(message)
+        if params:
+            translated_message = translated_message.format(**params)
+        translated_title = self.tr(title) if title else ''
+        if self.notification_manager is not None:
+            self.notification_manager.notify_system(
+                translated_title, translated_message, error, tray)
+            self.notification_manager.submit(translated_title, translated_message, images)
 
     def get_overlay_view(self):
         if self.overlay_window is None:
@@ -641,7 +678,7 @@ class OK:
     @property
     def headless_app(self):
         if self._headless_app is None:
-            self._headless_app = HeadlessApp(self.config, self.exit_event)
+            self._headless_app = HeadlessApp(self.config, self.exit_event, self.task_executor)
         return self._headless_app
 
     def should_init_task_manager_headless(self):

@@ -179,3 +179,5 @@ def test_global_setting_subconfigs_follow_qt_visibility_rules():
 
     updated = runtime.set_setting("Basic Options", "Advanced", True)
     assert [field["key"] for field in updated["fields"]] == ["Advanced", "Details"]
+    assert updated["fields"][0]["sub_config"] is False
+    assert updated["fields"][1]["sub_config"] is True
