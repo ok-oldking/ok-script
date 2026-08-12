@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
-import { Button, Dropdown, FluentProvider, Input, Option, SpinButton, webDarkTheme, webLightTheme } from "@fluentui/react-components";
+import { Button, Dropdown, FluentProvider, Input, Menu, MenuDivider, MenuItem, MenuList, MenuPopover, MenuTrigger, Option, SpinButton, webDarkTheme, webLightTheme } from "@fluentui/react-components";
 import {
   Alert20Regular,
   Add20Regular,
   ArrowDown20Regular,
+  ArrowExport20Regular,
+  ArrowImport20Regular,
   ArrowClockwise20Regular,
   ArrowUp20Regular,
   Calendar20Regular,
   Camera20Regular,
   CheckmarkCircle20Regular,
   ChevronDown20Regular,
+  Copy20Regular,
   DeveloperBoard20Regular,
   Delete20Regular,
   Dismiss20Regular,
@@ -26,6 +29,7 @@ import {
   PaintBrush20Regular,
   Play20Regular,
   QuestionCircle20Regular,
+  Record20Regular,
   Search20Regular,
   Save20Regular,
   Settings20Regular,
@@ -37,7 +41,11 @@ import {
   Window20Regular
 } from "@fluentui/react-icons";
 import { runtimeApi } from "./api";
+import { ConfirmDeleteDialog } from "./ConfirmDialog";
 import { locale, setLocale, t } from "./i18n";
+import { MarkupDialog } from "./MarkupDialog";
+import { PythonCodeEditor } from "./PythonCodeEditor";
+import { CreateScriptDialog, ExportScriptDialog, ImportScriptDialog, RecordScriptDialog } from "./ScriptDialogs";
 import type { AboutInfo, AutomationTask, CaptureUiState, LogResponse, MethodOption, NavigationCapabilities, RuntimeEvent, ScheduleData, ScheduledTask, ScriptDocument, ScriptSummary, ScriptTemplate, SettingsGroup, TaskConfigField, TemplateAnnotations, TemplateImage } from "./types";
 
 type IconComponent = typeof Play20Regular;
@@ -519,6 +527,43 @@ function AboutPage({ notify }: { notify: ToastSink }) {
   </section>;
 }
 
+function applyRecordedCode(code: string, initCode: string, runCode: string, loop: "none" | "count" | "forever", count: number) {
+  let lines = code.split("\n");
+  if (initCode.trim()) {
+    const initStart = lines.findIndex((line) => /^\s*def\s+__init__\s*\(/.test(line));
+    if (initStart >= 0) {
+      const baseIndent = lines[initStart].match(/^\s*/)?.[0] ?? "";
+      const bodyIndent = `${baseIndent}    `;
+      const captureStart = lines.findIndex((line, index) => index > initStart && line.startsWith(bodyIndent) && /self\.capture_config\s*=/.test(line));
+      const formatted = initCode.trim().split("\n").map((line) => bodyIndent + line.trimEnd());
+      if (captureStart >= 0) {
+        let balance = 0;
+        let captureEnd = captureStart;
+        for (let index = captureStart; index < lines.length; index += 1) {
+          balance += (lines[index].match(/{/g) ?? []).length - (lines[index].match(/}/g) ?? []).length;
+          captureEnd = index;
+          if (index > captureStart && balance <= 0) break;
+        }
+        lines.splice(captureStart, captureEnd - captureStart + 1, ...formatted);
+      } else {
+        lines.splice(initStart + 1, 0, ...formatted);
+      }
+    }
+  }
+  const runStart = lines.findIndex((line) => /^\s*def\s+run\s*\(/.test(line));
+  if (runStart >= 0) {
+    const baseIndent = lines[runStart].match(/^\s*/)?.[0] ?? "";
+    const bodyIndent = `${baseIndent}    `;
+    let generated = runCode.trim().split("\n").filter(Boolean);
+    if (loop === "count") generated = [`for _ in range(${count}):`, ...(generated.length ? generated.map((line) => `    ${line}`) : ["    pass"])];
+    if (loop === "forever") generated = ["while True:", ...(generated.length ? generated.map((line) => `    ${line}`) : ["    pass"])];
+    const runEndOffset = lines.slice(runStart + 1).findIndex((line) => line.trim() && !line.startsWith(bodyIndent));
+    const runEnd = runEndOffset < 0 ? lines.length : runStart + 1 + runEndOffset;
+    lines.splice(runStart + 1, runEnd - runStart - 1, ...generated.map((line) => bodyIndent + line));
+  }
+  return lines.join("\n");
+}
+
 function ScriptPage({ notify }: { notify: ToastSink }) {
   const [scripts, setScripts] = useState<ScriptSummary[]>([]);
   const [templates, setTemplates] = useState<ScriptTemplate[]>([]);
@@ -526,10 +571,14 @@ function ScriptPage({ notify }: { notify: ToastSink }) {
   const [document, setDocument] = useState<ScriptDocument | null>(null);
   const [code, setCode] = useState("");
   const [creating, setCreating] = useState(false);
-  const [className, setClassName] = useState("");
-  const [taskName, setTaskName] = useState("");
-  const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [exportData, setExportData] = useState<{ tasks: string[]; manifest: Record<string, string> } | null>(null);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [recordOpen, setRecordOpen] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const recordOptions = useRef<{ loop: "none" | "count" | "forever"; count: number }>({ loop: "none", count: 10 });
+  const importRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const refresh = useCallback(async () => {
     try { setScripts(await runtimeApi.scripts()); }
@@ -550,6 +599,35 @@ function ScriptPage({ notify }: { notify: ToastSink }) {
     catch (reason) { notify(reason instanceof Error ? reason.message : t("Action failed"), "error"); }
     finally { setBusy(false); }
   };
+  const copy = () => {
+    if (!document) return;
+    setBusy(true);
+    void runtimeApi.copyScript(document.name).then(async (next) => { setDocument(next); setCode(next.code); await refresh(); notify(t("Task copied successfully."), "success"); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false));
+  };
+  const run = () => {
+    if (!document) return;
+    setBusy(true);
+    void runtimeApi.runScript(document.name, code).then((next) => { setDocument(next); if (next.error) notify(next.error, "error"); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false));
+  };
+  const startRecording = (loop: "none" | "count" | "forever", count: number) => {
+    recordOptions.current = { loop, count };
+    setRecordOpen(false);
+    setBusy(true);
+    void runtimeApi.startScriptRecording().then((result) => { setRecording(true); notify(t("Recording will start when window '{name}' becomes active.", { name: result.target || "" }), "info"); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false));
+  };
+  const stopRecording = () => {
+    setBusy(true);
+    void runtimeApi.stopScriptRecording().then((result) => {
+      const options = recordOptions.current;
+      setCode((current) => applyRecordedCode(current, result.init_code, result.run_code, options.loop, options.count));
+      setRecording(false);
+      notify(t("Recording inserted into the script."), "success");
+    }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false));
+  };
+  const errorLine = useMemo(() => {
+    const match = document?.error?.match(/line\s+(\d+)/i);
+    return match ? Number(match[1]) : undefined;
+  }, [document?.error]);
   const insertTemplate = (template: ScriptTemplate) => {
     const args: string[] = [];
     for (const parameter of template.params) {
@@ -577,16 +655,31 @@ function ScriptPage({ notify }: { notify: ToastSink }) {
     <div className="script-workspace">
       <aside className="script-template-panel"><label className="page-search"><Search20Regular /><input value={templateQuery} onChange={(event) => setTemplateQuery(event.target.value)} placeholder={t("Search templates...")} /></label><div className="surface-card template-tree">{Object.entries(groupedTemplates).map(([category, items]) => <details key={category}><summary>{t(category)}</summary>{items.map((item) => <button type="button" key={`${item.class_name}.${item.name}`} title={item.full_doc} onClick={() => insertTemplate(item)}>{t(item.template_name)}</button>)}</details>)}</div></aside>
       <div className="script-editor-panel">
-        <header className="script-toolbar"><label>{t("Choose Task:")}<Dropdown className="script-task-dropdown" aria-label={t("Choose Task:")} inlinePopup placeholder={t("Select task to edit")} value={document?.name ?? ""} selectedOptions={document ? [document.name] : []} onOptionSelect={(_event, data) => data.optionValue && void open(data.optionValue)}>{scripts.map((script) => <Option key={script.name} value={script.name} text={script.name}>{script.name}</Option>)}</Dropdown></label><details className="file-menu"><summary>{t("File")}</summary><div><button type="button" disabled={!document || busy} onClick={() => void save()}><Save20Regular />{t("Save")}</button><button type="button" onClick={() => setCreating((value) => !value)}><Add20Regular />{t("Create Task")}</button><button type="button" disabled={!document} onClick={() => document && void runtimeApi.copyScript(document.name).then(async (next) => { setDocument(next); setCode(next.code); await refresh(); }).catch((reason) => notify(reason.message, "error"))}>{t("Copy Task")}</button><button type="button" disabled={!document} onClick={() => { if (document && window.confirm(`${t("Confirm Delete")}: ${document.name}?`)) void runtimeApi.deleteScript(document.name).then(async () => { setDocument(null); setCode(""); await refresh(); }).catch((reason) => notify(reason.message, "error")); }}><Delete20Regular />{t("Delete Task")}</button></div></details><span className="toolbar-spacer" /><button type="button" className="primary-button" disabled={!document || busy} onClick={() => { if (!document) return; setBusy(true); void runtimeApi.runScript(document.name, code).then((next) => { setDocument(next); if (next.error) notify(next.error, "error"); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }}><Play20Regular />{t("Run")}</button><a className="toolbar-button" href="https://github.com/ok-oldking/ok-py" target="_blank" rel="noreferrer"><QuestionCircle20Regular />{t("Guide")}</a></header>
-    {creating && <form className="surface-card inline-create-form" onSubmit={(event) => { event.preventDefault(); setBusy(true); void runtimeApi.createScript(className, taskName, description).then(async (next) => { setDocument(next); setCode(next.code); setCreating(false); setClassName(""); setTaskName(""); setDescription(""); await refresh(); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }}>
-      <Input required placeholder={t("Class Name (English only)")} value={className} onChange={(event) => setClassName(event.target.value)} />
-      <Input required placeholder={t("Task Name")} value={taskName} onChange={(event) => setTaskName(event.target.value)} />
-      <Input placeholder={t("Description (Optional)")} value={description} onChange={(event) => setDescription(event.target.value)} />
-      <button type="submit" disabled={busy}>{t("Create")}</button>
-    </form>}
-        <div className="surface-card code-editor-wrap">{document ? <><textarea ref={editorRef} spellCheck={false} value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={(event) => { if (event.ctrlKey && event.key.toLocaleLowerCase() === "s") { event.preventDefault(); void save(); } }} />{document.error && <div className="script-error">{document.error}</div>}</> : <div className="script-empty"><Button appearance="primary" icon={<Add20Regular />} onClick={() => setCreating(true)}>{t("Create New Task")}</Button></div>}</div>
+        <header className="script-toolbar">
+          <label>{t("Choose Task:")}<Dropdown className="script-task-dropdown" listbox={{ className: "script-task-listbox" }} aria-label={t("Choose Task:")} inlinePopup placeholder={t("Select task to edit")} value={document?.name ?? ""} selectedOptions={document ? [document.name] : []} onOptionSelect={(_event, data) => data.optionValue && void open(data.optionValue)}>{scripts.map((script) => <Option key={script.name} value={script.name} text={script.name}>{script.name}</Option>)}</Dropdown></label>
+          <Menu mountNode={window.document.querySelector(".desktop") as HTMLElement}><MenuTrigger disableButtonEnhancement><Button icon={<DocumentText20Regular />}>{t("File")}</Button></MenuTrigger><MenuPopover className="script-file-menu"><MenuList>
+            <MenuItem icon={<Save20Regular />} disabled={!document || busy} onClick={() => void save()}>{t("Save")} <span className="menu-shortcut">Ctrl+S</span></MenuItem>
+            <MenuItem icon={<Add20Regular />} onClick={() => setCreating(true)}>{t("Create Task")}</MenuItem>
+            <MenuItem icon={<Copy20Regular />} disabled={!document || busy} onClick={copy}>{t("Copy Task")}</MenuItem>
+            <MenuItem icon={<Delete20Regular />} disabled={!document || busy} onClick={() => document && setDeleteTarget(document.name)}>{t("Delete Task")}</MenuItem>
+            <MenuDivider />
+            <MenuItem icon={<ArrowExport20Regular />} onClick={() => void runtimeApi.scriptExportOptions().then(setExportData).catch((reason) => notify(reason.message, "error"))}>{t("Export Script")}</MenuItem>
+            <MenuItem icon={<ArrowImport20Regular />} onClick={() => importRef.current?.click()}>{t("Import Script")}</MenuItem>
+          </MenuList></MenuPopover></Menu>
+          <input ref={importRef} hidden type="file" accept=".okscript" onChange={(event) => { const file = event.target.files?.[0]; if (file) setImportFile(file); event.currentTarget.value = ""; }} />
+          <span className="toolbar-spacer" />
+          <Button className="script-run-button" appearance="primary" icon={recording ? <Stop20Regular /> : <Play20Regular />} disabled={!document || busy} onClick={recording ? stopRecording : run}>{recording ? t("Stop") : t("Run")}</Button>
+          {!recording && <Button icon={<Record20Regular />} disabled={!document || busy} onClick={() => setRecordOpen(true)}>{t("Record")}</Button>}
+          <Button as="a" icon={<QuestionCircle20Regular />} href="https://github.com/ok-oldking/ok-py" target="_blank">{t("Guide")}</Button>
+        </header>
+        <div className="surface-card code-editor-wrap">{document ? <><PythonCodeEditor value={code} errorLine={errorLine} onChange={setCode} onSave={() => void save()} editorRef={editorRef} />{document.error && <div className="script-error">{document.error}</div>}</> : <div className="script-empty"><Button appearance="primary" icon={<Add20Regular />} onClick={() => setCreating(true)}>{t("Create New Task")}</Button></div>}</div>
       </div>
     </div>
+    {deleteTarget && <ConfirmDeleteDialog name={deleteTarget} onCancel={() => setDeleteTarget(null)} onConfirm={() => { const name = deleteTarget; setDeleteTarget(null); setBusy(true); void runtimeApi.deleteScript(name).then(async () => { setDocument(null); setCode(""); await refresh(); notify(t("Task deleted successfully."), "success"); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }} />}
+    {creating && <CreateScriptDialog busy={busy} onCancel={() => setCreating(false)} onCreate={(className, taskName, description) => { setBusy(true); void runtimeApi.createScript(className, taskName, description).then(async (next) => { setDocument(next); setCode(next.code); setCreating(false); await refresh(); notify(t("Task created successfully."), "success"); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }} />}
+    {exportData && <ExportScriptDialog tasks={exportData.tasks} manifest={exportData.manifest} onCancel={() => setExportData(null)} onExport={(selected, fileName, scriptName, version) => { setBusy(true); void runtimeApi.exportScripts(selected, fileName, scriptName, version).then((blob) => { const url = URL.createObjectURL(blob); const anchor = window.document.createElement("a"); anchor.href = url; anchor.download = `${fileName}.okscript`; anchor.click(); URL.revokeObjectURL(url); setExportData(null); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }} />}
+    {importFile && <ImportScriptDialog file={importFile} onCancel={() => setImportFile(null)} onImport={() => { const file = importFile; setBusy(true); void runtimeApi.importScripts(file).then(async (result) => { notify(result.message, "success"); setImportFile(null); await refresh(); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }} />}
+    {recordOpen && <RecordScriptDialog onCancel={() => setRecordOpen(false)} onRecord={startRecording} />}
   </section>;
 }
 
@@ -595,19 +688,37 @@ function TemplatesPage({ notify }: { notify: ToastSink }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [markup, setMarkup] = useState<TemplateAnnotations | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [destination, setDestination] = useState<"tasks" | "assets">("tasks");
   const [generateEnum, setGenerateEnum] = useState(false);
   const [enumPath, setEnumPath] = useState("ok_tasks/LabelEnum.py");
+  const markupOpening = useRef(false);
+  const lastTemplatePress = useRef<{ name: string; time: number } | null>(null);
   const refresh = useCallback(async () => { try { setImages(await runtimeApi.templates()); } catch (reason) { notify(reason instanceof Error ? reason.message : t("Action failed"), "error"); } }, [notify]);
   useEffect(() => { void refresh(); }, [refresh]);
+  const openMarkup = useCallback((name: string) => {
+    if (markupOpening.current) return;
+    markupOpening.current = true;
+    void runtimeApi.templateAnnotations(name).then(setMarkup).catch((reason) => notify(reason.message, "error")).finally(() => { markupOpening.current = false; });
+  }, [notify]);
   const visible = images.filter((image) => `${image.name} ${image.categories.join(" ")}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
   return <section className="workspace-page templates-page">
-    <header className="page-toolbar template-toolbar"><button type="button" className="primary-button" onClick={() => void runtimeApi.captureTemplate().then(setImages).catch((reason) => notify(reason.message, "error"))}><Camera20Regular />{t("Screenshot")}</button>{selected && <><button type="button" onClick={() => void runtimeApi.templateAnnotations(selected).then(setMarkup).catch((reason) => notify(reason.message, "error"))}><Edit20Regular />{t("Markup")}</button><button type="button" onClick={() => { if (window.confirm(`${t("Confirm Delete")}: ${selected}?`)) void runtimeApi.deleteTemplate(selected).then(async () => { setSelected(null); await refresh(); }).catch((reason) => notify(reason.message, "error")); }}><Delete20Regular />{t("Delete")}</button></>}<button type="button" onClick={() => setSaveOpen(true)}><Save20Regular />{t("Save")}</button></header>
+    <header className="page-toolbar template-toolbar"><button type="button" className="primary-button" onClick={() => void runtimeApi.captureTemplate().then(setImages).catch((reason) => notify(reason.message, "error"))}><Camera20Regular />{t("Screenshot")}</button>{selected && <><button type="button" onClick={() => openMarkup(selected)}><Edit20Regular />{t("Markup")}</button><button type="button" onClick={() => setDeleteTarget(selected)}><Delete20Regular />{t("Delete")}</button></>}<button type="button" onClick={() => setSaveOpen(true)}><Save20Regular />{t("Save")}</button></header>
     <label className="template-search page-search"><Search20Regular /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search by name or category...")} /></label>
-    <div className="template-grid">{visible.map((item) => <button type="button" className={`surface-card template-card ${selected === item.name ? "selected" : ""}`} key={item.name} onClick={() => setSelected((current) => current === item.name ? null : item.name)} onDoubleClick={() => void runtimeApi.templateAnnotations(item.name).then(setMarkup)}><img src={item.url} alt={item.name} loading="lazy" /><div><strong>{item.name}</strong><small>{item.categories.join(", ")}</small></div></button>)}</div>
+    <div className="template-grid">{visible.map((item) => <button type="button" className={`surface-card template-card ${selected === item.name ? "selected" : ""}`} key={item.name} onClick={() => setSelected((current) => current === item.name ? null : item.name)} onPointerDown={() => {
+      const now = performance.now();
+      const previous = lastTemplatePress.current;
+      lastTemplatePress.current = { name: item.name, time: now };
+      if (previous?.name === item.name && now - previous.time < 500) { lastTemplatePress.current = null; openMarkup(item.name); }
+    }}><img src={item.url} alt={item.name} loading="lazy" /><div><strong>{item.name}</strong><small>{item.categories.join(", ")}</small></div></button>)}</div>
     {!visible.length && <div className="template-empty"><p>{t("No templates yet")}</p><button type="button" className="primary-button" onClick={() => void runtimeApi.captureTemplate().then(setImages).catch((reason) => notify(reason.message, "error"))}><Camera20Regular />{t("Take Screenshot")}</button></div>}
-    {markup && <div className="modal-backdrop"><section className="modal markup-modal" role="dialog" aria-modal="true"><header><strong>{t("Markup")} · {markup.name}</strong><button type="button" onClick={() => setMarkup(null)}><Dismiss20Regular /></button></header><div className="markup-body"><div className="markup-preview"><img src={markup.url} alt={markup.name} />{markup.width > 0 && markup.height > 0 && markup.annotations.map((annotation, index) => <span key={index} title={annotation.category} style={{ left: `${annotation.bbox[0] / markup.width * 100}%`, top: `${annotation.bbox[1] / markup.height * 100}%`, width: `${annotation.bbox[2] / markup.width * 100}%`, height: `${annotation.bbox[3] / markup.height * 100}%` }}><b>{annotation.category || index + 1}</b></span>)}</div><div className="annotation-list">{markup.annotations.map((annotation, index) => <div key={index}><Input placeholder={t("Category name")} value={annotation.category} onChange={(event) => setMarkup((current) => current && ({ ...current, annotations: current.annotations.map((item, itemIndex) => itemIndex === index ? { ...item, category: event.target.value } : item) }))} />{annotation.bbox.map((value, coordinate) => <label key={coordinate}>{["X", "Y", "W", "H"][coordinate]}<input type="number" min="0" value={value} onChange={(event) => setMarkup((current) => current && ({ ...current, annotations: current.annotations.map((item, itemIndex) => itemIndex === index ? { ...item, bbox: item.bbox.map((number, numberIndex) => numberIndex === coordinate ? Number(event.target.value) : number) } : item) }))} /></label>)}<button type="button" onClick={() => setMarkup((current) => current && ({ ...current, annotations: current.annotations.filter((_item, itemIndex) => itemIndex !== index) }))}><Delete20Regular /></button></div>)}<button type="button" onClick={() => setMarkup((current) => current && ({ ...current, annotations: [...current.annotations, { category: "", bbox: [0, 0, 0, 0] }] }))}><Add20Regular />{t("Bounding Box")}</button></div></div><footer className="list-editor-footer"><button type="button" onClick={() => setMarkup(null)}>{t("Cancel")}</button><button type="button" className="primary-button" onClick={() => void runtimeApi.saveTemplateAnnotations(markup.name, markup.annotations).then(() => { setMarkup(null); void refresh(); notify(t("Saved"), "success"); }).catch((reason) => notify(reason.message, "error"))}>{t("Save")}</button></footer></section></div>}
+    {markup && <MarkupDialog initial={markup} images={images} notify={notify} onClose={() => { setMarkup(null); void refresh(); }} />}
+    {deleteTarget && <ConfirmDeleteDialog name={deleteTarget} onCancel={() => setDeleteTarget(null)} onConfirm={() => {
+      const name = deleteTarget;
+      setDeleteTarget(null);
+      void runtimeApi.deleteTemplate(name).then(async () => { setSelected(null); await refresh(); }).catch((reason) => notify(reason.message, "error"));
+    }} />}
     {saveOpen && <div className="modal-backdrop"><section className="modal save-templates-modal" role="dialog" aria-modal="true"><header><strong>{t("Save To")}</strong><button type="button" onClick={() => setSaveOpen(false)}><Dismiss20Regular /></button></header><div className="save-options"><label><input type="radio" checked={destination === "tasks"} onChange={() => setDestination("tasks")} />{t("ok_tasks/assets (custom scripts)")}</label><label><input type="radio" checked={destination === "assets"} onChange={() => setDestination("assets")} />{t("assets (standalone app)")}</label><label><input type="checkbox" checked={generateEnum} onChange={(event) => setGenerateEnum(event.target.checked)} />{t("Generate label enum file")}</label>{generateEnum && <Input value={enumPath} onChange={(event) => setEnumPath(event.target.value)} placeholder={t("Relative path, e.g. ok_tasks/LabelEnum.py")} />}</div><footer className="list-editor-footer"><button type="button" onClick={() => setSaveOpen(false)}>{t("Cancel")}</button><button type="button" className="primary-button" onClick={() => void runtimeApi.saveTemplates(destination, generateEnum, enumPath).then((result) => { setSaveOpen(false); notify(result.message, "success"); }).catch((reason) => notify(reason.message, "error"))}>{t("OK")}</button></footer></section></div>}
   </section>;
 }

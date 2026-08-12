@@ -8,6 +8,7 @@ import re
 import secrets
 import shutil
 import threading
+import tempfile
 import zipfile
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -831,6 +832,63 @@ class WebRuntime:
             raise RuntimeError("Start task failed")
         return document
 
+    def script_export_options(self):
+        from ok.core.script_packager import load_manifest
+        return {"tasks": [item["name"] for item in self.scripts()], "manifest": load_manifest(str(self._script_folder()))}
+
+    def export_scripts(self, selected, file_name, script_name, version):
+        from ok.core.script_packager import export_script, validate_filename
+        selected = [str(name) for name in selected or []]
+        available = {item["name"] for item in self.scripts()}
+        if not selected or any(name not in available for name in selected):
+            raise ValueError("Select at least one valid task")
+        if not validate_filename(str(file_name or "")):
+            raise ValueError("Invalid file name")
+        if not str(script_name or "").strip():
+            raise ValueError("Script name is required")
+        success, message, output_path = export_script(selected, str(file_name), str(script_name).strip(), str(version or "1.0.0"))
+        if not success:
+            raise RuntimeError(message)
+        return Path(output_path)
+
+    def import_script_archive(self, filename, content):
+        if not str(filename or "").lower().endswith(".okscript"):
+            raise ValueError("Select an .okscript file")
+        if not content or len(content) > 100 * 1024 * 1024:
+            raise ValueError("Invalid or oversized script package")
+        from ok.core.script_packager import import_script
+        with tempfile.NamedTemporaryFile(suffix=".okscript", delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(content)
+        try:
+            with zipfile.ZipFile(temporary) as archive:
+                for member in archive.infolist():
+                    target = Path(member.filename)
+                    if target.is_absolute() or ".." in target.parts:
+                        raise ValueError("Unsafe script package path")
+            success, message, import_folder = import_script(str(temporary))
+            if not success:
+                raise ValueError(message)
+            self.task_manager.load_import_folder(import_folder)
+            return {"message": message}
+        finally:
+            temporary.unlink(missing_ok=True)
+
+    def start_script_recording(self):
+        from ok.ui.qt.tasks.RecordScript import recorder
+        if recorder.is_recording:
+            return {"recording": True}
+        target = self.device_manager.get_hwnd_name()
+        recorder.start(target)
+        return {"recording": True, "target": target}
+
+    def stop_script_recording(self):
+        from ok.ui.qt.tasks.RecordScript import recorder
+        if not recorder.is_recording:
+            raise RuntimeError("Recording is not active")
+        init_code, run_code = recorder.stop()
+        return {"recording": False, "init_code": init_code, "run_code": run_code}
+
     def _template_folder(self):
         folder = (Path.cwd() / "ok_templates").resolve()
         folder.mkdir(parents=True, exist_ok=True)
@@ -1112,7 +1170,7 @@ class WebRuntime:
 
 def create_web_app(config):
     try:
-        from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+        from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
         from fastapi.responses import FileResponse
         from fastapi.staticfiles import StaticFiles
     except ImportError as exc:
@@ -1122,6 +1180,7 @@ def create_web_app(config):
 
     # FastAPI resolves postponed endpoint annotations from module globals.
     globals()["WebSocket"] = WebSocket
+    globals()["Request"] = Request
 
     static_dir = Path(__file__).with_name("static")
     icon_url = _copy_web_icon(config, static_dir)
@@ -1275,6 +1334,43 @@ def create_web_app(config):
     async def run_script(name: str, body: dict):
         try:
             return await asyncio.to_thread(runtime.run_script, name, body.get("code"))
+        except (ValueError, RuntimeError, OSError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.get("/api/scripts-export/options")
+    async def script_export_options():
+        try:
+            return await asyncio.to_thread(runtime.script_export_options)
+        except (ValueError, RuntimeError, OSError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/api/scripts-export")
+    async def export_scripts(body: dict):
+        try:
+            path = await asyncio.to_thread(runtime.export_scripts, body.get("selected"), body.get("file_name"), body.get("script_name"), body.get("version"))
+            return FileResponse(path, filename=path.name, media_type="application/octet-stream")
+        except (ValueError, RuntimeError, OSError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/api/scripts-import")
+    async def import_scripts(request: Request):
+        try:
+            content = await request.body()
+            return await asyncio.to_thread(runtime.import_script_archive, request.headers.get("x-file-name", ""), content)
+        except (ValueError, RuntimeError, OSError, zipfile.BadZipFile) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/api/scripts-record/start")
+    async def start_script_recording():
+        try:
+            return await asyncio.to_thread(runtime.start_script_recording)
+        except (ValueError, RuntimeError, OSError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/api/scripts-record/stop")
+    async def stop_script_recording():
+        try:
+            return await asyncio.to_thread(runtime.stop_script_recording)
         except (ValueError, RuntimeError, OSError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 

@@ -24,6 +24,12 @@ function post<T>(path: string, body?: unknown): Promise<T> {
   });
 }
 
+async function checkedResponse(response: Response) {
+  if (response.ok) return response;
+  const body = await response.json().catch(() => ({})) as { detail?: string };
+  throw new Error(body.detail || response.statusText || t("Request failed"));
+}
+
 export const runtimeApi = {
   captureUi: () => request<CaptureUiState>("/api/ui/capture"),
   themeUi: () => request<ThemeUiState>("/api/ui/theme"),
@@ -48,6 +54,19 @@ export const runtimeApi = {
   deleteScript: (name: string) => post<{ deleted: string }>(`/api/scripts/${encodeURIComponent(name)}/delete`),
   copyScript: (name: string) => post<ScriptDocument>(`/api/scripts/${encodeURIComponent(name)}/copy`),
   runScript: (name: string, code: string) => post<ScriptDocument>(`/api/scripts/${encodeURIComponent(name)}/run`, { code }),
+  scriptExportOptions: () => request<{ tasks: string[]; manifest: Record<string, string> }>("/api/scripts-export/options"),
+  exportScripts: async (selected: string[], fileName: string, scriptName: string, version: string) => {
+    const response = await checkedResponse(await fetch("/api/scripts-export", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ selected, file_name: fileName, script_name: scriptName, version })
+    }));
+    return response.blob();
+  },
+  importScripts: (file: File) => request<{ message: string }>("/api/scripts-import", {
+    method: "POST", headers: { "Content-Type": "application/octet-stream", "X-File-Name": file.name }, body: file
+  }),
+  startScriptRecording: () => post<{ recording: boolean; target?: string }>("/api/scripts-record/start"),
+  stopScriptRecording: () => post<{ recording: boolean; init_code: string; run_code: string }>("/api/scripts-record/stop"),
   templates: () => request<TemplateImage[]>("/api/templates"),
   captureTemplate: () => post<TemplateImage[]>("/api/templates/capture"),
   deleteTemplate: (name: string) => post<{ deleted: string }>(`/api/templates/${encodeURIComponent(name)}/delete`),
