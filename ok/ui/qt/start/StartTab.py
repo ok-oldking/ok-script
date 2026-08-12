@@ -112,14 +112,15 @@ class StartTab(Tab):
         self.overlay_switch = SwitchButton()
         self.overlay_switch.setOnText(self.tr("Enable Boxes"))
         self.overlay_switch.setOffText(self.tr("Disable Boxes"))
-        self.overlay_switch.setChecked(og.app.ok_config.get('use_overlay', False))
+        overlay_state = og.app.overlay_state()
+        self.overlay_switch.setChecked(overlay_state['boxes'])
         self.overlay_switch.checkedChanged.connect(self.on_overlay_boxes_toggled)
         self.overlay_layout.addWidget(self.overlay_switch)
 
         self.overlay_log_switch = SwitchButton()
         self.overlay_log_switch.setOnText(self.tr("Show Log on Overlay"))
         self.overlay_log_switch.setOffText(self.tr("Hide Log on Overlay"))
-        self.overlay_log_switch.setChecked(og.app.ok_config.get('show_overlay_logs', True))
+        self.overlay_log_switch.setChecked(overlay_state['logs'])
         self.overlay_log_switch.checkedChanged.connect(self.on_overlay_log_toggled)
         self.overlay_layout.addWidget(self.overlay_log_switch)
         self.overlay_layout.addStretch(1)
@@ -149,16 +150,11 @@ class StartTab(Tab):
 
     def on_overlay_boxes_toggled(self, checked):
         from ok import og
-        og.app.ok_config['use_overlay'] = checked
-        og.app.ok_config.save_file()
-        og.app.get_overlay_view().set_boxes_enabled(checked)
+        og.app.set_overlay_setting('boxes', checked)
 
     def on_overlay_log_toggled(self, checked):
         from ok import og
-        og.app.ok_config['show_overlay_logs'] = checked
-        og.app.ok_config.save_file()
-        if og.app.overlay_window:
-            og.app.overlay_window.update()
+        og.app.set_overlay_setting('logs', checked)
 
     @staticmethod
     def capture():

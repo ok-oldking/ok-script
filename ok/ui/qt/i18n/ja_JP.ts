@@ -3198,5 +3198,305 @@
             <source>Open Screenshot Folder</source>
             <translation>スクリーンショットフォルダーを開く</translation>
         </message>
+        <message>
+            <source>Completed</source>
+            <translation>完了</translation>
+        </message>
+        <message>
+            <source>Time Elapsed</source>
+            <translation>経過時間</translation>
+        </message>
+        <message>
+            <source>Waiting for {task_name} task to be completed</source>
+            <translation>{task_name} タスクの完了を待機中</translation>
+        </message>
+        <message>
+            <source>Instructions</source>
+            <translation>使用説明</translation>
+        </message>
+        <message>
+            <source>Enabled</source>
+            <translation>有効</translation>
+        </message>
+        <message>
+            <source>Disabled</source>
+            <translation>無効</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>停止</translation>
+        </message>
+        <message>
+            <source>Reset Config</source>
+            <translation>設定をリセット</translation>
+        </message>
+        <message>
+            <source>App Config</source>
+            <translation>アプリ設定</translation>
+        </message>
+        <message>
+            <source>Application Theme</source>
+            <translation>アプリのテーマ</translation>
+        </message>
+        <message>
+            <source>Change the appearance of the application</source>
+            <translation>アプリケーションの外観を変更</translation>
+        </message>
+        <message>
+            <source>Light</source>
+            <translation>ライト</translation>
+        </message>
+        <message>
+            <source>Dark</source>
+            <translation>ダーク</translation>
+        </message>
+        <message>
+            <source>Use system setting</source>
+            <translation>システム設定を使用</translation>
+        </message>
+        <message>
+            <source>Language</source>
+            <translation>言語</translation>
+        </message>
+        <message>
+            <source>Set your preferred language</source>
+            <translation>優先言語を設定</translation>
+        </message>
+        <message>
+            <source>Actions</source>
+            <translation>操作</translation>
+        </message>
+        <message>
+            <source>Add</source>
+            <translation>追加</translation>
+        </message>
+        <message>
+            <source>Auto Exit After Task</source>
+            <translation>Auto Exit After Task</translation>
+        </message>
+        <message>
+            <source>Available Options</source>
+            <translation>利用可能なオプション</translation>
+        </message>
+        <message>
+            <source>Bounding Box</source>
+            <translation>バウンディングボックス</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>キャンセル</translation>
+        </message>
+        <message>
+            <source>Category name</source>
+            <translation>カテゴリ名</translation>
+        </message>
+        <message>
+            <source>Choose Task:</source>
+            <translation>タスクを選択:</translation>
+        </message>
+        <message>
+            <source>Class Name (English only)</source>
+            <translation>クラス名 (英語のみ)</translation>
+        </message>
+        <message>
+            <source>Confirm</source>
+            <translation>確認</translation>
+        </message>
+        <message>
+            <source>Confirm Delete</source>
+            <translation>削除の確認</translation>
+        </message>
+        <message>
+            <source>Copy Task</source>
+            <translation>タスクをコピー</translation>
+        </message>
+        <message>
+            <source>Create</source>
+            <translation>作成</translation>
+        </message>
+        <message>
+            <source>Create New Task</source>
+            <translation>新規タスクを作成</translation>
+        </message>
+        <message>
+            <source>Create Schedule Task</source>
+            <translation>スケジュールタスクを作成</translation>
+        </message>
+        <message>
+            <source>Create Task</source>
+            <translation>タスクを作成</translation>
+        </message>
+        <message>
+            <source>Current App</source>
+            <translation>Current App</translation>
+        </message>
+        <message>
+            <source>Days</source>
+            <translation>日</translation>
+        </message>
+        <message>
+            <source>Delete</source>
+            <translation>削除</translation>
+        </message>
+        <message>
+            <source>Delete Task</source>
+            <translation>タスクを削除</translation>
+        </message>
+        <message>
+            <source>Description (Optional)</source>
+            <translation>説明 (任意)</translation>
+        </message>
+        <message>
+            <source>File</source>
+            <translation>ファイル</translation>
+        </message>
+        <message>
+            <source>Generate label enum file</source>
+            <translation>ラベル列挙ファイルを生成</translation>
+        </message>
+        <message>
+            <source>Guide</source>
+            <translation>ガイド</translation>
+        </message>
+        <message>
+            <source>Hour</source>
+            <translation>時間</translation>
+        </message>
+        <message>
+            <source>Hours</source>
+            <translation>時間</translation>
+        </message>
+        <message>
+            <source>Markup</source>
+            <translation>標注</translation>
+        </message>
+        <message>
+            <source>Minute</source>
+            <translation>分</translation>
+        </message>
+        <message>
+            <source>Modify</source>
+            <translation>修正</translation>
+        </message>
+        <message>
+            <source>Modify Schedule Task</source>
+            <translation>スケジュールタスクを修正</translation>
+        </message>
+        <message>
+            <source>Move Down</source>
+            <translation>下へ</translation>
+        </message>
+        <message>
+            <source>Move Up</source>
+            <translation>上へ</translation>
+        </message>
+        <message>
+            <source>Next Run</source>
+            <translation>次回実行</translation>
+        </message>
+        <message>
+            <source>No templates yet</source>
+            <translation>テンプレートがありません</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <source>Other Projects</source>
+            <translation>関連プロジェクト</translation>
+        </message>
+        <message>
+            <source>Relative path, e.g. ok_tasks/LabelEnum.py</source>
+            <translation>相対パス（例: ok_tasks/LabelEnum.py）</translation>
+        </message>
+        <message>
+            <source>Remove</source>
+            <translation>削除</translation>
+        </message>
+        <message>
+            <source>Run</source>
+            <translation>実行</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>保存</translation>
+        </message>
+        <message>
+            <source>Save To</source>
+            <translation>保存先</translation>
+        </message>
+        <message>
+            <source>Saved</source>
+            <translation>Saved</translation>
+        </message>
+        <message>
+            <source>Screenshot</source>
+            <translation>スクリーンショット</translation>
+        </message>
+        <message>
+            <source>Search by name or category...</source>
+            <translation>名前またはカテゴリで検索...</translation>
+        </message>
+        <message>
+            <source>Search templates...</source>
+            <translation>テンプレートを検索...</translation>
+        </message>
+        <message>
+            <source>Select Task</source>
+            <translation>タスクを選択</translation>
+        </message>
+        <message>
+            <source>Select task to edit</source>
+            <translation>Select task to edit</translation>
+        </message>
+        <message>
+            <source>Selected Options</source>
+            <translation>選択したオプション</translation>
+        </message>
+        <message>
+            <source>Status</source>
+            <translation>状態</translation>
+        </message>
+        <message>
+            <source>Take Screenshot</source>
+            <translation>スクリーンショットを撮る</translation>
+        </message>
+        <message>
+            <source>Task Name</source>
+            <translation>タスク名</translation>
+        </message>
+        <message>
+            <source>Task rebuilt successfully.</source>
+            <translation>タスクの再構築に成功しました。</translation>
+        </message>
+        <message>
+            <source>Timeout</source>
+            <translation>タイムアウト</translation>
+        </message>
+        <message>
+            <source>Trigger Type</source>
+            <translation>トリガータイプ</translation>
+        </message>
+        <message>
+            <source>assets (standalone app)</source>
+            <translation>assets (スタンドアロンアプリ)</translation>
+        </message>
+        <message>
+            <source>ok_tasks/assets (custom scripts)</source>
+            <translation>ok_tasks/assets (カスタムスクリプト)</translation>
+        </message>
+        <message>
+            <source>GitHub</source>
+            <translation>GitHub</translation>
+        </message>
+        <message>
+            <source>FAQ</source>
+            <translation>FAQ</translation>
+        </message>
+        <message>
+            <source>Website</source>
+            <translation>ウェブサイト</translation>
+        </message>
     </context>
 </TS>

@@ -1,4 +1,4 @@
-import type { ActionResult, CaptureUiState, ExecutorStatus, LogResponse } from "./types";
+import type { AboutInfo, ActionResult, AutomationTask, CaptureUiState, ExecutorStatus, LogResponse, NavigationCapabilities, ScheduleData, ScriptDocument, ScriptSummary, ScriptTemplate, SettingsGroup, TemplateAnnotations, TemplateImage, ThemeUiState } from "./types";
 import { t } from "./i18n";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -26,6 +26,7 @@ function post<T>(path: string, body?: unknown): Promise<T> {
 
 export const runtimeApi = {
   captureUi: () => request<CaptureUiState>("/api/ui/capture"),
+  themeUi: () => request<ThemeUiState>("/api/ui/theme"),
   pause: () => post<ExecutorStatus>("/api/executor/pause"),
   resume: () => post<ExecutorStatus>("/api/executor/resume"),
   refreshDevices: () => post<{ accepted: boolean }>("/api/devices/refresh"),
@@ -34,6 +35,42 @@ export const runtimeApi = {
   selectInteraction: (id: string) => post<CaptureUiState>("/api/interaction-methods/select", { id }),
   setOverlay: (name: "boxes" | "logs", value: boolean) =>
     post<CaptureUiState>("/api/overlay", { name, value }),
+  tasks: () => request<AutomationTask[]>("/api/tasks"),
+  settings: () => request<SettingsGroup[]>("/api/settings"),
+  navigation: () => request<NavigationCapabilities>("/api/navigation"),
+  about: () => request<AboutInfo>("/api/about"),
+  scripts: () => request<ScriptSummary[]>("/api/scripts"),
+  scriptTemplates: () => request<ScriptTemplate[]>("/api/script-templates"),
+  script: (name: string) => request<ScriptDocument>(`/api/scripts/${encodeURIComponent(name)}`),
+  createScript: (className: string, taskName: string, description: string) =>
+    post<ScriptDocument>("/api/scripts", { class_name: className, task_name: taskName, description }),
+  saveScript: (name: string, code: string) => post<ScriptDocument>(`/api/scripts/${encodeURIComponent(name)}`, { code }),
+  deleteScript: (name: string) => post<{ deleted: string }>(`/api/scripts/${encodeURIComponent(name)}/delete`),
+  copyScript: (name: string) => post<ScriptDocument>(`/api/scripts/${encodeURIComponent(name)}/copy`),
+  runScript: (name: string, code: string) => post<ScriptDocument>(`/api/scripts/${encodeURIComponent(name)}/run`, { code }),
+  templates: () => request<TemplateImage[]>("/api/templates"),
+  captureTemplate: () => post<TemplateImage[]>("/api/templates/capture"),
+  deleteTemplate: (name: string) => post<{ deleted: string }>(`/api/templates/${encodeURIComponent(name)}/delete`),
+  templateAnnotations: (name: string) => request<TemplateAnnotations>(`/api/templates/${encodeURIComponent(name)}/annotations`),
+  saveTemplateAnnotations: (name: string, annotations: TemplateAnnotations["annotations"]) => post<TemplateAnnotations>(`/api/templates/${encodeURIComponent(name)}/annotations`, { annotations }),
+  saveTemplates: (destination: "tasks" | "assets", generateLabelEnum: boolean, enumPath: string) => post<{ message: string }>("/api/templates/save", { destination, generate_label_enum: generateLabelEnum, enum_path: enumPath }),
+  schedule: () => request<ScheduleData>("/api/schedule"),
+  createSchedule: (body: Record<string, unknown>) => post<ScheduleData>("/api/schedule", body),
+  scheduleAction: (name: string, action: "enable" | "disable" | "delete") =>
+    post<ScheduleData>(`/api/schedule/${encodeURIComponent(name)}/action`, { action }),
+  updateSchedule: (name: string, body: Record<string, unknown>) => post<ScheduleData>(`/api/schedule/${encodeURIComponent(name)}`, body),
+  setSetting: (group: string, key: string, value: unknown) =>
+    post<SettingsGroup>(`/api/settings/${encodeURIComponent(group)}/config`, { key, value }),
+  resetSettings: (group: string) =>
+    post<SettingsGroup>(`/api/settings/${encodeURIComponent(group)}/reset`),
+  startTask: (name: string) => post<AutomationTask>(`/api/tasks/${encodeURIComponent(name)}/start`),
+  taskAction: (name: string, action: "enable" | "disable" | "pause" | "resume" | "stop") =>
+    post<AutomationTask>(`/api/tasks/${encodeURIComponent(name)}/action`, { action }),
+  setTaskConfig: (name: string, key: string, value: unknown) =>
+    post<AutomationTask>(`/api/tasks/${encodeURIComponent(name)}/config`, { key, value }),
+  resetTaskConfig: (name: string) =>
+    post<AutomationTask>(`/api/tasks/${encodeURIComponent(name)}/config/reset`),
+  stopTask: () => post<ExecutorStatus>("/api/executor/stop-task"),
   tool: (action: string) => post<ActionResult>(`/api/tools/${encodeURIComponent(action)}`),
   logs: (level = "ALL", query = "") => {
     const parameters = new URLSearchParams({ level, query });

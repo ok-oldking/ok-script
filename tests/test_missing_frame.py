@@ -21,6 +21,21 @@ def test_ocr_returns_empty_when_frame_is_none():
     assert operation.ocr() == []
 
 
+def test_fix_texts_accepts_headless_string_locale():
+    operation = OCR.__new__(OCR)
+    operation._executor = SimpleNamespace(
+        config={'ocr': {'auto_simplify': True}},
+        locale='en_US',
+        ocr_po_translation=None,
+        text_fix={},
+    )
+    detected_box = SimpleNamespace(name=' recognized text ')
+
+    operation.fix_texts([detected_box])
+
+    assert detected_box.name == 'recognized text'
+
+
 def test_feature_set_searches_return_empty_when_frame_is_none():
     feature_set = FeatureSet.__new__(FeatureSet)
 

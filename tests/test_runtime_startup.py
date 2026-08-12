@@ -42,7 +42,11 @@ def make_runtime(*, auto_start=False, task=0, exit_after=False):
     runtime.global_config = FakeGlobalConfig(auto_start)
     runtime.device_manager = FakeDeviceManager()
     controller = FakeStartController()
-    runtime._headless_app = SimpleNamespace(start_controller=controller)
+    runtime._headless_app = SimpleNamespace(
+        start_controller=controller,
+        initialize_overlay=lambda: setattr(runtime, 'overlay_initialized', True),
+    )
+    runtime.overlay_initialized = False
     runtime._app = None
     return runtime, controller
 
@@ -61,6 +65,7 @@ def test_start_runtime_refreshes_devices_once_and_emits_start_success():
     assert runtime.device_manager.refresh_count == 1
     assert controller.calls == []
     assert events == [True]
+    assert runtime.overlay_initialized is True
 
 
 def test_start_runtime_uses_core_auto_start_instead_of_ui_logic():

@@ -1,26 +1,35 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { RefObject } from "react";
+import { Dropdown, FluentProvider, Input, Option, SpinButton, webDarkTheme, webLightTheme } from "@fluentui/react-components";
 import {
   Alert20Regular,
+  Add20Regular,
+  ArrowDown20Regular,
   ArrowClockwise20Regular,
+  ArrowUp20Regular,
   Calendar20Regular,
   Camera20Regular,
   CheckmarkCircle20Regular,
-  Code20Regular,
+  ChevronDown20Regular,
   DeveloperBoard20Regular,
+  Delete20Regular,
   Dismiss20Regular,
   DocumentText20Regular,
   Edit20Regular,
   ErrorCircle20Regular,
   Folder20Regular,
-  Games20Regular,
+  Globe20Regular,
   Image20Regular,
   Info20Regular,
+  LocalLanguage20Regular,
   Navigation20Regular,
-  People20Regular,
+  PaintBrush20Regular,
   Play20Regular,
   QuestionCircle20Regular,
   Search20Regular,
+  Save20Regular,
   Settings20Regular,
+  Stop20Regular,
   TaskListSquareLtr20Regular,
   Timer20Regular,
   Pause20Regular,
@@ -28,22 +37,47 @@ import {
   Window20Regular
 } from "@fluentui/react-icons";
 import { runtimeApi } from "./api";
-import { t } from "./i18n";
-import type { CaptureUiState, LogResponse, MethodOption } from "./types";
+import { setLocale, t } from "./i18n";
+import type { AboutInfo, AutomationTask, CaptureUiState, LogResponse, MethodOption, NavigationCapabilities, RuntimeEvent, ScheduleData, ScheduledTask, ScriptDocument, ScriptSummary, ScriptTemplate, SettingsGroup, TaskConfigField, TemplateAnnotations, TemplateImage } from "./types";
 
 type IconComponent = typeof Play20Regular;
-type Notice = { message: string; intent: "success" | "info" };
+type ToastMessage = { id: number; message: string; intent: "success" | "info" | "error" };
+type AppTheme = "Light" | "Dark" | "Auto";
+type SystemAccent = { light: string; dark: string };
+
+const WINDOWS_STANDARD_BLUE = "#60cdff";
+
+const languageOptions = [
+  ["zh_CN", "简体中文"], ["zh_TW", "繁體中文"], ["en_US", "English"],
+  ["es_ES", "Español"], ["ja_JP", "日本語"], ["ko_KR", "한국인"], ["Auto", "Use system setting"]
+] as const;
+
+function mixHex(source: string, target: string, amount: number) {
+  const parse = (value: string) => [1, 3, 5].map((index) => Number.parseInt(value.slice(index, index + 2), 16));
+  const from = parse(source);
+  const to = parse(target);
+  return `#${from.map((channel, index) => Math.round(channel + (to[index] - channel) * amount).toString(16).padStart(2, "0")).join("")}`;
+}
+
+const themed = (base: typeof webDarkTheme, dark: boolean, accent: string) => ({
+  ...base,
+  colorBrandBackground: accent,
+  colorBrandBackgroundHover: mixHex(accent, "#ffffff", 0.14),
+  colorBrandBackgroundPressed: mixHex(accent, "#000000", 0.12),
+  colorBrandBackgroundSelected: accent,
+  colorBrandForeground1: dark ? accent : mixHex(accent, "#000000", 0.38),
+  colorBrandForeground2: dark ? mixHex(accent, "#ffffff", 0.14) : mixHex(accent, "#000000", 0.48),
+  colorBrandStroke1: accent,
+  colorBrandStroke2: accent,
+  colorCompoundBrandForeground1: dark ? accent : mixHex(accent, "#000000", 0.38),
+  colorCompoundBrandForeground1Hover: dark ? mixHex(accent, "#ffffff", 0.14) : mixHex(accent, "#000000", 0.48),
+  colorCompoundBrandStroke: accent,
+  colorCompoundBrandStrokeHover: mixHex(accent, "#000000", 0.12),
+  colorNeutralForegroundOnBrand: "#102a35"
+});
 
 const primaryNavigation: Array<[string, IconComponent]> = [
-  ["Capture", Play20Regular],
-  ["Triggers", Timer20Regular],
-  ["Tasks", TaskListSquareLtr20Regular],
-  ["Character Code", Code20Regular],
-  ["Script", Edit20Regular],
-  ["Templates", Image20Regular],
-  ["Schedule", Calendar20Regular],
-  ["Character Settings", People20Regular],
-  ["Game Hotkeys", Games20Regular]
+  ["Capture", Play20Regular]
 ];
 
 const secondaryNavigation: Array<[string, IconComponent]> = [
@@ -51,6 +85,8 @@ const secondaryNavigation: Array<[string, IconComponent]> = [
   ["Settings", Settings20Regular],
   ["About", QuestionCircle20Regular]
 ];
+
+const opticallyHighNavigationIcons = new Set(["Capture", "Triggers"]);
 
 // Most runtime events (box drawing, screenshots, progress, logs) do not alter
 // StartTab controls. Refreshing for every event can produce hundreds of HTTP
@@ -63,16 +99,18 @@ const captureStateEvents = new Set([
   "task_list_updated"
 ]);
 
-function MethodList({ items, onSelect, disabled }: {
+const taskStateEvents = new Set(["task", "task_done", "executor_paused", "task_list_updated"]);
+
+function MethodList({ items, label, onSelect, disabled }: {
   items: MethodOption[];
+  label: string;
   onSelect: (id: string) => void;
   disabled: boolean;
 }) {
-  return <div className="option-list" role="listbox">
+  return <div className="option-list" role="group" aria-label={label}>
     {items.map((item) => <button
       type="button"
-      role="option"
-      aria-selected={item.selected}
+      aria-pressed={item.selected}
       className={`option-row ${item.selected ? "selected" : ""}`}
       disabled={disabled}
       key={item.id}
@@ -80,6 +118,57 @@ function MethodList({ items, onSelect, disabled }: {
     >{item.label}</button>)}
     {!items.length && <div className="empty-option">{t("No options available")}</div>}
   </div>;
+}
+
+function useDialogFocus(open: boolean, dialogRef: RefObject<HTMLElement | null>, onClose: () => void) {
+  useEffect(() => {
+    if (!open) return;
+
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusableSelector = [
+      "button:not([disabled])",
+      "input:not([disabled])",
+      "select:not([disabled])",
+      "textarea:not([disabled])",
+      "[href]",
+      "[tabindex]:not([tabindex='-1'])"
+    ].join(",");
+    const focusable = () => Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector));
+    (dialog.querySelector<HTMLElement>("[data-autofocus]") ?? focusable()[0] ?? dialog).focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const elements = focusable();
+      if (!elements.length) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [dialogRef, onClose, open]);
 }
 
 function Switch({ checked, label, disabled, onChange }: {
@@ -95,7 +184,409 @@ function Switch({ checked, label, disabled, onChange }: {
   </label>;
 }
 
-export default function App() {
+function ListConfigControl({ field, disabled, onCommit }: {
+  field: TaskConfigField;
+  disabled: boolean;
+  onCommit: (value: unknown[]) => void;
+}) {
+  const current = Array.isArray(field.value) ? field.value : [];
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<unknown[]>(current);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [newItem, setNewItem] = useState("");
+  const display = current.map(String).join(", ");
+
+  const beginEdit = () => {
+    setItems([...current]);
+    setSelected(null);
+    setNewItem("");
+    setOpen(true);
+  };
+  const add = (value: unknown) => {
+    if (!field.allow_duplication && items.some((item) => JSON.stringify(item) === JSON.stringify(value))) return;
+    setItems((existing) => [...existing, value]);
+    setSelected(items.length);
+  };
+  const move = (direction: -1 | 1) => {
+    if (selected === null) return;
+    const destination = selected + direction;
+    if (destination < 0 || destination >= items.length) return;
+    setItems((existing) => {
+      const next = [...existing];
+      [next[selected], next[destination]] = [next[destination], next[selected]];
+      return next;
+    });
+    setSelected(destination);
+  };
+  const remove = () => {
+    if (selected === null) return;
+    setItems((existing) => existing.filter((_item, index) => index !== selected));
+    setSelected((index) => index === null || items.length <= 1 ? null : Math.min(index, items.length - 2));
+  };
+
+  return <>
+    <div className="task-config-control list-summary"><span title={display}>{display || t("None")}</span><button type="button" disabled={disabled} onClick={beginEdit}><Edit20Regular /><span className="button-label">{t("Modify")}</span></button></div>
+    {open && <div className="modal-backdrop list-editor-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setOpen(false)}>
+      <section className="modal list-editor-modal" role="dialog" aria-modal="true" aria-label={field.key}>
+        <header><strong>{field.key}</strong><button type="button" aria-label={t("Close")} onClick={() => setOpen(false)}><Dismiss20Regular /></button></header>
+        <div className="list-editor-content">
+          {field.options ? <section><h2>{t("Available Options")}</h2><div className="available-list-options">{field.options.map((option, index) => {
+            const alreadySelected = !field.allow_duplication && items.some((item) => JSON.stringify(item) === JSON.stringify(option));
+            return <button type="button" key={index} disabled={alreadySelected} onClick={() => add(option)}><Add20Regular />{String(option)}</button>;
+          })}</div></section> : <section><h2>{t("Add")}</h2><div className="list-add-row"><Input aria-label={t("Add")} value={newItem} onChange={(event) => setNewItem(event.target.value)} onKeyDown={(event) => {
+            if (event.key === "Enter" && newItem.trim()) { add(newItem.trim()); setNewItem(""); }
+          }} /><button type="button" disabled={!newItem.trim()} onClick={() => { add(newItem.trim()); setNewItem(""); }}><Add20Regular />{t("Add")}</button></div></section>}
+          <section className="selected-list-section"><h2>{t("Selected Options")}</h2><div className="selected-list-body"><ol>{items.map((item, index) => <li key={`${JSON.stringify(item)}-${index}`}><button type="button" className={selected === index ? "selected" : ""} onClick={() => setSelected(index)}>{String(item)}</button></li>)}</ol><div className="list-editor-actions">
+            <button type="button" disabled={selected === null || selected === 0} onClick={() => move(-1)}><ArrowUp20Regular />{t("Move Up")}</button>
+            <button type="button" disabled={selected === null || selected === items.length - 1} onClick={() => move(1)}><ArrowDown20Regular />{t("Move Down")}</button>
+            <button type="button" disabled={selected === null} onClick={remove}><Delete20Regular />{t("Remove")}</button>
+          </div></div></section>
+        </div>
+        <footer className="list-editor-footer"><button type="button" onClick={() => setOpen(false)}>{t("Cancel")}</button><button type="button" className="primary-button" onClick={() => { onCommit(items); setOpen(false); }}>{t("Confirm")}</button></footer>
+      </section>
+    </div>}
+  </>;
+}
+
+function TaskConfigControl({ field, disabled, onCommit }: {
+  field: TaskConfigField;
+  disabled: boolean;
+  onCommit: (value: unknown) => void;
+}) {
+  const [draft, setDraft] = useState(() => field.kind === "list"
+    ? JSON.stringify(field.value, null, 2)
+    : String(field.value ?? ""));
+
+  useEffect(() => {
+    setDraft(field.kind === "list" ? JSON.stringify(field.value, null, 2) : String(field.value ?? ""));
+  }, [field.kind, field.value]);
+
+  if (field.kind === "boolean") {
+    return <div className="task-config-control boolean"><Switch checked={Boolean(field.value)} disabled={disabled} label={Boolean(field.value) ? t("Enabled") : t("Disabled")} onChange={onCommit} /></div>;
+  }
+  if (field.kind === "select") {
+    return <div className="task-config-control select"><Dropdown
+      aria-label={field.key}
+      disabled={disabled}
+      inlinePopup
+      value={String(field.value ?? "")}
+      selectedOptions={[JSON.stringify(field.value)]}
+      onOptionSelect={(_event, data) => data.optionValue !== undefined && onCommit(JSON.parse(data.optionValue))}
+    >{(field.options ?? []).map((option, index) => <Option key={index} value={JSON.stringify(option)} text={String(option)}>{String(option)}</Option>)}</Dropdown></div>;
+  }
+  if (field.kind === "multi_selection") {
+    const values = Array.isArray(field.value) ? field.value : [];
+    return <div className="task-config-options">{(field.options ?? []).map((option, index) => {
+      const selected = values.some((value) => JSON.stringify(value) === JSON.stringify(option));
+      return <label className="config-checkbox" key={index}>
+        <input type="checkbox" disabled={disabled} checked={selected} onChange={(event) => onCommit(event.target.checked ? [...values, option] : values.filter((value) => JSON.stringify(value) !== JSON.stringify(option)))} />
+        <span className="config-checkbox-mark" />
+        <span>{String(option)}</span>
+      </label>;
+    })}</div>;
+  }
+  if (field.kind === "list") {
+    return <ListConfigControl field={field} disabled={disabled} onCommit={onCommit} />;
+  }
+  const numeric = field.kind === "integer" || field.kind === "number";
+  if (numeric) {
+    return <div className="task-config-control number"><SpinButton
+      aria-label={field.key}
+      disabled={disabled}
+      min={field.minimum ?? undefined}
+      max={field.maximum ?? undefined}
+      step={field.kind === "integer" ? 1 : 0.1}
+      value={Number(draft)}
+      onChange={(_event, data) => {
+        if (data.value !== undefined) {
+          setDraft(String(data.value));
+          onCommit(data.value);
+        }
+      }}
+    /></div>;
+  }
+  return <div className="task-config-control text"><Input aria-label={field.key} disabled={disabled} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={() => onCommit(draft)} /></div>;
+}
+
+function SettingsPage({ groups, loading, pending, theme, language, onTheme, onLanguage, onUpdate, onReset }: {
+  groups: SettingsGroup[];
+  loading: boolean;
+  pending: string | null;
+  theme: AppTheme;
+  language: string;
+  onTheme: (theme: AppTheme) => void;
+  onLanguage: (language: string) => void;
+  onUpdate: (group: SettingsGroup, field: TaskConfigField, value: unknown) => void;
+  onReset: (group: SettingsGroup) => void;
+}) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setExpanded((current) => {
+      const next = new Set(current);
+      groups.filter((group) => group.expanded).forEach((group) => next.add(group.name));
+      return next;
+    });
+  }, [groups]);
+
+  const busy = pending !== null;
+  return <section className="settings-page" aria-label={t("Settings")}>
+    <h1>{t("Settings")}</h1>
+    <section className="settings-group">
+      <h2>{t("App Config")}</h2>
+      <div className="surface-card app-settings-card">
+        <div className="task-config-row">
+          <span><strong>{t("Application Theme")}</strong><small>{t("Change the appearance of the application")}</small></span>
+          <div className="setting-control-with-icon"><PaintBrush20Regular /><Dropdown aria-label={t("Application Theme")} inlinePopup value={t(theme === "Auto" ? "Use system setting" : theme)} selectedOptions={[theme]} onOptionSelect={(_event, data) => data.optionValue && onTheme(data.optionValue as AppTheme)}>
+            <Option value="Light">{t("Light")}</Option><Option value="Dark">{t("Dark")}</Option><Option value="Auto">{t("Use system setting")}</Option>
+          </Dropdown></div>
+        </div>
+        <div className="task-config-row">
+          <span><strong>{t("Language")}</strong><small>{t("Set your preferred language")}</small></span>
+          <div className="setting-control-with-icon"><LocalLanguage20Regular /><Dropdown aria-label={t("Language")} inlinePopup value={languageOptions.find(([value]) => value === language)?.[1] ?? t("Use system setting")} selectedOptions={[language]} onOptionSelect={(_event, data) => data.optionValue && onLanguage(data.optionValue)}>
+            {languageOptions.map(([value, label]) => <Option key={value} value={value}>{value === "Auto" ? t(label) : label}</Option>)}
+          </Dropdown></div>
+        </div>
+      </div>
+    </section>
+    {loading && !groups.length ? <div className="task-empty">{t("Loading")}</div> : <div className="settings-groups">
+      {groups.filter((group) => !group.top_level).map((group) => {
+        const open = expanded.has(group.name);
+        return <article key={group.name} className={`qt-task-card settings-config-card surface-card ${open ? "expanded" : ""}`}>
+          <div className="qt-task-header"><button type="button" className="task-expand" aria-expanded={open} onClick={() => setExpanded((current) => {
+            const next = new Set(current); if (next.has(group.name)) next.delete(group.name); else next.add(group.name); return next;
+          })}><span><strong>{t(group.name)}</strong><small>{t(group.description)}</small></span><ChevronDown20Regular /></button></div>
+          {open && <div className="task-config">
+            {group.fields.map((field) => <div className="task-config-row" key={field.key}>
+              <span><strong>{t(field.key)}</strong>{field.description && <small>{t(field.description)}</small>}</span>
+              <TaskConfigControl field={field} disabled={busy} onCommit={(value) => {
+                if (JSON.stringify(value) !== JSON.stringify(field.value)) onUpdate(group, field, value);
+              }} />
+            </div>)}
+            <footer><button type="button" disabled={busy} onClick={() => onReset(group)}><span className="button-label">{t("Reset Config")}</span></button></footer>
+          </div>}
+        </article>;
+      })}
+    </div>}
+  </section>;
+}
+
+function TopLevelSettingsPage({ group, loading, pending, onUpdate, onReset }: {
+  group: SettingsGroup | undefined;
+  loading: boolean;
+  pending: string | null;
+  onUpdate: (group: SettingsGroup, field: TaskConfigField, value: unknown) => void;
+  onReset: (group: SettingsGroup) => void;
+}) {
+  if (!group) return <section className="settings-page"><div className="task-empty">{loading ? t("Loading") : t("No options available")}</div></section>;
+  const busy = pending !== null;
+  return <section className="settings-page top-level-settings-page" aria-label={t(group.name)}>
+    <h1>{t(group.name)}</h1>
+    {group.description && <p className="settings-description">{t(group.description)}</p>}
+    <div className="surface-card top-level-settings-card">
+      <div className="task-config">
+        {group.fields.map((field) => <div className="task-config-row" key={field.key}>
+          <span><strong>{t(field.key)}</strong>{field.description && <small>{t(field.description)}</small>}</span>
+          <TaskConfigControl field={field} disabled={busy} onCommit={(value) => {
+            if (JSON.stringify(value) !== JSON.stringify(field.value)) onUpdate(group, field, value);
+          }} />
+        </div>)}
+        <footer><button type="button" disabled={busy} onClick={() => onReset(group)}><span className="button-label">{t("Reset Config")}</span></button></footer>
+      </div>
+    </div>
+  </section>;
+}
+
+type ToastSink = (message: string, intent: ToastMessage["intent"]) => void;
+
+function GithubMark() {
+  return <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor"><path d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.18.55-.39v-1.49c-2.23.49-2.7-.95-2.7-.95-.36-.93-.89-1.18-.89-1.18-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.23 1.88.87 2.34.67.07-.52.28-.87.51-1.07-1.78-.2-3.65-.89-3.65-3.96 0-.88.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.22 2.2.82A7.65 7.65 0 0 1 8 3.84c.68 0 1.35.09 1.98.27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.08-1.87 3.75-3.66 3.95.29.25.54.74.54 1.5v2.22c0 .21.15.46.55.38A8 8 0 0 0 8 0Z" /></svg>;
+}
+
+function sanitizedAboutHtml(html: string) {
+  const documentNode = new DOMParser().parseFromString(html, "text/html");
+  const allowed = new Set(["A", "B", "BLOCKQUOTE", "BR", "CODE", "DIV", "EM", "H1", "H2", "H3", "H4", "HR", "I", "LI", "OL", "P", "PRE", "SPAN", "STRONG", "U", "UL"]);
+  const blockedWithContent = new Set(["EMBED", "IFRAME", "MATH", "OBJECT", "SCRIPT", "STYLE", "SVG", "TEMPLATE"]);
+  for (const element of Array.from(documentNode.body.querySelectorAll("*"))) {
+    if (blockedWithContent.has(element.tagName)) {
+      element.remove();
+      continue;
+    }
+    if (!allowed.has(element.tagName)) {
+      element.replaceWith(...Array.from(element.childNodes));
+      continue;
+    }
+    for (const attribute of Array.from(element.attributes)) {
+      if (element.tagName !== "A" || attribute.name.toLocaleLowerCase() !== "href") element.removeAttribute(attribute.name);
+    }
+    if (element.tagName === "A") {
+      const href = element.getAttribute("href") ?? "";
+      if (!/^https?:\/\//i.test(href)) element.removeAttribute("href");
+      else { element.setAttribute("target", "_blank"); element.setAttribute("rel", "noreferrer noopener"); }
+    }
+  }
+  return documentNode.body.innerHTML;
+}
+
+function AboutPage({ notify }: { notify: ToastSink }) {
+  const [info, setInfo] = useState<AboutInfo | null>(null);
+  useEffect(() => { runtimeApi.about().then(setInfo).catch((reason) => notify(reason instanceof Error ? reason.message : t("Action failed"), "error")); }, [notify]);
+  const links = Object.entries(info?.links ?? {}).flatMap(([name, value]) => {
+    const findUrl = (item: unknown): string | null => typeof item === "string" ? item : item && typeof item === "object" ? Object.values(item).map(findUrl).find(Boolean) ?? null : null;
+    const url = findUrl(value);
+    return url ? [[name, url] as const] : [];
+  });
+  return <section className="settings-page about-page">
+    {!info ? <div className="task-empty">{t("Loading")}</div> : <>
+      <div className="surface-card about-identity">
+        <div className="app-avatar">{info.icon_url ? <img src={info.icon_url} alt="" /> : "OK"}</div>
+        <div><h1>{info.title}</h1><p>{info.version} · {t(info.debug ? "Debug" : "Release")}</p></div>
+        {links.length > 0 && <div className="about-identity-links">{links.map(([name, url]) => <a key={name} href={url} target="_blank" rel="noreferrer noopener">{name === "github" && <GithubMark />}{t(name === "github" ? "GitHub" : name === "faq" ? "FAQ" : name.replaceAll("_", " "))}</a>)}</div>}
+      </div>
+      {info.projects.length > 0 && <section className="about-projects"><h2>{t("Other Projects")}</h2><div>{info.projects.map((project) => <article className="surface-card" key={project.url}><div><strong>{t(project.name)}</strong><small>{project.url.replace("https://github.com/", "")}</small></div><nav><a href={project.url} target="_blank" rel="noreferrer noopener"><GithubMark />{t("GitHub")}</a>{project.website && <a href={project.website} target="_blank" rel="noreferrer noopener"><Globe20Regular />{t("Website")}</a>}</nav></article>)}</div></section>}
+      {info.about && <div className="surface-card about-copy" dangerouslySetInnerHTML={{ __html: sanitizedAboutHtml(info.about) }} />}
+    </>}
+  </section>;
+}
+
+function ScriptPage({ notify }: { notify: ToastSink }) {
+  const [scripts, setScripts] = useState<ScriptSummary[]>([]);
+  const [templates, setTemplates] = useState<ScriptTemplate[]>([]);
+  const [templateQuery, setTemplateQuery] = useState("");
+  const [document, setDocument] = useState<ScriptDocument | null>(null);
+  const [code, setCode] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [className, setClassName] = useState("");
+  const [taskName, setTaskName] = useState("");
+  const [description, setDescription] = useState("");
+  const [busy, setBusy] = useState(false);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const refresh = useCallback(async () => {
+    try { setScripts(await runtimeApi.scripts()); }
+    catch (reason) { notify(reason instanceof Error ? reason.message : t("Action failed"), "error"); }
+  }, [notify]);
+  useEffect(() => {
+    void refresh();
+    runtimeApi.scriptTemplates().then(setTemplates).catch((reason) => notify(reason.message, "error"));
+  }, [notify, refresh]);
+  const open = async (name: string) => {
+    try { const next = await runtimeApi.script(name); setDocument(next); setCode(next.code); }
+    catch (reason) { notify(reason instanceof Error ? reason.message : t("Action failed"), "error"); }
+  };
+  const save = async () => {
+    if (!document) return;
+    setBusy(true);
+    try { const next = await runtimeApi.saveScript(document.name, code); setDocument(next); notify(next.error || t("Task rebuilt successfully."), next.error ? "error" : "success"); await refresh(); }
+    catch (reason) { notify(reason instanceof Error ? reason.message : t("Action failed"), "error"); }
+    finally { setBusy(false); }
+  };
+  const insertTemplate = (template: ScriptTemplate) => {
+    const args: string[] = [];
+    for (const parameter of template.params) {
+      const value = window.prompt(`${parameter.name}${parameter.default === null ? " (required)" : ` (default: ${parameter.default})`}`, "");
+      if (value === null) return;
+      if (!value.trim() && parameter.default === null) { notify(`${parameter.name} is required`, "error"); return; }
+      if (value.trim()) args.push(parameter.default === null ? value.trim() : `${parameter.name}=${value.trim()}`);
+    }
+    const snippet = `${template.is_static ? `${template.class_name}.` : "self."}${template.name}(${args.join(", ")})`;
+    const editor = editorRef.current;
+    if (!editor) return;
+    const start = editor.selectionStart;
+    const lineStart = code.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+    const indentation = code.slice(lineStart, start).match(/^\s*/)?.[0] ?? "";
+    const insertion = `${start > lineStart ? "\n" : ""}${indentation || "        "}${snippet}\n`;
+    setCode(`${code.slice(0, start)}${insertion}${code.slice(editor.selectionEnd)}`);
+  };
+  const groupedTemplates = useMemo(() => {
+    const query = templateQuery.trim().toLocaleLowerCase();
+    return templates.filter((item) => !query || `${item.name} ${item.doc}`.toLocaleLowerCase().includes(query)).reduce<Record<string, ScriptTemplate[]>>((groups, item) => {
+      (groups[item.category] ??= []).push(item); return groups;
+    }, {});
+  }, [templateQuery, templates]);
+  return <section className="workspace-page script-page">
+    <div className="script-workspace">
+      <aside className="script-template-panel"><label className="page-search"><Search20Regular /><input value={templateQuery} onChange={(event) => setTemplateQuery(event.target.value)} placeholder={t("Search templates...")} /></label><div className="surface-card template-tree">{Object.entries(groupedTemplates).map(([category, items]) => <details key={category}><summary>{t(category)}</summary>{items.map((item) => <button type="button" key={`${item.class_name}.${item.name}`} title={item.full_doc} onClick={() => insertTemplate(item)}>{t(item.template_name)}</button>)}</details>)}</div></aside>
+      <div className="script-editor-panel">
+        <header className="script-toolbar"><label>{t("Choose Task:")}<select value={document?.name ?? ""} onChange={(event) => event.target.value && void open(event.target.value)}><option value="">{t("Select task to edit")}</option>{scripts.map((script) => <option key={script.name}>{script.name}</option>)}</select></label><details className="file-menu"><summary>{t("File")}</summary><div><button type="button" disabled={!document || busy} onClick={() => void save()}><Save20Regular />{t("Save")}</button><button type="button" onClick={() => setCreating((value) => !value)}><Add20Regular />{t("Create Task")}</button><button type="button" disabled={!document} onClick={() => document && void runtimeApi.copyScript(document.name).then(async (next) => { setDocument(next); setCode(next.code); await refresh(); }).catch((reason) => notify(reason.message, "error"))}>{t("Copy Task")}</button><button type="button" disabled={!document} onClick={() => { if (document && window.confirm(`${t("Confirm Delete")}: ${document.name}?`)) void runtimeApi.deleteScript(document.name).then(async () => { setDocument(null); setCode(""); await refresh(); }).catch((reason) => notify(reason.message, "error")); }}><Delete20Regular />{t("Delete Task")}</button></div></details><span className="toolbar-spacer" /><button type="button" className="primary-button" disabled={!document || busy} onClick={() => { if (!document) return; setBusy(true); void runtimeApi.runScript(document.name, code).then((next) => { setDocument(next); if (next.error) notify(next.error, "error"); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }}><Play20Regular />{t("Run")}</button><a className="toolbar-button" href="https://github.com/ok-oldking/ok-py" target="_blank" rel="noreferrer"><QuestionCircle20Regular />{t("Guide")}</a></header>
+    {creating && <form className="surface-card inline-create-form" onSubmit={(event) => { event.preventDefault(); setBusy(true); void runtimeApi.createScript(className, taskName, description).then(async (next) => { setDocument(next); setCode(next.code); setCreating(false); setClassName(""); setTaskName(""); setDescription(""); await refresh(); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }}>
+      <Input required placeholder={t("Class Name (English only)")} value={className} onChange={(event) => setClassName(event.target.value)} />
+      <Input required placeholder={t("Task Name")} value={taskName} onChange={(event) => setTaskName(event.target.value)} />
+      <Input placeholder={t("Description (Optional)")} value={description} onChange={(event) => setDescription(event.target.value)} />
+      <button type="submit" disabled={busy}>{t("Create")}</button>
+    </form>}
+        <div className="surface-card code-editor-wrap">{document ? <><textarea ref={editorRef} spellCheck={false} value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={(event) => { if (event.ctrlKey && event.key.toLocaleLowerCase() === "s") { event.preventDefault(); void save(); } }} />{document.error && <div className="script-error">{document.error}</div>}</> : <div className="script-empty"><button type="button" className="primary-button" onClick={() => setCreating(true)}><Add20Regular />{t("Create New Task")}</button></div>}</div>
+      </div>
+    </div>
+  </section>;
+}
+
+function TemplatesPage({ notify }: { notify: ToastSink }) {
+  const [images, setImages] = useState<TemplateImage[]>([]);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+  const [markup, setMarkup] = useState<TemplateAnnotations | null>(null);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [destination, setDestination] = useState<"tasks" | "assets">("tasks");
+  const [generateEnum, setGenerateEnum] = useState(false);
+  const [enumPath, setEnumPath] = useState("ok_tasks/LabelEnum.py");
+  const refresh = useCallback(async () => { try { setImages(await runtimeApi.templates()); } catch (reason) { notify(reason instanceof Error ? reason.message : t("Action failed"), "error"); } }, [notify]);
+  useEffect(() => { void refresh(); }, [refresh]);
+  const visible = images.filter((image) => `${image.name} ${image.categories.join(" ")}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+  return <section className="workspace-page templates-page">
+    <header className="page-toolbar template-toolbar"><button type="button" className="primary-button" onClick={() => void runtimeApi.captureTemplate().then(setImages).catch((reason) => notify(reason.message, "error"))}><Camera20Regular />{t("Screenshot")}</button>{selected && <><button type="button" onClick={() => void runtimeApi.templateAnnotations(selected).then(setMarkup).catch((reason) => notify(reason.message, "error"))}><Edit20Regular />{t("Markup")}</button><button type="button" onClick={() => { if (window.confirm(`${t("Confirm Delete")}: ${selected}?`)) void runtimeApi.deleteTemplate(selected).then(async () => { setSelected(null); await refresh(); }).catch((reason) => notify(reason.message, "error")); }}><Delete20Regular />{t("Delete")}</button></>}<button type="button" onClick={() => setSaveOpen(true)}><Save20Regular />{t("Save")}</button></header>
+    <label className="template-search page-search"><Search20Regular /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search by name or category...")} /></label>
+    <div className="template-grid">{visible.map((item) => <button type="button" className={`surface-card template-card ${selected === item.name ? "selected" : ""}`} key={item.name} onClick={() => setSelected((current) => current === item.name ? null : item.name)} onDoubleClick={() => void runtimeApi.templateAnnotations(item.name).then(setMarkup)}><img src={item.url} alt={item.name} loading="lazy" /><div><strong>{item.name}</strong><small>{item.categories.join(", ")}</small></div></button>)}</div>
+    {!visible.length && <div className="template-empty"><p>{t("No templates yet")}</p><button type="button" className="primary-button" onClick={() => void runtimeApi.captureTemplate().then(setImages).catch((reason) => notify(reason.message, "error"))}><Camera20Regular />{t("Take Screenshot")}</button></div>}
+    {markup && <div className="modal-backdrop"><section className="modal markup-modal" role="dialog" aria-modal="true"><header><strong>{t("Markup")} · {markup.name}</strong><button type="button" onClick={() => setMarkup(null)}><Dismiss20Regular /></button></header><div className="markup-body"><div className="markup-preview"><img src={markup.url} alt={markup.name} />{markup.width > 0 && markup.height > 0 && markup.annotations.map((annotation, index) => <span key={index} title={annotation.category} style={{ left: `${annotation.bbox[0] / markup.width * 100}%`, top: `${annotation.bbox[1] / markup.height * 100}%`, width: `${annotation.bbox[2] / markup.width * 100}%`, height: `${annotation.bbox[3] / markup.height * 100}%` }}><b>{annotation.category || index + 1}</b></span>)}</div><div className="annotation-list">{markup.annotations.map((annotation, index) => <div key={index}><Input placeholder={t("Category name")} value={annotation.category} onChange={(event) => setMarkup((current) => current && ({ ...current, annotations: current.annotations.map((item, itemIndex) => itemIndex === index ? { ...item, category: event.target.value } : item) }))} />{annotation.bbox.map((value, coordinate) => <label key={coordinate}>{["X", "Y", "W", "H"][coordinate]}<input type="number" min="0" value={value} onChange={(event) => setMarkup((current) => current && ({ ...current, annotations: current.annotations.map((item, itemIndex) => itemIndex === index ? { ...item, bbox: item.bbox.map((number, numberIndex) => numberIndex === coordinate ? Number(event.target.value) : number) } : item) }))} /></label>)}<button type="button" onClick={() => setMarkup((current) => current && ({ ...current, annotations: current.annotations.filter((_item, itemIndex) => itemIndex !== index) }))}><Delete20Regular /></button></div>)}<button type="button" onClick={() => setMarkup((current) => current && ({ ...current, annotations: [...current.annotations, { category: "", bbox: [0, 0, 0, 0] }] }))}><Add20Regular />{t("Bounding Box")}</button></div></div><footer className="list-editor-footer"><button type="button" onClick={() => setMarkup(null)}>{t("Cancel")}</button><button type="button" className="primary-button" onClick={() => void runtimeApi.saveTemplateAnnotations(markup.name, markup.annotations).then(() => { setMarkup(null); void refresh(); notify(t("Saved"), "success"); }).catch((reason) => notify(reason.message, "error"))}>{t("Save")}</button></footer></section></div>}
+    {saveOpen && <div className="modal-backdrop"><section className="modal save-templates-modal" role="dialog" aria-modal="true"><header><strong>{t("Save To")}</strong><button type="button" onClick={() => setSaveOpen(false)}><Dismiss20Regular /></button></header><div className="save-options"><label><input type="radio" checked={destination === "tasks"} onChange={() => setDestination("tasks")} />{t("ok_tasks/assets (custom scripts)")}</label><label><input type="radio" checked={destination === "assets"} onChange={() => setDestination("assets")} />{t("assets (standalone app)")}</label><label><input type="checkbox" checked={generateEnum} onChange={(event) => setGenerateEnum(event.target.checked)} />{t("Generate label enum file")}</label>{generateEnum && <Input value={enumPath} onChange={(event) => setEnumPath(event.target.value)} placeholder={t("Relative path, e.g. ok_tasks/LabelEnum.py")} />}</div><footer className="list-editor-footer"><button type="button" onClick={() => setSaveOpen(false)}>{t("Cancel")}</button><button type="button" className="primary-button" onClick={() => void runtimeApi.saveTemplates(destination, generateEnum, enumPath).then((result) => { setSaveOpen(false); notify(result.message, "success"); }).catch((reason) => notify(reason.message, "error"))}>{t("OK")}</button></footer></section></div>}
+  </section>;
+}
+
+function SchedulePage({ notify }: { notify: ToastSink }) {
+  const [data, setData] = useState<ScheduleData>({ available_tasks: [], tasks: [] });
+  const [creating, setCreating] = useState(false);
+  const [taskIndex, setTaskIndex] = useState(0);
+  const [triggerType, setTriggerType] = useState("Daily");
+  const [hour, setHour] = useState(9);
+  const [minute, setMinute] = useState(0);
+  const [timeout, setTimeoutValue] = useState(0);
+  const [intervalDays, setIntervalDays] = useState(0);
+  const [intervalHours, setIntervalHours] = useState(0);
+  const [autoExit, setAutoExit] = useState(true);
+  const [editing, setEditing] = useState<ScheduledTask | null>(null);
+  const refresh = useCallback(async () => { try { const next = await runtimeApi.schedule(); setData(next); if (!taskIndex && next.available_tasks[0]) setTaskIndex(next.available_tasks[0].index); } catch (reason) { notify(reason instanceof Error ? reason.message : t("Action failed"), "error"); } }, [notify, taskIndex]);
+  useEffect(() => { void refresh(); }, [refresh]);
+  const act = async (name: string, action: "enable" | "disable" | "delete") => { try { setData(await runtimeApi.scheduleAction(name, action)); } catch (reason) { notify(reason instanceof Error ? reason.message : t("Action failed"), "error"); } };
+  const beginEdit = (task: ScheduledTask) => {
+    setEditing(task); setTaskIndex(task.task_index); setTriggerType(task.trigger_type || "Daily"); setHour(task.start_hour ?? 9); setMinute(task.start_minute ?? 0); setTimeoutValue(task.timeout_hours ?? 0); setAutoExit(task.auto_exit ?? true); setIntervalDays(task.interval_days); setIntervalHours(task.interval_hours);
+  };
+  const grouped = useMemo(() => data.tasks.reduce<Record<string, ScheduledTask[]>>((groups, task) => {
+    const name = task.path.replace(/^\\/, "").split("\\")[0] || t("Current App"); (groups[name] ??= []).push(task); return groups;
+  }, {}), [data.tasks]);
+  return <section className="workspace-page schedule-page">
+    <header className="page-toolbar"><h1>{t("Schedule")}</h1><button type="button" onClick={() => void refresh()}><ArrowClockwise20Regular />{t("Refresh")}</button><button type="button" disabled={!data.available_tasks.length} onClick={() => setCreating((value) => !value)}><Add20Regular />{t("Create Task")}</button></header>
+    {creating && <div className="modal-backdrop"><section className="modal schedule-edit-modal" role="dialog" aria-modal="true"><header><strong>{t("Create Schedule Task")}</strong><button type="button" onClick={() => setCreating(false)}><Dismiss20Regular /></button></header><form className="schedule-form" onSubmit={(event) => { event.preventDefault(); const selected = data.available_tasks.find((task) => task.index === taskIndex); if (!selected) return; void runtimeApi.createSchedule({ name: selected.name, task_index: taskIndex, trigger_type: triggerType, start_hour: hour, start_minute: minute, timeout_hours: timeout, auto_exit: autoExit, interval_days: intervalDays, interval_hours: intervalHours }).then((next) => { setData(next); setCreating(false); }).catch((reason) => notify(reason.message, "error")); }}>
+      <label>{t("Select Task")}<select value={taskIndex} onChange={(event) => setTaskIndex(Number(event.target.value))}>{data.available_tasks.map((task) => <option key={task.index} value={task.index}>{t(task.name)}</option>)}</select></label>
+      <label>{t("Trigger Type")}<select value={triggerType} onChange={(event) => setTriggerType(event.target.value)}>{["Daily", "Weekly", "Monthly", "Once", "Custom"].map((value) => <option key={value}>{t(value)}</option>)}</select></label>
+      <label>{t("Hour")}<input type="number" min="0" max="23" value={hour} onChange={(event) => setHour(Number(event.target.value))} /></label>
+      <label>{t("Minute")}<input type="number" min="0" max="59" value={minute} onChange={(event) => setMinute(Number(event.target.value))} /></label>
+      <label>{t("Timeout")}<input type="number" min="0" max="12" value={timeout} onChange={(event) => setTimeoutValue(Number(event.target.value))} /></label>
+      {triggerType === "Custom" && <><label>{t("Days")}<input type="number" min="0" max="365" value={intervalDays} onChange={(event) => setIntervalDays(Number(event.target.value))} /></label><label>{t("Hours")}<input type="number" min="0" max="23" value={intervalHours} onChange={(event) => setIntervalHours(Number(event.target.value))} /></label></>}
+      <label className="schedule-check"><input type="checkbox" checked={autoExit} onChange={(event) => setAutoExit(event.target.checked)} />{t("Auto Exit After Task")}</label>
+      <footer className="list-editor-footer"><button type="button" onClick={() => setCreating(false)}>{t("Cancel")}</button><button type="submit" className="primary-button">{t("Create")}</button></footer>
+    </form></section></div>}
+    <div className="schedule-groups">{Object.entries(grouped).map(([group, tasks]) => <section key={group}><h2>{group}</h2><div className="surface-card schedule-table-wrap"><table className="schedule-table"><thead><tr><th>{t("Task Name")}</th><th>{t("Status")}</th><th>{t("Trigger Type")}</th><th>{t("Next Run")}</th><th>{t("Enabled")}</th><th>{t("Actions")}</th></tr></thead><tbody>{tasks.map((task) => <tr key={task.path || task.name}><td title={task.path}>{t(task.name)}</td><td>{t(task.status)}</td><td>{t(task.trigger_type)}</td><td>{task.next_run_time || "-"}</td><td><Switch checked={task.enabled} disabled={task.read_only} label="" onChange={(checked) => void act(task.path || task.name, checked ? "enable" : "disable")} /></td><td><button type="button" disabled={task.read_only} onClick={() => beginEdit(task)}>{t("Modify")}</button><button type="button" disabled={task.read_only} onClick={() => { if (window.confirm(`${t("Confirm Delete")}: ${task.name}?`)) void act(task.path || task.name, "delete"); }}>{t("Delete")}</button></td></tr>)}</tbody></table></div></section>)}</div>
+    {!data.tasks.length && <div className="task-empty">{t("No options available")}</div>}
+    {editing && <div className="modal-backdrop"><section className="modal schedule-edit-modal" role="dialog" aria-modal="true"><header><strong>{t("Modify Schedule Task")}</strong><button type="button" onClick={() => setEditing(null)}><Dismiss20Regular /></button></header><form className="schedule-form" onSubmit={(event) => { event.preventDefault(); void runtimeApi.updateSchedule(editing.path || editing.name, { task_index: taskIndex, trigger_type: triggerType, start_hour: hour, start_minute: minute, timeout_hours: timeout, auto_exit: autoExit, interval_days: intervalDays, interval_hours: intervalHours }).then((next) => { setData(next); setEditing(null); }).catch((reason) => notify(reason.message, "error")); }}><label>{t("Task Name")}<input disabled value={t(editing.name)} /></label><label>{t("Trigger Type")}<select value={triggerType} onChange={(event) => setTriggerType(event.target.value)}>{["Daily", "Weekly", "Monthly", "Once", "Custom"].map((value) => <option key={value} value={value}>{t(value)}</option>)}</select></label><label>{t("Hour")}<input type="number" min="0" max="23" value={hour} onChange={(event) => setHour(Number(event.target.value))} /></label><label>{t("Minute")}<input type="number" min="0" max="59" value={minute} onChange={(event) => setMinute(Number(event.target.value))} /></label><label>{t("Timeout")}<input type="number" min="0" max="12" value={timeout} onChange={(event) => setTimeoutValue(Number(event.target.value))} /></label>{triggerType === "Custom" && <><label>{t("Days")}<input type="number" min="0" max="365" value={intervalDays} onChange={(event) => setIntervalDays(Number(event.target.value))} /></label><label>{t("Hours")}<input type="number" min="0" max="23" value={intervalHours} onChange={(event) => setIntervalHours(Number(event.target.value))} /></label></>}<label className="schedule-check"><input type="checkbox" checked={autoExit} onChange={(event) => setAutoExit(event.target.checked)} />{t("Auto Exit After Task")}</label><footer className="list-editor-footer"><button type="button" onClick={() => setEditing(null)}>{t("Cancel")}</button><button type="submit" className="primary-button">{t("Confirm")}</button></footer></form></section></div>}
+  </section>;
+}
+
+function RuntimeApp({ theme, language, onTheme, onLanguage }: {
+  theme: AppTheme;
+  language: string;
+  onTheme: (theme: AppTheme) => void;
+  onLanguage: (language: string) => void;
+}) {
   useEffect(() => {
     const updateDesktopScale = () => {
       // Edge can expose a several-thousand-pixel CSS viewport in desktop mode
@@ -103,7 +594,9 @@ export default function App() {
       // against the layout's reference viewport so controls remain usable.
       const widthScale = window.innerWidth / 1536;
       const heightScale = window.innerHeight / 864;
-      const scale = Math.min(5, Math.max(1.25, Math.min(widthScale, heightScale)));
+      const desiredScale = Math.max(1, Math.min(widthScale, heightScale));
+      const fitScale = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+      const scale = Math.min(5, Math.max(0.5, Math.min(desiredScale, fitScale)));
       document.documentElement.style.setProperty("--desktop-scale", scale.toFixed(3));
     };
 
@@ -118,11 +611,11 @@ export default function App() {
   }, []);
 
   const [ui, setUi] = useState<CaptureUiState | null>(null);
+  const [activePage, setActivePage] = useState("Capture");
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [notice, setNotice] = useState<Notice | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   const [captureUrl, setCaptureUrl] = useState<string | null>(null);
   const [logsOpen, setLogsOpen] = useState(false);
@@ -130,20 +623,107 @@ export default function App() {
   const [logLevel, setLogLevel] = useState("ALL");
   const [logQuery, setLogQuery] = useState("");
   const [logData, setLogData] = useState<LogResponse | null>(null);
+  const [tasks, setTasks] = useState<AutomationTask[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [settings, setSettings] = useState<SettingsGroup[]>([]);
+  const [capabilities, setCapabilities] = useState<NavigationCapabilities | null>(null);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [instructionsTask, setInstructionsTask] = useState<AutomationTask | null>(null);
   const logConsole = useRef<HTMLPreElement>(null);
+  const captureDialog = useRef<HTMLElement>(null);
+  const logDialog = useRef<HTMLElement>(null);
+  const instructionsDialog = useRef<HTMLElement>(null);
+  const nextToastId = useRef(0);
+  const toastTimers = useRef<Map<number, number>>(new Map());
+  const toastKeys = useRef<Map<number, string>>(new Map());
+  const activeToastMessages = useRef<Set<string>>(new Set());
+  const closeCapture = useCallback(() => setCaptureUrl(null), []);
+  const closeLogs = useCallback(() => setLogsOpen(false), []);
+  const closeInstructions = useCallback(() => setInstructionsTask(null), []);
+  const pushToast = useCallback((message: string, intent: ToastMessage["intent"]) => {
+    const normalizedMessage = message.trim();
+    if (!normalizedMessage) return;
+    const messageKey = normalizedMessage.toLocaleLowerCase();
+    if (activeToastMessages.current.has(messageKey)) return;
+    activeToastMessages.current.add(messageKey);
+    const toast = { id: ++nextToastId.current, message: normalizedMessage, intent };
+    toastKeys.current.set(toast.id, messageKey);
+    setToasts((current) => [toast, ...current]);
+    if (intent !== "success") {
+      const timer = window.setTimeout(() => {
+        setToasts((current) => current.filter((item) => item.id !== toast.id));
+        toastTimers.current.delete(toast.id);
+        toastKeys.current.delete(toast.id);
+        activeToastMessages.current.delete(messageKey);
+      }, 15_000);
+      toastTimers.current.set(toast.id, timer);
+    }
+  }, []);
+  const dismissToast = useCallback((id: number) => {
+    const timer = toastTimers.current.get(id);
+    if (timer !== undefined) window.clearTimeout(timer);
+    toastTimers.current.delete(id);
+    const messageKey = toastKeys.current.get(id);
+    if (messageKey !== undefined) activeToastMessages.current.delete(messageKey);
+    toastKeys.current.delete(id);
+    setToasts((current) => current.filter((toast) => toast.id !== id));
+  }, []);
+
+  useEffect(() => () => {
+    toastTimers.current.forEach((timer) => window.clearTimeout(timer));
+    toastTimers.current.clear();
+    toastKeys.current.clear();
+    activeToastMessages.current.clear();
+  }, []);
+
+  useDialogFocus(captureUrl !== null, captureDialog, closeCapture);
+  useDialogFocus(logsOpen, logDialog, closeLogs);
+  useDialogFocus(instructionsTask !== null, instructionsDialog, closeInstructions);
 
   const load = useCallback(async () => {
     try {
       setUi(await runtimeApi.captureUi());
-      setError(null);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t("Could not reach the automation runtime"));
+      pushToast(reason instanceof Error ? reason.message : t("Could not reach the automation runtime"), "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [pushToast]);
 
-  useEffect(() => { void load(); }, [load]);
+  const loadTasks = useCallback(async (showLoading = false) => {
+    if (showLoading) setTasksLoading(true);
+    try {
+      setTasks(await runtimeApi.tasks());
+    } catch (reason) {
+      pushToast(reason instanceof Error ? reason.message : t("Could not reach the automation runtime"), "error");
+    } finally {
+      if (showLoading) setTasksLoading(false);
+    }
+  }, [pushToast]);
+
+  const loadSettings = useCallback(async () => {
+    setSettingsLoading(true);
+    try { setSettings(await runtimeApi.settings()); }
+    catch (reason) { pushToast(reason instanceof Error ? reason.message : t("Could not reach the automation runtime"), "error"); }
+    finally { setSettingsLoading(false); }
+  }, [pushToast]);
+
+  useEffect(() => {
+    void load();
+    void loadSettings();
+    runtimeApi.navigation().then(setCapabilities).catch((reason) => pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error"));
+  }, [load, loadSettings, pushToast]);
+  useEffect(() => {
+    if (activePage === "Tasks" || activePage === "Triggers") void loadTasks(true);
+    if (activePage === "Settings") void loadSettings();
+  }, [activePage, loadSettings, loadTasks]);
+
+  useEffect(() => {
+    if (activePage !== "Tasks" && activePage !== "Triggers") return;
+    const timer = window.setInterval(() => void loadTasks(), 1000);
+    return () => window.clearInterval(timer);
+  }, [activePage, loadTasks]);
 
   useEffect(() => {
     if (!logsOpen || logsPaused) return;
@@ -154,27 +734,19 @@ export default function App() {
         const data = await runtimeApi.logs(logLevel, logQuery);
         if (!stopped) setLogData(data);
       } catch (reason) {
-        if (!stopped) setError(reason instanceof Error ? reason.message : t("Could not load logs"));
+        if (!stopped) pushToast(reason instanceof Error ? reason.message : t("Could not load logs"), "error");
       } finally {
         if (!stopped) timer = window.setTimeout(refreshLogs, 750);
       }
     };
     void refreshLogs();
     return () => { stopped = true; if (timer) clearTimeout(timer); };
-  }, [logLevel, logQuery, logsOpen, logsPaused]);
+  }, [logLevel, logQuery, logsOpen, logsPaused, pushToast]);
 
   useEffect(() => {
     const consoleElement = logConsole.current;
     if (consoleElement && !logsPaused) consoleElement.scrollTop = consoleElement.scrollHeight;
   }, [logData, logsPaused]);
-
-  useEffect(() => {
-    const closeModal = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { setCaptureUrl(null); setLogsOpen(false); }
-    };
-    window.addEventListener("keydown", closeModal);
-    return () => window.removeEventListener("keydown", closeModal);
-  }, []);
 
   useEffect(() => {
     let socket: WebSocket | null = null;
@@ -184,16 +756,27 @@ export default function App() {
       const protocol = location.protocol === "https:" ? "wss" : "ws";
       socket = new WebSocket(`${protocol}://${location.host}/api/events`);
       socket.onmessage = ({ data }) => {
-        let event: { event?: string; ui?: CaptureUiState };
-        try { event = JSON.parse(data) as { event?: string; ui?: CaptureUiState }; }
+        let event: RuntimeEvent;
+        try { event = JSON.parse(data) as RuntimeEvent; }
         catch { return; }
-        if (!event.event || !captureStateEvents.has(event.event)) return;
-        // The server attaches the new UI state for relevant events. Do not
-        // follow every event with another HTTP request.
-        if (event.ui) setUi(event.ui);
-        if (event.event === "adb_devices") setPending((current) => current === "refresh" ? null : current);
+        if (event.event === "notification") {
+          const message = typeof event.args[0] === "string" ? event.args[0] : String(event.args[0] ?? "");
+          pushToast(t(message), event.args[2] === true ? "error" : "info");
+        }
+        if (captureStateEvents.has(event.event)) {
+          // The server attaches the new UI state for relevant events. Do not
+          // follow every event with another HTTP request.
+          if (event.ui) setUi(event.ui);
+          if (event.event === "adb_devices") setPending((current) => current === "refresh" ? null : current);
+        }
+        if (taskStateEvents.has(event.event)) {
+          void loadTasks();
+          if (!event.ui) void load();
+        }
       };
-      socket.onclose = () => { if (!stopped) timer = window.setTimeout(connect, 1500); };
+      socket.onclose = () => {
+        if (!stopped) timer = window.setTimeout(connect, 1500);
+      };
       socket.onerror = () => socket?.close();
     };
     connect();
@@ -202,12 +785,12 @@ export default function App() {
       if (timer) clearTimeout(timer);
       socket?.close();
     };
-  }, [load]);
+  }, [load, loadTasks, pushToast]);
 
   const perform = async (name: string, action: () => Promise<CaptureUiState>) => {
     setPending(name);
-    try { setUi(await action()); setError(null); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : t("Action failed")); }
+    try { setUi(await action()); }
+    catch (reason) { pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error"); }
     finally { setPending(null); }
   };
 
@@ -215,10 +798,9 @@ export default function App() {
     setPending(name);
     try {
       const result = await runtimeApi.tool(name);
-      setNotice({ message: result.message, intent: "success" });
+      pushToast(result.message, "success");
       if (result.kind === "capture" && result.resource_url) setCaptureUrl(result.resource_url);
-      setError(null);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : t("Action failed")); }
+    } catch (reason) { pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error"); }
     finally { setPending(null); }
   };
 
@@ -226,18 +808,96 @@ export default function App() {
     setPending("refresh");
     try {
       await runtimeApi.refreshDevices();
-      setError(null);
       // Completion and the updated device list arrive through adb_devices.
     } catch (reason) {
       setPending(null);
-      setError(reason instanceof Error ? reason.message : t("Action failed"));
+      pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error");
     }
+  };
+
+  const performTask = async (name: string, action: () => Promise<unknown>) => {
+    setPending(name);
+    try {
+      await action();
+      const [nextUi, nextTasks] = await Promise.all([runtimeApi.captureUi(), runtimeApi.tasks()]);
+      setUi(nextUi);
+      setTasks(nextTasks);
+    } catch (reason) {
+      pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const replaceTask = (updated: AutomationTask) => {
+    setTasks((current) => current.map((task) => task.class_name === updated.class_name ? updated : task));
+  };
+
+  const updateTaskConfig = async (task: AutomationTask, field: TaskConfigField, value: unknown) => {
+    setTasks((current) => current.map((item) => item.class_name === task.class_name ? {
+      ...item,
+      config: item.config.map((configField) => configField.key === field.key ? { ...configField, value } : configField)
+    } : item));
+    try {
+      replaceTask(await runtimeApi.setTaskConfig(task.name, field.key, value));
+    } catch (reason) {
+      pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error");
+      void loadTasks();
+    }
+  };
+
+  const resetTaskConfig = async (task: AutomationTask) => {
+    try {
+      replaceTask(await runtimeApi.resetTaskConfig(task.name));
+    } catch (reason) {
+      pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error");
+    }
+  };
+
+  const replaceSettingsGroup = (updated: SettingsGroup) => {
+    setSettings((current) => current.map((group) => group.name === updated.name ? updated : group));
+  };
+
+  const updateSetting = async (group: SettingsGroup, field: TaskConfigField, value: unknown) => {
+    setPending(`setting:${group.name}:${field.key}`);
+    setSettings((current) => current.map((item) => item.name === group.name ? {
+      ...item, fields: item.fields.map((itemField) => itemField.key === field.key ? { ...itemField, value } : itemField)
+    } : item));
+    try { replaceSettingsGroup(await runtimeApi.setSetting(group.name, field.key, value)); }
+    catch (reason) { pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error"); void loadSettings(); }
+    finally { setPending(null); }
+  };
+
+  const resetSettings = async (group: SettingsGroup) => {
+    setPending(`setting:${group.name}:reset`);
+    try { replaceSettingsGroup(await runtimeApi.resetSettings(group.name)); }
+    catch (reason) { pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error"); }
+    finally { setPending(null); }
   };
 
   const devices = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
     return (ui?.devices ?? []).filter((device) => !normalized || `${device.label} ${device.keywords}`.toLocaleLowerCase().includes(normalized));
   }, [query, ui?.devices]);
+
+  const visibleTasks = useMemo(() => tasks.filter((task) => task.visible && task.trigger === (activePage === "Triggers")), [activePage, tasks]);
+  const topLevelSettings = useMemo(() => settings.filter((group) => group.top_level), [settings]);
+  const topLevelGroupForPage = useCallback((page: string) => topLevelSettings.find((group) =>
+    group.name === page || (group.name === "Notification" && page === "Notifications")
+  ), [topLevelSettings]);
+  const primaryNavigationItems = useMemo(() => {
+    const items = [...primaryNavigation];
+    if (capabilities?.triggers) items.push(["Triggers", Timer20Regular]);
+    if (capabilities?.tasks) items.push(["Tasks", TaskListSquareLtr20Regular]);
+    if (capabilities?.script) items.push(["Script", Edit20Regular]);
+    if (capabilities?.templates) items.push(["Templates", Image20Regular]);
+    if (capabilities?.schedule) items.push(["Schedule", Calendar20Regular]);
+    topLevelSettings.filter((group) => group.name !== "Notification").forEach((group) => {
+      if (!items.some(([label]) => label === group.name)) items.push([group.name, Settings20Regular]);
+    });
+    return items;
+  }, [capabilities, topLevelSettings]);
+  const activeTopLevelSettings = topLevelGroupForPage(activePage);
 
   const status = ui?.status;
   const startLabel = status?.paused === false ? t("Pause") : `${t("Start")}${status?.hotkey ? `(${status.hotkey})` : ""}`;
@@ -247,25 +907,34 @@ export default function App() {
     <aside className="sidebar">
       <button type="button" className="nav-toggle" aria-label={t("Toggle navigation")} onClick={() => setCollapsed((value) => !value)}><Navigation20Regular /></button>
       <nav className="nav-primary">
-        {primaryNavigation.map(([label, Icon], index) => <button
+        {primaryNavigationItems.map(([label, Icon]) => <button
           type="button"
           key={label}
-          className={`nav-item ${index === 0 ? "active" : ""}`}
+          className={`nav-item ${label === activePage ? "active" : ""}`}
+          aria-current={label === activePage ? "page" : undefined}
           title={t(label)}
-          onClick={() => index !== 0 && setNotice({ message: t("{page} is not available in the web UI yet.", { page: t(label) }), intent: "info" })}
-        ><Icon /><span>{t(label)}</span></button>)}
+          onClick={() => {
+            setActivePage(label);
+          }}
+        ><Icon className={opticallyHighNavigationIcons.has(label) ? "nav-icon-shift-down" : undefined} /><span>{t(label)}</span></button>)}
       </nav>
       <nav className="nav-secondary">
-        {secondaryNavigation.map(([label, Icon]) => <button type="button" key={label} className="nav-item" title={t(label)} onClick={() => setNotice({ message: t("{page} is not available in the web UI yet.", { page: t(label) }), intent: "info" })}><Icon /><span>{t(label)}</span></button>)}
+        {secondaryNavigation.map(([label, Icon]) => <button type="button" key={label} className={`nav-item ${label === activePage ? "active" : ""}`} aria-current={label === activePage ? "page" : undefined} title={t(label)} onClick={() => {
+          setActivePage(label);
+        }}><Icon /><span>{t(label)}</span></button>)}
       </nav>
     </aside>
 
-    <div className="toast-stack" aria-live="polite">
-      {error && <div className="toast toast-error" role="alert"><ErrorCircle20Regular /><span>{error}</span><button type="button" aria-label={t("Close")} onClick={() => setError(null)}><Dismiss20Regular /></button></div>}
-      {notice && <div className={`toast toast-${notice.intent}`} role="status">{notice.intent === "success" ? <CheckmarkCircle20Regular /> : <Info20Regular />}<span>{notice.message}</span><button type="button" aria-label={t("Close")} onClick={() => setNotice(null)}><Dismiss20Regular /></button></div>}
+    <div className="toast-stack" aria-live="polite" aria-atomic="false">
+      {toasts.map((toast) => <div key={toast.id} className={`toast toast-${toast.intent}`} role={toast.intent === "error" ? "alert" : "status"}>
+        {toast.intent === "error" ? <ErrorCircle20Regular /> : toast.intent === "success" ? <CheckmarkCircle20Regular /> : <Info20Regular />}
+        <span>{toast.message}</span>
+        <button type="button" aria-label={t("Close")} onClick={() => dismissToast(toast.id)}><Dismiss20Regular /></button>
+      </div>)}
     </div>
 
-    <main className="content">
+    <main className={`content ${activePage !== "Capture" ? "task-content" : ""}`}>
+      {activePage === "Capture" ? <>
       <section className="start-card surface-card">
         <div className="app-identity"><div className="app-avatar">{ui?.icon_url ? <img src={ui.icon_url} alt="" /> : "OK"}</div><div><strong>{ui?.title || "OK-WW"}</strong><small>{ui?.version || "dev"}</small></div></div>
         <div className="start-actions">
@@ -280,11 +949,10 @@ export default function App() {
           <h2>{t("Choose Window")}</h2>
           <div className="surface-card selector-card">
             <label className="device-search"><Search20Regular /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search title or exe...")} /></label>
-            <div className="option-list" role="listbox">
+            <div className="option-list" role="group" aria-label={t("Choose Window")}>
               {devices.map((device) => <button
                 type="button"
-                role="option"
-                aria-selected={device.selected}
+                aria-pressed={device.selected}
                 className={`option-row ${device.selected ? "selected" : ""}`}
                 disabled={pending !== null}
                 key={device.id}
@@ -296,11 +964,11 @@ export default function App() {
         </div>
         <div className="selector-column">
           <h2>{t("Capture Method")}</h2>
-          <div className="surface-card selector-card"><MethodList items={ui?.capture_methods ?? []} disabled={pending !== null} onSelect={(id) => void perform("capture-method", () => runtimeApi.selectCapture(id))} /></div>
+          <div className="surface-card selector-card"><MethodList items={ui?.capture_methods ?? []} label={t("Capture Method")} disabled={pending !== null} onSelect={(id) => void perform("capture-method", () => runtimeApi.selectCapture(id))} /></div>
         </div>
         <div className="selector-column">
           <h2>{t("Choose Interaction")}</h2>
-          <div className="surface-card selector-card"><MethodList items={ui?.interaction_methods ?? []} disabled={pending !== null} onSelect={(id) => void perform("interaction-method", () => runtimeApi.selectInteraction(id))} /></div>
+          <div className="surface-card selector-card"><MethodList items={ui?.interaction_methods ?? []} label={t("Choose Interaction")} disabled={pending !== null} onSelect={(id) => void perform("interaction-method", () => runtimeApi.selectInteraction(id))} /></div>
         </div>
       </section>
 
@@ -319,26 +987,94 @@ export default function App() {
       <section className="page-section overlay-section">
         <h2>{t("Debug Overlay")}</h2>
         <div className="surface-card switch-card">
-          <Switch checked={ui?.overlay.boxes ?? false} disabled={pending !== null || !ui} label={(ui?.overlay.boxes ?? false) ? t("Enable Boxes") : t("Disable Boxes")} onChange={(value) => void perform("overlay", () => runtimeApi.setOverlay("boxes", value))} />
-          <Switch checked={ui?.overlay.logs ?? false} disabled={pending !== null || !ui} label={(ui?.overlay.logs ?? false) ? t("Show Log on Overlay") : t("Hide Log on Overlay")} onChange={(value) => void perform("overlay", () => runtimeApi.setOverlay("logs", value))} />
+          <Switch checked={ui?.overlay.boxes ?? false} disabled={pending !== null || !ui} label={t("Enable Boxes")} onChange={(value) => void perform("overlay", () => runtimeApi.setOverlay("boxes", value))} />
+          <Switch checked={ui?.overlay.logs ?? false} disabled={pending !== null || !ui} label={t("Show Log on Overlay")} onChange={(value) => void perform("overlay", () => runtimeApi.setOverlay("logs", value))} />
         </div>
       </section>
       <div className="content-spacer" />
+      </> : activePage === "About" ? <AboutPage notify={pushToast} />
+      : activePage === "Script" ? <ScriptPage notify={pushToast} />
+      : activePage === "Templates" ? <TemplatesPage notify={pushToast} />
+      : activePage === "Schedule" ? <SchedulePage notify={pushToast} />
+      : activePage === "Settings" ? <SettingsPage
+        groups={settings}
+        loading={settingsLoading}
+        pending={pending}
+        theme={theme}
+        language={language}
+        onTheme={onTheme}
+        onLanguage={onLanguage}
+        onUpdate={(group, field, value) => void updateSetting(group, field, value)}
+        onReset={(group) => void resetSettings(group)}
+      /> : activeTopLevelSettings || activePage === "Notifications" ? <TopLevelSettingsPage
+        group={activeTopLevelSettings}
+        loading={settingsLoading}
+        pending={pending}
+        onUpdate={(group, field, value) => void updateSetting(group, field, value)}
+        onReset={(group) => void resetSettings(group)}
+      /> : <>
+        <section className="task-list" aria-label={t(activePage)}>
+          {tasksLoading && !tasks.length ? <div className="task-empty">{t("Loading")}</div> : visibleTasks.length ? visibleTasks.map((task) => {
+            const expanded = expandedTasks.has(task.class_name);
+            const busy = pending !== null;
+            const toggleExpanded = () => setExpandedTasks((current) => {
+              const next = new Set(current);
+              if (next.has(task.class_name)) next.delete(task.class_name); else next.add(task.class_name);
+              return next;
+            });
+            const elapsed = task.running && task.start_time > 0 ? Math.max(0, Date.now() / 1000 - task.start_time) : 0;
+            const elapsedText = `${Math.floor(elapsed / 3600)}h ${Math.floor(elapsed % 3600 / 60)}m ${Math.floor(elapsed % 60)}s`;
+            const description = task.running
+              ? `${task.paused ? t("Paused") : t("Running")} · ${t("Time Elapsed")}: ${elapsedText}`
+              : task.description;
+            return <article key={task.class_name} className={`qt-task-card surface-card ${expanded ? "expanded" : ""} ${task.running ? "running" : ""}`}>
+              <div className="qt-task-header">
+                <button type="button" className="task-summary" disabled={!task.config.length} aria-expanded={task.config.length ? expanded : undefined} onClick={toggleExpanded}><span><strong>{task.name}</strong><small>{description}</small></span></button>
+                <div className="qt-task-actions">
+                  {task.waiting_for && <span className="task-waiting" title={t("Waiting for {task_name} task to be completed", { task_name: task.waiting_for })}>{t("Waiting for {task_name} task to be completed", { task_name: task.waiting_for })}</span>}
+                  {task.instructions && <button type="button" disabled={busy} onClick={() => setInstructionsTask(task)}><Info20Regular /><span className="button-label">{t("Instructions")}</span></button>}
+                  {task.trigger ? <Switch checked={task.enabled} disabled={busy} label={task.enabled ? t("Enabled") : t("Disabled")} onChange={(checked) => void performTask(task.name, () => runtimeApi.taskAction(task.name, checked ? "enable" : "disable"))} /> : <>
+                    {task.enabled && task.running && !task.paused && <button type="button" disabled={busy} onClick={() => void performTask(task.name, () => runtimeApi.taskAction(task.name, "pause"))}><Pause20Regular /><span className="button-label">{t("Pause")}</span></button>}
+                    {task.enabled && <button type="button" className="primary-button" disabled={busy} onClick={() => void performTask(task.name, () => runtimeApi.taskAction(task.name, "stop"))}><Stop20Regular /><span className="button-label">{t("Stop")}</span></button>}
+                    {(!task.enabled || task.paused) && <button type="button" className="primary-button" disabled={busy} onClick={() => void performTask(task.name, task.paused ? () => runtimeApi.taskAction(task.name, "resume") : () => runtimeApi.startTask(task.name))}><Play20Regular /><span className="button-label">{task.paused ? t("Resume") : t("Start")}</span></button>}
+                  </>}
+                </div>
+                {task.config.length > 0 && <button type="button" className="task-expand-indicator" aria-label={task.name} aria-expanded={expanded} onClick={toggleExpanded}><ChevronDown20Regular /></button>}
+              </div>
+              {expanded && task.config.length > 0 && <div className="task-config">
+                {task.config.map((field) => <div className="task-config-row" key={field.key}>
+                  <span><strong>{field.key}</strong>{field.description && <small>{field.description}</small>}</span>
+                  <TaskConfigControl field={field} disabled={busy} onCommit={(value) => {
+                    if (JSON.stringify(value) !== JSON.stringify(field.value)) void updateTaskConfig(task, field, value);
+                  }} />
+                </div>)}
+                <footer><button type="button" disabled={busy} onClick={() => void resetTaskConfig(task)}><span className="button-label">{t("Reset Config")}</span></button></footer>
+              </div>}
+            </article>;
+          }) : <div className="task-empty">{t("{count} available", { count: 0 })}</div>}
+        </section>
+      </>}
     </main>
-    {captureUrl && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setCaptureUrl(null)}>
-      <section className="modal capture-modal" role="dialog" aria-modal="true" aria-label={t("Capture Preview")}>
-        <header><strong>{t("Capture Preview")}</strong><div className="modal-header-actions"><button className="modal-text-button" type="button" onClick={() => void tool("screenshot-folder")}><Folder20Regular />{t("Open Screenshot Folder")}</button><button type="button" aria-label={t("Close")} onClick={() => setCaptureUrl(null)}><Dismiss20Regular /></button></div></header>
+    {captureUrl && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && closeCapture()}>
+      <section ref={captureDialog} className="modal capture-modal" role="dialog" aria-modal="true" aria-label={t("Capture Preview")} tabIndex={-1}>
+        <header><strong>{t("Capture Preview")}</strong><div className="modal-header-actions"><button className="modal-text-button" type="button" onClick={() => void tool("screenshot-folder")}><Folder20Regular />{t("Open Screenshot Folder")}</button><button type="button" aria-label={t("Close")} onClick={closeCapture}><Dismiss20Regular /></button></div></header>
         <div className="capture-preview"><img src={captureUrl} alt={t("Captured game frame")} /></div>
       </section>
     </div>}
-    {logsOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setLogsOpen(false)}>
-      <section className="modal log-modal" role="dialog" aria-modal="true" aria-label={t("View Log")}>
-        <header><strong>{t("View Log")}</strong><button type="button" aria-label={t("Close")} onClick={() => setLogsOpen(false)}><Dismiss20Regular /></button></header>
+    {instructionsTask && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && closeInstructions()}>
+      <section ref={instructionsDialog} className="modal instructions-modal" role="dialog" aria-modal="true" aria-label={instructionsTask.name} tabIndex={-1}>
+        <header><strong>{instructionsTask.name}</strong><button type="button" aria-label={t("Close")} onClick={closeInstructions}><Dismiss20Regular /></button></header>
+        <div>{instructionsTask.instructions}</div>
+      </section>
+    </div>}
+    {logsOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && closeLogs()}>
+      <section ref={logDialog} className="modal log-modal" role="dialog" aria-modal="true" aria-label={t("View Log")} tabIndex={-1}>
+        <header><strong>{t("View Log")}</strong><button type="button" aria-label={t("Close")} onClick={closeLogs}><Dismiss20Regular /></button></header>
         <div className="log-toolbar">
           <select aria-label={t("Log level")} value={logLevel} onChange={(event) => setLogLevel(event.target.value)}>
             <option value="ALL">{t("All Levels")}</option><option>DEBUG</option><option>INFO</option><option>WARNING</option><option>ERROR</option><option>CRITICAL</option>
           </select>
-          <label><Search20Regular /><input value={logQuery} onChange={(event) => setLogQuery(event.target.value)} placeholder={t("Filter logs...")} /></label>
+          <label><Search20Regular /><input data-autofocus aria-label={t("Filter logs...")} value={logQuery} onChange={(event) => setLogQuery(event.target.value)} placeholder={t("Filter logs...")} /></label>
           <button type="button" onClick={() => setLogsPaused((value) => !value)}>{logsPaused ? <Play20Regular /> : <Pause20Regular />}{logsPaused ? t("Resume") : t("Pause")}</button>
           <button type="button" onClick={() => { setLogsPaused(true); setLogData((current) => current ? { ...current, text: "", line_count: 0 } : current); }}><Dismiss20Regular />{t("Clear")}</button>
         </div>
@@ -348,4 +1084,54 @@ export default function App() {
     </div>}
     <div className="theme-mark"><WeatherMoon20Regular /><Window20Regular /></div>
   </div>;
+}
+
+export default function App() {
+  const [theme, setTheme] = useState<AppTheme>(() => (localStorage.getItem("ok-script-theme") as AppTheme | null) ?? "Auto");
+  const [language, setLanguage] = useState(() => {
+    const initial = localStorage.getItem("ok-script-language") ?? "Auto";
+    setLocale(initial);
+    return initial;
+  });
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const [systemAccent, setSystemAccent] = useState<SystemAccent | null>(null);
+  const dark = theme === "Dark" || (theme === "Auto" && systemDark);
+  const accent = theme === "Auto" ? (systemAccent?.[dark ? "dark" : "light"] ?? WINDOWS_STANDARD_BLUE) : WINDOWS_STANDARD_BLUE;
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    const update = () => setSystemDark(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    let stopped = false;
+    const loadAccent = async () => {
+      try {
+        const value = (await runtimeApi.themeUi()).system_accent;
+        if (!stopped && value && /^#[0-9a-f]{6}$/i.test(value.light) && /^#[0-9a-f]{6}$/i.test(value.dark)) setSystemAccent(value);
+      } catch {
+        if (!stopped) setSystemAccent(null);
+      }
+    };
+    void loadAccent();
+    window.addEventListener("focus", loadAccent);
+    return () => { stopped = true; window.removeEventListener("focus", loadAccent); };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    document.documentElement.style.setProperty("--accent", accent);
+    document.documentElement.style.setProperty("--accent-hover", mixHex(accent, "#ffffff", 0.14));
+    localStorage.setItem("ok-script-theme", theme);
+  }, [accent, dark, theme]);
+
+  useEffect(() => {
+    localStorage.setItem("ok-script-language", language);
+  }, [language]);
+
+  return <FluentProvider theme={themed(dark ? webDarkTheme : webLightTheme, dark, accent)} className="app-provider">
+    <RuntimeApp theme={theme} language={language} onTheme={setTheme} onLanguage={(next) => { setLocale(next); setLanguage(next); }} />
+  </FluentProvider>;
 }

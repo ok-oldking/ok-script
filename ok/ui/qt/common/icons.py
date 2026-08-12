@@ -6,6 +6,7 @@ from ok.core.icons import Icon
 _ICONS = {
     Icon.APPLICATION: FluentIcon.APPLICATION,
     Icon.GAME: FluentIcon.GAME,
+    Icon.PEOPLE: FluentIcon.PEOPLE,
     Icon.RINGER: FluentIcon.RINGER,
     Icon.SYNC: FluentIcon.SYNC,
     Icon.UPDATE: FluentIcon.UPDATE,

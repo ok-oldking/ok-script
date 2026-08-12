@@ -47,14 +47,19 @@ if os.name == "nt":
     TRANSPARENT = 1
     PS_SOLID = 0
 
+
     class POINT(ctypes.Structure):
         _fields_ = [("x", wintypes.LONG), ("y", wintypes.LONG)]
+
 
     class SIZE(ctypes.Structure):
         _fields_ = [("cx", wintypes.LONG), ("cy", wintypes.LONG)]
 
+
     class RECT(ctypes.Structure):
-        _fields_ = [("left", wintypes.LONG), ("top", wintypes.LONG), ("right", wintypes.LONG), ("bottom", wintypes.LONG)]
+        _fields_ = [("left", wintypes.LONG), ("top", wintypes.LONG), ("right", wintypes.LONG),
+                    ("bottom", wintypes.LONG)]
+
 
     class BLENDFUNCTION(ctypes.Structure):
         _fields_ = [
@@ -64,6 +69,7 @@ if os.name == "nt":
             ("AlphaFormat", ctypes.c_byte),
         ]
 
+
     class BITMAPINFOHEADER(ctypes.Structure):
         _fields_ = [
             ("biSize", wintypes.DWORD), ("biWidth", wintypes.LONG), ("biHeight", wintypes.LONG),
@@ -72,8 +78,10 @@ if os.name == "nt":
             ("biClrUsed", wintypes.DWORD), ("biClrImportant", wintypes.DWORD),
         ]
 
+
     class BITMAPINFO(ctypes.Structure):
         _fields_ = [("bmiHeader", BITMAPINFOHEADER), ("bmiColors", wintypes.DWORD * 3)]
+
 
     class CREATESTRUCTW(ctypes.Structure):
         _fields_ = [
@@ -83,9 +91,11 @@ if os.name == "nt":
             ("lpszClass", wintypes.LPCWSTR), ("dwExStyle", wintypes.DWORD),
         ]
 
+
     # ``ctypes.wintypes`` does not expose LRESULT on every Python build.
     LRESULT = ctypes.c_ssize_t
     WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
+
 
     class WNDCLASSW(ctypes.Structure):
         _fields_ = [
@@ -94,6 +104,7 @@ if os.name == "nt":
             ("hCursor", ctypes.c_void_p), ("hbrBackground", ctypes.c_void_p),
             ("lpszMenuName", wintypes.LPCWSTR), ("lpszClassName", wintypes.LPCWSTR),
         ]
+
 
     # Explicit signatures are essential on 64-bit Python: ctypes otherwise
     # assumes an ``int`` result and silently truncates HWND/HDC/HBITMAP values.
@@ -122,13 +133,13 @@ if os.name == "nt":
     user32.GetDC.restype = ctypes.c_void_p
     user32.ReleaseDC.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
     user32.UpdateLayeredWindow.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(POINT),
-                                            ctypes.POINTER(SIZE), ctypes.c_void_p, ctypes.POINTER(POINT),
-                                            wintypes.DWORD, ctypes.POINTER(BLENDFUNCTION), wintypes.DWORD]
+                                           ctypes.POINTER(SIZE), ctypes.c_void_p, ctypes.POINTER(POINT),
+                                           wintypes.DWORD, ctypes.POINTER(BLENDFUNCTION), wintypes.DWORD]
     user32.UpdateLayeredWindow.restype = wintypes.BOOL
     gdi32.CreateCompatibleDC.argtypes = [ctypes.c_void_p]
     gdi32.CreateCompatibleDC.restype = ctypes.c_void_p
     gdi32.CreateDIBSection.argtypes = [ctypes.c_void_p, ctypes.POINTER(BITMAPINFO), wintypes.UINT,
-                                        ctypes.POINTER(ctypes.c_void_p), ctypes.c_void_p, wintypes.DWORD]
+                                       ctypes.POINTER(ctypes.c_void_p), ctypes.c_void_p, wintypes.DWORD]
     gdi32.CreateDIBSection.restype = ctypes.c_void_p
     gdi32.SelectObject.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
     gdi32.SelectObject.restype = ctypes.c_void_p
@@ -324,9 +335,9 @@ class Win32GdiOverlay:
                 self._boxes_until = time.monotonic() + 4.0
                 if time.monotonic() - self._last_draw_log_at > 1.0:
                     self._last_draw_log_at = time.monotonic()
-                    logger.info(
-                        f"Win32 overlay draw event: key={_key}, boxes={len(boxes) if hasattr(boxes, '__len__') else 1}, "
-                        f"source_visible={self._source_visible}, rect={self._width}x{self._height}")
+                    # logger.info(
+                    #     f"Win32 overlay draw event: key={_key}, boxes={len(boxes) if hasattr(boxes, '__len__') else 1}, "
+                    #     f"source_visible={self._source_visible}, rect={self._width}x{self._height}")
             self._schedule_expiry(4.01, self.expire_boxes)
             self._schedule_render()
 
@@ -376,7 +387,8 @@ class Win32GdiOverlay:
         if not self._config_value("show_overlay_logs", True):
             return
         message = str(message)
-        if any(text in message for text in ("A new release of pip", "does not currently take into account all the packages")):
+        if any(text in message for text in
+               ("A new release of pip", "does not currently take into account all the packages")):
             return
         parts = message.split(":", 3)
         if len(parts) > 3:
@@ -437,7 +449,8 @@ class Win32GdiOverlay:
             # overlay content over another application when the game loses
             # focus, including freshly received background draw events.
             return bool(self._source_visible and
-                        (self._boxes_enabled or self._boxes_active or custom_active or self.blur_images or self.custom_painters))
+                        (
+                                    self._boxes_enabled or self._boxes_active or custom_active or self.blur_images or self.custom_painters))
 
     def _window_thread(self):
         try:
@@ -516,7 +529,8 @@ class Win32GdiOverlay:
         bitmap = gdi32.CreateDIBSection(memory_dc, ctypes.byref(info), DIB_RGB_COLORS, ctypes.byref(bits), None, 0)
         old_bitmap = gdi32.SelectObject(memory_dc, bitmap)
         try:
-            buffer = np.ctypeslib.as_array(ctypes.cast(bits, ctypes.POINTER(ctypes.c_ubyte)), shape=(height * width * 4,))
+            buffer = np.ctypeslib.as_array(ctypes.cast(bits, ctypes.POINTER(ctypes.c_ubyte)),
+                                           shape=(height * width * 4,))
             pixels = buffer.reshape((height, width, 4))
             pixels.fill(0)
             self._paint_blur_pixels(pixels)
@@ -538,7 +552,8 @@ class Win32GdiOverlay:
             if not user32.SetWindowPos(self._hwnd, HWND_TOPMOST, self._x, self._y, width, height,
                                        SWP_NOACTIVATE | SWP_SHOWWINDOW):
                 raise ctypes.WinError(ctypes.get_last_error())
-            if not user32.UpdateLayeredWindow(self._hwnd, screen_dc, ctypes.byref(destination), ctypes.byref(size), memory_dc,
+            if not user32.UpdateLayeredWindow(self._hwnd, screen_dc, ctypes.byref(destination), ctypes.byref(size),
+                                              memory_dc,
                                               ctypes.byref(source), 0, ctypes.byref(blend), 2):
                 raise ctypes.WinError(ctypes.get_last_error())
             # A source-window update can arrive while GDI is drawing. Do not

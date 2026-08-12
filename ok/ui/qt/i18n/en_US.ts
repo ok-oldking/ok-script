@@ -3208,5 +3208,305 @@
             <source>Open Screenshot Folder</source>
             <translation>Open Screenshot Folder</translation>
         </message>
+        <message>
+            <source>Completed</source>
+            <translation>Completed</translation>
+        </message>
+        <message>
+            <source>Time Elapsed</source>
+            <translation>Time Elapsed</translation>
+        </message>
+        <message>
+            <source>Waiting for {task_name} task to be completed</source>
+            <translation>Waiting for {task_name} task to be completed</translation>
+        </message>
+        <message>
+            <source>Instructions</source>
+            <translation>Instructions</translation>
+        </message>
+        <message>
+            <source>Enabled</source>
+            <translation>Enabled</translation>
+        </message>
+        <message>
+            <source>Disabled</source>
+            <translation>Disabled</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>Stop</translation>
+        </message>
+        <message>
+            <source>Reset Config</source>
+            <translation>Reset Config</translation>
+        </message>
+        <message>
+            <source>App Config</source>
+            <translation>App Config</translation>
+        </message>
+        <message>
+            <source>Application Theme</source>
+            <translation>Application Theme</translation>
+        </message>
+        <message>
+            <source>Change the appearance of the application</source>
+            <translation>Change the appearance of the application</translation>
+        </message>
+        <message>
+            <source>Light</source>
+            <translation>Light</translation>
+        </message>
+        <message>
+            <source>Dark</source>
+            <translation>Dark</translation>
+        </message>
+        <message>
+            <source>Use system setting</source>
+            <translation>Use system setting</translation>
+        </message>
+        <message>
+            <source>Language</source>
+            <translation>Language</translation>
+        </message>
+        <message>
+            <source>Set your preferred language</source>
+            <translation>Set your preferred language</translation>
+        </message>
+        <message>
+            <source>Actions</source>
+            <translation>Actions</translation>
+        </message>
+        <message>
+            <source>Add</source>
+            <translation>Add</translation>
+        </message>
+        <message>
+            <source>Auto Exit After Task</source>
+            <translation>Auto Exit After Task</translation>
+        </message>
+        <message>
+            <source>Available Options</source>
+            <translation>Available Options</translation>
+        </message>
+        <message>
+            <source>Bounding Box</source>
+            <translation>Bounding Box</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>Cancel</translation>
+        </message>
+        <message>
+            <source>Category name</source>
+            <translation>Category name</translation>
+        </message>
+        <message>
+            <source>Choose Task:</source>
+            <translation>Choose Task:</translation>
+        </message>
+        <message>
+            <source>Class Name (English only)</source>
+            <translation>Class Name (English only)</translation>
+        </message>
+        <message>
+            <source>Confirm</source>
+            <translation>Confirm</translation>
+        </message>
+        <message>
+            <source>Confirm Delete</source>
+            <translation>Confirm Delete</translation>
+        </message>
+        <message>
+            <source>Copy Task</source>
+            <translation>Copy Task</translation>
+        </message>
+        <message>
+            <source>Create</source>
+            <translation>Create</translation>
+        </message>
+        <message>
+            <source>Create New Task</source>
+            <translation>Create New Task</translation>
+        </message>
+        <message>
+            <source>Create Schedule Task</source>
+            <translation>Create Schedule Task</translation>
+        </message>
+        <message>
+            <source>Create Task</source>
+            <translation>Create Task</translation>
+        </message>
+        <message>
+            <source>Current App</source>
+            <translation>Current App</translation>
+        </message>
+        <message>
+            <source>Days</source>
+            <translation>Days</translation>
+        </message>
+        <message>
+            <source>Delete</source>
+            <translation>Delete</translation>
+        </message>
+        <message>
+            <source>Delete Task</source>
+            <translation>Delete Task</translation>
+        </message>
+        <message>
+            <source>Description (Optional)</source>
+            <translation>Description (Optional)</translation>
+        </message>
+        <message>
+            <source>File</source>
+            <translation>File</translation>
+        </message>
+        <message>
+            <source>Generate label enum file</source>
+            <translation>Generate label enum file</translation>
+        </message>
+        <message>
+            <source>Guide</source>
+            <translation>Guide</translation>
+        </message>
+        <message>
+            <source>Hour</source>
+            <translation>Hour</translation>
+        </message>
+        <message>
+            <source>Hours</source>
+            <translation>Hours</translation>
+        </message>
+        <message>
+            <source>Markup</source>
+            <translation>Markup</translation>
+        </message>
+        <message>
+            <source>Minute</source>
+            <translation>Minute</translation>
+        </message>
+        <message>
+            <source>Modify</source>
+            <translation>Modify</translation>
+        </message>
+        <message>
+            <source>Modify Schedule Task</source>
+            <translation>Modify Schedule Task</translation>
+        </message>
+        <message>
+            <source>Move Down</source>
+            <translation>Move Down</translation>
+        </message>
+        <message>
+            <source>Move Up</source>
+            <translation>Move Up</translation>
+        </message>
+        <message>
+            <source>Next Run</source>
+            <translation>Next Run</translation>
+        </message>
+        <message>
+            <source>No templates yet</source>
+            <translation>No templates yet</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <source>Other Projects</source>
+            <translation>Other Projects</translation>
+        </message>
+        <message>
+            <source>Relative path, e.g. ok_tasks/LabelEnum.py</source>
+            <translation>Relative path, e.g. ok_tasks/LabelEnum.py</translation>
+        </message>
+        <message>
+            <source>Remove</source>
+            <translation>Remove</translation>
+        </message>
+        <message>
+            <source>Run</source>
+            <translation>Run</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>Save</translation>
+        </message>
+        <message>
+            <source>Save To</source>
+            <translation>Save To</translation>
+        </message>
+        <message>
+            <source>Saved</source>
+            <translation>Saved</translation>
+        </message>
+        <message>
+            <source>Screenshot</source>
+            <translation>Screenshot</translation>
+        </message>
+        <message>
+            <source>Search by name or category...</source>
+            <translation>Search by name or category...</translation>
+        </message>
+        <message>
+            <source>Search templates...</source>
+            <translation>Search templates...</translation>
+        </message>
+        <message>
+            <source>Select Task</source>
+            <translation>Select Task</translation>
+        </message>
+        <message>
+            <source>Select task to edit</source>
+            <translation>Select task to edit</translation>
+        </message>
+        <message>
+            <source>Selected Options</source>
+            <translation>Selected Options</translation>
+        </message>
+        <message>
+            <source>Status</source>
+            <translation>Status</translation>
+        </message>
+        <message>
+            <source>Take Screenshot</source>
+            <translation>Take Screenshot</translation>
+        </message>
+        <message>
+            <source>Task Name</source>
+            <translation>Task Name</translation>
+        </message>
+        <message>
+            <source>Task rebuilt successfully.</source>
+            <translation>Task rebuilt successfully.</translation>
+        </message>
+        <message>
+            <source>Timeout</source>
+            <translation>Timeout</translation>
+        </message>
+        <message>
+            <source>Trigger Type</source>
+            <translation>Trigger Type</translation>
+        </message>
+        <message>
+            <source>assets (standalone app)</source>
+            <translation>assets (standalone app)</translation>
+        </message>
+        <message>
+            <source>ok_tasks/assets (custom scripts)</source>
+            <translation>ok_tasks/assets (custom scripts)</translation>
+        </message>
+        <message>
+            <source>GitHub</source>
+            <translation>GitHub</translation>
+        </message>
+        <message>
+            <source>FAQ</source>
+            <translation>FAQ</translation>
+        </message>
+        <message>
+            <source>Website</source>
+            <translation>Website</translation>
+        </message>
     </context>
 </TS>

@@ -3207,5 +3207,305 @@
             <source>Open Screenshot Folder</source>
             <translation>스크린샷 폴더 열기</translation>
         </message>
+        <message>
+            <source>Completed</source>
+            <translation>완료됨</translation>
+        </message>
+        <message>
+            <source>Time Elapsed</source>
+            <translation>경과 시간</translation>
+        </message>
+        <message>
+            <source>Waiting for {task_name} task to be completed</source>
+            <translation>{task_name} 작업 완료 대기 중</translation>
+        </message>
+        <message>
+            <source>Instructions</source>
+            <translation>사용 설명</translation>
+        </message>
+        <message>
+            <source>Enabled</source>
+            <translation>활성화됨</translation>
+        </message>
+        <message>
+            <source>Disabled</source>
+            <translation>비활성화됨</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>중지</translation>
+        </message>
+        <message>
+            <source>Reset Config</source>
+            <translation>설정 초기화</translation>
+        </message>
+        <message>
+            <source>App Config</source>
+            <translation>앱 설정</translation>
+        </message>
+        <message>
+            <source>Application Theme</source>
+            <translation>애플리케이션 테마</translation>
+        </message>
+        <message>
+            <source>Change the appearance of the application</source>
+            <translation>애플리케이션의 모양 변경</translation>
+        </message>
+        <message>
+            <source>Light</source>
+            <translation>밝게</translation>
+        </message>
+        <message>
+            <source>Dark</source>
+            <translation>어둡게</translation>
+        </message>
+        <message>
+            <source>Use system setting</source>
+            <translation>시스템 설정 사용</translation>
+        </message>
+        <message>
+            <source>Language</source>
+            <translation>언어</translation>
+        </message>
+        <message>
+            <source>Set your preferred language</source>
+            <translation>선호하는 언어 설정</translation>
+        </message>
+        <message>
+            <source>Actions</source>
+            <translation>작업</translation>
+        </message>
+        <message>
+            <source>Add</source>
+            <translation>추가</translation>
+        </message>
+        <message>
+            <source>Auto Exit After Task</source>
+            <translation>Auto Exit After Task</translation>
+        </message>
+        <message>
+            <source>Available Options</source>
+            <translation>사용 가능한 옵션</translation>
+        </message>
+        <message>
+            <source>Bounding Box</source>
+            <translation>바운딩 박스</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>취소</translation>
+        </message>
+        <message>
+            <source>Category name</source>
+            <translation>카테고리 이름</translation>
+        </message>
+        <message>
+            <source>Choose Task:</source>
+            <translation>작업 선택:</translation>
+        </message>
+        <message>
+            <source>Class Name (English only)</source>
+            <translation>클래스 이름 (영어만)</translation>
+        </message>
+        <message>
+            <source>Confirm</source>
+            <translation>확인</translation>
+        </message>
+        <message>
+            <source>Confirm Delete</source>
+            <translation>삭제 확인</translation>
+        </message>
+        <message>
+            <source>Copy Task</source>
+            <translation>작업 복사</translation>
+        </message>
+        <message>
+            <source>Create</source>
+            <translation>생성</translation>
+        </message>
+        <message>
+            <source>Create New Task</source>
+            <translation>새 작업 생성</translation>
+        </message>
+        <message>
+            <source>Create Schedule Task</source>
+            <translation>예약 작업 생성</translation>
+        </message>
+        <message>
+            <source>Create Task</source>
+            <translation>작업 생성</translation>
+        </message>
+        <message>
+            <source>Current App</source>
+            <translation>Current App</translation>
+        </message>
+        <message>
+            <source>Days</source>
+            <translation>일</translation>
+        </message>
+        <message>
+            <source>Delete</source>
+            <translation>삭제</translation>
+        </message>
+        <message>
+            <source>Delete Task</source>
+            <translation>작업 삭제</translation>
+        </message>
+        <message>
+            <source>Description (Optional)</source>
+            <translation>설명 (선택)</translation>
+        </message>
+        <message>
+            <source>File</source>
+            <translation>파일</translation>
+        </message>
+        <message>
+            <source>Generate label enum file</source>
+            <translation>레이블 enum 파일 생성</translation>
+        </message>
+        <message>
+            <source>Guide</source>
+            <translation>가이드</translation>
+        </message>
+        <message>
+            <source>Hour</source>
+            <translation>시간</translation>
+        </message>
+        <message>
+            <source>Hours</source>
+            <translation>시간</translation>
+        </message>
+        <message>
+            <source>Markup</source>
+            <translation>마크업</translation>
+        </message>
+        <message>
+            <source>Minute</source>
+            <translation>분</translation>
+        </message>
+        <message>
+            <source>Modify</source>
+            <translation>수정</translation>
+        </message>
+        <message>
+            <source>Modify Schedule Task</source>
+            <translation>예약 작업 수정</translation>
+        </message>
+        <message>
+            <source>Move Down</source>
+            <translation>아래로 이동</translation>
+        </message>
+        <message>
+            <source>Move Up</source>
+            <translation>위로 이동</translation>
+        </message>
+        <message>
+            <source>Next Run</source>
+            <translation>다음 실행</translation>
+        </message>
+        <message>
+            <source>No templates yet</source>
+            <translation>템플릿이 없습니다</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>확인</translation>
+        </message>
+        <message>
+            <source>Other Projects</source>
+            <translation>관련 프로젝트</translation>
+        </message>
+        <message>
+            <source>Relative path, e.g. ok_tasks/LabelEnum.py</source>
+            <translation>상대 경로, 예: ok_tasks/LabelEnum.py</translation>
+        </message>
+        <message>
+            <source>Remove</source>
+            <translation>제거</translation>
+        </message>
+        <message>
+            <source>Run</source>
+            <translation>실행</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>저장</translation>
+        </message>
+        <message>
+            <source>Save To</source>
+            <translation>저장 위치</translation>
+        </message>
+        <message>
+            <source>Saved</source>
+            <translation>Saved</translation>
+        </message>
+        <message>
+            <source>Screenshot</source>
+            <translation>스크린샷</translation>
+        </message>
+        <message>
+            <source>Search by name or category...</source>
+            <translation>이름 또는 카테고리로 검색...</translation>
+        </message>
+        <message>
+            <source>Search templates...</source>
+            <translation>템플릿 검색...</translation>
+        </message>
+        <message>
+            <source>Select Task</source>
+            <translation>작업 선택</translation>
+        </message>
+        <message>
+            <source>Select task to edit</source>
+            <translation>Select task to edit</translation>
+        </message>
+        <message>
+            <source>Selected Options</source>
+            <translation>선택한 옵션</translation>
+        </message>
+        <message>
+            <source>Status</source>
+            <translation>상태</translation>
+        </message>
+        <message>
+            <source>Take Screenshot</source>
+            <translation>스크린샷 촬영</translation>
+        </message>
+        <message>
+            <source>Task Name</source>
+            <translation>작업 이름</translation>
+        </message>
+        <message>
+            <source>Task rebuilt successfully.</source>
+            <translation>작업이 성공적으로 재구성되었습니다.</translation>
+        </message>
+        <message>
+            <source>Timeout</source>
+            <translation>시간 초과</translation>
+        </message>
+        <message>
+            <source>Trigger Type</source>
+            <translation>트리거 유형</translation>
+        </message>
+        <message>
+            <source>assets (standalone app)</source>
+            <translation>assets (독립 실행형 앱)</translation>
+        </message>
+        <message>
+            <source>ok_tasks/assets (custom scripts)</source>
+            <translation>ok_tasks/assets (사용자 스크립트)</translation>
+        </message>
+        <message>
+            <source>GitHub</source>
+            <translation>GitHub</translation>
+        </message>
+        <message>
+            <source>FAQ</source>
+            <translation>FAQ</translation>
+        </message>
+        <message>
+            <source>Website</source>
+            <translation>웹사이트</translation>
+        </message>
     </context>
 </TS>

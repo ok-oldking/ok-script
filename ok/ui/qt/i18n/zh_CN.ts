@@ -3204,5 +3204,305 @@
             <source>Open Screenshot Folder</source>
             <translation>打开截图目录</translation>
         </message>
+        <message>
+            <source>Completed</source>
+            <translation>已完成</translation>
+        </message>
+        <message>
+            <source>Time Elapsed</source>
+            <translation>已运行</translation>
+        </message>
+        <message>
+            <source>Waiting for {task_name} task to be completed</source>
+            <translation>等待 {task_name} 任务完成</translation>
+        </message>
+        <message>
+            <source>Instructions</source>
+            <translation>使用说明</translation>
+        </message>
+        <message>
+            <source>Enabled</source>
+            <translation>已启用</translation>
+        </message>
+        <message>
+            <source>Disabled</source>
+            <translation>未启用</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>停止</translation>
+        </message>
+        <message>
+            <source>Reset Config</source>
+            <translation>重置配置</translation>
+        </message>
+        <message>
+            <source>App Config</source>
+            <translation>软件设置</translation>
+        </message>
+        <message>
+            <source>Application Theme</source>
+            <translation>应用主题</translation>
+        </message>
+        <message>
+            <source>Change the appearance of the application</source>
+            <translation>改变应用程序的外观</translation>
+        </message>
+        <message>
+            <source>Light</source>
+            <translation>浅色</translation>
+        </message>
+        <message>
+            <source>Dark</source>
+            <translation>深色</translation>
+        </message>
+        <message>
+            <source>Use system setting</source>
+            <translation>使用系统设置</translation>
+        </message>
+        <message>
+            <source>Language</source>
+            <translation>语言</translation>
+        </message>
+        <message>
+            <source>Set your preferred language</source>
+            <translation>选择你的语言</translation>
+        </message>
+        <message>
+            <source>Actions</source>
+            <translation>操作</translation>
+        </message>
+        <message>
+            <source>Add</source>
+            <translation>添加</translation>
+        </message>
+        <message>
+            <source>Auto Exit After Task</source>
+            <translation>Auto Exit After Task</translation>
+        </message>
+        <message>
+            <source>Available Options</source>
+            <translation>可用选项</translation>
+        </message>
+        <message>
+            <source>Bounding Box</source>
+            <translation>边界框</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>取消</translation>
+        </message>
+        <message>
+            <source>Category name</source>
+            <translation>分类名称</translation>
+        </message>
+        <message>
+            <source>Choose Task:</source>
+            <translation>选择任务:</translation>
+        </message>
+        <message>
+            <source>Class Name (English only)</source>
+            <translation>类名 (仅限英文)</translation>
+        </message>
+        <message>
+            <source>Confirm</source>
+            <translation>确认</translation>
+        </message>
+        <message>
+            <source>Confirm Delete</source>
+            <translation>确认删除</translation>
+        </message>
+        <message>
+            <source>Copy Task</source>
+            <translation>复制任务</translation>
+        </message>
+        <message>
+            <source>Create</source>
+            <translation>创建</translation>
+        </message>
+        <message>
+            <source>Create New Task</source>
+            <translation>创建新任务</translation>
+        </message>
+        <message>
+            <source>Create Schedule Task</source>
+            <translation>创建计划任务</translation>
+        </message>
+        <message>
+            <source>Create Task</source>
+            <translation>创建任务</translation>
+        </message>
+        <message>
+            <source>Current App</source>
+            <translation>Current App</translation>
+        </message>
+        <message>
+            <source>Days</source>
+            <translation>天</translation>
+        </message>
+        <message>
+            <source>Delete</source>
+            <translation>删除</translation>
+        </message>
+        <message>
+            <source>Delete Task</source>
+            <translation>删除任务</translation>
+        </message>
+        <message>
+            <source>Description (Optional)</source>
+            <translation>描述 (可选)</translation>
+        </message>
+        <message>
+            <source>File</source>
+            <translation>文件</translation>
+        </message>
+        <message>
+            <source>Generate label enum file</source>
+            <translation>生成标签枚举文件</translation>
+        </message>
+        <message>
+            <source>Guide</source>
+            <translation>教程</translation>
+        </message>
+        <message>
+            <source>Hour</source>
+            <translation>时</translation>
+        </message>
+        <message>
+            <source>Hours</source>
+            <translation>小时</translation>
+        </message>
+        <message>
+            <source>Markup</source>
+            <translation>标注</translation>
+        </message>
+        <message>
+            <source>Minute</source>
+            <translation>分</translation>
+        </message>
+        <message>
+            <source>Modify</source>
+            <translation>修改</translation>
+        </message>
+        <message>
+            <source>Modify Schedule Task</source>
+            <translation>修改计划任务</translation>
+        </message>
+        <message>
+            <source>Move Down</source>
+            <translation>下移</translation>
+        </message>
+        <message>
+            <source>Move Up</source>
+            <translation>上移</translation>
+        </message>
+        <message>
+            <source>Next Run</source>
+            <translation>下次运行</translation>
+        </message>
+        <message>
+            <source>No templates yet</source>
+            <translation>暂无模板</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>确定</translation>
+        </message>
+        <message>
+            <source>Other Projects</source>
+            <translation>相关项目</translation>
+        </message>
+        <message>
+            <source>Relative path, e.g. ok_tasks/LabelEnum.py</source>
+            <translation>相对路径，例如：ok_tasks/LabelEnum.py</translation>
+        </message>
+        <message>
+            <source>Remove</source>
+            <translation>移除</translation>
+        </message>
+        <message>
+            <source>Run</source>
+            <translation>运行</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>保存</translation>
+        </message>
+        <message>
+            <source>Save To</source>
+            <translation>保存到</translation>
+        </message>
+        <message>
+            <source>Saved</source>
+            <translation>Saved</translation>
+        </message>
+        <message>
+            <source>Screenshot</source>
+            <translation>截图</translation>
+        </message>
+        <message>
+            <source>Search by name or category...</source>
+            <translation>按名称或分类搜索...</translation>
+        </message>
+        <message>
+            <source>Search templates...</source>
+            <translation>搜索模板...</translation>
+        </message>
+        <message>
+            <source>Select Task</source>
+            <translation>选择任务</translation>
+        </message>
+        <message>
+            <source>Select task to edit</source>
+            <translation>Select task to edit</translation>
+        </message>
+        <message>
+            <source>Selected Options</source>
+            <translation>已选选项</translation>
+        </message>
+        <message>
+            <source>Status</source>
+            <translation>状态</translation>
+        </message>
+        <message>
+            <source>Take Screenshot</source>
+            <translation>截取屏幕</translation>
+        </message>
+        <message>
+            <source>Task Name</source>
+            <translation>任务名称</translation>
+        </message>
+        <message>
+            <source>Task rebuilt successfully.</source>
+            <translation>任务重建成功。</translation>
+        </message>
+        <message>
+            <source>Timeout</source>
+            <translation>超时时间</translation>
+        </message>
+        <message>
+            <source>Trigger Type</source>
+            <translation>触发类型</translation>
+        </message>
+        <message>
+            <source>assets (standalone app)</source>
+            <translation>assets (独立应用)</translation>
+        </message>
+        <message>
+            <source>ok_tasks/assets (custom scripts)</source>
+            <translation>ok_tasks/assets (自定义脚本)</translation>
+        </message>
+        <message>
+            <source>GitHub</source>
+            <translation>GitHub</translation>
+        </message>
+        <message>
+            <source>FAQ</source>
+            <translation>FAQ</translation>
+        </message>
+        <message>
+            <source>Website</source>
+            <translation>网站</translation>
+        </message>
     </context>
 </TS>

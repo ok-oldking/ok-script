@@ -852,7 +852,8 @@ class OCR(FindFeature):
             auto_simplify = ocr_config.get('auto_simplify', False)
 
         if auto_simplify:
-            locale_name = self.executor.locale.name()
+            locale = self.executor.locale
+            locale_name = locale.name() if hasattr(locale, "name") else str(locale)
             if locale_name.startswith('zh_TW') or locale_name.startswith('zh_HK') or locale_name.startswith('zh_MO'):
                 try:
                     from opencc import OpenCC

@@ -15,7 +15,13 @@ function resolveLocale(language: string): Locale {
   return match ?? "en_US";
 }
 
-export const locale = resolveLocale(navigator.language);
+export let locale = resolveLocale(navigator.language);
+
+export function setLocale(language: string): Locale {
+  locale = resolveLocale(language === "Auto" ? navigator.language : language);
+  document.documentElement.lang = locale.replace("_", "-");
+  return locale;
+}
 
 export function t(source: string, parameters: Parameters = {}): string {
   const catalog = catalogs[locale] as Record<string, string>;

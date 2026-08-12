@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     )
     from ok.feature.Feature import Feature
     from ok.feature.FeatureSet import FeatureSet
+    from ok.core.icons import Icon
     from ok.core.events import communicate
     from ok.ui.qt.MainWindow import MainWindow
     from ok.task.DiagnosisTask import DiagnosisTask
@@ -90,6 +91,7 @@ if TYPE_CHECKING:
 
 _LAZY_IMPORTS = {
     'communicate': ('ok.core.events', 'communicate'),
+    'Icon': ('ok.core.icons', 'Icon'),
     'MainWindow': ('ok.ui.qt.MainWindow', 'MainWindow'),
     'TaskExecutor': ('ok.task.TaskExecutor', 'TaskExecutor'),
     'DeviceManager': ('ok.device.DeviceManager', 'DeviceManager'),
@@ -200,14 +202,65 @@ class CommunicateHandler(logging.Handler):
         self.communicate.log.emit(record.levelno, log_message)
 
 
-class App:
+_OK_CONFIG_DEFAULTS = {
+    'window_x': -1,
+    'window_y': -1,
+    'window_width': -1,
+    'window_height': -1,
+    'window_maximized': False,
+    'navigation_expanded': True,
+    'use_overlay': False,
+    'show_overlay_logs': True,
+}
+
+
+def _create_ok_config(config):
+    """Load UI state once for both the Qt and headless/web facades."""
+    from ok.util.config import Config
+
+    defaults = dict(_OK_CONFIG_DEFAULTS)
+    for key in ('use_overlay', 'show_overlay_logs'):
+        if key in config:
+            defaults[key] = bool(config[key])
+    return Config('_ok', defaults)
+
+
+class _OverlayConfigMixin:
+    def overlay_state(self):
+        return {
+            'boxes': bool(self.ok_config.get('use_overlay', False)),
+            'logs': bool(self.ok_config.get('show_overlay_logs', True)),
+        }
+
+    def initialize_overlay(self):
+        """Apply persisted overlay state independently of the active UI."""
+        if self.ok_config.get('use_overlay', False) or callable(self.config.get('blur_area')):
+            overlay = self.get_overlay_view()
+            overlay.set_boxes_enabled(self.ok_config.get('use_overlay', False))
+
+    def set_overlay_setting(self, name, value):
+        key = {'boxes': 'use_overlay', 'logs': 'show_overlay_logs'}.get(name)
+        if key is None:
+            raise ValueError(f'Unknown overlay setting: {name}')
+
+        self.ok_config[key] = bool(value)
+        overlay = self.overlay_window
+        if name == 'boxes' and value:
+            overlay = self.get_overlay_view()
+        if overlay is not None:
+            # This also schedules a repaint so a changed log setting takes
+            # effect immediately in the native overlay.
+            overlay.set_boxes_enabled(self.ok_config.get('use_overlay', False))
+        return self.overlay_state()
+
+
+class App(_OverlayConfigMixin):
     def __init__(self, config, task_executor,
                  exit_event=None):
         from PySide6.QtGui import QIcon
         from ok.core.events import communicate
         from ok.ui.qt.events import install_qt_event_dispatcher
         from ok.util.clazz import init_class_by_name
-        from ok.util.config import Config
 
         super().__init__()
         og.exit_event = exit_event
@@ -221,9 +274,7 @@ class App:
         if task_executor is not None:
             task_executor.locale = self.locale
             task_executor.load_tr()
-        self.ok_config = Config('_ok', {'window_x': -1, 'window_y': -1, 'window_width': -1, 'window_height': -1,
-                                        'window_maximized': False, 'navigation_expanded': True,
-                                        'use_overlay': False, 'show_overlay_logs': True})
+        self.ok_config = _create_ok_config(config)
         communicate.quit.connect(self.quit)
 
         self.about = self.config.get('about')
@@ -356,9 +407,6 @@ class App:
     def do_show_main(self):
         from ok.ui.qt.MainWindow import MainWindow
 
-        if self.ok_config.get('use_overlay', False) or callable(self.config.get('blur_area')):
-            self.get_overlay_view()
-
         self.main_window = MainWindow(self, self.config, self.ok_config, self.icon, self.title, self.version,
                                       self.debug,
                                       self.about,
@@ -400,14 +448,13 @@ class App:
         sys.exit(self.app.exec())
 
 
-class HeadlessApp:
+class HeadlessApp(_OverlayConfigMixin):
     """Small app facade for running tasks without creating any UI windows."""
 
     def __init__(self, config, exit_event=None):
         from ok.core.events import communicate
         from ok.core.translation import LocaleName
         from ok.util.clazz import init_class_by_name
-        from ok.util.config import Config
 
         og.exit_event = exit_event
         og.handler = Handler(exit_event, 'global')
@@ -417,10 +464,7 @@ class HeadlessApp:
         self.global_config = og.global_config
         self.icon = None
         self.overlay_window = None
-        self.ok_config = Config('_ok', {'window_x': -1, 'window_y': -1, 'window_width': -1, 'window_height': -1,
-                                        'window_maximized': False, 'navigation_expanded': True,
-                                        'use_overlay': bool(config.get('use_overlay', False)),
-                                        'show_overlay_logs': bool(config.get('show_overlay_logs', True))})
+        self.ok_config = _create_ok_config(config)
         self.exit_event = exit_event
         self.po_translation = None
         self.to_translate = None
@@ -647,9 +691,10 @@ class OK:
         from ok.core.events import communicate
         from ok.util.GlobalConfig import basic_options
 
-        communicate.start_success.emit()
         task_number = self.args.get('task', 0)
         app = self.headless_app if self.should_init_task_manager_headless() else self.app
+        app.initialize_overlay()
+        communicate.start_success.emit()
         if task_number > 0:
             logger.info(f'start runtime with task param {task_number - 1} {self.args.get("exit", False)}')
             app.start_controller.start(task_number - 1, exit_after=self.args.get('exit', False))
