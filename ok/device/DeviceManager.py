@@ -38,6 +38,10 @@ def resolve_emulator_window_exe(exe_path, instance_name=None):
         install_root, 'nx_device', version, 'shell', 'MuMuNxDevice.exe')
 
 
+def method_name(method):
+    return method.__name__ if isinstance(method, type) else str(method)
+
+
 class DeviceManager:
 
     def __init__(self, app_config, exit_event=None, global_config=None):
@@ -518,6 +522,46 @@ class DeviceManager:
 
     def get_preferred_capture(self):
         return self.config.get("capture")
+
+    def available_capture_methods(self, device=None):
+        """Return valid capture method identifiers for a selected device."""
+        device = device or self.get_preferred_device()
+        if not device:
+            return []
+        kind = device.get('device')
+        if kind == 'windows':
+            configured = (self.windows_capture_config or {}).get('capture_method', [])
+            methods = configured if isinstance(configured, list) else [configured]
+            return [method_name(item) for item in (methods or ['windows']) if item]
+        if kind == 'browser':
+            return ['browser']
+        methods = ['adb']
+        emulator = device.get('emulator')
+        if emulator is not None:
+            try:
+                from ok.alas.emulator_windows import Emulator
+                if (emulator and emulator.type == Emulator.MuMuPlayer12
+                        and 'MuMuPlayerGlobal' not in str(emulator.path)):
+                    methods.append('ipc')
+            except (AttributeError, ImportError):
+                pass
+        return methods
+
+    def available_interaction_methods(self, device=None):
+        """Return valid interaction method identifiers for a selected device."""
+        device = device or self.get_preferred_device()
+        if not device:
+            return []
+        kind = device.get('device')
+        if kind == 'windows':
+            configured = (self.windows_capture_config or {}).get('interaction', [])
+            methods = configured if isinstance(configured, list) else [configured]
+            return [method_name(item) for item in (methods or ['Pynput']) if item]
+        if kind == 'browser':
+            return ['BrowserInteraction']
+        if kind == 'adb':
+            return ['ADBInteraction']
+        return ['Default Interaction']
 
     def set_hwnd_name(self, hwnd_name):
         preferred = self.get_preferred_device()

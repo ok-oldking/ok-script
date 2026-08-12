@@ -92,9 +92,9 @@ export function MarkupDialog({ initial, images, notify, onClose }: {
   const [view, setView] = useState<number[]>([0, 0, initial.width || 1, initial.height || 1]);
   const [colorInfo, setColorInfo] = useState<{ text: string; rgb: string } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const pixelContext = useRef<CanvasRenderingContext2D | null>(null);
   const dragRef = useRef<DragState | null>(null);
-  const lastBoxPress = useRef<{ index: number; time: number } | null>(null);
   const currentIndex = Math.max(0, images.findIndex((image) => image.name === document.name));
 
   useEffect(() => {
@@ -172,14 +172,22 @@ export function MarkupDialog({ initial, images, notify, onClose }: {
     if (annotation) setDeleteIndex(index);
   }, [document.annotations]);
 
+  useEffect(() => { dialogRef.current?.focus(); }, []);
+
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      if (draft || deleteIndex !== null || event.ctrlKey || event.altKey || event.metaKey ||
+      if (draft || deleteIndex !== null || event.altKey || event.metaKey ||
           target?.matches("input, textarea, select, [contenteditable='true']")) return;
 
       const key = event.key.toLocaleLowerCase();
-      if (key === "r") toggleMode("draw");
+      if (event.ctrlKey && key === "c" && selected >= 0) {
+        const annotation = document.annotations[selected];
+        const next = [...document.annotations, { ...annotation, id: undefined, category: `${annotation.category}_copy`, bbox: clampBox([annotation.bbox[0] + 20, annotation.bbox[1] + 20, annotation.bbox[2], annotation.bbox[3]], imageWidth, imageHeight) }];
+        setSelected(-1);
+        void persist(next);
+      } else if (event.ctrlKey) return;
+      else if (key === "r") toggleMode("draw");
       else if (key === "d") toggleMode("delete");
       else if (event.key === "Delete" && selected >= 0) deleteAnnotation(selected);
       else if (event.key === "ArrowLeft") void loadImage(currentIndex - 1);
@@ -190,7 +198,7 @@ export function MarkupDialog({ initial, images, notify, onClose }: {
 
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, [currentIndex, deleteAnnotation, deleteIndex, draft, loadImage, selected, toggleMode]);
+  }, [currentIndex, deleteAnnotation, deleteIndex, document.annotations, draft, imageHeight, imageWidth, loadImage, persist, selected, toggleMode]);
 
   const handleCanvasPointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
     const point = pointFromEvent(event);
@@ -214,18 +222,6 @@ export function MarkupDialog({ initial, images, notify, onClose }: {
     event.stopPropagation();
     if (mode === "delete") { deleteAnnotation(index); return; }
     if (mode !== "none") return;
-    if (!handle) {
-      const now = performance.now();
-      const previous = lastBoxPress.current;
-      lastBoxPress.current = { index, time: now };
-      if (previous?.index === index && now - previous.time < 500) {
-        lastBoxPress.current = null;
-        dragRef.current = null;
-        setSelected(index);
-        openEditor(index);
-        return;
-      }
-    }
     const point = pointFromEvent(event);
     setSelected(index);
     dragRef.current = { kind: handle ? "resize" : "move", index, handle, start: point, originalBox: [...document.annotations[index].bbox] };
@@ -289,8 +285,8 @@ export function MarkupDialog({ initial, images, notify, onClose }: {
   const labelSize = Math.max(view[2], view[3]) / 85;
   const handles = selectedBox ? [["tl", selectedBox[0], selectedBox[1]], ["tr", selectedBox[0] + selectedBox[2], selectedBox[1]], ["bl", selectedBox[0], selectedBox[1] + selectedBox[3]], ["br", selectedBox[0] + selectedBox[2], selectedBox[1] + selectedBox[3]]] as const : [];
 
-  return <div className="modal-backdrop markup-editor-backdrop">
-    <section className="modal markup-editor-modal" role="dialog" aria-modal="true" aria-label={t("Markup Editor")}>
+  return <div className="modal-backdrop markup-editor-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <section ref={dialogRef} tabIndex={-1} className="modal markup-editor-modal" role="dialog" aria-modal="true" aria-label={t("Markup Editor")}>
       <header><strong>{t("Markup Editor")}</strong><button type="button" aria-label={t("Close")} onClick={onClose}><Dismiss20Regular /></button></header>
       <div className="markup-editor-toolbar">
         <Button appearance={mode === "draw" ? "primary" : "secondary"} icon={<Edit20Regular />} onClick={() => toggleMode("draw")}>{t("Draw (R)")}</Button>
@@ -310,7 +306,7 @@ export function MarkupDialog({ initial, images, notify, onClose }: {
               const [x, y, width, height] = annotation.bbox;
               const active = selected === index;
               const color = active ? "#0078d4" : hovered === index ? "#ffa500" : annotationColor(annotation, index);
-              return <g key={annotation.id ?? index} onPointerEnter={() => setHovered(index)} onPointerLeave={() => setHovered(-1)} onPointerDown={(event) => startBoxDrag(event, index)}>
+              return <g key={annotation.id ?? index} onPointerEnter={() => setHovered(index)} onPointerLeave={() => setHovered(-1)} onDoubleClick={(event) => { event.stopPropagation(); setSelected(index); openEditor(index); }} onPointerDown={(event) => startBoxDrag(event, index)}>
                 <rect className="markup-box-hit" x={x} y={y} width={width} height={height} />
                 <rect className="markup-box" x={x} y={y} width={width} height={height} stroke={color} fill={color} />
                 <text className="markup-box-label" x={x + labelSize * .18} y={Math.max(labelSize, y - labelSize * .18)} fill={color} fontSize={labelSize}>{annotation.category}</text>

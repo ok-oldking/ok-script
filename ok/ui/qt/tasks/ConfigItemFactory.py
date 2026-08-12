@@ -9,22 +9,11 @@ from ok.gui.tasks.LabelAndSpinBox import LabelAndSpinBox
 from ok.gui.tasks.LabelAndSwitchButton import LabelAndSwitchButton
 from ok.gui.tasks.LabelAndTextEdit import LabelAndTextEdit
 from ok.gui.tasks.ModifyListItem import ModifyListItem
+from ok.core.config_schema import resolve_config_type
 
 
 def _resolve_type(the_type, default_value):
-    if not isinstance(the_type, dict):
-        return None
-
-    resolved_type = the_type.get('type')
-    if resolved_type:
-        return resolved_type
-    if 'buttons' in the_type or 'callback' in the_type:
-        return 'button'
-    if 'options' in the_type:
-        if isinstance(default_value, list):
-            return 'multi_selection'
-        return 'drop_down'
-    return None
+    return resolve_config_type(the_type, default_value)
 
 
 def config_widget(config_type, config_desc, config, key, value, task):

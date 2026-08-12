@@ -74,7 +74,7 @@ export type TaskConfigField = {
   value: unknown;
   default: unknown;
   description: string;
-  kind: "boolean" | "integer" | "number" | "text" | "select" | "multi_selection" | "list";
+  kind: "boolean" | "integer" | "number" | "text" | "multiline" | "file" | "select" | "multi_selection" | "list";
   options: unknown[] | null;
   allow_duplication: boolean;
   minimum: number | null;
@@ -132,7 +132,7 @@ export type ScriptTemplate = {
   full_doc: string;
   class_name: string;
   is_static: boolean;
-  params: Array<{ name: string; default: string | null }>;
+  params: Array<{ name: string; default: string | null; doc?: string }>;
 };
 
 export type TemplateImage = {

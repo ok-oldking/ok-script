@@ -38,28 +38,18 @@ from qfluentwidgets import (
 
 from ok import Logger, og
 from ok.gui.widget.Tab import Tab
-from ok.util.windows_schedule import WindowsScheduleManager, ScheduleTaskInfo, TriggerType
+from ok.util.windows_schedule import (
+    WindowsScheduleManager, ScheduleTaskInfo, TriggerType,
+    format_next_run_time as core_format_next_run_time,
+    infer_trigger_type as core_infer_trigger_type,
+    normalize_trigger_type as core_normalize_trigger_type,
+)
 
 logger = Logger.get_logger(__name__)
 
 
 def normalize_trigger_type(raw_type: str) -> TriggerType:
-    """将 COM/schtasks 的触发器类型统一为 TriggerType"""
-    value = (raw_type or "").strip()
-    lowered = value.lower()
-
-    if value in (TriggerType.DAILY.value, "2") or "daily" in lowered:
-        return TriggerType.DAILY
-    if value in (TriggerType.WEEKLY.value, "3") or "weekly" in lowered:
-        return TriggerType.WEEKLY
-    if value in (TriggerType.MONTHLY.value, "4", "5", "6") or "monthly" in lowered:
-        return TriggerType.MONTHLY
-    if value in (TriggerType.ONCE.value, "1") or "once" in lowered or "time" in lowered:
-        return TriggerType.ONCE
-    if value in (TriggerType.CUSTOM.value,) or "custom" in lowered:
-        return TriggerType.CUSTOM
-
-    return TriggerType.DAILY
+    return core_normalize_trigger_type(raw_type)
 
 
 def display_trigger_type(raw_type: str, tr_func: Optional[Callable[[str], str]] = None) -> str:
@@ -84,33 +74,7 @@ def trigger_type_to_index(raw_type: str) -> int:
 
 def infer_trigger_type(raw_type: str, xml_config: str = "", interval_days: int = 0,
                        interval_hours: int = 0) -> TriggerType:
-    """综合 raw/xml/interval 推断触发类型，避免读取异常时回显错误"""
-    if interval_hours > 0 or interval_days > 1:
-        return TriggerType.CUSTOM
-
-    trigger = normalize_trigger_type(raw_type)
-    raw_value = (raw_type or "").strip()
-
-    # raw 可识别且不是默认兜底值时直接用
-    if raw_value and (raw_value.isdigit() or raw_value.lower() in {"daily", "weekly", "monthly", "once", "custom"}):
-        return trigger
-
-    xml = (xml_config or "").lower()
-    if not xml:
-        return trigger
-
-    if "<repetition>" in xml and "<interval>pt" in xml and "h</interval>" in xml:
-        return TriggerType.CUSTOM
-    if "<schedulebyweek>" in xml:
-        return TriggerType.WEEKLY
-    if "<schedulebymonth>" in xml:
-        return TriggerType.MONTHLY
-    if "<timetrigger>" in xml and "<repetition>" not in xml:
-        return TriggerType.ONCE
-    if "<schedulebyday>" in xml:
-        return TriggerType.DAILY
-
-    return trigger
+    return core_infer_trigger_type(raw_type, xml_config, interval_days, interval_hours)
 
 
 def display_trigger_type_for_task(
@@ -145,27 +109,7 @@ def trigger_type_to_index_for_task(task_info: ScheduleTaskInfo) -> int:
 
 
 def format_next_run_time(next_run_time: str) -> str:
-    """格式化下次运行时间，截取关键参数"""
-    if not next_run_time:
-        return "-"
-
-    # 如果已经很短，直接返回
-    if len(next_run_time) <= 16:  # 例如 "2026-03-06 14:30"
-        return next_run_time
-
-    # 尝试提取日期和时间部分，移除额外的信息
-    # 优先保留 "YYYY-MM-DD HH:MM" 格式
-    parts = next_run_time.split()
-    if len(parts) >= 2:
-        date_part = parts[0]
-        time_part = parts[1]
-        # 检查时间格式是否包含秒
-        if len(time_part) > 5:  # "HH:MM:SS"
-            time_part = time_part[:5]  # 只保留 "HH:MM"
-        return f"{date_part} {time_part}"
-
-    # 如果无法分割，就截取前16个字符
-    return next_run_time[:16]
+    return core_format_next_run_time(next_run_time)
 
 
 class ScheduleTaskTable(TableWidget):

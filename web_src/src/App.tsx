@@ -45,7 +45,7 @@ import { ConfirmDeleteDialog } from "./ConfirmDialog";
 import { locale, setLocale, t } from "./i18n";
 import { MarkupDialog } from "./MarkupDialog";
 import { PythonCodeEditor } from "./PythonCodeEditor";
-import { CreateScriptDialog, ExportScriptDialog, ImportScriptDialog, RecordScriptDialog } from "./ScriptDialogs";
+import { CreateScriptDialog, ExportScriptDialog, ExternalScriptChangeDialog, ImportScriptDialog, RecordScriptDialog, TemplateParameterDialog, UnsavedScriptDialog } from "./ScriptDialogs";
 import type { AboutInfo, AutomationTask, CaptureUiState, LogResponse, MethodOption, NavigationCapabilities, RuntimeEvent, ScheduleData, ScheduledTask, ScriptDocument, ScriptSummary, ScriptTemplate, SettingsGroup, TaskConfigField, TemplateAnnotations, TemplateImage } from "./types";
 
 type IconComponent = typeof Play20Regular;
@@ -295,10 +295,16 @@ function TaskConfigControl({ field, disabled, onCommit }: {
     return <div className="task-config-control boolean"><Switch checked={Boolean(field.value)} disabled={disabled} label={Boolean(field.value) ? t("Enabled") : t("Disabled")} onChange={onCommit} /></div>;
   }
   if (field.kind === "select") {
+    const longestOption = Math.max(
+      String(field.value ?? "").length,
+      ...(field.options ?? []).map((option) => String(option).length)
+    );
+    const optionWidth = Math.min(36, Math.max(12, longestOption + 4));
     return <div className="task-config-control select"><Dropdown
       aria-label={field.key}
       disabled={disabled}
       inlinePopup
+      style={{ width: `${optionWidth}ch` }}
       value={String(field.value ?? "")}
       selectedOptions={[JSON.stringify(field.value)]}
       onOptionSelect={(_event, data) => data.optionValue !== undefined && onCommit(JSON.parse(data.optionValue))}
@@ -308,15 +314,26 @@ function TaskConfigControl({ field, disabled, onCommit }: {
     const values = Array.isArray(field.value) ? field.value : [];
     return <div className="task-config-options">{(field.options ?? []).map((option, index) => {
       const selected = values.some((value) => JSON.stringify(value) === JSON.stringify(option));
-      return <label className="config-checkbox" key={index}>
-        <input type="checkbox" disabled={disabled} checked={selected} onChange={(event) => onCommit(event.target.checked ? [...values, option] : values.filter((value) => JSON.stringify(value) !== JSON.stringify(option)))} />
-        <span className="config-checkbox-mark" />
-        <span>{String(option)}</span>
+      return <label className="config-checkbox task-config-checkbox" key={index}>
+        <input
+          type="checkbox"
+          disabled={disabled}
+          checked={selected}
+          onChange={(event) => onCommit(event.currentTarget.checked ? [...values, option] : values.filter((value) => JSON.stringify(value) !== JSON.stringify(option)))}
+        />
+        <svg className="config-checkbox-mark" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+          <rect x="1" y="1" width="18" height="18" rx="3" />
+          <path d="M5.25 10.25 8.6 13.6 14.9 6.9" />
+        </svg>
+        <span className="config-checkbox-label">{String(option)}</span>
       </label>;
     })}</div>;
   }
   if (field.kind === "list") {
     return <ListConfigControl field={field} disabled={disabled} onCommit={onCommit} />;
+  }
+  if (field.kind === "multiline") {
+    return <div className="task-config-control multiline"><textarea aria-label={field.key} disabled={disabled} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={() => onCommit(draft)} /></div>;
   }
   const numeric = field.kind === "integer" || field.kind === "number";
   if (numeric) {
@@ -335,7 +352,7 @@ function TaskConfigControl({ field, disabled, onCommit }: {
       }}
     /></div>;
   }
-  return <div className="task-config-control text"><Input aria-label={field.key} disabled={disabled} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={() => onCommit(draft)} /></div>;
+  return <div className={`task-config-control text ${field.kind === "file" ? "file" : ""}`}><Input aria-label={field.key} disabled={disabled} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={() => onCommit(draft)} /></div>;
 }
 
 function SettingsPage({ groups, loading, pending, theme, language, onTheme, onLanguage, onUpdate, onReset }: {
@@ -527,44 +544,7 @@ function AboutPage({ notify }: { notify: ToastSink }) {
   </section>;
 }
 
-function applyRecordedCode(code: string, initCode: string, runCode: string, loop: "none" | "count" | "forever", count: number) {
-  let lines = code.split("\n");
-  if (initCode.trim()) {
-    const initStart = lines.findIndex((line) => /^\s*def\s+__init__\s*\(/.test(line));
-    if (initStart >= 0) {
-      const baseIndent = lines[initStart].match(/^\s*/)?.[0] ?? "";
-      const bodyIndent = `${baseIndent}    `;
-      const captureStart = lines.findIndex((line, index) => index > initStart && line.startsWith(bodyIndent) && /self\.capture_config\s*=/.test(line));
-      const formatted = initCode.trim().split("\n").map((line) => bodyIndent + line.trimEnd());
-      if (captureStart >= 0) {
-        let balance = 0;
-        let captureEnd = captureStart;
-        for (let index = captureStart; index < lines.length; index += 1) {
-          balance += (lines[index].match(/{/g) ?? []).length - (lines[index].match(/}/g) ?? []).length;
-          captureEnd = index;
-          if (index > captureStart && balance <= 0) break;
-        }
-        lines.splice(captureStart, captureEnd - captureStart + 1, ...formatted);
-      } else {
-        lines.splice(initStart + 1, 0, ...formatted);
-      }
-    }
-  }
-  const runStart = lines.findIndex((line) => /^\s*def\s+run\s*\(/.test(line));
-  if (runStart >= 0) {
-    const baseIndent = lines[runStart].match(/^\s*/)?.[0] ?? "";
-    const bodyIndent = `${baseIndent}    `;
-    let generated = runCode.trim().split("\n").filter(Boolean);
-    if (loop === "count") generated = [`for _ in range(${count}):`, ...(generated.length ? generated.map((line) => `    ${line}`) : ["    pass"])];
-    if (loop === "forever") generated = ["while True:", ...(generated.length ? generated.map((line) => `    ${line}`) : ["    pass"])];
-    const runEndOffset = lines.slice(runStart + 1).findIndex((line) => line.trim() && !line.startsWith(bodyIndent));
-    const runEnd = runEndOffset < 0 ? lines.length : runStart + 1 + runEndOffset;
-    lines.splice(runStart + 1, runEnd - runStart - 1, ...generated.map((line) => bodyIndent + line));
-  }
-  return lines.join("\n");
-}
-
-function ScriptPage({ notify }: { notify: ToastSink }) {
+function ScriptPage({ notify, onDirtyChange, registerSave }: { notify: ToastSink; onDirtyChange: (dirty: boolean) => void; registerSave: (save: (() => Promise<boolean>) | null) => void }) {
   const [scripts, setScripts] = useState<ScriptSummary[]>([]);
   const [templates, setTemplates] = useState<ScriptTemplate[]>([]);
   const [templateQuery, setTemplateQuery] = useState("");
@@ -577,6 +557,9 @@ function ScriptPage({ notify }: { notify: ToastSink }) {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [recordOpen, setRecordOpen] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [pendingScript, setPendingScript] = useState<string | null>(null);
+  const [parameterTemplate, setParameterTemplate] = useState<ScriptTemplate | null>(null);
+  const [externalDocument, setExternalDocument] = useState<ScriptDocument | null>(null);
   const recordOptions = useRef<{ loop: "none" | "count" | "forever"; count: number }>({ loop: "none", count: 10 });
   const importRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLTextAreaElement>(null);
@@ -588,17 +571,43 @@ function ScriptPage({ notify }: { notify: ToastSink }) {
     void refresh();
     runtimeApi.scriptTemplates().then(setTemplates).catch((reason) => notify(reason.message, "error"));
   }, [notify, refresh]);
-  const open = async (name: string) => {
+  const dirty = Boolean(document && code !== document.code);
+  useEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  const loadScript = async (name: string) => {
     try { const next = await runtimeApi.script(name); setDocument(next); setCode(next.code); }
     catch (reason) { notify(reason instanceof Error ? reason.message : t("Action failed"), "error"); }
   };
+  const open = async (name: string) => {
+    if (dirty && name !== document?.name) { setPendingScript(name); return; }
+    await loadScript(name);
+  };
   const save = async () => {
-    if (!document) return;
+    if (!document) return false;
     setBusy(true);
-    try { const next = await runtimeApi.saveScript(document.name, code); setDocument(next); notify(next.error || t("Task rebuilt successfully."), next.error ? "error" : "success"); await refresh(); }
-    catch (reason) { notify(reason instanceof Error ? reason.message : t("Action failed"), "error"); }
+    try { const next = await runtimeApi.saveScript(document.name, code); setDocument(next); setCode(next.code); notify(next.error || t("Task rebuilt successfully."), next.error ? "error" : "success"); await refresh(); return !next.error; }
+    catch (reason) { notify(reason instanceof Error ? reason.message : t("Action failed"), "error"); return false; }
     finally { setBusy(false); }
   };
+  useEffect(() => { registerSave(save); return () => registerSave(null); });
+  useEffect(() => {
+    if (!document || busy) return;
+    let stopped = false;
+    const timer = window.setInterval(() => {
+      void runtimeApi.script(document.name).then((next) => {
+        if (stopped || next.modified === document.modified) return;
+        if (dirty) setExternalDocument(next);
+        else { setDocument(next); setCode(next.code); }
+      }).catch(() => undefined);
+    }, 2000);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, [busy, dirty, document]);
   const copy = () => {
     if (!document) return;
     setBusy(true);
@@ -617,9 +626,9 @@ function ScriptPage({ notify }: { notify: ToastSink }) {
   };
   const stopRecording = () => {
     setBusy(true);
-    void runtimeApi.stopScriptRecording().then((result) => {
-      const options = recordOptions.current;
-      setCode((current) => applyRecordedCode(current, result.init_code, result.run_code, options.loop, options.count));
+    const options = recordOptions.current;
+    void runtimeApi.stopScriptRecording(code, options.loop, options.count).then((result) => {
+      setCode(result.code);
       setRecording(false);
       notify(t("Recording inserted into the script."), "success");
     }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false));
@@ -629,13 +638,16 @@ function ScriptPage({ notify }: { notify: ToastSink }) {
     return match ? Number(match[1]) : undefined;
   }, [document?.error]);
   const insertTemplate = (template: ScriptTemplate) => {
-    const args: string[] = [];
-    for (const parameter of template.params) {
-      const value = window.prompt(`${parameter.name}${parameter.default === null ? " (required)" : ` (default: ${parameter.default})`}`, "");
-      if (value === null) return;
-      if (!value.trim() && parameter.default === null) { notify(`${parameter.name} is required`, "error"); return; }
-      if (value.trim()) args.push(parameter.default === null ? value.trim() : `${parameter.name}=${value.trim()}`);
-    }
+    if (template.params.length) { setParameterTemplate(template); return; }
+    insertTemplateValues(template, {});
+  };
+  const insertTemplateValues = (template: ScriptTemplate, values: Record<string, string>) => {
+    const args = template.params.flatMap((parameter) => {
+      let value = values[parameter.name]?.trim() ?? "";
+      if (!value) return [];
+      if (/^[A-Za-z_]\w*$/.test(value) && !["True", "False", "None"].includes(value)) value = JSON.stringify(value);
+      return [parameter.default === null ? value : `${parameter.name}=${value}`];
+    });
     const snippet = `${template.is_static ? `${template.class_name}.` : "self."}${template.name}(${args.join(", ")})`;
     const editor = editorRef.current;
     if (!editor) return;
@@ -644,6 +656,7 @@ function ScriptPage({ notify }: { notify: ToastSink }) {
     const indentation = code.slice(lineStart, start).match(/^\s*/)?.[0] ?? "";
     const insertion = `${start > lineStart ? "\n" : ""}${indentation || "        "}${snippet}\n`;
     setCode(`${code.slice(0, start)}${insertion}${code.slice(editor.selectionEnd)}`);
+    setParameterTemplate(null);
   };
   const groupedTemplates = useMemo(() => {
     const query = templateQuery.trim().toLocaleLowerCase();
@@ -680,6 +693,9 @@ function ScriptPage({ notify }: { notify: ToastSink }) {
     {exportData && <ExportScriptDialog tasks={exportData.tasks} manifest={exportData.manifest} onCancel={() => setExportData(null)} onExport={(selected, fileName, scriptName, version) => { setBusy(true); void runtimeApi.exportScripts(selected, fileName, scriptName, version).then((blob) => { const url = URL.createObjectURL(blob); const anchor = window.document.createElement("a"); anchor.href = url; anchor.download = `${fileName}.okscript`; anchor.click(); URL.revokeObjectURL(url); setExportData(null); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }} />}
     {importFile && <ImportScriptDialog file={importFile} onCancel={() => setImportFile(null)} onImport={() => { const file = importFile; setBusy(true); void runtimeApi.importScripts(file).then(async (result) => { notify(result.message, "success"); setImportFile(null); await refresh(); }).catch((reason) => notify(reason.message, "error")).finally(() => setBusy(false)); }} />}
     {recordOpen && <RecordScriptDialog onCancel={() => setRecordOpen(false)} onRecord={startRecording} />}
+    {parameterTemplate && <TemplateParameterDialog template={parameterTemplate} onCancel={() => setParameterTemplate(null)} onInsert={(values) => insertTemplateValues(parameterTemplate, values)} />}
+    {pendingScript && <UnsavedScriptDialog onCancel={() => setPendingScript(null)} onDiscard={() => { const name = pendingScript; setPendingScript(null); void loadScript(name); }} onSave={() => { const name = pendingScript; void save().then((saved) => { if (saved) { setPendingScript(null); void loadScript(name); } }); }} />}
+    {externalDocument && <ExternalScriptChangeDialog onKeep={() => { setDocument((current) => current ? { ...current, modified: externalDocument.modified } : current); setExternalDocument(null); }} onReload={() => { setDocument(externalDocument); setCode(externalDocument.code); setExternalDocument(null); }} />}
   </section>;
 }
 
@@ -811,6 +827,10 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [instructionsTask, setInstructionsTask] = useState<AutomationTask | null>(null);
+  const [scriptDirty, setScriptDirty] = useState(false);
+  const [pendingPage, setPendingPage] = useState<string | null>(null);
+  const scriptSaveRef = useRef<(() => Promise<boolean>) | null>(null);
+  const registerScriptSave = useCallback((save: (() => Promise<boolean>) | null) => { scriptSaveRef.current = save; }, []);
   const logConsole = useRef<HTMLPreElement>(null);
   const captureDialog = useRef<HTMLElement>(null);
   const logDialog = useRef<HTMLElement>(null);
@@ -913,12 +933,12 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
     };
   }, [systemNotificationsEnabled]);
   useEffect(() => {
-    if (activePage === "Tasks" || activePage === "Triggers") void loadTasks(true);
+    if (activePage === "Tasks" || activePage === "Triggers" || activePage.startsWith("group:")) void loadTasks(true);
     if (activePage === "Settings") void loadSettings();
   }, [activePage, loadSettings, loadTasks]);
 
   useEffect(() => {
-    if (activePage !== "Tasks" && activePage !== "Triggers") return;
+    if (activePage !== "Tasks" && activePage !== "Triggers" && !activePage.startsWith("group:")) return;
     const timer = window.setInterval(() => void loadTasks(), 1000);
     return () => window.clearInterval(timer);
   }, [activePage, loadTasks]);
@@ -976,6 +996,7 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
         }
         if (taskStateEvents.has(event.event)) {
           void loadTasks();
+          if (event.event === "task_list_updated") runtimeApi.navigation().then(setCapabilities).catch(() => undefined);
           if (!event.ui) void load();
         }
       };
@@ -1090,8 +1111,14 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
     return (ui?.devices ?? []).filter((device) => !normalized || `${device.label} ${device.keywords}`.toLocaleLowerCase().includes(normalized));
   }, [query, ui?.devices]);
 
-  const visibleTasks = useMemo(() => tasks.filter((task) => task.visible && task.trigger === (activePage === "Triggers")), [activePage, tasks]);
+  const visibleTasks = useMemo(() => tasks.filter((task) => {
+    if (!task.visible) return false;
+    if (activePage === "Triggers") return task.trigger;
+    if (activePage.startsWith("group:")) return !task.trigger && task.group_name === activePage.slice(6);
+    return activePage === "Tasks" && !task.trigger && !task.group_name;
+  }), [activePage, tasks]);
   const topLevelSettings = useMemo(() => settings.filter((group) => group.top_level), [settings]);
+  const taskGroups = useMemo(() => Array.from(new Set(tasks.filter((task) => task.visible && !task.trigger && task.group_name).map((task) => task.group_name as string))), [tasks]);
   const topLevelGroupForPage = useCallback((page: string) => topLevelSettings.find((group) =>
     group.name === page || (group.name === "Notification" && page === "Notifications")
   ), [topLevelSettings]);
@@ -1099,6 +1126,7 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
     const items = [...primaryNavigation];
     if (capabilities?.triggers) items.push(["Triggers", Timer20Regular]);
     if (capabilities?.tasks) items.push(["Tasks", TaskListSquareLtr20Regular]);
+    taskGroups.forEach((group) => items.push([`group:${group}`, TaskListSquareLtr20Regular]));
     if (capabilities?.script) items.push(["Script", Edit20Regular]);
     if (capabilities?.templates) items.push(["Templates", Image20Regular]);
     if (capabilities?.schedule) items.push(["Schedule", Calendar20Regular]);
@@ -1106,8 +1134,13 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
       if (!items.some(([label]) => label === group.name)) items.push([group.name, Settings20Regular]);
     });
     return items;
-  }, [capabilities, topLevelSettings]);
+  }, [capabilities, taskGroups, topLevelSettings]);
   const activeTopLevelSettings = topLevelGroupForPage(activePage);
+  const navigationLabel = (label: string) => label.startsWith("group:") ? label.slice(6) : t(label);
+  const navigate = (page: string) => {
+    if (activePage === "Script" && page !== "Script" && scriptDirty) setPendingPage(page);
+    else setActivePage(page);
+  };
 
   const status = ui?.status;
   const startLabel = status?.paused === false ? t("Pause") : `${t("Start")}${status?.hotkey ? `(${status.hotkey})` : ""}`;
@@ -1122,15 +1155,15 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
           key={label}
           className={`nav-item ${label === activePage ? "active" : ""}`}
           aria-current={label === activePage ? "page" : undefined}
-          title={t(label)}
+          title={navigationLabel(label)}
           onClick={() => {
-            setActivePage(label);
+            navigate(label);
           }}
-        ><Icon className={opticallyHighNavigationIcons.has(label) ? "nav-icon-shift-down" : undefined} /><span>{t(label)}</span></button>)}
+        ><Icon className={opticallyHighNavigationIcons.has(label) ? "nav-icon-shift-down" : undefined} /><span>{navigationLabel(label)}</span></button>)}
       </nav>
       <nav className="nav-secondary">
         {secondaryNavigation.map(([label, Icon]) => <button type="button" key={label} className={`nav-item ${label === activePage ? "active" : ""}`} aria-current={label === activePage ? "page" : undefined} title={t(label)} onClick={() => {
-          setActivePage(label);
+          navigate(label);
         }}><Icon /><span>{t(label)}</span></button>)}
       </nav>
     </aside>
@@ -1203,7 +1236,7 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
       </section>
       <div className="content-spacer" />
       </> : activePage === "About" ? <AboutPage notify={pushToast} />
-      : activePage === "Script" ? <ScriptPage notify={pushToast} />
+      : activePage === "Script" ? <ScriptPage notify={pushToast} onDirtyChange={setScriptDirty} registerSave={registerScriptSave} />
       : activePage === "Templates" ? <TemplatesPage notify={pushToast} />
       : activePage === "Schedule" ? <SchedulePage notify={pushToast} />
       : activePage === "Settings" ? <SettingsPage
@@ -1292,6 +1325,7 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
         <footer>{logData?.path || "logs/ok-script.log"} · {logData?.line_count ?? 0} {t("lines")}</footer>
       </section>
     </div>}
+    {pendingPage && <UnsavedScriptDialog onCancel={() => setPendingPage(null)} onDiscard={() => { const page = pendingPage; setPendingPage(null); setScriptDirty(false); setActivePage(page); }} onSave={() => { const page = pendingPage; void scriptSaveRef.current?.().then((saved) => { if (saved) { setPendingPage(null); setScriptDirty(false); setActivePage(page); } }); }} />}
     <div className="theme-mark"><WeatherMoon20Regular /><Window20Regular /></div>
   </div>;
 }

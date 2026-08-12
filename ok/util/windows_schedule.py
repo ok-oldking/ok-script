@@ -75,6 +75,62 @@ class ScheduleTaskInfo:
         return asdict(self)
 
 
+def normalize_trigger_type(raw_type: str) -> TriggerType:
+    """Normalize COM, schtasks and UI trigger values."""
+    value = str(raw_type or "").strip()
+    lowered = value.lower()
+    if value in (TriggerType.DAILY.value, "2") or "daily" in lowered:
+        return TriggerType.DAILY
+    if value in (TriggerType.WEEKLY.value, "3") or "weekly" in lowered:
+        return TriggerType.WEEKLY
+    if value in (TriggerType.MONTHLY.value, "4", "5", "6") or "monthly" in lowered:
+        return TriggerType.MONTHLY
+    if value in (TriggerType.ONCE.value, "1") or "once" in lowered or "time" in lowered:
+        return TriggerType.ONCE
+    if value == TriggerType.CUSTOM.value or "custom" in lowered:
+        return TriggerType.CUSTOM
+    return TriggerType.DAILY
+
+
+def infer_trigger_type(raw_type: str, xml_config: str = "", interval_days: int = 0,
+                       interval_hours: int = 0) -> TriggerType:
+    if interval_hours > 0 or interval_days > 1:
+        return TriggerType.CUSTOM
+    trigger = normalize_trigger_type(raw_type)
+    raw_value = str(raw_type or "").strip()
+    if raw_value and (raw_value.isdigit() or raw_value.lower() in {
+            "daily", "weekly", "monthly", "once", "custom"}):
+        return trigger
+    xml = str(xml_config or "").lower()
+    if "<repetition>" in xml and "<interval>pt" in xml and "h</interval>" in xml:
+        return TriggerType.CUSTOM
+    if "<schedulebyweek" in xml:
+        return TriggerType.WEEKLY
+    if "<schedulebymonth" in xml:
+        return TriggerType.MONTHLY
+    if "<timetrigger" in xml and "<repetition>" not in xml:
+        return TriggerType.ONCE
+    if "<schedulebyday" in xml:
+        return TriggerType.DAILY
+    return trigger
+
+
+def trigger_type_for_task(task_info: ScheduleTaskInfo) -> TriggerType:
+    return infer_trigger_type(
+        task_info.trigger_type, task_info.xml_config,
+        task_info.interval_days, task_info.interval_hours)
+
+
+def format_next_run_time(next_run_time: str) -> str:
+    value = str(next_run_time or "")
+    if not value:
+        return "-"
+    if len(value) <= 16:
+        return value
+    parts = value.split()
+    return " ".join(parts[:2])[:16] if len(parts) >= 2 else value[:16]
+
+
 class WindowsScheduleCache:
     """Windows 任务计划本地缓存管理"""
 
@@ -759,6 +815,39 @@ class WindowsScheduleManager:
             except Exception as e:
                 logger.error(f"Failed to create task: {e}")
                 return False
+
+    def replace_task(self, task_name: str, task_index: int,
+                     trigger_type: TriggerType, timeout_hours: int = 0,
+                     start_hour: int = 9, start_minute: int = 0,
+                     auto_exit: bool = True, enabled: bool = True,
+                     description: str = "", interval_days: int = 0,
+                     interval_hours: int = 0) -> bool:
+        """Create the replacement before removing the previous scheduled task."""
+        with self.lock:
+            current = self.cache.get(task_name)
+            if current is None or current.read_only or not current.path:
+                return False
+            old_path = current.path
+            if not self.create_task(
+                    task_name, task_index, trigger_type, timeout_hours,
+                    start_hour, start_minute, auto_exit, enabled, description,
+                    interval_days, interval_hours):
+                return False
+            replacement = next((item for item in self.cache.get_all()
+                                if item.name == task_name and item.path != old_path), None)
+            if replacement is None:
+                return False
+            if self._delete_task_by_path(old_path):
+                self.cache.cache.pop(old_path, None)
+                self.cache.save_cache()
+                return True
+
+            logger.error("Failed to remove previous task after creating replacement; rolling back")
+            self._delete_task_by_path(replacement.path)
+            self.cache.cache.pop(replacement.path, None)
+            self.cache.add_or_update(current)
+            self._notify_update(current)
+            return False
 
     def _create_task_via_com(self, task_name: str, task_index: int,
                              trigger_type: TriggerType, timeout_hours: int,

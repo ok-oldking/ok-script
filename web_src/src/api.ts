@@ -66,7 +66,7 @@ export const runtimeApi = {
     method: "POST", headers: { "Content-Type": "application/octet-stream", "X-File-Name": file.name }, body: file
   }),
   startScriptRecording: () => post<{ recording: boolean; target?: string }>("/api/scripts-record/start"),
-  stopScriptRecording: () => post<{ recording: boolean; init_code: string; run_code: string }>("/api/scripts-record/stop"),
+  stopScriptRecording: (code: string, loop: "none" | "count" | "forever", count: number) => post<{ recording: boolean; code: string }>("/api/scripts-record/stop", { code, loop, count }),
   templates: () => request<TemplateImage[]>("/api/templates"),
   captureTemplate: () => post<TemplateImage[]>("/api/templates/capture"),
   deleteTemplate: (name: string) => post<{ deleted: string }>(`/api/templates/${encodeURIComponent(name)}/delete`),

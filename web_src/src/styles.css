@@ -113,7 +113,8 @@ button { -webkit-tap-highlight-color: transparent; }
 :root[data-theme="light"] .task-config footer button, :root[data-theme="light"] .list-summary > button { background: rgba(80,49,65,.065); }
 :root[data-theme="light"] .task-config { background: rgba(72,43,58,.025); }
 :root[data-theme="light"] .task-config-row { border-color: rgba(71,48,60,.08); }
-:root[data-theme="light"] .switch-track, :root[data-theme="light"] .config-checkbox-mark { border-color: #7f7279; }
+:root[data-theme="light"] .switch-track { border-color: #7f7279; }
+:root[data-theme="light"] .config-checkbox-mark rect { stroke: #7f7279; }
 :root[data-theme="light"] .switch-thumb { background: #6e6268; }
 :root[data-theme="light"] .toast { border-color: rgba(61,39,50,.14); background: linear-gradient(to right, var(--toast-accent) 0 4px, #fff9fc 4px); color: #34282e; box-shadow: 0 8px 28px rgba(66,34,51,.18); }
 .surface-card { border: 0; border-radius: 11px; background: var(--card-bg); }
@@ -429,6 +430,7 @@ h2 { margin: 0 0 8px; color: #f4eff1; font-size: .88rem; line-height: 1.3; font-
 .qt-task-actions .switch-thumb { width: 13px; height: 13px; left: 3px; top: 3px; }
 .qt-task-actions .switch-control input:checked + .switch-track .switch-thumb { left: 23px; }
 .task-config { padding: 4px 16px 10px; border-top: 1px solid var(--stroke); background: rgba(0,0,0,.08); }
+.task-config-control.multiline textarea { width: 100%; min-height: 88px; resize: vertical; padding: 8px 9px; border: 1px solid var(--stroke); border-radius: 5px; background: rgba(255,255,255,.05); color: inherit; font: inherit; }
 .task-config-row { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(0, 2fr); align-items: center; min-height: 52px; gap: 16px; padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,.045); }
 .task-config-row > span strong, .task-config-row > span small { display: block; }
 .task-config-row > span strong { font-size: .8rem; font-weight: 600; }
@@ -438,26 +440,35 @@ h2 { margin: 0 0 8px; color: #f4eff1; font-size: .88rem; line-height: 1.3; font-
 .task-config-control, .task-config-options { justify-self: end; width: fit-content; max-width: 100%; }
 .task-config-control.text { display: flex; min-width: 12rem; width: fit-content; max-width: 100%; justify-self: end; justify-content: flex-end; margin-left: auto; }
 .task-config-control.text .fui-Input { width: fit-content; min-width: 12rem; max-width: min(430px, 100%); margin-left: auto; }
-.task-config-control.text .fui-Input input { width: auto; min-width: 10rem; field-sizing: content; text-align: right !important; text-align: end !important; }
+.task-config-control.text .fui-Input input { width: auto; min-width: 10rem; field-sizing: content; text-align: left !important; text-align: start !important; }
 .task-config-control.list { width: min(430px, 100%); }
 .task-config-control > *, .task-config-control > span { max-width: 100%; }
-.task-config-control.select .fui-Dropdown { width: 9rem; min-width: 0; text-align: right; text-align: end; }
-.task-config-control.select [role="combobox"] { min-width: 0; text-align: right; text-align: end; }
-.task-config-option { justify-content: flex-end !important; text-align: right !important; text-align: end !important; }
+.task-config-control.select .fui-Dropdown { min-width: 12ch; max-width: min(36ch, 100%); text-align: left; text-align: start; }
+.task-config-control.select [role="combobox"] { min-width: 0; justify-content: flex-start; text-align: left; text-align: start; }
+.task-config-control.select [role="combobox"] > span { min-width: 0; flex: 1; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.task-config-option { justify-content: flex-start !important; text-align: left !important; text-align: start !important; }
 .task-config-control.number .fui-SpinButton { width: 8rem; min-width: 0; }
-.task-config-control.number .fui-SpinButton input { text-align: right !important; text-align: end !important; }
+.task-config-control.number .fui-SpinButton input { text-align: left !important; text-align: start !important; }
 .task-config-control.list textarea { min-height: 68px; resize: vertical; text-align: right; text-align: end; }
-.task-config-options { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 10px; }
-.config-checkbox { position: relative; display: inline-flex; align-items: center; min-height: 28px; gap: 7px; cursor: pointer; }
+.task-config-options { display: flex; width: 100%; flex-wrap: wrap; justify-content: flex-end; gap: 4px 10px; }
+.task-config-checkbox { min-width: 0; max-width: 100%; flex: 0 0 auto; }
+.config-checkbox { position: relative; display: inline-grid; grid-template-columns: 20px max-content; align-items: center; min-height: 28px; gap: 7px; cursor: pointer; }
 .config-checkbox input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.config-checkbox-mark { position: relative; display: block; width: 18px; height: 18px; flex: 0 0 18px; border: 2px solid #aaa2a7; border-radius: 3px; }
-.config-checkbox input:checked + .config-checkbox-mark { border-color: var(--accent); background: var(--accent); }
-.config-checkbox input:checked + .config-checkbox-mark::after {
-  content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 9px;
-  border: solid #102a35; border-width: 0 2px 2px 0; transform: translate(-50%, -58%) rotate(45deg);
+.config-checkbox-mark {
+  display: block;
+  grid-column: 1;
+  width: 20px !important; min-width: 20px !important; max-width: 20px !important;
+  height: 20px !important; min-height: 20px !important; max-height: 20px !important;
+  overflow: visible;
+  flex: none;
 }
+.config-checkbox-mark rect { fill: transparent; stroke: #aaa2a7; stroke-width: 2; }
+.config-checkbox-mark path { fill: none; stroke: transparent; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.config-checkbox-label { grid-column: 2; min-width: 0; white-space: nowrap; }
+.config-checkbox input:checked + .config-checkbox-mark rect { fill: var(--accent); stroke: var(--accent); }
+.config-checkbox input:checked + .config-checkbox-mark path { stroke: #102a35; }
 .config-checkbox input:focus-visible + .config-checkbox-mark { outline: 2px solid white; outline-offset: 2px; }
-.config-checkbox input:disabled ~ span { opacity: .55; }
+.config-checkbox input:disabled ~ * { opacity: .55; }
 .list-summary { display: flex; align-items: center; width: min(430px, 100%); gap: 8px; }
 .list-summary > span { min-width: 0; flex: 1; overflow: hidden; color: var(--text-muted); text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .list-editor-content button, .list-editor-footer button {

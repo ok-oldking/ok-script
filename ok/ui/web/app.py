@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import ast
 import dataclasses
 import json
 import re
@@ -16,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from ok.core.events import EventMessage, communicate
+from ok.core.template_store import CocoTemplateStore
 
 
 LOG_LINE_PATTERN = re.compile(
@@ -24,7 +24,6 @@ LOG_LINE_PATTERN = re.compile(
 )
 LOG_LEVELS = {"ALL": 0, "DEBUG": 10, "INFO": 20, "WARNING": 30, "ERROR": 40, "CRITICAL": 50}
 SCRIPT_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*\.py$")
-TEMPLATE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
 EVENT_SESSION_KEY_PATTERN = re.compile(r"^[A-Za-z0-9_-]{16,128}$")
 
 
@@ -88,47 +87,9 @@ class _ExitWake:
 
 
 def _script_templates():
-    """Extract the same BaseTask helper palette used by Qt without importing Qt."""
-    source_path = Path(__file__).parents[2] / "task" / "task.py"
-    tree = ast.parse(source_path.read_text(encoding="utf-8"))
-    target_classes = {"ExecutorOperation", "FindFeature", "OCR", "BaseTask"}
-    categories = [
-        ("Mouse", ("click", "scroll", "mouse", "swipe", "move")),
-        ("Key", ("key", "press", "release", "input", "back")),
-        ("Control", ("sleep", "reset_scene", "next_frame", "disable", "wait_until", "enable", "unpause", "pause", "wait_scene")),
-        ("OCR", ("ocr", "text_fix")),
-        ("Template Matching", ("find", "feature", "match", "exists")),
-        ("Box", ("box", "width", "height")),
-        ("Window", ("window", "ensure_in_front", "hwnd")),
-        ("ADB", ("adb",)),
-        ("Logging", ("log", "info_", "screenshot")),
-    ]
-    templates = []
-    seen = set()
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.ClassDef) or node.name not in target_classes:
-            continue
-        for method in node.body:
-            if not isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef)) or method.name.startswith("_") or method.name in seen:
-                continue
-            if any(isinstance(item, ast.Name) and item.id == "property" for item in method.decorator_list):
-                continue
-            seen.add(method.name)
-            args = method.args.args[1:] if method.args.args and method.args.args[0].arg in {"self", "cls"} else method.args.args
-            defaults = [None] * (len(args) - len(method.args.defaults)) + list(method.args.defaults)
-            params = []
-            for argument, default in zip(args, defaults):
-                params.append({"name": argument.arg, "default": ast.unparse(default) if default is not None else None})
-            lowered = method.name.lower()
-            category = next((name for name, words in categories if any(word in lowered for word in words)), "Other")
-            doc = ast.get_docstring(method) or ""
-            templates.append({
-                "name": method.name, "template_name": method.name.replace("_", " ").title(),
-                "category": category, "doc": doc.splitlines()[0] if doc else "", "full_doc": doc,
-                "class_name": node.name, "is_static": any(isinstance(item, ast.Name) and item.id == "staticmethod" for item in method.decorator_list),
-                "params": params,
-            })
-    return sorted(templates, key=lambda item: (item["category"], item["template_name"]))
+    """Return the same BaseTask helper palette used by every UI."""
+    from ok.core.script_templates import serialize_script_templates
+    return serialize_script_templates()
 
 
 def _color_hex(red, green, blue):
@@ -210,97 +171,9 @@ def _json_value(value: Any):
 
 def _config_fields(config, descriptions=None, config_types=None, defaults=None):
     """Return the editable fields shared by Qt and web config cards."""
-    fields = []
-    if not config:
-        return fields
-    descriptions = descriptions or {}
-    config_types = config_types or {}
-    defaults = defaults or {}
-
-    sub_config_keys = set()
-    for parent_type in config_types.values():
-        rules = parent_type.get("sub_configs") if isinstance(parent_type, dict) else None
-        if not isinstance(rules, dict):
-            continue
-        for controlled_keys in rules.values():
-            sub_config_keys.update(
-                [controlled_keys] if isinstance(controlled_keys, str) else list(controlled_keys or [])
-            )
-
-    def normalize_keys(keys):
-        if keys is None:
-            return []
-        return [keys] if isinstance(keys, str) else list(keys)
-
-    def active_keys(rules, value):
-        if isinstance(value, list):
-            return {
-                key for choice in value
-                for key in normalize_keys(rules.get(choice))
-            }
-        try:
-            return set(normalize_keys(rules.get(value)))
-        except TypeError:
-            return set()
-
-    def is_visible(key, checking=None):
-        checking = set(checking or ())
-        if key in checking:
-            return False
-        checking.add(key)
-        for parent_key, parent_type in config_types.items():
-            rules = parent_type.get("sub_configs") if isinstance(parent_type, dict) else None
-            if not isinstance(rules, dict):
-                continue
-            controlled = {
-                controlled_key for keys in rules.values()
-                for controlled_key in normalize_keys(keys)
-            }
-            if key in controlled and (
-                    not is_visible(parent_key, checking)
-                    or key not in active_keys(rules, config.get(parent_key))):
-                return False
-        return True
-
-    for key, value in config.items():
-        if str(key).startswith("_"):
-            continue
-        field_type = config_types.get(key)
-        if isinstance(field_type, dict) and field_type.get("hidden"):
-            continue
-        if not is_visible(key):
-            continue
-        resolved_type = field_type.get("type") if isinstance(field_type, dict) else None
-        if resolved_type in {"button", "global"} or (
-                isinstance(field_type, dict) and ("buttons" in field_type or "callback" in field_type)):
-            continue
-        options = field_type.get("options") if isinstance(field_type, dict) else None
-        options_available = field_type.get("options_available") if isinstance(field_type, dict) else None
-        if options is not None:
-            kind = "multi_selection" if isinstance(value, list) else "select"
-        elif isinstance(value, bool):
-            kind = "boolean"
-        elif isinstance(value, int):
-            kind = "integer"
-        elif isinstance(value, float):
-            kind = "number"
-        elif isinstance(value, list):
-            kind = "list"
-        else:
-            kind = "text"
-        fields.append({
-            "key": str(key),
-            "value": _json_value(value),
-            "default": _json_value(defaults.get(key)),
-            "description": str(descriptions.get(key) or ""),
-            "kind": kind,
-            "options": _json_value(options if options is not None else options_available),
-            "allow_duplication": bool(field_type.get("allow_duplication", False)) if isinstance(field_type, dict) else False,
-            "minimum": field_type.get("min") if isinstance(field_type, dict) else None,
-            "maximum": field_type.get("max") if isinstance(field_type, dict) else None,
-            "sub_config": key in sub_config_keys,
-        })
-    return fields
+    from ok.core.config_schema import build_config_fields
+    return build_config_fields(
+        config, descriptions, config_types, defaults, serialize=_json_value)
 
 
 def _task_config_fields(task):
@@ -425,6 +298,7 @@ class WebRuntime:
         self.last_capture_path = None
         self.icon_url = icon_url
         self._schedule_manager = None
+        self._template_store = None
         self.event_session_key = secrets.token_urlsafe(32)
 
     @property
@@ -446,6 +320,12 @@ class WebRuntime:
             self._schedule_manager = WindowsScheduleManager(config=self.ok.config)
         return self._schedule_manager
 
+    @property
+    def template_store(self):
+        if getattr(self, "_template_store", None) is None:
+            self._template_store = CocoTemplateStore(Path.cwd() / "ok_templates")
+        return self._template_store
+
     def status(self):
         current = self.executor.current_task
         hotkey = self.executor.basic_options.get("Start/Stop")
@@ -464,16 +344,7 @@ class WebRuntime:
     def _capture_methods(self, device):
         if not device:
             return []
-        if device.get("device") == "windows":
-            configured = (self.device_manager.windows_capture_config or {}).get("capture_method", [])
-            methods = configured if isinstance(configured, list) else [configured]
-            methods = methods or ["windows"]
-        elif device.get("device") == "browser":
-            methods = ["browser"]
-        elif device.get("emulator") is not None:
-            methods = ["adb", "ipc"] if device.get("emulator") else ["adb"]
-        else:
-            methods = ["adb"]
+        methods = self.device_manager.available_capture_methods(device)
         selected = self.device_manager.get_preferred_capture()
         return [{
             "id": _method_name(method),
@@ -484,17 +355,7 @@ class WebRuntime:
     def _interaction_methods(self, device):
         if not device:
             return []
-        kind = device.get("device")
-        if kind == "windows":
-            configured = (self.device_manager.windows_capture_config or {}).get("interaction", [])
-            methods = configured if isinstance(configured, list) else [configured]
-            methods = methods or ["Pynput"]
-        elif kind == "browser":
-            methods = ["BrowserInteraction"]
-        elif kind == "adb":
-            methods = ["ADBInteraction"]
-        else:
-            methods = ["Default Interaction"]
+        methods = self.device_manager.available_interaction_methods(device)
         selected = self.device_manager.config.get("interaction")
         return [{
             "id": _method_name(method),
@@ -861,11 +722,6 @@ class WebRuntime:
             temporary = Path(handle.name)
             handle.write(content)
         try:
-            with zipfile.ZipFile(temporary) as archive:
-                for member in archive.infolist():
-                    target = Path(member.filename)
-                    if target.is_absolute() or ".." in target.parts:
-                        raise ValueError("Unsafe script package path")
             success, message, import_folder = import_script(str(temporary))
             if not success:
                 raise ValueError(message)
@@ -882,124 +738,47 @@ class WebRuntime:
         recorder.start(target)
         return {"recording": True, "target": target}
 
-    def stop_script_recording(self):
+    def stop_script_recording(self, source="", loop="none", count=1):
         from ok.ui.qt.tasks.RecordScript import recorder
         if not recorder.is_recording:
             raise RuntimeError("Recording is not active")
         init_code, run_code = recorder.stop()
-        return {"recording": False, "init_code": init_code, "run_code": run_code}
+        from ok.core.script_editing import merge_recorded_code
+        return {
+            "recording": False,
+            "code": merge_recorded_code(source, init_code, run_code, loop, count),
+        }
 
     def _template_folder(self):
-        folder = (Path.cwd() / "ok_templates").resolve()
-        folder.mkdir(parents=True, exist_ok=True)
-        return folder
+        return self.template_store.folder
 
     def _template_path(self, name):
-        name = Path(str(name or "")).name
-        if not name or Path(name).suffix.lower() not in TEMPLATE_EXTENSIONS:
-            raise ValueError("Invalid template image")
-        root = self._template_folder()
-        path = (root / name).resolve()
-        if path.parent != root:
-            raise ValueError("Invalid template path")
-        return path
+        return self.template_store.image_path(name)
 
     def templates(self):
-        root = self._template_folder()
-        coco_path = root / "coco_annotations.json"
-        try:
-            coco = json.loads(coco_path.read_text(encoding="utf-8")) if coco_path.is_file() else {}
-        except (OSError, ValueError):
-            coco = {}
-        categories = {item.get("id"): str(item.get("name", "")) for item in coco.get("categories", [])}
-        image_ids = {str(item.get("file_name", "")).casefold(): item.get("id") for item in coco.get("images", [])}
-        annotations = {}
-        for item in coco.get("annotations", []):
-            annotations.setdefault(item.get("image_id"), []).append(categories.get(item.get("category_id"), ""))
         return [{
-            "name": path.name,
-            "url": f"/api/templates/image/{path.name}",
-            "modified": path.stat().st_mtime,
-            "categories": [name for name in annotations.get(image_ids.get(path.name.casefold()), []) if name],
-        } for path in sorted((item for item in root.iterdir() if item.suffix.lower() in TEMPLATE_EXTENSIONS), key=lambda item: item.stat().st_mtime, reverse=True)]
+            "name": item["path"].name,
+            "url": f"/api/templates/image/{item['path'].name}",
+            "modified": item["modified"],
+            "categories": item["categories"],
+        } for item in self.template_store.list_images()]
 
     def delete_template(self, name):
-        path = self._template_path(name)
-        if not path.is_file():
-            raise ValueError("Template not found")
-        path.unlink()
-        coco_path = self._template_folder() / "coco_annotations.json"
-        if coco_path.is_file():
-            coco = json.loads(coco_path.read_text(encoding="utf-8"))
-            image_ids = {item.get("id") for item in coco.get("images", []) if str(item.get("file_name", "")).casefold() == path.name.casefold()}
-            coco["images"] = [item for item in coco.get("images", []) if item.get("id") not in image_ids]
-            coco["annotations"] = [item for item in coco.get("annotations", []) if item.get("image_id") not in image_ids]
-            coco_path.write_text(json.dumps(coco, ensure_ascii=False, indent=2), encoding="utf-8")
+        self.template_store.delete_image(name)
         return {"deleted": name}
 
     def template_annotations(self, name):
-        path = self._template_path(name)
-        if not path.is_file():
-            raise ValueError("Template not found")
-        coco_path = self._template_folder() / "coco_annotations.json"
-        coco = json.loads(coco_path.read_text(encoding="utf-8")) if coco_path.is_file() else {"images": [], "annotations": [], "categories": []}
-        image = next((item for item in coco.get("images", []) if str(item.get("file_name", "")).casefold() == path.name.casefold()), None)
-        width = int((image or {}).get("width") or 0)
-        height = int((image or {}).get("height") or 0)
-        if width <= 0 or height <= 0:
-            import cv2
-            frame = cv2.imread(str(path))
-            if frame is not None:
-                height, width = frame.shape[:2]
-        categories = {item.get("id"): item.get("name", "") for item in coco.get("categories", [])}
-        annotations = [] if image is None else [{
-            "id": item.get("id"), "category": categories.get(item.get("category_id"), ""), "bbox": item.get("bbox", [0, 0, 0, 0]),
-        } for item in coco.get("annotations", []) if item.get("image_id") == image.get("id")]
+        result = self.template_store.annotations_for(name)
         return {
-            "name": path.name,
-            "url": f"/api/templates/image/{path.name}",
-            "width": width,
-            "height": height,
-            "annotations": annotations,
+            "name": result["path"].name,
+            "url": f"/api/templates/image/{result['path'].name}",
+            "width": result["width"],
+            "height": result["height"],
+            "annotations": result["annotations"],
         }
 
     def save_template_annotations(self, name, annotations):
-        path = self._template_path(name)
-        if not path.is_file() or not isinstance(annotations, list):
-            raise ValueError("Invalid annotations")
-        root = self._template_folder()
-        coco_path = root / "coco_annotations.json"
-        coco = json.loads(coco_path.read_text(encoding="utf-8")) if coco_path.is_file() else {"images": [], "annotations": [], "categories": []}
-        image = next((item for item in coco.get("images", []) if str(item.get("file_name", "")).casefold() == path.name.casefold()), None)
-        if image is None:
-            image_id = max((int(item.get("id", 0)) for item in coco.get("images", [])), default=0) + 1
-            import cv2
-            frame = cv2.imread(str(path))
-            height, width = frame.shape[:2] if frame is not None else (0, 0)
-            image = {"id": image_id, "file_name": path.name, "width": width, "height": height}
-            coco.setdefault("images", []).append(image)
-        coco["annotations"] = [item for item in coco.get("annotations", []) if item.get("image_id") != image["id"]]
-        category_by_name = {str(item.get("name", "")): item for item in coco.get("categories", [])}
-        next_category = max((int(item.get("id", 0)) for item in coco.get("categories", [])), default=0) + 1
-        next_annotation = max((int(item.get("id", 0)) for item in coco.get("annotations", [])), default=0) + 1
-        for annotation in annotations:
-            category_name = str(annotation.get("category", "")).strip()
-            bbox = annotation.get("bbox")
-            if not category_name or not isinstance(bbox, list) or len(bbox) != 4:
-                raise ValueError("Invalid bounding box")
-            values = [max(0, float(value)) for value in bbox]
-            category = category_by_name.get(category_name)
-            if category is None:
-                category = {"id": next_category, "name": category_name, "supercategory": ""}
-                next_category += 1
-                coco.setdefault("categories", []).append(category)
-                category_by_name[category_name] = category
-            coco.setdefault("annotations", []).append({
-                "id": next_annotation, "image_id": image["id"], "category_id": category["id"],
-                "bbox": values, "area": values[2] * values[3], "iscrowd": 0,
-            })
-            next_annotation += 1
-        coco_path.write_text(json.dumps(coco, ensure_ascii=False, indent=2), encoding="utf-8")
+        self.template_store.replace_annotations(name, annotations)
         return self.template_annotations(name)
 
     def save_templates(self, destination="tasks", generate_label_enum=False, enum_path="ok_tasks/LabelEnum.py"):
@@ -1030,23 +809,30 @@ class WebRuntime:
         frame = capture_method.get_frame()
         if frame is None:
             raise RuntimeError("Failed to capture frame")
-        import cv2
-        root = self._template_folder()
-        used = {int(path.stem) for path in root.iterdir() if path.stem.isdigit() and path.suffix.lower() in TEMPLATE_EXTENSIONS}
-        index = 0
-        while index in used:
-            index += 1
-        path = root / f"{index}.png"
-        if not cv2.imwrite(str(path), frame):
-            raise RuntimeError("Failed to save template image")
+        from ok.util.blur import apply_blur_areas, get_blur_algorithm
+        frame = apply_blur_areas(
+            frame,
+            self.ok.config.get("blur_area"),
+            get_blur_algorithm(getattr(self.ok, "global_config", None)),
+        )
+        if processor := self.ok.config.get("screenshot_processor"):
+            frame = processor(frame.copy())
+        self.template_store.save_frame(frame)
         return self.templates()
 
     def schedule_tasks(self):
+        from ok.util.windows_schedule import format_next_run_time, trigger_type_for_task
         available = [{"index": index + 1, "name": task.name} for index, task in enumerate(self.executor.onetime_tasks or []) if getattr(task, "support_schedule_task", False) and getattr(task, "visible", True)]
-        return {"available_tasks": available, "tasks": [_json_value(task) for task in self.schedule_manager.query_all_tasks(force_sync=True)]}
+        tasks = []
+        for task in self.schedule_manager.query_all_tasks(force_sync=True):
+            value = _json_value(task)
+            value["trigger_type"] = trigger_type_for_task(task).value
+            value["next_run_time"] = format_next_run_time(task.next_run_time)
+            tasks.append(value)
+        return {"available_tasks": available, "tasks": tasks}
 
     def create_schedule_task(self, body):
-        from ok.util.windows_schedule import TriggerType
+        from ok.util.windows_schedule import normalize_trigger_type
         task_index = int(body.get("task_index", 0))
         available_indices = {
             index + 1 for index, task in enumerate(self.executor.onetime_tasks or [])
@@ -1054,10 +840,7 @@ class WebRuntime:
         }
         if task_index not in available_indices:
             raise ValueError("Invalid scheduled task")
-        try:
-            trigger = TriggerType(str(body.get("trigger_type", "Daily")))
-        except ValueError as exc:
-            raise ValueError("Invalid trigger type") from exc
+        trigger = normalize_trigger_type(body.get("trigger_type", "Daily"))
         success = self.schedule_manager.create_task(
             task_name=str(body.get("name") or ""), task_index=task_index, trigger_type=trigger,
             timeout_hours=int(body.get("timeout_hours", 0)), start_hour=int(body.get("start_hour", 9)),
@@ -1082,7 +865,7 @@ class WebRuntime:
         return self.schedule_tasks()
 
     def update_schedule_task(self, name, body):
-        from ok.util.windows_schedule import TriggerType
+        from ok.util.windows_schedule import normalize_trigger_type
         current = self.schedule_manager.cache.get(name)
         if current is None:
             current = next((item for item in self.schedule_manager.cache.values() if item.path == name or item.name == name), None)
@@ -1095,13 +878,8 @@ class WebRuntime:
         }
         if task_index not in available_indices:
             raise ValueError("Invalid scheduled task")
-        try:
-            trigger = TriggerType(str(body.get("trigger_type", current.trigger_type or "Daily")))
-        except ValueError as exc:
-            raise ValueError("Invalid trigger type") from exc
-        if not self.schedule_manager.delete_task(name):
-            raise RuntimeError("Failed to replace scheduled task")
-        success = self.schedule_manager.create_task(
+        trigger = normalize_trigger_type(body.get("trigger_type", current.trigger_type or "Daily"))
+        success = self.schedule_manager.replace_task(
             task_name=current.name, task_index=task_index, trigger_type=trigger,
             timeout_hours=int(body.get("timeout_hours", 0)), start_hour=int(body.get("start_hour", 9)),
             start_minute=int(body.get("start_minute", 0)), auto_exit=bool(body.get("auto_exit", True)), enabled=current.enabled,
@@ -1368,9 +1146,14 @@ def create_web_app(config):
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.post("/api/scripts-record/stop")
-    async def stop_script_recording():
+    async def stop_script_recording(body: dict):
         try:
-            return await asyncio.to_thread(runtime.stop_script_recording)
+            return await asyncio.to_thread(
+                runtime.stop_script_recording,
+                str(body.get("code", "")),
+                str(body.get("loop", "none")),
+                int(body.get("count", 1)),
+            )
         except (ValueError, RuntimeError, OSError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 

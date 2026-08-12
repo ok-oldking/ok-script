@@ -14,6 +14,7 @@ from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
 from ok.gui.util.touch_scroll import enable_touch_scrolling
 
 from ok import Config, og
+from ok.core.template_store import CocoTemplateStore, filename_key
 from ok.gui.util.windows_thumbnail import WindowsThumbnailReader
 from ok.util.logger import Logger
 
@@ -65,10 +66,7 @@ class ImageItem(TypedDict):
 
 
 def ensure_template_folder():
-    folder = os.path.join(os.getcwd(), TEMPLATE_FOLDER)
-    if not os.path.exists(folder):
-        os.makedirs(folder, exist_ok=True)
-    return folder
+    return str(CocoTemplateStore(os.path.join(os.getcwd(), TEMPLATE_FOLDER)).folder)
 
 
 def get_coco_path():
@@ -77,62 +75,26 @@ def get_coco_path():
 
 def _filename_key(file_name):
     """Return a stable key for COCO and filesystem filename matching."""
-    return os.path.basename(str(file_name or '').replace('\\', '/')).casefold()
+    return filename_key(file_name)
 
 
 def load_coco() -> CocoData:
-    path = get_coco_path()
-    if os.path.exists(path):
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to load COCO json: {e}")
-    return {
-        "images": [],
-        "annotations": [],
-        "categories": []
-    }
+    return CocoTemplateStore(os.path.join(os.getcwd(), TEMPLATE_FOLDER)).load()
 
 
 def save_coco(coco_data):
-    path = get_coco_path()
-    coco_data['annotations'].sort(key=lambda x: x['id'])
-    coco_data['categories'].sort(key=lambda x: x['id'])
-    coco_data['images'].sort(key=lambda x: x['id'])
-    with open(path, 'w', encoding='utf-8') as f:
-        json.dump(coco_data, f, indent=2, ensure_ascii=False)
+    CocoTemplateStore(os.path.join(os.getcwd(), TEMPLATE_FOLDER)).save(coco_data)
 
 
 def get_image_files():
     """Get all image files sorted by creation time descending."""
-    folder = ensure_template_folder()
-    exts = {'.png', '.jpg', '.jpeg', '.bmp', '.webp'}
-    files = []
-    for f in os.listdir(folder):
-        if os.path.splitext(f)[1].lower() in exts:
-            full = os.path.join(folder, f)
-            files.append((full, os.path.getctime(full)))
-    files.sort(key=lambda x: x[1], reverse=True)
-    return [f[0] for f in files]
+    store = CocoTemplateStore(os.path.join(os.getcwd(), TEMPLATE_FOLDER))
+    return [str(item['path']) for item in store.list_images()]
 
 
 def get_next_image_name(folder, coco_data=None):
     """Find the next available numeric image name."""
-    existing = set()
-    for f in os.listdir(folder):
-        name = os.path.splitext(f)[0]
-        if name.isdigit():
-            existing.add(int(name))
-    for img in (coco_data or {}).get('images', []):
-        name = os.path.splitext(os.path.basename(img.get('file_name', '')))[0]
-        if name.isdigit():
-            existing.add(int(name))
-
-    i = 0
-    while i in existing:
-        i += 1
-    return str(i)
+    return os.path.splitext(CocoTemplateStore(folder).next_image_name())[0]
 
 
 def get_image_entry_for_path(coco_data, image_path):

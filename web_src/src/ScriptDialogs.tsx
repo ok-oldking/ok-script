@@ -1,6 +1,57 @@
 import { useEffect, useState } from "react";
 import { Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Input } from "@fluentui/react-components";
 import { t } from "./i18n";
+import type { ScriptTemplate } from "./types";
+
+export function UnsavedScriptDialog({ onCancel, onDiscard, onSave }: {
+  onCancel: () => void;
+  onDiscard: () => void;
+  onSave: () => void;
+}) {
+  return <Dialog open modalType="modal" onOpenChange={(_event, data) => !data.open && onCancel()}>
+    <DialogSurface className="script-action-dialog"><DialogBody>
+      <DialogTitle>{t("Save Changes")}</DialogTitle>
+      <DialogContent>{t("The current task has unsaved changes. Do you want to save them?")}</DialogContent>
+      <DialogActions><Button onClick={onCancel}>{t("Cancel")}</Button><Button onClick={onDiscard}>{t("Don't Save")}</Button><Button appearance="primary" onClick={onSave}>{t("Save")}</Button></DialogActions>
+    </DialogBody></DialogSurface>
+  </Dialog>;
+}
+
+export function ExternalScriptChangeDialog({ onKeep, onReload }: {
+  onKeep: () => void;
+  onReload: () => void;
+}) {
+  return <Dialog open modalType="modal" onOpenChange={(_event, data) => !data.open && onKeep()}>
+    <DialogSurface className="script-action-dialog"><DialogBody>
+      <DialogTitle>{t("File Changed")}</DialogTitle>
+      <DialogContent>{t("The file was modified externally. Reload it and discard your unsaved changes?")}</DialogContent>
+      <DialogActions><Button onClick={onKeep}>{t("Keep Editing")}</Button><Button appearance="primary" onClick={onReload}>{t("Reload")}</Button></DialogActions>
+    </DialogBody></DialogSurface>
+  </Dialog>;
+}
+
+export function TemplateParameterDialog({ template, onCancel, onInsert }: {
+  template: ScriptTemplate;
+  onCancel: () => void;
+  onInsert: (values: Record<string, string>) => void;
+}) {
+  const [values, setValues] = useState<Record<string, string>>({});
+  const missing = template.params.some((parameter) => parameter.default === null && !values[parameter.name]?.trim());
+  return <Dialog open modalType="modal" onOpenChange={(_event, data) => !data.open && onCancel()}>
+    <DialogSurface className="script-action-dialog template-parameter-dialog"><DialogBody>
+      <DialogTitle>{template.name}</DialogTitle>
+      <DialogContent className="script-dialog-content">
+        {template.full_doc && <pre className="template-parameter-doc">{template.full_doc}</pre>}
+        {template.params.map((parameter) => <label key={parameter.name}>
+          <span>{parameter.name}{parameter.default === null ? " *" : ""}</span>
+          <Input autoFocus={template.params[0] === parameter} value={values[parameter.name] ?? ""} placeholder={parameter.default === null ? t("required") : `${t("default")}: ${parameter.default}`} onChange={(event) => setValues((current) => ({ ...current, [parameter.name]: event.target.value }))} />
+          {parameter.doc && <small>{parameter.doc}</small>}
+        </label>)}
+      </DialogContent>
+      <DialogActions><Button onClick={onCancel}>{t("Cancel")}</Button><Button appearance="primary" disabled={missing} onClick={() => onInsert(values)}>{t("Insert")}</Button></DialogActions>
+    </DialogBody></DialogSurface>
+  </Dialog>;
+}
 
 export function CreateScriptDialog({ busy, onCancel, onCreate }: {
   busy: boolean;

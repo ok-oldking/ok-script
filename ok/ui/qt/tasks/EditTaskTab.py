@@ -654,90 +654,11 @@ class EditTaskTab(QWidget):
             self._replace_run_block(init_code, run_code)
 
     def _replace_run_block(self, init_code, run_code):
-        import re
-        code = self.editor.toPlainText()
-        
-        lines = code.split('\n')
-        
-        # 1. Replace capture_config in __init__
-        if init_code:
-            init_start = -1
-            init_indentation = ""
-            for i, line in enumerate(lines):
-                if re.match(r'^\s*def\s+__init__\s*\(.*?\)\s*:', line):
-                    init_start = i
-                    match = re.match(r'^(\s*)def', line)
-                    base_indent = match.group(1) if match else ""
-                    init_indentation = base_indent + "    "
-                    break
-                    
-            if init_start != -1:
-                capture_config_start = -1
-                capture_config_end = -1
-                
-                for i in range(init_start + 1, len(lines)):
-                    if re.match(r'^\s*def\s+', lines[i]) or (lines[i].strip() and not lines[i].startswith(init_indentation)):
-                        break
-                        
-                    if re.match(r'^\s*self\.capture_config\s*=', lines[i]):
-                        capture_config_start = i
-                        brackets = 0
-                        for j in range(i, len(lines)):
-                            if j > i and (re.match(r'^\s*def\s+', lines[j]) or (lines[j].strip() and not lines[j].startswith(init_indentation))):
-                                capture_config_end = j - 1
-                                break
-                            brackets += lines[j].count('{') - lines[j].count('}')
-                            if brackets <= 0:
-                                capture_config_end = j
-                                break
-                        if capture_config_end == -1:
-                            capture_config_end = i
-                        break
-                        
-                init_lines = init_code.strip('\n').split('\n')
-                formatted_init_code = []
-                for line in init_lines:
-                    formatted_init_code.append(init_indentation + line.rstrip())
-                    
-                if capture_config_start != -1 and capture_config_end != -1:
-                    lines = lines[:capture_config_start] + formatted_init_code + lines[capture_config_end + 1:]
-                else:
-                    insert_idx = init_start + 1
-                    for i in range(init_start + 1, len(lines)):
-                        if re.match(r'^\s*def\s+', lines[i]) or (lines[i].strip() and not lines[i].startswith(init_indentation)):
-                            break
-                        insert_idx = i + 1
-                    lines = lines[:insert_idx] + formatted_init_code + lines[insert_idx:]
-
-        # 2. Replace run method body
-        run_start = -1
-        indentation = ""
-        for i, line in enumerate(lines):
-            if re.match(r'^\s*def\s+run\s*\(.*?\)\s*:', line):
-                run_start = i
-                match = re.match(r'^(\s*)def', line)
-                base_indent = match.group(1) if match else ""
-                indentation = base_indent + "    "
-                break
-                
-        if run_start != -1:
-            run_end = len(lines)
-            for i in range(run_start + 1, len(lines)):
-                if re.match(r'^\s*def\s+', lines[i]) or (lines[i].strip() and not lines[i].startswith(indentation)):
-                    run_end = i
-                    break
-                    
-            new_lines = lines[:run_start+1]
-            generated_code_lines = run_code.strip('\n').split('\n')
-            for line in generated_code_lines:
-                new_lines.append(indentation + line.rstrip())
-            new_lines.extend(lines[run_end:])
-            
-            cursor = self.editor.textCursor()
-            v_scroll = self.editor.verticalScrollBar().value()
-            
-            self.editor.setPlainText("\n".join(new_lines))
-            self.editor.verticalScrollBar().setValue(v_scroll)
+        from ok.core.script_editing import merge_recorded_code
+        v_scroll = self.editor.verticalScrollBar().value()
+        self.editor.setPlainText(merge_recorded_code(
+            self.editor.toPlainText(), init_code, run_code))
+        self.editor.verticalScrollBar().setValue(v_scroll)
 
     def save_code(self, silent=False):
         code = self.editor.toPlainText()
