@@ -20,6 +20,7 @@
   --text-muted: #cfc8cc;
   --push-button-height: 32px;
   --button-icon-gap: 3px;
+  --window-radius: 10px;
   /* App.tsx updates this from the desktop viewport. Mobile disables the
      transform, so its existing responsive sizing is unaffected. */
   --desktop-scale: 1;
@@ -64,6 +65,40 @@ button { -webkit-tap-highlight-color: transparent; }
   transform-origin: top left;
 }
 
+.desktop.pywebview-shell {
+  grid-template-rows: 32px minmax(0, 1fr); border: 0; border-radius: var(--window-radius);
+}
+.window-titlebar {
+  position: relative; z-index: 950; display: none; grid-column: 1 / -1; min-width: 0; height: 32px;
+  align-items: stretch; background: var(--titlebar-bg); color: inherit; user-select: none;
+}
+.pywebview-shell .window-titlebar { display: flex; }
+.window-titlebar-drag {
+  display: flex; min-width: 0; flex: 1; align-items: center; gap: 8px; padding-left: 10px; cursor: default;
+}
+.window-titlebar-drag img { width: 16px; height: 16px; border-radius: 3px; object-fit: cover; pointer-events: none; }
+.window-titlebar-fallback {
+  display: grid; width: 16px; height: 16px; place-items: center; border-radius: 3px; background: var(--accent);
+  color: #102a35; font-size: 8px; font-weight: 700; line-height: 1; pointer-events: none;
+}
+.window-titlebar-title {
+  overflow: hidden; font-size: 12px; font-weight: 400; line-height: 1; text-overflow: ellipsis; white-space: nowrap; pointer-events: none;
+}
+.window-controls { display: flex; flex: none; align-items: stretch; }
+.window-controls button {
+  display: grid; width: 46px; min-width: 46px; height: 32px; place-items: center; padding: 0; border: 0; border-radius: 0;
+  background: transparent; color: inherit; cursor: default;
+}
+.window-controls button:hover { background: rgba(255,255,255,.09); }
+.window-controls button:active { background: rgba(255,255,255,.055); }
+.window-controls button.window-close:hover { background: #c42b1c; color: #fff; }
+.window-controls button.window-close:active { background: #a92318; }
+.window-controls svg { width: 14px; height: 14px; }
+:root[data-theme="light"] .window-controls button:hover { background: rgba(0,0,0,.07); }
+:root[data-theme="light"] .window-controls button:active { background: rgba(0,0,0,.045); }
+:root[data-theme="light"] .window-controls button.window-close:hover { background: #c42b1c; color: #fff; }
+:root[data-theme="light"] .window-controls button.window-close:active { background: #a92318; }
+
 .app-avatar {
   display: grid; place-items: center; overflow: hidden; border-radius: 50%;
   color: #f2d9ef; background: radial-gradient(circle at 60% 25%, #6578bc 0 18%, #3c4a7b 19% 31%, #4c3d49 32% 63%, #222 64%);
@@ -74,6 +109,12 @@ button { -webkit-tap-highlight-color: transparent; }
   position: relative; display: flex; flex-direction: column; width: max-content; min-width: 0; overflow: hidden;
   background: var(--chrome-bg); border-right: 1px solid rgba(255,255,255,.035);
 }
+.nav-selection-indicator {
+  position: absolute; z-index: 2; left: 3px; top: 0; width: 3px; height: 18px; border-radius: 3px; opacity: 0;
+  background: var(--accent); transition: transform 260ms cubic-bezier(.1, .9, .2, 1), opacity 120ms ease-out;
+  pointer-events: none; will-change: transform;
+}
+.nav-selection-indicator.visible { opacity: 1; }
 .nav-toggle {
   display: grid; place-items: center; width: 34px; height: 34px; margin: 0 0 1px 3px;
   border: 0; border-radius: 6px; background: transparent; color: #ded8db;
@@ -85,14 +126,12 @@ button { -webkit-tap-highlight-color: transparent; }
   position: relative; display: grid; grid-template-columns: 17px minmax(0, 1fr); align-items: center; width: 100%; min-width: 0; height: 34px; gap: 4px;
   padding: 0 7px; border: 0; border-radius: 6px; background: transparent; color: #e0dadd; cursor: pointer;
   font-size: .7rem; line-height: 1; text-align: left; white-space: nowrap;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
 }
 .nav-item svg { display: block; width: 17px; height: 17px; place-self: center; }
 .nav-item svg.nav-icon-shift-down { transform: translateY(2px); }
 .nav-item span { display: inline-flex; align-items: center; align-self: center; height: 17px; }
 .nav-item.active { background: rgba(255,255,255,.052); }
-.nav-item.active::before {
-  content: ""; position: absolute; left: -1px; top: 8px; width: 3px; height: 18px; border-radius: 3px; background: var(--accent);
-}
 .desktop.nav-collapsed { grid-template-columns: 61px minmax(0, 1fr); }
 .nav-collapsed .nav-item span { display: none; }
 
@@ -102,6 +141,11 @@ button { -webkit-tap-highlight-color: transparent; }
   background: linear-gradient(145deg, #312229 0%, #311d25 55%, #2d1d24 100%);
   scrollbar-color: rgba(255,255,255,.58) transparent;
   scrollbar-width: thin;
+}
+.nav-page-transition { animation: winui-page-enter 220ms cubic-bezier(.1, .9, .2, 1) both; }
+@keyframes winui-page-enter {
+  from { opacity: .72; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 :root[data-theme="light"] .content { background: linear-gradient(145deg, #fbf6f8 0%, #f7eff3 55%, #f3e9ee 100%); }
 :root[data-theme="light"] .sidebar { border-color: rgba(61,39,50,.08); }
@@ -574,6 +618,7 @@ h2 { margin: 0 0 8px; color: #f4eff1; font-size: .88rem; line-height: 1.3; font-
   :root { font-size: 16px; }
   body { overflow: auto; }
   .desktop, .desktop.nav-collapsed { grid-template-columns: 1fr; grid-template-rows: auto 1fr; width: auto; height: auto; min-width: 0; min-height: 100vh; overflow: visible; border-radius: 0; transform: none; }
+  .desktop.pywebview-shell, .desktop.pywebview-shell.nav-collapsed { grid-template-rows: 32px auto 1fr; }
   .sidebar { position: sticky; z-index: 900; top: 0; display: block; width: 100%; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.06); }
   .nav-toggle { display: none; }
   .nav-primary { display: flex; gap: 4px; padding: 5px 8px; }
@@ -583,7 +628,8 @@ h2 { margin: 0 0 8px; color: #f4eff1; font-size: .88rem; line-height: 1.3; font-
   .nav-primary .nav-item { display: none; width: auto; height: 38px; }
   .nav-primary .nav-item:nth-child(1), .nav-primary .nav-item:nth-child(2), .nav-primary .nav-item:nth-child(3) { display: grid; }
   .nav-collapsed .nav-item span { display: inline-flex; }
-  .nav-item.active::before { left: 9px; right: 9px; top: auto; bottom: 1px; width: auto; height: 2px; }
+  .nav-selection-indicator { display: none; }
+  .nav-item.active::before { content: ""; position: absolute; left: 9px; right: 9px; top: auto; bottom: 1px; width: auto; height: 2px; border-radius: 2px; background: var(--accent); animation: mobile-nav-indicator-in 180ms cubic-bezier(.1, .9, .2, 1); }
   .content { display: block; height: auto; margin: 0; overflow: visible; padding: 18px 14px; border-radius: 0; }
   .start-card { align-items: flex-start; gap: 16px; }
   .start-actions { justify-content: flex-end; }
@@ -627,4 +673,15 @@ h2 { margin: 0 0 8px; color: #f4eff1; font-size: .88rem; line-height: 1.3; font-
   .about-identity { align-items: flex-start; flex-wrap: wrap; }
   .about-identity-links { width: 100%; justify-content: flex-start; margin-left: 0; }
   .about-projects article { align-items: flex-start; flex-direction: column; }
+}
+
+@keyframes mobile-nav-indicator-in {
+  from { opacity: 0; transform: scaleX(.35); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-selection-indicator { transition: none; }
+  .nav-page-transition, .nav-item.active::before { animation: none; }
+  .nav-item { transition: none; }
 }

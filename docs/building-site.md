@@ -10,7 +10,7 @@
 
 ```powershell
 $py = if (Test-Path .\.venv\Scripts\python.exe) { ".\.venv\Scripts\python.exe" } else { "python" }
-& $py -m pip install -r requirements-docs.txt
+& $py -m pip install --group default
 ```
 
 ## 本地预览

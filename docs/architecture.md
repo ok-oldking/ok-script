@@ -22,7 +22,13 @@ the same stream and forwards serializable events over a WebSocket.
 pip install ok-script             # headless core
 pip install "ok-script[qt]"       # desktop UI
 pip install "ok-script[web]"      # FastAPI/browser UI
-pip install "ok-script[all]"      # both UIs
+```
+
+For repository development, install the TOML dependency group instead. The
+`default` group contains the development tools and both UI stacks:
+
+```bash
+pip install --editable . --group default
 ```
 
 ## Run a mode

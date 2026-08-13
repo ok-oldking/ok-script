@@ -1,0 +1,97 @@
+[build-system]
+requires = [
+    "setuptools>=77",
+    "wheel",
+    "requests>=2.32.3",
+    "packaging>=24.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ok-script"
+dynamic = ["version"]
+description = "Automation with Computer Vision for Python"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "ok-oldking", email = "firedcto@gmail.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Intended Audience :: Developers",
+    "Operating System :: Microsoft :: Windows",
+]
+dependencies = [
+    "pywin32>=306",
+    "pyappify>=1.0.6",
+    "typing-extensions>=4.11.0",
+    "requests>=2.32.3",
+    "psutil>=6.0.0",
+    "pydirectinput==1.0.4",
+    "pycaw==20240210",
+    "mouse==0.7.1",
+]
+
+[project.optional-dependencies]
+web = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "pywebview>=5.4",
+]
+qt = [
+    "PySide6-Fluent-Widgets>=1.8.3",
+    "pynput>=1.8.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/ok-oldking/ok-script"
+Repository = "https://github.com/ok-oldking/ok-script"
+
+[project.scripts]
+ok = "ok.cli:main"
+
+[dependency-groups]
+web = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "pywebview>=5.4",
+]
+qt = [
+    "PySide6-Essentials>=6.7.0",
+    "PySideSix-Frameless-Window>=0.3.12",
+    "darkdetect>=0.8.0",
+    "PySide6-Fluent-Widgets>=1.8.3",
+    "pynput>=1.8.1",
+]
+default = [
+    { include-group = "web" },
+    { include-group = "qt" },
+    "numpy>=1.26.4",
+    "opencv-python>=4.9.0.80",
+    "Pillow>=10.0",
+    "adbutils>=2.2.1",
+    "ok-d3dshot>=0.1.5",
+    "OpenCC==1.2.0",
+    "pytest>=8.0",
+    "mypy>=1.10",
+    "build>=1.2",
+    "twine>=5.0",
+    "setuptools>=77",
+    "wheel",
+    "get-pypi-latest-version",
+    "mkdocs-material==9.7.7",
+]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "docs*"]
+
+[tool.setuptools.package-data]
+"ok.ui.web" = ["static/*.html", "static/*.js", "static/*.css", "static/*.png"]

@@ -81,6 +81,31 @@ def test_web_client_routes_tray_events_to_browser_notifications():
     assert 'Notification.requestPermission()' in source
 
 
+def test_web_client_detects_pywebview_if_ready_event_fired_before_react_effect():
+    source = (Path(__file__).parents[1] / "web_src" / "src" / "App.tsx").read_text(encoding="utf-8")
+
+    listener = 'window.addEventListener("pywebviewready", markNativeShell);'
+    ready_check = 'if (window.pywebview) markNativeShell();'
+    assert listener in source
+    assert ready_check in source
+    assert source.index(listener) < source.index(ready_check)
+
+
+def test_web_client_has_winui_window_frame_and_navigation_motion():
+    root = Path(__file__).parents[1]
+    source = (root / "web_src" / "src" / "App.tsx").read_text(encoding="utf-8")
+    styles = (root / "web_src" / "src" / "styles.css").read_text(encoding="utf-8")
+
+    assert 'className={`nav-selection-indicator ${navIndicatorVisible ? "visible" : ""}`}' in source
+    assert "key={activePage}" in source
+    assert "border-radius: var(--window-radius)" in styles
+    assert "grid-template-rows: 32px minmax(0, 1fr); border: 0" in styles
+    assert "cubic-bezier(.1, .9, .2, 1)" in styles
+    assert "@keyframes winui-page-enter" in styles
+    assert "@media (prefers-reduced-motion: reduce)" in styles
+    assert "window-resize-handle" not in source
+
+
 def test_script_crud_stays_inside_custom_task_folder(tmp_path):
     runtime = make_runtime(tmp_path)
 

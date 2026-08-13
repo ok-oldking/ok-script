@@ -303,6 +303,11 @@ class WebRuntime:
         self.event_session_key = secrets.token_urlsafe(32)
 
     @property
+    def ui_state(self):
+        """Shared window/UI state used by both Qt and pywebview shells."""
+        return self.ok.headless_app.ok_config
+
+    @property
     def executor(self):
         return self.ok.task_executor
 

@@ -33,6 +33,19 @@ ok-script 支持 Python 3.11 及以上版本，推荐使用 Python 3.12。
 python -m pip install ok-script
 ```
 
+按使用场景安装界面依赖：
+
+```powershell
+python -m pip install "ok-script[qt]"
+python -m pip install "ok-script[web]"
+```
+
+开发本仓库时，使用 `pyproject.toml` 中的 `default` 依赖组安装完整开发环境：
+
+```powershell
+python -m pip install --editable . --group default
+```
+
 如果要创建完整的自动化项目，建议从 [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) 模板开始，而不是直接在本仓库中编写业务脚本。
 
 ## 文档

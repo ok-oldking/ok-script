@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { Button, Dropdown, FluentProvider, Input, Menu, MenuDivider, MenuItem, MenuList, MenuPopover, MenuTrigger, Option, SpinButton, webDarkTheme, webLightTheme } from "@fluentui/react-components";
 import {
@@ -33,7 +33,9 @@ import {
   Search20Regular,
   Save20Regular,
   Settings20Regular,
+  Square20Regular,
   Stop20Regular,
+  Subtract20Regular,
   TaskListSquareLtr20Regular,
   Timer20Regular,
   Pause20Regular,
@@ -52,6 +54,18 @@ type IconComponent = typeof Play20Regular;
 type ToastMessage = { id: number; message: string; intent: "success" | "info" | "error" };
 type AppTheme = "Light" | "Dark" | "Auto";
 type SystemAccent = { light: string; dark: string };
+
+type PywebviewWindowApi = {
+  minimize: () => Promise<void>;
+  toggle_maximize: () => Promise<boolean>;
+  close: () => Promise<void>;
+};
+
+declare global {
+  interface Window {
+    pywebview?: { api?: PywebviewWindowApi };
+  }
+}
 
 const WINDOWS_STANDARD_BLUE = "#60cdff";
 const SYSTEM_NOTIFICATION_KEY = "System Notification";
@@ -784,6 +798,17 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   onTheme: (theme: AppTheme) => void;
   onLanguage: (language: string) => void;
 }) {
+  const [nativeShell, setNativeShell] = useState(() => Boolean(window.pywebview));
+
+  useEffect(() => {
+    const markNativeShell = () => setNativeShell(true);
+    window.addEventListener("pywebviewready", markNativeShell);
+    // The bridge can finish between the initial render and this effect. Check
+    // it after subscribing so both sides of that race reveal the title bar.
+    if (window.pywebview) markNativeShell();
+    return () => window.removeEventListener("pywebviewready", markNativeShell);
+  }, []);
+
   useEffect(() => {
     const updateDesktopScale = () => {
       // Edge can expose a several-thousand-pixel CSS viewport in desktop mode
@@ -828,6 +853,9 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [instructionsTask, setInstructionsTask] = useState<AutomationTask | null>(null);
   const [scriptDirty, setScriptDirty] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const [navIndicatorTop, setNavIndicatorTop] = useState(0);
+  const [navIndicatorVisible, setNavIndicatorVisible] = useState(false);
   const [pendingPage, setPendingPage] = useState<string | null>(null);
   const scriptSaveRef = useRef<(() => Promise<boolean>) | null>(null);
   const registerScriptSave = useCallback((save: (() => Promise<boolean>) | null) => { scriptSaveRef.current = save; }, []);
@@ -1146,8 +1174,39 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   const startLabel = status?.starting ? t("Starting") : status?.paused === false ? t("Pause") : `${t("Start")}${status?.hotkey ? `(${status.hotkey})` : ""}`;
   const StartStateIcon = status?.starting ? ArrowClockwise20Regular : status?.paused === false ? Pause20Regular : Play20Regular;
 
-  return <div className={`desktop ${collapsed ? "nav-collapsed" : ""}`}>
-    <aside className="sidebar">
+  const callWindowApi = (action: keyof PywebviewWindowApi) => {
+    const method = window.pywebview?.api?.[action];
+    if (method) void method();
+  };
+
+  useLayoutEffect(() => {
+    const activeItem = sidebarRef.current?.querySelector<HTMLElement>(".nav-item.active");
+    if (!activeItem) {
+      setNavIndicatorVisible(false);
+      return;
+    }
+    setNavIndicatorTop(activeItem.offsetTop + (activeItem.offsetHeight - 18) / 2);
+    setNavIndicatorVisible(true);
+  }, [activePage, collapsed, primaryNavigationItems]);
+
+  return <div className={`desktop ${collapsed ? "nav-collapsed" : ""} ${nativeShell ? "pywebview-shell" : ""}`}>
+    <header className="window-titlebar" aria-hidden={!nativeShell}>
+      <div className="window-titlebar-drag pywebview-drag-region" onDoubleClick={() => callWindowApi("toggle_maximize")}>
+        {ui?.icon_url ? <img src={ui.icon_url} alt="" /> : <span className="window-titlebar-fallback">OK</span>}
+        <span className="window-titlebar-title">{ui?.title || "ok-script"}</span>
+      </div>
+      <div className="window-controls">
+        <button type="button" aria-label={t("Minimize")} title={t("Minimize")} onClick={() => callWindowApi("minimize")}><Subtract20Regular /></button>
+        <button type="button" aria-label={t("Maximize")} title={t("Maximize")} onClick={() => callWindowApi("toggle_maximize")}><Square20Regular /></button>
+        <button type="button" className="window-close" aria-label={t("Close")} title={t("Close")} onClick={() => callWindowApi("close")}><Dismiss20Regular /></button>
+      </div>
+    </header>
+    <aside ref={sidebarRef} className="sidebar">
+      <span
+        className={`nav-selection-indicator ${navIndicatorVisible ? "visible" : ""}`}
+        style={{ transform: `translateY(${navIndicatorTop}px)` }}
+        aria-hidden="true"
+      />
       <button type="button" className="nav-toggle" aria-label={t("Toggle navigation")} onClick={() => setCollapsed((value) => !value)}><Navigation20Regular /></button>
       <nav className="nav-primary">
         {primaryNavigationItems.map(([label, Icon]) => <button
@@ -1176,7 +1235,7 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
       </div>)}
     </div>
 
-    <main className={`content ${activePage !== "Capture" ? "task-content" : ""}`}>
+    <main key={activePage} className={`content nav-page-transition ${activePage !== "Capture" ? "task-content" : ""}`}>
       {activePage === "Capture" ? <>
       <section className="start-card about-identity surface-card">
         <div className="app-avatar">{ui?.icon_url ? <img src={ui.icon_url} alt="" /> : "OK"}</div><div><h1>{ui?.title || "OK-WW"}</h1><p>{ui?.version || "dev"} · {t(ui?.debug ? "Debug" : "Release")}</p></div>
