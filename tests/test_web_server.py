@@ -68,7 +68,7 @@ def test_debug_web_ui_opens_pywebview_instead_of_browser():
 
 
 def test_webview_uses_app_window_config_and_stops_server_on_close():
-    webview = SimpleNamespace(create_window=Mock(), start=Mock())
+    webview = SimpleNamespace(create_window=Mock(), start=Mock(), settings={})
     server = Mock(should_exit=False)
     server_socket = object()
     server_thread = Mock()
@@ -91,6 +91,7 @@ def test_webview_uses_app_window_config_and_stops_server_on_close():
         min_size=(1000, 700),
     )
     webview.start.assert_called_once_with(debug=True)
+    assert webview.settings["OPEN_DEVTOOLS_IN_DEBUG"] is False
     server_thread.start.assert_called_once_with()
     assert server.should_exit is True
     server_thread.join.assert_called_once_with(timeout=10)
@@ -128,6 +129,23 @@ def test_server_info_logs_are_routed_to_ok_debug():
     ok_logger.warning.assert_called_once_with("Server warning")
 
 
+def test_websocket_frame_debug_logs_are_not_routed_to_app_logger():
+    ok_logger = Mock()
+    handler = _OkServerLogHandler()
+    handler.logger = ok_logger
+
+    for message in (
+        '> TEXT \'{"event":"log"}\' [198 bytes]',
+        '< BINARY 01 02 03 [3 bytes]',
+        '> PING ab cd [binary, 2 bytes]',
+    ):
+        handler.emit(logging.LogRecord(
+            "uvicorn.error", logging.DEBUG, __file__, 1, message, (), None,
+        ))
+
+    ok_logger.assert_not_called()
+
+
 def test_server_loggers_use_only_ok_handler():
     logger_names = ("uvicorn", "uvicorn.error", "uvicorn.access", "websockets.server")
     originals = {
@@ -142,7 +160,10 @@ def test_server_loggers_use_only_ok_handler():
             server_logger = logging.getLogger(name)
             assert len(server_logger.handlers) == 1
             assert isinstance(server_logger.handlers[0], _OkServerLogHandler)
-            assert server_logger.level == logging.DEBUG
+            expected_level = (
+                logging.INFO if name == "websockets.server" else logging.DEBUG
+            )
+            assert server_logger.level == expected_level
             assert server_logger.propagate is False
     finally:
         for name, (handlers, level, propagate) in originals.items():
