@@ -289,11 +289,12 @@ class WebRuntime:
         from ok import OK
 
         web_config = dict(config)
+        web_config.pop("gui", None)
         web_config["use_gui"] = False
         # Browser clients own Windows-visible notifications. A server-side
         # tray icon is unreliable when Uvicorn runs in a non-interactive
         # session and would duplicate browser notifications when it works.
-        web_config["web_ui"] = True
+        web_config["web_runtime"] = True
         self.ok = ok_instance or OK(web_config)
         self.last_capture_path = None
         self.icon_url = icon_url

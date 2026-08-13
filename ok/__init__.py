@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 from ok.util.handler import Handler, ExitEvent
 from ok.util.logger import Logger
 from ok.util.file import get_path_relative_to_exe
+from ok.core.ui_config import resolve_ui_config, resolve_window_size
 os.environ["PYTHONIOENCODING"] = "utf-8"
 
 if TYPE_CHECKING:
@@ -310,14 +311,6 @@ class App(_OverlayConfigMixin):
             self.to_translate = None
             
         self.po_translation = None
-        if not config.get('window_size'):
-            logger.info(f'no config.window_size was set use default')
-            config['window_size'] = {
-                'width': 1200,
-                'height': 800,
-                'min_width': 1200,
-                'min_height': 800,
-            }
         og.app = self
         og.executor = task_executor
         if task_executor:
@@ -425,9 +418,10 @@ class App(_OverlayConfigMixin):
         # Set the window title here
         self.main_window.setWindowIcon(self.icon)
 
-        self.main_window.set_window_size(self.config['window_size']['width'], self.config['window_size']['height'],
-                                         self.config['window_size']['min_width'],
-                                         self.config['window_size']['min_height'])
+        window_size = resolve_window_size(self.config)
+        self.main_window.set_window_size(window_size['width'], window_size['height'],
+                                         window_size['min_width'],
+                                         window_size['min_height'])
 
         og.main_window = self.main_window
 
@@ -488,7 +482,10 @@ class HeadlessApp(_OverlayConfigMixin):
         self.notification_manager = None
         if task_executor is not None:
             from ok.notification import NotificationManager
-            notification_kwargs = {'system_notifier': None} if config.get('web_ui') else {}
+            ui_config = resolve_ui_config(config)
+            is_web = (config.get('web_runtime')
+                      or (ui_config is not None and ui_config['type'] == 'web'))
+            notification_kwargs = {'system_notifier': None} if is_web else {}
             self.notification_manager = NotificationManager(
                 self.global_config, task_executor, exit_event,
                 app_name=config.get('gui_title'), app_icon=config.get('gui_icon'),
@@ -683,17 +680,25 @@ class OK:
         return self._headless_app
 
     def should_init_task_manager_headless(self):
-        return (self.config.get("web_ui", False)
-                or not self.config.get("use_gui")
+        ui_config = resolve_ui_config(self.config)
+        return (ui_config is None
+                or ui_config["type"] != "qt"
                 or self.args.get('headless', False))
 
     def start(self):
         logger.info(f'OK start id:{id(self)} pid:{os.getpid()}')
         try:
-            if self.config.get("web_ui", False):
+            ui_config = resolve_ui_config(self.config)
+            if ui_config is not None and ui_config["type"] == "web":
                 from ok.ui.web.server import run_web
-                return run_web(self.config, ok_instance=self)
-            use_gui = self.config.get("use_gui") and not self.args.get('headless', False)
+                return run_web(
+                    self.config,
+                    open_browser=ui_config["launch_mode"] != "server",
+                    launch_mode=ui_config["launch_mode"],
+                    ok_instance=self,
+                )
+            use_gui = (ui_config is not None and ui_config["type"] == "qt"
+                       and not self.args.get('headless', False))
             if not use_gui and self.args.get('task', 0) > 0:
                 self.run_task(self.args.get('task'), exit_after=self.args.get('exit', False))
                 return
@@ -1022,6 +1027,7 @@ def run_task(config, task=1, debug=False, exit_after=False):
     from ok.task.task import TriggerTask
 
     headless_config = dict(config)
+    headless_config.pop("gui", None)
     headless_config["use_gui"] = False
     headless_config["debug"] = debug
     if isinstance(task, type) and issubclass(task, TriggerTask):

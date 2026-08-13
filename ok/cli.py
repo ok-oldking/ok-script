@@ -56,7 +56,7 @@ def run_gui_command(args):
     from ok import OK
 
     config = dict(load_config(args.config))
-    config["use_gui"] = True
+    config["gui"] = {"type": "qt"}
     OK(config).start()
     return 0
 

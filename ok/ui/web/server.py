@@ -4,6 +4,9 @@ import threading
 import webbrowser
 
 from ok.util.logger import Logger
+from ok.core.ui_config import resolve_window_size
+
+logger = Logger.get_logger("web_server")
 
 
 class _OkServerLogHandler(logging.Handler):
@@ -60,7 +63,7 @@ def _run_webview(web_config, url, server, server_socket):
             "Debug web UI requires pywebview. Install ok-script[web]."
         ) from exc
 
-    window_config = web_config.get("window_size") or {}
+    window_config = resolve_window_size(web_config)
     webview.settings["OPEN_DEVTOOLS_IN_DEBUG"] = False
     server_thread = threading.Thread(
         target=server.run,
@@ -87,7 +90,7 @@ def _run_webview(web_config, url, server, server_socket):
 
 
 def run_web(config, host="127.0.0.1", port=0, open_browser=True, debug=None,
-            ok_instance=None):
+            launch_mode=None, ok_instance=None):
     """Run the browser UI, using an OS-assigned port by default."""
     try:
         import uvicorn
@@ -102,6 +105,16 @@ def run_web(config, host="127.0.0.1", port=0, open_browser=True, debug=None,
     web_config["use_gui"] = False
     if debug is not None:
         web_config["debug"] = debug
+    if launch_mode is None:
+        gui_config = web_config.get("gui")
+        launch_mode = (gui_config.get("launch_mode", "pywebview")
+                       if isinstance(gui_config, dict) else None)
+        if launch_mode is None:
+            launch_mode = "pywebview"
+    if launch_mode not in {"pywebview", "browser", "server"}:
+        raise ValueError(
+            "launch_mode must be 'pywebview', 'browser', or 'server'"
+        )
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     browser_timer = None
@@ -119,16 +132,20 @@ def run_web(config, host="127.0.0.1", port=0, open_browser=True, debug=None,
         _configure_server_logging()
         server = uvicorn.Server(uvicorn_config)
         url = f"http://{host}:{selected_port}"
-        if open_browser and web_config.get("debug", False):
+        logger.info(f"ok script pyappify web server started:{host}:{selected_port}")
+        if open_browser and launch_mode == "pywebview":
             _run_webview(web_config, url, server, server_socket)
         else:
-            if open_browser:
+            if open_browser and launch_mode == "browser":
                 browser_timer = threading.Timer(
                     1.0, webbrowser.open, args=(url,)
                 )
                 browser_timer.daemon = True
                 browser_timer.start()
             server.run(sockets=[server_socket])
+    except Exception as exc:
+        logger.error(f"ok script pyappify web server start failed {exc}")
+        raise
     finally:
         if browser_timer is not None:
             browser_timer.cancel()

@@ -3,6 +3,8 @@ import sys
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+import pytest
+
 from ok.ui.web.server import (
     _OkServerLogHandler, _configure_server_logging, _run_webview, run_web,
 )
@@ -16,6 +18,7 @@ def test_run_web_uses_available_port_and_does_not_mutate_config():
     uvicorn = SimpleNamespace(Config=uvicorn_config, Server=Mock(return_value=server))
 
     with patch.dict(sys.modules, {"uvicorn": uvicorn}), \
+            patch("ok.ui.web.server.logger") as logger, \
             patch("ok.ui.web.app.create_web_app", return_value=app) as create_app:
         selected_port = run_web(config, open_browser=False, debug=True)
 
@@ -28,6 +31,9 @@ def test_run_web_uses_available_port_and_does_not_mutate_config():
         app, host="127.0.0.1", port=selected_port, log_config=None
     )
     server.run.assert_called_once()
+    logger.info.assert_called_once_with(
+        f"ok script pyappify web server started:127.0.0.1:{selected_port}"
+    )
     assert server.run.call_args.kwargs["sockets"][0].fileno() == -1
 
 
@@ -39,7 +45,7 @@ def test_run_web_opens_selected_port_in_browser():
     with patch.dict(sys.modules, {"uvicorn": uvicorn}), \
             patch("ok.ui.web.app.create_web_app"), \
             patch("ok.ui.web.server.threading.Timer", return_value=timer) as timer_class:
-        selected_port = run_web({}, open_browser=True)
+        selected_port = run_web({}, open_browser=True, launch_mode="browser")
 
     timer_class.assert_called_once()
     assert timer_class.call_args.args[0] == 1.0
@@ -51,7 +57,24 @@ def test_run_web_opens_selected_port_in_browser():
     timer.cancel.assert_called_once_with()
 
 
-def test_debug_web_ui_opens_pywebview_instead_of_browser():
+def test_run_web_logs_start_failure_and_reraises():
+    failure = RuntimeError("startup crashed")
+    server = Mock()
+    server.run.side_effect = failure
+    uvicorn = SimpleNamespace(Config=Mock(), Server=Mock(return_value=server))
+
+    with patch.dict(sys.modules, {"uvicorn": uvicorn}), \
+            patch("ok.ui.web.app.create_web_app"), \
+            patch("ok.ui.web.server.logger") as logger, \
+            pytest.raises(RuntimeError, match="startup crashed"):
+        run_web({}, open_browser=False)
+
+    logger.error.assert_called_once_with(
+        "ok script pyappify web server start failed startup crashed"
+    )
+
+
+def test_default_web_launch_opens_pywebview():
     server = Mock()
     uvicorn = SimpleNamespace(Config=Mock(), Server=Mock(return_value=server))
 
@@ -59,12 +82,47 @@ def test_debug_web_ui_opens_pywebview_instead_of_browser():
             patch("ok.ui.web.app.create_web_app"), \
             patch("ok.ui.web.server._run_webview") as run_webview, \
             patch("ok.ui.web.server.threading.Timer") as timer_class:
-        selected_port = run_web({"debug": True}, open_browser=True)
+        selected_port = run_web({}, open_browser=True)
 
     run_webview.assert_called_once()
     assert run_webview.call_args.args[1] == f"http://127.0.0.1:{selected_port}"
     timer_class.assert_not_called()
     server.run.assert_not_called()
+
+
+def test_pywebview_launch_mode_opens_pywebview_without_debug():
+    server = Mock()
+    uvicorn = SimpleNamespace(Config=Mock(), Server=Mock(return_value=server))
+
+    with patch.dict(sys.modules, {"uvicorn": uvicorn}), \
+            patch("ok.ui.web.app.create_web_app"), \
+            patch("ok.ui.web.server._run_webview") as run_webview, \
+            patch("ok.ui.web.server.threading.Timer") as timer_class:
+        selected_port = run_web(
+            {"gui": {"type": "web", "launch_mode": "pywebview"}}, open_browser=True
+        )
+
+    run_webview.assert_called_once()
+    assert run_webview.call_args.args[1] == f"http://127.0.0.1:{selected_port}"
+    timer_class.assert_not_called()
+    server.run.assert_not_called()
+
+
+def test_server_launch_mode_runs_without_opening_client():
+    server = Mock()
+    uvicorn = SimpleNamespace(Config=Mock(), Server=Mock(return_value=server))
+
+    with patch.dict(sys.modules, {"uvicorn": uvicorn}), \
+            patch("ok.ui.web.app.create_web_app"), \
+            patch("ok.ui.web.server._run_webview") as run_webview, \
+            patch("ok.ui.web.server.threading.Timer") as timer_class:
+        run_web(
+            {"gui": {"type": "web", "launch_mode": "server"}}, open_browser=True
+        )
+
+    run_webview.assert_not_called()
+    timer_class.assert_not_called()
+    server.run.assert_called_once()
 
 
 def test_webview_uses_app_window_config_and_stops_server_on_close():
@@ -104,10 +162,14 @@ def test_run_web_reuses_existing_ok_instance():
 
     with patch.dict(sys.modules, {"uvicorn": uvicorn}), \
             patch("ok.ui.web.app.create_web_app") as create_app:
-        run_web({"web_ui": True}, open_browser=False, ok_instance=ok_instance)
+        run_web(
+            {"gui": {"type": "web"}}, open_browser=False,
+            ok_instance=ok_instance,
+        )
 
     create_app.assert_called_once_with(
-        {"web_ui": True, "use_gui": False}, ok_instance=ok_instance
+        {"gui": {"type": "web"}, "use_gui": False},
+        ok_instance=ok_instance,
     )
 
 

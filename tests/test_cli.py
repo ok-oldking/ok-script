@@ -24,6 +24,18 @@ class TestCli(unittest.TestCase):
             config, host="localhost", port=0, open_browser=False
         )
 
+    def test_gui_command_uses_nested_qt_config(self):
+        config = {"gui_title": "Test"}
+
+        with patch.object(cli, "load_config", return_value=config), \
+                patch("ok.OK") as ok_class:
+            self.assertEqual(0, cli.main(["gui"]))
+
+        ok_class.assert_called_once_with({
+            "gui_title": "Test", "gui": {"type": "qt"},
+        })
+        ok_class.return_value.start.assert_called_once_with()
+
     def test_run_task_forwards_exit_after_flag(self):
         config = {"use_gui": False}
 

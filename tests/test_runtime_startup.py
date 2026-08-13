@@ -86,15 +86,43 @@ def test_start_runtime_applies_task_arguments_before_auto_start():
     assert controller.calls == [(2, True)]
 
 
-def test_ok_start_routes_web_ui_to_web_server():
+def test_ok_start_routes_nested_browser_gui_to_web_server():
     runtime = object.__new__(OK)
-    runtime.config = {"web_ui": True}
+    runtime.config = {"gui": {"type": "web", "launch_mode": "browser"}}
 
     from unittest.mock import patch
     with patch("ok.ui.web.server.run_web", return_value=43210) as run_web:
         assert runtime.start() == 43210
 
-    run_web.assert_called_once_with(runtime.config, ok_instance=runtime)
+    run_web.assert_called_once_with(
+        runtime.config, open_browser=True, launch_mode="browser", ok_instance=runtime
+    )
+
+
+def test_ok_start_routes_nested_pywebview_ui_to_pywebview():
+    runtime = object.__new__(OK)
+    runtime.config = {"gui": {"type": "web", "launch_mode": "pywebview"}}
+
+    from unittest.mock import patch
+    with patch("ok.ui.web.server.run_web", return_value=43210) as run_web:
+        assert runtime.start() == 43210
+
+    run_web.assert_called_once_with(
+        runtime.config, open_browser=True, launch_mode="pywebview", ok_instance=runtime
+    )
+
+
+def test_ok_start_routes_nested_server_gui_without_opening_window():
+    runtime = object.__new__(OK)
+    runtime.config = {"gui": {"type": "web", "launch_mode": "server"}}
+
+    from unittest.mock import patch
+    with patch("ok.ui.web.server.run_web", return_value=43210) as run_web:
+        assert runtime.start() == 43210
+
+    run_web.assert_called_once_with(
+        runtime.config, open_browser=False, launch_mode="server", ok_instance=runtime
+    )
 
 
 def test_device_refresh_always_publishes_completion_event():
