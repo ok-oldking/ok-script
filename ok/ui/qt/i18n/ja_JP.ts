@@ -3554,5 +3554,9 @@
             <source>Share Link copied to clipboard</source>
             <translation>共有リンクをクリップボードにコピーしました</translation>
         </message>
+        <message>
+            <source>Starting</source>
+            <translation>起動中</translation>
+        </message>
     </context>
 </TS>

@@ -155,6 +155,7 @@ _LAZY_IMPORTS = {
     'calculate_color_percentage': ('ok.util.color', 'calculate_color_percentage'),
     'get_mask_in_color_range': ('ok.util.color', 'get_mask_in_color_range'),
     'is_pure_black': ('ok.util.color', 'is_pure_black'),
+    'run_web': ('ok.ui.web.server', 'run_web'),
 }
 
 __all__ = [
@@ -682,11 +683,16 @@ class OK:
         return self._headless_app
 
     def should_init_task_manager_headless(self):
-        return not self.config.get("use_gui") or self.args.get('headless', False)
+        return (self.config.get("web_ui", False)
+                or not self.config.get("use_gui")
+                or self.args.get('headless', False))
 
     def start(self):
         logger.info(f'OK start id:{id(self)} pid:{os.getpid()}')
         try:
+            if self.config.get("web_ui", False):
+                from ok.ui.web.server import run_web
+                return run_web(self.config, ok_instance=self)
             use_gui = self.config.get("use_gui") and not self.args.get('headless', False)
             if not use_gui and self.args.get('task', 0) > 0:
                 self.run_task(self.args.get('task'), exit_after=self.args.get('exit', False))

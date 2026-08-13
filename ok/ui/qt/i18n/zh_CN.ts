@@ -3560,5 +3560,9 @@
             <source>Share Link copied to clipboard</source>
             <translation>分享链接已经复制到剪切板</translation>
         </message>
+        <message>
+            <source>Starting</source>
+            <translation>正在启动</translation>
+        </message>
     </context>
 </TS>

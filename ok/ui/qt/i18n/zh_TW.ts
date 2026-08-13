@@ -3558,5 +3558,9 @@
             <source>Share Link copied to clipboard</source>
             <translation>分享連結已複製到剪貼簿</translation>
         </message>
+        <message>
+            <source>Starting</source>
+            <translation>正在啟動</translation>
+        </message>
     </context>
 </TS>

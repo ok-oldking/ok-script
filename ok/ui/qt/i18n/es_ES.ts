@@ -3562,5 +3562,9 @@
             <source>Share Link copied to clipboard</source>
             <translation>Enlace para compartir copiado al portapapeles</translation>
         </message>
+        <message>
+            <source>Starting</source>
+            <translation>Iniciando</translation>
+        </message>
     </context>
 </TS>

@@ -62,18 +62,9 @@ def run_gui_command(args):
 
 
 def run_web_command(args):
-    try:
-        import uvicorn
-    except ImportError as exc:
-        raise RuntimeError(
-            "The web UI requires FastAPI and Uvicorn. Install ok-script[web]."
-        ) from exc
+    from ok import run_web
 
-    from ok.ui.web import create_web_app
-
-    config = dict(load_config(args.config))
-    config["use_gui"] = False
-    uvicorn.run(create_web_app(config), host=args.host, port=args.port)
+    run_web(load_config(args.config), host=args.host, port=args.port, open_browser=False)
     return 0
 
 
@@ -108,7 +99,8 @@ def build_parser():
     web_parser = subparsers.add_parser("web", help="Run the FastAPI browser UI")
     web_parser.add_argument("-c", "--config", help="Config import target")
     web_parser.add_argument("--host", default="127.0.0.1")
-    web_parser.add_argument("--port", type=int, default=8000)
+    web_parser.add_argument("--port", type=int, default=0,
+                            help="Port to listen on (default: choose an available port)")
     web_parser.set_defaults(func=run_web_command)
 
     return parser

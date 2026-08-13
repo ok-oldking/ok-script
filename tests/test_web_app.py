@@ -64,6 +64,24 @@ def test_web_runtime_issues_url_safe_event_session_key(monkeypatch):
     assert runtime.event_session_key.replace("-", "").replace("_", "").isalnum()
 
 
+def test_web_status_reports_starting_before_executor_runs():
+    runtime = object.__new__(WebRuntime)
+    runtime.ok = SimpleNamespace(
+        task_executor=SimpleNamespace(
+            current_task=None,
+            basic_options={"Start/Stop": "None"},
+            paused=True,
+            thread=None,
+            get_all_tasks=lambda: [],
+        ),
+        headless_app=SimpleNamespace(
+            start_controller=SimpleNamespace(starting=True)
+        ),
+    )
+
+    assert runtime.status()["starting"] is True
+
+
 def test_read_log_filters_complete_records(tmp_path: Path):
     log = tmp_path / "ok-script.log"
     log.write_text(

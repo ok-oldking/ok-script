@@ -57,11 +57,13 @@ setuptools.setup(
         'web': [
             'fastapi>=0.115.0',
             'uvicorn[standard]>=0.30.0',
+            'pywebview>=5.4',
         ],
         'all': [
             'PySide6-Fluent-Widgets>=1.8.3',
             'fastapi>=0.115.0',
             'uvicorn[standard]>=0.30.0',
+            'pywebview>=5.4',
         ],
     },
     package_data={

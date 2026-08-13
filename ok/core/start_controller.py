@@ -23,6 +23,7 @@ class StartController:
         windows_config = app_config.get('windows') or {}
         self.start_exe = windows_config.get('start_exe', True)
         self.start_method = windows_config.get('start_method', WINDOWS_START_METHOD_START)
+        self.starting = False
 
     def tr(self, message):
         app = getattr(og, "app", None)
@@ -38,9 +39,21 @@ class StartController:
         communicate.task.emit(task)
 
     def start(self, task=None, exit_after=False):
-        self.handler.post(lambda: self.do_start(task, exit_after))
+        self.starting = True
+        try:
+            self.handler.post(lambda: self.do_start(task, exit_after))
+        except Exception:
+            self.starting = False
+            raise
 
     def do_start(self, task=None, exit_after=False):
+        self.starting = True
+        try:
+            return self._do_start(task, exit_after)
+        finally:
+            self.starting = False
+
+    def _do_start(self, task=None, exit_after=False):
         communicate.starting_emulator.emit(False, None, self.start_timeout)
         tasks_to_enable = []
         try:

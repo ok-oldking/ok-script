@@ -285,7 +285,7 @@ def _read_log(path, level="ALL", query="", max_lines=5000):
 
 
 class WebRuntime:
-    def __init__(self, config, icon_url=None):
+    def __init__(self, config, icon_url=None, ok_instance=None):
         from ok import OK
 
         web_config = dict(config)
@@ -294,7 +294,7 @@ class WebRuntime:
         # tray icon is unreliable when Uvicorn runs in a non-interactive
         # session and would duplicate browser notifications when it works.
         web_config["web_ui"] = True
-        self.ok = OK(web_config)
+        self.ok = ok_instance or OK(web_config)
         self.last_capture_path = None
         self.icon_url = icon_url
         self._schedule_manager = None
@@ -329,9 +329,11 @@ class WebRuntime:
     def status(self):
         current = self.executor.current_task
         hotkey = self.executor.basic_options.get("Start/Stop")
+        start_controller = self.ok.headless_app.start_controller
         return {
             "paused": bool(self.executor.paused),
             "running": self.executor.thread is not None and self.executor.thread.is_alive(),
+            "starting": bool(start_controller.starting),
             "current_task": current.name if current else None,
             "task_count": len(self.executor.get_all_tasks()),
             "hotkey": hotkey if hotkey and hotkey != "None" else None,
@@ -946,7 +948,7 @@ class WebRuntime:
         self.ok.quit()
 
 
-def create_web_app(config):
+def create_web_app(config, ok_instance=None):
     try:
         from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
         from fastapi.responses import FileResponse
@@ -962,7 +964,7 @@ def create_web_app(config):
 
     static_dir = Path(__file__).with_name("static")
     icon_url = _copy_web_icon(config, static_dir)
-    runtime = WebRuntime(config, icon_url=icon_url)
+    runtime = WebRuntime(config, icon_url=icon_url, ok_instance=ok_instance)
     event_sessions = _EventSessionRegistry()
 
     @asynccontextmanager

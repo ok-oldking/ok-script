@@ -3563,5 +3563,9 @@
             <source>Share Link copied to clipboard</source>
             <translation>공유 링크가 클립보드에 복사되었습니다</translation>
         </message>
+        <message>
+            <source>Starting</source>
+            <translation>시작 중</translation>
+        </message>
     </context>
 </TS>

@@ -1,6 +1,7 @@
 export type ExecutorStatus = {
   paused: boolean;
   running: boolean;
+  starting: boolean;
   current_task: string | null;
   task_count: number;
   hotkey: string | null;

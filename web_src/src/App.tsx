@@ -1143,8 +1143,8 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   };
 
   const status = ui?.status;
-  const startLabel = status?.paused === false ? t("Pause") : `${t("Start")}${status?.hotkey ? `(${status.hotkey})` : ""}`;
-  const StartStateIcon = status?.paused === false ? Pause20Regular : Play20Regular;
+  const startLabel = status?.starting ? t("Starting") : status?.paused === false ? t("Pause") : `${t("Start")}${status?.hotkey ? `(${status.hotkey})` : ""}`;
+  const StartStateIcon = status?.starting ? ArrowClockwise20Regular : status?.paused === false ? Pause20Regular : Play20Regular;
 
   return <div className={`desktop ${collapsed ? "nav-collapsed" : ""}`}>
     <aside className="sidebar">
@@ -1183,7 +1183,7 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
         <div className="start-actions">
           <button type="button" disabled={pending !== null} onClick={() => void tool("capture")}><Camera20Regular />{t("Capture")}</button>
           <button type="button" disabled={pending !== null} onClick={() => void refreshDevices()}><ArrowClockwise20Regular />{pending === "refresh" ? t("Refreshing") : t("Refresh")}</button>
-          <button className="primary-button" type="button" disabled={pending !== null || loading} onClick={() => void perform("start", status?.paused === false ? async () => { await runtimeApi.pause(); return runtimeApi.captureUi(); } : async () => { await runtimeApi.resume(); return runtimeApi.captureUi(); })}><StartStateIcon />{startLabel}</button>
+          <button className="primary-button" type="button" disabled={pending !== null || loading || status?.starting} onClick={() => void perform("start", status?.paused === false ? async () => { await runtimeApi.pause(); return runtimeApi.captureUi(); } : async () => { await runtimeApi.resume(); return runtimeApi.captureUi(); })}><StartStateIcon />{startLabel}</button>
         </div>
       </section>
 
