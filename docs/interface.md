@@ -47,7 +47,7 @@ ok-script 将任务配置、设备连接、脚本开发、模板管理和识别�
 
 ## 模板素材管理
 
-![模板素材管理界面](ok_py/image_template.png)
+![模板素材管理界面](ok_py/image_template.webp)
 
 模板页以图片卡片展示 COCO 截图和标注类别。你可以：
 
@@ -61,7 +61,7 @@ ok-script 将任务配置、设备连接、脚本开发、模板管理和识别�
 
 ## 调试浮层
 
-![带模板识别结果的调试浮层](ok_py/image_overlay.png)
+![带模板识别结果的调试浮层](ok_py/image_overlay.webp)
 
 调试浮层把识别过程直接绘制在捕获画面上：
 

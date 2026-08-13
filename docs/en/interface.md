@@ -47,7 +47,7 @@ The built-in editor is useful for inspection and quick experiments. Use PyCharm 
 
 ## Manage template assets
 
-![Template asset management interface](../ok_py/image_template.png)
+![Template asset management interface](../ok_py/image_template.webp)
 
 The template page presents COCO source screenshots and annotation categories as cards. It supports:
 
@@ -61,7 +61,7 @@ Annotate at the highest resolution you plan to support. Choose stable, distincti
 
 ## Inspect the debug overlay
 
-![Debug overlay with template-matching results](../ok_py/image_overlay.png)
+![Debug overlay with template-matching results](../ok_py/image_overlay.webp)
 
 The debug overlay draws recognition state over the captured frame:
 
