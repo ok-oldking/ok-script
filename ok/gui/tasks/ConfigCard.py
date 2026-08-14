@@ -1,8 +1,9 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QHBoxLayout
+from PySide6.QtWidgets import QApplication, QHBoxLayout
 from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton
 
 from ok import og
+from ok.gui.common.design_system import DesignToken
 from ok.gui.tasks.ConfigItemFactory import config_widget
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
@@ -18,7 +19,6 @@ class ConfigContentMixin:
         self.config_type = config_type
         self.sub_configs_rules = {}
         self.sub_configs_controlled_keys = {}
-        self.sub_configs_dividers = {}
         self.task = task
         self.reset_config = None
         self.__initWidget()
@@ -80,10 +80,6 @@ class ConfigContentMixin:
             return
 
         adding_keys.add(key)
-        has_sub_configs = self.__has_renderable_sub_configs(key)
-        if has_sub_configs:
-            self.__add_sub_configs_divider(key, 'top')
-
         self.__addConfig(key, value)
         added_keys.add(key)
 
@@ -97,9 +93,6 @@ class ConfigContentMixin:
 
             self.__addConfigWithSubConfigs(sub_config_key, sub_config_value, added_keys, adding_keys)
 
-        if has_sub_configs:
-            self.__add_sub_configs_divider(key, 'bottom')
-
         adding_keys.remove(key)
 
     def __addConfig(self, key: str, value):
@@ -107,25 +100,24 @@ class ConfigContentMixin:
         self.config_widgets.append(widget)
         self.config_widget_by_key[key] = widget
         self.config_keys.append(key)
+        if self.__is_sub_config_key(key):
+            layout = widget.layout
+            margins = layout.contentsMargins()
+            layout.setContentsMargins(
+                margins.left() + DesignToken.SUBCONFIG_INDENT,
+                DesignToken.SUBCONFIG_TOP_PADDING,
+                margins.right(), margins.bottom())
+            widget.setMinimumHeight(DesignToken.SUBCONFIG_MIN_HEIGHT)
+            widget.setProperty('subConfig', True)
         self.viewLayout.addWidget(widget)
-
-    def __add_sub_configs_divider(self, key, position):
-        divider = QFrame()
-        divider.setFrameShape(QFrame.HLine)
-        divider.setFrameShadow(QFrame.Plain)
-        divider.setObjectName('subConfigsDivider')
-        divider.setFixedHeight(1)
-        divider.setStyleSheet("color: rgba(128, 128, 128, 90); background-color: rgba(128, 128, 128, 90);")
-        self.sub_configs_dividers.setdefault(key, {})[position] = divider
-        self.viewLayout.addWidget(divider)
 
     def __is_button_config(self, the_type):
         return (
-            isinstance(the_type, dict)
-            and (
-                the_type.get('type') == 'button'
-                or ('type' not in the_type and ('buttons' in the_type or 'callback' in the_type))
-            )
+                isinstance(the_type, dict)
+                and (
+                        the_type.get('type') == 'button'
+                        or ('type' not in the_type and ('buttons' in the_type or 'callback' in the_type))
+                )
         )
 
     def __setup_sub_configs(self):
@@ -140,6 +132,8 @@ class ConfigContentMixin:
             switch_button = getattr(widget, 'switch_button', None)
             if switch_button is not None:
                 switch_button.checkedChanged.connect(self.__apply_sub_config_visibility)
+            for check_box in getattr(widget, 'check_boxes', []):
+                check_box.checkStateChanged.connect(self.__apply_sub_config_visibility)
 
         self.__apply_sub_config_visibility()
 
@@ -213,32 +207,42 @@ class ConfigContentMixin:
         return keys
 
     def __get_active_sub_config_keys(self, key):
-        try:
-            config_keys = self.sub_configs_rules.get(key, {}).get(self.config.get(key), [])
-        except TypeError:
-            return []
+        config_keys = self.__resolve_sub_config_keys(
+            self.sub_configs_rules.get(key, {}),
+            self.config.get(key),
+        )
         return [
             config_key for config_key in config_keys
             if config_key in self.config_widget_by_key
         ]
 
+    def __resolve_sub_config_keys(self, rule, value):
+        if not isinstance(value, list):
+            try:
+                return rule.get(value, [])
+            except TypeError:
+                return []
+
+        config_keys = []
+        for selected_value in value:
+            try:
+                selected_config_keys = rule.get(selected_value, [])
+            except TypeError:
+                continue
+            for config_key in selected_config_keys:
+                if config_key not in config_keys:
+                    config_keys.append(config_key)
+        return config_keys
+
     def __apply_sub_config_visibility(self, *args):
         self.__sync_sub_config_order()
         for key, widget in self.config_widget_by_key.items():
             widget.setVisible(self.__is_config_visible(key, set()))
-        for key, dividers in self.sub_configs_dividers.items():
-            visible = self.__is_sub_configs_group_visible(key)
-            for divider in dividers.values():
-                divider.setVisible(visible)
         self._adjust_config_content_size()
 
     def __sync_sub_config_order(self):
         for widget in self.config_widget_by_key.values():
             self.viewLayout.removeWidget(widget)
-        for dividers in self.sub_configs_dividers.values():
-            for divider in dividers.values():
-                self.viewLayout.removeWidget(divider)
-
         insert_index = 0
         for key in self.config_keys:
             if self.__is_sub_config_key(key):
@@ -251,13 +255,6 @@ class ConfigContentMixin:
 
         inserting_keys.add(key)
         active_sub_config_keys = self.__get_active_sub_config_keys(key)
-        has_visible_sub_configs = any(
-            self.__is_config_visible(sub_config_key, set())
-            for sub_config_key in active_sub_config_keys
-        )
-
-        if has_visible_sub_configs:
-            insert_index = self.__insert_sub_configs_divider(key, 'top', insert_index)
 
         self.viewLayout.insertWidget(insert_index, self.config_widget_by_key[key])
         insert_index += 1
@@ -265,27 +262,8 @@ class ConfigContentMixin:
         for sub_config_key in active_sub_config_keys:
             insert_index = self.__insert_config_group(sub_config_key, insert_index, inserting_keys)
 
-        if has_visible_sub_configs:
-            insert_index = self.__insert_sub_configs_divider(key, 'bottom', insert_index)
-
         inserting_keys.remove(key)
         return insert_index
-
-    def __insert_sub_configs_divider(self, key, position, insert_index):
-        divider = self.sub_configs_dividers.get(key, {}).get(position)
-        if divider is None:
-            return insert_index
-
-        self.viewLayout.insertWidget(insert_index, divider)
-        return insert_index + 1
-
-    def __is_sub_configs_group_visible(self, key):
-        if not self.__is_config_visible(key, set()):
-            return False
-        for sub_config_key in self.__get_active_sub_config_keys(key):
-            if sub_config_key in self.config_widget_by_key and self.__is_config_visible(sub_config_key, set()):
-                return True
-        return False
 
     def __is_config_visible(self, key, checking):
         if key in checking:
@@ -299,10 +277,7 @@ class ConfigContentMixin:
             if not self.__is_config_visible(parent_key, checking):
                 return False
 
-            try:
-                visible_config_keys = rule.get(self.config.get(parent_key), [])
-            except TypeError:
-                visible_config_keys = []
+            visible_config_keys = self.__resolve_sub_config_keys(rule, self.config.get(parent_key))
 
             if key not in visible_config_keys:
                 return False
@@ -319,8 +294,16 @@ class ConfigCard(ConfigContentMixin, ExpandSettingCard):
     def __init__(self, task, name, config, description, default_config, config_description,
                  config_type, config_icon):
 
+        self._expand_enabled = True
         super().__init__(config_icon or FluentIcon.INFO, og.app.tr(name), og.app.tr(description))
         self._init_config_content(task, config, default_config, config_description, config_type)
 
+    def setExpand(self, isExpand: bool):
+        """Keep empty cards collapsed while retaining the native animation."""
+        if isExpand and not self._expand_enabled:
+            return
+        super().setExpand(isExpand)
+
     def _on_empty_config_content(self):
+        self._expand_enabled = False
         self.card.expandButton.hide()

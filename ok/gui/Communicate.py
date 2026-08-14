@@ -13,7 +13,7 @@ class Communicate(QObject):
     task_done = Signal(object)
     window = Signal(bool, int, int, int, int, int, int, float)
     loading_progress = Signal(str)
-    notification = Signal(str, str, bool, bool, str, object)
+    notification = Signal(str, str, bool, bool, str, object, object)
     executor_paused: Signal = Signal(bool)
     screenshot = Signal(object, str, bool, object)
     blur_overlay = Signal(object)

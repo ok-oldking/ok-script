@@ -51,10 +51,16 @@ class OverlayWindow(OverlayWidget):
         # overlay is connected to future window updates. Seed it with the current
         # state so it does not remain hidden until the source geometry changes.
         if hwnd_window is not None:
+            get_capture_origin = getattr(hwnd_window, 'get_capture_origin', None)
+            if callable(get_capture_origin):
+                capture_x, capture_y = get_capture_origin()
+            else:
+                capture_x = getattr(hwnd_window, 'x', 0) + getattr(hwnd_window, 'real_x_offset', 0)
+                capture_y = getattr(hwnd_window, 'y', 0) + getattr(hwnd_window, 'real_y_offset', 0)
             self.update_overlay(
                 bool(getattr(hwnd_window, 'visible', False)),
-                getattr(hwnd_window, 'x', 0) + getattr(hwnd_window, 'real_x_offset', 0),
-                getattr(hwnd_window, 'y', 0) + getattr(hwnd_window, 'real_y_offset', 0),
+                capture_x,
+                capture_y,
                 getattr(hwnd_window, 'window_width', 0),
                 getattr(hwnd_window, 'window_height', 0),
                 getattr(hwnd_window, 'width', 0),

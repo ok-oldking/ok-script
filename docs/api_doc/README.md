@@ -1,5 +1,9 @@
 # ok-script API 文档
 
+[English](../en/api_reference.md) · [文档中心](../index.md) · [快速开始](../quick_start/README.md) · [进阶指南](../after_quick_start/README.md)
+
+本文档是任务开发时的 API 参考。第一次使用 ok-script 时，请先完成[快速开始](../quick_start/README.md)；查找具体方法时，可以使用浏览器的页面搜索功能按方法名定位。
+
 ## 目录
 
 - [Box](#box)
@@ -335,7 +339,7 @@ boxes = self.ocr(match="确认")
 和 `wait_click_feature`。这些方法会自动循环获取新的 frame，调用前通常不需要额外 `sleep`。编写或生成脚本代码时，能用
 `wait_` 方法表达的等待逻辑，尽量使用 `wait_` 方法。
 
-### 截图 (Screenshot)
+### 截图 (Screenshot) { #截图-screenshot }
 
 <a name="frame"></a>
 
@@ -393,7 +397,7 @@ def adb_ui_dump(self) -> str
 - **返回:**
     - `str`: UI 结构的 XML 字符串。
 
-### 输入 (Input)
+### 输入 (Input) { #输入-input }
 
 <a name="click"></a>
 
@@ -663,7 +667,7 @@ def back(self, *args, after_sleep=0, **kwargs)
 
 模拟返回操作，通常是发送 'esc' 键（PC）或返回键（Android）。支持 `after_sleep` 参数。
 
-### Config 相关
+### Config 相关 { #config-相关 }
 
 <a name="load_config"></a>
 
@@ -713,7 +717,7 @@ def get_global_config_desc(self, option) -> str
 
 ---
 
-### 任务配置 (Task Configuration)
+### 任务配置 (Task Configuration) { #任务配置-task-configuration }
 
 `BaseTask` 允许通过 `default_config` 和 `config_type` 来定义任务在 GUI 界面中的配置表单。
 
@@ -740,7 +744,6 @@ def get_global_config_desc(self, option) -> str
 
 - **`drop_down`**: 下拉选择框。
     - **参数:** `options` (list[str]): 选项列表。
-- **`sub_configs`**: 可用于下拉选择框或布尔开关的可选参数。它根据当前值控制其他配置项是否显示；key 是选项值或 `True`/`False`，value 是需要显示的配置项名称列表。这些配置项会按照列表顺序显示在当前配置项下方，未包含在当前值列表中的配置项会被隐藏。
 - **`multi_selection`**: 多选列表。
     - **参数:** `options` (list[str]): 选项列表。
 - **`text_edit`**: 强制使用多行文本框。
@@ -757,6 +760,10 @@ def get_global_config_desc(self, option) -> str
         - `buttons` (list[dict]): 如果需要显示多个按钮，可以提供一个按钮配置列表，每个元素包含上述 `text`, `icon`, `callback`。
     - **注意:** `button` 类型的配置项其 key 和 value 只用于 GUI 渲染展示，**不会** 被保存到本地配置文件中。
 
+通用可选参数：
+
+- **`sub_configs`**: 可用于下拉选择框、布尔开关或多选列表，根据当前值控制其他配置项是否显示。key 是选项值或 `True`/`False`，value 是需要显示的配置项名称列表。对于多选列表，所有已选选项对应的配置项会按选项顺序合并，重复项只显示一次；未选择任何选项时，所有关联配置项都会隐藏。
+
 **示例代码:**
 
 ```python
@@ -766,6 +773,9 @@ class MyTask(BaseTask):
         self.default_config = {
             'Run Count': 1,
             'Mode': 'Default',
+            'Features': ['Logging'],
+            'Log Level': 'Info',
+            'Output Path': '',
             'Input Path': '',
             'Advanced Tool': 'Action' # 占位符
         }
@@ -774,6 +784,14 @@ class MyTask(BaseTask):
                 'options': ['Default', 'Fast'],
                 'sub_configs': {
                     'Fast': ['Advanced Tool']
+                }
+            },
+            'Features': {
+                'type': 'multi_selection',
+                'options': ['Logging', 'Export'],
+                'sub_configs': {
+                    'Logging': ['Log Level'],
+                    'Export': ['Output Path']
                 }
             },
             'Input Path': {
@@ -807,7 +825,7 @@ class MyTask(BaseTask):
 
 ---
 
-### 屏幕画图 (Screen drawing)
+### 屏幕画图 (Screen drawing) { #屏幕画图-screen-drawing }
 
 <a name="draw_boxes"></a>
 
@@ -977,7 +995,7 @@ def add_text_fix(self, fix)
 - **参数:**
     - `fix` (dict): 一个字典，键为错误文本，值为正确文本。
 
-### 找图 (Image finding)
+### 找图 (Image finding) { #找图-image-finding }
 
 <a name="find_feature"></a>
 
@@ -1130,7 +1148,7 @@ def find_first_match_in_box(self, box, to_find, threshold, use_gray_scale=False,
 
 在给定的 `Box` 内按 `to_find` 顺序查找，第一个找到的特征会被立即返回。
 
-### 找色 (Color finding)
+### 找色 (Color finding) { #找色-color-finding }
 
 <a name="calculate_color_percentage"></a>
 
@@ -1148,14 +1166,15 @@ def calculate_color_percentage(self, color, box: Box | str) -> float
 - **返回:**
   - `float`: 颜色像素所占的百分比 (0.0 - 1.0)。
 
-### 显示信息 (Display information)
+### 显示信息 (Display information) { #显示信息-display-information }
 
 <a name="notification"></a>
 
 ### notification
 
 ```python
-def notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None)
+def notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None,
+                 images=None, screenshot=False)
 ```
 
 在主界面显示一个通知信息条或系统托盘通知。
@@ -1165,6 +1184,8 @@ def notification(self, message, title=None, error=False, tray=False, show_tab=No
     - `tray` (bool): 是否同时显示系统托盘通知。
     - `show_tab` (str): 点击通知时跳转到的 UI 选项卡。
     - `params` (any): 随通知一起传递给 UI 的附加参数。
+    - `images` (numpy.ndarray | list[numpy.ndarray] | None): 可选的单张或多张 OpenCV 图像。图像会异步写入 `screenshots/notification`，并发送给支持图像的通知服务，但不会显示在应用界面中。
+    - `screenshot` (bool): 为 `True` 时，将当前帧追加到 `images`。默认为 `False`。
 
 <a name="info_set"></a>
 
@@ -1226,39 +1247,39 @@ def info_clear(self)
 
 清除当前任务的所有监控信息。
 
-### 日志 (Logging)
+### 日志 (Logging) { #日志-logging }
 
 <a name="log_info"></a>
 
 ### log\_info
 
 ```python
-def log_info(self, message, notify=False)
+def log_info(self, message, notify=False, images=None, screenshot=False)
 ```
 
-记录一条信息级别的日志。
+记录一条信息级别的日志。可选图像和当前帧会异步写入 `screenshots/log`。
 
 <a name="log_debug"></a>
 
 ### log\_debug
 
 ```python
-def log_debug(self, message, notify=False)
+def log_debug(self, message, notify=False, images=None, screenshot=False)
 ```
 
-记录一条调试级别的日志。
+记录一条调试级别的日志。可选图像和当前帧会异步写入 `screenshots/log`。
 
 <a name="log_error"></a>
 
 ### log\_error
 
 ```python
-def log_error(self, message, exception=None, notify=False)
+def log_error(self, message, exception=None, notify=False, images=None, screenshot=False)
 ```
 
-记录一条错误级别的日志。
+记录一条错误级别的日志。无论 `screenshot` 的值为何，都会保存当前帧。
 
-### 其他 (Other)
+### 其他 (Other) { #其他-other }
 
 <a name="is_adb"></a>
 

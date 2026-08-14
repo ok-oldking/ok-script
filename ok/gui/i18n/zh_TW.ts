@@ -45,6 +45,46 @@
             <source>Downgrade success {from_version} -&gt; {to_version}</source>
             <translation>降級成功 {from_version} -&gt; {to_version}</translation>
         </message>
+        <message>
+            <source>ok-py Automation Tool</source>
+            <translation>ok-py按鍵精靈</translation>
+        </message>
+        <message>
+            <source>Wuthering Waves</source>
+            <translation>鳴潮</translation>
+        </message>
+        <message>
+            <source>Girls' Frontline 2</source>
+            <translation>少前2</translation>
+        </message>
+        <message>
+            <source>Star Resonance</source>
+            <translation>星痕共鳴</translation>
+        </message>
+        <message>
+            <source>Duet Night Abyss</source>
+            <translation>二重螺旋</translation>
+        </message>
+        <message>
+            <source>Chaos Zero Nightmare</source>
+            <translation>卡厄思夢境</translation>
+        </message>
+        <message>
+            <source>Onmyoji</source>
+            <translation>陰陽師</translation>
+        </message>
+        <message>
+            <source>Arknights: Endfield</source>
+            <translation>明日方舟：終末地</translation>
+        </message>
+        <message>
+            <source>Neverness to Everness</source>
+            <translation>異環</translation>
+        </message>
+        <message>
+            <source>ok-script App Template</source>
+            <translation>ok-script 應用範本</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
@@ -1018,6 +1058,10 @@
             <source>Time Elapsed</source>
             <translation>已執行時間</translation>
         </message>
+        <message>
+            <source>Close</source>
+            <translation>關閉</translation>
+        </message>
     </context>
     <context>
         <name>VersionCard</name>
@@ -1431,6 +1475,162 @@
         <message>
             <source>Open the app launcher to manage updates</source>
             <translation>開啟應用程式啟動器以管理更新</translation>
+        </message>
+        <message>
+            <source>Notification</source>
+            <translation>通知</translation>
+        </message>
+        <message>
+            <source>Configure notification providers</source>
+            <translation>設定通知服務提供者</translation>
+        </message>
+        <message>
+            <source>System Notification</source>
+            <translation>系統通知</translation>
+        </message>
+        <message>
+            <source>Show notifications using the Windows system tray</source>
+            <translation>使用 Windows 系統匣顯示通知</translation>
+        </message>
+        <message>
+            <source>Discord Notification</source>
+            <translation>Discord 通知</translation>
+        </message>
+        <message>
+            <source>Send notifications to a Discord webhook</source>
+            <translation>將通知傳送到 Discord Webhook</translation>
+        </message>
+        <message>
+            <source>Discord Webhook</source>
+            <translation>Discord Webhook</translation>
+        </message>
+        <message>
+            <source>Discord channel webhook URL</source>
+            <translation>Discord 頻道 Webhook URL</translation>
+        </message>
+        <message>
+            <source>QQ Desktop Notification (Not Reliable)</source>
+            <translation>QQ 桌面通知（不可靠）</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local QQ contact</source>
+            <translation>將通知傳送給本機 QQ 聯絡人</translation>
+        </message>
+        <message>
+            <source>QQ Desktop Nickname</source>
+            <translation>QQ 桌面暱稱</translation>
+        </message>
+        <message>
+            <source>Exact QQ contact nickname</source>
+            <translation>QQ 聯絡人的完整暱稱</translation>
+        </message>
+        <message>
+            <source>WeChat Desktop Notification (Not Reliable)</source>
+            <translation>微信桌面通知（不可靠）</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local WeChat contact</source>
+            <translation>將通知傳送給本機微信聯絡人</translation>
+        </message>
+        <message>
+            <source>WeChat Desktop Nickname</source>
+            <translation>微信桌面暱稱</translation>
+        </message>
+        <message>
+            <source>Exact WeChat contact nickname</source>
+            <translation>微信聯絡人的完整暱稱</translation>
+        </message>
+        <message>
+            <source>Telegram Notification</source>
+            <translation>Telegram 通知</translation>
+        </message>
+        <message>
+            <source>Telegram Bot Token</source>
+            <translation>Telegram 機器人權杖</translation>
+        </message>
+        <message>
+            <source>Telegram Chat ID</source>
+            <translation>Telegram 聊天 ID</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat Webhook Notification</source>
+            <translation>企業微信 Webhook 通知</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat Webhook URL</source>
+            <translation>企業微信 Webhook 網址</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Notification</source>
+            <translation>QQ 機器人 API 通知</translation>
+        </message>
+        <message>
+            <source>QQ Bot API App ID</source>
+            <translation>QQ 機器人 API 應用程式 ID</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Token</source>
+            <translation>QQ 機器人 API 權杖</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Channel ID</source>
+            <translation>QQ 機器人 API 頻道 ID</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Telegram Bot API</source>
+            <translation>透過 Telegram 機器人 API 傳送通知</translation>
+        </message>
+        <message>
+            <source>Telegram bot token from BotFather</source>
+            <translation>從 BotFather 取得的 Telegram 機器人權杖</translation>
+        </message>
+        <message>
+            <source>Telegram user, group, or channel chat ID</source>
+            <translation>Telegram 使用者、群組或頻道的聊天 ID</translation>
+        </message>
+        <message>
+            <source>Send notifications through an Enterprise WeChat group bot</source>
+            <translation>透過企業微信群組機器人傳送通知</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat group bot webhook URL</source>
+            <translation>企業微信群組機器人 Webhook 網址</translation>
+        </message>
+        <message>
+            <source>Send notifications through the QQ Guild Bot API</source>
+            <translation>透過 QQ 頻道機器人 API 傳送通知</translation>
+        </message>
+        <message>
+            <source>QQ Bot application ID</source>
+            <translation>QQ 機器人應用程式 ID</translation>
+        </message>
+        <message>
+            <source>QQ Bot application token</source>
+            <translation>QQ 機器人應用程式權杖</translation>
+        </message>
+        <message>
+            <source>QQ channel ID to receive notifications</source>
+            <translation>接收通知的 QQ 頻道 ID</translation>
+        </message>
+        <message>
+            <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
+            <translation>選擇通知的傳送位置。通知一律會顯示在應用程式內；請啟用您希望額外接收通知的服務。</translation>
+        </message>
+        <message>
+            <source>Local Client Notification</source>
+            <translation>本機用戶端通知</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ or WeChat client window to be open and running</source>
+            <translation>需要本機 QQ 或微信用戶端視窗保持開啟並執行</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ client window to be open and running</source>
+            <translation>需要本機 QQ 用戶端視窗保持開啟並執行</translation>
+        </message>
+        <message>
+            <source>Requires the local WeChat client window to be open and running</source>
+            <translation>需要本機微信用戶端視窗保持開啟並執行</translation>
         </message>
     </context>
     <context>

@@ -3,9 +3,10 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 
 
 class FlowLayout(QWidget):
-    def __init__(self):
+    def __init__(self, alignment=Qt.AlignLeft):
         super().__init__()
         self.setWindowTitle("Flow Layout")
+        self.alignment = alignment
 
         # Main vertical layout
         self.vbox = QVBoxLayout()
@@ -17,7 +18,7 @@ class FlowLayout(QWidget):
     def add_new_hbox(self):
         # Create a new horizontal layout and add it to the vertical layout
         self.hbox = QHBoxLayout()
-        self.hbox.setAlignment(Qt.AlignLeft)
+        self.hbox.setAlignment(self.alignment)
         self.vbox.addLayout(self.hbox)
         self.current_width = 0
 

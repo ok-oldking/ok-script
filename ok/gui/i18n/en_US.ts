@@ -45,6 +45,46 @@
             <source>Downgrade success {from_version} -&gt; {to_version}</source>
             <translation>Downgrade success {from_version} -&gt; {to_version}</translation>
         </message>
+        <message>
+            <source>ok-py Automation Tool</source>
+            <translation>ok-py Automation Tool</translation>
+        </message>
+        <message>
+            <source>Wuthering Waves</source>
+            <translation>Wuthering Waves</translation>
+        </message>
+        <message>
+            <source>Girls' Frontline 2</source>
+            <translation>Girls' Frontline 2</translation>
+        </message>
+        <message>
+            <source>Star Resonance</source>
+            <translation>Star Resonance</translation>
+        </message>
+        <message>
+            <source>Duet Night Abyss</source>
+            <translation>Duet Night Abyss</translation>
+        </message>
+        <message>
+            <source>Chaos Zero Nightmare</source>
+            <translation>Chaos Zero Nightmare</translation>
+        </message>
+        <message>
+            <source>Onmyoji</source>
+            <translation>Onmyoji</translation>
+        </message>
+        <message>
+            <source>Arknights: Endfield</source>
+            <translation>Arknights: Endfield</translation>
+        </message>
+        <message>
+            <source>Neverness to Everness</source>
+            <translation>Neverness to Everness</translation>
+        </message>
+        <message>
+            <source>ok-script App Template</source>
+            <translation>ok-script App Template</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
@@ -1024,6 +1064,10 @@
             <source>Time Elapsed</source>
             <translation>Time Elapsed</translation>
         </message>
+        <message>
+            <source>Close</source>
+            <translation>Close</translation>
+        </message>
     </context>
     <context>
         <name>VersionCard</name>
@@ -1437,6 +1481,162 @@
         <message>
             <source>Open the app launcher to manage updates</source>
             <translation>Open the app launcher to manage updates</translation>
+        </message>
+        <message>
+            <source>Notification</source>
+            <translation>Notification</translation>
+        </message>
+        <message>
+            <source>Configure notification providers</source>
+            <translation>Configure notification providers</translation>
+        </message>
+        <message>
+            <source>System Notification</source>
+            <translation>System Notification</translation>
+        </message>
+        <message>
+            <source>Show notifications using the Windows system tray</source>
+            <translation>Show notifications using the Windows system tray</translation>
+        </message>
+        <message>
+            <source>Discord Notification</source>
+            <translation>Discord Notification</translation>
+        </message>
+        <message>
+            <source>Send notifications to a Discord webhook</source>
+            <translation>Send notifications to a Discord webhook</translation>
+        </message>
+        <message>
+            <source>Discord Webhook</source>
+            <translation>Discord Webhook</translation>
+        </message>
+        <message>
+            <source>Discord channel webhook URL</source>
+            <translation>Discord channel webhook URL</translation>
+        </message>
+        <message>
+            <source>QQ Desktop Notification (Not Reliable)</source>
+            <translation>QQ Desktop Notification (Not Reliable)</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local QQ contact</source>
+            <translation>Send notifications to a local QQ contact</translation>
+        </message>
+        <message>
+            <source>QQ Desktop Nickname</source>
+            <translation>QQ Desktop Nickname</translation>
+        </message>
+        <message>
+            <source>Exact QQ contact nickname</source>
+            <translation>Exact QQ contact nickname</translation>
+        </message>
+        <message>
+            <source>WeChat Desktop Notification (Not Reliable)</source>
+            <translation>WeChat Desktop Notification (Not Reliable)</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local WeChat contact</source>
+            <translation>Send notifications to a local WeChat contact</translation>
+        </message>
+        <message>
+            <source>WeChat Desktop Nickname</source>
+            <translation>WeChat Desktop Nickname</translation>
+        </message>
+        <message>
+            <source>Exact WeChat contact nickname</source>
+            <translation>Exact WeChat contact nickname</translation>
+        </message>
+        <message>
+            <source>Telegram Notification</source>
+            <translation>Telegram Notification</translation>
+        </message>
+        <message>
+            <source>Telegram Bot Token</source>
+            <translation>Telegram Bot Token</translation>
+        </message>
+        <message>
+            <source>Telegram Chat ID</source>
+            <translation>Telegram Chat ID</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat Webhook Notification</source>
+            <translation>Enterprise WeChat Webhook Notification</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat Webhook URL</source>
+            <translation>Enterprise WeChat Webhook URL</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Notification</source>
+            <translation>QQ Bot API Notification</translation>
+        </message>
+        <message>
+            <source>QQ Bot API App ID</source>
+            <translation>QQ Bot API App ID</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Token</source>
+            <translation>QQ Bot API Token</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Channel ID</source>
+            <translation>QQ Bot API Channel ID</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Telegram Bot API</source>
+            <translation>Send notifications through the Telegram Bot API</translation>
+        </message>
+        <message>
+            <source>Telegram bot token from BotFather</source>
+            <translation>Telegram bot token from BotFather</translation>
+        </message>
+        <message>
+            <source>Telegram user, group, or channel chat ID</source>
+            <translation>Telegram user, group, or channel chat ID</translation>
+        </message>
+        <message>
+            <source>Send notifications through an Enterprise WeChat group bot</source>
+            <translation>Send notifications through an Enterprise WeChat group bot</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat group bot webhook URL</source>
+            <translation>Enterprise WeChat group bot webhook URL</translation>
+        </message>
+        <message>
+            <source>Send notifications through the QQ Guild Bot API</source>
+            <translation>Send notifications through the QQ Guild Bot API</translation>
+        </message>
+        <message>
+            <source>QQ Bot application ID</source>
+            <translation>QQ Bot application ID</translation>
+        </message>
+        <message>
+            <source>QQ Bot application token</source>
+            <translation>QQ Bot application token</translation>
+        </message>
+        <message>
+            <source>QQ channel ID to receive notifications</source>
+            <translation>QQ channel ID to receive notifications</translation>
+        </message>
+        <message>
+            <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
+            <translation>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</translation>
+        </message>
+        <message>
+            <source>Local Client Notification</source>
+            <translation>Local Client Notification</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ or WeChat client window to be open and running</source>
+            <translation>Requires the local QQ or WeChat client window to be open and running</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ client window to be open and running</source>
+            <translation>Requires the local QQ client window to be open and running</translation>
+        </message>
+        <message>
+            <source>Requires the local WeChat client window to be open and running</source>
+            <translation>Requires the local WeChat client window to be open and running</translation>
         </message>
     </context>
     <context>

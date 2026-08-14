@@ -75,6 +75,11 @@ def get_coco_path():
     return os.path.join(ensure_template_folder(), COCO_JSON)
 
 
+def _filename_key(file_name):
+    """Return a stable key for COCO and filesystem filename matching."""
+    return os.path.basename(str(file_name or '').replace('\\', '/')).casefold()
+
+
 def load_coco() -> CocoData:
     path = get_coco_path()
     if os.path.exists(path):
@@ -132,9 +137,9 @@ def get_next_image_name(folder, coco_data=None):
 
 def get_image_entry_for_path(coco_data, image_path):
     """Find a COCO image entry for a template image path."""
-    filename = os.path.basename(image_path)
+    filename_key = _filename_key(image_path)
     for img in coco_data.get('images', []):
-        if os.path.basename(img.get('file_name', '')) == filename:
+        if _filename_key(img.get('file_name', '')) == filename_key:
             return img
     return None
 
@@ -176,10 +181,14 @@ def get_categories_by_filename(coco_data):
             if image_id in category_names_by_image:
                 category_names_by_image[image_id].append(category_name)
 
-    return {
-        os.path.basename(image['file_name']): category_names_by_image[image['id']]
-        for image in coco_data.get('images', [])
-    }
+    categories_by_filename = {}
+    for image in coco_data.get('images', []):
+        filename_key = _filename_key(image.get('file_name', ''))
+        names = categories_by_filename.setdefault(filename_key, [])
+        for category_name in category_names_by_image.get(image['id'], []):
+            if category_name not in names:
+                names.append(category_name)
+    return categories_by_filename
 
 
 def _card_style(selected, dark):
@@ -256,8 +265,7 @@ class ImageLoaderRunnable(QRunnable):
             windows_thumbnail_available = windows_thumbnail_reader.open()
             try:
                 for img_path in all_images:
-                    filename = os.path.basename(img_path)
-                    cats = categories_by_filename.get(filename, [])
+                    cats = categories_by_filename.get(_filename_key(img_path), [])
 
                     thumbnail = None
                     if windows_thumbnail_available and FORCE_WINDOWS_THUMBNAIL_EXTRACTION:
@@ -373,13 +381,22 @@ class ImageCard(QFrame):
         thumb_size = w - 16
         metrics = self.fontMetrics()
         lh = metrics.lineSpacing()
-        
-        f_h = lh * 3 if self._features_text_full else 0
-        name_h = lh * 2
-        
+
+        # Keep the existing minimum heights, but expand both text labels when
+        # their content wraps. Fixed heights here clip feature names, and a
+        # long filename makes the missing text especially noticeable.
+        self.features_label.setFixedWidth(thumb_size)
+        self.features_label.setText(self._features_text_full)
+        f_h = 0
+        if self._features_text_full:
+            f_h = max(lh * 3, self.features_label.sizeHint().height())
+
+        self.name_label.setFixedWidth(thumb_size)
+        name_h = max(lh * 2, self.name_label.sizeHint().height())
+
         self.features_label.setFixedHeight(f_h)
         self.name_label.setFixedHeight(name_h)
-        
+
         total_h = thumb_size + f_h + name_h + 12
         self.setFixedSize(w, total_h)
 
@@ -393,7 +410,6 @@ class ImageCard(QFrame):
                 scaled = pixmap.scaled(thumb_size, thumb_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.thumb_label.setPixmap(scaled)
 
-        self.features_label.setText(self._features_text_full)
 
     def set_selected(self, selected):
         self.selected = selected
@@ -738,7 +754,7 @@ class TemplateTab(QWidget):
             card = self._cards_by_path.get(image_path)
             if item is None or card is None:
                 continue
-            item['categories'] = categories_by_filename.get(os.path.basename(image_path), [])
+            item['categories'] = categories_by_filename.get(_filename_key(image_path), [])
             card.set_features_text(', '.join(item['categories']))
 
     def apply_filter(self):
@@ -854,7 +870,7 @@ class TemplateTab(QWidget):
         """Add an image entry to COCO data if not already present."""
         filename = os.path.basename(image_path)
         for img in self.coco_data.get('images', []):
-            if os.path.basename(img.get('file_name', '')) == filename:
+            if _filename_key(img.get('file_name', '')) == _filename_key(filename):
                 return  # Already exists
 
         # Read image dimensions
@@ -899,7 +915,7 @@ class TemplateTab(QWidget):
                 image_ids = {
                     img['id']
                     for img in self.coco_data.get('images', [])
-                    if os.path.basename(img.get('file_name', '')) == filename
+                    if _filename_key(img.get('file_name', '')) == _filename_key(filename)
                 }
                 if image_ids:
                     self.coco_data['images'] = [

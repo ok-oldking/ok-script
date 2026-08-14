@@ -10,7 +10,8 @@ from PySide6.QtWidgets import QApplication
 
 from ok import Config, og
 from ok.gui.tasks.MarkUpWindow import MarkUpWindow
-from ok.gui.tasks.TemplateTab import (TemplateTab, get_categories_by_filename,
+from ok.gui.tasks.TemplateTab import (ImageCard, TemplateTab,
+                                      get_categories_by_filename,
                                       get_next_image_name)
 
 
@@ -84,6 +85,50 @@ class TestTemplateTabCardCollection(unittest.TestCase):
         self.assertEqual([], self.tab._visible_image_paths)
         self.assertIs(card, self.tab._cards_by_path[image_path])
         self.assertTrue(card.isHidden())
+
+    def test_duplicate_filename_categories_are_merged_and_searchable(self):
+        filename = 'A_Very_Long_Template_Filename_That_Has_Duplicate_Coco_Entries.png'
+        image_path = self._add_item(filename)
+        card = self.tab._cards_by_path[image_path]
+        coco_data = {
+            'images': [
+                {'id': 1, 'file_name': f'images/{filename}', 'width': 0, 'height': 0},
+                {'id': 2, 'file_name': filename.lower(), 'width': 0, 'height': 0},
+            ],
+            'annotations': [
+                {'id': 1, 'image_id': 1, 'category_id': 1},
+                {'id': 2, 'image_id': 2, 'category_id': 2},
+            ],
+            'categories': [
+                {'id': 1, 'name': 'first_feature', 'supercategory': ''},
+                {'id': 2, 'name': 'previously_missing_feature', 'supercategory': ''},
+            ],
+        }
+
+        self.tab.on_markup_closed([image_path], coco_data)
+        self.assertEqual('first_feature, previously_missing_feature', card.features_label.text())
+
+        self.tab.search_box.setText('previously_missing_feature')
+        self.tab.apply_filter()
+        self.assertEqual([image_path], self.tab._visible_image_paths)
+
+    def test_long_feature_and_file_names_are_not_clipped(self):
+        card = ImageCard(
+            os.path.join(
+                self.temp_dir.name,
+                'a_very_long_template_filename_that_wraps_onto_more_than_two_lines.png',
+            ),
+            features_text=', '.join(f'feature_{i}_with_a_long_name' for i in range(5)),
+        )
+
+        self.assertGreaterEqual(
+            card.features_label.height(),
+            card.features_label.sizeHint().height(),
+        )
+        self.assertGreaterEqual(
+            card.name_label.height(),
+            card.name_label.sizeHint().height(),
+        )
 
     def test_removing_item_only_removes_its_card(self):
         first_path = self._add_item('first.png')

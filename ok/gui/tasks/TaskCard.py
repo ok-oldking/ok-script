@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget, QSizePolicy
 from qfluentwidgets import FluentIcon, PrimaryPushButton, PushButton, SwitchButton, MessageBox
 
@@ -15,6 +16,7 @@ class TaskCard(ConfigCard):
                          task.config_type, config_icon=task.icon or FluentIcon.INFO)
         self.task = task
         self.onetime = onetime
+        self._compact_header()
 
         # Create a container widget for buttons with consistent 6px spacing
         self.button_container = QWidget()
@@ -42,7 +44,7 @@ class TaskCard(ConfigCard):
             self.pause_button = PushButton(FluentIcon.PAUSE, self.tr("Pause"), self)
             self.pause_button.clicked.connect(self.pause_clicked)
 
-            self.stop_button = PushButton(OKIcon.STOP, self.tr("Stop"), self)
+            self.stop_button = PrimaryPushButton(OKIcon.STOP, self.tr("Stop"), self)
             self.stop_button.clicked.connect(self.stop_clicked)
 
             self.start_button = PrimaryPushButton(FluentIcon.PLAY, self.tr("Start"), self)
@@ -70,6 +72,28 @@ class TaskCard(ConfigCard):
 
         self.update_buttons(self.task)
         communicate.task.connect(self.update_buttons)
+
+    def _compact_header(self):
+        """Display the task name and description in one compact row."""
+        self.card.iconLabel.hide()
+        icon_spacing = self.card.hBoxLayout.itemAt(1)
+        if icon_spacing is not None and icon_spacing.spacerItem() is not None:
+            self.card.hBoxLayout.takeAt(1)
+
+        self.card.vBoxLayout.removeWidget(self.card.titleLabel)
+        self.card.vBoxLayout.removeWidget(self.card.contentLabel)
+
+        self.header_text_layout = QHBoxLayout()
+        self.header_text_layout.setContentsMargins(0, 0, 0, 0)
+        self.header_text_layout.setSpacing(8)
+        self.header_text_layout.addWidget(self.card.titleLabel, 0, Qt.AlignVCenter)
+        self.header_text_layout.addWidget(self.card.contentLabel, 1, Qt.AlignVCenter)
+        self.card.vBoxLayout.addLayout(self.header_text_layout)
+
+        compact_height = 50
+        self.card.setFixedHeight(compact_height)
+        self.setViewportMargins(0, compact_height, 0, 0)
+        self.setFixedHeight(compact_height)
 
     def update_content(self):
         content = ""

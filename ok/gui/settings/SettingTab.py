@@ -69,6 +69,8 @@ class SettingTab(Tab):
                 if getattr(option, 'show_at_tab', False):
                     continue
                 card = GlobalConfigCard(config, option)
+                if name == 'Basic Options':
+                    card.setExpand(True)
                 self.basic_group.addSettingCard(card)
                 self.config_groups.append(card)
 

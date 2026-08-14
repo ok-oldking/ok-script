@@ -6,7 +6,7 @@ from ok import Handler, og
 from ok import Logger
 from ok.device.capture import BaseWindowsCaptureMethod, BrowserCaptureMethod
 from ok.gui.Communicate import communicate
-from ok.gui.util.Alert import alert_error
+from ok.gui.util.Alert import alert_error, alert_info
 from ok.util.process import is_admin, execute, WINDOWS_START_METHOD_START
 
 logger = Logger.get_logger(__name__)
@@ -61,6 +61,8 @@ class StartController(QObject):
                 if exit_after:
                     task.exit_after_task = True
                 self._mark_task_enabled(task)
+                if og.executor.paused:
+                    og.executor.start()
                 communicate.starting_emulator.emit(True, None, 0)
                 return True
         except Exception as e:
@@ -224,6 +226,7 @@ class StartController(QObject):
                 True,
                 'start',
                 None,
+                None,
             )
 
     def check_resolution(self):
@@ -234,11 +237,17 @@ class StartController(QObject):
         min_size = supported_resolution.get('min_size')
         resize_to = supported_resolution.get('resize_to')
         force_ratio = supported_resolution.get('force_ratio')
+        capture_method = og.device_manager.capture_method
+        is_windows_capture = isinstance(capture_method, BaseWindowsCaptureMethod)
+        auto_resize_enabled = (
+            not is_windows_capture
+            or og.global_config.get_config('Basic Options').get('Auto Resize Game Window', True)
+        )
         supported, resolution = og.executor.check_frame_and_resolution(supported_ratio, min_size)
         if not supported:
             resize_success = False
-            if resize_to and isinstance(og.device_manager.capture_method, BaseWindowsCaptureMethod):
-                resize_success = og.device_manager.capture_method.hwnd_window.try_resize_to(resize_to)
+            if resize_to and is_windows_capture and auto_resize_enabled:
+                resize_success = capture_method.hwnd_window.try_resize_to(resize_to)
             if not resize_success:
                 error = self.tr(
                     'Resolution {resolution} check failed, some tasks might not work correctly!').format(
@@ -249,6 +258,10 @@ class StartController(QObject):
                 if min_size:
                     error += self.tr(', the supported min resolution is {min_size}').format(
                         min_size=f'{min_size[0]}x{min_size[1]}')
+        if error and not auto_resize_enabled:
+            logger.info(f'check_resolution: {error}')
+            alert_info(error)
+            return None
         if force_ratio:
             return error
         elif error:

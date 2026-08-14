@@ -28,13 +28,16 @@ class AboutTab(Tab):
             self.add_card(self._startup_version_change_title(version_change), update_note_label)
 
         projects = [
-            {"name": "ok-py按键精灵", "url": "https://github.com/ok-oldking/ok-py"},
-            {"name": "鸣潮", "url": "https://github.com/ok-oldking/ok-wuthering-waves"},
-            {"name": "少前2", "url": "https://github.com/ok-oldking/ok-gf2"},
-            {"name": "星痕共鸣", "url": "https://github.com/Sanheiii/ok-star-resonance"},
-            {"name": "二重螺旋", "url": "https://github.com/BnanZ0/ok-duet-night-abyss"},
-            {"name": "终末地", "url": "https://github.com/AliceJump/ok-end-field"},
-            {"name": "异环", "url": "https://github.com/BnanZ0/ok-neverness-to-everness"},
+            {"name": self.tr("ok-py Automation Tool"), "url": "https://github.com/ok-oldking/ok-py"},
+            {"name": self.tr("ok-script App Template"), "url": "https://github.com/ok-oldking/ok-script-app"},
+            {"name": self.tr("Wuthering Waves"), "url": "https://github.com/ok-oldking/ok-wuthering-waves"},
+            {"name": self.tr("Girls' Frontline 2"), "url": "https://github.com/ok-oldking/ok-gf2"},
+            {"name": self.tr("Star Resonance"), "url": "https://github.com/Sanheiii/ok-star-resonance"},
+            {"name": self.tr("Duet Night Abyss"), "url": "https://github.com/BnanZ0/ok-duet-night-abyss"},
+            {"name": self.tr("Chaos Zero Nightmare"), "url": "https://github.com/baoxin1100/ok-kes"},
+            {"name": self.tr("Onmyoji"), "url": "https://github.com/YunLiuZ/ok-Onmyoji"},
+            {"name": self.tr("Arknights: Endfield"), "url": "https://github.com/AliceJump/ok-end-field"},
+            {"name": self.tr("Neverness to Everness"), "url": "https://github.com/BnanZ0/ok-neverness-to-everness"},
         ]
 
         def normalize_url(url):

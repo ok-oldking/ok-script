@@ -39,6 +39,7 @@ share/python-wheels/
 MANIFEST
 venv/
 my_build/
+site/
 
 # PyInstaller
 # Usually these files are written by a python script from a template

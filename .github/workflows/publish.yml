@@ -1,0 +1,78 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+
+      - name: Derive package version from tag
+        id: version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [[ -z "$version" || "$version" == "$GITHUB_REF_NAME" ]]; then
+            echo "Release tags must use the vX.Y.Z format; received: $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install build tools
+        run: python -m pip install --upgrade build twine
+
+      - name: Build distribution
+        env:
+          OK_SCRIPT_BUILD_VERSION: ${{ steps.version.outputs.version }}
+        run: python -m build
+
+      - name: Check distribution metadata
+        run: twine check dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+  release:
+    name: Create GitHub release
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        shell: bash
+        run: |
+          previous_tag=$(git tag --sort=-version:refname | awk -v current="$GITHUB_REF_NAME" '$0 != current { print; exit }')
+          if [[ -z "$previous_tag" ]]; then
+            echo "**Release Note $GITHUB_REF_NAME:**" > RELEASE_NOTES.md
+            git log --no-merges --format='- %s' "$GITHUB_REF_NAME" >> RELEASE_NOTES.md
+          else
+            printf '**Release Note %s -> %s:**\n\n' "$previous_tag" "$GITHUB_REF_NAME" > RELEASE_NOTES.md
+            git log --no-merges --format='- %s' "$previous_tag..$GITHUB_REF_NAME" >> RELEASE_NOTES.md
+          fi
+
+      - name: Create release for tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md

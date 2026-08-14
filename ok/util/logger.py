@@ -16,6 +16,7 @@ _ok_logger = logging.getLogger("ok")
 _OK_STDOUT_HANDLER = "_ok_stdout_handler"
 _file_listener = None
 _file_handler = None
+_queue_handler = None
 
 
 def _ensure_default_console_logger():
@@ -107,11 +108,13 @@ class SafeFileHandler(TimedRotatingFileHandler):
         return default_name
 
     def emit(self, record):
+        # QueueListener can still deliver records while logging is shutting down.
+        # A closed handler cannot write them, and reporting that expected state via
+        # handleError() produces a traceback for every queued record.
+        if self.stream is None or self.stream.closed:
+            return
         try:
-            if self.stream and not self.stream.closed:
-                super().emit(record)
-            else:
-                raise ValueError("I/O operation on closed file.")
+            super().emit(record)
         except Exception:
             self.handleError(record)
 
@@ -155,8 +158,14 @@ class CommunicateHandler(logging.Handler):
 
 
 def config_logger(config=None, name='ok-script'):
-    global _file_listener, _file_handler
+    global _file_listener, _file_handler, _queue_handler
 
+    # Stop new records entering the old queue before draining and closing its
+    # listener. Other application threads may continue logging during this call.
+    if _queue_handler is not None:
+        _ok_logger.removeHandler(_queue_handler)
+        _queue_handler.close()
+        _queue_handler = None
     if _file_listener is not None:
         _file_listener.stop()
         _file_listener = None
@@ -210,6 +219,7 @@ def config_logger(config=None, name='ok-script'):
     log_queue = queue.Queue()
     queue_handler = QueueHandler(log_queue)
     _ok_logger.addHandler(queue_handler)
+    _queue_handler = queue_handler
 
     _file_handler = SafeFileHandler(logger_file, when="midnight", interval=1,
                                     backupCount=7, encoding='utf-8')

@@ -186,6 +186,8 @@ class FeatureSet:
                 self.process_data(feature_name)
 
     def get_box_by_name(self, mat, category_name):
+        if mat is None:
+            return None
         self.check_size(mat)
         self.ensure_feature(category_name)
         return self.box_dict.get(category_name)
@@ -200,6 +202,8 @@ class FeatureSet:
             cv2.imwrite(file_path, image.mat)
 
     def get_feature_by_name(self, mat, name):
+        if mat is None:
+            return None
         self.check_size(mat)
         self.ensure_feature(name)
         return self.feature_dict.get(name)
@@ -210,6 +214,8 @@ class FeatureSet:
                          frame_processor=None, template=None, mask_function=None, match_method=cv2.TM_CCOEFF_NORMED,
                          screenshot=False, limit=0, target_height=0):
         import time
+        if mat is None:
+            return []
         start_time = time.time()
         self.check_size(mat)
         check_size_time = time.time()
@@ -387,6 +393,8 @@ class FeatureSet:
                      to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0, canny_higher=0,
                      frame_processor=None, template=None, mask_function=None, match_method=cv2.TM_CCOEFF_NORMED,
                      screenshot=False, limit=0, target_height=0):
+        if mat is None:
+            return []
         if type(category_name) is list:
             results = []
             for cn in category_name:

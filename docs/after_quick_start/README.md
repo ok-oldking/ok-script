@@ -1,5 +1,7 @@
 # ok-script 进阶使用指南
 
+[English](../en/advanced.md) · [文档中心](../index.md) · [快速开始](../quick_start/README.md) · [API 参考](../api_doc/README.md)
+
 本文档是 [ok-script 自动化脚本开发指南](../quick_start/README.md) 的进阶补充，旨在帮助开发者更深入地利用框架的高级功能，并结合
 CI/CD 流程实现项目的自动化管理。
 
@@ -8,14 +10,15 @@ CI/CD 流程实现项目的自动化管理。
 - [1. 模板匹配 (Template Matching)](#1-模板匹配-template-matching)
 - [2. 多语言国际化 (i18n)](#2-多语言国际化-i18n)
 - [3. 自动化测试](#3-自动化测试)
-- [4. 使用 GitHub Action 自动化打包与发布](#4-使用-github-action-自动化打包与发布)
+- [4. 使用 GitHub Actions 自动化打包与发布](#4-使用-github-actions-自动化打包与发布)
     - [关键步骤解析](#关键步骤解析)
+        - [添加额外的源码内联依赖](#添加额外的源码内联依赖)
     - [Sync Repositories 的国内镜像功能](#sync-repositories-的国内镜像功能)
     - [配置多地区更新源](#配置多地区更新源)
     - [打包产物说明](#打包产物说明)
     - [加速构建速度](#加速构建速度)
 
-## 1. 模板匹配 (Template Matching)
+## 1. 模板匹配 (Template Matching) { #1-模板匹配-template-matching }
 
 `ok-script` 的模板匹配工作流基于 COCO 数据集格式，这使得标注和管理特征点（模板图片）变得高效且精准。
 
@@ -35,7 +38,7 @@ CI/CD 流程实现项目的自动化管理。
 3. **自动处理**: 运行 `python main_debug.py` 启动程序。在 Debug 模式下，点击开始按钮后，`ok-script` 会自动检测 `assets` 目录下的 COCO
    文件，并执行**切图和压缩**操作，将大图中的各个标注区域切割成独立的模板图片，并进行优化，以备后续 `find_feature` 等方法调用。
 
-## 2. 多语言国际化 (i18n)
+## 2. 多语言国际化 (i18n) { #2-多语言国际化-i18n }
 
 为脚本添加多语言支持可以扩大用户群体，`ok-script` 内置了简便的国际化流程。
 
@@ -49,7 +52,7 @@ CI/CD 流程实现项目的自动化管理。
 3. **一键编译**: 修改 `.po` 文件后，无需执行任何命令行操作。只需在 `ok-script` 客户端的**开发者工具**中，点击**“编译
    i18n”**按钮。框架会自动将所有 `.po` 文件编译成二进制的 `.mo` 文件，程序运行时将自动加载对应的语言。
 
-## 3. 自动化测试
+## 3. 自动化测试 { #3-自动化测试 }
 
 为 Task 编写单元测试是保证脚本健壮性的关键。`ok-script` 提供了 `TaskTestCase` 基类，使得测试变得非常简单。
 
@@ -97,7 +100,7 @@ class TestUserIssue(TaskTestCase):
 **重要提示**：首次在 PyCharm 中运行测试时，需要修改其“运行/调试配置”(Run/Debug Configuration)。请确保**“工作目录”(Working
 directory)** 设置为项目的**根目录**。否则，测试脚本会因为找不到 `tests/images/` 等相对路径下的文件而执行失败。
 
-## 4. 使用 GitHub Action 自动化打包与发布
+## 4. 使用 GitHub Actions 自动化打包与发布 { #4-使用-github-actions-自动化打包与发布 }
 
 您提供的 `.github/workflows/build.yml` 文件定义了一个完整的自动化流程（CI/CD），它会在您每次推送新的版本标签（如 `v1.0.0`
 ）时，自动完成测试、打包和发布。
@@ -105,22 +108,40 @@ directory)** 设置为项目的**根目录**。否则，测试脚本会因为找
 该流程的核心是 **PyAppify** ([https://github.com/ok-oldking/pyappify](https://github.com/ok-oldking/pyappify))，这是一个专门用于将
 Python 项目打包成独立 Windows 可执行文件的工具，它通过项目根目录下的 `pyappify.yml` 配置文件进行驱动。
 
-### 关键步骤解析
+### 关键步骤解析 { #关键步骤解析 }
 
 1. **触发条件 (`on`)**: 工作流由推送 `v*` 格式的 Git 标签触发，是标准的版本发布方式。
 2. **安装依赖与环境设置 (`Install dependencies`)**: 读取 `requirements.txt` 并安装所有依赖，为后续步骤做准备。
-3. **源码内联 (`inline_ok_requirements`)**: 将 `ok-script` 框架源码直接集成到项目中，使得最终打包的 `.exe` 完全自包含，简化用户安装。
+3. **源码内联 (`inline_ok_requirements`)**: 将 `ok-script`、`pyappify` 以及额外配置的小型依赖库整合到 Git 代码中，使其随仓库一起更新，无需单独通过 pip 升级。
 4. **运行自动化测试 (`Run tests`)**: 执行 `tests/` 目录下的所有单元测试，作为发布的“质量门禁”。任何测试失败都会中断流程。
 5. **同步仓库与生成更新日志 (`Sync Repositories`)**: 一个自定义 Action，用于将部分代码同步到轻量级的更新库，并自动生成两个版本标签之间的更新日志。
 6. **打包可执行文件 (`Build with PyAppify Action`)**: 调用 PyAppify 工具将 Python 项目打包成独立的 Windows 可执行文件。
 7. **创建 GitHub Release (`Release`)**: 在 GitHub 上创建新的 Release，使用自动生成的更新日志作为描述，并将打包好的可执行文件作为附件上传。
 
-### Sync Repositories 的国内镜像功能
+#### 添加额外的源码内联依赖 { #添加额外的源码内联依赖 }
+
+`inline_ok_requirements` 默认内联 `ok-script` 和 `pyappify`。对于更新频繁且体积较小、希望随 Git
+仓库分发的 Python pip 库，可以重复使用可选参数 `--add-inlined-requirement PACKAGE=FOLDER`：
+
+```powershell
+python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG" `
+  --add-inlined-requirement custom-package=custom_package `
+  --add-inlined-requirement another-package=another_package
+```
+
+- `PACKAGE`：`requirements.txt` 中的 pip 发行包名称，例如 `custom-package`。
+- `FOLDER`：该库在 `site-packages` 中需要复制的源码目录，例如 `custom_package`。
+
+使用 `--tag` 时，脚本会从已安装的依赖中复制 `FOLDER`，并从 `requirements.txt` 删除对应的 `PACKAGE`。
+若 `deploy.txt` 尚未包含 `FOLDER` 或其子路径，脚本会自动追加该目录；已有条目不会重复添加。
+此方式适合纯 Python、小体积依赖；包含大型资源或依赖平台二进制文件的库，应继续通过正常的依赖和打包流程管理。
+
+### Sync Repositories 的国内镜像功能 { #sync-repositories-的国内镜像功能 }
 
 `Sync Repositories` 步骤的一个主要用途是**同步代码到国内镜像仓库**。对于无法流畅访问 GitHub 的国内用户，他们可以通过配置好的国内
 Git URL 进行脚本的自动更新，保证了更新渠道的畅通。
 
-### 配置多地区更新源
+### 配置多地区更新源 { #配置多地区更新源 }
 
 为了让不同地区的用户使用不同的更新源，您需要在 `pyappify.yml` 文件中定义多个 `profiles`。这允许您为同一个项目打包出多个版本，每个版本内嵌了不同的更新地址。
 
@@ -141,7 +162,7 @@ profiles:
     # ... 其他配置
 ```
 
-### 打包产物说明
+### 打包产物说明 { #打包产物说明 }
 
 `PyAppify Action` 成功运行后，通常会生成以下文件：
 
@@ -150,10 +171,10 @@ profiles:
 * `ok-ww-win32-online-setup.exe`: 在线安装包，需要联网下载资源，不推荐普通用户使用。
 * `ok-ww-win32.zip`: **构建加速文件**。它包含了本次构建的启动器 `.exe`，**无法直接运行**，其主要目的是用于加速下一次的构建流程。
 
-### 加速构建速度
+### 加速构建速度 { #加速构建速度 }
 
 启动器 `.exe` 文件（即 `ok-ww-win32.zip` 内的文件）通常只在项目图标变更或启动器版本升级时才需要重新打包。在日常仅更新
-`Task` 脚本代码的情况下，我们可以复用上一次发布中的启动器来大幅缩短 GitHub Action 的构建时间。
+`Task` 脚本代码的情况下，我们可以复用上一次发布中的启动器来大幅缩短 GitHub Actions 的构建时间。
 
 为此，可以在 `pyappify-action` 步骤中增加 `use_release` 配置：
 

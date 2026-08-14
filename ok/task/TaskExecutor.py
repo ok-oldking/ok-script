@@ -584,13 +584,12 @@ class TaskExecutor:
                     communicate.task.emit(task)
             except TaskDisabledException:
                 logger.info(f"TaskDisabledException, continue {task}")
-                from ok import og
                 task.running = False
                 self.current_task = None
                 if not is_trigger_task:
                     communicate.task.emit(task)
                 communicate.notification.emit('Stopped', task.name, False,
-                                              True, None, None)
+                                              False, None, None, None)
                 continue
             except FinishedException:
                 logger.info(f"FinishedException, breaking")
@@ -612,7 +611,7 @@ class TaskExecutor:
                     params = {"key": e.key}
                 else:
                     error = str(e)
-                communicate.notification.emit(error, name, True, True, None, params)
+                communicate.notification.emit(error, name, True, True, None, params, None)
                 task.info_set(QCoreApplication.tr('app', 'Error'), error)
                 logger.error(f"{name} exception stopped", e)
                 if self._frame is not None:

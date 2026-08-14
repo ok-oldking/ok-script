@@ -45,6 +45,46 @@
             <source>Downgrade success {from_version} -&gt; {to_version}</source>
             <translation>ダウングレード成功 {from_version} -&gt; {to_version}</translation>
         </message>
+        <message>
+            <source>ok-py Automation Tool</source>
+            <translation>ok-py 自動化ツール</translation>
+        </message>
+        <message>
+            <source>Wuthering Waves</source>
+            <translation>鳴潮</translation>
+        </message>
+        <message>
+            <source>Girls' Frontline 2</source>
+            <translation>ドールズフロントライン2</translation>
+        </message>
+        <message>
+            <source>Star Resonance</source>
+            <translation>星痕共鳴</translation>
+        </message>
+        <message>
+            <source>Duet Night Abyss</source>
+            <translation>デュエットナイトアビス</translation>
+        </message>
+        <message>
+            <source>Chaos Zero Nightmare</source>
+            <translation>カオスゼロナイトメア</translation>
+        </message>
+        <message>
+            <source>Onmyoji</source>
+            <translation>陰陽師</translation>
+        </message>
+        <message>
+            <source>Arknights: Endfield</source>
+            <translation>アークナイツ：エンドフィールド</translation>
+        </message>
+        <message>
+            <source>Neverness to Everness</source>
+            <translation>Neverness to Everness</translation>
+        </message>
+        <message>
+            <source>ok-script App Template</source>
+            <translation>ok-script アプリテンプレート</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
@@ -1014,6 +1054,10 @@
             <source>Time Elapsed</source>
             <translation>経過時間</translation>
         </message>
+        <message>
+            <source>Close</source>
+            <translation>閉じる</translation>
+        </message>
     </context>
     <context>
         <name>VersionCard</name>
@@ -1427,6 +1471,162 @@
         <message>
             <source>Open the app launcher to manage updates</source>
             <translation>アプリランチャーを開いて更新を管理します</translation>
+        </message>
+        <message>
+            <source>Notification</source>
+            <translation>通知</translation>
+        </message>
+        <message>
+            <source>Configure notification providers</source>
+            <translation>通知プロバイダーを設定</translation>
+        </message>
+        <message>
+            <source>System Notification</source>
+            <translation>システム通知</translation>
+        </message>
+        <message>
+            <source>Show notifications using the Windows system tray</source>
+            <translation>Windows システムトレイで通知を表示</translation>
+        </message>
+        <message>
+            <source>Discord Notification</source>
+            <translation>Discord 通知</translation>
+        </message>
+        <message>
+            <source>Send notifications to a Discord webhook</source>
+            <translation>Discord Webhook に通知を送信</translation>
+        </message>
+        <message>
+            <source>Discord Webhook</source>
+            <translation>Discord Webhook</translation>
+        </message>
+        <message>
+            <source>Discord channel webhook URL</source>
+            <translation>Discord チャンネルの Webhook URL</translation>
+        </message>
+        <message>
+            <source>QQ Desktop Notification (Not Reliable)</source>
+            <translation>QQ デスクトップ通知（信頼性が低い）</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local QQ contact</source>
+            <translation>ローカルの QQ 連絡先に通知を送信</translation>
+        </message>
+        <message>
+            <source>QQ Desktop Nickname</source>
+            <translation>QQ デスクトップのニックネーム</translation>
+        </message>
+        <message>
+            <source>Exact QQ contact nickname</source>
+            <translation>QQ 連絡先の完全一致するニックネーム</translation>
+        </message>
+        <message>
+            <source>WeChat Desktop Notification (Not Reliable)</source>
+            <translation>WeChat デスクトップ通知（信頼性が低い）</translation>
+        </message>
+        <message>
+            <source>Send notifications to a local WeChat contact</source>
+            <translation>ローカルの WeChat 連絡先に通知を送信</translation>
+        </message>
+        <message>
+            <source>WeChat Desktop Nickname</source>
+            <translation>WeChat デスクトップのニックネーム</translation>
+        </message>
+        <message>
+            <source>Exact WeChat contact nickname</source>
+            <translation>WeChat 連絡先の完全一致するニックネーム</translation>
+        </message>
+        <message>
+            <source>Telegram Notification</source>
+            <translation>Telegram 通知</translation>
+        </message>
+        <message>
+            <source>Telegram Bot Token</source>
+            <translation>Telegram ボットトークン</translation>
+        </message>
+        <message>
+            <source>Telegram Chat ID</source>
+            <translation>Telegram チャット ID</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat Webhook Notification</source>
+            <translation>Enterprise WeChat Webhook 通知</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat Webhook URL</source>
+            <translation>Enterprise WeChat Webhook URL</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Notification</source>
+            <translation>QQ Bot API 通知</translation>
+        </message>
+        <message>
+            <source>QQ Bot API App ID</source>
+            <translation>QQ Bot API アプリ ID</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Token</source>
+            <translation>QQ Bot API トークン</translation>
+        </message>
+        <message>
+            <source>QQ Bot API Channel ID</source>
+            <translation>QQ Bot API チャンネル ID</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Telegram Bot API</source>
+            <translation>Telegram Bot API で通知を送信</translation>
+        </message>
+        <message>
+            <source>Telegram bot token from BotFather</source>
+            <translation>BotFather の Telegram ボットトークン</translation>
+        </message>
+        <message>
+            <source>Telegram user, group, or channel chat ID</source>
+            <translation>Telegram ユーザー、グループ、チャンネルのチャット ID</translation>
+        </message>
+        <message>
+            <source>Send notifications through an Enterprise WeChat group bot</source>
+            <translation>Enterprise WeChat グループボットで通知を送信</translation>
+        </message>
+        <message>
+            <source>Enterprise WeChat group bot webhook URL</source>
+            <translation>Enterprise WeChat グループボットの Webhook URL</translation>
+        </message>
+        <message>
+            <source>Send notifications through the QQ Guild Bot API</source>
+            <translation>QQ Guild Bot API で通知を送信</translation>
+        </message>
+        <message>
+            <source>QQ Bot application ID</source>
+            <translation>QQ Bot アプリケーション ID</translation>
+        </message>
+        <message>
+            <source>QQ Bot application token</source>
+            <translation>QQ Bot アプリケーション トークン</translation>
+        </message>
+        <message>
+            <source>QQ channel ID to receive notifications</source>
+            <translation>通知先の QQ チャンネル ID</translation>
+        </message>
+        <message>
+            <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
+            <translation>通知の配信先を選択します。通知は常にアプリ内に表示されます。追加で受け取りたいプロバイダーを有効にしてください。</translation>
+        </message>
+        <message>
+            <source>Local Client Notification</source>
+            <translation>ローカルクライアント通知</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ or WeChat client window to be open and running</source>
+            <translation>ローカルの QQ または WeChat クライアントウィンドウを開いて実行しておく必要があります</translation>
+        </message>
+        <message>
+            <source>Requires the local QQ client window to be open and running</source>
+            <translation>ローカルの QQ クライアントウィンドウを開いて実行しておく必要があります</translation>
+        </message>
+        <message>
+            <source>Requires the local WeChat client window to be open and running</source>
+            <translation>ローカルの WeChat クライアントウィンドウを開いて実行しておく必要があります</translation>
         </message>
     </context>
     <context>

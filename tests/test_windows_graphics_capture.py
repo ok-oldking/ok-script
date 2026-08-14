@@ -29,12 +29,61 @@ class _FakeFramePool:
 
 
 class TestCaptureTargetSignature(unittest.TestCase):
+    def test_capture_origin_uses_fallback_crop_for_embedded_title_bar(self):
+        window = object.__new__(HwndWindow)
+        window.x = 100
+        window.y = 200
+        window.window_width = 1920
+        window.window_height = 1140
+        window.client_width = 1920
+        window.client_height = 1140
+        window.width = 1920
+        window.height = 1080
+        window.real_x_offset = 0
+        window.real_y_offset = 0
+
+        self.assertEqual((100, 260), window.get_capture_origin())
+
+    def test_capture_origin_prefers_discovered_render_surface_offset(self):
+        window = object.__new__(HwndWindow)
+        window.x = 100
+        window.y = 200
+        window.window_width = 1920
+        window.window_height = 1140
+        window.client_width = 1920
+        window.client_height = 1140
+        window.width = 1920
+        window.height = 1080
+        window.real_x_offset = 8
+        window.real_y_offset = 42
+
+        self.assertEqual((108, 242), window.get_capture_origin())
+
+    def test_capture_origin_does_not_double_count_standard_window_decorations(self):
+        window = object.__new__(HwndWindow)
+        # x/y are already the client area's screen origin. The larger outer
+        # dimensions include the standard Windows border and title bar.
+        window.x = 108
+        window.y = 242
+        window.window_width = 1296
+        window.window_height = 759
+        window.client_width = 1280
+        window.client_height = 720
+        window.width = 1280
+        window.height = 720
+        window.real_x_offset = 0
+        window.real_y_offset = 0
+
+        self.assertEqual((108, 242), window.get_capture_origin())
+
     def test_hwnd_window_signature_tracks_hwnd_tree_and_geometry(self):
         window = object.__new__(HwndWindow)
         window.hwnd = 10
         window.top_hwnd = 11
         window.width = 1280
         window.height = 720
+        window.client_width = 1280
+        window.client_height = 752
         window.real_x_offset = 0
         window.real_y_offset = 32
         window.real_width = 1280
@@ -171,7 +220,7 @@ class TestWindowsGraphicsCaptureGetFrame(unittest.TestCase):
         method = self._method(_FakeFrame())
         method.last_frame = None
 
-        with patch.object(windows_graphics_module.time, 'monotonic', side_effect=[0.0, 2.0]):
+        with patch.object(windows_graphics_module.time, 'monotonic', side_effect=[0.0, 5.0]):
             result = method.do_get_frame()
 
         self.assertIsNone(result)

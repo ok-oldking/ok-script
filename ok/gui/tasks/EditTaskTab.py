@@ -10,6 +10,7 @@ from qfluentwidgets import MessageBox, PlainTextEdit, PushButton, FluentIcon, Pr
 from ok import og
 from ok.gui.tasks.PythonHighlighter import PythonHighlighter
 from ok.gui.tasks.TemplateFactory import TemplateFactory, get_templates, filter_templates
+from ok.util.explorer import reveal_in_explorer
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -1097,9 +1098,7 @@ class {class_name}({base_class}):
             if success:
                 from ok.gui.util.app import show_info_bar
                 show_info_bar(self.window(), self.tr('Script exported successfully to Downloads folder.'), title=self.tr('Success'))
-                # Open Explorer and select the file
-                import subprocess
-                subprocess.Popen(f'explorer /select,"{os.path.normpath(output_path)}"')
+                reveal_in_explorer(output_path)
             else:
                 alert_error(f"{self.tr('Export failed')}: {message}")
 

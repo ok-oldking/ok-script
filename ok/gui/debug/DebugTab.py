@@ -1,4 +1,3 @@
-import subprocess
 import time
 from ctypes import windll, wintypes
 
@@ -16,6 +15,7 @@ from ok.device.interaction import DoNothingInteraction
 from ok.gui.i18n.GettextTranslator import convert_to_mo_files
 from ok.gui.util.Alert import alert_info, alert_error
 from ok.gui.widget.Tab import Tab
+from ok.util.explorer import open_explorer_folder, reveal_in_explorer
 
 logger = Logger.get_logger(__name__)
 
@@ -107,7 +107,7 @@ class DebugTab(Tab):
 
     def gen_tr(self):
         folder = og.app.gen_tr_po_files()
-        subprocess.Popen(r'explorer /select,"{}"'.format(folder))
+        reveal_in_explorer(folder)
 
     def check_hotkey(self):
         # Example event type, you should use the appropriate QEvent.Type for your case
@@ -185,7 +185,7 @@ class DebugTab(Tab):
             alert_info(self.tr(f"OCR success (Logged): {result}"))
             folder = og.ok.screenshot.screenshot_folder
             if folder:
-                subprocess.Popen(r'explorer "{}"'.format(folder))
+                open_explorer_folder(folder)
         except Exception as e:
             logger.error('debug ocr_log exception', e)
             return
@@ -222,8 +222,7 @@ def capture(processor=None):
                                                                   og.ok.screenshot.screenshot_folder,
                                                                   current_capture, True, None, processor=processor)
 
-                # Use subprocess.Popen to open the file explorer and select the file
-                subprocess.Popen(r'explorer /select,"{}"'.format(file_path))
+                reveal_in_explorer(file_path)
                 logger.info(f'captured screenshot: {current_capture}')
                 alert_info(QCoreApplication.translate('DebugTab', 'Capture Success'), True)
             else:
