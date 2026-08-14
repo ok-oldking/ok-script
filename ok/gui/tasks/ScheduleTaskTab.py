@@ -320,10 +320,10 @@ class CreateScheduleTaskDialog(MessageBoxBase):
         super().__init__(parent)
         self.titleLabel = SubtitleLabel(self.tr("Create Schedule Task"), self)
 
-        # 获取所有 onetime_tasks
+        # 获取所有 onetime_tasks（不筛 visible，未显示在 GUI 的任务也可计划调度）
         self.tasks = [
             task for task in (og.executor.onetime_tasks if og.executor.onetime_tasks else [])
-            if task.support_schedule_task and getattr(task, 'visible', True)
+            if task.support_schedule_task
         ]
         self.task_names = [og.app.tr(task.name) for task in self.tasks]
 

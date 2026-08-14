@@ -179,8 +179,8 @@ class MainWindow(FluentWindow):
         self.update_imported_tabs()
         communicate.task_list_updated.connect(self.update_imported_tabs)
 
-        # 添加计划任务Tab
-        any_support_schedule = any(task.support_schedule_task for task in visible_onetime_tasks)
+        # 添加计划任务Tab（不要求任务 visible，未显示在 GUI 的任务也可计划调度）
+        any_support_schedule = any(task.support_schedule_task for task in self.executor.onetime_tasks)
         if any_support_schedule:
             from ok.gui.tasks.ScheduleTaskTab import ScheduleTaskTab
             self.schedule_tab = ScheduleTaskTab(config=self.config)
