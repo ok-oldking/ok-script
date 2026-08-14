@@ -121,6 +121,20 @@ def test_web_tabs_share_the_same_outer_page_padding():
     assert ".task-list { display: grid; gap: 8px; padding: 0; }" in styles
 
 
+def test_web_tab_surface_is_square_and_identity_cards_are_compact():
+    styles = (Path(__file__).parents[1] / "web_src" / "src" / "styles.css").read_text(
+        encoding="utf-8"
+    )
+
+    assert (
+        "padding: var(--page-padding-block) var(--page-padding-inline);\n"
+        "  border: 0; border-radius: 0;"
+    ) in styles
+    assert ".start-card.about-identity { min-height: 68px; padding: 10px 14px; }" in styles
+    assert ".about-identity .app-avatar { width: 40px; height: 40px; }" in styles
+    assert ".about-identity h1 { margin: 0; font-size: 1rem; }" in styles
+
+
 def test_script_crud_stays_inside_custom_task_folder(tmp_path):
     runtime = make_runtime(tmp_path)
 

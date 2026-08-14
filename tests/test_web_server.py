@@ -7,10 +7,26 @@ import pytest
 
 from ok.ui.web.server import (
     _OkServerLogHandler, _WebviewWindowApi, _configure_server_logging,
-    _move_winforms_window, _resize_bounds, _RoundedWindowRegion,
+    _make_resize_handle_transparent, _move_winforms_window, _resize_bounds,
+    _RoundedWindowRegion,
     _run_webview,
     _saved_window_kwargs, _WebviewGeometryState, run_web,
 )
+
+
+def test_native_resize_handle_is_invisible_but_not_click_through():
+    control = SimpleNamespace(Handle=SimpleNamespace(ToInt64=Mock(return_value=123)))
+    user32 = SimpleNamespace(
+        GetWindowLongW=Mock(return_value=0x20),
+        SetWindowLongW=Mock(return_value=0x20),
+        SetLayeredWindowAttributes=Mock(return_value=True),
+    )
+
+    with patch("ok.ui.web.server.ctypes.windll", SimpleNamespace(user32=user32)):
+        assert _make_resize_handle_transparent(control) is True
+
+    user32.SetWindowLongW.assert_called_once_with(123, -20, 0x00080020)
+    user32.SetLayeredWindowAttributes.assert_called_once_with(123, 0, 1, 2)
 
 
 def test_run_web_uses_available_port_and_does_not_mutate_config():

@@ -16,6 +16,9 @@ _DWMWCP_ROUND = 2
 _HTLEFT, _HTRIGHT, _HTTOP, _HTTOPLEFT = 10, 11, 12, 13
 _HTTOPRIGHT, _HTBOTTOM, _HTBOTTOMLEFT, _HTBOTTOMRIGHT = 14, 15, 16, 17
 _SWP_NOZORDER_NOACTIVATE = 0x0004 | 0x0010
+_GWL_EXSTYLE = -20
+_WS_EX_LAYERED = 0x00080000
+_LWA_ALPHA = 0x00000002
 
 
 class _WindowRect(ctypes.Structure):
@@ -39,6 +42,27 @@ def _resize_bounds(bounds, hit_test, dx, dy, min_width, min_height):
     if hit_test in (_HTBOTTOM, _HTBOTTOMLEFT, _HTBOTTOMRIGHT):
         bottom = max(bottom + dy, top + min_height)
     return left, top, right - left, bottom - top
+
+
+def _make_resize_handle_transparent(control):
+    """Hide a native resize overlay without making its hit area click-through."""
+    if os.name != "nt":
+        return False
+    user32 = ctypes.windll.user32
+    user32.GetWindowLongW.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    user32.GetWindowLongW.restype = ctypes.c_long
+    user32.SetWindowLongW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_long]
+    user32.SetWindowLongW.restype = ctypes.c_long
+    user32.SetLayeredWindowAttributes.argtypes = [
+        ctypes.c_void_p, ctypes.c_uint32, ctypes.c_ubyte, ctypes.c_uint32,
+    ]
+    user32.SetLayeredWindowAttributes.restype = ctypes.c_bool
+
+    hwnd = control.Handle.ToInt64()
+    extended_style = user32.GetWindowLongW(hwnd, _GWL_EXSTYLE)
+    user32.SetWindowLongW(hwnd, _GWL_EXSTYLE, extended_style | _WS_EX_LAYERED)
+    # Alpha zero is click-through; one is visually imperceptible but keeps input.
+    return bool(user32.SetLayeredWindowAttributes(hwnd, 0, 1, _LWA_ALPHA))
 
 
 def _install_native_resize_handles(window, rounded_region):
@@ -158,6 +182,7 @@ def _install_native_resize_handles(window, rounded_region):
         panel.MouseCaptureChanged += capture_changed
         native_window.Controls.Add(panel)
         panel.BringToFront()
+        _make_resize_handle_transparent(panel)
         handles.append(panel)
         handlers.extend((mouse_down, mouse_move, mouse_up, capture_changed))
     native_window._ok_resize_handles = (handles, handlers)
