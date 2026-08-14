@@ -8,7 +8,7 @@ import pytest
 from ok.ui.web.server import (
     _OkServerLogHandler, _WebviewWindowApi, _configure_server_logging,
     _make_resize_handle_transparent, _move_winforms_window, _resize_bounds,
-    _RoundedWindowRegion,
+    _RoundedWindowRegion, _set_native_window_visible,
     _run_webview,
     _saved_window_kwargs, _WebviewGeometryState, run_web,
 )
@@ -127,6 +127,7 @@ def test_pywebview_reuses_shared_qt_window_state():
         run_web({}, open_browser=True)
 
     assert run_webview.call_args.kwargs["ui_state"] is ui_state
+    assert run_webview.call_args.kwargs["ready_event"] is web_app.state.webview_ready
 
 
 def test_pywebview_launch_mode_opens_pywebview_without_debug():
@@ -174,8 +175,10 @@ def test_webview_uses_app_window_config_and_stops_server_on_close():
             return self
 
     window = Mock()
+    before_show_event = RecordingEvent()
     shown_event = RecordingEvent()
     window.events = SimpleNamespace(
+        before_show=before_show_event,
         shown=shown_event,
         resized=MagicMock(),
         maximized=MagicMock(),
@@ -203,7 +206,7 @@ def test_webview_uses_app_window_config_and_stops_server_on_close():
 
     webview.create_window.assert_called_once()
     create_args = webview.create_window.call_args
-    assert create_args.args == ("OK-WW", "http://127.0.0.1:12345")
+    assert create_args.args == ("OK-WW", "http://127.0.0.1:12345?pywebview=1")
     assert create_args.kwargs == {
         "js_api": create_args.kwargs["js_api"],
         "width": 1400,
@@ -218,7 +221,8 @@ def test_webview_uses_app_window_config_and_stops_server_on_close():
     assert isinstance(create_args.kwargs["js_api"], _WebviewWindowApi)
     assert create_args.kwargs["js_api"]._window is window
     assert not hasattr(create_args.kwargs["js_api"], "window")
-    assert len(shown_event.handlers) == 2
+    assert len(shown_event.handlers) == 3
+    assert len(before_show_event.handlers) == 1
     webview.start.assert_called_once_with(debug=False)
     assert webview.settings["OPEN_DEVTOOLS_IN_DEBUG"] is False
     server_thread.start.assert_called_once_with()
@@ -229,6 +233,7 @@ def test_webview_uses_app_window_config_and_stops_server_on_close():
 def test_webview_enables_debug_features_only_for_debug_builds():
     window = Mock()
     window.events = SimpleNamespace(
+        before_show=MagicMock(),
         shown=MagicMock(),
         resized=MagicMock(),
         maximized=MagicMock(),
@@ -265,6 +270,39 @@ def test_webview_window_api_controls_attached_window():
     window.maximize.assert_called_once_with()
     window.restore.assert_called_once_with()
     window.destroy.assert_called_once_with()
+
+
+def test_webview_window_is_revealed_only_once_when_content_is_ready():
+    window = Mock()
+    window.native = None
+    api = _WebviewWindowApi()
+    api._attach(window)
+
+    assert api._reveal() is True
+    assert api._reveal() is False
+
+    window.show.assert_called_once_with()
+
+
+def test_winforms_window_stays_transparent_until_content_is_ready():
+    native_window = SimpleNamespace(
+        InvokeRequired=False,
+        Opacity=1,
+        Show=Mock(),
+        Activate=Mock(),
+    )
+    window = SimpleNamespace(native=native_window, show=Mock())
+
+    with patch("ok.ui.web.server.os.name", "nt"):
+        assert _set_native_window_visible(window, False) is True
+        assert native_window.Opacity == 0
+        native_window.Show.assert_not_called()
+
+        assert _set_native_window_visible(window, True) is True
+        assert native_window.Opacity == 1
+
+    native_window.Show.assert_called_once_with()
+    native_window.Activate.assert_called_once_with()
 
 
 def test_native_resize_bounds_respect_edges_and_minimum_size():

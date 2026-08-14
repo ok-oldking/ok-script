@@ -999,6 +999,13 @@ def create_web_app(config, ok_instance=None):
     async def theme_ui():
         return await asyncio.to_thread(runtime.theme_ui)
 
+    @app.post("/api/ui/ready")
+    async def ui_ready():
+        ready_event = getattr(app.state, "webview_ready", None)
+        if ready_event is not None:
+            ready_event.set()
+        return {"ready": True}
+
     @app.post("/api/devices/refresh")
     async def refresh_devices():
         # Completion and state are published through communicate.adb_devices.

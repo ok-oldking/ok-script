@@ -69,6 +69,7 @@ declare global {
 
 const WINDOWS_STANDARD_BLUE = "#60cdff";
 const SYSTEM_NOTIFICATION_KEY = "System Notification";
+const PYWEBVIEW_LAUNCH = new URLSearchParams(window.location.search).get("pywebview") === "1";
 
 function requestBrowserNotificationPermission() {
   if (!("Notification" in window)) return Promise.resolve("denied" as NotificationPermission);
@@ -798,10 +799,19 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   onTheme: (theme: AppTheme) => void;
   onLanguage: (language: string) => void;
 }) {
-  const [nativeShell, setNativeShell] = useState(() => Boolean(window.pywebview));
+  const [nativeShell, setNativeShell] = useState(() => PYWEBVIEW_LAUNCH || Boolean(window.pywebview));
+  const [initialContentLoaded, setInitialContentLoaded] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!PYWEBVIEW_LAUNCH) return;
+    document.documentElement.classList.add("pywebview-starting");
+    return () => document.documentElement.classList.remove("pywebview-starting");
+  }, []);
 
   useEffect(() => {
-    const markNativeShell = () => setNativeShell(true);
+    const markNativeShell = () => {
+      setNativeShell(true);
+    };
     window.addEventListener("pywebviewready", markNativeShell);
     // The bridge can finish between the initial render and this effect. Check
     // it after subscribing so both sides of that race reveal the title bar.
@@ -945,10 +955,34 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   }, [pushToast]);
 
   useEffect(() => {
-    void load();
-    void loadSettings();
-    runtimeApi.navigation().then(setCapabilities).catch((reason) => pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error"));
+    let active = true;
+    const loadNavigation = () => runtimeApi.navigation().then(setCapabilities).catch((reason) => {
+      pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error");
+    });
+    void Promise.allSettled([load(), loadSettings(), loadNavigation()]).then(() => {
+      if (active) setInitialContentLoaded(true);
+    });
+    return () => { active = false; };
   }, [load, loadSettings, pushToast]);
+
+  useEffect(() => {
+    if (!initialContentLoaded) return;
+    let secondFrame = 0;
+    let revealFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        document.documentElement.classList.remove("pywebview-starting");
+        revealFrame = window.requestAnimationFrame(() => {
+          void runtimeApi.contentReady();
+        });
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
+      if (revealFrame) window.cancelAnimationFrame(revealFrame);
+    };
+  }, [initialContentLoaded]);
 
   useEffect(() => {
     if (!systemNotificationsEnabled || !("Notification" in window) || Notification.permission !== "default") return;

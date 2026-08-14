@@ -109,7 +109,7 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .sidebar {
   position: relative; display: flex; flex-direction: column; width: max-content; min-width: 0; overflow: hidden;
-  background: var(--chrome-bg); border-right: 1px solid rgba(255,255,255,.035);
+  background: var(--chrome-bg); border-right: 0;
 }
 .nav-selection-indicator {
   position: absolute; z-index: 2; left: 3px; top: 0; width: 3px; height: 18px; border-radius: 3px; opacity: 0;
@@ -139,7 +139,7 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .content {
   display: grid; min-width: 0; min-height: 0; height: auto; grid-template-rows: auto minmax(170px, 1fr) auto auto; gap: 9px; overflow: hidden; margin: 3px 3px 3px 0; padding: var(--page-padding-block) var(--page-padding-inline);
-  border: 0; border-radius: 0;
+  border: 0; border-radius: 12px 0 0 0;
   background: linear-gradient(145deg, #312229 0%, #311d25 55%, #2d1d24 100%);
   scrollbar-color: rgba(255,255,255,.58) transparent;
   scrollbar-width: thin;
@@ -150,7 +150,6 @@ button { -webkit-tap-highlight-color: transparent; }
   to { opacity: 1; transform: translateY(0); }
 }
 :root[data-theme="light"] .content { background: linear-gradient(145deg, #fbf6f8 0%, #f7eff3 55%, #f3e9ee 100%); }
-:root[data-theme="light"] .sidebar { border-color: rgba(61,39,50,.08); }
 :root[data-theme="light"] .nav-toggle, :root[data-theme="light"] .nav-item { color: #4c4046; }
 :root[data-theme="light"] .nav-toggle:hover, :root[data-theme="light"] .nav-item:hover,
 :root[data-theme="light"] .nav-item.active { background: rgba(66,39,53,.065); }
@@ -224,6 +223,7 @@ h2 { margin: 0 0 8px; color: #f4eff1; font-size: .88rem; line-height: 1.3; font-
   position: relative; width: 53px; height: 27px; border: 2px solid #aaa2a7; border-radius: 15px; background: transparent; transition: .15s ease;
 }
 .switch-thumb { position: absolute; left: 4px; top: 4px; width: 15px; height: 15px; border-radius: 50%; background: #ddd7da; transition: .15s ease; }
+.pywebview-starting .switch-track, .pywebview-starting .switch-thumb { transition: none; }
 .switch-control input:checked + .switch-track { border-color: var(--accent); background: var(--accent); }
 .switch-control input:checked + .switch-track .switch-thumb { left: 30px; background: #102a35; }
 .switch-control input:focus-visible + .switch-track { outline: 2px solid white; outline-offset: 2px; }

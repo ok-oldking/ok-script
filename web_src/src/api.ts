@@ -31,6 +31,7 @@ async function checkedResponse(response: Response) {
 }
 
 export const runtimeApi = {
+  contentReady: () => post<{ ready: boolean }>("/api/ui/ready"),
   captureUi: () => request<CaptureUiState>("/api/ui/capture"),
   themeUi: () => request<ThemeUiState>("/api/ui/theme"),
   pause: () => post<ExecutorStatus>("/api/executor/pause"),

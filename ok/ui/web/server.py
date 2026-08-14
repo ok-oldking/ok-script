@@ -411,6 +411,28 @@ def _patch_pywebview_winforms_move():
     return True
 
 
+def _set_native_window_visible(window, visible):
+    """Hide WinForms visually without suspending its WebView2 child."""
+    native_window = getattr(window, "native", None)
+    if os.name != "nt" or native_window is None:
+        if visible:
+            window.show()
+        return False
+
+    def apply_visibility():
+        native_window.Opacity = 1 if visible else 0
+        if visible:
+            native_window.Show()
+            native_window.Activate()
+
+    if getattr(native_window, "InvokeRequired", False):
+        from System import Action
+        native_window.Invoke(Action(apply_visibility))
+    else:
+        apply_visibility()
+    return True
+
+
 class _WebviewWindowApi:
     """Window controls exposed only to the bundled pywebview client."""
 
@@ -419,6 +441,8 @@ class _WebviewWindowApi:
         # native Window private or it will walk the WinForms/.NET object graph.
         self._window = None
         self.maximized = False
+        self._revealed = False
+        self._reveal_lock = threading.Lock()
 
     def _attach(self, window, maximized=False):
         self._window = window
@@ -429,6 +453,16 @@ class _WebviewWindowApi:
 
     def _on_restored(self):
         self.maximized = False
+
+    def _reveal(self):
+        """Reveal the native window once React has completed its first layout."""
+        with self._reveal_lock:
+            if self._revealed or self._window is None:
+                return False
+            self._revealed = True
+            window = self._window
+        _set_native_window_visible(window, True)
+        return True
 
     def minimize(self):
         if self._window is not None:
@@ -494,7 +528,8 @@ def _configure_server_logging():
         server_logger.propagate = False
 
 
-def _run_webview(web_config, url, server, server_socket, ui_state=None):
+def _run_webview(web_config, url, server, server_socket, ui_state=None,
+                 ready_event=None):
     try:
         import webview
     except ImportError as exc:
@@ -512,12 +547,14 @@ def _run_webview(web_config, url, server, server_socket, ui_state=None):
         daemon=True,
     )
     server_thread.start()
+    window_api = None
+    reveal_stop = threading.Event()
     try:
         saved_window = _saved_window_kwargs(window_config, ui_state)
         window_api = _WebviewWindowApi()
         window = webview.create_window(
             web_config.get("gui_title", "ok-script"),
-            url,
+            f"{url}?pywebview=1",
             js_api=window_api,
             min_size=(
                 window_config.get("min_width", 800),
@@ -535,10 +572,27 @@ def _run_webview(web_config, url, server, server_socket, ui_state=None):
         )
         rounded_region = _RoundedWindowRegion(window)
         window_api._attach(window, saved_window.get("maximized", False))
+        window.events.before_show += lambda: _set_native_window_visible(
+            window, False
+        )
         window.events.shown += rounded_region.apply
         window.events.shown += lambda: _install_native_resize_handles(
             window, rounded_region
         )
+        def start_reveal_wait():
+            def reveal_when_ready():
+                if ready_event is not None:
+                    ready_event.wait(15)
+                if not reveal_stop.is_set():
+                    window_api._reveal()
+
+            threading.Thread(
+                target=reveal_when_ready,
+                name="webview-reveal",
+                daemon=True,
+            ).start()
+
+        window.events.shown += start_reveal_wait
         window.events.maximized += window_api._on_maximized
         window.events.maximized += rounded_region.clear
         window.events.restored += window_api._on_restored
@@ -550,6 +604,7 @@ def _run_webview(web_config, url, server, server_socket, ui_state=None):
             window.events.closing += geometry_state.closing
         webview.start(debug=bool(web_config.get("debug", False)))
     finally:
+        reveal_stop.set()
         server.should_exit = True
         server_thread.join(timeout=10)
 
@@ -589,6 +644,12 @@ def run_web(config, host="127.0.0.1", port=0, open_browser=True, debug=None,
         selected_port = server_socket.getsockname()[1]
 
         web_app = create_web_app(web_config, ok_instance=ok_instance)
+        webview_ready = None
+        if open_browser and launch_mode == "pywebview":
+            webview_ready = threading.Event()
+            app_state = getattr(web_app, "state", None)
+            if app_state is not None:
+                app_state.webview_ready = webview_ready
         uvicorn_config = uvicorn.Config(
             web_app,
             host=host,
@@ -608,6 +669,7 @@ def run_web(config, host="127.0.0.1", port=0, open_browser=True, debug=None,
                 server,
                 server_socket,
                 ui_state=ui_state if isinstance(ui_state, dict) else None,
+                ready_event=webview_ready,
             )
         else:
             if open_browser and launch_mode == "browser":
