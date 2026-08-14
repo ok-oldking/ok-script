@@ -33,17 +33,27 @@ ok-script 支持 Python 3.11 及以上版本，推荐使用 Python 3.12。
 python -m pip install ok-script
 ```
 
-按使用场景安装界面依赖：
+只安装应用所需的依赖配置。`default` 为无界面模式，Web、Qt、ADB 和 OCR
+能力分别按需安装：
 
 ```powershell
+python -m pip install "ok-script[default]"
 python -m pip install "ok-script[qt]"
 python -m pip install "ok-script[web]"
+python -m pip install "ok-script[adb]"
+python -m pip install "ok-script[ocr]"
 ```
 
-开发本仓库时，使用 `pyproject.toml` 中的 `default` 依赖组安装完整开发环境：
+ok-script 不会自动选择 OpenCV。用户必须根据自己的应用选择版本，并且只安装
+一个变体：`opencv-python`、`opencv-contrib-python`、`opencv-python-headless`
+或 `opencv-contrib-python-headless`。
+
+以无界面模式开发本仓库时，同时安装 `pyproject.toml` 中的 `default` 和 `dev`
+依赖组；再根据需要添加 `--group web`、`--group qt`、`--group adb` 或
+`--group ocr`：
 
 ```powershell
-python -m pip install --editable . --group default
+python -m pip install --editable . --group default --group dev
 ```
 
 如果要创建完整的自动化项目，建议从 [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) 模板开始，而不是直接在本仓库中编写业务脚本。

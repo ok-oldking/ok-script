@@ -10,7 +10,7 @@ Run from the repository root:
 
 ```powershell
 $py = if (Test-Path .\.venv\Scripts\python.exe) { ".\.venv\Scripts\python.exe" } else { "python" }
-& $py -m pip install --group default
+& $py -m pip install --group dev
 ```
 
 ## Preview locally

@@ -34,27 +34,16 @@ dependencies = [
     "pydirectinput==1.0.4",
     "pycaw==20240210",
     "mouse==0.7.1",
-]
-
-[project.optional-dependencies]
-web = [
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.30.0",
-    "pywebview>=5.4",
-]
-qt = [
-    "PySide6-Fluent-Widgets>=1.8.3",
     "pynput>=1.8.1",
 ]
 
-[project.urls]
-Homepage = "https://github.com/ok-oldking/ok-script"
-Repository = "https://github.com/ok-oldking/ok-script"
-
-[project.scripts]
-ok = "ok.cli:main"
-
-[dependency-groups]
+[project.optional-dependencies]
+default = [
+    "numpy>=1.26.4",
+    "Pillow>=10.0",
+    "ok-d3dshot>=0.1.5",
+    "OpenCC==1.2.0",
+]
 web = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
@@ -65,17 +54,56 @@ qt = [
     "PySideSix-Frameless-Window>=0.3.12",
     "darkdetect>=0.8.0",
     "PySide6-Fluent-Widgets>=1.8.3",
-    "pynput>=1.8.1",
 ]
-default = [
-    { include-group = "web" },
-    { include-group = "qt" },
-    "numpy>=1.26.4",
-    "opencv-python>=4.9.0.80",
-    "Pillow>=10.0",
+adb = [
     "adbutils>=2.2.1",
+]
+ocr = [
+    "onnxocr-ppocrv5",
+]
+dev = [
+    "pytest>=8.0",
+    "mypy>=1.10",
+    "build>=1.2",
+    "twine>=5.0",
+    "setuptools>=77",
+    "wheel",
+    "get-pypi-latest-version",
+    "mkdocs-material==9.7.7",
+]
+
+[project.urls]
+Homepage = "https://github.com/ok-oldking/ok-script"
+Repository = "https://github.com/ok-oldking/ok-script"
+
+[project.scripts]
+ok = "ok.cli:main"
+
+[dependency-groups]
+default = [
+    "numpy>=1.26.4",
+    "Pillow>=10.0",
     "ok-d3dshot>=0.1.5",
     "OpenCC==1.2.0",
+]
+web = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "pywebview>=5.4",
+]
+qt = [
+    "PySide6-Essentials>=6.7.0",
+    "PySideSix-Frameless-Window>=0.3.12",
+    "darkdetect>=0.8.0",
+    "PySide6-Fluent-Widgets>=1.8.3",
+]
+adb = [
+    "adbutils>=2.2.1",
+]
+ocr = [
+    "onnxocr-ppocrv5",
+]
+dev = [
     "pytest>=8.0",
     "mypy>=1.10",
     "build>=1.2",

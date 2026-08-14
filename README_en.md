@@ -33,18 +33,28 @@ ok-script supports Python 3.11 and later. Python 3.12 is recommended.
 python -m pip install ok-script
 ```
 
-Install the UI dependencies for the intended use case:
+Install only the profiles needed by the application. The `default` profile is
+headless; UI, ADB, and OCR support are separate:
 
 ```powershell
+python -m pip install "ok-script[default]"
 python -m pip install "ok-script[qt]"
 python -m pip install "ok-script[web]"
+python -m pip install "ok-script[adb]"
+python -m pip install "ok-script[ocr]"
 ```
 
-For repository development, install the complete `default` dependency group
-from `pyproject.toml`:
+OpenCV is deliberately not selected by ok-script. The user must choose the
+version and install exactly one variant appropriate for the application:
+`opencv-python`, `opencv-contrib-python`, `opencv-python-headless`, or
+`opencv-contrib-python-headless`.
+
+For headless repository development, combine the matching `default` and `dev`
+dependency groups from `pyproject.toml`. Add `--group web`, `--group qt`,
+`--group adb`, or `--group ocr` as needed:
 
 ```powershell
-python -m pip install --editable . --group default
+python -m pip install --editable . --group default --group dev
 ```
 
 To build a complete automation application, start with the [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) template instead of adding application-specific code to this repository.

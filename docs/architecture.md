@@ -19,17 +19,27 @@ the same stream and forwards serializable events over a WebSocket.
 ## Install a mode
 
 ```bash
-pip install ok-script             # headless core
-pip install "ok-script[qt]"       # desktop UI
-pip install "ok-script[web]"      # FastAPI/browser UI
+pip install ok-script                # minimal headless core
+pip install "ok-script[default]"     # headless runtime profile
+pip install "ok-script[qt]"          # desktop UI
+pip install "ok-script[web]"         # FastAPI/web UI
+pip install "ok-script[adb]"         # ADB devices
+pip install "ok-script[ocr]"         # ONNX OCR
 ```
 
-For repository development, install the TOML dependency group instead. The
-`default` group contains the development tools and both UI stacks:
+OpenCV is not part of any profile. Users must choose the version and exactly one
+suitable variant for their application: `opencv-python`,
+`opencv-contrib-python`, `opencv-python-headless`, or
+`opencv-contrib-python-headless`.
+
+The optional-dependency profiles and local TOML dependency groups have identical
+names and requirements. For headless repository development, install:
 
 ```bash
-pip install --editable . --group default
+pip install --editable . --group default --group dev
 ```
+
+Add the `web`, `qt`, `adb`, or `ocr` group for the use case being developed.
 
 ## Run a mode
 
