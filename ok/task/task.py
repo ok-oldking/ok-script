@@ -83,6 +83,10 @@ class ExecutorOperation:
         """
         return self.executor.get_task_by_class(cls)
 
+    def get_tasks(self):
+        """Return registered tasks without exposing the executor to extensions."""
+        return list(self.executor.get_all_tasks())
+
     def box_in_horizontal_center(self, box, off_percent=0.02):
         """
         Checks if a box is in the horizontal center.
@@ -1281,6 +1285,13 @@ class BaseTask(OCR):
         for index, frame in enumerate(frames):
             communicate.screenshot.emit(frame, f'notification/notification_{index + 1}', False, None)
         communicate.notification.emit(message, title, error, tray, show_tab, params, frames)
+
+    def emit_web_event(self, event, payload=None):
+        """Publish a serializable event to this task's optional browser tab."""
+        tab = getattr(self, "web_tab", None)
+        if tab is None:
+            raise RuntimeError(f"{self.__class__.__name__} does not declare web_tab")
+        communicate.task_tab.emit(tab.id, str(event), payload)
 
     @property
     def enabled(self):

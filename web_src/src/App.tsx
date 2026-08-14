@@ -48,6 +48,7 @@ import { locale, setLocale, t } from "./i18n";
 import { MarkupDialog } from "./MarkupDialog";
 import { PythonCodeEditor } from "./PythonCodeEditor";
 import { CreateScriptDialog, ExportScriptDialog, ExternalScriptChangeDialog, ImportScriptDialog, RecordScriptDialog, TemplateParameterDialog, UnsavedScriptDialog } from "./ScriptDialogs";
+import { publishTaskTabEvent, TaskTabHost } from "./TaskTabHost";
 import type { AboutInfo, AutomationTask, CaptureUiState, LogResponse, MethodOption, NavigationCapabilities, RuntimeEvent, ScheduleData, ScheduledTask, ScriptDocument, ScriptSummary, ScriptTemplate, SettingsGroup, TaskConfigField, TemplateAnnotations, TemplateImage } from "./types";
 
 type IconComponent = typeof Play20Regular;
@@ -132,6 +133,14 @@ const secondaryNavigation: Array<[string, IconComponent]> = [
 ];
 
 const opticallyHighNavigationIcons = new Set(["Capture", "Triggers"]);
+
+function taskTabIcon(icon: string): IconComponent {
+  if (icon === "settings") return Settings20Regular;
+  if (icon === "image") return Image20Regular;
+  if (icon === "calendar") return Calendar20Regular;
+  if (icon === "play") return Play20Regular;
+  return DeveloperBoard20Regular;
+}
 
 // Most runtime events (box drawing, screenshots, progress, logs) do not alter
 // StartTab controls. Refreshing for every event can produce hundreds of HTTP
@@ -863,12 +872,15 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [instructionsTask, setInstructionsTask] = useState<AutomationTask | null>(null);
   const [scriptDirty, setScriptDirty] = useState(false);
+  const [taskTabDirty, setTaskTabDirty] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const [navIndicatorTop, setNavIndicatorTop] = useState(0);
   const [navIndicatorVisible, setNavIndicatorVisible] = useState(false);
   const [pendingPage, setPendingPage] = useState<string | null>(null);
   const scriptSaveRef = useRef<(() => Promise<boolean>) | null>(null);
+  const taskTabSaveRef = useRef<(() => Promise<boolean>) | null>(null);
   const registerScriptSave = useCallback((save: (() => Promise<boolean>) | null) => { scriptSaveRef.current = save; }, []);
+  const registerTaskTabSave = useCallback((save: (() => Promise<boolean>) | null) => { taskTabSaveRef.current = save; }, []);
   const logConsole = useRef<HTMLPreElement>(null);
   const captureDialog = useRef<HTMLElement>(null);
   const logDialog = useRef<HTMLElement>(null);
@@ -1061,6 +1073,13 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
           if (event.event === "task_list_updated") runtimeApi.navigation().then(setCapabilities).catch(() => undefined);
           if (!event.ui) void load();
         }
+        if (event.event === "task_tab") {
+          publishTaskTabEvent({
+            tab_id: String(event.args[0] ?? ""),
+            name: String(event.args[1] ?? ""),
+            payload: event.args[2]
+          });
+        }
       };
       socket.onclose = () => {
         if (!stopped) timer = window.setTimeout(connect, 1500);
@@ -1186,9 +1205,22 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   ), [topLevelSettings]);
   const primaryNavigationItems = useMemo(() => {
     const items = [...primaryNavigation];
+    const taskTabs = capabilities?.task_tabs ?? [];
+    const beforeDefaultTaskTabs = taskTabs.filter((tab) =>
+      tab.position === "scroll" && !tab.add_after_default_tabs
+    );
+    const afterDefaultTaskTabs = taskTabs.filter((tab) =>
+      tab.position === "scroll" && tab.add_after_default_tabs
+    );
+    beforeDefaultTaskTabs.forEach((tab) => {
+      items.push([`task-tab:${tab.id}`, taskTabIcon(tab.icon)]);
+    });
     if (capabilities?.triggers) items.push(["Triggers", Timer20Regular]);
     if (capabilities?.tasks) items.push(["Tasks", TaskListSquareLtr20Regular]);
     taskGroups.forEach((group) => items.push([`group:${group}`, TaskListSquareLtr20Regular]));
+    afterDefaultTaskTabs.forEach((tab) => {
+      items.push([`task-tab:${tab.id}`, taskTabIcon(tab.icon)]);
+    });
     if (capabilities?.script) items.push(["Script", Edit20Regular]);
     if (capabilities?.templates) items.push(["Templates", Image20Regular]);
     if (capabilities?.schedule) items.push(["Schedule", Calendar20Regular]);
@@ -1197,10 +1229,30 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
     });
     return items;
   }, [capabilities, taskGroups, topLevelSettings]);
+  const secondaryNavigationItems = useMemo(() => {
+    const taskTabs = (capabilities?.task_tabs ?? [])
+      .filter((tab) => tab.position === "bottom")
+      .map((tab): [string, IconComponent] => [`task-tab:${tab.id}`, taskTabIcon(tab.icon)]);
+    return [...taskTabs, ...secondaryNavigation];
+  }, [capabilities]);
+  const activeTaskTab = useMemo(() => {
+    if (!activePage.startsWith("task-tab:")) return null;
+    const id = activePage.slice("task-tab:".length);
+    return capabilities?.task_tabs.find((tab) => tab.id === id) ?? null;
+  }, [activePage, capabilities]);
   const activeTopLevelSettings = topLevelGroupForPage(activePage);
-  const navigationLabel = (label: string) => label.startsWith("group:") ? label.slice(6) : t(label);
+  const navigationLabel = (label: string) => {
+    if (label.startsWith("group:")) return label.slice(6);
+    if (label.startsWith("task-tab:")) {
+      const id = label.slice("task-tab:".length);
+      return t(capabilities?.task_tabs.find((tab) => tab.id === id)?.name ?? id);
+    }
+    return t(label);
+  };
   const navigate = (page: string) => {
-    if (activePage === "Script" && page !== "Script" && scriptDirty) setPendingPage(page);
+    const dirtyScript = activePage === "Script" && page !== "Script" && scriptDirty;
+    const dirtyTaskTab = activePage.startsWith("task-tab:") && page !== activePage && taskTabDirty;
+    if (dirtyScript || dirtyTaskTab) setPendingPage(page);
     else setActivePage(page);
   };
 
@@ -1255,9 +1307,9 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
         ><Icon className={opticallyHighNavigationIcons.has(label) ? "nav-icon-shift-down" : undefined} /><span>{navigationLabel(label)}</span></button>)}
       </nav>
       <nav className="nav-secondary">
-        {secondaryNavigation.map(([label, Icon]) => <button type="button" key={label} className={`nav-item ${label === activePage ? "active" : ""}`} aria-current={label === activePage ? "page" : undefined} title={t(label)} onClick={() => {
+        {secondaryNavigationItems.map(([label, Icon]) => <button type="button" key={label} className={`nav-item ${label === activePage ? "active" : ""}`} aria-current={label === activePage ? "page" : undefined} title={navigationLabel(label)} onClick={() => {
           navigate(label);
-        }}><Icon /><span>{t(label)}</span></button>)}
+        }}><Icon /><span>{navigationLabel(label)}</span></button>)}
       </nav>
     </aside>
 
@@ -1329,6 +1381,12 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
       </section>
       <div className="content-spacer" />
       </> : activePage === "About" ? <AboutPage notify={pushToast} />
+      : activeTaskTab ? <TaskTabHost
+        tab={activeTaskTab}
+        notify={pushToast}
+        onDirtyChange={setTaskTabDirty}
+        registerSave={registerTaskTabSave}
+      />
       : activePage === "Script" ? <ScriptPage notify={pushToast} onDirtyChange={setScriptDirty} registerSave={registerScriptSave} />
       : activePage === "Templates" ? <TemplatesPage notify={pushToast} />
       : activePage === "Schedule" ? <SchedulePage notify={pushToast} />
@@ -1418,7 +1476,28 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
         <footer>{logData?.path || "logs/ok-script.log"} · {logData?.line_count ?? 0} {t("lines")}</footer>
       </section>
     </div>}
-    {pendingPage && <UnsavedScriptDialog onCancel={() => setPendingPage(null)} onDiscard={() => { const page = pendingPage; setPendingPage(null); setScriptDirty(false); setActivePage(page); }} onSave={() => { const page = pendingPage; void scriptSaveRef.current?.().then((saved) => { if (saved) { setPendingPage(null); setScriptDirty(false); setActivePage(page); } }); }} />}
+    {pendingPage && <UnsavedScriptDialog
+      onCancel={() => setPendingPage(null)}
+      onDiscard={() => {
+        const page = pendingPage;
+        setPendingPage(null);
+        if (activePage === "Script") setScriptDirty(false);
+        else setTaskTabDirty(false);
+        setActivePage(page);
+      }}
+      onSave={() => {
+        const page = pendingPage;
+        const save = activePage === "Script" ? scriptSaveRef.current : taskTabSaveRef.current;
+        if (!save) return;
+        void save().then((saved) => {
+          if (!saved) return;
+          setPendingPage(null);
+          if (activePage === "Script") setScriptDirty(false);
+          else setTaskTabDirty(false);
+          setActivePage(page);
+        });
+      }}
+    />}
     <div className="theme-mark"><WeatherMoon20Regular /><Window20Regular /></div>
   </div>;
 }

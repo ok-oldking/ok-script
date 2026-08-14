@@ -66,6 +66,7 @@ if TYPE_CHECKING:
         WaitFailedException,
     )
     from ok.task.task import BaseTask, FindFeature, OCR, TriggerTask
+    from ok.task.web import WebCustomTab, WebTabConfig, task_tab_action, task_tab_query
     from ok.util.Analytics import Analytics
     from ok.util.GlobalConfig import (GlobalConfig, register_app_launcher_options,
                                       register_basic_options, register_notification_options)
@@ -131,6 +132,10 @@ _LAZY_IMPORTS = {
     'DiagnosisTask': ('ok.task.DiagnosisTask', 'DiagnosisTask'),
     'BaseTask': ('ok.task.task', 'BaseTask'),
     'TriggerTask': ('ok.task.task', 'TriggerTask'),
+    'WebTabConfig': ('ok.task.web', 'WebTabConfig'),
+    'WebCustomTab': ('ok.task.web', 'WebCustomTab'),
+    'task_tab_action': ('ok.task.web', 'task_tab_action'),
+    'task_tab_query': ('ok.task.web', 'task_tab_query'),
     'FindFeature': ('ok.task.task', 'FindFeature'),
     'OCR': ('ok.task.task', 'OCR'),
     'Feature': ('ok.feature.Feature', 'Feature'),
@@ -947,13 +952,24 @@ class OK:
                                           config_folder=self.config.get("config_folder"), debug=self.debug,
                                           global_config=self.global_config, ocr_target_height=ocr_target_height,
                                           config=self.config)
+        onetime_tasks = list(self.config.get('onetime_tasks', []))
+        ui_config = resolve_ui_config(self.config)
+        if ((ui_config is not None and ui_config["type"] == "web")
+                or self.config.get("web_runtime", False)):
+            from ok.task.web import configured_web_custom_tabs
+            existing = {tuple(task[:2]) for task in onetime_tasks
+                        if isinstance(task, (list, tuple)) and len(task) >= 2}
+            for web_task in configured_web_custom_tabs(self.config.get('web_tabs', [])):
+                if tuple(web_task) not in existing:
+                    onetime_tasks.append(web_task)
+                    existing.add(tuple(web_task))
         if self.should_init_task_manager_headless():
             from ok.core.task_manager import TaskManager
         else:
             from ok.ui.qt.tasks.TaskManger import TaskManager
         task_app = self.headless_app if self.should_init_task_manager_headless() else self.app
         og.task_manager = TaskManager(task_executor=self.task_executor, app=task_app,
-                                      onetime_tasks=self.config.get('onetime_tasks', []),
+                                      onetime_tasks=onetime_tasks,
                                       trigger_tasks=self.config.get('trigger_tasks', []),
                                       scene=self.config.get('scene'))
         og.executor = self.task_executor

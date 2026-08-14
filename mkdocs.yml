@@ -70,4 +70,5 @@ nav:
       - Interface and developer tools: en/interface.md
       - Advanced guide: en/advanced.md
       - API reference: en/api_reference.md
+      - Task-backed web tabs: en/task_web_tabs.md
       - Build the documentation site: en/building-site.md

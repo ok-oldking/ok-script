@@ -41,7 +41,7 @@ def test_about_and_navigation_are_runtime_driven(tmp_path):
 
     assert runtime.navigation() == {
         "triggers": False, "tasks": False, "script": True,
-        "templates": True, "schedule": False,
+        "templates": True, "schedule": False, "task_tabs": [],
     }
     assert runtime.about()["title"] == "Test App"
     assert runtime.about()["links"]["github"] == "https://example.test"
@@ -122,6 +122,32 @@ def test_web_client_has_winui_window_frame_and_navigation_motion():
     assert "@keyframes winui-page-enter" in styles
     assert "@media (prefers-reduced-motion: reduce)" in styles
     assert "window-resize-handle" not in source
+
+
+def test_web_client_loads_task_owned_tabs_without_exposing_executor():
+    root = Path(__file__).parents[1]
+    app_source = (root / "web_src" / "src" / "App.tsx").read_text(encoding="utf-8")
+    host_source = (root / "web_src" / "src" / "TaskTabHost.tsx").read_text(encoding="utf-8")
+
+    assert 'activePage.startsWith("task-tab:")' in app_source
+    assert "<TaskTabHost" in app_source
+    assert "import(/* @vite-ignore */ tab.module_url)" in host_source
+    assert "taskTabQuery" in host_source
+    assert "executor" not in host_source.lower()
+
+
+def test_web_custom_tab_navigation_order_matches_qt():
+    source = (Path(__file__).parents[1] / "web_src" / "src" / "App.tsx").read_text(
+        encoding="utf-8"
+    )
+
+    before_tabs = source.index("beforeDefaultTaskTabs.forEach")
+    triggers = source.index('if (capabilities?.triggers) items.push(["Triggers"')
+    groups = source.index("taskGroups.forEach")
+    after_tabs = source.index("afterDefaultTaskTabs.forEach")
+    script = source.index('if (capabilities?.script) items.push(["Script"')
+
+    assert before_tabs < triggers < groups < after_tabs < script
 
 
 def test_web_tabs_share_the_same_outer_page_padding():

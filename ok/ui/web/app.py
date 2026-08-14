@@ -16,6 +16,7 @@ from typing import Any
 
 from ok.core.events import EventMessage, communicate
 from ok.core.template_store import CocoTemplateStore
+from ok.task.web import WebTabConfig, call_task_tab_operation, task_tab_operations
 
 
 LOG_LINE_PATTERN = re.compile(
@@ -25,6 +26,54 @@ LOG_LINE_PATTERN = re.compile(
 LOG_LEVELS = {"ALL": 0, "DEBUG": 10, "INFO": 20, "WARNING": 30, "ERROR": 40, "CRITICAL": 50}
 SCRIPT_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*\.py$")
 EVENT_SESSION_KEY_PATTERN = re.compile(r"^[A-Za-z0-9_-]{16,128}$")
+
+
+@dataclasses.dataclass(frozen=True)
+class RegisteredTaskTab:
+    task: Any
+    specification: WebTabConfig
+
+    def manifest(self):
+        spec = self.specification
+        return {
+            "id": spec.id,
+            "name": spec.name,
+            "icon": spec.icon,
+            "position": spec.position,
+            "add_after_default_tabs": spec.add_after_default_tabs,
+            "task_controls": spec.task_controls,
+            "task_name": self.task.name,
+            "task_class_name": self.task.__class__.__name__,
+            "module_url": f"/task-tabs/{spec.id}/assets/{spec.entrypoint}",
+        }
+
+
+def register_task_tabs(tasks):
+    """Discover task-owned web tabs without consulting legacy Qt config."""
+    registered = []
+    ids = set()
+    for task in tasks:
+        specification = getattr(task, "web_tab", None)
+        if specification is None:
+            continue
+        if not isinstance(specification, WebTabConfig):
+            raise TypeError(
+                f"{task.__class__.__name__}.web_tab must be an ok.WebTabConfig"
+            )
+        if specification.id in ids:
+            raise ValueError(f"Duplicate task tab id: {specification.id}")
+        asset_dir = specification.resolved_asset_dir
+        entrypoint = specification.resolved_entrypoint
+        if not asset_dir.is_dir():
+            raise ValueError(f"Task tab asset directory does not exist: {asset_dir}")
+        if asset_dir not in entrypoint.parents or not entrypoint.is_file():
+            raise ValueError(f"Task tab entrypoint does not exist: {entrypoint}")
+        # Validate duplicate or malformed decorators during startup rather than
+        # after a browser has already opened the page.
+        task_tab_operations(task)
+        ids.add(specification.id)
+        registered.append(RegisteredTaskTab(task, specification))
+    return registered
 
 
 class _EventSessionRegistry:
@@ -544,7 +593,28 @@ class WebRuntime:
             "script": bool(manager and getattr(manager, "has_custom", False)),
             "templates": bool((manager and getattr(manager, "has_custom", False)) or self.ok.config.get("debug")),
             "schedule": any(getattr(task, "support_schedule_task", False) and getattr(task, "visible", True) for task in tasks),
+            "task_tabs": self.task_tabs(),
         }
+
+    def task_tabs(self):
+        tabs = getattr(self, "_task_tabs", None)
+        if tabs is None:
+            tabs = register_task_tabs(self.executor.get_all_tasks())
+            self._task_tabs = tabs
+        return [tab.manifest() for tab in tabs]
+
+    def task_tab_call(self, tab_id, kind, operation, payload=None):
+        if kind not in {"query", "action"}:
+            raise ValueError(f"Unknown task tab operation kind: {kind}")
+        registration = next(
+            (tab for tab in self._task_tabs if tab.specification.id == tab_id), None
+        )
+        if registration is None:
+            raise ValueError(f"Unknown task tab: {tab_id}")
+        result = call_task_tab_operation(
+            registration.task, kind, operation, payload or {}
+        )
+        return _json_value(result)
 
     def about(self):
         links = self.ok.config.get("links") or {}
@@ -971,6 +1041,7 @@ def create_web_app(config, ok_instance=None):
     static_dir = Path(__file__).with_name("static")
     icon_url = _copy_web_icon(config, static_dir)
     runtime = WebRuntime(config, icon_url=icon_url, ok_instance=ok_instance)
+    runtime._task_tabs = register_task_tabs(runtime.executor.get_all_tasks())
     event_sessions = _EventSessionRegistry()
 
     @asynccontextmanager
@@ -981,6 +1052,13 @@ def create_web_app(config, ok_instance=None):
 
     app = FastAPI(title=config.get("gui_title", "ok-script"), lifespan=lifespan)
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
+    for task_tab in runtime._task_tabs:
+        tab_id = task_tab.specification.id
+        app.mount(
+            f"/task-tabs/{tab_id}/assets",
+            StaticFiles(directory=task_tab.specification.resolved_asset_dir),
+            name=f"task-tab-{tab_id}",
+        )
     app.state.runtime = runtime
 
     @app.get("/")
@@ -1072,6 +1150,28 @@ def create_web_app(config, ok_instance=None):
     @app.get("/api/navigation")
     async def navigation():
         return runtime.navigation()
+
+    @app.get("/api/task-tabs")
+    async def task_tabs():
+        return runtime.task_tabs()
+
+    @app.post("/api/task-tabs/{tab_id}/query/{operation}")
+    async def task_tab_query(tab_id: str, operation: str, body: dict):
+        try:
+            return await asyncio.to_thread(
+                runtime.task_tab_call, tab_id, "query", operation, body
+            )
+        except (ValueError, TypeError, RuntimeError, OSError, SyntaxError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/api/task-tabs/{tab_id}/action/{operation}")
+    async def task_tab_action(tab_id: str, operation: str, body: dict):
+        try:
+            return await asyncio.to_thread(
+                runtime.task_tab_call, tab_id, "action", operation, body
+            )
+        except (ValueError, TypeError, RuntimeError, OSError, SyntaxError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/about")
     async def about():

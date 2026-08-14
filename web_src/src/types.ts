@@ -111,6 +111,25 @@ export type NavigationCapabilities = {
   script: boolean;
   templates: boolean;
   schedule: boolean;
+  task_tabs: TaskTabManifest[];
+};
+
+export type TaskTabManifest = {
+  id: string;
+  name: string;
+  icon: string;
+  position: "scroll" | "bottom";
+  add_after_default_tabs: boolean;
+  task_controls: boolean;
+  task_name: string;
+  task_class_name: string;
+  module_url: string;
+};
+
+export type TaskTabEvent = {
+  tab_id: string;
+  name: string;
+  payload: unknown;
 };
 
 export type AboutInfo = {

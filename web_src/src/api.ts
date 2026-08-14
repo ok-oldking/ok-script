@@ -1,4 +1,4 @@
-import type { AboutInfo, ActionResult, AutomationTask, CaptureUiState, ExecutorStatus, LogResponse, NavigationCapabilities, ScheduleData, ScriptDocument, ScriptSummary, ScriptTemplate, SettingsGroup, TemplateAnnotations, TemplateImage, ThemeUiState } from "./types";
+import type { AboutInfo, ActionResult, AutomationTask, CaptureUiState, ExecutorStatus, LogResponse, NavigationCapabilities, ScheduleData, ScriptDocument, ScriptSummary, ScriptTemplate, SettingsGroup, TaskTabManifest, TemplateAnnotations, TemplateImage, ThemeUiState } from "./types";
 import { t } from "./i18n";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -45,6 +45,11 @@ export const runtimeApi = {
   tasks: () => request<AutomationTask[]>("/api/tasks"),
   settings: () => request<SettingsGroup[]>("/api/settings"),
   navigation: () => request<NavigationCapabilities>("/api/navigation"),
+  taskTabs: () => request<TaskTabManifest[]>("/api/task-tabs"),
+  taskTabQuery: <T>(tabId: string, operation: string, body: Record<string, unknown> = {}) =>
+    post<T>(`/api/task-tabs/${encodeURIComponent(tabId)}/query/${encodeURIComponent(operation)}`, body),
+  taskTabAction: <T>(tabId: string, operation: string, body: Record<string, unknown> = {}) =>
+    post<T>(`/api/task-tabs/${encodeURIComponent(tabId)}/action/${encodeURIComponent(operation)}`, body),
   about: () => request<AboutInfo>("/api/about"),
   scripts: () => request<ScriptSummary[]>("/api/scripts"),
   scriptTemplates: () => request<ScriptTemplate[]>("/api/script-templates"),

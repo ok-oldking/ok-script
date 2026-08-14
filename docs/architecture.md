@@ -58,5 +58,9 @@ Both commands run from the repository root. They regenerate the web translation
 catalog from the Qt `.ts` files before starting Vite or producing the packaged
 assets.
 
+Application-specific browser pages can be declared by registered tasks without
+depending on FastAPI or accessing the executor directly. See
+[task-backed web tabs](en/task_web_tabs.md).
+
 New desktop imports should use `ok.ui.qt`. Existing `ok.gui` imports remain
 available as a migration shim.
