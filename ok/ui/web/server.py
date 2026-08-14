@@ -7,6 +7,7 @@ import webbrowser
 
 from ok.util.logger import Logger
 from ok.core.ui_config import resolve_window_size
+from ok.ui.web.requirements import check_web_requirements
 
 logger = Logger.get_logger("web_server")
 
@@ -612,12 +613,7 @@ def _run_webview(web_config, url, server, server_socket, ui_state=None,
 def run_web(config, host="127.0.0.1", port=0, open_browser=True, debug=None,
             launch_mode=None, ok_instance=None):
     """Run the browser UI, using an OS-assigned port by default."""
-    try:
-        import uvicorn
-    except ImportError as exc:
-        raise RuntimeError(
-            "The web UI requires FastAPI and Uvicorn. Install ok-script[web]."
-        ) from exc
+    uvicorn = check_web_requirements()
 
     from ok.ui.web.app import create_web_app
 

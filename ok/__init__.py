@@ -599,6 +599,12 @@ class OK:
         import pyappify
         from ok.util.config import Config
 
+        self.config = config
+        ui_config = resolve_ui_config(config)
+        if ui_config is not None and ui_config["type"] == "web":
+            from ok.ui.web.requirements import check_web_requirements
+            check_web_requirements()
+
         check_mutex_fn = _resolve('check_mutex')
         config_logger_fn = _resolve('config_logger')
         global_config_class = _resolve('GlobalConfig')
@@ -617,7 +623,6 @@ class OK:
         if pyappify.app_profile:
             config['profile'] = pyappify.app_profile
         og.config = config
-        self.config = config
         config["config_folder"] = config.get("config_folder") or 'configs'
         Config.config_folder = config["config_folder"]
         config['debug'] = config.get("debug", False)
@@ -723,6 +728,9 @@ class OK:
                     logger.info("Keyboard interrupt received, exiting script.")
                 finally:
                     logger.info("Script has terminated.")
+        except SystemExit:
+            self.quit()
+            raise
         except Exception as e:
             logger.error("start error", e)
             self.exit_event.set()

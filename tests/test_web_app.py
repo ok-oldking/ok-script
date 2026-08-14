@@ -1,17 +1,26 @@
 import asyncio
+import sys
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
 from ok import App, HeadlessApp, _create_ok_config
 from ok.ui.web.app import (
-    WebRuntime, _color_hex, _copy_web_icon, _device_payload, _read_log,
+    WebRuntime, _color_hex, _copy_web_icon, _device_payload, _read_log, create_web_app,
     _EventSessionRegistry, _send_websocket_payload,
     _wait_for_websocket_disconnect,
 )
 from ok.util.config import Config
+
+
+def test_create_web_app_exits_when_fastapi_is_missing():
+    with patch.dict(sys.modules, {"fastapi": None}), \
+            pytest.raises(SystemExit, match="Install ok-script\\[web\\]") as exit_info:
+        create_web_app({})
+
+    assert exit_info.value.code != 0
 
 
 def test_copy_web_icon_prepares_static_asset(tmp_path: Path):

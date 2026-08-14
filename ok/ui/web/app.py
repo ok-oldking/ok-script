@@ -17,6 +17,7 @@ from typing import Any
 from ok.core.events import EventMessage, communicate
 from ok.core.template_store import CocoTemplateStore
 from ok.task.web import WebTabConfig, call_task_tab_operation, task_tab_operations
+from ok.ui.web.requirements import WEB_REQUIREMENTS_MESSAGE, check_web_requirements
 
 
 LOG_LINE_PATTERN = re.compile(
@@ -1025,14 +1026,13 @@ class WebRuntime:
 
 
 def create_web_app(config, ok_instance=None):
+    check_web_requirements()
     try:
         from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
         from fastapi.responses import FileResponse
         from fastapi.staticfiles import StaticFiles
     except ImportError as exc:
-        raise RuntimeError(
-            "The web UI requires FastAPI and Uvicorn. Install ok-script[web]."
-        ) from exc
+        raise SystemExit(WEB_REQUIREMENTS_MESSAGE) from exc
 
     # FastAPI resolves postponed endpoint annotations from module globals.
     globals()["WebSocket"] = WebSocket
