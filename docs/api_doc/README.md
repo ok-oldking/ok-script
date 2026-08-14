@@ -1,6 +1,6 @@
 # ok-script API 文档
 
-[English](../en/api_reference.md) · [文档中心](../index.md) · [快速开始](../quick_start/README.md) · [进阶指南](../after_quick_start/README.md)
+[English](../en/api_reference.md) · [文档中心](../index.md) · [快速开始](../quick_start/README.md) · [进阶指南](../after_quick_start/README.md) · [Web 自定义页](../task_web_tabs.md)
 
 本文档是任务开发时的 API 参考。第一次使用 ok-script 时，请先完成[快速开始](../quick_start/README.md)；查找具体方法时，可以使用浏览器的页面搜索功能按方法名定位。
 

@@ -62,6 +62,7 @@ nav:
       - 界面与开发工具: interface.md
       - 进阶指南: after_quick_start/README.md
       - API 参考: api_doc/README.md
+      - Web 自定义页: task_web_tabs.md
       - 构建文档网站: building-site.md
   - English:
       - Documentation home: en/index.md

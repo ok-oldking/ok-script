@@ -21,6 +21,13 @@ class ClaimRewardTask(BaseTask):
 
 Recognition methods generally return a `Box`, a list of boxes, or `None`/an empty list when no match is found.
 
+## Custom browser tabs
+
+Use `WebCustomTab`, `WebTabConfig`, `task_tab_query`, and `task_tab_action` to
+add an application-specific browser page backed by the task API. See the
+[task-backed custom web tab guide](task_web_tabs.md) for configuration,
+frontend context, events, and security boundaries.
+
 ## `Box`
 
 `Box` represents a rectangular screen region.
