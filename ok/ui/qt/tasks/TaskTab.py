@@ -5,10 +5,10 @@ from PySide6.QtWidgets import QTableWidgetItem, QWidget
 from qfluentwidgets import FluentIcon, ToolButton
 
 from ok import Logger, og
-from ok.gui.tasks.TooltipTableWidget import TooltipTableWidget
-from ok.gui.widget.ExpandCardLayout import ExpandCardLayout
-from ok.gui.widget.Tab import Tab
-from ok.gui.widget.UpdateConfigWidgetItem import value_to_string
+from ok.ui.qt.tasks.TooltipTableWidget import TooltipTableWidget
+from ok.ui.qt.widget.ExpandCardLayout import ExpandCardLayout
+from ok.ui.qt.widget.Tab import Tab
+from ok.ui.qt.widget.UpdateConfigWidgetItem import value_to_string
 
 logger = Logger.get_logger(__name__)
 

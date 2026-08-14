@@ -9,8 +9,8 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from ok import Config, og
-from ok.gui.tasks.MarkUpWindow import MarkUpWindow
-from ok.gui.tasks.TemplateTab import (ImageCard, TemplateTab,
+from ok.ui.qt.tasks.MarkUpWindow import MarkUpWindow
+from ok.ui.qt.tasks.TemplateTab import (ImageCard, TemplateTab,
                                       get_categories_by_filename,
                                       get_next_image_name)
 

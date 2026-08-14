@@ -1,6 +1,6 @@
 from qfluentwidgets import SwitchButton, IndicatorPosition
 
-from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
+from ok.ui.qt.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 
 class LabelAndSwitchButton(ConfigLabelAndWidget):

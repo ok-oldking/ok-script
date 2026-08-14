@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QWidget, QFrame
 
-from ok.gui.common.style_sheet import StyleSheet
+from ok.ui.qt.common.style_sheet import StyleSheet
 
 
 class EmptyCard(QWidget):

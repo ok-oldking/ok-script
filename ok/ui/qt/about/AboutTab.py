@@ -2,11 +2,11 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGridLayout, QWidget, QSizePolicy
 from qfluentwidgets import BodyLabel, SettingCardGroup
 
-from ok.gui.about.ProjectCard import ProjectCard
-from ok.gui.about.VersionCard import VersionCard
-from ok.gui.util.app import get_localized_app_config
-from ok.gui.util.pyappify_startup import get_startup_version_change
-from ok.gui.widget.Tab import Tab
+from ok.ui.qt.about.ProjectCard import ProjectCard
+from ok.ui.qt.about.VersionCard import VersionCard
+from ok.ui.qt.util.app import get_localized_app_config
+from ok.ui.qt.util.pyappify_startup import get_startup_version_change
+from ok.ui.qt.widget.Tab import Tab
 from ok.util.file import get_path_relative_to_exe
 
 

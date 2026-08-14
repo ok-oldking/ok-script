@@ -2,8 +2,8 @@ from PySide6.QtWidgets import QFrame, QVBoxLayout
 from qfluentwidgets import BodyLabel, TitleLabel
 
 from ok import Config, ConfigOption, og
-from ok.gui.tasks.ConfigCard import ConfigContentMixin
-from ok.gui.widget.Tab import Tab
+from ok.ui.qt.tasks.ConfigCard import ConfigContentMixin
+from ok.ui.qt.widget.Tab import Tab
 
 
 class GlobalConfigTab(ConfigContentMixin, Tab):

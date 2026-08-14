@@ -2,7 +2,7 @@ from qfluentwidgets import NavigationItemPosition
 
 from ok import Logger
 from ok import TaskExecutor
-from ok.gui.widget.Tab import Tab
+from ok.ui.qt.widget.Tab import Tab
 
 
 class CustomTab(Tab):

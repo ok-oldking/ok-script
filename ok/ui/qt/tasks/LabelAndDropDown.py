@@ -2,8 +2,8 @@ from PySide6.QtGui import QFontMetrics  # Needed for width calculation
 from qfluentwidgets import ComboBox
 
 from ok import og
-from ok.gui.common.design_system import control_width
-from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
+from ok.ui.qt.common.design_system import control_width
+from ok.ui.qt.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 from ok.util.collection import find_index_in_list
 
 

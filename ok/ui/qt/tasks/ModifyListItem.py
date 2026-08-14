@@ -1,9 +1,9 @@
 from qfluentwidgets import PushButton, BodyLabel
 
 from ok import og
-from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
-from ok.gui.tasks.ModifyListDialog import ModifyListDialog
-from ok.gui.widget.UpdateConfigWidgetItem import value_to_string
+from ok.ui.qt.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
+from ok.ui.qt.tasks.ModifyListDialog import ModifyListDialog
+from ok.ui.qt.widget.UpdateConfigWidgetItem import value_to_string
 
 
 class ModifyListItem(ConfigLabelAndWidget):

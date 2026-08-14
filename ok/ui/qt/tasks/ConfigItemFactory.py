@@ -1,14 +1,14 @@
-from ok.gui.tasks.LabelAndButtons import LabelAndButtons
-from ok.gui.tasks.LabelAndDoubleSpinBox import LabelAndDoubleSpinBox
-from ok.gui.tasks.LabelAndDropDown import LabelAndDropDown
-from ok.gui.tasks.LabelAndFileSelector import LabelAndFileSelector
-from ok.gui.tasks.LabelAndGlobal import LabelAndGlobal
-from ok.gui.tasks.LabelAndLineEdit import LabelAndLineEdit
-from ok.gui.tasks.LabelAndMultiSelection import LabelAndMultiSelection
-from ok.gui.tasks.LabelAndSpinBox import LabelAndSpinBox
-from ok.gui.tasks.LabelAndSwitchButton import LabelAndSwitchButton
-from ok.gui.tasks.LabelAndTextEdit import LabelAndTextEdit
-from ok.gui.tasks.ModifyListItem import ModifyListItem
+from ok.ui.qt.tasks.LabelAndButtons import LabelAndButtons
+from ok.ui.qt.tasks.LabelAndDoubleSpinBox import LabelAndDoubleSpinBox
+from ok.ui.qt.tasks.LabelAndDropDown import LabelAndDropDown
+from ok.ui.qt.tasks.LabelAndFileSelector import LabelAndFileSelector
+from ok.ui.qt.tasks.LabelAndGlobal import LabelAndGlobal
+from ok.ui.qt.tasks.LabelAndLineEdit import LabelAndLineEdit
+from ok.ui.qt.tasks.LabelAndMultiSelection import LabelAndMultiSelection
+from ok.ui.qt.tasks.LabelAndSpinBox import LabelAndSpinBox
+from ok.ui.qt.tasks.LabelAndSwitchButton import LabelAndSwitchButton
+from ok.ui.qt.tasks.LabelAndTextEdit import LabelAndTextEdit
+from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
 from ok.core.config_schema import resolve_config_type
 
 

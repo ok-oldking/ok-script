@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from ok import og
-from ok.gui.MainWindow import MainWindow
+from ok.ui.qt.MainWindow import MainWindow
 
 
 class _NotificationHarness:
@@ -42,8 +42,8 @@ class TestMainWindowNotifications(unittest.TestCase):
         self.addCleanup(setattr, og, "app", original_app)
 
         with (
-            patch("ok.gui.MainWindow.QCoreApplication.translate", return_value="Translated status"),
-            patch("ok.gui.util.app.show_info_bar") as show_info_bar,
+            patch("ok.ui.qt.MainWindow.QCoreApplication.translate", return_value="Translated status"),
+            patch("ok.ui.qt.util.app.show_info_bar") as show_info_bar,
         ):
             harness.show_notification("Stopped", "Original task name", tray=True)
 

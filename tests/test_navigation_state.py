@@ -6,7 +6,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtWidgets import QApplication, QWidget
 from qfluentwidgets import FluentIcon, FluentWindow, NavigationDisplayMode
 
-from ok.gui.MainWindow import MainWindow
+from ok.ui.qt.MainWindow import MainWindow
 
 
 class _NavigationStateHarness:

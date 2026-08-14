@@ -6,14 +6,14 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QAbstractItemView, QVBoxLayout, QHBoxLayout, QWidget, QListWidgetItem, QSizePolicy
 from qfluentwidgets import ListWidget, PushButton, FluentIcon, SwitchButton, SearchLineEdit
 
-from ok.gui.Communicate import communicate
-from ok.gui.common.design_system import DesignToken
-from ok.gui.debug.DebugTab import capture
-from ok.gui.start.SelectCaptureListView import SelectCaptureListView
-from ok.gui.start.SelectInteractionListView import SelectInteractionListView
-from ok.gui.start.StartCard import StartCard
-from ok.gui.widget.Card import Card
-from ok.gui.widget.Tab import Tab
+from ok.ui.qt.Communicate import communicate
+from ok.ui.qt.common.design_system import DesignToken
+from ok.ui.qt.debug.DebugTab import capture
+from ok.ui.qt.start.SelectCaptureListView import SelectCaptureListView
+from ok.ui.qt.start.SelectInteractionListView import SelectInteractionListView
+from ok.ui.qt.start.StartCard import StartCard
+from ok.ui.qt.widget.Card import Card
+from ok.ui.qt.widget.Tab import Tab
 from ok.util.explorer import open_explorer_folder, reveal_in_explorer
 from ok.util.logger import Logger
 
@@ -186,7 +186,7 @@ class StartTab(Tab):
         StartTab.open_folder(Path.cwd() / "logs")
 
     def open_logs(self):
-        from ok.gui.start.LogWindow import LogWindow
+        from ok.ui.qt.start.LogWindow import LogWindow
         if self.log_window is None:
             self.log_window = LogWindow()
             self.log_window.destroyed.connect(self._log_window_closed)
@@ -204,7 +204,7 @@ class StartTab(Tab):
     @staticmethod
     def export_logs():
         from ok import og
-        from ok.gui.util.Alert import alert_error
+        from ok.ui.qt.util.Alert import alert_error
         from ok.util.file import get_downloads_folder
         app_name = og.config.get('gui_title')
         downloads_path = Path(get_downloads_folder())
@@ -232,12 +232,12 @@ class StartTab(Tab):
         try:
             import os
             from ok import og
-            from ok.gui.util.Alert import alert_error
+            from ok.ui.qt.util.Alert import alert_error
             if og.executor.paused:
                 alert_error(self.tr("Please Start First"))
                 return
             result = og.executor.get_all_tasks()[0].ocr(log=True, screenshot=True)
-            from ok.gui.util.Alert import alert_info
+            from ok.ui.qt.util.Alert import alert_info
             alert_info(self.tr(f"OCR success (Logged): {result}"))
             folder = og.ok.screenshot.screenshot_folder
             if folder:

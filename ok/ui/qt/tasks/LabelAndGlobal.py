@@ -1,7 +1,7 @@
 from qfluentwidgets import PushButton
 
-from ok.gui.Communicate import communicate
-from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
+from ok.ui.qt.Communicate import communicate
+from ok.ui.qt.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 
 class LabelAndGlobal(ConfigLabelAndWidget):

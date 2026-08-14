@@ -7,7 +7,7 @@ from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QLabel, QWidget
 from qfluentwidgets import ExpandLayout, ExpandSettingCard, FluentIcon
 
-from ok.gui.widget.ExpandCardLayout import ExpandCardLayout
+from ok.ui.qt.widget.ExpandCardLayout import ExpandCardLayout
 
 
 class TestExpandCardLayout(unittest.TestCase):

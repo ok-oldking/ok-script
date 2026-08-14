@@ -124,7 +124,7 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
 
         with simulated_pyappify_env("1.0.4", "1.0.3", notes):
             from PySide6.QtWidgets import QApplication
-            from ok.gui.about.AboutTab import AboutTab
+            from ok.ui.qt.about.AboutTab import AboutTab
 
             app = QApplication.instance() or QApplication([])
             tab = AboutTab({
@@ -155,7 +155,7 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
     def test_version_card_shows_update_button_for_pyappify_app_version(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         from PySide6.QtWidgets import QApplication
-        from ok.gui.about.VersionCard import VersionCard
+        from ok.ui.qt.about.VersionCard import VersionCard
 
         app = QApplication.instance() or QApplication([])
         show_pyappify = Mock()
@@ -181,7 +181,7 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
     def test_version_card_hides_update_button_without_pyappify_app_version(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         from PySide6.QtWidgets import QApplication
-        from ok.gui.about.VersionCard import VersionCard
+        from ok.ui.qt.about.VersionCard import VersionCard
 
         app = QApplication.instance() or QApplication([])
         card = VersionCard(

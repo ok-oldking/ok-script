@@ -2,8 +2,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QVBoxLayout, QSizePolicy, QWidget, QHBoxLayout, QSpacerItem, QFrame, QLayout
 from qfluentwidgets import StrongBodyLabel
 
-from ok.gui.common.design_system import DesignToken, configure_card_layout
-from ok.gui.common.style_sheet import StyleSheet
+from ok.ui.qt.common.design_system import DesignToken, configure_card_layout
+from ok.ui.qt.common.style_sheet import StyleSheet
 
 
 class Card(QWidget):

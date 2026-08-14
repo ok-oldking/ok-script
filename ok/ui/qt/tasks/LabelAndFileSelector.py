@@ -3,7 +3,7 @@ import os
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout
 from qfluentwidgets import FluentIcon, PushButton
 
-from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
+from ok.ui.qt.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 
 class LabelAndFileSelector(ConfigLabelAndWidget):

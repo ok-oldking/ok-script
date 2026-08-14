@@ -6,7 +6,7 @@ from qfluentwidgets import (
 )
 
 from ok import og
-from ok.gui.util.touch_scroll import enable_touch_scrolling
+from ok.ui.qt.util.touch_scroll import enable_touch_scrolling
 
 
 SHOW_SEARCH_OPTIONS_THRESHOLD = 20

@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QApplication
 from ok.core.icons import Icon
 
 from ok import og
-from ok.gui.tasks.ConfigItemFactory import config_widget
+from ok.ui.qt.tasks.ConfigItemFactory import config_widget
 from ok.util.GlobalConfig import (
     APP_LAUNCHER_ACTION,
     APP_LAUNCHER_AUTO_START,
@@ -77,7 +77,7 @@ class TestBasicOptions(unittest.TestCase):
         save_file.assert_called_once_with()
 
     def test_global_config_tab_renders_options_without_card_container(self):
-        from ok.gui.settings.GlobalConfigTab import GlobalConfigTab
+        from ok.ui.qt.settings.GlobalConfigTab import GlobalConfigTab
 
         original_app = getattr(og, 'app', None)
         original_folder = Config.config_folder
@@ -237,7 +237,7 @@ class TestBasicOptions(unittest.TestCase):
             original_app = getattr(og, 'app', None)
             original_config = getattr(og, 'config', None)
             try:
-                from ok.gui.settings.GlobalConfigCard import GlobalConfigCard
+                from ok.ui.qt.settings.GlobalConfigCard import GlobalConfigCard
 
                 og.app = SimpleNamespace(tr=lambda text: text)
                 og.config = {'gui_title': 'Demo App'}

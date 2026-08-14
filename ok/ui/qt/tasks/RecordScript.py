@@ -4,7 +4,7 @@ import win32gui
 from pynput import mouse, keyboard
 
 from ok import og
-from ok.gui.Communicate import communicate
+from ok.ui.qt.Communicate import communicate
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -26,7 +26,7 @@ class Recorder:
             if visible != self.is_active:
                 self.is_active = visible
                 if visible:
-                    from ok.gui.util.Alert import alert_info
+                    from ok.ui.qt.util.Alert import alert_info
                     alert_info("Target window active: Recording resumed", tray=True)
                     if not self.target_hwnd and getattr(og.device_manager, 'hwnd_window', None):
                         self.target_hwnd = og.device_manager.hwnd_window.hwnd
@@ -34,7 +34,7 @@ class Recorder:
                         self.last_event_time += (time.time() - self.inactive_start_time)
                         self.inactive_start_time = 0
                 else:
-                    from ok.gui.util.Alert import alert_info
+                    from ok.ui.qt.util.Alert import alert_info
                     alert_info("Target window inactive: Recording paused", tray=True)
                     self.drop_pending_inputs()
                     self.inactive_start_time = time.time()

@@ -1,7 +1,7 @@
 from qfluentwidgets import SpinBox
 
-from ok.gui.common.design_system import DesignToken
-from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
+from ok.ui.qt.common.design_system import DesignToken
+from ok.ui.qt.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 
 class LabelAndSpinBox(ConfigLabelAndWidget):

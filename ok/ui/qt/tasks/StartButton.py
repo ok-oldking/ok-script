@@ -3,8 +3,8 @@ from PySide6.QtGui import QColor
 from qfluentwidgets import PushButton
 
 from ok import Logger, og
-from ok.gui.Communicate import communicate
-from ok.gui.util.Alert import show_alert
+from ok.ui.qt.Communicate import communicate
+from ok.ui.qt.util.Alert import show_alert
 
 logger = Logger.get_logger(__name__)
 

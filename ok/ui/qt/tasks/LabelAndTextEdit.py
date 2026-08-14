@@ -1,8 +1,8 @@
 from PySide6.QtGui import QFontMetrics
 from qfluentwidgets import TextEdit
 
-from ok.gui.common.design_system import control_width
-from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
+from ok.ui.qt.common.design_system import control_width
+from ok.ui.qt.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
 
 class LabelAndTextEdit(ConfigLabelAndWidget):

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout
 from qfluentwidgets import PushButton, TextEdit
 
 from ok import Config
-from ok.gui.widget.Tab import Tab
+from ok.ui.qt.widget.Tab import Tab
 
 
 class RunCodeTab(Tab):

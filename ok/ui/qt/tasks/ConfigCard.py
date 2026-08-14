@@ -1,12 +1,12 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QHBoxLayout
 from qfluentwidgets import FluentIcon, ExpandSettingCard, PushButton
-from ok.gui.common.icons import resolve_icon
+from ok.ui.qt.common.icons import resolve_icon
 
 from ok import og
-from ok.gui.common.design_system import DesignToken
-from ok.gui.tasks.ConfigItemFactory import config_widget
-from ok.gui.tasks.LabelAndWidget import LabelAndWidget
+from ok.ui.qt.common.design_system import DesignToken
+from ok.ui.qt.tasks.ConfigItemFactory import config_widget
+from ok.ui.qt.tasks.LabelAndWidget import LabelAndWidget
 
 
 class ConfigContentMixin:

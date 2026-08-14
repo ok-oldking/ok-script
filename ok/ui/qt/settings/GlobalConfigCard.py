@@ -1,7 +1,7 @@
 from ok import Config
 from ok import ConfigOption
-from ok.gui.tasks.ConfigCard import ConfigCard
-from ok.gui.common.icons import resolve_icon
+from ok.ui.qt.tasks.ConfigCard import ConfigCard
+from ok.ui.qt.common.icons import resolve_icon
 
 
 class GlobalConfigCard(ConfigCard):

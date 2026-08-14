@@ -8,8 +8,8 @@ from qfluentwidgets import MessageBox, PlainTextEdit, PushButton, FluentIcon, Pr
     BodyLabel, ComboBox, RoundMenu, Action, TreeWidget, TransparentDropDownPushButton, CheckBox
 
 from ok import og
-from ok.gui.tasks.PythonHighlighter import PythonHighlighter
-from ok.gui.tasks.TemplateFactory import TemplateFactory, get_templates, filter_templates
+from ok.ui.qt.tasks.PythonHighlighter import PythonHighlighter
+from ok.ui.qt.tasks.TemplateFactory import TemplateFactory, get_templates, filter_templates
 from ok.util.explorer import reveal_in_explorer
 from ok.util.logger import Logger
 
@@ -609,7 +609,7 @@ class EditTaskTab(QWidget):
                     self._record_loop_count = w.loop_count_input.value()
                         
                 hwnd_name = og.device_manager.get_hwnd_name()
-                from ok.gui.util.Alert import alert_info
+                from ok.ui.qt.util.Alert import alert_info
                 alert_msg = parent_tab.tr("Recording will start when window '{hwnd_name}' becomes active.")
                 alert_info(alert_msg.replace("{hwnd_name}", hwnd_name))
                 
@@ -686,11 +686,11 @@ class EditTaskTab(QWidget):
 
                 self.editor.document().setModified(False)
                 if not silent:
-                    from ok.gui.util.app import show_info_bar
+                    from ok.ui.qt.util.app import show_info_bar
                     show_info_bar(self.window(), self.tr("Task rebuilt successfully."), title=self.tr("Success"))
                 return True
             except Exception as e:
-                from ok.gui.util.Alert import alert_error
+                from ok.ui.qt.util.Alert import alert_error
                 alert_error(f"{self.tr('Failed to save')}: {e}")
                 return False
         return False
@@ -711,14 +711,14 @@ class EditTaskTab(QWidget):
                     if os.path.exists(self.python_file):
                         os.remove(self.python_file)
                 
-                from ok.gui.util.app import show_info_bar
+                from ok.ui.qt.util.app import show_info_bar
                 show_info_bar(self.window(), self.tr("Task deleted successfully."), title=self.tr("Success"))
                 self.python_file = None
                 self.task = None
                 self.editor.clear()
                 self.refresh_dropdown()
             except Exception as e:
-                from ok.gui.util.Alert import alert_error
+                from ok.ui.qt.util.Alert import alert_error
                 alert_error(f"Error deleting task: {e}")
 
     def on_item_expanded_collapsed(self, item):
@@ -769,7 +769,7 @@ class EditTaskTab(QWidget):
 
     def create_task(self):
         from qfluentwidgets import MessageBoxBase, LineEdit, SubtitleLabel
-        from ok.gui.util.Alert import alert_error
+        from ok.ui.qt.util.Alert import alert_error
         import re
 
         class CreateTaskDialog(MessageBoxBase):
@@ -839,14 +839,14 @@ class {class_name}({base_class}):
                         break
                         
                 og.task_manager.load_single_user_task(file_path)
-                from ok.gui.util.app import show_info_bar
+                from ok.ui.qt.util.app import show_info_bar
                 show_info_bar(self.window(), self.tr("Task created successfully."), title=self.tr("Success"))
             except Exception as e:
                 alert_error(f"Error creating task: {e}")
 
     def copy_task(self):
         from qfluentwidgets import MessageBoxBase, ComboBox, SubtitleLabel
-        from ok.gui.util.Alert import alert_error
+        from ok.ui.qt.util.Alert import alert_error
         import inspect
 
         class CopyTaskDialog(MessageBoxBase):
@@ -931,15 +931,15 @@ class {class_name}({base_class}):
                         break
                         
                 og.task_manager.load_single_user_task(target_path)
-                from ok.gui.util.app import show_info_bar
+                from ok.ui.qt.util.app import show_info_bar
                 show_info_bar(self.window(), self.tr("Task copied successfully."), title=self.tr("Success"))
             except Exception as e:
                 alert_error(f"Error copying task: {e}")
 
     def show_export_dialog(self):
         from qfluentwidgets import MessageBoxBase, LineEdit, SubtitleLabel
-        from ok.gui.util.Alert import alert_error
-        from ok.gui.tasks.ScriptPackager import get_task_files, load_manifest, export_script, validate_filename
+        from ok.ui.qt.util.Alert import alert_error
+        from ok.ui.qt.tasks.ScriptPackager import get_task_files, load_manifest, export_script, validate_filename
 
         task_files = get_task_files()
         if not task_files:
@@ -1017,7 +1017,7 @@ class {class_name}({base_class}):
 
             success, message, output_path = export_script(selected, file_name, script_name, version)
             if success:
-                from ok.gui.util.app import show_info_bar
+                from ok.ui.qt.util.app import show_info_bar
                 show_info_bar(self.window(), self.tr('Script exported successfully to Downloads folder.'), title=self.tr('Success'))
                 reveal_in_explorer(output_path)
             else:
@@ -1087,12 +1087,12 @@ class {class_name}({base_class}):
             self._do_import(file_path)
 
     def _do_import(self, file_path):
-        from ok.gui.util.Alert import alert_error
-        from ok.gui.tasks.ScriptPackager import import_script
+        from ok.ui.qt.util.Alert import alert_error
+        from ok.ui.qt.tasks.ScriptPackager import import_script
 
         success, message, import_folder = import_script(file_path)
         if success:
-            from ok.gui.util.app import show_info_bar
+            from ok.ui.qt.util.app import show_info_bar
             show_info_bar(self.window(), message, title=self.tr('Success'))
             # Load the imported tasks
             og.task_manager.load_import_folder(import_folder)

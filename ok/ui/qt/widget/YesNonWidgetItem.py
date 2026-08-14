@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QComboBox
 
-from ok.gui.widget.UpdateConfigWidgetItem import UpdateConfigWidgetItem
+from ok.ui.qt.widget.UpdateConfigWidgetItem import UpdateConfigWidgetItem
 
 
 class YesNonWidgetItem(UpdateConfigWidgetItem, QComboBox):

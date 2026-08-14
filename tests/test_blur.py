@@ -6,7 +6,7 @@ import numpy as np
 
 from ok import og
 from ok.feature.Box import Box
-from ok.gui.debug.Screenshot import Screenshot
+from ok.ui.qt.debug.Screenshot import Screenshot
 from ok.util.blur import (
     BLUR_ALGORITHM,
     DEFAULT_BLUR_ALGORITHM,

@@ -3,8 +3,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-import ok.gui.StartController as start_controller_module
-from ok.gui.StartController import StartController
+import ok.ui.qt.StartController as start_controller_module
+from ok.ui.qt.StartController import StartController
 from ok.util.gpu_driver_settings import GpuDriverPostProcessing
 
 

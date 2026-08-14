@@ -6,7 +6,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from qfluentwidgets import Theme
 
-from ok.gui.MainWindow import MainWindow
+from ok.ui.qt.MainWindow import MainWindow
 
 
 class _Signal:
@@ -55,9 +55,9 @@ class TestMainWindowSystemTheme(unittest.TestCase):
         harness = _ThemeChangeHarness(accent_changed=True)
 
         with (
-            patch("ok.gui.MainWindow.qconfig", config),
-            patch("ok.gui.MainWindow.updateStyleSheet") as update_style_sheet,
-            patch("ok.gui.MainWindow.QTimer.singleShot") as single_shot,
+            patch("ok.ui.qt.MainWindow.qconfig", config),
+            patch("ok.ui.qt.MainWindow.updateStyleSheet") as update_style_sheet,
+            patch("ok.ui.qt.MainWindow.QTimer.singleShot") as single_shot,
         ):
             harness._apply_system_theme_change()
 
@@ -73,9 +73,9 @@ class TestMainWindowSystemTheme(unittest.TestCase):
         harness = _ThemeChangeHarness(accent_changed=True)
 
         with (
-            patch("ok.gui.MainWindow.qconfig", config),
-            patch("ok.gui.MainWindow.updateStyleSheet") as update_style_sheet,
-            patch("ok.gui.MainWindow.QTimer.singleShot"),
+            patch("ok.ui.qt.MainWindow.qconfig", config),
+            patch("ok.ui.qt.MainWindow.updateStyleSheet") as update_style_sheet,
+            patch("ok.ui.qt.MainWindow.QTimer.singleShot"),
         ):
             harness._apply_system_theme_change()
 
@@ -89,9 +89,9 @@ class TestMainWindowSystemTheme(unittest.TestCase):
         harness = _ThemeChangeHarness(accent_changed=False)
 
         with (
-            patch("ok.gui.MainWindow.qconfig", config),
-            patch("ok.gui.MainWindow.updateStyleSheet") as update_style_sheet,
-            patch("ok.gui.MainWindow.QTimer.singleShot"),
+            patch("ok.ui.qt.MainWindow.qconfig", config),
+            patch("ok.ui.qt.MainWindow.updateStyleSheet") as update_style_sheet,
+            patch("ok.ui.qt.MainWindow.QTimer.singleShot"),
         ):
             harness._apply_system_theme_change()
 
@@ -102,7 +102,7 @@ class TestMainWindowSystemTheme(unittest.TestCase):
     def test_refresh_mica_rebuilds_enabled_backdrop(self):
         harness = _MicaHarness(enabled=True)
 
-        with patch("ok.gui.MainWindow.isDarkTheme", return_value=True):
+        with patch("ok.ui.qt.MainWindow.isDarkTheme", return_value=True):
             harness._refresh_mica()
 
         self.assertEqual(

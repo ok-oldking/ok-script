@@ -37,7 +37,7 @@ from qfluentwidgets import (
 )
 
 from ok import Logger, og
-from ok.gui.widget.Tab import Tab
+from ok.ui.qt.widget.Tab import Tab
 from ok.util.windows_schedule import (
     WindowsScheduleManager, ScheduleTaskInfo, TriggerType,
     format_next_run_time as core_format_next_run_time,

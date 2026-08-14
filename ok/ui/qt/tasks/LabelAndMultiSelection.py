@@ -3,8 +3,8 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout
 from qfluentwidgets import CheckBox
 
 from ok import og
-from ok.gui.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
-from ok.gui.widget.FlowLayout import FlowLayout
+from ok.ui.qt.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
+from ok.ui.qt.widget.FlowLayout import FlowLayout
 
 
 class LabelAndMultiSelection(ConfigLabelAndWidget):

@@ -1,7 +1,7 @@
 from ok import Logger, og
 
-from ok.gui.tasks.TaskCard import TaskCard
-from ok.gui.tasks.TaskTab import TaskTab
+from ok.ui.qt.tasks.TaskCard import TaskCard
+from ok.ui.qt.tasks.TaskTab import TaskTab
 
 logger = Logger.get_logger(__name__)
 
@@ -37,7 +37,7 @@ class OneTimeTaskTab(TaskTab):
             # Keep this ordinary footer outside the expandable-card layout.
             self.vBoxLayout.addWidget(self.button_container)
             
-        from ok.gui.Communicate import communicate
+        from ok.ui.qt.Communicate import communicate
         communicate.task_list_updated.connect(self.refresh_ui)
         self.refresh_ui()
 

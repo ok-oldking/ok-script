@@ -2,8 +2,8 @@ from PySide6.QtWidgets import QHBoxLayout
 from qfluentwidgets import PushButton
 
 from ok import og
-from ok.gui.common.icons import resolve_icon
-from ok.gui.tasks.LabelAndWidget import LabelAndWidget
+from ok.ui.qt.common.icons import resolve_icon
+from ok.ui.qt.tasks.LabelAndWidget import LabelAndWidget
 
 
 class LabelAndButtons(LabelAndWidget):

@@ -2,7 +2,7 @@ import pyappify
 from PySide6.QtCore import Qt
 from qfluentwidgets import FluentIcon, PushButton, SettingCard
 
-from ok.gui.about.LinksBar import LinksBar
+from ok.ui.qt.about.LinksBar import LinksBar
 
 
 class VersionCard(SettingCard):

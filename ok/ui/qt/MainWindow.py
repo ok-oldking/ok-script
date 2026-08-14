@@ -28,13 +28,13 @@ MessageBoxBase.keyPressEvent = _patched_message_box_base_keyPressEvent
 
 from ok.util.config import Config
 
-from ok.gui.Communicate import communicate
-from ok.gui.common.accent_color import qfluent_theme_source_color
-from ok.gui.common.icons import resolve_icon
-from ok.gui.util.Alert import alert_error
-from ok.gui.util.touch_scroll import enable_touch_scrolling
-from ok.gui.util.pyappify_startup import get_startup_version_change
-from ok.gui.widget.StartLoadingDialog import StartLoadingDialog
+from ok.ui.qt.Communicate import communicate
+from ok.ui.qt.common.accent_color import qfluent_theme_source_color
+from ok.ui.qt.common.icons import resolve_icon
+from ok.ui.qt.util.Alert import alert_error
+from ok.ui.qt.util.touch_scroll import enable_touch_scrolling
+from ok.ui.qt.util.pyappify_startup import get_startup_version_change
+from ok.ui.qt.widget.StartLoadingDialog import StartLoadingDialog
 from ok.util.GlobalConfig import basic_options, KILL_LAUNCHER_AFTER_START, NOTIFICATION_OPTION_NAME
 from ok.util.clazz import init_class_by_name
 from ok.util.process import restart_as_admin
@@ -72,7 +72,7 @@ class MainWindow(FluentWindow):
         self.basic_global_config = global_config.get_config(basic_options)
         self.main_window_config = Config('main_window', {'last_version': 'v0.0.0'})
         self.exit_event = exit_event
-        from ok.gui.start.StartTab import StartTab
+        from ok.ui.qt.start.StartTab import StartTab
         self.start_tab = StartTab(config, exit_event)
         self.onetime_tab = None
         self.trigger_tab = None
@@ -115,13 +115,13 @@ class MainWindow(FluentWindow):
         visible_trigger_tasks = [task for task in self.executor.trigger_tasks if getattr(task, 'visible', True)]
 
         if len(visible_trigger_tasks) > 0:
-            from ok.gui.tasks.TriggerTaskTab import TriggerTaskTab
+            from ok.ui.qt.tasks.TriggerTaskTab import TriggerTaskTab
             self.trigger_tab = TriggerTaskTab()
             self.addSubInterface(self.trigger_tab, FluentIcon.STOP_WATCH, self.tr('Triggers'),
                                  position=NavigationItemPosition.SCROLL)
 
         if visible_onetime_tasks:
-            from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
+            from ok.ui.qt.tasks.OneTimeTaskTab import OneTimeTaskTab
             from collections import defaultdict
 
             groups = defaultdict(list)
@@ -151,23 +151,23 @@ class MainWindow(FluentWindow):
         for tab_obj in after_custom_tabs:
             self.addSubInterface(tab_obj, tab_obj.icon, self.app.tr(tab_obj.name), position=tab_obj.position)
         if debug:
-            from ok.gui.debug.DebugTab import DebugTab
+            from ok.ui.qt.debug.DebugTab import DebugTab
             debug_tab = DebugTab(config, exit_event)
             self.addSubInterface(debug_tab, FluentIcon.DEVELOPER_TOOLS, self.tr('Debug'),
                                  position=NavigationItemPosition.BOTTOM)
-            from ok.gui.debug.RunCodeTab import RunCodeTab
+            from ok.ui.qt.debug.RunCodeTab import RunCodeTab
             run_code_tab = RunCodeTab(config, exit_event)
             self.addSubInterface(run_code_tab, FluentIcon.COMMAND_PROMPT, self.tr('Run Code'),
                                  position=NavigationItemPosition.BOTTOM)
 
         if og.task_manager.has_custom:
-            from ok.gui.tasks.EditTaskTab import EditTaskTab
+            from ok.ui.qt.tasks.EditTaskTab import EditTaskTab
             self.edit_task_tab = EditTaskTab()
             self.addSubInterface(self.edit_task_tab, FluentIcon.EDIT, self.tr('Script'),
                                  position=NavigationItemPosition.SCROLL)
 
         if og.task_manager.has_custom or debug:
-            from ok.gui.tasks.TemplateTab import TemplateTab
+            from ok.ui.qt.tasks.TemplateTab import TemplateTab
             self.template_tab = TemplateTab(config=config)
             self.addSubInterface(self.template_tab, FluentIcon.PHOTO, self.tr('Templates'),
                                  position=NavigationItemPosition.SCROLL)
@@ -179,7 +179,7 @@ class MainWindow(FluentWindow):
         # 添加计划任务Tab
         any_support_schedule = any(task.support_schedule_task for task in visible_onetime_tasks)
         if any_support_schedule:
-            from ok.gui.tasks.ScheduleTaskTab import ScheduleTaskTab
+            from ok.ui.qt.tasks.ScheduleTaskTab import ScheduleTaskTab
             self.schedule_tab = ScheduleTaskTab(config=self.config)
             self.addSubInterface(self.schedule_tab, FluentIcon.CALENDAR, self.tr('Schedule'),
                                  position=NavigationItemPosition.SCROLL)
@@ -187,7 +187,7 @@ class MainWindow(FluentWindow):
         notification_tab = None
         for name, config_obj, option in global_config.get_all_visible_configs():
             if getattr(option, 'show_at_tab', False):
-                from ok.gui.settings.GlobalConfigTab import GlobalConfigTab
+                from ok.ui.qt.settings.GlobalConfigTab import GlobalConfigTab
                 config_tab = GlobalConfigTab(config_obj, option)
                 self.global_config_tabs.append(config_tab)
                 if name == NOTIFICATION_OPTION_NAME:
@@ -201,12 +201,12 @@ class MainWindow(FluentWindow):
             self.addSubInterface(notification_tab, FluentIcon.RINGER, self.app.tr(NOTIFICATION_OPTION_NAME),
                                  position=NavigationItemPosition.BOTTOM)
 
-        from ok.gui.settings.SettingTab import SettingTab
+        from ok.ui.qt.settings.SettingTab import SettingTab
         self.setting_tab = SettingTab()
         self.addSubInterface(self.setting_tab, FluentIcon.SETTING, self.tr('Settings'),
                              position=NavigationItemPosition.BOTTOM)
 
-        from ok.gui.about.AboutTab import AboutTab
+        from ok.ui.qt.about.AboutTab import AboutTab
         self.about_tab = AboutTab(config)
         self.addSubInterface(self.about_tab, FluentIcon.QUESTION, self.tr('About'),
                              position=NavigationItemPosition.BOTTOM)
@@ -369,7 +369,7 @@ class MainWindow(FluentWindow):
     def update_imported_tabs(self):
         """Update navigation tabs for imported scripts."""
         from ok import og
-        from ok.gui.tasks.OneTimeTaskTab import OneTimeTaskTab
+        from ok.ui.qt.tasks.OneTimeTaskTab import OneTimeTaskTab
         
         imported_scripts = og.task_manager.imported_scripts
         
@@ -617,7 +617,7 @@ class MainWindow(FluentWindow):
 
     def show_notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None, images=None):
         from ok import og
-        from ok.gui.util.app import show_info_bar
+        from ok.ui.qt.util.app import show_info_bar
         translated_message = QCoreApplication.translate("app", message)
         if params:
             translated_message = translated_message.format(**params)
@@ -673,15 +673,15 @@ class MainWindow(FluentWindow):
                     if hasattr(self, 'edit_task_tab'):
                         self.edit_task_tab._do_import(arg)
                     else:
-                        from ok.gui.tasks.ScriptPackager import import_script
+                        from ok.ui.qt.tasks.ScriptPackager import import_script
                         success, message, import_folder = import_script(arg)
                         if success:
                             from ok import og
                             og.task_manager.load_import_folder(import_folder)
-                            from ok.gui.util.app import show_info_bar
+                            from ok.ui.qt.util.app import show_info_bar
                             show_info_bar(self.window(), message, title=self.tr('Success'))
                         else:
-                            from ok.gui.util.Alert import alert_error
+                            from ok.ui.qt.util.Alert import alert_error
                             alert_error(f"Import failed: {message}")
                 except Exception as e:
                     logger.error(f'Error importing .okscript file: {e}')

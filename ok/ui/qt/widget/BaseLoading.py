@@ -1,5 +1,5 @@
 # coding:utf-8
-from ok.gui.widget.StartLoadingDialog import StartLoadingDialog
+from ok.ui.qt.widget.StartLoadingDialog import StartLoadingDialog
 
 
 class BaseLoading():

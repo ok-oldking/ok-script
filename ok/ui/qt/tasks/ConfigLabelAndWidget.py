@@ -1,4 +1,4 @@
-from ok.gui.tasks.LabelAndWidget import LabelAndWidget
+from ok.ui.qt.tasks.LabelAndWidget import LabelAndWidget
 
 
 class ConfigLabelAndWidget(LabelAndWidget):

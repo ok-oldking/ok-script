@@ -5,8 +5,8 @@ from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentTranslator, InfoBar, InfoBarPosition, setTheme
 
 from ok import Logger
-from ok.gui import resources
-from ok.gui.common.config import cfg
+from ok.ui.qt import resources
+from ok.ui.qt.common.config import cfg
 
 logger = Logger.get_logger(__name__)
 

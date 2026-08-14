@@ -8,7 +8,7 @@ from qfluentwidgets.common.animation import BackgroundAnimationWidget
 from qfluentwidgets.components.widgets.frameless_window import FramelessWindow
 
 from ok import og
-from ok.gui.widget.BaseLoading import BaseLoading
+from ok.ui.qt.widget.BaseLoading import BaseLoading
 
 
 class BaseWindow(BackgroundAnimationWidget, FramelessWindow, BaseLoading):

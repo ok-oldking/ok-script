@@ -12,8 +12,8 @@ from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
                             isDarkTheme, SplitTitleBar, RoundMenu,
                             Action)
 
-from ok.gui.tasks.TemplateTab import (load_coco, save_coco, get_image_entry_for_path)
-from ok.gui.widget.BaseWindow import BaseWindow
+from ok.ui.qt.tasks.TemplateTab import (load_coco, save_coco, get_image_entry_for_path)
+from ok.ui.qt.widget.BaseWindow import BaseWindow
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)

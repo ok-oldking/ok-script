@@ -3,7 +3,7 @@ from PySide6.QtGui import QPainter
 from PySide6.QtWidgets import QWidget, QGraphicsOpacityEffect
 from qfluentwidgets import Theme, isDarkTheme, FluentIcon, StateToolTip, BodyLabel
 
-from ok.gui.common.style_sheet import StyleSheet
+from ok.ui.qt.common.style_sheet import StyleSheet
 
 
 class StatusBar(QWidget):

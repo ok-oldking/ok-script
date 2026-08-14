@@ -4,9 +4,9 @@ from qfluentwidgets import InfoBar, setTheme
 from qfluentwidgets import (SettingCardGroup, ComboBoxSettingCard, OptionsSettingCard)
 
 from ok import og
-from ok.gui.common.config import cfg
-from ok.gui.settings.GlobalConfigCard import GlobalConfigCard
-from ok.gui.widget.Tab import Tab
+from ok.ui.qt.common.config import cfg
+from ok.ui.qt.settings.GlobalConfigCard import GlobalConfigCard
+from ok.ui.qt.widget.Tab import Tab
 from ok.util.GlobalConfig import APP_LAUNCHER_OPTION_NAME
 
 

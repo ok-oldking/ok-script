@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QSizePolicy, QHBoxLayout, QVBoxLayout, QLayout, QLabel
 
-from ok.gui.common.design_system import configure_row
+from ok.ui.qt.common.design_system import configure_row
 
 
 class LabelAndWidget(QWidget):

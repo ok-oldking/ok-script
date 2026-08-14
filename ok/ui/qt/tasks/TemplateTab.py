@@ -11,11 +11,11 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
 from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
                             SearchLineEdit, MessageBox, BodyLabel, isDarkTheme,
                             qconfig, IndeterminateProgressRing)
-from ok.gui.util.touch_scroll import enable_touch_scrolling
+from ok.ui.qt.util.touch_scroll import enable_touch_scrolling
 
 from ok import Config, og
 from ok.core.template_store import CocoTemplateStore, filename_key
-from ok.gui.util.windows_thumbnail import WindowsThumbnailReader
+from ok.ui.qt.util.windows_thumbnail import WindowsThumbnailReader
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -790,13 +790,13 @@ class TemplateTab(QWidget):
         """Capture a frame and save it to ok_templates."""
         try:
             if og.device_manager.capture_method is None:
-                from ok.gui.util.Alert import alert_error
+                from ok.ui.qt.util.Alert import alert_error
                 alert_error(self.tr("No capture method available. Please start capture first."))
                 return
 
             frame = og.device_manager.capture_method.get_frame()
             if frame is None:
-                from ok.gui.util.Alert import alert_error
+                from ok.ui.qt.util.Alert import alert_error
                 alert_error(self.tr("Failed to capture frame."))
                 return
 
@@ -818,14 +818,14 @@ class TemplateTab(QWidget):
             # Add image to COCO data
             self._add_image_to_coco(file_path)
 
-            from ok.gui.util.Alert import alert_info
+            from ok.ui.qt.util.Alert import alert_info
             alert_info(self.tr("Screenshot saved: {}").format(os.path.basename(file_path)))
 
             self._create_image_item(file_path)
             self.apply_filter()
         except Exception as e:
             logger.error(f"Screenshot error: {e}")
-            from ok.gui.util.Alert import alert_error
+            from ok.ui.qt.util.Alert import alert_error
             alert_error(self.tr("Screenshot failed: {e}").format(e=e))
 
     def _add_image_to_coco(self, image_path):
@@ -902,11 +902,11 @@ class TemplateTab(QWidget):
                 self._remove_image_item(image_path)
                 self.apply_filter()
 
-                from ok.gui.util.app import show_info_bar
+                from ok.ui.qt.util.app import show_info_bar
                 show_info_bar(self.window(), self.tr("Image deleted."), title=self.tr("Success"))
             except Exception as e:
                 logger.error(f"Delete error: {e}")
-                from ok.gui.util.Alert import alert_error
+                from ok.ui.qt.util.Alert import alert_error
                 alert_error(self.tr("Delete failed: {e}").format(e=e))
 
     def _normalize_label_enum_relative_path(self, relative_path):
@@ -940,7 +940,7 @@ class TemplateTab(QWidget):
         image_folder = ensure_template_folder()
 
         if not os.path.exists(coco_json_path):
-            from ok.gui.util.Alert import alert_error
+            from ok.ui.qt.util.Alert import alert_error
             alert_error(self.tr("No annotations to save."))
             return
 
@@ -1013,7 +1013,7 @@ class TemplateTab(QWidget):
         if generate_label_enum_checkbox.isChecked():
             generate_label_enmu = self._normalize_label_enum_relative_path(enum_relative_path_text)
             if not generate_label_enmu:
-                from ok.gui.util.Alert import alert_error
+                from ok.ui.qt.util.Alert import alert_error
                 alert_error(self.tr("Invalid relative path. Example: ok_tasks/LabelEnum.py"))
                 return
 
@@ -1028,11 +1028,11 @@ class TemplateTab(QWidget):
             except Exception as e:
                 logger.warning(f"Could not reload feature set after save: {e}")
 
-            from ok.gui.util.Alert import alert_info
+            from ok.ui.qt.util.Alert import alert_info
             alert_info(self.tr("Save completed successfully to: {}").format(target_folder))
         except Exception as e:
             logger.error(f"Save compressed error: {e}", e)
-            from ok.gui.util.Alert import alert_error
+            from ok.ui.qt.util.Alert import alert_error
             alert_error(self.tr("Save failed: {e}").format(e=e))
 
     def open_markup(self):
@@ -1045,7 +1045,7 @@ class TemplateTab(QWidget):
             self.markup_window.raise_()
             return
 
-        from ok.gui.tasks.MarkUpWindow import MarkUpWindow
+        from ok.ui.qt.tasks.MarkUpWindow import MarkUpWindow
         self.markup_window = MarkUpWindow(self.selected_image, self._visible_image_paths)
         self.markup_window.closed.connect(self.on_markup_closed)
         self._update_selection_buttons()

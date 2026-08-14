@@ -1,7 +1,7 @@
 import unittest
 from types import SimpleNamespace
 
-from ok.gui.MainWindow import MainWindow
+from ok.ui.qt.MainWindow import MainWindow
 
 
 class TestMainWindowStartupTab(unittest.TestCase):

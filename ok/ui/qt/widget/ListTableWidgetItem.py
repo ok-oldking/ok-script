@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidgetItem
 
-from ok.gui.widget.UpdateConfigWidgetItem import UpdateConfigWidgetItem, value_to_string
+from ok.ui.qt.widget.UpdateConfigWidgetItem import UpdateConfigWidgetItem, value_to_string
 
 
 class ListTableWidgetItem(UpdateConfigWidgetItem, QTableWidgetItem):

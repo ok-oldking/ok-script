@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QMessageBox
 
-from ok.gui.Communicate import communicate
+from ok.ui.qt.Communicate import communicate
 
 
 def show_alert(title, message):

@@ -3,8 +3,8 @@ from PySide6.QtWidgets import QVBoxLayout, QApplication
 from qfluentwidgets import BodyLabel, PushButton, SplitTitleBar
 
 from ok import Logger, og
-from ok.gui.Communicate import communicate
-from ok.gui.widget.BaseWindow import BaseWindow
+from ok.ui.qt.Communicate import communicate
+from ok.ui.qt.widget.BaseWindow import BaseWindow
 
 logger = Logger.get_logger(__name__)
 

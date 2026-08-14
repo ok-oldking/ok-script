@@ -12,9 +12,9 @@ from ok import Logger
 from ok.capture.windows.dump import dump_threads
 from ok.device.capture import ImageCaptureMethod
 from ok.device.interaction import DoNothingInteraction
-from ok.gui.i18n.GettextTranslator import convert_to_mo_files
-from ok.gui.util.Alert import alert_info, alert_error
-from ok.gui.widget.Tab import Tab
+from ok.ui.qt.i18n.GettextTranslator import convert_to_mo_files
+from ok.ui.qt.util.Alert import alert_info, alert_error
+from ok.ui.qt.widget.Tab import Tab
 from ok.util.explorer import open_explorer_folder, reveal_in_explorer
 
 logger = Logger.get_logger(__name__)

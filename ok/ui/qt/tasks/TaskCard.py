@@ -3,9 +3,9 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget, QSizePolicy
 from qfluentwidgets import FluentIcon, PrimaryPushButton, PushButton, SwitchButton, MessageBox
 
 from ok import Logger, BaseTask, og
-from ok.gui.Communicate import communicate
-from ok.gui.common.OKIcon import OKIcon
-from ok.gui.tasks.ConfigCard import ConfigCard
+from ok.ui.qt.Communicate import communicate
+from ok.ui.qt.common.OKIcon import OKIcon
+from ok.ui.qt.tasks.ConfigCard import ConfigCard
 
 logger = Logger.get_logger(__name__)
 

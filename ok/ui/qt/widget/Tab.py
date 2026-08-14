@@ -3,11 +3,11 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QVBoxLayout, QWidget, QSizePolicy
 from qfluentwidgets import ScrollArea
 
-from ok.gui.common.design_system import configure_page_layout
-from ok.gui.common.style_sheet import StyleSheet
-from ok.gui.util.touch_scroll import enable_touch_scrolling
-from ok.gui.widget.Card import Card
-from ok.gui.widget.StartLoadingDialog import StartLoadingDialog
+from ok.ui.qt.common.design_system import configure_page_layout
+from ok.ui.qt.common.style_sheet import StyleSheet
+from ok.ui.qt.util.touch_scroll import enable_touch_scrolling
+from ok.ui.qt.widget.Card import Card
+from ok.ui.qt.widget.StartLoadingDialog import StartLoadingDialog
 
 
 class Tab(ScrollArea):

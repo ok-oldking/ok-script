@@ -6,7 +6,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtCore import QCoreApplication, QEvent
 from PySide6.QtWidgets import QApplication, QScrollArea, QWidget
 
-from ok.gui.util.touch_scroll import enable_touch_scrolling
+from ok.ui.qt.util.touch_scroll import enable_touch_scrolling
 
 
 class TestTouchScrollLifecycle(unittest.TestCase):
