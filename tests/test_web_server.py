@@ -7,7 +7,8 @@ import pytest
 
 from ok.ui.web.server import (
     _OkServerLogHandler, _WebviewWindowApi, _configure_server_logging,
-    _enable_native_resize, _move_winforms_window, _run_webview,
+    _move_winforms_window, _resize_bounds, _RoundedWindowRegion,
+    _run_webview,
     _saved_window_kwargs, _WebviewGeometryState, run_web,
 )
 
@@ -148,10 +149,19 @@ def test_server_launch_mode_runs_without_opening_client():
 
 
 def test_webview_uses_app_window_config_and_stops_server_on_close():
+    class RecordingEvent:
+        def __init__(self):
+            self.handlers = []
+
+        def __iadd__(self, handler):
+            self.handlers.append(handler)
+            return self
+
     window = Mock()
-    shown_event = MagicMock()
+    shown_event = RecordingEvent()
     window.events = SimpleNamespace(
         shown=shown_event,
+        resized=MagicMock(),
         maximized=MagicMock(),
         restored=MagicMock(),
     )
@@ -186,18 +196,43 @@ def test_webview_uses_app_window_config_and_stops_server_on_close():
         "frameless": True,
         "resizable": True,
         "easy_drag": False,
-        "shadow": True,
+        "shadow": False,
         "background_color": "#251e22",
     }
     assert isinstance(create_args.kwargs["js_api"], _WebviewWindowApi)
     assert create_args.kwargs["js_api"]._window is window
     assert not hasattr(create_args.kwargs["js_api"], "window")
-    shown_event.__iadd__.assert_called_once_with(_enable_native_resize)
-    webview.start.assert_called_once_with(debug=True)
+    assert len(shown_event.handlers) == 2
+    webview.start.assert_called_once_with(debug=False)
     assert webview.settings["OPEN_DEVTOOLS_IN_DEBUG"] is False
     server_thread.start.assert_called_once_with()
     assert server.should_exit is True
     server_thread.join.assert_called_once_with(timeout=10)
+
+
+def test_webview_enables_debug_features_only_for_debug_builds():
+    window = Mock()
+    window.events = SimpleNamespace(
+        shown=MagicMock(),
+        resized=MagicMock(),
+        maximized=MagicMock(),
+        restored=MagicMock(),
+    )
+    webview = SimpleNamespace(
+        create_window=Mock(return_value=window), start=Mock(), settings={}
+    )
+    server = Mock(should_exit=False)
+
+    with patch.dict(sys.modules, {"webview": webview}), \
+            patch("ok.ui.web.server.threading.Thread"):
+        _run_webview(
+            {"debug": True},
+            "http://127.0.0.1:12345",
+            server,
+            object(),
+        )
+
+    webview.start.assert_called_once_with(debug=True)
 
 
 def test_webview_window_api_controls_attached_window():
@@ -216,21 +251,40 @@ def test_webview_window_api_controls_attached_window():
     window.destroy.assert_called_once_with()
 
 
-def test_enable_native_resize_restores_thickframe_style():
+def test_native_resize_bounds_respect_edges_and_minimum_size():
+    bounds = (100, 200, 900, 700)
+
+    assert _resize_bounds(bounds, 17, 50, 25, 600, 400) == (
+        100, 200, 850, 525,
+    )
+    assert _resize_bounds(bounds, 13, 300, 200, 600, 400) == (
+        300, 300, 600, 400,
+    )
+
+
+def test_rounded_window_region_tracks_native_window_size():
     native_window = SimpleNamespace(
         Handle=SimpleNamespace(ToInt32=Mock(return_value=1234)),
     )
-    window = SimpleNamespace(native=native_window)
+    rounded = _RoundedWindowRegion(SimpleNamespace(native=native_window))
 
-    with patch(
-        "ok.ui.web.server.ctypes.windll.user32.GetWindowLongW",
-        return_value=0x10000000,
-    ), patch("ok.ui.web.server.ctypes.windll.user32.SetWindowLongW") as set_style, \
-            patch("ok.ui.web.server.ctypes.windll.user32.SetWindowPos") as set_pos:
-        assert _enable_native_resize(window) is True
+    def populate_rect(_hwnd, rect_pointer):
+        rect = rect_pointer._obj
+        rect.left, rect.top, rect.right, rect.bottom = 20, 30, 1020, 730
+        return True
 
-    set_style.assert_called_once_with(1234, -16, 0x10040000)
-    set_pos.assert_called_once_with(1234, 0, 0, 0, 0, 0, 0x0027)
+    with patch("ok.ui.web.server.ctypes.windll.user32.IsZoomed", return_value=False), \
+            patch("ok.ui.web.server.ctypes.windll.user32.GetWindowRect", side_effect=populate_rect), \
+            patch("ok.ui.web.server.ctypes.windll.user32.GetDpiForWindow", return_value=144), \
+            patch("ok.ui.web.server.ctypes.windll.dwmapi.DwmSetWindowAttribute") as set_dwm, \
+            patch("ok.ui.web.server.ctypes.windll.gdi32.CreateRoundRectRgn", return_value=456) as create_region, \
+            patch("ok.ui.web.server.ctypes.windll.user32.SetWindowRgn", return_value=True) as set_region:
+        assert rounded.apply() is True
+        assert rounded.apply() is True
+
+    assert [entry.args[1] for entry in set_dwm.call_args_list] == [33]
+    create_region.assert_called_once_with(0, 0, 1001, 701, 48, 48)
+    set_region.assert_called_once_with(1234, 456, True)
 
 
 def test_saved_window_kwargs_restore_qt_geometry_state():

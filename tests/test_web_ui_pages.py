@@ -106,6 +106,21 @@ def test_web_client_has_winui_window_frame_and_navigation_motion():
     assert "window-resize-handle" not in source
 
 
+def test_web_tabs_share_the_same_outer_page_padding():
+    styles = (Path(__file__).parents[1] / "web_src" / "src" / "styles.css").read_text(
+        encoding="utf-8"
+    )
+
+    assert "padding: var(--page-padding-block) var(--page-padding-inline)" in styles
+    assert "--page-padding-block: 16px" in styles
+    assert "--page-padding-inline: 16px" in styles
+    assert "--page-padding-block: 18px" not in styles
+    assert ".task-content { display: block; overflow: auto; scrollbar-width" in styles
+    assert ".settings-page { width: 100%; margin: 0; padding: 0; }" in styles
+    assert ".workspace-page { width: 100%; margin: 0; padding: 0; }" in styles
+    assert ".task-list { display: grid; gap: 8px; padding: 0; }" in styles
+
+
 def test_script_crud_stays_inside_custom_task_folder(tmp_path):
     runtime = make_runtime(tmp_path)
 
