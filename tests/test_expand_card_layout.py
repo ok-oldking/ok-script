@@ -38,6 +38,16 @@ class TestExpandCardLayout(unittest.TestCase):
         layout.removeWidget(card)
         self.assertEqual(0, layout.count())
 
+    def test_nested_layout_does_not_add_outer_page_padding(self):
+        host = QWidget()
+        layout = ExpandCardLayout(host)
+
+        margins = layout.contentsMargins()
+        self.assertEqual(
+            (margins.left(), margins.top(), margins.right(), margins.bottom()),
+            (0, 0, 0, 0),
+        )
+
     def test_cards_can_be_removed(self):
         host = QWidget()
         layout = ExpandCardLayout(host)

@@ -9,6 +9,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from ok import Config, og
+from ok.ui.qt.common.design_system import DesignToken
 from ok.ui.qt.tasks.MarkUpWindow import MarkUpWindow
 from ok.ui.qt.tasks.TemplateTab import (ImageCard, TemplateTab,
                                       get_categories_by_filename,
@@ -44,6 +45,15 @@ class TestTemplateTabCardCollection(unittest.TestCase):
         path = os.path.join(self.temp_dir.name, name)
         self.tab._create_image_item(path, categories or [])
         return path
+
+    def test_uses_standard_page_layout(self):
+        layout = self.tab.layout()
+        margins = layout.contentsMargins()
+        self.assertEqual(
+            (margins.left(), margins.top(), margins.right(), margins.bottom()),
+            (DesignToken.PAGE_MARGIN,) * 4,
+        )
+        self.assertEqual(layout.spacing(), DesignToken.PAGE_SPACING)
 
     def test_search_reuses_cards_and_clears_hidden_selection(self):
         boss_path = self._add_item('boss.png', ['boss'])

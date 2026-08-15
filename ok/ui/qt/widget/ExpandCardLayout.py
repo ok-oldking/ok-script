@@ -12,6 +12,10 @@ class ExpandCardLayout(ExpandLayout):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        # This layout is nested inside a page that already owns the outer
+        # inset.  Qt otherwise adds its default 11 px layout margin here,
+        # making task cards appear more indented than content on other tabs.
+        self.setContentsMargins(0, 0, 0, 0)
 
     def addWidget(self, widget, stretch=0, alignment=None):
         if self.indexOf(widget) >= 0:

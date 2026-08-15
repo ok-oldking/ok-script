@@ -102,6 +102,11 @@ class TestTaskUi(unittest.TestCase):
         self.assertIsInstance(tab.taskCardLayout, ExpandLayout)
         self.assertIs(tab.taskCardLayout, tab.task_cards_view.layout())
         self.assertIsNot(tab.taskCardLayout, tab.view.layout())
+        margins = tab.taskCardLayout.contentsMargins()
+        self.assertEqual(
+            (margins.left(), margins.top(), margins.right(), margins.bottom()),
+            (0, 0, 0, 0),
+        )
 
     def test_task_card_uses_native_expansion_state(self):
         values = {"Long text": "A configuration value long enough to use the multiline text editor"}

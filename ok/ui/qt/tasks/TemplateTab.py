@@ -15,6 +15,7 @@ from ok.ui.qt.util.touch_scroll import enable_touch_scrolling
 
 from ok import Config, og
 from ok.core.template_store import CocoTemplateStore, filename_key
+from ok.ui.qt.common.design_system import configure_page_layout
 from ok.ui.qt.util.windows_thumbnail import WindowsThumbnailReader
 from ok.util.logger import Logger
 
@@ -529,8 +530,7 @@ class TemplateTab(QWidget):
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(16, 16, 16, 16)
-        main_layout.setSpacing(8)
+        configure_page_layout(main_layout)
 
         # Top toolbar
         toolbar = QHBoxLayout()

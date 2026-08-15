@@ -8,6 +8,7 @@ from qfluentwidgets import MessageBox, PlainTextEdit, PushButton, FluentIcon, Pr
     BodyLabel, ComboBox, RoundMenu, Action, TreeWidget, TransparentDropDownPushButton, CheckBox
 
 from ok import og
+from ok.ui.qt.common.design_system import configure_page_layout
 from ok.ui.qt.tasks.PythonHighlighter import PythonHighlighter
 from ok.ui.qt.tasks.TemplateFactory import TemplateFactory, get_templates, filter_templates
 from ok.util.explorer import reveal_in_explorer
@@ -230,6 +231,7 @@ class EditTaskTab(QWidget):
 
     def init_ui(self):
         self.layout = QHBoxLayout(self)
+        configure_page_layout(self.layout)
 
         # Left: Template Chooser with search filter
         self.template_panel = QVBoxLayout()

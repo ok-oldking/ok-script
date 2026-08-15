@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QLayout, QWidget
 class DesignToken:
     """The app's 8-point-grid-derived layout and sizing tokens."""
 
-    PAGE_MARGIN = 24
+    PAGE_MARGIN = 16
     PAGE_SPACING = 12
 
     SECTION_SPACING = 12
