@@ -705,7 +705,9 @@ class WebRuntime:
         try:
             module = self.pyappify_module
             logger.info("calling pyappify.get_version_list(release_only=%s)", release_only)
-            versions = module.get_version_list(release_only=release_only)
+            versions = module.get_version_list(
+                release_only=release_only, exit_event=self.ok.exit_event
+            )
             logger.info("pyappify.get_version_list result=%r", versions)
             if not isinstance(versions, list):
                 raise RuntimeError("PyAppify returned an invalid version list")
@@ -748,7 +750,7 @@ class WebRuntime:
             if not callable(operation):
                 raise RuntimeError("Updating is not supported by this PyAppify version")
             logger.info("calling pyappify.update_to_version(%r)", version)
-            result = operation(version)
+            result = operation(version, exit_event=self.ok.exit_event)
             logger.info("pyappify.update_to_version(%r) result=%r", version, result)
             return {"accepted": True, "version": version, "result": _json_value(result)}
         finally:

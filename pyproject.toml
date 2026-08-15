@@ -27,7 +27,7 @@ classifiers = [
 ]
 dependencies = [
     "pywin32>=306",
-    "pyappify>=1.0.6",
+    "pyappify>=1.0.9",
     "typing-extensions>=4.11.0",
     "requests>=2.32.3",
     "psutil>=6.0.0",

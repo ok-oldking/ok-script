@@ -31,6 +31,7 @@ def make_runtime(tmp_path):
         config={"gui_title": "Test App", "version": "1.2.3", "debug": False, "links": {"github": "https://example.test"}},
         task_manager=manager,
         task_executor=SimpleNamespace(get_all_tasks=lambda: [], onetime_tasks=[], trigger_tasks=[]),
+        exit_event=Mock(),
     )
     runtime.icon_url = "/static/app-icon.png"
     runtime._schedule_manager = None
@@ -107,7 +108,7 @@ def test_web_update_check_returns_calculated_notes_in_one_result(tmp_path):
 
     result = runtime.check_for_updates(release_only=False)
 
-    get_versions.assert_called_once_with(release_only=False)
+    get_versions.assert_called_once_with(release_only=False, exit_event=runtime.ok.exit_event)
     assert result["current_version"] == "1.2.3"
     assert result["update_available"] is True
     assert result["versions"][0] == {"version": "v1.2.5", "notes": ["five", "four", "three"]}
@@ -120,7 +121,7 @@ def test_web_update_request_calls_pyappify(tmp_path):
 
     result = runtime.update_to_version("v1.2.4")
 
-    update.assert_called_once_with("v1.2.4")
+    update.assert_called_once_with("v1.2.4", exit_event=runtime.ok.exit_event)
     assert result["accepted"] is True
     assert result["version"] == "v1.2.4"
 

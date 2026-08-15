@@ -16,7 +16,7 @@ logger = Logger.get_logger(__name__)
 
 
 class AboutTab(Tab):
-    def __init__(self, config, pyappify_module=None):
+    def __init__(self, config, pyappify_module=None, exit_event=None):
         super().__init__()
         if pyappify_module is None:
             import pyappify as pyappify_module
@@ -28,7 +28,9 @@ class AboutTab(Tab):
 
         self.update_card = None
         if callable(getattr(pyappify_module, 'get_version_list', None)):
-            self.update_card = UpdateCard(config.get('version'), pyappify_module, self)
+            self.update_card = UpdateCard(
+                config.get('version'), pyappify_module, self, exit_event=exit_event
+            )
             self.add_card(self.tr("App update"), self.update_card)
         else:
             logger.warning(

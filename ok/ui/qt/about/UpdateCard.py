@@ -51,13 +51,14 @@ class UpdateCard(QWidget):
     VERSION_COMBO_MIN_WIDTH = 100
     VERSION_COMBO_MAX_WIDTH = 240
 
-    def __init__(self, current_version, pyappify_module, parent=None):
+    def __init__(self, current_version, pyappify_module, parent=None, exit_event=None):
         super().__init__(parent)
         self.current_version = current_version or getattr(pyappify_module, "app_version", None) or ""
         if "PYAPPIFY_PYTHON_TEST" in os.environ and not _is_numeric_version(self.current_version):
             logger.info(f"using v0.0.0 for nonnumeric test version {self.current_version!r}")
             self.current_version = "v0.0.0"
         self.pyappify_module = pyappify_module
+        self.exit_event = exit_event
         self.versions = []
         self._busy = False
         logger.info(
@@ -125,7 +126,7 @@ class UpdateCard(QWidget):
         self._set_status(self.tr("Checking for updates…"))
         release_only = not self.test_version_checkbox.isChecked()
         self._run_in_background(
-            lambda: get_versions(release_only=release_only),
+            lambda: get_versions(release_only=release_only, exit_event=self.exit_event),
             self._versions_loaded,
             f"pyappify.get_version_list(release_only={release_only})",
         )
@@ -141,7 +142,7 @@ class UpdateCard(QWidget):
         self._set_busy(True)
         self._set_status(self.tr("Starting change to {version}…").format(version=version))
         self._run_in_background(
-            lambda: update_to_version(version),
+            lambda: update_to_version(version, exit_event=self.exit_event),
             self._update_finished,
             f"pyappify.update_to_version({version!r})",
         )

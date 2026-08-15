@@ -212,7 +212,7 @@ class MainWindow(FluentWindow):
                              position=NavigationItemPosition.BOTTOM)
 
         from ok.ui.qt.about.AboutTab import AboutTab
-        self.about_tab = AboutTab(config)
+        self.about_tab = AboutTab(config, exit_event=exit_event)
         self.addSubInterface(self.about_tab, FluentIcon.QUESTION, self.tr('About'),
                              position=NavigationItemPosition.BOTTOM)
         self.about_update_badge = None
@@ -526,14 +526,18 @@ class MainWindow(FluentWindow):
             self.shown = True
             pyappify.hide_pyappify()
             if update_pyappify := self.config.get("update_pyappify"):
-                pyappify.upgrade(update_pyappify.get('to_version'), update_pyappify.get('sha256'),
-                                 [update_pyappify.get('zip_url')], self.exit_event)
+                pyappify.upgrade(
+                    update_pyappify.get('to_version'),
+                    update_pyappify.get('sha256'),
+                    [update_pyappify.get('zip_url')],
+                    exit_event=self.exit_event,
+                )
             logger.info("Window has fully displayed")
             from ok import og
             og.ok.start_runtime()
             if self.basic_global_config.get(KILL_LAUNCHER_AFTER_START):
                 logger.info(f'MainWindow showEvent Kill Launcher After Start')
-                pyappify.kill_pyappify()
+                pyappify.kill_pyappify(exit_event=self.exit_event)
             startup_version_change = get_startup_version_change()
             if self.version != self.main_window_config.get('last_version'):
                 self.main_window_config['last_version'] = self.version
@@ -739,5 +743,5 @@ class MainWindow(FluentWindow):
                 self.executor.destroy()
             event.accept()
             if not self.do_not_quit:
-                pyappify.kill_pyappify()
+                pyappify.kill_pyappify(exit_event=self.exit_event)
                 QApplication.instance().exit()

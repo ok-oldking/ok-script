@@ -299,6 +299,7 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
 
     def test_check_test_version_controls_release_filter(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        import threading
         import time
         from PySide6.QtWidgets import QApplication
         from ok.ui.qt.about.UpdateCard import UpdateCard
@@ -308,7 +309,8 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
             get_version_list=Mock(return_value=[]),
             is_greater_version=lambda left, right: self._version_tuple(left) > self._version_tuple(right),
         )
-        card = UpdateCard("v1.0.0", module)
+        exit_event = threading.Event()
+        card = UpdateCard("v1.0.0", module, exit_event=exit_event)
 
         for checked, expected_release_only in ((False, True), (True, False)):
             card.test_version_checkbox.setChecked(checked)
@@ -320,6 +322,7 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
                 time.sleep(0.01)
             self.assertFalse(card._busy)
             self.assertEqual(expected_release_only, module.get_version_list.call_args.kwargs["release_only"])
+            self.assertIs(exit_event, module.get_version_list.call_args.kwargs["exit_event"])
 
         card.deleteLater()
         app.processEvents()
@@ -366,6 +369,36 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         self.assertTrue(card.check_progress.isHidden())
         self.assertEqual(QAbstractAnimation.State.Stopped, card.check_progress.aniGroup.state())
         self.assertEqual(1, get_versions.call_count)
+        card.deleteLater()
+        app.processEvents()
+
+    def test_update_to_version_receives_exit_event(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        import threading
+        import time
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.about.UpdateCard import UpdateCard
+
+        app = QApplication.instance() or QApplication([])
+        exit_event = threading.Event()
+        update_to_version = Mock(return_value={"updated": True, "version": "v1.1.0"})
+        module = SimpleNamespace(
+            update_to_version=update_to_version,
+            is_greater_version=lambda left, right: self._version_tuple(left) > self._version_tuple(right),
+            calculate_update_notes=self._calculate_update_notes,
+        )
+        card = UpdateCard("v1.0.0", module, exit_event=exit_event)
+        card._apply_versions((True, [{"version": "v1.1.0", "update_note": ["one"]}]))
+
+        card.update_to_selected_version()
+        for _ in range(100):
+            app.processEvents()
+            if not card._busy:
+                break
+            time.sleep(0.01)
+
+        self.assertFalse(card._busy)
+        update_to_version.assert_called_once_with("v1.1.0", exit_event=exit_event)
         card.deleteLater()
         app.processEvents()
 
