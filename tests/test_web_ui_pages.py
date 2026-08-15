@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 from ok.ui.web.app import WebRuntime
 
@@ -71,6 +72,57 @@ def test_about_supports_qt_locale_first_links_config(tmp_path):
 
     assert about["links"]["default"]["discord"] == "https://discord.gg/example"
     assert "https://github.com/ok-oldking/ok-wuthering-waves" not in [project["url"] for project in about["projects"]]
+
+
+def test_about_exposes_update_capability_and_test_delay(tmp_path, monkeypatch):
+    runtime = make_runtime(tmp_path)
+    runtime._pyappify_module = SimpleNamespace(get_version_list=Mock())
+    monkeypatch.setenv("PYAPPIFY_PYTHON_TEST", "1")
+
+    about = runtime.about()
+
+    assert about["update_supported"] is True
+    assert about["update_check_delay_ms"] == 10_000
+
+
+def test_web_update_check_returns_calculated_notes_in_one_result(tmp_path):
+    runtime = make_runtime(tmp_path)
+    versions = [
+        {"version": "v1.2.5", "update_note": ["five"]},
+        {"version": "v1.2.4", "update_note": ["four"]},
+        {"version": "v1.2.3", "update_note": ["three"]},
+    ]
+
+    def calculate_notes(items, current, target):
+        current_index = next(index for index, item in enumerate(items) if item["version"].lstrip("v") == current.lstrip("v"))
+        target_index = next(index for index, item in enumerate(items) if item["version"] == target)
+        return [note for item in items[min(current_index, target_index):max(current_index, target_index) + 1] for note in item["update_note"]]
+
+    get_versions = Mock(return_value=versions)
+    runtime._pyappify_module = SimpleNamespace(
+        get_version_list=get_versions,
+        calculate_update_notes=Mock(side_effect=calculate_notes),
+        is_greater_version=lambda left, right: tuple(map(int, left.lstrip("v").split("."))) > tuple(map(int, right.lstrip("v").split("."))),
+    )
+
+    result = runtime.check_for_updates(release_only=False)
+
+    get_versions.assert_called_once_with(release_only=False)
+    assert result["current_version"] == "1.2.3"
+    assert result["update_available"] is True
+    assert result["versions"][0] == {"version": "v1.2.5", "notes": ["five", "four", "three"]}
+
+
+def test_web_update_request_calls_pyappify(tmp_path):
+    runtime = make_runtime(tmp_path)
+    update = Mock(return_value={"updated": True, "version": "v1.2.4"})
+    runtime._pyappify_module = SimpleNamespace(update_to_version=update)
+
+    result = runtime.update_to_version("v1.2.4")
+
+    update.assert_called_once_with("v1.2.4")
+    assert result["accepted"] is True
+    assert result["version"] == "v1.2.4"
 
 
 def test_web_client_routes_tray_events_to_browser_notifications():

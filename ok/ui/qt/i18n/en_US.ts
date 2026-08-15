@@ -85,6 +85,14 @@
             <source>ok-script App Template</source>
             <translation>ok-script App Template</translation>
         </message>
+        <message>
+            <source>App update</source>
+            <translation>App update</translation>
+        </message>
+        <message>
+            <source>Disclaimer</source>
+            <translation>Disclaimer</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
@@ -3567,6 +3575,157 @@
         <message>
             <source>Starting</source>
             <translation>Starting</translation>
+        </message>
+        <message>
+            <source>App update</source>
+            <translation>App update</translation>
+        </message>
+        <message>
+            <source>Disclaimer</source>
+            <translation>Disclaimer</translation>
+        </message>
+        <message>
+            <source>Check Test Version</source>
+            <translation>Check Test Version</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>Check for updates</translation>
+        </message>
+        <message>
+            <source>Click to check for updates</source>
+            <translation>Click to check for updates</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>Version</translation>
+        </message>
+        <message>
+            <source>Update</source>
+            <translation>Update</translation>
+        </message>
+        <message>
+            <source>Downgrade</source>
+            <translation>Downgrade</translation>
+        </message>
+        <message>
+            <source>Current version</source>
+            <translation>Current version</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>Checking for updates…</translation>
+        </message>
+        <message>
+            <source>Starting change to {version}…</source>
+            <translation>Starting change to {version}…</translation>
+        </message>
+        <message>
+            <source>Failed to check for updates: {error}</source>
+            <translation>Failed to check for updates: {error}</translation>
+        </message>
+        <message>
+            <source>No versions are available.</source>
+            <translation>No versions are available.</translation>
+        </message>
+        <message>
+            <source>No updates available.</source>
+            <translation>No updates available.</translation>
+        </message>
+        <message>
+            <source>No release notes.</source>
+            <translation>No release notes.</translation>
+        </message>
+        <message>
+            <source>Update request accepted. The app will restart to apply it.</source>
+            <translation>Update request accepted. The app will restart to apply it.</translation>
+        </message>
+        <message>
+            <source>Failed to change version: {error}</source>
+            <translation>Failed to change version: {error}</translation>
+        </message>
+        <message>
+            <source>Update available.</source>
+            <translation>Update available.</translation>
+        </message>
+    </context>
+    <context>
+        <name>UpdateCard</name>
+        <message>
+            <source>Check Test Version</source>
+            <translation>Check Test Version</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>Check for updates</translation>
+        </message>
+        <message>
+            <source>Click to check for updates</source>
+            <translation>Click to check for updates</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>Version</translation>
+        </message>
+        <message>
+            <source>Update</source>
+            <translation>Update</translation>
+        </message>
+        <message>
+            <source>Downgrade</source>
+            <translation>Downgrade</translation>
+        </message>
+        <message>
+            <source>Current version</source>
+            <translation>Current version</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>Checking for updates…</translation>
+        </message>
+        <message>
+            <source>Starting change to {version}…</source>
+            <translation>Starting change to {version}…</translation>
+        </message>
+        <message>
+            <source>Failed to check for updates: {error}</source>
+            <translation>Failed to check for updates: {error}</translation>
+        </message>
+        <message>
+            <source>No versions are available.</source>
+            <translation>No versions are available.</translation>
+        </message>
+        <message>
+            <source>No updates available.</source>
+            <translation>No updates available.</translation>
+        </message>
+        <message>
+            <source>No release notes.</source>
+            <translation>No release notes.</translation>
+        </message>
+        <message>
+            <source>Update request accepted. The app will restart to apply it.</source>
+            <translation>Update request accepted. The app will restart to apply it.</translation>
+        </message>
+        <message>
+            <source>Failed to change version: {error}</source>
+            <translation>Failed to change version: {error}</translation>
+        </message>
+        <message>
+            <source>Update checking is not supported by this PyAppify version.</source>
+            <translation>Update checking is not supported by this PyAppify version.</translation>
+        </message>
+        <message>
+            <source>Updating is not supported by this PyAppify version.</source>
+            <translation>Updating is not supported by this PyAppify version.</translation>
+        </message>
+        <message>
+            <source>Update-note calculation is not supported.</source>
+            <translation>Update-note calculation is not supported.</translation>
+        </message>
+        <message>
+            <source>Failed to calculate update notes: {error}</source>
+            <translation>Failed to calculate update notes: {error}</translation>
         </message>
     </context>
 </TS>

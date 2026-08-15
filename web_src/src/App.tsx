@@ -49,7 +49,7 @@ import { MarkupDialog } from "./MarkupDialog";
 import { PythonCodeEditor } from "./PythonCodeEditor";
 import { CreateScriptDialog, ExportScriptDialog, ExternalScriptChangeDialog, ImportScriptDialog, RecordScriptDialog, TemplateParameterDialog, UnsavedScriptDialog } from "./ScriptDialogs";
 import { publishTaskTabEvent, TaskTabHost } from "./TaskTabHost";
-import type { AboutInfo, AutomationTask, CaptureUiState, LogResponse, MethodOption, NavigationCapabilities, RuntimeEvent, ScheduleData, ScheduledTask, ScriptDocument, ScriptSummary, ScriptTemplate, SettingsGroup, TaskConfigField, TemplateAnnotations, TemplateImage } from "./types";
+import type { AboutInfo, AutomationTask, CaptureUiState, LogResponse, MethodOption, NavigationCapabilities, RuntimeEvent, ScheduleData, ScheduledTask, ScriptDocument, ScriptSummary, ScriptTemplate, SettingsGroup, TaskConfigField, TemplateAnnotations, TemplateImage, UpdateCheckResult } from "./types";
 
 type IconComponent = typeof Play20Regular;
 type ToastMessage = { id: number; message: string; intent: "success" | "info" | "error" };
@@ -547,14 +547,61 @@ function sanitizedAboutHtml(html: string) {
   return documentNode.body.innerHTML;
 }
 
-function AboutPage({ notify }: { notify: ToastSink }) {
-  const [info, setInfo] = useState<AboutInfo | null>(null);
-  useEffect(() => { runtimeApi.about().then(setInfo).catch((reason) => notify(reason instanceof Error ? reason.message : t("Action failed"), "error")); }, [notify]);
+function compareVersions(left: string, right: string) {
+  const parse = (version: string) => version.replace(/^v/, "").split(".").map(Number);
+  const leftParts = parse(left);
+  const rightParts = parse(right);
+  if ([...leftParts, ...rightParts].some(Number.isNaN)) return left === right ? 0 : 0;
+  const length = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < length; index += 1) {
+    const difference = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
+    if (difference) return difference > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+function AboutPage({ info, updateResult, updateChecking, updateError, onCheck, notify }: {
+  info: AboutInfo | null;
+  updateResult: UpdateCheckResult | null;
+  updateChecking: boolean;
+  updateError: string | null;
+  onCheck: (releaseOnly: boolean) => Promise<void>;
+  notify: ToastSink;
+}) {
+  const [testVersions, setTestVersions] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState("");
+  const [applying, setApplying] = useState(false);
+  const [applyStatus, setApplyStatus] = useState("");
+  const [applyError, setApplyError] = useState(false);
+  useEffect(() => { setSelectedVersion(updateResult?.versions[0]?.version ?? ""); }, [updateResult]);
   const links = aboutLinkOrder.flatMap((name) => {
     const url = configuredAboutLink(info?.links ?? {}, name);
     return url ? [[name, url] as const] : [];
   });
   const linkLabel = (name: typeof aboutLinkOrder[number]) => name === "github" ? "GitHub" : name === "discord" ? "Discord" : name === "qq_group" ? "QQ群" : name === "qq_channel" ? "QQ频道" : name === "faq" ? "FAQ" : name === "share" ? "Share" : "Sponsor";
+  const selected = updateResult?.versions.find((item) => item.version === selectedVersion);
+  const direction = selected ? compareVersions(selected.version, updateResult?.current_version ?? info?.version ?? "") : 0;
+  const status = updateError
+    ? t("Failed to check for updates: {error}", { error: updateError })
+    : updateChecking ? t("Checking for updates…")
+      : !updateResult ? t("Click to check for updates")
+        : !updateResult.versions.length ? t("No versions are available.")
+          : updateResult.update_available ? "" : t("No updates available.");
+  const apply = async () => {
+    if (!selected || !direction || applying) return;
+    setApplying(true);
+    setApplyError(false);
+    setApplyStatus(t("Starting change to {version}…", { version: selected.version }));
+    try {
+      await runtimeApi.applyUpdate(selected.version);
+      setApplyStatus(t("Update request accepted. The app will restart to apply it."));
+    } catch (reason) {
+      setApplyError(true);
+      setApplyStatus(t("Failed to change version: {error}", { error: reason instanceof Error ? reason.message : t("Action failed") }));
+    } finally {
+      setApplying(false);
+    }
+  };
   return <section className="settings-page about-page">
     {!info ? <div className="task-empty">{t("Loading")}</div> : <>
       <div className="surface-card about-identity">
@@ -562,8 +609,16 @@ function AboutPage({ notify }: { notify: ToastSink }) {
         <div><h1>{info.title}</h1><p>{info.version} · {t(info.debug ? "Debug" : "Release")}</p></div>
         {links.length > 0 && <div className="about-identity-links">{links.map(([name, url]) => name === "share" ? <button type="button" key={name} onClick={() => void navigator.clipboard.writeText(url).then(() => notify(t("Share Link copied to clipboard"), "success")).catch(() => notify(t("Action failed"), "error"))}><AboutLinkIcon name={name} />{t(linkLabel(name))}</button> : <a key={name} href={url} target="_blank" rel="noreferrer noopener"><AboutLinkIcon name={name} />{t(linkLabel(name))}</a>)}</div>}
       </div>
+      {info.update_supported && <section className="about-section"><h2>{t("App update")}</h2><div className="surface-card update-card">
+        <div className="update-controls">
+          {updateResult && updateResult.versions.length > 0 && <label className="version-picker"><span>{t("Version")}</span><select disabled={updateChecking || applying} value={selectedVersion} style={{ width: `${Math.min(26, Math.max(12, ...updateResult.versions.map((item) => item.version.length + 6)))}ch` }} onChange={(event) => { setSelectedVersion(event.target.value); setApplyStatus(""); setApplyError(false); }}>{updateResult.versions.map((item) => <option value={item.version} key={item.version}>{item.version}</option>)}</select></label>}
+          <span className={`update-status ${updateError || applyError ? "error" : ""}`} role={updateError || applyError ? "alert" : "status"}>{applyStatus || status}</span>
+          <div className="update-actions"><label className="config-checkbox"><input type="checkbox" checked={testVersions} disabled={updateChecking || applying} onChange={(event) => setTestVersions(event.target.checked)} /><span className="config-checkbox-mark" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" /><path d="M5.25 10.25 8.6 13.6 14.9 6.9" /></svg></span><span>{t("Check Test Version")}</span></label><button type="button" disabled={updateChecking || applying} onClick={() => { setApplyStatus(""); setApplyError(false); void onCheck(!testVersions); }}><ArrowClockwise20Regular className={updateChecking ? "update-spinner" : undefined} />{t("Check for updates")}</button><button type="button" className="primary-button" disabled={!direction || updateChecking || applying} onClick={() => void apply()}><ArrowClockwise20Regular />{!selected || direction > 0 ? t("Update") : direction < 0 ? t("Downgrade") : t("Current version")}</button></div>
+        </div>
+        {selected && <div className="update-notes">{selected.notes.length ? selected.notes.map((note, index) => <div key={`${index}-${note}`}>• {note}</div>) : t("No release notes.")}</div>}
+      </div></section>}
+      {info.about && <section className="about-section"><h2>{t("Disclaimer")}</h2><div className="surface-card about-copy" dangerouslySetInnerHTML={{ __html: sanitizedAboutHtml(info.about) }} /></section>}
       {info.projects.length > 0 && <section className="about-projects"><h2>{t("Other Projects")}</h2><div>{info.projects.map((project) => <article className="surface-card" key={project.url}><div><strong>{t(project.name)}</strong><small>{project.url.replace("https://github.com/", "")}</small></div><nav><a href={project.url} target="_blank" rel="noreferrer noopener"><GithubMark />{t("GitHub")}</a>{project.website && <a href={project.website} target="_blank" rel="noreferrer noopener"><Globe20Regular />{t("Website")}</a>}</nav></article>)}</div></section>}
-      {info.about && <div className="surface-card about-copy" dangerouslySetInnerHTML={{ __html: sanitizedAboutHtml(info.about) }} />}
     </>}
   </section>;
 }
@@ -869,6 +924,11 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   const [settings, setSettings] = useState<SettingsGroup[]>([]);
   const [capabilities, setCapabilities] = useState<NavigationCapabilities | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(false);
+  const [aboutInfo, setAboutInfo] = useState<AboutInfo | null>(null);
+  const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
+  const [updateChecking, setUpdateChecking] = useState(false);
+  const [updateCheckCompleted, setUpdateCheckCompleted] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [instructionsTask, setInstructionsTask] = useState<AutomationTask | null>(null);
   const [scriptDirty, setScriptDirty] = useState(false);
@@ -889,6 +949,8 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
   const toastTimers = useRef<Map<number, number>>(new Map());
   const toastKeys = useRef<Map<number, string>>(new Map());
   const activeToastMessages = useRef<Set<string>>(new Set());
+  const updateRequestPending = useRef(false);
+  const scheduledUpdateTimer = useRef<number | null>(null);
   const eventSessionKey = ui?.event_session_key;
   const systemNotificationsEnabled = settings.some((group) =>
     group.name === "Notification" && group.fields.some((field) =>
@@ -965,6 +1027,50 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
     catch (reason) { pushToast(reason instanceof Error ? reason.message : t("Could not reach the automation runtime"), "error"); }
     finally { setSettingsLoading(false); }
   }, [pushToast]);
+
+  const checkForUpdates = useCallback(async (releaseOnly = true, manual = true) => {
+    if (manual && scheduledUpdateTimer.current !== null) {
+      window.clearTimeout(scheduledUpdateTimer.current);
+      scheduledUpdateTimer.current = null;
+    }
+    if (updateRequestPending.current) return;
+    updateRequestPending.current = true;
+    setUpdateChecking(true);
+    setUpdateCheckCompleted(false);
+    setUpdateError(null);
+    try {
+      setUpdateResult(await runtimeApi.updates(releaseOnly));
+    } catch (reason) {
+      setUpdateResult(null);
+      setUpdateError(reason instanceof Error ? reason.message : t("Action failed"));
+    } finally {
+      updateRequestPending.current = false;
+      setUpdateChecking(false);
+      setUpdateCheckCompleted(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    runtimeApi.about().then((value) => { if (active) setAboutInfo(value); }).catch((reason) => {
+      if (active) pushToast(reason instanceof Error ? reason.message : t("Action failed"), "error");
+    });
+    return () => { active = false; };
+  }, [pushToast]);
+
+  useEffect(() => {
+    if (!aboutInfo?.update_supported || updateChecking || updateCheckCompleted) return;
+    scheduledUpdateTimer.current = window.setTimeout(() => {
+      scheduledUpdateTimer.current = null;
+      void checkForUpdates(true, false);
+    }, aboutInfo.update_check_delay_ms);
+    return () => {
+      if (scheduledUpdateTimer.current !== null) {
+        window.clearTimeout(scheduledUpdateTimer.current);
+        scheduledUpdateTimer.current = null;
+      }
+    };
+  }, [aboutInfo, checkForUpdates, updateCheckCompleted, updateChecking]);
 
   useEffect(() => {
     let active = true;
@@ -1309,7 +1415,7 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
       <nav className="nav-secondary">
         {secondaryNavigationItems.map(([label, Icon]) => <button type="button" key={label} className={`nav-item ${label === activePage ? "active" : ""}`} aria-current={label === activePage ? "page" : undefined} title={navigationLabel(label)} onClick={() => {
           navigate(label);
-        }}><Icon /><span>{navigationLabel(label)}</span></button>)}
+        }}><Icon /><span>{navigationLabel(label)}</span>{label === "About" && updateCheckCompleted && updateResult?.update_available && <i className="nav-update-dot" aria-label={t("Update available.")} />}</button>)}
       </nav>
     </aside>
 
@@ -1380,7 +1486,7 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
         </div>
       </section>
       <div className="content-spacer" />
-      </> : activePage === "About" ? <AboutPage notify={pushToast} />
+      </> : activePage === "About" ? <AboutPage info={aboutInfo} updateResult={updateResult} updateChecking={updateChecking} updateError={updateError} onCheck={(releaseOnly) => checkForUpdates(releaseOnly, true)} notify={pushToast} />
       : activeTaskTab ? <TaskTabHost
         tab={activeTaskTab}
         notify={pushToast}

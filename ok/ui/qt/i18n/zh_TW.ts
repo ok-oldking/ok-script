@@ -85,6 +85,14 @@
             <source>ok-script App Template</source>
             <translation>ok-script 應用範本</translation>
         </message>
+        <message>
+            <source>App update</source>
+            <translation>應用程式更新</translation>
+        </message>
+        <message>
+            <source>Disclaimer</source>
+            <translation>免責聲明</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
@@ -3561,6 +3569,157 @@
         <message>
             <source>Starting</source>
             <translation>正在啟動</translation>
+        </message>
+        <message>
+            <source>App update</source>
+            <translation>應用程式更新</translation>
+        </message>
+        <message>
+            <source>Disclaimer</source>
+            <translation>免責聲明</translation>
+        </message>
+        <message>
+            <source>Check Test Version</source>
+            <translation>檢查測試版本</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>檢查更新</translation>
+        </message>
+        <message>
+            <source>Click to check for updates</source>
+            <translation>按一下以檢查更新</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>版本</translation>
+        </message>
+        <message>
+            <source>Update</source>
+            <translation>更新</translation>
+        </message>
+        <message>
+            <source>Downgrade</source>
+            <translation>降級</translation>
+        </message>
+        <message>
+            <source>Current version</source>
+            <translation>目前版本</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>正在檢查更新…</translation>
+        </message>
+        <message>
+            <source>Starting change to {version}…</source>
+            <translation>正在切換至 {version}…</translation>
+        </message>
+        <message>
+            <source>Failed to check for updates: {error}</source>
+            <translation>檢查更新失敗：{error}</translation>
+        </message>
+        <message>
+            <source>No versions are available.</source>
+            <translation>沒有可用版本。</translation>
+        </message>
+        <message>
+            <source>No updates available.</source>
+            <translation>已是最新版本。</translation>
+        </message>
+        <message>
+            <source>No release notes.</source>
+            <translation>暫無更新說明。</translation>
+        </message>
+        <message>
+            <source>Update request accepted. The app will restart to apply it.</source>
+            <translation>更新要求已接受。應用程式將重新啟動以套用更新。</translation>
+        </message>
+        <message>
+            <source>Failed to change version: {error}</source>
+            <translation>切換版本失敗：{error}</translation>
+        </message>
+        <message>
+            <source>Update available.</source>
+            <translation>有可用更新。</translation>
+        </message>
+    </context>
+    <context>
+        <name>UpdateCard</name>
+        <message>
+            <source>Check Test Version</source>
+            <translation>檢查測試版本</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>檢查更新</translation>
+        </message>
+        <message>
+            <source>Click to check for updates</source>
+            <translation>按一下以檢查更新</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>版本</translation>
+        </message>
+        <message>
+            <source>Update</source>
+            <translation>更新</translation>
+        </message>
+        <message>
+            <source>Downgrade</source>
+            <translation>降級</translation>
+        </message>
+        <message>
+            <source>Current version</source>
+            <translation>目前版本</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>正在檢查更新…</translation>
+        </message>
+        <message>
+            <source>Starting change to {version}…</source>
+            <translation>正在切換至 {version}…</translation>
+        </message>
+        <message>
+            <source>Failed to check for updates: {error}</source>
+            <translation>檢查更新失敗：{error}</translation>
+        </message>
+        <message>
+            <source>No versions are available.</source>
+            <translation>沒有可用版本。</translation>
+        </message>
+        <message>
+            <source>No updates available.</source>
+            <translation>已是最新版本。</translation>
+        </message>
+        <message>
+            <source>No release notes.</source>
+            <translation>暫無更新說明。</translation>
+        </message>
+        <message>
+            <source>Update request accepted. The app will restart to apply it.</source>
+            <translation>更新要求已接受。應用程式將重新啟動以套用更新。</translation>
+        </message>
+        <message>
+            <source>Failed to change version: {error}</source>
+            <translation>切換版本失敗：{error}</translation>
+        </message>
+        <message>
+            <source>Update checking is not supported by this PyAppify version.</source>
+            <translation>此 PyAppify 版本不支援檢查更新。</translation>
+        </message>
+        <message>
+            <source>Updating is not supported by this PyAppify version.</source>
+            <translation>此 PyAppify 版本不支援更新。</translation>
+        </message>
+        <message>
+            <source>Update-note calculation is not supported.</source>
+            <translation>不支援計算更新說明。</translation>
+        </message>
+        <message>
+            <source>Failed to calculate update notes: {error}</source>
+            <translation>計算更新說明失敗：{error}</translation>
         </message>
     </context>
 </TS>

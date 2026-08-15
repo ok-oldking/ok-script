@@ -6,7 +6,8 @@ from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QScreen
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
 from qfluentwidgets import qconfig, FluentIcon, NavigationItemPosition, MessageBox, InfoBar, \
-    InfoBarPosition, MessageBoxBase, FluentWindow, NavigationDisplayMode, isDarkTheme, Theme
+    InfoBarPosition, MessageBoxBase, FluentWindow, NavigationDisplayMode, isDarkTheme, Theme, \
+    DotInfoBadge, InfoBadgePosition
 from qfluentwidgets.components.widgets.scroll_bar import ScrollBarHandleDisplayMode
 from qfluentwidgets.common.style_sheet import updateStyleSheet
 
@@ -45,6 +46,10 @@ logger = Logger.get_logger(__name__)
 
 NAVIGATION_EXPAND_MAX_WIDTH = 240
 NAVIGATION_EXPAND_FIT_PADDING = 23
+
+
+def update_check_delay_ms():
+    return 10_000 if "PYAPPIFY_PYTHON_TEST" in os.environ else 30_000
 
 
 class MainWindow(FluentWindow):
@@ -210,6 +215,11 @@ class MainWindow(FluentWindow):
         self.about_tab = AboutTab(config)
         self.addSubInterface(self.about_tab, FluentIcon.QUESTION, self.tr('About'),
                              position=NavigationItemPosition.BOTTOM)
+        self.about_update_badge = None
+        self.update_check_timer = None
+        if self.about_tab.update_card is not None:
+            self.about_tab.update_card.update_available_changed.connect(self._set_about_update_available)
+            self.about_tab.update_card.check_started.connect(self._cancel_scheduled_update_check)
 
         dev = self.tr('Debug')
         profile = config.get('profile', "")
@@ -242,6 +252,31 @@ class MainWindow(FluentWindow):
         communicate.global_config.connect(self.goto_global_config)
 
         logger.info('main window __init__ done')
+
+    def _set_about_update_available(self, available):
+        if available and self.about_update_badge is None:
+            about_navigation_item = self.navigationInterface.widget(self.about_tab.objectName())
+            self.about_update_badge = DotInfoBadge.error(
+                self, target=about_navigation_item, position=InfoBadgePosition.NAVIGATION_ITEM
+            )
+        if self.about_update_badge is not None:
+            self.about_update_badge.setVisible(available)
+
+    def _schedule_update_check(self):
+        if self.about_tab.update_card is None:
+            return
+        if self.update_check_timer is None:
+            self.update_check_timer = QTimer(self)
+            self.update_check_timer.setSingleShot(True)
+            self.update_check_timer.timeout.connect(self.about_tab.check_for_updates)
+        update_delay = update_check_delay_ms()
+        logger.info(f'schedule pyappify update check in {update_delay}ms')
+        self.update_check_timer.start(update_delay)
+
+    def _cancel_scheduled_update_check(self):
+        if self.update_check_timer is not None and self.update_check_timer.isActive():
+            logger.info('cancel scheduled pyappify update check because a check has started')
+            self.update_check_timer.stop()
 
     @staticmethod
     def _get_dwm_accent_color():
@@ -513,6 +548,7 @@ class MainWindow(FluentWindow):
         if first_show:
             QTimer.singleShot(0, self.bring_to_front)
             QTimer.singleShot(250, self.show_startup_version_change_notice)
+            self._schedule_update_check()
 
     def set_window_size(self, width, height, min_width, min_height):
         screen = QScreen.availableGeometry(self.screen())

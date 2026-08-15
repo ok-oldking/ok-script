@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import json
+import logging
+import os
 import re
 import secrets
 import shutil
@@ -27,6 +29,7 @@ LOG_LINE_PATTERN = re.compile(
 LOG_LEVELS = {"ALL": 0, "DEBUG": 10, "INFO": 20, "WARNING": 30, "ERROR": 40, "CRITICAL": 50}
 SCRIPT_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*\.py$")
 EVENT_SESSION_KEY_PATTERN = re.compile(r"^[A-Za-z0-9_-]{16,128}$")
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -219,6 +222,25 @@ def _json_value(value: Any):
     return str(value)
 
 
+def _numeric_version(version):
+    value = str(version or "").lstrip("v")
+    return bool(value) and all(part.isdigit() for part in value.split("."))
+
+
+def _compare_pyappify_versions(module, left, right):
+    left = str(left)
+    right = str(right)
+    if left == right:
+        return 0
+    is_greater = getattr(module, "is_greater_version", None)
+    if callable(is_greater):
+        if is_greater(left, right):
+            return 1
+        if is_greater(right, left):
+            return -1
+    return 0
+
+
 def _config_fields(config, descriptions=None, config_types=None, defaults=None):
     """Return the editable fields shared by Qt and web config cards."""
     from ok.core.config_schema import build_config_fields
@@ -350,6 +372,7 @@ class WebRuntime:
         self.icon_url = icon_url
         self._schedule_manager = None
         self._template_store = None
+        self._pyappify_update_lock = threading.Lock()
         self.event_session_key = secrets.token_urlsafe(32)
 
     @property
@@ -654,7 +677,82 @@ class WebRuntime:
             "about": str(self.ok.config.get("about") or ""),
             "links": {str(key): _json_value(value) for key, value in links.items()},
             "projects": [project for project in projects if project["url"].lower().rstrip("/") != current_github],
+            "update_supported": callable(getattr(self.pyappify_module, "get_version_list", None)),
+            "update_check_delay_ms": 10_000 if "PYAPPIFY_PYTHON_TEST" in os.environ else 30_000,
         }
+
+    @property
+    def pyappify_module(self):
+        module = getattr(self, "_pyappify_module", None)
+        if module is None:
+            import pyappify as module
+            self._pyappify_module = module
+        return module
+
+    @property
+    def pyappify_update_lock(self):
+        lock = getattr(self, "_pyappify_update_lock", None)
+        if lock is None:
+            lock = threading.Lock()
+            self._pyappify_update_lock = lock
+        return lock
+
+    def check_for_updates(self, release_only=True):
+        if not isinstance(release_only, bool):
+            raise TypeError("release_only must be a boolean")
+        if not self.pyappify_update_lock.acquire(blocking=False):
+            raise RuntimeError("An update request is already in progress")
+        try:
+            module = self.pyappify_module
+            logger.info("calling pyappify.get_version_list(release_only=%s)", release_only)
+            versions = module.get_version_list(release_only=release_only)
+            logger.info("pyappify.get_version_list result=%r", versions)
+            if not isinstance(versions, list):
+                raise RuntimeError("PyAppify returned an invalid version list")
+            current_version = str(self.ok.config.get("version") or getattr(module, "app_version", "") or "")
+            if "PYAPPIFY_PYTHON_TEST" in os.environ and not _numeric_version(current_version):
+                current_version = "v0.0.0"
+            valid_versions = [
+                item for item in versions
+                if isinstance(item, dict) and item.get("version")
+            ]
+            calculate_notes = getattr(module, "calculate_update_notes", None)
+            if not callable(calculate_notes):
+                raise RuntimeError("Update-note calculation is not supported by this PyAppify version")
+            result_versions = [{
+                "version": str(item["version"]),
+                "notes": [str(note) for note in calculate_notes(
+                    valid_versions, current_version, str(item["version"])
+                )],
+            } for item in valid_versions]
+            update_available = any(
+                _compare_pyappify_versions(module, item["version"], current_version) > 0
+                for item in result_versions
+            )
+            return {
+                "current_version": current_version,
+                "versions": result_versions,
+                "update_available": update_available,
+            }
+        finally:
+            self.pyappify_update_lock.release()
+
+    def update_to_version(self, version):
+        version = str(version or "").strip()
+        if not version:
+            raise ValueError("version must be a non-empty string")
+        if not self.pyappify_update_lock.acquire(blocking=False):
+            raise RuntimeError("An update request is already in progress")
+        try:
+            operation = getattr(self.pyappify_module, "update_to_version", None)
+            if not callable(operation):
+                raise RuntimeError("Updating is not supported by this PyAppify version")
+            logger.info("calling pyappify.update_to_version(%r)", version)
+            result = operation(version)
+            logger.info("pyappify.update_to_version(%r) result=%r", version, result)
+            return {"accepted": True, "version": version, "result": _json_value(result)}
+        finally:
+            self.pyappify_update_lock.release()
 
     def script_templates(self):
         return _script_templates()
@@ -1176,6 +1274,22 @@ def create_web_app(config, ok_instance=None):
     @app.get("/api/about")
     async def about():
         return runtime.about()
+
+    @app.get("/api/updates")
+    async def updates(release_only: bool = True):
+        try:
+            return await asyncio.to_thread(runtime.check_for_updates, release_only)
+        except Exception as exc:
+            logger.exception("Failed to check for updates")
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/api/updates/apply")
+    async def apply_update(body: dict):
+        try:
+            return await asyncio.to_thread(runtime.update_to_version, body.get("version"))
+        except Exception as exc:
+            logger.exception("Failed to change version")
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/scripts")
     async def scripts():

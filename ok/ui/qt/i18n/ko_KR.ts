@@ -85,6 +85,14 @@
             <source>ok-script App Template</source>
             <translation>ok-script 앱 템플릿</translation>
         </message>
+        <message>
+            <source>App update</source>
+            <translation>앱 업데이트</translation>
+        </message>
+        <message>
+            <source>Disclaimer</source>
+            <translation>면책 조항</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
@@ -3566,6 +3574,157 @@
         <message>
             <source>Starting</source>
             <translation>시작 중</translation>
+        </message>
+        <message>
+            <source>App update</source>
+            <translation>앱 업데이트</translation>
+        </message>
+        <message>
+            <source>Disclaimer</source>
+            <translation>면책 조항</translation>
+        </message>
+        <message>
+            <source>Check Test Version</source>
+            <translation>테스트 버전 확인</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>업데이트 확인</translation>
+        </message>
+        <message>
+            <source>Click to check for updates</source>
+            <translation>클릭하여 업데이트 확인</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>버전</translation>
+        </message>
+        <message>
+            <source>Update</source>
+            <translation>업데이트</translation>
+        </message>
+        <message>
+            <source>Downgrade</source>
+            <translation>다운그레이드</translation>
+        </message>
+        <message>
+            <source>Current version</source>
+            <translation>현재 버전</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>업데이트 확인 중…</translation>
+        </message>
+        <message>
+            <source>Starting change to {version}…</source>
+            <translation>{version}(으)로 변경 시작 중…</translation>
+        </message>
+        <message>
+            <source>Failed to check for updates: {error}</source>
+            <translation>업데이트 확인 실패: {error}</translation>
+        </message>
+        <message>
+            <source>No versions are available.</source>
+            <translation>사용 가능한 버전이 없습니다.</translation>
+        </message>
+        <message>
+            <source>No updates available.</source>
+            <translation>사용 가능한 업데이트가 없습니다.</translation>
+        </message>
+        <message>
+            <source>No release notes.</source>
+            <translation>릴리스 노트가 없습니다.</translation>
+        </message>
+        <message>
+            <source>Update request accepted. The app will restart to apply it.</source>
+            <translation>업데이트 요청이 수락되었습니다. 적용을 위해 앱이 다시 시작됩니다.</translation>
+        </message>
+        <message>
+            <source>Failed to change version: {error}</source>
+            <translation>버전 변경 실패: {error}</translation>
+        </message>
+        <message>
+            <source>Update available.</source>
+            <translation>업데이트가 있습니다.</translation>
+        </message>
+    </context>
+    <context>
+        <name>UpdateCard</name>
+        <message>
+            <source>Check Test Version</source>
+            <translation>테스트 버전 확인</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>업데이트 확인</translation>
+        </message>
+        <message>
+            <source>Click to check for updates</source>
+            <translation>클릭하여 업데이트 확인</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>버전</translation>
+        </message>
+        <message>
+            <source>Update</source>
+            <translation>업데이트</translation>
+        </message>
+        <message>
+            <source>Downgrade</source>
+            <translation>다운그레이드</translation>
+        </message>
+        <message>
+            <source>Current version</source>
+            <translation>현재 버전</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>업데이트 확인 중…</translation>
+        </message>
+        <message>
+            <source>Starting change to {version}…</source>
+            <translation>{version}(으)로 변경 시작 중…</translation>
+        </message>
+        <message>
+            <source>Failed to check for updates: {error}</source>
+            <translation>업데이트 확인 실패: {error}</translation>
+        </message>
+        <message>
+            <source>No versions are available.</source>
+            <translation>사용 가능한 버전이 없습니다.</translation>
+        </message>
+        <message>
+            <source>No updates available.</source>
+            <translation>사용 가능한 업데이트가 없습니다.</translation>
+        </message>
+        <message>
+            <source>No release notes.</source>
+            <translation>릴리스 노트가 없습니다.</translation>
+        </message>
+        <message>
+            <source>Update request accepted. The app will restart to apply it.</source>
+            <translation>업데이트 요청이 수락되었습니다. 적용을 위해 앱이 다시 시작됩니다.</translation>
+        </message>
+        <message>
+            <source>Failed to change version: {error}</source>
+            <translation>버전 변경 실패: {error}</translation>
+        </message>
+        <message>
+            <source>Update checking is not supported by this PyAppify version.</source>
+            <translation>이 PyAppify 버전은 업데이트 확인을 지원하지 않습니다.</translation>
+        </message>
+        <message>
+            <source>Updating is not supported by this PyAppify version.</source>
+            <translation>이 PyAppify 버전은 업데이트를 지원하지 않습니다.</translation>
+        </message>
+        <message>
+            <source>Update-note calculation is not supported.</source>
+            <translation>업데이트 노트 계산을 지원하지 않습니다.</translation>
+        </message>
+        <message>
+            <source>Failed to calculate update notes: {error}</source>
+            <translation>업데이트 노트 계산 실패: {error}</translation>
         </message>
     </context>
 </TS>

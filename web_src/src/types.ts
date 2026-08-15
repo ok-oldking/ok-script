@@ -140,7 +140,17 @@ export type AboutInfo = {
   about: string;
   links: Record<string, unknown>;
   projects: Array<{ name: string; url: string; website?: string }>;
+  update_supported: boolean;
+  update_check_delay_ms: number;
 };
+
+export type AppVersion = { version: string; notes: string[] };
+export type UpdateCheckResult = {
+  current_version: string;
+  versions: AppVersion[];
+  update_available: boolean;
+};
+export type UpdateApplyResult = { accepted: boolean; version: string; result: unknown };
 
 export type ScriptSummary = { name: string; modified: number };
 export type ScriptDocument = ScriptSummary & { code: string; error?: string | null };

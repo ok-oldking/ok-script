@@ -1,4 +1,4 @@
-import type { AboutInfo, ActionResult, AutomationTask, CaptureUiState, ExecutorStatus, LogResponse, NavigationCapabilities, ScheduleData, ScriptDocument, ScriptSummary, ScriptTemplate, SettingsGroup, TaskTabManifest, TemplateAnnotations, TemplateImage, ThemeUiState } from "./types";
+import type { AboutInfo, ActionResult, AutomationTask, CaptureUiState, ExecutorStatus, LogResponse, NavigationCapabilities, ScheduleData, ScriptDocument, ScriptSummary, ScriptTemplate, SettingsGroup, TaskTabManifest, TemplateAnnotations, TemplateImage, ThemeUiState, UpdateApplyResult, UpdateCheckResult } from "./types";
 import { t } from "./i18n";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -51,6 +51,8 @@ export const runtimeApi = {
   taskTabAction: <T>(tabId: string, operation: string, body: Record<string, unknown> = {}) =>
     post<T>(`/api/task-tabs/${encodeURIComponent(tabId)}/action/${encodeURIComponent(operation)}`, body),
   about: () => request<AboutInfo>("/api/about"),
+  updates: (releaseOnly = true) => request<UpdateCheckResult>(`/api/updates?release_only=${releaseOnly}`),
+  applyUpdate: (version: string) => post<UpdateApplyResult>("/api/updates/apply", { version }),
   scripts: () => request<ScriptSummary[]>("/api/scripts"),
   scriptTemplates: () => request<ScriptTemplate[]>("/api/script-templates"),
   script: (name: string) => request<ScriptDocument>(`/api/scripts/${encodeURIComponent(name)}`),

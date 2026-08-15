@@ -85,6 +85,14 @@
             <source>ok-script App Template</source>
             <translation>ok-script アプリテンプレート</translation>
         </message>
+        <message>
+            <source>App update</source>
+            <translation>アプリの更新</translation>
+        </message>
+        <message>
+            <source>Disclaimer</source>
+            <translation>免責事項</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
@@ -3557,6 +3565,157 @@
         <message>
             <source>Starting</source>
             <translation>起動中</translation>
+        </message>
+        <message>
+            <source>App update</source>
+            <translation>アプリの更新</translation>
+        </message>
+        <message>
+            <source>Disclaimer</source>
+            <translation>免責事項</translation>
+        </message>
+        <message>
+            <source>Check Test Version</source>
+            <translation>テスト版を確認</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>更新を確認</translation>
+        </message>
+        <message>
+            <source>Click to check for updates</source>
+            <translation>クリックして更新を確認</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>バージョン</translation>
+        </message>
+        <message>
+            <source>Update</source>
+            <translation>更新</translation>
+        </message>
+        <message>
+            <source>Downgrade</source>
+            <translation>ダウングレード</translation>
+        </message>
+        <message>
+            <source>Current version</source>
+            <translation>現在のバージョン</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>更新を確認しています…</translation>
+        </message>
+        <message>
+            <source>Starting change to {version}…</source>
+            <translation>{version} への切り替えを開始しています…</translation>
+        </message>
+        <message>
+            <source>Failed to check for updates: {error}</source>
+            <translation>更新の確認に失敗しました: {error}</translation>
+        </message>
+        <message>
+            <source>No versions are available.</source>
+            <translation>利用可能なバージョンはありません。</translation>
+        </message>
+        <message>
+            <source>No updates available.</source>
+            <translation>利用可能な更新はありません。</translation>
+        </message>
+        <message>
+            <source>No release notes.</source>
+            <translation>リリースノートはありません。</translation>
+        </message>
+        <message>
+            <source>Update request accepted. The app will restart to apply it.</source>
+            <translation>更新要求を受け付けました。適用するためアプリを再起動します。</translation>
+        </message>
+        <message>
+            <source>Failed to change version: {error}</source>
+            <translation>バージョンの変更に失敗しました: {error}</translation>
+        </message>
+        <message>
+            <source>Update available.</source>
+            <translation>更新があります。</translation>
+        </message>
+    </context>
+    <context>
+        <name>UpdateCard</name>
+        <message>
+            <source>Check Test Version</source>
+            <translation>テスト版を確認</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>更新を確認</translation>
+        </message>
+        <message>
+            <source>Click to check for updates</source>
+            <translation>クリックして更新を確認</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>バージョン</translation>
+        </message>
+        <message>
+            <source>Update</source>
+            <translation>更新</translation>
+        </message>
+        <message>
+            <source>Downgrade</source>
+            <translation>ダウングレード</translation>
+        </message>
+        <message>
+            <source>Current version</source>
+            <translation>現在のバージョン</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>更新を確認しています…</translation>
+        </message>
+        <message>
+            <source>Starting change to {version}…</source>
+            <translation>{version} への切り替えを開始しています…</translation>
+        </message>
+        <message>
+            <source>Failed to check for updates: {error}</source>
+            <translation>更新の確認に失敗しました: {error}</translation>
+        </message>
+        <message>
+            <source>No versions are available.</source>
+            <translation>利用可能なバージョンはありません。</translation>
+        </message>
+        <message>
+            <source>No updates available.</source>
+            <translation>利用可能な更新はありません。</translation>
+        </message>
+        <message>
+            <source>No release notes.</source>
+            <translation>リリースノートはありません。</translation>
+        </message>
+        <message>
+            <source>Update request accepted. The app will restart to apply it.</source>
+            <translation>更新要求を受け付けました。適用するためアプリを再起動します。</translation>
+        </message>
+        <message>
+            <source>Failed to change version: {error}</source>
+            <translation>バージョンの変更に失敗しました: {error}</translation>
+        </message>
+        <message>
+            <source>Update checking is not supported by this PyAppify version.</source>
+            <translation>この PyAppify バージョンは更新確認に対応していません。</translation>
+        </message>
+        <message>
+            <source>Updating is not supported by this PyAppify version.</source>
+            <translation>この PyAppify バージョンは更新に対応していません。</translation>
+        </message>
+        <message>
+            <source>Update-note calculation is not supported.</source>
+            <translation>更新ノートの計算には対応していません。</translation>
+        </message>
+        <message>
+            <source>Failed to calculate update notes: {error}</source>
+            <translation>更新ノートの計算に失敗しました: {error}</translation>
         </message>
     </context>
 </TS>

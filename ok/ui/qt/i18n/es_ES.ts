@@ -85,6 +85,14 @@
             <source>ok-script App Template</source>
             <translation>Plantilla de aplicación ok-script</translation>
         </message>
+        <message>
+            <source>App update</source>
+            <translation>Actualización de la aplicación</translation>
+        </message>
+        <message>
+            <source>Disclaimer</source>
+            <translation>Aviso legal</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
@@ -3565,6 +3573,157 @@
         <message>
             <source>Starting</source>
             <translation>Iniciando</translation>
+        </message>
+        <message>
+            <source>App update</source>
+            <translation>Actualización de la aplicación</translation>
+        </message>
+        <message>
+            <source>Disclaimer</source>
+            <translation>Aviso legal</translation>
+        </message>
+        <message>
+            <source>Check Test Version</source>
+            <translation>Buscar versiones de prueba</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>Buscar actualizaciones</translation>
+        </message>
+        <message>
+            <source>Click to check for updates</source>
+            <translation>Haz clic para buscar actualizaciones</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>Versión</translation>
+        </message>
+        <message>
+            <source>Update</source>
+            <translation>Actualizar</translation>
+        </message>
+        <message>
+            <source>Downgrade</source>
+            <translation>Cambiar a una versión anterior</translation>
+        </message>
+        <message>
+            <source>Current version</source>
+            <translation>Versión actual</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>Buscando actualizaciones…</translation>
+        </message>
+        <message>
+            <source>Starting change to {version}…</source>
+            <translation>Iniciando el cambio a {version}…</translation>
+        </message>
+        <message>
+            <source>Failed to check for updates: {error}</source>
+            <translation>No se pudieron buscar actualizaciones: {error}</translation>
+        </message>
+        <message>
+            <source>No versions are available.</source>
+            <translation>No hay versiones disponibles.</translation>
+        </message>
+        <message>
+            <source>No updates available.</source>
+            <translation>No hay actualizaciones disponibles.</translation>
+        </message>
+        <message>
+            <source>No release notes.</source>
+            <translation>No hay notas de la versión.</translation>
+        </message>
+        <message>
+            <source>Update request accepted. The app will restart to apply it.</source>
+            <translation>Se aceptó la solicitud de actualización. La aplicación se reiniciará para aplicarla.</translation>
+        </message>
+        <message>
+            <source>Failed to change version: {error}</source>
+            <translation>No se pudo cambiar la versión: {error}</translation>
+        </message>
+        <message>
+            <source>Update available.</source>
+            <translation>Hay una actualización disponible.</translation>
+        </message>
+    </context>
+    <context>
+        <name>UpdateCard</name>
+        <message>
+            <source>Check Test Version</source>
+            <translation>Buscar versiones de prueba</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>Buscar actualizaciones</translation>
+        </message>
+        <message>
+            <source>Click to check for updates</source>
+            <translation>Haz clic para buscar actualizaciones</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>Versión</translation>
+        </message>
+        <message>
+            <source>Update</source>
+            <translation>Actualizar</translation>
+        </message>
+        <message>
+            <source>Downgrade</source>
+            <translation>Cambiar a una versión anterior</translation>
+        </message>
+        <message>
+            <source>Current version</source>
+            <translation>Versión actual</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>Buscando actualizaciones…</translation>
+        </message>
+        <message>
+            <source>Starting change to {version}…</source>
+            <translation>Iniciando el cambio a {version}…</translation>
+        </message>
+        <message>
+            <source>Failed to check for updates: {error}</source>
+            <translation>No se pudieron buscar actualizaciones: {error}</translation>
+        </message>
+        <message>
+            <source>No versions are available.</source>
+            <translation>No hay versiones disponibles.</translation>
+        </message>
+        <message>
+            <source>No updates available.</source>
+            <translation>No hay actualizaciones disponibles.</translation>
+        </message>
+        <message>
+            <source>No release notes.</source>
+            <translation>No hay notas de la versión.</translation>
+        </message>
+        <message>
+            <source>Update request accepted. The app will restart to apply it.</source>
+            <translation>Se aceptó la solicitud de actualización. La aplicación se reiniciará para aplicarla.</translation>
+        </message>
+        <message>
+            <source>Failed to change version: {error}</source>
+            <translation>No se pudo cambiar la versión: {error}</translation>
+        </message>
+        <message>
+            <source>Update checking is not supported by this PyAppify version.</source>
+            <translation>Esta versión de PyAppify no permite buscar actualizaciones.</translation>
+        </message>
+        <message>
+            <source>Updating is not supported by this PyAppify version.</source>
+            <translation>Esta versión de PyAppify no permite actualizar.</translation>
+        </message>
+        <message>
+            <source>Update-note calculation is not supported.</source>
+            <translation>No se admite el cálculo de notas de actualización.</translation>
+        </message>
+        <message>
+            <source>Failed to calculate update notes: {error}</source>
+            <translation>No se pudieron calcular las notas de actualización: {error}</translation>
         </message>
     </context>
 </TS>
