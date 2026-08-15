@@ -1,4 +1,5 @@
 import argparse
+import glob
 import os
 import re
 
@@ -29,19 +30,6 @@ def _read_deploy_entries(repo_dir):
 def _deploy_includes_folder(deploy_entries, folder):
     folder = folder.replace('\\', '/').strip('/')
     return any(entry == folder or entry.startswith(f'{folder}/') for entry in deploy_entries)
-
-
-def _get_inlined_requirement_folders(repo_dir, inlined_requirements=None):
-    if inlined_requirements is None:
-        inlined_requirements = INLINED_REQUIREMENTS
-    deploy_entries = _read_deploy_entries(repo_dir)
-    if not deploy_entries:
-        return []
-    return [
-        package_folder
-        for package_folder in inlined_requirements.values()
-        if _deploy_includes_folder(deploy_entries, package_folder)
-    ]
 
 
 def _add_folders_to_deploy(repo_dir, folders):
@@ -92,13 +80,29 @@ def inline_site_packages(repo_dir, package_folders=None):
             raise RuntimeError(f'Failed to inline {package_folder} from site-packages')
 
 
+def _remove_inlined_requirements(repo_dir, package_names):
+    package_names = tuple(package_names)
+    if not package_names:
+        return
+    requirement_pattern = re.compile(
+        r'^\s*({})\b'.format('|'.join(re.escape(name) for name in package_names)),
+        re.IGNORECASE,
+    )
+    for file_path in glob.glob(os.path.join(repo_dir, 'requirements*.txt')):
+        with open(file_path, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+        filtered_lines = [line for line in lines if not requirement_pattern.match(line)]
+        with open(file_path, 'w', encoding='utf-8') as file:
+            file.writelines(filtered_lines)
+
+
 def remove_ok_requirements(repo_dir, tag, additional_inlined_requirements=None):
     inlined_requirements = dict(INLINED_REQUIREMENTS)
     if additional_inlined_requirements:
         inlined_requirements.update(additional_inlined_requirements)
-        _add_folders_to_deploy(repo_dir, additional_inlined_requirements.values())
 
-    package_folders = _get_inlined_requirement_folders(repo_dir, inlined_requirements)
+    package_folders = inlined_requirements.values()
+    _add_folders_to_deploy(repo_dir, package_folders)
     inline_site_packages(repo_dir, package_folders)
 
     config_file = get_file_in_path_or_cwd(repo_dir, 'config.py')
@@ -108,25 +112,12 @@ def remove_ok_requirements(repo_dir, tag, additional_inlined_requirements=None):
     with open(config_file, 'w', encoding='utf-8') as file:
         file.write(new_content)
 
-    file_path = os.path.join(repo_dir, 'requirements.txt')
-    with open(file_path, 'r', encoding='utf-8') as file:
-        lines = file.readlines()
-    inlined_packages = [
-        package_name
-        for package_name, package_folder in inlined_requirements.items()
-        if package_folder in package_folders
-    ]
-    if inlined_packages:
-        requirement_pattern = r'^\s*({})\b'.format('|'.join(re.escape(name) for name in inlined_packages))
-        filtered_lines = [line for line in lines if not re.match(requirement_pattern, line, re.IGNORECASE)]
-    else:
-        filtered_lines = lines
-    with open(file_path, 'w', encoding='utf-8') as file:
-        file.writelines(filtered_lines)
+    _remove_inlined_requirements(repo_dir, inlined_requirements.keys())
+
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Inline deployment requirements.')
-    parser.add_argument('--tag', help='Set the application version and remove inlined packages from requirements.txt.')
+    parser.add_argument('--tag', help='Set the application version and remove inlined packages from requirements files.')
     parser.add_argument(
         '--add-inlined-requirement',
         action='append',
@@ -145,7 +136,7 @@ def main(argv=None):
     else:
         inlined_requirements = dict(INLINED_REQUIREMENTS)
         inlined_requirements.update(additional_inlined_requirements)
-        _add_folders_to_deploy(repo_dir, additional_inlined_requirements.values())
+        _add_folders_to_deploy(repo_dir, inlined_requirements.values())
         inline_site_packages(repo_dir, inlined_requirements.values())
 
 
