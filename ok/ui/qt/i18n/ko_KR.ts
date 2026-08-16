@@ -323,6 +323,10 @@
             <source>Share Link copied to clipboard</source>
             <translation>공유 링크가 클립보드에 복사되었습니다</translation>
         </message>
+        <message>
+            <source>Download</source>
+            <translation>다운로드</translation>
+        </message>
     </context>
     <context>
         <name>LogWindow</name>
@@ -3725,6 +3729,17 @@
         <message>
             <source>Failed to calculate update notes: {error}</source>
             <translation>업데이트 노트 계산 실패: {error}</translation>
+        </message>
+        <message>
+            <source>Download</source>
+            <translation>다운로드</translation>
+        </message>
+    </context>
+    <context>
+        <name>ProjectCard</name>
+        <message>
+            <source>Download</source>
+            <translation>다운로드</translation>
         </message>
     </context>
 </TS>

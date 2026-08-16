@@ -643,7 +643,7 @@ class WebRuntime:
     def about(self):
         links = self.ok.config.get("links") or {}
         projects = [
-            {"name": "ok-py Automation Tool", "url": "https://github.com/ok-oldking/ok-py", "website": "https://ok-script.com/"},
+            {"name": "ok-script", "url": "https://github.com/ok-oldking/ok-script", "website": "https://ok-script.com/"},
             {"name": "ok-script App Template", "url": "https://github.com/ok-oldking/ok-script-app", "website": "https://ok-script.com/app/en/"},
             {"name": "Wuthering Waves", "url": "https://github.com/ok-oldking/ok-wuthering-waves", "website": "https://ok-script.com/ok-ww/en/"},
             {"name": "Girls' Frontline 2", "url": "https://github.com/ok-oldking/ok-gf2"},

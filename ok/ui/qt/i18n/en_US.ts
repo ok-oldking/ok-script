@@ -314,6 +314,10 @@
             <source>Share Link copied to clipboard</source>
             <translation>Share Link copied to clipboard</translation>
         </message>
+        <message>
+            <source>Download</source>
+            <translation>Download</translation>
+        </message>
     </context>
     <context>
         <name>LogWindow</name>
@@ -3726,6 +3730,17 @@
         <message>
             <source>Failed to calculate update notes: {error}</source>
             <translation>Failed to calculate update notes: {error}</translation>
+        </message>
+        <message>
+            <source>Download</source>
+            <translation>Download</translation>
+        </message>
+    </context>
+    <context>
+        <name>ProjectCard</name>
+        <message>
+            <source>Download</source>
+            <translation>Download</translation>
         </message>
     </context>
 </TS>

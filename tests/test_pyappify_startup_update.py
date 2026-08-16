@@ -228,6 +228,42 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         tab.deleteLater()
         app.processEvents()
 
+    def test_project_cards_constrain_long_urls_and_match_link_button_spacing(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.about.ProjectCard import ProjectCard
+
+        app = QApplication.instance() or QApplication([])
+        url = "https://github.com/example/a-very-long-project-name-that-must-not-expand-the-about-window"
+        card = ProjectCard("Example", url, "https://example.com")
+        app.processEvents()
+
+        self.assertEqual(6, card.hBoxLayout.spacing())
+        self.assertEqual(11, card.hBoxLayout.itemAt(card.hBoxLayout.count() - 1).spacerItem().sizeHint().width())
+        self.assertLessEqual(card.sizeHint().width(), 520)
+        self.assertEqual(url, card.contentLabel.toolTip())
+        card.deleteLater()
+        app.processEvents()
+
+    def test_update_download_button_is_primary_and_precedes_test_version_control(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        from qfluentwidgets import PrimaryPushButton
+        from ok.ui.qt.about.UpdateCard import UpdateCard
+
+        app = QApplication.instance() or QApplication([])
+        card = UpdateCard("v1.0.0", SimpleNamespace(), download_url="https://example.com/download")
+        widgets = [
+            card.controls_layout.itemAt(index).widget()
+            for index in range(card.controls_layout.count())
+            if card.controls_layout.itemAt(index).widget() is not None
+        ]
+
+        self.assertIsInstance(card.download_button, PrimaryPushButton)
+        self.assertLess(widgets.index(card.download_button), widgets.index(card.test_version_checkbox))
+        card.deleteLater()
+        app.processEvents()
+
     def test_update_card_calculates_upgrade_and_downgrade_notes(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         from PySide6.QtCore import Qt
@@ -427,6 +463,23 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         self.assertIn("#d13438", card.status_label.styleSheet())
         self.assertTrue(card.version_label.isHidden())
         self.assertTrue(card.version_combo.isHidden())
+        card.deleteLater()
+        app.processEvents()
+
+    def test_long_failed_request_error_wraps_without_widening_status_label(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.about.UpdateCard import UpdateCard
+
+        app = QApplication.instance() or QApplication([])
+        card = UpdateCard("v1.0.0", SimpleNamespace())
+        message = "Failed to check for updates: " + ("launcher executable path is invalid; " * 20)
+        card._set_status(message, error=True)
+        app.processEvents()
+
+        self.assertTrue(card.status_label.wordWrap())
+        self.assertLessEqual(card.status_label.minimumSizeHint().width(), 400)
+        self.assertEqual(message, card.status_label.toolTip())
         card.deleteLater()
         app.processEvents()
 

@@ -490,7 +490,7 @@ function ShareMark() {
   return <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.4"><circle cx="4" cy="8" r="1.7" /><circle cx="12" cy="4" r="1.7" /><circle cx="12" cy="12" r="1.7" /><path d="m5.5 7.2 5-2.4m-5 4 5 2.4" /></svg>;
 }
 
-const aboutLinkOrder = ["github", "discord", "qq_group", "qq_channel", "faq", "share", "sponsor"] as const;
+const aboutLinkOrder = ["github", "download", "discord", "qq_group", "qq_channel", "faq", "share", "sponsor"] as const;
 
 function localizedLink(value: unknown): string | null {
   if (typeof value === "string") return value;
@@ -517,6 +517,7 @@ function AboutLinkIcon({ name }: { name: typeof aboutLinkOrder[number] }) {
   if (name === "discord") return <DiscordMark />;
   if (name === "qq_group" || name === "qq_channel") return <ChatMark />;
   if (name === "faq") return <QuestionCircle20Regular />;
+  if (name === "download") return <ArrowDown20Regular />;
   if (name === "sponsor") return <HeartMark />;
   if (name === "share") return <ShareMark />;
   return <Info20Regular />;
@@ -578,7 +579,8 @@ function AboutPage({ info, updateResult, updateChecking, updateError, onCheck, n
     const url = configuredAboutLink(info?.links ?? {}, name);
     return url ? [[name, url] as const] : [];
   });
-  const linkLabel = (name: typeof aboutLinkOrder[number]) => name === "github" ? "GitHub" : name === "discord" ? "Discord" : name === "qq_group" ? "QQ群" : name === "qq_channel" ? "QQ频道" : name === "faq" ? "FAQ" : name === "share" ? "Share" : "Sponsor";
+  const linkLabel = (name: typeof aboutLinkOrder[number]) => name === "github" ? "GitHub" : name === "download" ? "Download" : name === "discord" ? "Discord" : name === "qq_group" ? "QQ群" : name === "qq_channel" ? "QQ频道" : name === "faq" ? "FAQ" : name === "share" ? "Share" : "Sponsor";
+  const downloadUrl = configuredAboutLink(info?.links ?? {}, "download");
   const selected = updateResult?.versions.find((item) => item.version === selectedVersion);
   const direction = selected ? compareVersions(selected.version, updateResult?.current_version ?? info?.version ?? "") : 0;
   const status = updateError
@@ -613,12 +615,13 @@ function AboutPage({ info, updateResult, updateChecking, updateError, onCheck, n
         <div className="update-controls">
           {updateResult && updateResult.versions.length > 0 && <label className="version-picker"><span>{t("Version")}</span><select disabled={updateChecking || applying} value={selectedVersion} style={{ width: `${Math.min(26, Math.max(12, ...updateResult.versions.map((item) => item.version.length + 6)))}ch` }} onChange={(event) => { setSelectedVersion(event.target.value); setApplyStatus(""); setApplyError(false); }}>{updateResult.versions.map((item) => <option value={item.version} key={item.version}>{item.version}</option>)}</select></label>}
           <span className={`update-status ${updateError || applyError ? "error" : ""}`} role={updateError || applyError ? "alert" : "status"}>{applyStatus || status}</span>
+          {updateError && downloadUrl && <a className="update-download" href={downloadUrl} target="_blank" rel="noreferrer noopener"><ArrowDown20Regular />{t("Download")}</a>}
           <div className="update-actions"><label className="config-checkbox"><input type="checkbox" checked={testVersions} disabled={updateChecking || applying} onChange={(event) => setTestVersions(event.target.checked)} /><span className="config-checkbox-mark" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" /><path d="M5.25 10.25 8.6 13.6 14.9 6.9" /></svg></span><span>{t("Check Test Version")}</span></label><button type="button" disabled={updateChecking || applying} onClick={() => { setApplyStatus(""); setApplyError(false); void onCheck(!testVersions); }}><ArrowClockwise20Regular className={updateChecking ? "update-spinner" : undefined} />{t("Check for updates")}</button><button type="button" className="primary-button" disabled={!direction || updateChecking || applying} onClick={() => void apply()}><ArrowClockwise20Regular />{!selected || direction > 0 ? t("Update") : direction < 0 ? t("Downgrade") : t("Current version")}</button></div>
         </div>
         {selected && <div className="update-notes">{selected.notes.length ? selected.notes.map((note, index) => <div key={`${index}-${note}`}>• {note}</div>) : t("No release notes.")}</div>}
       </div></section>}
       {info.about && <section className="about-section"><h2>{t("Disclaimer")}</h2><div className="surface-card about-copy" dangerouslySetInnerHTML={{ __html: sanitizedAboutHtml(info.about) }} /></section>}
-      {info.projects.length > 0 && <section className="about-projects"><h2>{t("Other Projects")}</h2><div>{info.projects.map((project) => <article className="surface-card" key={project.url}><div><strong>{t(project.name)}</strong><small>{project.url.replace("https://github.com/", "")}</small></div><nav><a href={project.url} target="_blank" rel="noreferrer noopener"><GithubMark />{t("GitHub")}</a>{project.website && <a href={project.website} target="_blank" rel="noreferrer noopener"><Globe20Regular />{t("Website")}</a>}</nav></article>)}</div></section>}
+      {info.projects.length > 0 && <section className="about-projects"><h2>{t("Other Projects")}</h2><div>{info.projects.map((project) => <article className="surface-card" key={project.url}><div><strong>{t(project.name)}</strong><small>{project.url.replace("https://github.com/", "")}</small></div><nav><a href={project.url} target="_blank" rel="noreferrer noopener"><GithubMark />{t("GitHub")}</a>{project.website && <a href={project.website} target="_blank" rel="noreferrer noopener"><ArrowDown20Regular />{t("Download")}</a>}</nav></article>)}</div></section>}
     </>}
   </section>;
 }

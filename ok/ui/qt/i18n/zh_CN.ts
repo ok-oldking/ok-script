@@ -314,6 +314,10 @@
             <source>Share Link copied to clipboard</source>
             <translation>分享链接已经复制到剪切板</translation>
         </message>
+        <message>
+            <source>Download</source>
+            <translation>下载</translation>
+        </message>
     </context>
     <context>
         <name>LogWindow</name>
@@ -3722,6 +3726,17 @@
         <message>
             <source>Failed to calculate update notes: {error}</source>
             <translation>计算更新说明失败：{error}</translation>
+        </message>
+        <message>
+            <source>Download</source>
+            <translation>下载</translation>
+        </message>
+    </context>
+    <context>
+        <name>ProjectCard</name>
+        <message>
+            <source>Download</source>
+            <translation>下载</translation>
         </message>
     </context>
 </TS>

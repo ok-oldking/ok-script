@@ -1,8 +1,8 @@
 import os
 import threading
 
-from PySide6.QtCore import QEvent, Signal, Qt
-from PySide6.QtGui import QFontMetrics, QIcon, QPixmap
+from PySide6.QtCore import QEvent, QUrl, Signal, Qt
+from PySide6.QtGui import QDesktopServices, QFontMetrics, QIcon, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CheckBox, ComboBox, FluentIcon, IndeterminateProgressRing, \
     PrimaryPushButton, PushButton
@@ -51,7 +51,7 @@ class UpdateCard(QWidget):
     VERSION_COMBO_MIN_WIDTH = 100
     VERSION_COMBO_MAX_WIDTH = 240
 
-    def __init__(self, current_version, pyappify_module, parent=None, exit_event=None):
+    def __init__(self, current_version, pyappify_module, parent=None, exit_event=None, download_url=None):
         super().__init__(parent)
         self.current_version = current_version or getattr(pyappify_module, "app_version", None) or ""
         if "PYAPPIFY_PYTHON_TEST" in os.environ and not _is_numeric_version(self.current_version):
@@ -59,6 +59,7 @@ class UpdateCard(QWidget):
             self.current_version = "v0.0.0"
         self.pyappify_module = pyappify_module
         self.exit_event = exit_event
+        self.download_url = download_url
         self.versions = []
         self._busy = False
         logger.info(
@@ -88,15 +89,27 @@ class UpdateCard(QWidget):
         self.update_button = PrimaryPushButton(FluentIcon.UPDATE, self.tr("Update"), self)
         self.update_button.clicked.connect(self.update_to_selected_version)
         self.update_button.setEnabled(False)
+        self.download_button = PrimaryPushButton(self.tr("Download"), self, icon=FluentIcon.DOWNLOAD)
+        self.download_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self.download_url)))
+        self.download_button.hide()
 
         self.controls_layout = QHBoxLayout()
-        self.controls_layout.setContentsMargins(0, 0, 0, 0)
+        self.controls_layout.setContentsMargins(0, 0, 11, 0)
+        self.controls_layout.setSpacing(6)
         self.version_label = BodyLabel(self.tr("Version"), self)
         self.status_label = BodyLabel(self.tr("Click to check for updates"), self)
+        self.status_label.setWordWrap(True)
+        self.status_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.status_label.setMinimumWidth(0)
+        self.status_label.setMaximumWidth(300)
+        status_size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        status_size_policy.setHeightForWidth(True)
+        self.status_label.setSizePolicy(status_size_policy)
         self.controls_layout.addWidget(self.version_label)
         self.controls_layout.addWidget(self.version_combo)
         self.controls_layout.addWidget(self.status_label)
         self.controls_layout.addStretch(1)
+        self.controls_layout.addWidget(self.download_button)
         self.controls_layout.addWidget(self.test_version_checkbox)
         self.controls_layout.addWidget(self.check_button)
         self.controls_layout.addWidget(self.update_button)
@@ -300,7 +313,9 @@ class UpdateCard(QWidget):
 
     def _set_status(self, message, error=False):
         self.status_label.setText(message)
+        self.status_label.setToolTip(message if error else "")
         self.status_label.setStyleSheet("color: #d13438;" if error else "")
+        self.download_button.setVisible(error and bool(self.download_url))
 
     def _compare_versions(self, left, right):
         if left == right:

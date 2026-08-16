@@ -323,6 +323,10 @@
             <source>Share Link copied to clipboard</source>
             <translation>分享連結已複製到剪貼簿</translation>
         </message>
+        <message>
+            <source>Download</source>
+            <translation>下載</translation>
+        </message>
     </context>
     <context>
         <name>LogWindow</name>
@@ -3720,6 +3724,17 @@
         <message>
             <source>Failed to calculate update notes: {error}</source>
             <translation>計算更新說明失敗：{error}</translation>
+        </message>
+        <message>
+            <source>Download</source>
+            <translation>下載</translation>
+        </message>
+    </context>
+    <context>
+        <name>ProjectCard</name>
+        <message>
+            <source>Download</source>
+            <translation>下載</translation>
         </message>
     </context>
 </TS>

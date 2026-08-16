@@ -28,8 +28,10 @@ class AboutTab(Tab):
 
         self.update_card = None
         if callable(getattr(pyappify_module, 'get_version_list', None)):
+            links = config.get('links') or {}
             self.update_card = UpdateCard(
-                config.get('version'), pyappify_module, self, exit_event=exit_event
+                config.get('version'), pyappify_module, self, exit_event=exit_event,
+                download_url=get_localized_app_config(links, 'download'),
             )
             self.add_card(self.tr("App update"), self.update_card)
         else:
@@ -54,16 +56,16 @@ class AboutTab(Tab):
             self.add_card(self.tr("Disclaimer"), about_label)
 
         projects = [
-            {"name": self.tr("ok-py Automation Tool"), "url": "https://github.com/ok-oldking/ok-py"},
-            {"name": self.tr("ok-script App Template"), "url": "https://github.com/ok-oldking/ok-script-app"},
-            {"name": self.tr("Wuthering Waves"), "url": "https://github.com/ok-oldking/ok-wuthering-waves"},
+            {"name": "ok-script", "url": "https://github.com/ok-oldking/ok-script", "website": "https://ok-script.com/"},
+            {"name": self.tr("ok-script App Template"), "url": "https://github.com/ok-oldking/ok-script-app", "website": "https://app.ok-script.com/"},
+            {"name": self.tr("Wuthering Waves"), "url": "https://github.com/ok-oldking/ok-wuthering-waves", "website": "https://ok-ww.ok-script.com/"},
             {"name": self.tr("Girls' Frontline 2"), "url": "https://github.com/ok-oldking/ok-gf2"},
-            {"name": self.tr("Star Resonance"), "url": "https://github.com/Sanheiii/ok-star-resonance"},
+            {"name": self.tr("Star Resonance"), "url": "https://github.com/Sanheiii/ok-star-resonance", "website": "https://ok-script.com/ok-star-resonance/"},
             {"name": self.tr("Duet Night Abyss"), "url": "https://github.com/BnanZ0/ok-duet-night-abyss"},
-            {"name": self.tr("Chaos Zero Nightmare"), "url": "https://github.com/baoxin1100/ok-kes"},
-            {"name": self.tr("Onmyoji"), "url": "https://github.com/YunLiuZ/ok-Onmyoji"},
-            {"name": self.tr("Arknights: Endfield"), "url": "https://github.com/AliceJump/ok-end-field"},
-            {"name": self.tr("Neverness to Everness"), "url": "https://github.com/BnanZ0/ok-neverness-to-everness"},
+            {"name": self.tr("Chaos Zero Nightmare"), "url": "https://github.com/baoxin1100/ok-kes", "website": "https://ok-script.com/ok-kes/"},
+            {"name": self.tr("Onmyoji"), "url": "https://github.com/YunLiuZ/ok-Onmyoji", "website": "https://ok-script.com/ok-onmyoji/"},
+            {"name": self.tr("Arknights: Endfield"), "url": "https://github.com/AliceJump/ok-end-field", "website": "https://ok-script.com/ok-end-field/"},
+            {"name": self.tr("Neverness to Everness"), "url": "https://github.com/BnanZ0/ok-neverness-to-everness", "website": "https://ok-script.com/ok-nte/"},
         ]
 
         def normalize_url(url):
@@ -82,10 +84,12 @@ class AboutTab(Tab):
             grid_layout.setContentsMargins(0, 0, 0, 0)
             grid_layout.setHorizontalSpacing(12)
             grid_layout.setVerticalSpacing(12)
+            grid_layout.setColumnStretch(0, 1)
+            grid_layout.setColumnStretch(1, 1)
             grid_layout.setAlignment(Qt.AlignTop)
 
             for i, project in enumerate(filtered_projects):
-                card = ProjectCard(project['name'], project['url'], grid_widget)
+                card = ProjectCard(project['name'], project['url'], project.get('website'), grid_widget)
                 grid_layout.addWidget(card, i // 2, i % 2)
 
             self.group = self.add_card(self.tr("Other Projects"), grid_widget)

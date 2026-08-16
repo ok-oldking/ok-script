@@ -431,6 +431,8 @@ h2 { margin: 0 0 8px; color: #f4eff1; font-size: .88rem; line-height: 1.3; font-
 .version-picker select { min-width: 12ch; max-width: 26ch; height: var(--push-button-height); padding: 0 28px 0 9px; border: 1px solid var(--stroke); border-radius: 6px; background: rgba(255,255,255,.07); color: inherit; }
 .version-picker option { background: #30282d; color: #eee9ec; }
 .update-status { min-width: 0; color: var(--text-muted); font-size: .72rem; }
+.update-download { display: inline-flex; flex: 0 0 auto; min-height: var(--push-button-height); align-items: center; gap: var(--button-icon-gap); padding: 0 9px; border-radius: 6px; background: rgba(255,255,255,.07); color: inherit; font-size: .72rem; text-decoration: none; }
+.update-download:hover { background: rgba(255,255,255,.11); }
 .update-status.error { color: #ff6b75; }
 .update-actions { display: flex; align-items: center; gap: 7px; margin-left: auto; }
 .update-actions button { display: inline-flex; min-height: var(--push-button-height); align-items: center; justify-content: center; gap: var(--button-icon-gap); padding: 0 11px; border: 0; border-radius: 6px; background: rgba(255,255,255,.07); color: inherit; cursor: pointer; white-space: nowrap; }

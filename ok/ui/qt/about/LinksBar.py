@@ -25,6 +25,12 @@ class LinksBar(QWidget):
             self.github_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(github_url)))
             self.layout.addWidget(self.github_button, alignment=Qt.AlignRight, stretch=0)
 
+        download_url = self.get_url('download')
+        if download_url:
+            self.download_button = PushButton(self.tr("Download"), icon=FluentIcon.DOWNLOAD)
+            self.download_button.clicked.connect(lambda: self.open_url('download'))
+            self.layout.addWidget(self.download_button, alignment=Qt.AlignRight, stretch=0)
+
         if self.get_url('discord'):
             self.discord_button = PushButton(self.tr("Discord"), icon=OKIcon.DISCORD)
             self.discord_button.clicked.connect(lambda: self.open_url('discord'))

@@ -323,6 +323,10 @@
             <source>Share Link copied to clipboard</source>
             <translation>共有リンクをクリップボードにコピーしました</translation>
         </message>
+        <message>
+            <source>Download</source>
+            <translation>ダウンロード</translation>
+        </message>
     </context>
     <context>
         <name>LogWindow</name>
@@ -3716,6 +3720,17 @@
         <message>
             <source>Failed to calculate update notes: {error}</source>
             <translation>更新ノートの計算に失敗しました: {error}</translation>
+        </message>
+        <message>
+            <source>Download</source>
+            <translation>ダウンロード</translation>
+        </message>
+    </context>
+    <context>
+        <name>ProjectCard</name>
+        <message>
+            <source>Download</source>
+            <translation>ダウンロード</translation>
         </message>
     </context>
 </TS>
