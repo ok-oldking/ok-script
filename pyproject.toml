@@ -12,6 +12,7 @@ name = "ok-script"
 dynamic = ["version"]
 description = "Automation with Computer Vision for Python"
 readme = "README.md"
+license = { file = "LICENSE.txt" }
 requires-python = ">=3.11"
 authors = [
     { name = "ok-oldking", email = "firedcto@gmail.com" },

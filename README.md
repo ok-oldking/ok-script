@@ -102,6 +102,36 @@ python -m pip install --editable . --group default --group dev
 - [PyPI](https://pypi.org/project/ok-script/)
 - [GitHub](https://github.com/ok-oldking/ok-script)
 
+## 致谢
+
+ok-script 的开发离不开以下开源项目：
+
+- [PyAppify](https://github.com/ok-oldking/pyappify)：用于应用更新和打包。
+- [OnnxOCR](https://github.com/ok-oldking/OnnxOCR)：提供支持 Intel NPU 的 OCR，
+  支持通过 OpenVINO 或 ONNX Runtime 推理，并使用 PaddleOCR v5 模型。
+- [PySide6](https://wiki.qt.io/Qt_for_Python)：提供基于 Qt 的桌面界面绑定。
+- [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets)：Qt
+  界面使用的 Fluent UI 组件。
+- [OpenCV](https://opencv.org/)、[NumPy](https://numpy.org/) 和
+  [Pillow](https://python-pillow.org/)：用于图像处理和计算机视觉。
+- [FastAPI](https://fastapi.tiangolo.com/)、[Uvicorn](https://www.uvicorn.org/)
+  和 [pywebview](https://pywebview.flowrl.com/)：用于 Web 界面支持。
+- [adbutils](https://github.com/openatx/adbutils)：用于 Android 设备连接。
+
+上述依赖均受其各自许可证约束，详情请参阅对应项目页面。
+
 ## 许可证
 
-本项目采用 [AGPL-3.0 许可证](LICENSE.txt)。
+本项目采用 [Apache License 2.0 + Commons Clause 及附加条款](LICENSE.txt)。
+
+允许的使用方式：
+
+- 可用于闭源项目或商业项目。
+- 可以 fork、本项目改进，并保持 fork 开源且免费。
+
+限制：
+
+- 禁止直接出售本项目，或仅改名、稍作修改后将其作为竞争产品出售或推广。
+- 禁止将本项目用于黑客攻击、未授权访问、恶意软件、欺诈或其他违法活动。
+- 任何使用 ok-script 的项目，都必须在项目网站、GitHub 或软件本身至少一处提及并链接 [ok-script.com](https://ok-script.com/) 或 [ok-script GitHub](https://github.com/ok-oldking/ok-script)。
+- Qt UI 的使用还必须遵守 [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 的许可证。

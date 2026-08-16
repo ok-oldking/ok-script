@@ -104,6 +104,47 @@ For a visual scripting experience built on ok-script, see [`ok-py`](https://gith
 - [PyPI](https://pypi.org/project/ok-script/)
 - [GitHub](https://github.com/ok-oldking/ok-script)
 
+## Credits
+
+ok-script is made possible by these open-source projects:
+
+- [PyAppify](https://github.com/ok-oldking/pyappify) — application updating
+  and packaging.
+- [OnnxOCR](https://github.com/ok-oldking/OnnxOCR) — OCR with Intel NPU
+  support through OpenVINO or ONNX Runtime, using a PaddleOCR v5 model.
+- [PySide6](https://wiki.qt.io/Qt_for_Python) — Qt-based desktop UI bindings.
+- [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) —
+  Fluent UI components used by the Qt interface.
+- [OpenCV](https://opencv.org/), [NumPy](https://numpy.org/), and
+  [Pillow](https://python-pillow.org/) — image processing and computer vision.
+- [FastAPI](https://fastapi.tiangolo.com/),
+  [Uvicorn](https://www.uvicorn.org/), and
+  [pywebview](https://pywebview.flowrl.com/) — web interface support.
+- [adbutils](https://github.com/openatx/adbutils) — Android device
+  connectivity.
+
+Each dependency remains subject to its own license. See the respective
+project pages for details.
+
 ## License
 
-This project is licensed under the [GNU AGPL v3](LICENSE.txt).
+This project is licensed under [Apache License 2.0 with Commons Clause and
+additional terms](LICENSE.txt).
+
+The following uses are allowed:
+
+- Use in closed-source and commercial projects.
+- Forking the project, making improvements, and keeping the fork open source
+  and free.
+
+The following restrictions apply:
+
+- Do not take this project, rename it or make only minor changes, and sell it
+  or market it as a competing product.
+- Do not use it for hacking, unauthorized access, malware, fraud, or any other
+  illegal activity.
+- Any project using ok-script must mention it and link to [ok-script.com](https://ok-script.com/)
+  or the [ok-script GitHub repository](https://github.com/ok-oldking/ok-script)
+  on the project's website, GitHub repository, or in the software itself.
+- Qt UI use is separately subject to the license of
+  [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets).
