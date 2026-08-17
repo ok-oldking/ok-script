@@ -46,6 +46,7 @@ logger = Logger.get_logger(__name__)
 
 NAVIGATION_EXPAND_MAX_WIDTH = 240
 NAVIGATION_EXPAND_FIT_PADDING = 23
+DEFAULT_THEME_COLOR = qconfig.themeColor.defaultValue
 
 
 def update_check_delay_ms():
@@ -62,6 +63,7 @@ class MainWindow(FluentWindow):
         self.stackedWidget.setAnimationEnabled(False)
         self._theme_cooldowns = set()
         logger.info('main window __init__')
+        self._configured_theme_color = DEFAULT_THEME_COLOR
         self._sync_system_accent_color(refresh=True)
         qconfig.themeChanged.connect(self._on_theme_changed)
         navigation_scroll_area = self.navigationInterface.panel.scrollArea
@@ -323,6 +325,15 @@ class MainWindow(FluentWindow):
         return QColor(red, green, blue)
 
     def _sync_system_accent_color(self, refresh=False):
+        if qconfig.themeMode.value != Theme.AUTO:
+            configured_color = getattr(self, '_configured_theme_color', None)
+            if configured_color is None or qconfig.get(qconfig.themeColor) == configured_color:
+                return False
+            qconfig.set(qconfig.themeColor, configured_color, save=False)
+            if refresh:
+                updateStyleSheet()
+            return True
+
         color = self.get_system_primary_theme_color()
         if color is None or color == qconfig.get(qconfig.themeColor):
             return False
