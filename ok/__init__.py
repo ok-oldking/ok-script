@@ -287,6 +287,7 @@ class App(_OverlayConfigMixin):
         from ok.ui.qt.util.app import init_app_config
         self.app, self.locale = init_app_config()
         install_qt_event_dispatcher()
+        self.app.aboutToQuit.connect(self._close_device_manager)
         if task_executor is not None:
             task_executor.locale = self.locale
             task_executor.load_tr()
@@ -335,8 +336,15 @@ class App(_OverlayConfigMixin):
         if self.overlay_window is not None:
             self.overlay_window.close()
         self.exit_event.set()
+        self._close_device_manager()
         from PySide6.QtCore import QMetaObject, Qt
         QMetaObject.invokeMethod(self.app, "quit", Qt.QueuedConnection)
+
+    @staticmethod
+    def _close_device_manager():
+        device_manager = getattr(og, 'device_manager', None)
+        if device_manager is not None:
+            device_manager.close()
 
     def tr(self, key):
         from PySide6.QtCore import QCoreApplication

@@ -129,6 +129,16 @@ class DeviceManager:
             if self.hwnd_window.exe_full_path:
                 kill_exe(abs_path=self.hwnd_window.exe_full_path)
 
+    def close(self):
+        """Stop capture resources before Qt/Python teardown begins."""
+        capture_method = self.capture_method
+        self.capture_method = None
+        if capture_method is not None:
+            try:
+                capture_method.close()
+            except Exception as e:
+                logger.error(f'capture method close failed: {e}')
+
     def select_hwnd(self, exe, hwnd):
         self.config['selected_exe'] = exe
         self.config['selected_hwnd'] = hwnd

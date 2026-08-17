@@ -10,7 +10,12 @@ from ok.util.window import WINDOWS_BUILD_NUMBER, WGC_NO_BORDER_MIN_BUILD
 
 from ok.device.capture_methods import bitblt
 from ok.device.capture_methods.base import BaseWindowsCaptureMethod
-from ok.device.capture_methods.bitblt_utils import PBYTE, composite_hwnds, get_crop_point
+from ok.device.capture_methods.bitblt_utils import (
+    PBYTE,
+    clean_up_bitblt,
+    composite_hwnds,
+    get_crop_point,
+)
 
 logger = Logger.get_logger(__name__)
 
@@ -24,7 +29,9 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     def __init__(self, hwnd_window):
         super().__init__(hwnd_window)
         self.lock = threading.RLock()
-        self.get_frame_lock = threading.Lock()
+        # close() may be requested by start_or_stop() while _do_get_frame()
+        # already owns this lock (for example after a target-window change).
+        self.get_frame_lock = threading.RLock()
         self.frame_event = threading.Event()
         self.frame_requested = threading.Event()
         self.last_frame_time = time.time()
@@ -247,31 +254,38 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         self.evtoken = None
 
     def close(self):
-        with self.lock:
-            logger.info('destroy windows capture')
-            self.frame_requested.clear()
-            self.frame_event.set()
-            if self.frame_pool is not None:
-                self.frame_pool.Close()
-                self.frame_pool = None
-            if self.session is not None:
-                self.session.Close()
-                self.session = None
-            self.item = None
-            if self.rtdevice:
-                self.rtdevice.Release()
-                self.rtdevice = None
-            if self.dxdevice:
-                self.dxdevice.Release()
-                self.dxdevice = None
-            if self.immediatedc:
-                self.immediatedc.Release()
-                self.immediatedc = None
-            if self.cputex:
-                self.cputex.Release()
-                self.cputex = None
-            self.capture_hwnd = 0
-            self.capture_target_signature = None
+        # _do_get_frame() composites child windows with BitBlt after receiving
+        # the WGC frame. Serialize close with that whole request so its GDI
+        # contexts cannot be released while composite_hwnds() is using them.
+        with self.get_frame_lock:
+            with self.lock:
+                logger.info('destroy windows capture')
+                self.frame_requested.clear()
+                self.frame_event.set()
+                if self.frame_pool is not None:
+                    self.frame_pool.Close()
+                    self.frame_pool = None
+                if self.session is not None:
+                    self.session.Close()
+                    self.session = None
+                self.item = None
+                if self.rtdevice:
+                    self.rtdevice.Release()
+                    self.rtdevice = None
+                if self.dxdevice:
+                    self.dxdevice.Release()
+                    self.dxdevice = None
+                if self.immediatedc:
+                    self.immediatedc.Release()
+                    self.immediatedc = None
+                if self.cputex:
+                    self.cputex.Release()
+                    self.cputex = None
+                for context in self.contexts.values():
+                    clean_up_bitblt(context)
+                self.contexts.clear()
+                self.capture_hwnd = 0
+                self.capture_target_signature = None
 
     def do_get_frame(self):
         # frame_requested and last_frame represent one in-flight request. Keep
