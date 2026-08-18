@@ -217,7 +217,6 @@ _OK_CONFIG_DEFAULTS = {
     'window_maximized': False,
     'navigation_expanded': True,
     'use_overlay': False,
-    'show_overlay_logs': True,
 }
 
 
@@ -226,18 +225,14 @@ def _create_ok_config(config):
     from ok.util.config import Config
 
     defaults = dict(_OK_CONFIG_DEFAULTS)
-    for key in ('use_overlay', 'show_overlay_logs'):
-        if key in config:
-            defaults[key] = bool(config[key])
+    if 'use_overlay' in config:
+        defaults['use_overlay'] = bool(config['use_overlay'])
     return Config('_ok', defaults)
 
 
 class _OverlayConfigMixin:
     def overlay_state(self):
-        return {
-            'boxes': bool(self.ok_config.get('use_overlay', False)),
-            'logs': bool(self.ok_config.get('show_overlay_logs', True)),
-        }
+        return {'boxes': bool(self.ok_config.get('use_overlay', False))}
 
     def initialize_overlay(self):
         """Apply persisted overlay state independently of the active UI."""
@@ -266,11 +261,10 @@ class _OverlayConfigMixin:
         overlay.sync_source_window(getattr(device_manager, 'hwnd_window', None))
 
     def set_overlay_setting(self, name, value):
-        key = {'boxes': 'use_overlay', 'logs': 'show_overlay_logs'}.get(name)
-        if key is None:
+        if name != 'boxes':
             raise ValueError(f'Unknown overlay setting: {name}')
 
-        self.ok_config[key] = bool(value)
+        self.ok_config['use_overlay'] = bool(value)
         overlay = self.overlay_window
         if name == 'boxes' and value:
             overlay = self.get_overlay_view()
@@ -280,8 +274,6 @@ class _OverlayConfigMixin:
             return self.overlay_state()
         if overlay is not None:
             self.sync_overlay_source()
-            # This also schedules a repaint so a changed log setting takes
-            # effect immediately in the native overlay.
             overlay.set_boxes_enabled(self.ok_config.get('use_overlay', False))
         return self.overlay_state()
 

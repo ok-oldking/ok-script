@@ -12,7 +12,7 @@ class TestWin32GdiOverlay(unittest.TestCase):
     def setUp(self):
         self.original_app = getattr(og, 'app', None)
         self.original_ok = getattr(og, 'ok', None)
-        og.app = SimpleNamespace(ok_config={'use_overlay': False, 'show_overlay_logs': True})
+        og.app = SimpleNamespace(ok_config={'use_overlay': False})
         og.ok = SimpleNamespace(screenshot=SimpleNamespace(ui_dict={}))
         self.source_window = SimpleNamespace(
             visible=True, x=10, y=20, real_x_offset=2, real_y_offset=4,
@@ -133,3 +133,13 @@ class TestWin32GdiOverlay(unittest.TestCase):
         self.view.stop()
 
         self.view._join_workers.assert_not_called()
+
+    def test_dark_text_panel_is_translucent_and_clipped(self):
+        pixels = np.full((8, 10, 4), 255, dtype=np.uint8)
+
+        self.view._paint_dark_panel(pixels, -5, 2, 20, 7, alpha=180)
+
+        np.testing.assert_array_equal(pixels[2:7, :, :3], 0)
+        np.testing.assert_array_equal(pixels[2:7, :, 3], 180)
+        np.testing.assert_array_equal(pixels[:2], 255)
+        np.testing.assert_array_equal(pixels[7:], 255)

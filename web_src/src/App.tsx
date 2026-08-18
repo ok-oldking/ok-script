@@ -1478,14 +1478,7 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
           <button type="button" disabled={pending !== null} onClick={() => void tool("log-folder")}><Folder20Regular />{t("Log Folder")}</button>
           <button type="button" disabled={pending !== null} onClick={() => setLogsOpen(true)}><DeveloperBoard20Regular />{t("View Log")}</button>
           <button type="button" disabled={pending !== null} onClick={() => void tool("ocr")}><Search20Regular />OCR</button>
-        </div>
-      </section>
-
-      <section className="page-section overlay-section">
-        <h2>{t("Debug Overlay")}</h2>
-        <div className="surface-card switch-card">
-          <Switch checked={ui?.overlay.boxes ?? false} disabled={pending !== null || !ui} label={t("Enable Boxes")} onChange={(value) => void perform("overlay", () => runtimeApi.setOverlay("boxes", value))} />
-          <Switch checked={ui?.overlay.logs ?? false} disabled={pending !== null || !ui} label={t("Show Log on Overlay")} onChange={(value) => void perform("overlay", () => runtimeApi.setOverlay("logs", value))} />
+          {ui && <Switch checked={ui.overlay.boxes} disabled={pending !== null} label={t("Enable Boxes")} onChange={(value) => void perform("overlay", () => runtimeApi.setOverlay("boxes", value))} />}
         </div>
       </section>
       <div className="content-spacer" />

@@ -903,18 +903,6 @@
             <translation>停用標記框</translation>
         </message>
         <message>
-            <source>Show Log on Overlay</source>
-            <translation>在懸浮窗顯示日誌</translation>
-        </message>
-        <message>
-            <source>Hide Log on Overlay</source>
-            <translation>隱藏懸浮窗日誌</translation>
-        </message>
-        <message>
-            <source>Debug Overlay</source>
-            <translation>除錯懸浮窗</translation>
-        </message>
-        <message>
             <source>Debug</source>
             <translation>開發工具</translation>
         </message>
@@ -3059,10 +3047,6 @@
             <translation>開發工具</translation>
         </message>
         <message>
-            <source>Debug Overlay</source>
-            <translation>除錯懸浮窗</translation>
-        </message>
-        <message>
             <source>Disable Boxes</source>
             <translation>停用標記框</translation>
         </message>
@@ -3077,10 +3061,6 @@
         <message>
             <source>Export Logs</source>
             <translation>匯出日誌</translation>
-        </message>
-        <message>
-            <source>Hide Log on Overlay</source>
-            <translation>隱藏懸浮窗日誌</translation>
         </message>
         <message>
             <source>Install Folder</source>
@@ -3121,10 +3101,6 @@
         <message>
             <source>Search title or exe...</source>
             <translation>搜尋標題或程式...</translation>
-        </message>
-        <message>
-            <source>Show Log on Overlay</source>
-            <translation>在懸浮窗顯示日誌</translation>
         </message>
         <message>
             <source>Toggle navigation</source>

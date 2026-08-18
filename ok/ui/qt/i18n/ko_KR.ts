@@ -904,18 +904,6 @@
             <translation>박스 사용 안 함</translation>
         </message>
         <message>
-            <source>Show Log on Overlay</source>
-            <translation>오버레이에 로그 표시</translation>
-        </message>
-        <message>
-            <source>Hide Log on Overlay</source>
-            <translation>오버레이에 로그 숨기기</translation>
-        </message>
-        <message>
-            <source>Debug Overlay</source>
-            <translation>디버그 오버레이</translation>
-        </message>
-        <message>
             <source>Debug</source>
             <translation>개발 도구</translation>
         </message>
@@ -3064,10 +3052,6 @@
             <translation>개발 도구</translation>
         </message>
         <message>
-            <source>Debug Overlay</source>
-            <translation>디버그 오버레이</translation>
-        </message>
-        <message>
             <source>Disable Boxes</source>
             <translation>박스 사용 안 함</translation>
         </message>
@@ -3082,10 +3066,6 @@
         <message>
             <source>Export Logs</source>
             <translation>로그 내보내기</translation>
-        </message>
-        <message>
-            <source>Hide Log on Overlay</source>
-            <translation>오버레이에 로그 숨기기</translation>
         </message>
         <message>
             <source>Install Folder</source>
@@ -3126,10 +3106,6 @@
         <message>
             <source>Search title or exe...</source>
             <translation>제목 또는 실행 파일 검색...</translation>
-        </message>
-        <message>
-            <source>Show Log on Overlay</source>
-            <translation>오버레이에 로그 표시</translation>
         </message>
         <message>
             <source>Toggle navigation</source>

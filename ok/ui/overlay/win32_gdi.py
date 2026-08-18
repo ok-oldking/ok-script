@@ -180,6 +180,9 @@ if os.name == "nt":
     gdi32.CreateFontW.restype = ctypes.c_void_p
     gdi32.TextOutW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, wintypes.LPCWSTR, ctypes.c_int]
     gdi32.TextOutW.restype = wintypes.BOOL
+    gdi32.GetTextExtentPoint32W.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR, ctypes.c_int,
+                                            ctypes.POINTER(SIZE)]
+    gdi32.GetTextExtentPoint32W.restype = wintypes.BOOL
     kernel32.GetModuleHandleW.argtypes = [wintypes.LPCWSTR]
     kernel32.GetModuleHandleW.restype = ctypes.c_void_p
     kernel32.GetCurrentThreadId.argtypes = []
@@ -224,12 +227,6 @@ class GdiCanvas:
 class Win32GdiOverlay:
     """Native overlay with the API previously exposed by ``OverlayWindow``."""
 
-    _log_colors = {
-        "DEBUG": (85, 255, 85), "INFO": (135, 206, 250),
-        "WARNING": (255, 255, 85), "ERROR": (255, 85, 85),
-    }
-    _log_levels = {10: "DEBUG", 20: "INFO", 30: "WARNING", 40: "ERROR"}
-
     def __init__(self, hwnd_window=None, *, native=True, exit_event=None):
         self._lock = threading.RLock()
         self._ready = threading.Event()
@@ -272,7 +269,6 @@ class Win32GdiOverlay:
         self._qt_clipboard_writer = self._create_qt_clipboard_writer()
         self.custom_painters = {}
         self._custom_painter_until = {}
-        self.logs = []
         self.blur_images = []
         self._py_object = ctypes.py_object(self) if self._native_available else None
 
@@ -280,7 +276,6 @@ class Win32GdiOverlay:
         communicate.clear_box.connect(self.clear_drawing)
         communicate.blur_overlay.connect(self.update_blur_patches)
         communicate.clear_blur_overlay.connect(self.clear_blur_overlay)
-        communicate.log.connect(self.add_log)
 
         if self._native_available:
             self._thread = threading.Thread(target=self._window_thread, name="Win32GdiOverlay", daemon=True)
@@ -454,21 +449,6 @@ class Win32GdiOverlay:
             self.blur_images = []
         self._schedule_render()
 
-    def add_log(self, level_no, message):
-        if not self._config_value("show_overlay_logs", True):
-            return
-        message = str(message)
-        if any(text in message for text in
-               ("A new release of pip", "does not currently take into account all the packages")):
-            return
-        parts = message.split(":", 3)
-        if len(parts) > 3:
-            message = parts[3].strip()
-        with self._lock:
-            self.logs.append((self._log_levels.get(level_no, "DEBUG"), message))
-            del self.logs[:-50]
-        self._schedule_render()
-
     def isVisible(self):
         return self._visible
 
@@ -493,8 +473,7 @@ class Win32GdiOverlay:
                     (communicate.draw_box, self.on_draw_box),
                     (communicate.clear_box, self.clear_drawing),
                     (communicate.blur_overlay, self.update_blur_patches),
-                    (communicate.clear_blur_overlay, self.clear_blur_overlay),
-                    (communicate.log, self.add_log)):
+                    (communicate.clear_blur_overlay, self.clear_blur_overlay)):
                 signal.disconnect(callback)
             communicate.window.disconnect(self.update_overlay)
             self._input_stop.set()
@@ -802,8 +781,7 @@ class Win32GdiOverlay:
             gdi32.SetBkMode(memory_dc, TRANSPARENT)
             self._paint_border(memory_dc)
             self._paint_boxes(memory_dc)
-            self._paint_logs(memory_dc)
-            self._paint_coordinate_overlay(memory_dc)
+            self._paint_coordinate_overlay(memory_dc, pixels)
             self._paint_custom(memory_dc)
             # GDI leaves alpha untouched.  Every coloured pixel becomes opaque;
             # untouched pixels stay transparent in the layered window.
@@ -918,21 +896,31 @@ class Win32GdiOverlay:
         gdi32.SelectObject(hdc, old_brush)
         gdi32.DeleteObject(pen)
 
-    def _paint_logs(self, hdc):
-        if not self._config_value("show_overlay_logs", True):
-            return
-        with self._lock:
-            logs = list(self.logs[-12:])
-        if not logs:
-            return
-        y = max(0, self._height - 18 * len(logs) - 8)
-        for level, text in logs:
-            gdi32.SetTextColor(hdc, _rgb(*self._log_colors.get(level, (255, 255, 255))))
-            text = text[:200]
-            gdi32.TextOutW(hdc, 5, y, text, len(text))
-            y += 18
+    @staticmethod
+    def _paint_dark_panel(pixels, left, top, right, bottom, alpha=180):
+        """Paint clipped translucent black without becoming opaque later.
 
-    def _paint_coordinate_overlay(self, hdc):
+        The compositor promotes non-black GDI pixels to full alpha. Keeping
+        the panel RGB at zero preserves the requested alpha while subsequent
+        text drawing remains crisp and opaque.
+        """
+        height, width = pixels.shape[:2]
+        left, top = max(0, int(left)), max(0, int(top))
+        right, bottom = min(width, int(right)), min(height, int(bottom))
+        if right <= left or bottom <= top:
+            return
+        panel = pixels[top:bottom, left:right]
+        panel[:, :, :3] = 0
+        panel[:, :, 3] = max(0, min(255, int(alpha)))
+
+    @staticmethod
+    def _text_extent(hdc, text, fallback_width=8, fallback_height=16):
+        size = SIZE()
+        if gdi32.GetTextExtentPoint32W(hdc, text, len(text), ctypes.byref(size)):
+            return max(1, size.cx), max(1, size.cy)
+        return max(1, len(text) * fallback_width), fallback_height
+
+    def _paint_coordinate_overlay(self, hdc, pixels):
         if not (self._is_alt_down and self._pointer_inside):
             return
         mouse_x, mouse_y = self._mouse_position
@@ -972,6 +960,11 @@ class Win32GdiOverlay:
                 f"(Alt+right click to copy)")
         font = gdi32.CreateFontW(-24, 0, 0, 0, 600, 0, 0, 0, 1, 0, 0, 5, 0, "Segoe UI")
         old_font = gdi32.SelectObject(hdc, font)
+        text_width, text_height = self._text_extent(
+            hdc, text, fallback_width=13, fallback_height=28)
+        self._paint_dark_panel(
+            pixels, 8, 10, min(self._width, 16 + text_width + 8),
+            min(self._height, 16 + text_height + 6))
         gdi32.SetTextColor(hdc, _rgb(255, 85, 85))
         gdi32.TextOutW(hdc, 16, 16, text, len(text))
         gdi32.SelectObject(hdc, old_font)

@@ -40,7 +40,7 @@ export const runtimeApi = {
   selectDevice: (id: string) => post<CaptureUiState>("/api/devices/select", { id }),
   selectCapture: (id: string) => post<CaptureUiState>("/api/capture-methods/select", { id }),
   selectInteraction: (id: string) => post<CaptureUiState>("/api/interaction-methods/select", { id }),
-  setOverlay: (name: "boxes" | "logs", value: boolean) =>
+  setOverlay: (name: "boxes", value: boolean) =>
     post<CaptureUiState>("/api/overlay", { name, value }),
   tasks: () => request<AutomationTask[]>("/api/tasks"),
   settings: () => request<SettingsGroup[]>("/api/settings"),

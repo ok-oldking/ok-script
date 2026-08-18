@@ -903,18 +903,6 @@
             <translation>Desactivar cuadros</translation>
         </message>
         <message>
-            <source>Show Log on Overlay</source>
-            <translation>Mostrar registro en superposición</translation>
-        </message>
-        <message>
-            <source>Hide Log on Overlay</source>
-            <translation>Ocultar registro en superposición</translation>
-        </message>
-        <message>
-            <source>Debug Overlay</source>
-            <translation>Superposición de depuración</translation>
-        </message>
-        <message>
             <source>Debug</source>
             <translation>Depurar</translation>
         </message>
@@ -3063,10 +3051,6 @@
             <translation>Depurar</translation>
         </message>
         <message>
-            <source>Debug Overlay</source>
-            <translation>Superposición de depuración</translation>
-        </message>
-        <message>
             <source>Disable Boxes</source>
             <translation>Desactivar cuadros</translation>
         </message>
@@ -3081,10 +3065,6 @@
         <message>
             <source>Export Logs</source>
             <translation>Exportar registros</translation>
-        </message>
-        <message>
-            <source>Hide Log on Overlay</source>
-            <translation>Ocultar registro en superposición</translation>
         </message>
         <message>
             <source>Install Folder</source>
@@ -3125,10 +3105,6 @@
         <message>
             <source>Search title or exe...</source>
             <translation>Buscar título o ejecutable...</translation>
-        </message>
-        <message>
-            <source>Show Log on Overlay</source>
-            <translation>Mostrar registro en superposición</translation>
         </message>
         <message>
             <source>Toggle navigation</source>

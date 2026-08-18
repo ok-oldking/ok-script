@@ -905,18 +905,6 @@
             <translation>Disable Boxes</translation>
         </message>
         <message>
-            <source>Show Log on Overlay</source>
-            <translation>Show Log on Overlay</translation>
-        </message>
-        <message>
-            <source>Hide Log on Overlay</source>
-            <translation>Hide Log on Overlay</translation>
-        </message>
-        <message>
-            <source>Debug Overlay</source>
-            <translation>Debug Overlay</translation>
-        </message>
-        <message>
             <source>Debug</source>
             <translation>Debug</translation>
         </message>
@@ -3065,10 +3053,6 @@
             <translation>Debug</translation>
         </message>
         <message>
-            <source>Debug Overlay</source>
-            <translation>Debug Overlay</translation>
-        </message>
-        <message>
             <source>Disable Boxes</source>
             <translation>Disable Boxes</translation>
         </message>
@@ -3083,10 +3067,6 @@
         <message>
             <source>Export Logs</source>
             <translation>Export Logs</translation>
-        </message>
-        <message>
-            <source>Hide Log on Overlay</source>
-            <translation>Hide Log on Overlay</translation>
         </message>
         <message>
             <source>Install Folder</source>
@@ -3127,10 +3107,6 @@
         <message>
             <source>Search title or exe...</source>
             <translation>Search title or exe...</translation>
-        </message>
-        <message>
-            <source>Show Log on Overlay</source>
-            <translation>Show Log on Overlay</translation>
         </message>
         <message>
             <source>Toggle navigation</source>

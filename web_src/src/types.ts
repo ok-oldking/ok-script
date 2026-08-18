@@ -35,7 +35,6 @@ export type CaptureUiState = {
   interaction_methods: MethodOption[];
   overlay: {
     boxes: boolean;
-    logs: boolean;
   };
 };
 

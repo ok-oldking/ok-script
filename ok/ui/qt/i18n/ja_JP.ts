@@ -899,18 +899,6 @@
             <translation>ボックスを無効化</translation>
         </message>
         <message>
-            <source>Show Log on Overlay</source>
-            <translation>オーバーレイにログを表示</translation>
-        </message>
-        <message>
-            <source>Hide Log on Overlay</source>
-            <translation>オーバーレイのログを隠す</translation>
-        </message>
-        <message>
-            <source>Debug Overlay</source>
-            <translation>デバッグオーバーレイ</translation>
-        </message>
-        <message>
             <source>Debug</source>
             <translation>デバッグ</translation>
         </message>
@@ -3055,10 +3043,6 @@
             <translation>デバッグ</translation>
         </message>
         <message>
-            <source>Debug Overlay</source>
-            <translation>デバッグオーバーレイ</translation>
-        </message>
-        <message>
             <source>Disable Boxes</source>
             <translation>ボックスを無効化</translation>
         </message>
@@ -3073,10 +3057,6 @@
         <message>
             <source>Export Logs</source>
             <translation>ログをエクスポート</translation>
-        </message>
-        <message>
-            <source>Hide Log on Overlay</source>
-            <translation>オーバーレイのログを隠す</translation>
         </message>
         <message>
             <source>Install Folder</source>
@@ -3117,10 +3097,6 @@
         <message>
             <source>Search title or exe...</source>
             <translation>タイトルまたは実行ファイルを検索...</translation>
-        </message>
-        <message>
-            <source>Show Log on Overlay</source>
-            <translation>オーバーレイにログを表示</translation>
         </message>
         <message>
             <source>Toggle navigation</source>

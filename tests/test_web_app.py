@@ -126,14 +126,14 @@ def test_core_ui_config_loads_persisted_overlay_state(tmp_path: Path, monkeypatc
     loaded = _create_ok_config({})
 
     assert loaded["use_overlay"] is True
-    assert loaded["show_overlay_logs"] is False
+    assert "show_overlay_logs" not in loaded
 
 
 @pytest.mark.parametrize("app_type", [App, HeadlessApp])
 def test_all_ui_facades_initialize_overlay_from_core_state(app_type):
     app = object.__new__(app_type)
     app.config = {}
-    app.ok_config = {"use_overlay": True, "show_overlay_logs": False}
+    app.ok_config = {"use_overlay": True}
     overlay = Mock()
     app.get_overlay_view = Mock(return_value=overlay)
 
@@ -147,7 +147,7 @@ def test_all_ui_facades_initialize_overlay_from_core_state(app_type):
 def test_disabled_overlay_is_not_initialized(app_type):
     app = object.__new__(app_type)
     app.config = {}
-    app.ok_config = {"use_overlay": False, "show_overlay_logs": True}
+    app.ok_config = {"use_overlay": False}
     app.get_overlay_view = Mock()
 
     app.initialize_overlay()
@@ -158,7 +158,7 @@ def test_disabled_overlay_is_not_initialized(app_type):
 def test_web_overlay_toggle_resyncs_latest_capture_window():
     app = object.__new__(HeadlessApp)
     app.config = {}
-    app.ok_config = {"use_overlay": False, "show_overlay_logs": True}
+    app.ok_config = {"use_overlay": False}
     app.overlay_window = Mock()
     app.get_overlay_view = Mock(return_value=app.overlay_window)
 
@@ -178,7 +178,7 @@ def test_web_overlay_toggle_resyncs_latest_capture_window():
 def test_turning_boxes_off_closes_and_releases_overlay():
     app = object.__new__(HeadlessApp)
     app.config = {}
-    app.ok_config = {"use_overlay": True, "show_overlay_logs": True}
+    app.ok_config = {"use_overlay": True}
     overlay = Mock()
     app.overlay_window = overlay
 
@@ -186,6 +186,16 @@ def test_turning_boxes_off_closes_and_releases_overlay():
 
     overlay.close.assert_called_once_with()
     assert app.overlay_window is None
+
+
+def test_removed_overlay_log_setting_is_rejected():
+    app = object.__new__(HeadlessApp)
+    app.config = {}
+    app.ok_config = {"use_overlay": False}
+    app.overlay_window = None
+
+    with pytest.raises(ValueError, match="Unknown overlay setting"):
+        app.set_overlay_setting("logs", True)
 
 
 def test_headless_notification_formats_and_submits_to_manager():

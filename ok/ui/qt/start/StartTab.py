@@ -100,31 +100,17 @@ class StartTab(Tab):
         self.ocr_button = PushButton(FluentIcon.SEARCH, "OCR")
         self.ocr_button.clicked.connect(self.ocr_log)
         self.debug_layout.addWidget(self.ocr_button)
-        self.debug_layout.addStretch(1)
-
-        self.add_card(self.tr("Debug"), self.debug_widget)
-
-        self.overlay_widget = QWidget()
-        self.overlay_layout = QHBoxLayout(self.overlay_widget)
-        self.overlay_layout.setContentsMargins(0, 0, 0, 0)
-        self.overlay_layout.setSpacing(20)
 
         self.overlay_switch = SwitchButton()
         self.overlay_switch.setOnText(self.tr("Enable Boxes"))
         self.overlay_switch.setOffText(self.tr("Disable Boxes"))
-        overlay_state = og.app.overlay_state()
-        self.overlay_switch.setChecked(overlay_state['boxes'])
+        self._set_switch_initial_state(
+            self.overlay_switch, og.app.overlay_state()['boxes'])
         self.overlay_switch.checkedChanged.connect(self.on_overlay_boxes_toggled)
-        self.overlay_layout.addWidget(self.overlay_switch)
+        self.debug_layout.addWidget(self.overlay_switch)
+        self.debug_layout.addStretch(1)
 
-        self.overlay_log_switch = SwitchButton()
-        self.overlay_log_switch.setOnText(self.tr("Show Log on Overlay"))
-        self.overlay_log_switch.setOffText(self.tr("Hide Log on Overlay"))
-        self.overlay_log_switch.setChecked(overlay_state['logs'])
-        self.overlay_log_switch.checkedChanged.connect(self.on_overlay_log_toggled)
-        self.overlay_layout.addWidget(self.overlay_log_switch)
-        self.overlay_layout.addStretch(1)
-        self.add_card(self.tr("Debug Overlay"), self.overlay_widget)
+        self.add_card(self.tr("Debug"), self.debug_widget)
 
         self.closed_by_finish_loading = False
         self.message = "Loading"
@@ -152,9 +138,18 @@ class StartTab(Tab):
         from ok import og
         og.app.set_overlay_setting('boxes', checked)
 
-    def on_overlay_log_toggled(self, checked):
-        from ok import og
-        og.app.set_overlay_setting('logs', checked)
+    @staticmethod
+    def _set_switch_initial_state(switch, checked):
+        """Set a SwitchButton before display without its startup animation."""
+        indicator = switch.indicator
+        indicator.blockSignals(True)
+        try:
+            indicator.setChecked(bool(checked))
+            indicator.slideAni.stop()
+            indicator.setSliderX(25 if checked else 5)
+        finally:
+            indicator.blockSignals(False)
+        switch._updateText()
 
     @staticmethod
     def capture():
