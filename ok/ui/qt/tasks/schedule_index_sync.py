@@ -11,7 +11,7 @@ ok-script 的 Windows 计划任务通过 `-t N`（1-based 索引）定位 onetim
 方案
 ----
 保留 ok 原生 `-t N`，不修改任何运行时解析 / 创建 / 修改对话框逻辑，
-仅在每次启动时（MainWindow.showEvent 首次显示、start_runtime 之前）
+仅在每次启动时（MainWindow.__init__ 构造 ScheduleTaskTab 之前、start_runtime 之前）
 自动校正旧索引：
 
 1. 读取 schedule_tasks_cache.json；
@@ -25,7 +25,7 @@ ok-script 的 Windows 计划任务通过 `-t N`（1-based 索引）定位 onetim
 
 调用点
 ------
-- ``ok.ui.qt.MainWindow.MainWindow.showEvent``：首次显示、start_runtime 之前；
+- ``ok.ui.qt.MainWindow.MainWindow.__init__``：构造 ScheduleTaskTab（加载任务缓存）之前；
 - ``fix_schedule_task_refs.py``：headless 无法启动 GUI 时的手动校正，复用本模块。
 """
 
@@ -143,8 +143,11 @@ def _replace_task_target(value: str, new_index: int) -> str:
     return _TASK_ARG_PATTERN.sub(lambda m: f"{m.group(1)}-t {new_index}", value)
 
 
-def _register_task_xml_via_schtasks(path: str, new_xml: str):
-    """通过 schtasks 命令用新 XML 更新计划任务（COM 不可用时的回退）。"""
+def _register_task_xml_via_schtasks(path: str, new_xml: str) -> bool:
+    """通过 schtasks 命令用新 XML 更新计划任务（COM 不可用时的回退）。
+
+    返回是否注册成功。
+    """
     import subprocess
     import tempfile
 
@@ -158,12 +161,14 @@ def _register_task_xml_via_schtasks(path: str, new_xml: str):
 
         cmd = ["schtasks", "/Create", "/XML", str(xml_file), "/TN", path, "/F"]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-        if result.returncode != 0:
-            logger.error(f"schedule index sync: schtasks update failed for {path}: {result.stderr}")
-        else:
+        if result.returncode == 0:
             logger.info(f"schedule index sync: updated task {path} via schtasks")
+            return True
+        logger.error(f"schedule index sync: schtasks update failed for {path}: {result.stderr}")
+        return False
     except Exception:
         logger.exception(f"schedule index sync: schtasks update failed for {path}")
+        return False
     finally:
         if xml_file and xml_file.exists():
             try:
@@ -172,13 +177,14 @@ def _register_task_xml_via_schtasks(path: str, new_xml: str):
                 pass
 
 
-def _register_task_xml(path: str, new_xml: str):
+def _register_task_xml(path: str, new_xml: str) -> bool:
     """用更新后的 XML 重新注册 Windows 计划任务（测试可 monkeypatch）。
 
     优先 COM（RegisterTaskDefinition CREATE_OR_UPDATE），失败时回退 schtasks。
+    返回是否注册成功；path 或 new_xml 为空时返回 False。
     """
     if not path or not new_xml:
-        return
+        return False
     try:
         import win32com.client
 
@@ -192,26 +198,36 @@ def _register_task_xml(path: str, new_xml: str):
             task_file_name, task_def, _TASK_CREATE_OR_UPDATE, None, None, 3
         )
         logger.info(f"schedule index sync: updated task {path} via COM")
-        return
+        return True
     except Exception as e:
         logger.warning(f"schedule index sync: COM update failed for {path}: {e}")
-    _register_task_xml_via_schtasks(path, new_xml)
+    return _register_task_xml_via_schtasks(path, new_xml)
 
 
-def _apply_correction(item: dict, new_index: int):
-    """改写单个缓存任务的 -t 索引，并同步 Windows 计划任务。"""
+def _apply_correction(item: dict, new_index: int) -> bool:
+    """改写单个缓存任务的 -t 索引，并同步 Windows 计划任务。
+
+    仅当 Windows 计划任务（若存在）成功用新 XML 重新注册后，才改写缓存字段并返回 True；
+    注册失败或无法改写时返回 False，保持缓存不变，下次启动会重试。
+    """
     old_xml = item.get("xml_config") or ""
     old_actions = item.get("actions") or ""
     new_xml = _replace_task_target(old_xml, new_index)
     new_actions = _replace_task_target(old_actions, new_index)
 
+    path = item.get("path") or ""
+    if path:
+        if not (old_xml and new_xml):
+            logger.error(f"schedule index sync: no xml_config to rewrite task {path}, skip")
+            return False
+        if not _register_task_xml(path, new_xml):
+            logger.error(f"schedule index sync: failed to update task {path}, keep cache unchanged")
+            return False
+
     item["xml_config"] = new_xml
     item["actions"] = new_actions
     item["task_index"] = new_index
-
-    path = item.get("path") or ""
-    if old_xml and new_xml and path:
-        _register_task_xml(path, new_xml)
+    return True
 
 
 def _collect_corrections(
@@ -245,14 +261,17 @@ def _collect_corrections(
 
 
 def _perform_corrections(corrections: List[Tuple[str, dict, int, str]]) -> Tuple[int, Dict[str, int]]:
-    """逐项应用索引修正，返回 (成功修正数, 旧 -t 目标 -> 新索引 的 argv 映射)。"""
+    """逐项应用索引修正，返回 (成功修正数, 旧 -t 目标 -> 新索引 的 argv 映射)。
+
+    仅统计并记录真正注册成功的修正；失败的条目保持缓存原样，下次启动会重试。
+    """
     changed = 0
     argv_target_map: Dict[str, int] = {}
     for task_key, item, new_index, old_target in corrections:
         try:
-            _apply_correction(item, new_index)
-            changed += 1
-            argv_target_map.setdefault(old_target, new_index)
+            if _apply_correction(item, new_index):
+                changed += 1
+                argv_target_map.setdefault(old_target, new_index)
         except Exception:
             logger.exception(f"schedule index sync failed for {task_key}")
     return changed, argv_target_map

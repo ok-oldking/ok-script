@@ -183,6 +183,17 @@ class MainWindow(FluentWindow):
         self.update_imported_tabs()
         communicate.task_list_updated.connect(self.update_imported_tabs)
 
+        # 计划任务索引启动时自动校正：以缓存任务名（不随 onetime_tasks 排序变化）为身份，
+        # 修正已创建计划任务的旧 -t 索引。必须在构造 ScheduleTaskTab 之前执行——
+        # ScheduleTaskTab.__init__ 会用 query_all_tasks(force_sync=True) 把任务加载进内存缓存，
+        # 若先加载后校正，UI 内存缓存仍是旧索引，Modify 时会把修复撤销。同时早于
+        # start_runtime，保证本次启动（-t 旧索引）也会被改写为正确索引。
+        try:
+            from ok.ui.qt.tasks.schedule_index_sync import sync_schedule_task_indexes
+            sync_schedule_task_indexes()
+        except Exception:
+            logger.exception("schedule task index sync failed in __init__")
+
         # 添加计划任务Tab（不要求任务 visible，未显示在 GUI 的任务也可计划调度）
         any_support_schedule = any(task.support_schedule_task for task in self.executor.onetime_tasks)
         if any_support_schedule:
@@ -535,14 +546,6 @@ class MainWindow(FluentWindow):
         first_show = event.type() == QEvent.Show and not self.shown
         if first_show:
             self.shown = True
-            # 计划任务索引启动时自动校正：以缓存任务名（不随 onetime_tasks 排序变化）为身份，
-            # 修正已创建计划任务的旧 -t 索引。必须在 start_runtime 之前执行，
-            # 这样本次启动（-t 旧索引）也会被改写为正确索引。
-            try:
-                from ok.ui.qt.tasks.schedule_index_sync import sync_schedule_task_indexes
-                sync_schedule_task_indexes()
-            except Exception:
-                logger.exception("schedule task index sync failed in showEvent")
             pyappify.hide_pyappify()
             if update_pyappify := self.config.get("update_pyappify"):
                 pyappify.upgrade(

@@ -51,7 +51,7 @@ def isolated(monkeypatch, tmp_path):
     monkeypatch.setattr(sync_patch, "_schedule_root_path", lambda: "\\ok-ef")
     registered = []
     monkeypatch.setattr(
-        sync_patch, "_register_task_xml", lambda path, xml: registered.append((path, xml))
+        sync_patch, "_register_task_xml", lambda path, xml: registered.append((path, xml)) or True
     )
     yield sync_patch, cache_file, registered
     sync_patch.reset_sync_guard()
@@ -180,6 +180,48 @@ def test_multiple_tasks_corrected(isolated):
         assert saved[path]["task_index"] == index
         assert f"-t {index}" in saved[path]["actions"]
     assert len(registered) == 4
+
+
+def test_registration_failure_keeps_cache_and_retries(isolated, monkeypatch):
+    """Windows 任务注册失败时（COM 与 schtasks 都失败）不得改写缓存。
+
+    失败的条目保持旧索引，changed 为 0，缓存不写盘，下次启动会重试。
+    """
+    patch_mod, cache_file, registered = isolated
+    onetime_tasks = [_FakeTask("日常任务"), _FakeTask("自动送货")]
+    data = {
+        "\\ok-ef\\daily": _make_cache_entry(
+            "\\ok-ef\\daily", "日常任务", actions="main.py -t 15 -e",
+            xml_config=_xml_with("main.py -t 15 -e"), task_index=15),
+    }
+    cache_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(patch_mod, "_register_task_xml", lambda path, xml: False)
+    monkeypatch.setattr(patch_mod, "_register_task_xml_via_schtasks", lambda path, xml: False)
+
+    assert patch_mod.sync_schedule_task_indexes(onetime_tasks=onetime_tasks) == 0
+    saved = json.loads(cache_file.read_text(encoding="utf-8"))
+    entry = saved["\\ok-ef\\daily"]
+    # 注册失败则不改缓存：仍为旧索引，changed=0 也意味着缓存文件不会被写盘
+    assert entry["task_index"] == 15
+    assert "-t 15" in entry["actions"]
+    assert "-t 15" in entry["xml_config"]
+
+
+def test_registration_failure_does_not_rewrite_current_argv(isolated, monkeypatch):
+    """注册失败时不得改写本次进程 sys.argv / og.ok.args。"""
+    patch_mod, cache_file, registered = isolated
+    onetime_tasks = [_FakeTask("日常任务"), _FakeTask("自动送货")]
+    data = {
+        "\\ok-ef\\daily": _make_cache_entry(
+            "\\ok-ef\\daily", "日常任务", actions="main.py -t 15 -e",
+            xml_config=_xml_with("main.py -t 15 -e"), task_index=15),
+    }
+    cache_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(patch_mod, "_register_task_xml", lambda path, xml: False)
+    monkeypatch.setattr(sys, "argv", ["main.py", "-t", "15", "-e"])
+
+    assert patch_mod.sync_schedule_task_indexes(onetime_tasks=onetime_tasks) == 0
+    assert sys.argv == ["main.py", "-t", "15", "-e"]
 
 
 def test_skips_other_app_read_only_tasks(isolated):
