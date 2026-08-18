@@ -236,9 +236,10 @@ class _OverlayConfigMixin:
 
     def initialize_overlay(self):
         """Apply persisted overlay state independently of the active UI."""
-        if self.ok_config.get('use_overlay', False) or callable(self.config.get('blur_area')):
+        if self.ok_config.get('use_overlay', False):
             overlay = self.get_overlay_view()
-            overlay.set_boxes_enabled(self.ok_config.get('use_overlay', False))
+            if overlay is not None:
+                overlay.set_boxes_enabled(True)
 
     def _close_overlay(self, wait=True):
         overlay = self.overlay_window
@@ -268,8 +269,7 @@ class _OverlayConfigMixin:
         overlay = self.overlay_window
         if name == 'boxes' and value:
             overlay = self.get_overlay_view()
-        elif (name == 'boxes' and not value and overlay is not None
-              and not callable(self.config.get('blur_area'))):
+        elif name == 'boxes' and not value and overlay is not None:
             self._close_overlay()
             return self.overlay_state()
         if overlay is not None:
@@ -410,15 +410,23 @@ class App(_OverlayConfigMixin):
         self.show_message_window(title, content)
 
     def update_overlay(self, visible, x, y, window_width, window_height, width, height, scaling):
+        if not self.ok_config.get('use_overlay', False):
+            # Treat the setting as an absolute lifecycle gate. In particular,
+            # a configured blur callback must not resurrect a disabled native
+            # window (and its input/expiry workers).
+            if self.overlay_window is not None:
+                self._close_overlay(wait=False)
+            return
         overlay_view = self.overlay_window
-        if overlay_view is None and (self.ok_config.get('use_overlay', False)
-                                     or callable(self.config.get('blur_area'))):
+        if overlay_view is None:
             overlay_view = self.get_overlay_view()
         if overlay_view:
             overlay_view.update_overlay(visible, x, y, window_width, window_height, width, height, scaling)
 
     def get_overlay_view(self):
         """Return the overlay widget exposed to tasks, custom tabs, and my_app."""
+        if not self.ok_config.get('use_overlay', False):
+            return None
         if self.overlay_window is None:
             from ok.core.events import communicate
             from ok.ui.overlay import Win32GdiOverlay
@@ -571,6 +579,8 @@ class HeadlessApp(_OverlayConfigMixin):
             self.notification_manager.submit(translated_title, translated_message, images)
 
     def get_overlay_view(self):
+        if not self.ok_config.get('use_overlay', False):
+            return None
         if self.overlay_window is None:
             from ok.core.events import communicate
             from ok.ui.overlay import Win32GdiOverlay

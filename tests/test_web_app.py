@@ -146,13 +146,23 @@ def test_all_ui_facades_initialize_overlay_from_core_state(app_type):
 @pytest.mark.parametrize("app_type", [App, HeadlessApp])
 def test_disabled_overlay_is_not_initialized(app_type):
     app = object.__new__(app_type)
-    app.config = {}
+    app.config = {"blur_area": lambda *_: None}
     app.ok_config = {"use_overlay": False}
     app.get_overlay_view = Mock()
 
     app.initialize_overlay()
 
     app.get_overlay_view.assert_not_called()
+
+
+@pytest.mark.parametrize("app_type", [App, HeadlessApp])
+def test_disabled_overlay_getter_does_not_create_native_window(app_type):
+    app = object.__new__(app_type)
+    app.ok_config = {"use_overlay": False}
+    app.overlay_window = None
+
+    assert app.get_overlay_view() is None
+    assert app.overlay_window is None
 
 
 def test_web_overlay_toggle_resyncs_latest_capture_window():
@@ -177,7 +187,7 @@ def test_web_overlay_toggle_resyncs_latest_capture_window():
 
 def test_turning_boxes_off_closes_and_releases_overlay():
     app = object.__new__(HeadlessApp)
-    app.config = {}
+    app.config = {"blur_area": lambda *_: None}
     app.ok_config = {"use_overlay": True}
     overlay = Mock()
     app.overlay_window = overlay
@@ -186,6 +196,19 @@ def test_turning_boxes_off_closes_and_releases_overlay():
 
     overlay.close.assert_called_once_with()
     assert app.overlay_window is None
+
+
+def test_capture_updates_cannot_resurrect_disabled_overlay():
+    app = object.__new__(App)
+    app.ok_config = {"use_overlay": False}
+    app.overlay_window = Mock()
+    app._close_overlay = Mock()
+    app.get_overlay_view = Mock()
+
+    app.update_overlay(True, 1, 2, 100, 80, 100, 80, 1)
+
+    app._close_overlay.assert_called_once_with(wait=False)
+    app.get_overlay_view.assert_not_called()
 
 
 def test_removed_overlay_log_setting_is_rejected():

@@ -344,6 +344,7 @@ class Win32GdiOverlay:
             if not enabled:
                 self._boxes_active = False
                 self._boxes_until = 0
+                self._reset_coordinate_capture()
             logger.info(
                 f"Win32 overlay boxes enabled={self._boxes_enabled}, "
                 f"source_visible={self._source_visible}, hwnd={self._hwnd}")
@@ -569,6 +570,9 @@ class Win32GdiOverlay:
         """
         clipboard_text = None
         with self._lock:
+            if not self._boxes_enabled:
+                alt_down = False
+                right_down = False
             previous = (self._is_alt_down, self._right_down, self._pointer_inside,
                         self._mouse_position, tuple(self._click_points))
             relative = (int(cursor_x) - self._x, int(cursor_y) - self._y)
