@@ -40,12 +40,16 @@ if os.name == "nt":
     WM_NCCREATE = 0x0081
     WM_APP = 0x8000
     WM_RENDER = WM_APP + 17
+    INPUT_POLL_INTERVAL = 0.02
     AC_SRC_OVER = 0
     AC_SRC_ALPHA = 1
     BI_RGB = 0
     DIB_RGB_COLORS = 0
     TRANSPARENT = 1
     PS_SOLID = 0
+    PS_DASH = 1
+    VK_RBUTTON = 0x02
+    VK_MENU = 0x12
 
 
     class POINT(ctypes.Structure):
@@ -129,6 +133,10 @@ if os.name == "nt":
     user32.GetWindowRect.restype = wintypes.BOOL
     user32.IsWindowVisible.argtypes = [ctypes.c_void_p]
     user32.IsWindowVisible.restype = wintypes.BOOL
+    user32.GetCursorPos.argtypes = [ctypes.POINTER(POINT)]
+    user32.GetCursorPos.restype = wintypes.BOOL
+    user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
+    user32.GetAsyncKeyState.restype = ctypes.c_short
     user32.GetDC.argtypes = [ctypes.c_void_p]
     user32.GetDC.restype = ctypes.c_void_p
     user32.ReleaseDC.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
@@ -157,6 +165,15 @@ if os.name == "nt":
     gdi32.SetTextColor.restype = wintypes.DWORD
     gdi32.Rectangle.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
     gdi32.Rectangle.restype = wintypes.BOOL
+    gdi32.MoveToEx.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.POINTER(POINT)]
+    gdi32.MoveToEx.restype = wintypes.BOOL
+    gdi32.LineTo.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int]
+    gdi32.LineTo.restype = wintypes.BOOL
+    gdi32.CreateFontW.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                                  wintypes.DWORD, wintypes.DWORD, wintypes.DWORD, wintypes.DWORD,
+                                  wintypes.DWORD, wintypes.DWORD, wintypes.DWORD, wintypes.DWORD,
+                                  wintypes.LPCWSTR]
+    gdi32.CreateFontW.restype = ctypes.c_void_p
     gdi32.TextOutW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, wintypes.LPCWSTR, ctypes.c_int]
     gdi32.TextOutW.restype = wintypes.BOOL
     kernel32.GetModuleHandleW.argtypes = [wintypes.LPCWSTR]
@@ -228,6 +245,15 @@ class Win32GdiOverlay:
         self._boxes_active = False
         self._boxes_until = 0.0
         self._custom_active_until = 0.0
+        self._mouse_position = (0, 0)
+        self._pointer_inside = False
+        self._is_alt_down = False
+        self._right_down = False
+        self._accumulated_coords = []
+        self._click_points = []
+        self._input_stop = threading.Event()
+        self._input_thread = None
+        self._qt_clipboard_writer = self._create_qt_clipboard_writer()
         self.custom_painters = {}
         self._custom_painter_until = {}
         self.logs = []
@@ -244,6 +270,10 @@ class Win32GdiOverlay:
             self._thread = threading.Thread(target=self._window_thread, name="Win32GdiOverlay", daemon=True)
             self._thread.start()
             self._ready.wait(2)
+            if self._hwnd:
+                self._input_thread = threading.Thread(
+                    target=self._input_loop, name="Win32GdiOverlayInput", daemon=True)
+                self._input_thread.start()
         logger.info(
             f"Win32 overlay initialized: native={self._native_available}, hwnd={self._hwnd}, "
             f"owner={self._owner_hwnd}")
@@ -287,6 +317,7 @@ class Win32GdiOverlay:
             self._frame_width, self._frame_height = self._width, self._height
             if not visible:
                 self.blur_images = []
+                self._reset_coordinate_capture()
             state = (self._source_visible, self._x, self._y, self._width, self._height)
             if state != self._last_overlay_state:
                 self._last_overlay_state = state
@@ -431,9 +462,125 @@ class Win32GdiOverlay:
                 (communicate.clear_blur_overlay, self.clear_blur_overlay),
                 (communicate.log, self.add_log)):
             signal.disconnect(callback)
+        self._input_stop.set()
+        if self._input_thread is not None and self._input_thread is not threading.current_thread():
+            self._input_thread.join(timeout=1)
         if self._native_available and self._hwnd:
             user32.PostMessageW(self._hwnd, WM_CLOSE, 0, 0)
             self._thread.join(timeout=1)
+
+    @staticmethod
+    def _create_qt_clipboard_writer():
+        """Create the legacy Qt clipboard bridge when a Qt app is active."""
+        try:
+            from PySide6.QtCore import QObject, Qt, Signal
+            from PySide6.QtGui import QGuiApplication
+
+            app = QGuiApplication.instance()
+            if app is None:
+                return None
+
+            class ClipboardWriter(QObject):
+                requested = Signal(str)
+
+                def __init__(self):
+                    super().__init__()
+                    self.requested.connect(
+                        lambda value: QGuiApplication.clipboard().setText(value),
+                        Qt.QueuedConnection,
+                    )
+
+            writer = ClipboardWriter()
+            writer.moveToThread(app.thread())
+            return writer
+        except (ImportError, RuntimeError):
+            return None
+
+    def _reset_coordinate_capture(self):
+        self._is_alt_down = False
+        self._right_down = False
+        self._pointer_inside = False
+        self._accumulated_coords = []
+        self._click_points = []
+
+    def _poll_input(self):
+        """Poll global input because the overlay remains click-through."""
+        point = POINT()
+        if not user32.GetCursorPos(ctypes.byref(point)):
+            return
+        right_state = user32.GetAsyncKeyState(VK_RBUTTON)
+        self._update_input_state(
+            bool(user32.GetAsyncKeyState(VK_MENU) & 0x8000),
+            bool(right_state & 0x8000 or right_state & 0x0001),
+            point.x,
+            point.y,
+        )
+
+    def _input_loop(self):
+        """Poll independently so layered-window painting cannot miss clicks."""
+        while not self._input_stop.is_set():
+            try:
+                self._poll_input()
+            except Exception as error:
+                logger.warning(f"overlay input polling failed: {error}")
+            self._input_stop.wait(INPUT_POLL_INTERVAL)
+
+    def _update_input_state(self, alt_down, right_down, cursor_x, cursor_y):
+        """Update crosshair/copy state from one input sample.
+
+        Kept separate from the Win32 polling call so the interaction can be
+        verified without creating a native desktop window.
+        """
+        clipboard_text = None
+        with self._lock:
+            previous = (self._is_alt_down, self._right_down, self._pointer_inside,
+                        self._mouse_position, tuple(self._click_points))
+            relative = (int(cursor_x) - self._x, int(cursor_y) - self._y)
+            inside = (self._source_visible and 0 <= relative[0] < self._width
+                      and 0 <= relative[1] < self._height)
+
+            if not alt_down:
+                self._accumulated_coords = []
+                self._click_points = []
+            if inside:
+                self._mouse_position = relative
+
+            # Capture only the up-to-down edge. The click still passes through
+            # to the game because the native window has WS_EX_TRANSPARENT.
+            if alt_down and right_down and not self._right_down and inside and self._width and self._height:
+                x_percent = relative[0] / self._width
+                y_percent = relative[1] / self._height
+                coordinate = f"{x_percent:.3f}, {y_percent:.3f}"
+                if len(self._accumulated_coords) >= 2:
+                    self._accumulated_coords[1] = coordinate
+                    self._click_points[1] = relative
+                else:
+                    self._accumulated_coords.append(coordinate)
+                    self._click_points.append(relative)
+                clipboard_text = ", ".join(self._accumulated_coords)
+
+            self._is_alt_down = bool(alt_down)
+            self._right_down = bool(right_down)
+            self._pointer_inside = inside
+            current = (self._is_alt_down, self._right_down, self._pointer_inside,
+                       self._mouse_position, tuple(self._click_points))
+
+        if clipboard_text is not None:
+            self._copy_to_clipboard(clipboard_text)
+        if current != previous:
+            self._schedule_render()
+
+    def _copy_to_clipboard(self, text):
+        try:
+            if self._qt_clipboard_writer is not None:
+                # This reproduces the pre-refactor QGuiApplication clipboard
+                # path without touching Qt from the native polling thread.
+                self._qt_clipboard_writer.requested.emit(text)
+                return
+            from ok.third_party.paperclip import copy
+            copy(text)
+        except Exception as error:
+            logger.warning(f"coordinate clipboard copy failed: {error}")
 
     def _schedule_expiry(self, duration, callback):
         timer = threading.Timer(max(0, float(duration)) + .01, callback)
@@ -458,7 +605,8 @@ class Win32GdiOverlay:
             # focus, including freshly received background draw events.
             return bool(self._source_visible and
                         (
-                                    self._boxes_enabled or self._boxes_active or custom_active or self.blur_images or self.custom_painters))
+                                    self._boxes_enabled or self._boxes_active or custom_active or self.blur_images or
+                                    self.custom_painters or (self._is_alt_down and self._pointer_inside)))
 
     def _window_thread(self):
         try:
@@ -546,6 +694,7 @@ class Win32GdiOverlay:
             self._paint_border(memory_dc)
             self._paint_boxes(memory_dc)
             self._paint_logs(memory_dc)
+            self._paint_coordinate_overlay(memory_dc)
             self._paint_custom(memory_dc)
             # GDI leaves alpha untouched.  Every coloured pixel becomes opaque;
             # untouched pixels stay transparent in the layered window.
@@ -673,6 +822,51 @@ class Win32GdiOverlay:
             text = text[:200]
             gdi32.TextOutW(hdc, 5, y, text, len(text))
             y += 18
+
+    def _paint_coordinate_overlay(self, hdc):
+        if not (self._is_alt_down and self._pointer_inside):
+            return
+        mouse_x, mouse_y = self._mouse_position
+        pen = gdi32.CreatePen(PS_DASH, 1, _rgb(0, 255, 0))
+        old_pen = gdi32.SelectObject(hdc, pen)
+        gdi32.MoveToEx(hdc, 0, mouse_y, None)
+        gdi32.LineTo(hdc, self._width, mouse_y)
+        gdi32.MoveToEx(hdc, mouse_x, 0, None)
+        gdi32.LineTo(hdc, mouse_x, self._height)
+        gdi32.SelectObject(hdc, old_pen)
+        gdi32.DeleteObject(pen)
+
+        marker_pen = gdi32.CreatePen(PS_SOLID, 2, _rgb(255, 0, 0))
+        old_pen = gdi32.SelectObject(hdc, marker_pen)
+        old_brush = gdi32.SelectObject(hdc, gdi32.GetStockObject(5))
+        if len(self._click_points) == 1:
+            x, y = self._click_points[0]
+            gdi32.MoveToEx(hdc, x - 5, y, None)
+            gdi32.LineTo(hdc, x + 6, y)
+            gdi32.MoveToEx(hdc, x, y - 5, None)
+            gdi32.LineTo(hdc, x, y + 6)
+        elif len(self._click_points) >= 2:
+            (x1, y1), (x2, y2) = self._click_points[:2]
+            gdi32.Rectangle(hdc, min(x1, x2), min(y1, y2), max(x1, x2) + 1, max(y1, y2) + 1)
+        gdi32.SelectObject(hdc, old_pen)
+        gdi32.SelectObject(hdc, old_brush)
+        gdi32.DeleteObject(marker_pen)
+
+        x_percent = mouse_x / self._width if self._width else 0
+        y_percent = mouse_y / self._height if self._height else 0
+        device_manager = getattr(og, "device_manager", None)
+        device_width = getattr(device_manager, "width", 0) or self._width
+        device_height = getattr(device_manager, "height", 0) or self._height
+        device_x = int(x_percent * device_width)
+        device_y = int(y_percent * device_height)
+        text = (f"{device_x}, {device_y}, {x_percent:.3f}, {y_percent:.3f} "
+                f"(Alt+right click to copy)")
+        font = gdi32.CreateFontW(-24, 0, 0, 0, 600, 0, 0, 0, 1, 0, 0, 5, 0, "Segoe UI")
+        old_font = gdi32.SelectObject(hdc, font)
+        gdi32.SetTextColor(hdc, _rgb(255, 85, 85))
+        gdi32.TextOutW(hdc, 16, 16, text, len(text))
+        gdi32.SelectObject(hdc, old_font)
+        gdi32.DeleteObject(font)
 
     def _paint_custom(self, hdc):
         canvas = GdiCanvas(hdc, self._ratio())

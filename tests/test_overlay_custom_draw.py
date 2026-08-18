@@ -59,3 +59,40 @@ class TestWin32GdiOverlay(unittest.TestCase):
         self.view.update_overlay(False, 0, 0, 100, 100, 100, 100, 1)
         self.assertFalse(self.view.blur_images)
         self.assertFalse(self.view.isVisible())
+
+    def test_alt_crosshair_makes_overlay_visible_while_pointer_is_inside(self):
+        self.assertFalse(self.view.isVisible())
+        self.view._update_input_state(True, False, 62, 64)
+        self.assertTrue(self.view.isVisible())
+        self.assertEqual((50, 40), self.view._mouse_position)
+
+        self.view._update_input_state(False, False, 62, 64)
+        self.assertFalse(self.view.isVisible())
+        self.assertEqual([], self.view._click_points)
+
+    def test_alt_right_click_copies_one_point_then_a_rectangle(self):
+        copied = []
+        self.view._copy_to_clipboard = copied.append
+
+        self.view._update_input_state(True, True, 22, 44)
+        self.view._update_input_state(True, True, 52, 64)
+        self.assertEqual(['0.100, 0.250'], copied)
+
+        self.view._update_input_state(True, False, 52, 64)
+        self.view._update_input_state(True, True, 52, 64)
+        self.assertEqual(['0.100, 0.250', '0.100, 0.250, 0.400, 0.500'], copied)
+        self.assertEqual([(10, 20), (40, 40)], self.view._click_points)
+
+    def test_right_click_without_alt_does_not_copy(self):
+        copied = []
+        self.view._copy_to_clipboard = copied.append
+        self.view._update_input_state(False, True, 22, 44)
+        self.assertEqual([], copied)
+
+    def test_hidden_source_does_not_capture_coordinates(self):
+        copied = []
+        self.view._copy_to_clipboard = copied.append
+        self.view.update_overlay(False, 12, 24, 100, 80, 100, 80, 1)
+        self.view._update_input_state(True, True, 22, 44)
+        self.assertEqual([], copied)
+        self.assertFalse(self.view.isVisible())
