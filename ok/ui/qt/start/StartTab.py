@@ -34,14 +34,15 @@ class StartTab(Tab):
         self.start_card.refresh_button.clicked.connect(self.refresh_clicked)
         self.start_card.capture_button.clicked.connect(self.capture)
 
-        horizontal_widget = QWidget()
-        horizontal_widget.setMinimumHeight(320)
-        horizontal_widget.setMaximumHeight(440)
-        horizontal_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        horizontal_layout = QHBoxLayout(horizontal_widget)
+        self.selector_widget = QWidget()
+        self.selector_widget.setMinimumHeight(320)
+        self.selector_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        horizontal_layout = QHBoxLayout(self.selector_widget)
         horizontal_layout.setContentsMargins(0, 0, 0, 0)
         horizontal_layout.setSpacing(DesignToken.SECTION_SPACING)
-        self.add_widget(horizontal_widget)
+        # The selector row owns all surplus page height. Start/debug cards keep
+        # their natural size while these lists grow with the window.
+        self.add_widget(self.selector_widget, 1)
 
         self.device_search_box = None
         if not config.get('windows') or not config.get('windows').get('exe'):
