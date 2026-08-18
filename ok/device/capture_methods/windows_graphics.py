@@ -34,6 +34,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         self.get_frame_lock = threading.RLock()
         self.frame_event = threading.Event()
         self.frame_requested = threading.Event()
+        self._frame_cancel_generation = 0
         self.last_frame_time = time.time()
         self.exit_event = hwnd_window.app_exit_event
         self.cputex = None
@@ -257,6 +258,12 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         # _do_get_frame() composites child windows with BitBlt after receiving
         # the WGC frame. Serialize close with that whole request so its GDI
         # contexts cannot be released while composite_hwnds() is using them.
+        # Wake a pending request before waiting for get_frame_lock; otherwise
+        # the GUI close path can wait for the full frame timeout.
+        with self.lock:
+            self._frame_cancel_generation += 1
+            self.frame_requested.clear()
+            self.frame_event.set()
         with self.get_frame_lock:
             with self.lock:
                 logger.info('destroy windows capture')
@@ -294,7 +301,8 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             return self._do_get_frame()
 
     def _do_get_frame(self):
-
+        if self.exit_event.is_set():
+            return None
         if self.start_or_stop():
             now = time.time()
             if now - self.last_frame_time > 10:
@@ -308,12 +316,21 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             # consuming such a frame.
             with self.lock:
                 frame = None
+                cancel_generation = self._frame_cancel_generation
                 self.last_frame = None
                 self.frame_event.clear()
                 self.frame_requested.set()
 
             deadline = time.monotonic() + WGC_FRAME_WAIT_TIMEOUT
             while frame is None:
+                if self.exit_event.is_set():
+                    with self.lock:
+                        self.last_frame = None
+                        self.frame_requested.clear()
+                        self.frame_event.clear()
+                    return None
+                if cancel_generation != self._frame_cancel_generation:
+                    return None
                 timeout_duration = deadline - time.monotonic()
                 if timeout_duration <= 0:
                     # Serialize cancellation with frame_arrived_callback(). If
@@ -328,7 +345,9 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                             self.frame_requested.clear()
                     break
 
-                self.frame_event.wait(timeout_duration)
+                # ExitEvent cannot directly wake threading.Event, so sample it
+                # at a short interval rather than blocking shutdown for 4 s.
+                self.frame_event.wait(min(timeout_duration, .05))
 
                 with self.lock:
                     if self.frame_pool is None:

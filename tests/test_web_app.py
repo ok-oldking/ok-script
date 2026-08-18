@@ -143,6 +143,18 @@ def test_all_ui_facades_initialize_overlay_from_core_state(app_type):
     overlay.set_boxes_enabled.assert_called_once_with(True)
 
 
+@pytest.mark.parametrize("app_type", [App, HeadlessApp])
+def test_disabled_overlay_is_not_initialized(app_type):
+    app = object.__new__(app_type)
+    app.config = {}
+    app.ok_config = {"use_overlay": False, "show_overlay_logs": True}
+    app.get_overlay_view = Mock()
+
+    app.initialize_overlay()
+
+    app.get_overlay_view.assert_not_called()
+
+
 def test_web_overlay_toggle_resyncs_latest_capture_window():
     app = object.__new__(HeadlessApp)
     app.config = {}
@@ -161,6 +173,19 @@ def test_web_overlay_toggle_resyncs_latest_capture_window():
 
     app.overlay_window.sync_source_window.assert_called_once_with(source_window)
     app.overlay_window.set_boxes_enabled.assert_called_once_with(True)
+
+
+def test_turning_boxes_off_closes_and_releases_overlay():
+    app = object.__new__(HeadlessApp)
+    app.config = {}
+    app.ok_config = {"use_overlay": True, "show_overlay_logs": True}
+    overlay = Mock()
+    app.overlay_window = overlay
+
+    app.set_overlay_setting("boxes", False)
+
+    overlay.close.assert_called_once_with()
+    assert app.overlay_window is None
 
 
 def test_headless_notification_formats_and_submits_to_manager():

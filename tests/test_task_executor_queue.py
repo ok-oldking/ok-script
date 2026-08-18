@@ -2,7 +2,7 @@ import threading
 import time
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import ok.task.TaskExecutor as task_executor_module
 from ok.task.TaskExecutor import TaskExecutor
@@ -117,6 +117,19 @@ class TestTaskExecutorQueue(unittest.TestCase):
         executor.enqueue_onetime_task(onetime_task)
 
         self.assertIs(trigger_task, executor.waiting_for_task(onetime_task))
+
+    def test_destroy_is_idempotent(self):
+        executor = self.make_executor([])
+        task = SimpleNamespace(on_destroy=Mock())
+        interaction = SimpleNamespace(on_destroy=Mock())
+        executor.onetime_tasks = [task]
+        executor.device_manager = SimpleNamespace(interaction=interaction)
+
+        executor.destroy()
+        executor.destroy()
+
+        task.on_destroy.assert_called_once_with()
+        interaction.on_destroy.assert_called_once_with()
 
 
 if __name__ == '__main__':

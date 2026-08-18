@@ -216,6 +216,7 @@ class TaskCard(ConfigCard):
     def check_changed(self, checked):
         if checked:
             import threading
-            threading.Thread(target=self.task.enable, name="TaskEnable").start()
+            threading.Thread(
+                target=self.task.enable, name="TaskEnable", daemon=True).start()
         else:
             self.task.disable()

@@ -1,5 +1,6 @@
 import unittest
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import numpy as np
 
@@ -96,3 +97,39 @@ class TestWin32GdiOverlay(unittest.TestCase):
         self.view._update_input_state(True, True, 22, 44)
         self.assertEqual([], copied)
         self.assertFalse(self.view.isVisible())
+
+    def test_frequent_box_events_keep_one_bounded_expiry_job(self):
+        self.view.set_boxes_enabled(True)
+        for _ in range(2000):
+            self.view.on_draw_box("feature", [object()], "red", None, True)
+
+        with self.view._expiry_lock:
+            self.assertEqual({"boxes"}, set(self.view._expiry_jobs))
+        self.assertTrue(self.view._expiry_handler.thread.is_alive())
+
+    def test_replacing_timed_draw_with_permanent_draw_cancels_old_expiry(self):
+        self.view.draw("status", lambda *_: None, duration=30)
+        self.view.draw("status", lambda *_: None)
+
+        with self.view._expiry_lock:
+            self.assertNotIn("custom:status", self.view._expiry_jobs)
+        self.assertIn("status", self.view.custom_painters)
+
+    def test_exit_event_stops_all_overlay_workers(self):
+        from ok.util.handler import ExitEvent
+
+        self.view.close()
+        event = ExitEvent()
+        self.view = Win32GdiOverlay(self.source_window, native=False, exit_event=event)
+        event.set()
+        self.view._expiry_handler.join(timeout=1)
+
+        self.assertTrue(self.view._closed)
+        self.assertFalse(self.view._expiry_handler.thread.is_alive())
+
+    def test_exit_event_overlay_stop_does_not_join_workers(self):
+        self.view._join_workers = Mock()
+
+        self.view.stop()
+
+        self.view._join_workers.assert_not_called()

@@ -3,7 +3,7 @@ import os
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from ok.ui.qt.MainWindow import MainWindow, update_check_delay_ms
+from ok.ui.qt.MainWindow import MainWindow, request_pyappify_shutdown, update_check_delay_ms
 
 
 class TestMainWindowStartupTab(unittest.TestCase):
@@ -15,6 +15,14 @@ class TestMainWindowStartupTab(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("PYAPPIFY_PYTHON_TEST", None)
             self.assertEqual(30_000, update_check_delay_ms())
+
+    @patch("ok.ui.qt.MainWindow.pyappify.kill_pyappify")
+    def test_pyappify_shutdown_does_not_block_gui_thread(self, kill_pyappify):
+        thread = request_pyappify_shutdown()
+
+        self.assertTrue(thread.daemon)
+        thread.join(1)
+        kill_pyappify.assert_called_once_with()
 
     def test_started_check_cancels_pending_timer(self):
         timer = SimpleNamespace(isActive=lambda: True, stop=Mock())

@@ -89,6 +89,8 @@ class TaskExecutor:
         self.lock = threading.Lock()
         self._wake_condition = threading.Condition()
         self._wake_version = 0
+        self._destroy_lock = threading.Lock()
+        self._destroyed = False
         if hasattr(self.exit_event, 'bind_condition'):
             self.exit_event.bind_condition(self._wake_condition)
         self._ocr_lib_lock = threading.Lock()
@@ -393,7 +395,10 @@ class TaskExecutor:
     def start(self):
         with self.lock:
             if self.thread is None:
-                self.thread = threading.Thread(target=self.execute, name="TaskExecutor")
+                # Application shutdown must not be held hostage by a custom
+                # task or interaction backend that ignores exit_event.
+                self.thread = threading.Thread(
+                    target=self.execute, name="TaskExecutor", daemon=True)
                 self.thread.start()
             if self.paused:
                 self.paused = False
@@ -623,15 +628,34 @@ class TaskExecutor:
         self._wake_executor()
 
     def destroy(self):
+        lock = getattr(self, '_destroy_lock', None)
+        if lock is None:
+            lock = self._destroy_lock = threading.Lock()
+        with lock:
+            if getattr(self, '_destroyed', False):
+                return
+            self._destroyed = True
         logger.info(f'Executor destroy')
-        for task in self.onetime_tasks:
-            task.on_destroy()
-        self.onetime_tasks = []
-        for task in self.trigger_tasks:
-            task.on_destroy()
-        self.trigger_tasks = []
+        onetime_tasks, self.onetime_tasks = self.onetime_tasks, []
+        trigger_tasks, self.trigger_tasks = self.trigger_tasks, []
+        for task in (*onetime_tasks, *trigger_tasks):
+            try:
+                task.on_destroy()
+            except Exception as error:
+                logger.error(f'task on_destroy failed for {task}: {error}')
         if self.interaction:
-            self.interaction.on_destroy()
+            try:
+                self.interaction.on_destroy()
+            except Exception as error:
+                logger.error(f'interaction on_destroy failed: {error}')
+
+    def request_destroy(self):
+        """Run cleanup away from the GUI close event when needed."""
+        if self.thread is not None and self.thread.is_alive():
+            # execute() owns normal cleanup after observing exit_event.
+            return
+        threading.Thread(
+            target=self.destroy, name="TaskExecutorCleanup", daemon=True).start()
 
     def wait_until_done(self):
         self.thread.join()

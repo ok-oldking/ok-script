@@ -12,6 +12,26 @@ from qfluentwidgets.components.widgets.scroll_bar import ScrollBarHandleDisplayM
 from qfluentwidgets.common.style_sheet import updateStyleSheet
 
 _original_MessageBoxBase_keyPressEvent = MessageBoxBase.keyPressEvent
+_pyappify_stop_lock = threading.Lock()
+
+
+def request_pyappify_shutdown():
+    """Terminate the launcher without ever blocking Qt's GUI thread."""
+    def stop_launcher():
+        if not _pyappify_stop_lock.acquire(blocking=False):
+            return
+        try:
+            pyappify.kill_pyappify()
+        except Exception as error:
+            logger.warning(f'kill_pyappify failed: {error}')
+        finally:
+            _pyappify_stop_lock.release()
+
+    thread = threading.Thread(
+        target=stop_launcher, name='PyAppifyShutdown', daemon=True)
+    thread.start()
+    return thread
+
 
 def _patched_message_box_base_keyPressEvent(self, e):
     if e.key() == Qt.Key_Escape:
@@ -463,7 +483,7 @@ class MainWindow(FluentWindow):
                        self.window())
         if w.exec():
             logger.info('restart_admin Yes button is pressed')
-            thread = threading.Thread(target=restart_as_admin)
+            thread = threading.Thread(target=restart_as_admin, daemon=True)
             thread.start()
             self.app.quit()
 
@@ -548,7 +568,7 @@ class MainWindow(FluentWindow):
             og.ok.start_runtime()
             if self.basic_global_config.get(KILL_LAUNCHER_AFTER_START):
                 logger.info(f'MainWindow showEvent Kill Launcher After Start')
-                pyappify.kill_pyappify(exit_event=self.exit_event)
+                request_pyappify_shutdown()
             startup_version_change = get_startup_version_change()
             if self.version != self.main_window_config.get('last_version'):
                 self.main_window_config['last_version'] = self.version
@@ -750,9 +770,14 @@ class MainWindow(FluentWindow):
                 self.hide()
                 return
             if not self.do_not_quit:
+                # Arm this before callbacks such as aboutToQuit can run. If a
+                # native cleanup call wedges the GUI thread, the process still
+                # has a bounded shutdown time and a diagnostic thread dump.
+                from ok.util.process import start_exit_watchdog
+                start_exit_watchdog()
                 self.exit_event.set()
-                self.executor.destroy()
+                self.executor.request_destroy()
             event.accept()
             if not self.do_not_quit:
-                pyappify.kill_pyappify(exit_event=self.exit_event)
+                request_pyappify_shutdown()
                 QApplication.instance().exit()

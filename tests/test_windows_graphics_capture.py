@@ -122,6 +122,7 @@ class TestWindowsGraphicsCaptureCallback(unittest.TestCase):
         method.exit_event = threading.Event()
         method.frame_event = threading.Event()
         method.frame_requested = threading.Event()
+        method._frame_cancel_generation = 0
         method.frame_requested.set()
         method.frame_pool = _FakeFramePool(frame)
         method.last_frame = None
@@ -185,6 +186,7 @@ class TestWindowsGraphicsCaptureGetFrame(unittest.TestCase):
         method.exit_event = threading.Event()
         method.frame_event = threading.Event()
         method.frame_requested = threading.Event()
+        method._frame_cancel_generation = 0
         method.frame_pool = _FakeFramePool(frame)
         method.last_frame = np.full((2, 2, 3), 1, dtype=np.uint8)
         method.last_frame_time = time.time()
@@ -226,6 +228,21 @@ class TestWindowsGraphicsCaptureGetFrame(unittest.TestCase):
         self.assertIsNone(result)
         self.assertFalse(method.frame_requested.is_set())
         self.assertIsNone(method.last_frame)
+
+    def test_exit_event_interrupts_pending_frame_wait(self):
+        method = self._method(_FakeFrame())
+        method.last_frame = None
+        result = []
+        worker = threading.Thread(target=lambda: result.append(method.do_get_frame()))
+        worker.start()
+        self.assertTrue(method.frame_requested.wait(1))
+
+        method.exit_event.set()
+        worker.join(.3)
+
+        self.assertFalse(worker.is_alive())
+        self.assertEqual([None], result)
+        self.assertFalse(method.frame_requested.is_set())
 
     def test_repeated_requests_continue_receiving_new_frames(self):
         method = self._method(_FakeFrame())

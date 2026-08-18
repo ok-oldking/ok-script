@@ -1,13 +1,17 @@
 # process.py
 import argparse
+import atexit
 import ctypes
 import glob
 import hashlib
 import os
 import re
 import subprocess
+import sys
+import tempfile
 import threading
 import time
+import traceback
 from ctypes import wintypes
 
 import psutil
@@ -18,6 +22,12 @@ logger = Logger.get_logger(__name__)
 
 WINDOWS_START_METHOD_START = 'start'
 WINDOWS_START_METHOD_OS_STARTFILE = 'os.startfile'
+
+_mutex_handle = None
+_mutex_owner_file = None
+_mutex_cleanup_registered = False
+_exit_watchdog_lock = threading.Lock()
+_exit_watchdog_started = False
 
 
 def is_admin():
@@ -39,7 +49,192 @@ def run_in_new_thread(func):
     return thread
 
 
-def check_mutex():
+def _write_shutdown_thread_dump():
+    """Persist all live Python stacks without depending on logging shutdown."""
+    from ok.util.file import ensure_dir_for_file, get_relative_path
+
+    output_file = get_relative_path(os.path.join('logs', 'shutdown_thread_dumps.txt'))
+    ensure_dir_for_file(output_file)
+    threads = {thread.ident: thread for thread in threading.enumerate()}
+    dumps = []
+    for thread_id, frame in sys._current_frames().items():
+        thread = threads.get(thread_id)
+        name = thread.name if thread else 'unknown'
+        daemon = thread.daemon if thread else 'unknown'
+        dumps.append(
+            f'Stack for thread {thread_id} (name={name}, daemon={daemon}):\n'
+            + ''.join(traceback.format_stack(frame)))
+    with open(output_file, 'w', encoding='utf-8') as file:
+        file.write('\n\n'.join(dumps))
+    return output_file
+
+
+def start_exit_watchdog(grace_period=3.0, exit_code=0, force_exit=None):
+    """Force termination if Python remains alive after the Qt loop exits.
+
+    The watchdog is daemonized, so a normal interpreter exit cancels it. It is
+    deliberately armed only by the Qt adapter after QApplication.exec() has
+    returned; at that point continued execution means shutdown is already in
+    progress and a remaining non-daemon worker must not keep the app alive.
+    """
+    global _exit_watchdog_started
+    with _exit_watchdog_lock:
+        if _exit_watchdog_started:
+            return None
+        _exit_watchdog_started = True
+
+    grace_period = max(0, grace_period)
+    normalized_exit_code = exit_code if isinstance(exit_code, int) else 0
+    hard_exit = force_exit or os._exit
+
+    def watch():
+        time.sleep(grace_period)
+        live_threads = [
+            f'{thread.name}(daemon={thread.daemon}, ident={thread.ident})'
+            for thread in threading.enumerate()
+            if thread is not threading.current_thread() and thread.is_alive()
+        ]
+        logger.warning(
+            'Shutdown grace period expired; forcing process exit. '
+            f'Live threads: {live_threads}')
+        try:
+            dump_file = _write_shutdown_thread_dump()
+            logger.warning(f'Shutdown thread stacks written to {dump_file}')
+        except Exception as error:
+            logger.error(f'Could not write shutdown thread stacks: {error}')
+        try:
+            sys.stdout.flush()
+            sys.stderr.flush()
+        except Exception:
+            pass
+        hard_exit(normalized_exit_code)
+
+    thread = threading.Thread(target=watch, name='ExitWatchdog', daemon=True)
+    thread.start()
+    if force_exit is None:
+        # Diagnostics are best-effort: a deadlocked logging handler or stalled
+        # filesystem must not defeat the actual shutdown guarantee.
+        def force_without_diagnostics():
+            time.sleep(grace_period + 1.0)
+            os._exit(normalized_exit_code)
+
+        threading.Thread(
+            target=force_without_diagnostics,
+            name='ExitWatchdogFallback', daemon=True).start()
+    return thread
+
+
+def _normalized_path(path):
+    if not path:
+        return None
+    return os.path.normcase(os.path.realpath(os.path.abspath(path)))
+
+
+def _current_app_signature():
+    entry = sys.argv[0] if sys.argv and sys.argv[0] and not sys.argv[0].startswith('-') else None
+    return _normalized_path(sys.executable), _normalized_path(os.getcwd()), _normalized_path(entry)
+
+
+def _process_matches_app(proc, executable, working_directory, entry_script):
+    """Strictly identify another invocation without matching unrelated Python jobs."""
+    try:
+        if proc.pid in (os.getpid(), os.getppid()):
+            return False
+        if _normalized_path(proc.exe()) != executable:
+            return False
+        process_cwd = _normalized_path(proc.cwd())
+        if process_cwd != working_directory:
+            return False
+        if entry_script is None:
+            return True
+        for argument in proc.cmdline():
+            if not argument or argument.startswith('-'):
+                continue
+            candidate = argument if os.path.isabs(argument) else os.path.join(process_cwd, argument)
+            if _normalized_path(candidate) == entry_script:
+                return True
+        return False
+    except (psutil.NoSuchProcess, psutil.AccessDenied, OSError):
+        return False
+
+
+def _read_owner_pid(owner_file):
+    try:
+        with open(owner_file, 'r', encoding='ascii') as file:
+            return int(file.read().strip())
+    except (OSError, ValueError):
+        return None
+
+
+def _find_previous_instances(owner_file):
+    executable, working_directory, entry_script = _current_app_signature()
+    owner_pid = _read_owner_pid(owner_file)
+    if owner_pid and owner_pid not in (os.getpid(), os.getppid()):
+        try:
+            owner = psutil.Process(owner_pid)
+            if _process_matches_app(owner, executable, working_directory, entry_script):
+                return [owner]
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+
+    # Compatibility fallback for a hung instance from a version that did not
+    # yet write the PID marker. The complete signature is still required.
+    if entry_script is None:
+        return []
+    matches = []
+    for proc in psutil.process_iter():
+        if _process_matches_app(proc, executable, working_directory, entry_script):
+            matches.append(proc)
+    return matches
+
+
+def _terminate_previous_instances(owner_file):
+    terminated = False
+    for proc in _find_previous_instances(owner_file):
+        try:
+            logger.warning(f'Terminating stuck previous instance pid={proc.pid}')
+            proc.kill()
+            terminated = True
+        except (psutil.NoSuchProcess, psutil.AccessDenied, OSError) as error:
+            logger.error(f'Could not terminate previous instance pid={proc.pid}: {error}')
+    return terminated
+
+
+def _release_mutex():
+    global _mutex_handle, _mutex_owner_file
+    if _mutex_handle:
+        try:
+            ctypes.windll.kernel32.CloseHandle(_mutex_handle)
+        except (AttributeError, OSError):
+            pass
+        _mutex_handle = None
+    if _mutex_owner_file and _read_owner_pid(_mutex_owner_file) == os.getpid():
+        try:
+            os.unlink(_mutex_owner_file)
+        except OSError:
+            pass
+    _mutex_owner_file = None
+
+
+def _retain_mutex(handle, owner_file):
+    global _mutex_handle, _mutex_owner_file, _mutex_cleanup_registered
+    _mutex_handle = handle
+    _mutex_owner_file = owner_file
+    try:
+        temporary = f'{owner_file}.{os.getpid()}.tmp'
+        with open(temporary, 'w', encoding='ascii') as file:
+            file.write(str(os.getpid()))
+        os.replace(temporary, owner_file)
+    except OSError as error:
+        logger.warning(f'Could not record mutex owner: {error}')
+    if not _mutex_cleanup_registered:
+        atexit.register(_release_mutex)
+        _mutex_cleanup_registered = True
+
+
+def check_mutex(wait_time=5, kill_wait_time=3):
+    if _mutex_handle:
+        return True
     _LPSECURITY_ATTRIBUTES = wintypes.LPVOID
     _BOOL = ctypes.c_int
     _DWORD = ctypes.c_ulong
@@ -54,34 +249,54 @@ def check_mutex():
     path = os.getcwd()
     # Try to create a named mutex
     mutex_name = hashlib.md5(path.encode()).hexdigest()
+    owner_file = os.path.join(tempfile.gettempdir(), f'ok-script-{mutex_name}.pid')
     mutex = _CreateMutex(0, False, mutex_name)
+    if not mutex:
+        raise ctypes.WinError()
+    already_exists = _GetLastError() == _ERROR_ALREADY_EXISTS
     logger.info(f'_CreateMutex {mutex_name}')
     # Check if the mutex already exists
-    if _GetLastError() == _ERROR_ALREADY_EXISTS:
+    if already_exists:
         logger.error(
             f'Another instance of this application is already running {mutex_name}. Waiting for it to disappear.')
         print(f"Another instance of this application is already running. {mutex_name}")
-        wait_time = 10
-        start_time = time.time()
-        while time.time() - start_time < wait_time:
-            # Try to create the mutex again to check if the other instance has released it
+        # A contender's handle also keeps the named kernel object alive. Close
+        # it before polling, otherwise this process prevents its own recovery.
+        ctypes.windll.kernel32.CloseHandle(mutex)
+
+        def try_acquire():
             temp_mutex = _CreateMutex(0, False, mutex_name)
+            if not temp_mutex:
+                raise ctypes.WinError()
             if _GetLastError() != _ERROR_ALREADY_EXISTS:
-                # Mutex is gone, the other instance likely terminated
+                _retain_mutex(temp_mutex, owner_file)
                 logger.info(f"Mutex {mutex_name} disappeared. Proceeding.")
-                ctypes.windll.kernel32.CloseHandle(temp_mutex)  # Close the temporary mutex
-                return True  # Proceed with the current instance
-            ctypes.windll.kernel32.CloseHandle(temp_mutex)  # Close the temporary mutex
-            time.sleep(0.5)  # Wait a bit before retrying
-        # If mutex still exists after waiting, kill the other instance
+                return True
+            ctypes.windll.kernel32.CloseHandle(temp_mutex)
+            return False
+
+        deadline = time.monotonic() + max(0, wait_time)
+        while time.monotonic() < deadline:
+            if try_acquire():
+                return True
+            time.sleep(0.25)
+
         logger.warning(
-            f"Mutex {mutex_name} still exists after {wait_time} seconds. Attempting to kill existing process.")
-        kill_exe(os.path.abspath(os.getcwd()))
-        # After attempting to kill, the mutex should eventually be released.
-        # You might want to add another short wait here or just let the mutex check
-        # in the next iteration of the main script loop handle it if it restarts.
-        return False  # Indicate that a mutex conflict was handled
-    return True  # No mutex conflict, proceed
+            f"Mutex {mutex_name} still exists after {wait_time} seconds; checking its recorded owner.")
+        if not _terminate_previous_instances(owner_file):
+            logger.error('No safely identifiable previous instance could be terminated.')
+            return False
+
+        deadline = time.monotonic() + max(0, kill_wait_time)
+        while time.monotonic() < deadline:
+            if try_acquire():
+                return True
+            time.sleep(0.25)
+        logger.error(f"Mutex {mutex_name} was not released after terminating its recorded owner.")
+        return False
+
+    _retain_mutex(mutex, owner_file)
+    return True
 
 
 def restart_as_admin():
