@@ -102,11 +102,7 @@ class ConfigContentMixin:
         self.config_widget_by_key[key] = widget
         self.config_keys.append(key)
         if self.__is_sub_config_key(key):
-            # LabelAnd* 控件把 self.layout 作为 QHBoxLayout 实例属性（遮蔽 Qt 方法），
-            # 而少数控件仍暴露 Qt 的 layout() 方法，这里兼容两种取值方式。
             layout = widget.layout
-            if callable(layout):
-                layout = layout()
             margins = layout.contentsMargins()
             layout.setContentsMargins(
                 margins.left() + DesignToken.SUBCONFIG_INDENT,
