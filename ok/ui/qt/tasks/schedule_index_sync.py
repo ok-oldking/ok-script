@@ -334,11 +334,16 @@ def sync_schedule_task_indexes(onetime_tasks: Optional[Sequence] = None) -> int:
     """
     global _SYNCED
     if _SYNCED:
+        logger.debug("schedule index sync skipped: already synced this process")
         return 0
     _SYNCED = True
 
     try:
         tasks = list(onetime_tasks) if onetime_tasks is not None else _onetime_tasks()
+        logger.info(
+            f"schedule index sync start: {len(tasks)} onetime_tasks, "
+            f"root={_schedule_root_path()}"
+        )
         name_to_index = _name_to_index_map(tasks)
         if not name_to_index:
             logger.info("schedule index sync skipped: onetime_tasks is empty")
@@ -346,15 +351,25 @@ def sync_schedule_task_indexes(onetime_tasks: Optional[Sequence] = None) -> int:
 
         cache_file = _cache_file()
         if cache_file is None or not cache_file.exists():
+            logger.info("schedule index sync skipped: cache file not found")
             return 0
 
         data = _load_cache_data(cache_file)
         if not data:
+            logger.info("schedule index sync skipped: cache is empty/invalid")
             return 0
+        logger.info(
+            f"schedule index sync: read {len(data)} cache entries from {cache_file}"
+        )
 
         corrections = _collect_corrections(data, name_to_index, _schedule_root_path().rstrip("\\"))
         if not corrections:
+            logger.info("schedule index sync: no stale indexes to correct")
             return 0
+        logger.info(
+            f"schedule index sync: {len(corrections)} stale task(s) found: "
+            + ", ".join(f"{item.get('name')} (old -t {old})" for _, item, _, old in corrections)
+        )
 
         changed, argv_target_map = _perform_corrections(corrections)
         if changed:
@@ -364,6 +379,11 @@ def sync_schedule_task_indexes(onetime_tasks: Optional[Sequence] = None) -> int:
                 f"{item.get('name')} -> -t {idx}" for _, item, idx, _ in corrections
             )
             logger.info(f"schedule index sync corrected {changed} task(s): {detail}")
+        else:
+            logger.warning(
+                "schedule index sync: corrections failed, cache kept unchanged, "
+                "will retry next launch"
+            )
         return changed
     except Exception:
         logger.exception("schedule index sync failed")
