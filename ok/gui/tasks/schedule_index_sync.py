@@ -84,6 +84,18 @@ def _cache_file() -> Optional[Path]:
         return None
 
 
+def _load_cache_data(cache_file: Path) -> Optional[dict]:
+    """读取计划任务缓存并校验为有效字典；非字典或为空时返回 None。
+
+    JSON 解析异常交由调用方统一处理（保持原有日志与返回值不变）。
+    """
+    with open(cache_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    if not isinstance(data, dict) or not data:
+        return None
+    return data
+
+
 def _schedule_root_path() -> str:
     """返回本应用的 Windows 计划任务根路径（如 \\ok-ef），测试可 monkeypatch。"""
     try:
@@ -202,6 +214,50 @@ def _apply_correction(item: dict, new_index: int):
         _register_task_xml(path, new_xml)
 
 
+def _collect_corrections(
+        data: dict, name_to_index: Dict[str, int], root_path: str
+) -> List[Tuple[str, dict, int, str]]:
+    """收集需要修正的缓存任务。
+
+    仅处理本应用（root_path）下的任务，且任务名在当前 onetime_tasks 中存在、
+    -t 目标不是当前索引时才收集，返回 [(task_key, item, new_index, old_target), ...]。
+    """
+    corrections: List[Tuple[str, dict, int, str]] = []
+    for task_key, item in data.items():
+        if not isinstance(item, dict):
+            continue
+        # 只处理本应用（如 ok-ef）下的任务，其它 ok-* 应用只读任务不动
+        if not _is_own_task_path(str(item.get("path") or task_key), root_path):
+            continue
+        name = item.get("name")
+        # 任务名在当前 onetime_tasks 中不存在，跳过
+        if not name or str(name) not in name_to_index:
+            continue
+        new_index = name_to_index[str(name)]
+        old_target = _extract_task_target(item)
+        if old_target is None:
+            continue
+        # 已是正确索引则跳过（幂等）
+        if old_target.isdigit() and int(old_target) == new_index:
+            continue
+        corrections.append((task_key, item, new_index, old_target))
+    return corrections
+
+
+def _perform_corrections(corrections: List[Tuple[str, dict, int, str]]) -> Tuple[int, Dict[str, int]]:
+    """逐项应用索引修正，返回 (成功修正数, 旧 -t 目标 -> 新索引 的 argv 映射)。"""
+    changed = 0
+    argv_target_map: Dict[str, int] = {}
+    for task_key, item, new_index, old_target in corrections:
+        try:
+            _apply_correction(item, new_index)
+            changed += 1
+            argv_target_map.setdefault(old_target, new_index)
+        except Exception:
+            logger.exception(f"schedule index sync failed for {task_key}")
+    return changed, argv_target_map
+
+
 def _rewrite_current_process_argv(argv_target_map: Dict[str, int]):
     """改写本次进程 sys.argv 中的 -t 参数，使本次启动也使用新索引。"""
     if not argv_target_map:
@@ -253,45 +309,15 @@ def sync_schedule_task_indexes(onetime_tasks: Optional[Sequence] = None) -> int:
         if cache_file is None or not cache_file.exists():
             return 0
 
-        with open(cache_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        if not isinstance(data, dict) or not data:
+        data = _load_cache_data(cache_file)
+        if not data:
             return 0
 
-        root_path = _schedule_root_path().rstrip("\\")
-        corrections: List[Tuple[str, dict, int, str]] = []
-        for task_key, item in data.items():
-            if not isinstance(item, dict):
-                continue
-            # 只处理本应用（ok-ef）下的任务，其它 ok-* 应用只读任务不动
-            if not _is_own_task_path(str(item.get("path") or task_key), root_path):
-                continue
-            name = item.get("name")
-            new_index = name_to_index.get(str(name)) if name else None
-            if not new_index:
-                # 任务名在当前 onetime_tasks 中不存在，跳过
-                continue
-            old_target = _extract_task_target(item)
-            if old_target is None:
-                continue
-            # 已是正确索引则跳过（幂等）
-            if old_target.isdigit() and int(old_target) == new_index:
-                continue
-            corrections.append((task_key, item, new_index, old_target))
-
+        corrections = _collect_corrections(data, name_to_index, _schedule_root_path().rstrip("\\"))
         if not corrections:
             return 0
 
-        changed = 0
-        argv_target_map: Dict[str, int] = {}
-        for task_key, item, new_index, old_target in corrections:
-            try:
-                _apply_correction(item, new_index)
-                changed += 1
-                argv_target_map.setdefault(old_target, new_index)
-            except Exception:
-                logger.exception(f"schedule index sync failed for {task_key}")
-
+        changed, argv_target_map = _perform_corrections(corrections)
         if changed:
             _rewrite_current_process_argv(argv_target_map)
             _write_cache(cache_file, data)
