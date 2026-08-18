@@ -1,7 +1,7 @@
 # coding:utf-8
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import InfoBar, setTheme
-from qfluentwidgets import (SettingCardGroup, ComboBoxSettingCard, OptionsSettingCard)
+from qfluentwidgets import (SettingCardGroup, ComboBoxSettingCard, OptionsSettingCard, SwitchSettingCard)
 
 from ok import og
 from ok.ui.qt.common.config import cfg
@@ -38,6 +38,13 @@ class SettingTab(Tab):
             ],
             parent=self.basic_group
         )
+
+        self.floating_window_card = SwitchSettingCard(
+            FIF.SEND,
+            og.app.tr('Floating Window'),
+            og.app.tr('Show a compact always-on-top panel above the game window'),
+            parent=self.basic_group
+        )
         self.config_groups = []
         self.__initWidget()
 
@@ -49,6 +56,7 @@ class SettingTab(Tab):
     def __initLayout(self):
         self.basic_group.addSettingCard(self.themeCard)
         self.basic_group.addSettingCard(self.languageCard)
+        self.basic_group.addSettingCard(self.floating_window_card)
 
     def goto_config(self, key):
         to_scroll = None
@@ -74,6 +82,10 @@ class SettingTab(Tab):
                 self.basic_group.addSettingCard(card)
                 self.config_groups.append(card)
 
+    def __onFloatingWindowChanged(self, checked):
+        if og.main_window is not None:
+            og.main_window.set_floating_window_enabled(checked)
+
     def __showRestartTooltip(self):
         """ show restart tooltip """
         InfoBar.success(
@@ -88,3 +100,5 @@ class SettingTab(Tab):
         cfg.appRestartSig.connect(self.__showRestartTooltip)
 
         self.themeCard.optionChanged.connect(lambda ci: setTheme(cfg.get(ci)))
+
+        self.floating_window_card.checkedChanged.connect(self.__onFloatingWindowChanged)

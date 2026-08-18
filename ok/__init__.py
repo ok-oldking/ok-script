@@ -460,9 +460,50 @@ class App(_OverlayConfigMixin):
 
         self.timer = QTimer()
         self.timer.start(1000)
-        self.timer.timeout.connect(lambda: None)
+        self.timer.timeout.connect(self._gui_heartbeat)
+
+        # Watchdog: if the Qt (GUI) thread stops processing events the window
+        # becomes "not responding" and the whole Python process appears stuck.
+        # Dump every thread's stack to logs/thread_dumps.txt so the hang can be
+        # diagnosed, and finally exit so a relaunch is not blocked by the
+        # stuck process holding the single-instance mutex.
+        self._last_gui_heartbeat = time.monotonic()
+        self._watchdog_stop = threading.Event()
+        self._watchdog_thread = threading.Thread(target=self._watchdog_loop,
+                                                 name='GuiWatchdog', daemon=True)
+        self._watchdog_thread.start()
 
         sys.exit(self.app.exec())
+
+    def _gui_heartbeat(self):
+        """Called every second by the Qt event loop; proves the GUI thread is alive."""
+        self._last_gui_heartbeat = time.monotonic()
+
+    def _watchdog_loop(self):
+        stuck_since = None
+        while not self._watchdog_stop.wait(2):
+            stuck_for = time.monotonic() - self._last_gui_heartbeat
+            if stuck_for > 8:
+                if stuck_since is None:
+                    stuck_since = time.monotonic()
+                    logger.error(
+                        f'GUI thread unresponsive for {stuck_for:.0f}s; dumping thread stacks for diagnosis.')
+                    try:
+                        from ok.capture.windows.dump import dump_threads
+                        dump_threads()
+                    except Exception as e:
+                        logger.error(f'Failed to dump threads: {e}')
+                elif time.monotonic() - stuck_since > 120:
+                    logger.error(
+                        f'GUI thread still unresponsive after 120s; exiting to release the instance mutex.')
+                    try:
+                        from ok.capture.windows.dump import dump_threads
+                        dump_threads()
+                    except Exception:
+                        pass
+                    os._exit(1)
+            else:
+                stuck_since = None
 
 
 class HeadlessApp(_OverlayConfigMixin):

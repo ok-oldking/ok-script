@@ -6,6 +6,7 @@ import hashlib
 import os
 import re
 import subprocess
+import sys
 import threading
 import time
 from ctypes import wintypes
@@ -61,25 +62,42 @@ def check_mutex():
         logger.error(
             f'Another instance of this application is already running {mutex_name}. Waiting for it to disappear.')
         print(f"Another instance of this application is already running. {mutex_name}")
-        wait_time = 10
+        # Drop our own handle first: while this process keeps a handle to the
+        # named mutex, the kernel object stays alive and the name never
+        # "disappears", so the retry loop below could never succeed.
+        ctypes.windll.kernel32.CloseHandle(mutex)
+        wait_time = 5
         start_time = time.time()
         while time.time() - start_time < wait_time:
             # Try to create the mutex again to check if the other instance has released it
             temp_mutex = _CreateMutex(0, False, mutex_name)
             if _GetLastError() != _ERROR_ALREADY_EXISTS:
-                # Mutex is gone, the other instance likely terminated
+                # Mutex is gone, the other instance likely terminated.  Keep
+                # this handle so the current instance holds the mutex.
                 logger.info(f"Mutex {mutex_name} disappeared. Proceeding.")
-                ctypes.windll.kernel32.CloseHandle(temp_mutex)  # Close the temporary mutex
                 return True  # Proceed with the current instance
             ctypes.windll.kernel32.CloseHandle(temp_mutex)  # Close the temporary mutex
             time.sleep(0.5)  # Wait a bit before retrying
-        # If mutex still exists after waiting, kill the other instance
+        # If mutex still exists after waiting, kill the previous instance.  The
+        # mutex is held by our own packaged interpreter, so pass the current
+        # interpreter path: passing the working directory (as the old code did)
+        # never matched any process exe and the stuck instance survived,
+        # leaving the app unable to start ("Python does not run").
         logger.warning(
-            f"Mutex {mutex_name} still exists after {wait_time} seconds. Attempting to kill existing process.")
-        kill_exe(os.path.abspath(os.getcwd()))
-        # After attempting to kill, the mutex should eventually be released.
-        # You might want to add another short wait here or just let the mutex check
-        # in the next iteration of the main script loop handle it if it restarts.
+            f"Mutex {mutex_name} still exists after {wait_time} seconds. Attempting to kill the previous instance.")
+        kill_exe(abs_path=sys.executable)
+        # Give the killed process a moment to release the mutex.
+        start_time = time.time()
+        while time.time() - start_time < 3:
+            temp_mutex = _CreateMutex(0, False, mutex_name)
+            if _GetLastError() != _ERROR_ALREADY_EXISTS:
+                logger.info(f"Mutex {mutex_name} released after killing the previous instance. Proceeding.")
+                return True
+            ctypes.windll.kernel32.CloseHandle(temp_mutex)
+            time.sleep(0.5)
+        logger.error(
+            f"Mutex {mutex_name} is still held after killing the previous instance; "
+            f"the stuck process may be unkillable (e.g. elevated).")
         return False  # Indicate that a mutex conflict was handled
     return True  # No mutex conflict, proceed
 

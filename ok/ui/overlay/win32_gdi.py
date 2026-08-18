@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import ctypes
 import os
+import heapq
 import threading
 import time
 from ctypes import wintypes
@@ -234,6 +235,19 @@ class Win32GdiOverlay:
         self.blur_images = []
         self._py_object = ctypes.py_object(self) if self._native_available else None
 
+        # A single scheduler thread for expiring boxes/custom painters.  The
+        # previous implementation created one threading.Timer per draw_box
+        # event, which floods the process with hundreds of short-lived threads
+        # during combat and stalls the GUI thread inside timer.start().
+        self._expiry_heap = []
+        self._expiry_counter = 0
+        self._expiry_condition = threading.Condition()
+        self._expiry_stop = False
+        self._expiry_thread = threading.Thread(target=self._expiry_loop,
+                                               name="Win32GdiOverlayExpiry",
+                                               daemon=True)
+        self._expiry_thread.start()
+
         communicate.draw_box.connect(self.on_draw_box)
         communicate.clear_box.connect(self.clear_drawing)
         communicate.blur_overlay.connect(self.update_blur_patches)
@@ -434,11 +448,45 @@ class Win32GdiOverlay:
         if self._native_available and self._hwnd:
             user32.PostMessageW(self._hwnd, WM_CLOSE, 0, 0)
             self._thread.join(timeout=1)
+        with self._expiry_condition:
+            self._expiry_stop = True
+            self._expiry_condition.notify_all()
 
     def _schedule_expiry(self, duration, callback):
-        timer = threading.Timer(max(0, float(duration)) + .01, callback)
-        timer.daemon = True
-        timer.start()
+        """Schedule ``callback`` once after ``duration`` seconds.
+
+        Uses one shared background thread instead of spawning a new
+        ``threading.Timer`` thread per event.
+        """
+        with self._expiry_condition:
+            if self._expiry_stop:
+                return
+            heapq.heappush(
+                self._expiry_heap,
+                (time.monotonic() + max(0, float(duration)) + 0.01,
+                 self._expiry_counter, callback),
+            )
+            self._expiry_counter += 1
+            self._expiry_condition.notify()
+
+    def _expiry_loop(self):
+        """Run due overlay expiry callbacks on one long-lived thread."""
+        while True:
+            with self._expiry_condition:
+                while not self._expiry_heap and not self._expiry_stop:
+                    self._expiry_condition.wait()
+                if self._expiry_stop and not self._expiry_heap:
+                    return
+                expire_at, _, callback = self._expiry_heap[0]
+                now = time.monotonic()
+                if expire_at > now:
+                    self._expiry_condition.wait(expire_at - now)
+                    continue
+                heapq.heappop(self._expiry_heap)
+            try:
+                callback()
+            except Exception as e:
+                logger.warning(f'overlay expiry callback failed: {e}')
 
     def _schedule_render(self):
         if not self._native_available or not self._hwnd or self._closed:

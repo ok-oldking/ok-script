@@ -51,12 +51,8 @@ class StatusBar(QWidget):
         self.__setQss()
         self.__initLayout()
 
-        self.rotateTimer.start()
+        self._sync_rotate_timer()
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            # Emit the 'clicked' signal
-            self.clicked.emit()
 
     def __initLayout(self):
         """ initialize layout """
@@ -86,8 +82,36 @@ class StatusBar(QWidget):
         """ set the state of tooltip """
         self.isDone = isDone
         self.update()
+        self._sync_rotate_timer()
         # if isDone:
         #     QTimer.singleShot(1000, self.__fadeOut)
+
+    def _sync_rotate_timer(self):
+        """Only spin the icon while running and visible.
+
+        The rotate timer previously ran forever at 20 Hz even for idle/hidden
+        status bars (main window + every floating window), needlessly waking
+        the GUI thread.
+        """
+        if not self.isDone and self.isVisible():
+            if not self.rotateTimer.isActive():
+                self.rotateTimer.start()
+        else:
+            self.rotateTimer.stop()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._sync_rotate_timer()
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self.rotateTimer.stop()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            # Emit the 'clicked' signal
+            self.clicked.emit()
+            event.accept()
 
     def __fadeOut(self):
         """ fade out """

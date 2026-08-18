@@ -27,6 +27,7 @@ def _patched_message_box_base_keyPressEvent(self, e):
 MessageBoxBase.keyPressEvent = _patched_message_box_base_keyPressEvent
 
 
+from ok import og
 from ok.util.config import Config
 
 from ok.ui.qt.Communicate import communicate
@@ -78,6 +79,9 @@ class MainWindow(FluentWindow):
         self.ok_config = ok_config
         self.basic_global_config = global_config.get_config(basic_options)
         self.main_window_config = Config('main_window', {'last_version': 'v0.0.0'})
+        self.floating_window_config = Config('floating_window', {'enabled': False, 'x': -1, 'y': -1})
+        self.floating_window = None
+        self.floating_switch_card = None
         self.exit_event = exit_event
         from ok.ui.qt.start.StartTab import StartTab
         self.start_tab = StartTab(config, exit_event)
@@ -210,6 +214,7 @@ class MainWindow(FluentWindow):
 
         from ok.ui.qt.settings.SettingTab import SettingTab
         self.setting_tab = SettingTab()
+        self.floating_switch_card = getattr(self.setting_tab, 'floating_window_card', None)
         self.addSubInterface(self.setting_tab, FluentIcon.SETTING, self.tr('Settings'),
                              position=NavigationItemPosition.BOTTOM)
 
@@ -232,6 +237,10 @@ class MainWindow(FluentWindow):
         menu = QMenu()
         exit_action = menu.addAction(self.tr("Exit"))
         exit_action.triggered.connect(self.tray_quit)
+        self.floating_tray_action = menu.addAction(og.app.tr("Floating Window"))
+        self.floating_tray_action.setCheckable(True)
+        self.floating_tray_action.setChecked(self.floating_window_config.get('enabled', False))
+        self.floating_tray_action.triggered.connect(self.set_floating_window_enabled)
 
         self.tray = QSystemTrayIcon(icon, parent=self)
 
@@ -396,17 +405,24 @@ class MainWindow(FluentWindow):
             import ctypes
             from ctypes import wintypes
 
-            native_message = wintypes.MSG.from_address(int(message))
-            if native_message.message == 0x0320:  # WM_DWMCOLORIZATIONCOLORCHANGED
+            # Reading the whole MSG plus scanning lParam strings on every native
+            # message is wasteful: this window receives one native event per
+            # mouse move/click.  Peek at just the message id first (the second
+            # field of the MSG struct) and only parse further for the two
+            # messages we actually care about.
+            message_id = ctypes.c_uint.from_address(
+                int(message) + ctypes.sizeof(wintypes.HWND)).value
+            if message_id == 0x0320:  # WM_DWMCOLORIZATIONCOLORCHANGED
                 logger.info('System colorization colors changed')
                 self._schedule_system_theme_change()
-            elif (
-                native_message.message == 0x001A  # WM_SETTINGCHANGE
-                and native_message.lParam
-                and ctypes.wstring_at(native_message.lParam) == "ImmersiveColorSet"
-            ):
-                logger.info('System theme changed')
-                self._schedule_system_theme_change()
+            elif message_id == 0x001A:  # WM_SETTINGCHANGE
+                native_message = wintypes.MSG.from_address(int(message))
+                if (
+                    native_message.lParam
+                    and ctypes.wstring_at(native_message.lParam) == "ImmersiveColorSet"
+                ):
+                    logger.info('System theme changed')
+                    self._schedule_system_theme_change()
         except (OSError, TypeError, ValueError) as e:
             logger.error('Failed to process Windows theme change', e)
 
@@ -512,6 +528,59 @@ class MainWindow(FluentWindow):
         logger.info('main window tray_quit')
         self.app.quit()
 
+    def set_floating_window_enabled(self, enabled):
+        """Enable/disable the floating overlay panel (\u60ac\u6d6e\u7a97)."""
+        enabled = bool(enabled)
+        logger.info(f'set_floating_window_enabled {enabled}')
+        if enabled:
+            self.show_floating_window()
+        else:
+            self.hide_floating_window()
+        self._sync_floating_window_ui()
+
+    def show_floating_window(self):
+        """Show the floating panel and hide the main window to the tray."""
+        if self.floating_window is None:
+            from ok.ui.qt.widget.FloatingWindow import FloatingWindow
+            self.floating_window = FloatingWindow(self.floating_window_config)
+            self.floating_window.closed.connect(self._on_floating_window_closed)
+        self.floating_window.show()
+        self.floating_window.raise_()
+        self.floating_window_config['enabled'] = True
+        self._sync_floating_window_ui()
+        if self.isVisible() and not self.isMinimized():
+            self.hide()
+        self.tray.showMessage(og.app.title, og.app.tr("Floating Window enabled"))
+        logger.info('floating window shown')
+
+    def hide_floating_window(self):
+        """Hide the floating panel and restore the main window."""
+        if self.floating_window is not None:
+            self.floating_window.hide()
+        self.floating_window_config['enabled'] = False
+        self._sync_floating_window_ui()
+        if self.isMinimized() or not self.isVisible():
+            self.showNormal()
+            self.bring_to_front()
+        logger.info('floating window hidden')
+
+    def _on_floating_window_closed(self):
+        # User closed the floating panel: exit floating mode and restore the
+        # main window.
+        self.hide_floating_window()
+
+    def _sync_floating_window_ui(self):
+        """Keep the tray action and the settings switch in sync."""
+        enabled = bool(self.floating_window_config.get('enabled', False))
+        if hasattr(self, 'floating_tray_action'):
+            self.floating_tray_action.setChecked(enabled)
+        if self.floating_switch_card is not None:
+            self.floating_switch_card.switchButton.blockSignals(True)
+            try:
+                self.floating_switch_card.setChecked(enabled)
+            finally:
+                self.floating_switch_card.switchButton.blockSignals(False)
+
     def show_update_copyright(self):
         title = self.tr('Info')
         content = self.tr(
@@ -559,18 +628,46 @@ class MainWindow(FluentWindow):
                     logger.info('skip copyright dialog because startup version change is shown on about tab')
             # Check for .okscript file in command line arguments
             self._check_okscript_args()
+            self._sync_floating_window_ui()
         super().showEvent(event)
         if first_show:
             QTimer.singleShot(0, self.bring_to_front)
             QTimer.singleShot(250, self.show_startup_version_change_notice)
             self._schedule_update_check()
+            if self.floating_window_config.get('enabled', False):
+                QTimer.singleShot(500, self.show_floating_window)
+
+    def _clamp_geometry_to_screen(self, x, y, width, height):
+        """Keep the restored window on a visible screen.
+
+        The saved position may point to a monitor that is no longer connected
+        (e.g. the user unplugged a second display).  Qt would otherwise place
+        the window off-screen where it cannot be dragged back.
+        """
+        from PySide6.QtWidgets import QApplication
+        right = x + width
+        bottom = y + height
+        for screen in QApplication.screens():
+            area = screen.availableGeometry()
+            if (right > area.left() and x < area.right()
+                    and bottom > area.top() and y < area.bottom()):
+                return x, y
+        primary = QScreen.availableGeometry(QApplication.primaryScreen())
+        x = min(max(x, primary.left()), max(primary.left(), primary.right() - width))
+        y = min(max(y, primary.top()), max(primary.top(), primary.bottom() - height))
+        return x, y
 
     def set_window_size(self, width, height, min_width, min_height):
         screen = QScreen.availableGeometry(self.screen())
         if (self.ok_config['window_width'] > 0 and self.ok_config['window_height'] > 0 and
-                self.ok_config['window_y'] > 0 and self.ok_config['window_x'] > 0):
-            x, y, width, height = (self.ok_config['window_x'], self.ok_config['window_y'],
-                                   self.ok_config['window_width'], self.ok_config['window_height'])
+                self.ok_config['window_y'] >= 0 and self.ok_config['window_x'] >= 0):
+            x = int(self.ok_config['window_x'])
+            y = int(self.ok_config['window_y'])
+            # Restored size must still satisfy the minimum window size, and the
+            # restored position must stay on a currently connected screen.
+            width = max(min_width, int(self.ok_config['window_width']))
+            height = max(min_height, int(self.ok_config['window_height']))
+            x, y = self._clamp_geometry_to_screen(x, y, width, height)
             if self.ok_config['window_maximized']:
                 self.setWindowState(Qt.WindowMaximized)
             else:
@@ -632,10 +729,11 @@ class MainWindow(FluentWindow):
         else:
             self.ok_config['window_maximized'] = False
             geometry = self.geometry()
-            self.ok_config['window_x'] = geometry.x()
-            self.ok_config['window_y'] = geometry.y()
-            self.ok_config['window_width'] = geometry.width()
-            self.ok_config['window_height'] = geometry.height()
+            if geometry.width() > 0 and geometry.height() > 0:
+                self.ok_config['window_x'] = geometry.x()
+                self.ok_config['window_y'] = geometry.y()
+                self.ok_config['window_width'] = geometry.width()
+                self.ok_config['window_height'] = geometry.height()
         logger.info(f'Window geometry updated in ok_config {self.ok_config}')
 
     def starting_emulator(self, done, error, seconds_left):
