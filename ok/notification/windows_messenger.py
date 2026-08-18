@@ -329,7 +329,7 @@ class MessengerAutomation:
         if self._last_frame is None:
             return
         try:
-            from ok.gui.Communicate import communicate
+            from ok.core.events import communicate
             provider = next(iter(sorted(self.process_names)), 'messenger').removesuffix('.exe')
             suffix = f'{provider}_error' if not reason else f'{provider}_{reason}'
             communicate.screenshot.emit(

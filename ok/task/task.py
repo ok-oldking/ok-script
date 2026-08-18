@@ -2,16 +2,14 @@ import re
 import threading
 import time
 from typing import List
-from PySide6.QtCore import QCoreApplication
-
 import cv2
 from numpy import ndarray
-from qfluentwidgets import FluentIcon
 
+from ok.core.events import communicate
+from ok.core.icons import Icon
 from ok.feature.Box import find_boxes_by_name, find_boxes_within_boundary, Box, find_box_by_name, relative_box, \
     sort_boxes, find_highest_confidence_box
 from ok.feature.FeatureSet import adjust_coordinates, resize_image, scale_box, join_list_elements
-from ok.gui.Communicate import communicate
 from ok.task.exceptions import HotkeyConfigException
 from ok.util.color import calculate_color_percentage
 from ok.util.config import Config
@@ -84,6 +82,10 @@ class ExecutorOperation:
         :return: The task instance or None. 任务实例或 None。
         """
         return self.executor.get_task_by_class(cls)
+
+    def get_tasks(self):
+        """Return registered tasks without exposing the executor to extensions."""
+        return list(self.executor.get_all_tasks())
 
     def box_in_horizontal_center(self, box, off_percent=0.02):
         """
@@ -854,7 +856,8 @@ class OCR(FindFeature):
             auto_simplify = ocr_config.get('auto_simplify', False)
 
         if auto_simplify:
-            locale_name = self.executor.locale.name()
+            locale = self.executor.locale
+            locale_name = locale.name() if hasattr(locale, "name") else str(locale)
             if locale_name.startswith('zh_TW') or locale_name.startswith('zh_HK') or locale_name.startswith('zh_MO'):
                 try:
                     from opencc import OpenCC
@@ -900,8 +903,8 @@ class OCR(FindFeature):
             logger.error('onnx_ocr', e)
             self.screenshot('onnx_ocr_exception', frame=image)
             if 'ZE_RESULT_ERROR_DEVICE_LOST' in str(e):
-                raise Exception(QCoreApplication.translate('Task',
-                                                           'NPU inferring Error, you might need to update the Intel NPU driver!'))
+                raise Exception(self._app.tr(
+                    'NPU inferring Error, you might need to update the Intel NPU driver!'))
             raise e
         detected_boxes = []
         # logger.debug(f'rapid_ocr result {result}')
@@ -1095,7 +1098,7 @@ class BaseTask(OCR):
         self.start_time = 0
         self.icon = None
         self.group_name = None
-        self.group_icon = FluentIcon.SYNC
+        self.group_icon = Icon.SYNC
         self.first_run_alert = None
         self.show_create_shortcut = False
         self.sleep_check_interval = -1
@@ -1282,6 +1285,13 @@ class BaseTask(OCR):
         for index, frame in enumerate(frames):
             communicate.screenshot.emit(frame, f'notification/notification_{index + 1}', False, None)
         communicate.notification.emit(message, title, error, tray, show_tab, params, frames)
+
+    def emit_web_event(self, event, payload=None):
+        """Publish a serializable event to this task's optional browser tab."""
+        tab = getattr(self, "web_tab", None)
+        if tab is None:
+            raise RuntimeError(f"{self.__class__.__name__} does not declare web_tab")
+        communicate.task_tab.emit(tab.id, str(event), payload)
 
     @property
     def enabled(self):

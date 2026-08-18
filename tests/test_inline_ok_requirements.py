@@ -11,9 +11,17 @@ def _write_repo_files(repo_dir, deploy_text=None):
         (repo_dir / "deploy.txt").write_text(deploy_text, encoding="utf-8")
 
 
-def test_remove_ok_requirements_skips_inline_and_removal_without_deploy_txt(tmp_path, monkeypatch):
+def test_remove_ok_requirements_always_includes_defaults_without_deploy_txt(tmp_path, monkeypatch):
     copied_folders = []
     _write_repo_files(tmp_path)
+    (tmp_path / "requirements-web.txt").write_text(
+        "ok-script==1.0.147\npyappify==1.0.3\nhttpx==0.28.1\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "requirements-dev.txt").write_text(
+        "PYAPPIFY==1.0.3\npytest==8.4.1\n",
+        encoding="utf-8",
+    )
     monkeypatch.setattr(
         inline_ok_requirements,
         "find_and_copy_site_package",
@@ -22,14 +30,21 @@ def test_remove_ok_requirements_skips_inline_and_removal_without_deploy_txt(tmp_
 
     inline_ok_requirements.remove_ok_requirements(str(tmp_path), "v1.2.3")
 
-    assert copied_folders == []
+    assert copied_folders == ["ok", "pyappify"]
     assert (tmp_path / "requirements.txt").read_text(encoding="utf-8") == (
-        "ok-script==1.0.147\npyappify==1.0.3\nrequests==2.32.3\n"
+        "requests==2.32.3\n"
     )
+    assert (tmp_path / "requirements-web.txt").read_text(encoding="utf-8") == (
+        "httpx==0.28.1\n"
+    )
+    assert (tmp_path / "requirements-dev.txt").read_text(encoding="utf-8") == (
+        "pytest==8.4.1\n"
+    )
+    assert (tmp_path / "deploy.txt").read_text(encoding="utf-8") == "ok\npyappify\n"
     assert (tmp_path / "config.py").read_text(encoding="utf-8") == 'version = "v1.2.3"\n'
 
 
-def test_remove_ok_requirements_only_inlines_folders_listed_in_deploy_txt(tmp_path, monkeypatch):
+def test_remove_ok_requirements_adds_missing_defaults_to_deploy_txt(tmp_path, monkeypatch):
     copied_folders = []
     _write_repo_files(tmp_path, "src\nok\nrequirements.txt\n")
     monkeypatch.setattr(
@@ -40,9 +55,12 @@ def test_remove_ok_requirements_only_inlines_folders_listed_in_deploy_txt(tmp_pa
 
     inline_ok_requirements.remove_ok_requirements(str(tmp_path), "v1.2.3")
 
-    assert copied_folders == ["ok"]
+    assert copied_folders == ["ok", "pyappify"]
     assert (tmp_path / "requirements.txt").read_text(encoding="utf-8") == (
-        "pyappify==1.0.3\nrequests==2.32.3\n"
+        "requests==2.32.3\n"
+    )
+    assert (tmp_path / "deploy.txt").read_text(encoding="utf-8") == (
+        "src\nok\nrequirements.txt\npyappify\n"
     )
 
 
@@ -57,10 +75,11 @@ def test_remove_ok_requirements_matches_deploy_subpaths(tmp_path, monkeypatch):
 
     inline_ok_requirements.remove_ok_requirements(str(tmp_path), "v1.2.3")
 
-    assert copied_folders == ["pyappify"]
+    assert copied_folders == ["ok", "pyappify"]
     assert (tmp_path / "requirements.txt").read_text(encoding="utf-8") == (
-        "ok-script==1.0.147\nrequests==2.32.3\n"
+        "requests==2.32.3\n"
     )
+    assert (tmp_path / "deploy.txt").read_text(encoding="utf-8") == "pyappify/main.py\nok\n"
 
 
 def test_additional_inlined_requirement_is_added_to_deploy_and_removed(tmp_path, monkeypatch):
@@ -82,8 +101,10 @@ def test_additional_inlined_requirement_is_added_to_deploy_and_removed(tmp_path,
         "custom-package=custom_package",
     ])
 
-    assert copied_folders == ["custom_package"]
-    assert (tmp_path / "deploy.txt").read_text(encoding="utf-8") == "src\ncustom_package\n"
+    assert copied_folders == ["ok", "pyappify", "custom_package"]
+    assert (tmp_path / "deploy.txt").read_text(encoding="utf-8") == (
+        "src\nok\npyappify\ncustom_package\n"
+    )
     assert "custom-package" not in (tmp_path / "requirements.txt").read_text(encoding="utf-8")
 
 
@@ -104,5 +125,7 @@ def test_additional_inlined_requirement_does_not_duplicate_deploy_subpath(tmp_pa
         {"custom-package": "custom_package"},
     )
 
-    assert copied_folders == ["custom_package"]
-    assert (tmp_path / "deploy.txt").read_text(encoding="utf-8") == "custom_package/main.py\n"
+    assert copied_folders == ["ok", "pyappify", "custom_package"]
+    assert (tmp_path / "deploy.txt").read_text(encoding="utf-8") == (
+        "custom_package/main.py\nok\npyappify\n"
+    )

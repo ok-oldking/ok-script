@@ -1,0 +1,31 @@
+from ok import Logger, og
+
+from ok.ui.qt.tasks.TaskCard import TaskCard
+from ok.ui.qt.tasks.TaskTab import TaskTab
+
+logger = Logger.get_logger(__name__)
+
+
+class TriggerTaskTab(TaskTab):
+    def __init__(self):
+        super().__init__()
+        self.card_widgets = []
+        from ok.ui.qt.Communicate import communicate
+        communicate.task_list_updated.connect(self.refresh_ui)
+        self.refresh_ui()
+
+    def refresh_ui(self):
+        for w in self.card_widgets:
+            self.remove_task_card(w)
+            w.deleteLater()
+        self.card_widgets.clear()
+        
+        for task in og.executor.trigger_tasks:
+            if not getattr(task, 'visible', True):
+                continue
+            task_card = TaskCard(task, False)
+            self.card_widgets.append(task_card)
+            self.add_task_card(task_card)
+
+    def in_current_list(self, task):
+        return task in og.executor.trigger_tasks and getattr(task, 'visible', True)

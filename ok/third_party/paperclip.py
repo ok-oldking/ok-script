@@ -54,8 +54,6 @@ import time
 import warnings
 from ctypes import c_size_t, sizeof, c_wchar_p, get_errno, c_wchar
 
-from PySide6.QtWidgets import QApplication
-
 _IS_RUNNING_PYTHON_2 = sys.version_info[0] == 2  # type: bool
 
 # For paste(): Python 3 uses str, Python 2 uses unicode.
@@ -138,6 +136,10 @@ def init_osx_pyobjc_clipboard():
 
 
 def init_qt_clipboard():
+    try:
+        from PySide6.QtWidgets import QApplication
+    except ImportError as exc:
+        raise PyperclipException("Qt clipboard support is not installed") from exc
     app = QApplication.instance()
     if app is None:
         app = QApplication([])

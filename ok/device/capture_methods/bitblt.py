@@ -8,6 +8,7 @@ from ok.device.capture_methods.bitblt_utils import (
     capture_by_bitblt,
     capture_desktop_by_bitblt,
     clean_up_desktop_bitblt,
+    clean_up_bitblt,
     composite_hwnds,
     get_crop_point,
 )
@@ -57,6 +58,19 @@ class BitBltCaptureMethod(BaseWindowsCaptureMethod):
 
     def get_name(self):
         return f'BitBlt_{render_full}'
+
+    def close(self):
+        """Release all GDI objects before the interpreter starts shutting down.
+
+        BitBlt contexts are used by the main capture and by any child windows
+        composited on top of it.  Leaving them for Python/pywin32 finalization
+        can race with the capture thread and cause a native access violation.
+        """
+        with self.lock:
+            clean_up_bitblt(self)
+            for context in self.contexts.values():
+                clean_up_bitblt(context)
+            self.contexts.clear()
 
     def test_exclusive_full_screen(self):
         frame = self.do_get_frame()

@@ -2,10 +2,8 @@ import sys
 import threading
 import time
 
-from PySide6.QtCore import QCoreApplication
-
-from ok.gui.Communicate import communicate
-from ok.gui.util.Alert import alert_info
+from ok.core.events import communicate
+from ok.core.notifications import alert_info
 from ok.task.exceptions import FinishedException, TaskDisabledException, WaitFailedException, CaptureException, \
     HotkeyConfigException
 from ok.util.GlobalConfig import basic_options
@@ -63,8 +61,7 @@ class TaskExecutor:
         self.paused = True
         self.config = config
         self.scene = None
-        from ok.gui.common.config import cfg
-        self.locale = cfg.get(cfg.language).value
+        self.locale = config.get("locale", "en_US")
         self.text_fix = {}
         self.ocr_po_translation = None
         self.load_tr()
@@ -111,9 +108,9 @@ class TaskExecutor:
         self.init_default_ocr()
 
     def load_tr(self):
-        locale_name = self.locale.name()
+        locale_name = self.locale.name() if hasattr(self.locale, "name") else str(self.locale)
         try:
-            from ok.gui.i18n.GettextTranslator import get_ocr_translations
+            from ok.core.translation import get_ocr_translations
             self.ocr_po_translation = get_ocr_translations(locale_name)
             self.ocr_po_translation.install()
             logger.info(f'translation ocr installed for {locale_name}')
@@ -161,7 +158,7 @@ class TaskExecutor:
         to_download = ocr_config.get('download_models')
         if to_download:
             models = self.config.get('download_models').get(to_download)
-            from ok.gui.util.download import download_models
+            from ok.core.downloads import download_models
             download_models(models)
 
         config_params = ocr_config.get('params')
@@ -612,7 +609,7 @@ class TaskExecutor:
                 else:
                     error = str(e)
                 communicate.notification.emit(error, name, True, True, None, params, None)
-                task.info_set(QCoreApplication.tr('app', 'Error'), error)
+                task.info_set(task._app.tr('Error'), error)
                 logger.error(f"{name} exception stopped", e)
                 if self._frame is not None:
                     communicate.screenshot.emit(self.frame, name, True, None)

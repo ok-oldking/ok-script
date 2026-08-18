@@ -1,10 +1,29 @@
 import unittest
+import os
 from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
-from ok.gui.MainWindow import MainWindow
+from ok.ui.qt.MainWindow import MainWindow, update_check_delay_ms
 
 
 class TestMainWindowStartupTab(unittest.TestCase):
+    def test_pyappify_test_mode_checks_after_ten_seconds(self):
+        with patch.dict(os.environ, {"PYAPPIFY_PYTHON_TEST": ""}):
+            self.assertEqual(10_000, update_check_delay_ms())
+
+    def test_normal_update_check_waits_thirty_seconds(self):
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("PYAPPIFY_PYTHON_TEST", None)
+            self.assertEqual(30_000, update_check_delay_ms())
+
+    def test_started_check_cancels_pending_timer(self):
+        timer = SimpleNamespace(isActive=lambda: True, stop=Mock())
+        window = SimpleNamespace(update_check_timer=timer)
+
+        MainWindow._cancel_scheduled_update_check(window)
+
+        timer.stop.assert_called_once_with()
+
     def test_prefers_default_onetime_tab(self):
         onetime_tab = object()
         window = SimpleNamespace(

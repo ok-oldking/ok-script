@@ -1,0 +1,277 @@
+import json
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
+
+from ok.ui.web.app import WebRuntime
+
+
+class FakeTaskManager:
+    def __init__(self, folder):
+        self.task_folder = str(folder)
+        self.has_custom = True
+        self.task_map = {}
+        self.task_errors = {}
+        self.loaded = []
+
+    def load_single_user_task(self, path):
+        self.loaded.append(path)
+
+    def reload_task_code(self, _task):
+        pass
+
+    def delete_task(self, _task):
+        raise AssertionError("Unexpected mapped task")
+
+
+def make_runtime(tmp_path):
+    runtime = object.__new__(WebRuntime)
+    manager = FakeTaskManager(tmp_path / "ok_tasks")
+    runtime.ok = SimpleNamespace(
+        config={"gui_title": "Test App", "version": "1.2.3", "debug": False, "links": {"github": "https://example.test"}},
+        task_manager=manager,
+        task_executor=SimpleNamespace(get_all_tasks=lambda: [], onetime_tasks=[], trigger_tasks=[]),
+        exit_event=Mock(),
+    )
+    runtime.icon_url = "/static/app-icon.png"
+    runtime._schedule_manager = None
+    return runtime
+
+
+def test_about_and_navigation_are_runtime_driven(tmp_path):
+    runtime = make_runtime(tmp_path)
+
+    assert runtime.navigation() == {
+        "triggers": False, "tasks": False, "script": True,
+        "templates": True, "schedule": False, "task_tabs": [],
+    }
+    assert runtime.about()["title"] == "Test App"
+    assert runtime.about()["links"]["github"] == "https://example.test"
+    assert runtime.about()["projects"][0]["website"] == "https://ok-script.com/"
+
+
+def test_about_omits_the_current_project_from_other_projects(tmp_path):
+    runtime = make_runtime(tmp_path)
+    runtime.ok.config["links"]["github"] = {"en_US": "https://github.com/ok-oldking/ok-wuthering-waves/"}
+
+    project_urls = [project["url"] for project in runtime.about()["projects"]]
+
+    assert "https://github.com/ok-oldking/ok-wuthering-waves" not in project_urls
+
+
+def test_about_supports_qt_locale_first_links_config(tmp_path):
+    runtime = make_runtime(tmp_path)
+    runtime.ok.config["links"] = {
+        "default": {
+            "github": "https://github.com/ok-oldking/ok-wuthering-waves",
+            "discord": "https://discord.gg/example",
+        },
+        "zh_CN": {"github": "https://github.com/ok-oldking/ok-wuthering-waves"},
+    }
+
+    about = runtime.about()
+
+    assert about["links"]["default"]["discord"] == "https://discord.gg/example"
+    assert "https://github.com/ok-oldking/ok-wuthering-waves" not in [project["url"] for project in about["projects"]]
+
+
+def test_about_exposes_update_capability_and_test_delay(tmp_path, monkeypatch):
+    runtime = make_runtime(tmp_path)
+    runtime._pyappify_module = SimpleNamespace(get_version_list=Mock())
+    monkeypatch.setenv("PYAPPIFY_PYTHON_TEST", "1")
+
+    about = runtime.about()
+
+    assert about["update_supported"] is True
+    assert about["update_check_delay_ms"] == 10_000
+
+
+def test_web_update_check_returns_calculated_notes_in_one_result(tmp_path):
+    runtime = make_runtime(tmp_path)
+    versions = [
+        {"version": "v1.2.5", "update_note": ["five"]},
+        {"version": "v1.2.4", "update_note": ["four"]},
+        {"version": "v1.2.3", "update_note": ["three"]},
+    ]
+
+    def calculate_notes(items, current, target):
+        current_index = next(index for index, item in enumerate(items) if item["version"].lstrip("v") == current.lstrip("v"))
+        target_index = next(index for index, item in enumerate(items) if item["version"] == target)
+        return [note for item in items[min(current_index, target_index):max(current_index, target_index) + 1] for note in item["update_note"]]
+
+    get_versions = Mock(return_value=versions)
+    runtime._pyappify_module = SimpleNamespace(
+        get_version_list=get_versions,
+        calculate_update_notes=Mock(side_effect=calculate_notes),
+        is_greater_version=lambda left, right: tuple(map(int, left.lstrip("v").split("."))) > tuple(map(int, right.lstrip("v").split("."))),
+    )
+
+    result = runtime.check_for_updates(release_only=False)
+
+    get_versions.assert_called_once_with(release_only=False, exit_event=runtime.ok.exit_event)
+    assert result["current_version"] == "1.2.3"
+    assert result["update_available"] is True
+    assert result["versions"][0] == {"version": "v1.2.5", "notes": ["five", "four", "three"]}
+
+
+def test_web_update_request_calls_pyappify(tmp_path):
+    runtime = make_runtime(tmp_path)
+    update = Mock(return_value={"updated": True, "version": "v1.2.4"})
+    runtime._pyappify_module = SimpleNamespace(update_to_version=update)
+
+    result = runtime.update_to_version("v1.2.4")
+
+    update.assert_called_once_with("v1.2.4", exit_event=runtime.ok.exit_event)
+    assert result["accepted"] is True
+    assert result["version"] == "v1.2.4"
+
+
+def test_web_client_routes_tray_events_to_browser_notifications():
+    source = (Path(__file__).parents[1] / "web_src" / "src" / "App.tsx").read_text(encoding="utf-8")
+
+    assert 'event.args[3] === true && systemNotificationsEnabled' in source
+    assert 'new Notification(title, { body: message, icon: iconUrl || undefined })' in source
+    assert 'Notification.requestPermission()' in source
+
+
+def test_web_client_detects_pywebview_if_ready_event_fired_before_react_effect():
+    source = (Path(__file__).parents[1] / "web_src" / "src" / "App.tsx").read_text(encoding="utf-8")
+
+    listener = 'window.addEventListener("pywebviewready", markNativeShell);'
+    ready_check = 'if (window.pywebview) markNativeShell();'
+    assert listener in source
+    assert ready_check in source
+    assert source.index(listener) < source.index(ready_check)
+
+
+def test_web_client_reveals_native_window_after_initial_content_layout():
+    source = (Path(__file__).parents[1] / "web_src" / "src" / "App.tsx").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Promise.allSettled([load(), loadSettings(), loadNavigation()])" in source
+    assert "if (!initialContentLoaded) return;" in source
+    assert "runtimeApi.contentReady()" in source
+    assert source.count("window.requestAnimationFrame(") >= 3
+    assert 'classList.remove("pywebview-starting")' in source
+
+    styles = (Path(__file__).parents[1] / "web_src" / "src" / "styles.css").read_text(
+        encoding="utf-8"
+    )
+    assert ".pywebview-starting .switch-track" in styles
+    assert ".pywebview-starting .switch-thumb { transition: none; }" in styles
+
+
+def test_web_client_has_winui_window_frame_and_navigation_motion():
+    root = Path(__file__).parents[1]
+    source = (root / "web_src" / "src" / "App.tsx").read_text(encoding="utf-8")
+    styles = (root / "web_src" / "src" / "styles.css").read_text(encoding="utf-8")
+
+    assert 'className={`nav-selection-indicator ${navIndicatorVisible ? "visible" : ""}`}' in source
+    assert "key={activePage}" in source
+    assert "border-radius: var(--window-radius)" in styles
+    assert "grid-template-rows: 32px minmax(0, 1fr); border: 0" in styles
+    assert "cubic-bezier(.1, .9, .2, 1)" in styles
+    assert "@keyframes winui-page-enter" in styles
+    assert "@media (prefers-reduced-motion: reduce)" in styles
+    assert "window-resize-handle" not in source
+
+
+def test_web_client_loads_task_owned_tabs_without_exposing_executor():
+    root = Path(__file__).parents[1]
+    app_source = (root / "web_src" / "src" / "App.tsx").read_text(encoding="utf-8")
+    host_source = (root / "web_src" / "src" / "TaskTabHost.tsx").read_text(encoding="utf-8")
+
+    assert 'activePage.startsWith("task-tab:")' in app_source
+    assert "<TaskTabHost" in app_source
+    assert "import(/* @vite-ignore */ tab.module_url)" in host_source
+    assert "taskTabQuery" in host_source
+    assert "executor" not in host_source.lower()
+
+
+def test_web_custom_tab_navigation_order_matches_qt():
+    source = (Path(__file__).parents[1] / "web_src" / "src" / "App.tsx").read_text(
+        encoding="utf-8"
+    )
+
+    before_tabs = source.index("beforeDefaultTaskTabs.forEach")
+    triggers = source.index('if (capabilities?.triggers) items.push(["Triggers"')
+    groups = source.index("taskGroups.forEach")
+    after_tabs = source.index("afterDefaultTaskTabs.forEach")
+    script = source.index('if (capabilities?.script) items.push(["Script"')
+
+    assert before_tabs < triggers < groups < after_tabs < script
+
+
+def test_web_tabs_share_the_same_outer_page_padding():
+    styles = (Path(__file__).parents[1] / "web_src" / "src" / "styles.css").read_text(
+        encoding="utf-8"
+    )
+
+    assert "padding: var(--page-padding-block) var(--page-padding-inline)" in styles
+    assert "--page-padding-block: 16px" in styles
+    assert "--page-padding-inline: 16px" in styles
+    assert "--page-padding-block: 18px" not in styles
+    assert ".task-content { display: block; overflow: auto; scrollbar-width" in styles
+    assert ".settings-page { width: 100%; margin: 0; padding: 0; }" in styles
+    assert ".workspace-page { width: 100%; margin: 0; padding: 0; }" in styles
+    assert ".task-list { display: grid; gap: 8px; padding: 0; }" in styles
+
+
+def test_web_tab_surface_has_only_a_top_left_radius_and_identity_cards_are_compact():
+    styles = (Path(__file__).parents[1] / "web_src" / "src" / "styles.css").read_text(
+        encoding="utf-8"
+    )
+
+    assert (
+        "padding: var(--page-padding-block) var(--page-padding-inline);\n"
+        "  border: 0; border-radius: 12px 0 0 0;"
+    ) in styles
+    assert "background: var(--chrome-bg); border-right: 0;" in styles
+    assert ".start-card.about-identity { min-height: 68px; padding: 10px 14px; }" in styles
+    assert ".about-identity .app-avatar { width: 40px; height: 40px; }" in styles
+    assert ".about-identity h1 { margin: 0; font-size: 1rem; }" in styles
+
+
+def test_script_crud_stays_inside_custom_task_folder(tmp_path):
+    runtime = make_runtime(tmp_path)
+
+    created = runtime.create_script("HelloTask", "Hello", "Example")
+    assert created["name"] == "HelloTask.py"
+    assert "class HelloTask" in created["code"]
+
+    saved = runtime.save_script("HelloTask.py", created["code"].replace("pass", "return"))
+    assert "return" in saved["code"]
+    assert [item["name"] for item in runtime.scripts()] == ["HelloTask.py"]
+
+    runtime.delete_script("HelloTask.py")
+    assert runtime.scripts() == []
+
+
+def test_template_gallery_reads_categories_and_cleans_coco(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    runtime = make_runtime(tmp_path)
+    folder = tmp_path / "ok_templates"
+    folder.mkdir()
+    (folder / "sample.png").write_bytes(b"image")
+    (folder / "coco_annotations.json").write_text(json.dumps({
+        "images": [{"id": 1, "file_name": "sample.png"}],
+        "categories": [{"id": 2, "name": "button"}],
+        "annotations": [{"id": 3, "image_id": 1, "category_id": 2}],
+    }), encoding="utf-8")
+
+    assert runtime.templates()[0]["categories"] == ["button"]
+    runtime.delete_template("sample.png")
+    coco = json.loads((folder / "coco_annotations.json").read_text(encoding="utf-8"))
+    assert coco["images"] == []
+    assert coco["annotations"] == []
+
+
+def test_script_paths_reject_traversal(tmp_path):
+    runtime = make_runtime(tmp_path)
+    try:
+        runtime.read_script("../outside.py")
+    except ValueError as exc:
+        assert "Invalid script name" in str(exc)
+    else:
+        raise AssertionError("Traversal should be rejected")

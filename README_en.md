@@ -1,5 +1,12 @@
 # ok-script
 
+## Headless, desktop, and web modes
+
+The automation runtime is independent from Qt. Install `ok-script` for
+headless use, `ok-script[qt]` for the existing desktop UI, or `ok-script[web]`
+for the FastAPI browser UI. Run them with `ok run_task`, `ok gui`, and `ok web`
+respectively. See [the runtime architecture](docs/architecture.md) for details.
+
 [简体中文](README.md) | **English**
 
 [![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)
@@ -24,6 +31,30 @@ ok-script supports Python 3.11 and later. Python 3.12 is recommended.
 
 ```powershell
 python -m pip install ok-script
+```
+
+Install only the profiles needed by the application. The `default` profile is
+headless; UI, ADB, and OCR support are separate:
+
+```powershell
+python -m pip install "ok-script[default]"
+python -m pip install "ok-script[qt]"
+python -m pip install "ok-script[web]"
+python -m pip install "ok-script[adb]"
+python -m pip install "ok-script[ocr]"
+```
+
+OpenCV is deliberately not selected by ok-script. The user must choose the
+version and install exactly one variant appropriate for the application:
+`opencv-python`, `opencv-contrib-python`, `opencv-python-headless`, or
+`opencv-contrib-python-headless`.
+
+For headless repository development, combine the matching `default` and `dev`
+dependency groups from `pyproject.toml`. Add `--group web`, `--group qt`,
+`--group adb`, or `--group ocr` as needed:
+
+```powershell
+python -m pip install --editable . --group default --group dev
 ```
 
 To build a complete automation application, start with the [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) template instead of adding application-specific code to this repository.
@@ -73,6 +104,47 @@ For a visual scripting experience built on ok-script, see [`ok-py`](https://gith
 - [PyPI](https://pypi.org/project/ok-script/)
 - [GitHub](https://github.com/ok-oldking/ok-script)
 
+## Credits
+
+ok-script is made possible by these open-source projects:
+
+- [PyAppify](https://github.com/ok-oldking/pyappify) — application updating
+  and packaging.
+- [OnnxOCR](https://github.com/ok-oldking/OnnxOCR) — OCR with Intel NPU
+  support through OpenVINO or ONNX Runtime, using a PaddleOCR v5 model.
+- [PySide6](https://wiki.qt.io/Qt_for_Python) — Qt-based desktop UI bindings.
+- [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) —
+  Fluent UI components used by the Qt interface.
+- [OpenCV](https://opencv.org/), [NumPy](https://numpy.org/), and
+  [Pillow](https://python-pillow.org/) — image processing and computer vision.
+- [FastAPI](https://fastapi.tiangolo.com/),
+  [Uvicorn](https://www.uvicorn.org/), and
+  [pywebview](https://pywebview.flowrl.com/) — web interface support.
+- [adbutils](https://github.com/openatx/adbutils) — Android device
+  connectivity.
+
+Each dependency remains subject to its own license. See the respective
+project pages for details.
+
 ## License
 
-This project is licensed under the [GNU AGPL v3](LICENSE.txt).
+This project is licensed under [Apache License 2.0 with Commons Clause and
+additional terms](LICENSE.txt).
+
+The following uses are allowed:
+
+- Use in closed-source and commercial projects.
+- Forking the project, making improvements, and keeping the fork open source
+  and free.
+
+The following restrictions apply:
+
+- Do not take this project, rename it or make only minor changes, and sell it
+  or market it as a competing product.
+- Do not use it for hacking, unauthorized access, malware, fraud, or any other
+  illegal activity.
+- Any project using ok-script must mention it and link to [ok-script.com](https://ok-script.com/)
+  or the [ok-script GitHub repository](https://github.com/ok-oldking/ok-script)
+  on the project's website, GitHub repository, or in the software itself.
+- Qt UI use is separately subject to the license of
+  [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets).

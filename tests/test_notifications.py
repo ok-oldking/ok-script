@@ -13,9 +13,10 @@ from ok.notification.providers import (
 from ok.notification.manager import NotificationManager
 from ok.notification.pipeline import NotificationPipeline
 from ok.notification.ppocr import NotificationPPOCR
+from ok.notification.system import WindowsSystemNotifier
 from ok.notification.messenger_images import _paste_from_context_menu, _wait_popup_text
 from ok.notification.windows_messenger import MessengerAutomation
-from ok.gui.debug.Screenshot import remove_old_files
+from ok.ui.qt.debug.Screenshot import remove_old_files
 from ok.task.task import BaseTask
 from ok.util.handler import ExitEvent
 from ok.util.GlobalConfig import (
@@ -142,6 +143,32 @@ def test_manager_does_not_queue_when_external_providers_are_disabled():
     manager.pipeline.submit.assert_not_called()
 
 
+def test_manager_system_notification_uses_shared_backend_and_setting():
+    manager = object.__new__(NotificationManager)
+    manager.config = {SYSTEM_NOTIFICATION_ENABLED: True}
+    manager.system_notifier = Mock()
+    manager.system_notifier.show.return_value = True
+
+    assert manager.notify_system('Task', 'Done', error=False, tray=True)
+    manager.system_notifier.show.assert_called_once_with('Task', 'Done', False)
+
+    manager.config[SYSTEM_NOTIFICATION_ENABLED] = False
+    assert not manager.notify_system('Task', 'Done', tray=True)
+
+
+def test_windows_system_notifier_sends_tray_balloon():
+    notifier = object.__new__(WindowsSystemNotifier)
+    notifier.app_name = 'Test App'
+    notifier._hwnd = 123
+    notifier._hicon = 456
+    notifier._closed = False
+
+    with patch('ok.notification.system._show_balloon', return_value=True) as notify:
+        assert notifier.show('Task', 'Failed', error=True)
+
+    notify.assert_called_once_with(123, 456, 'Task', 'Failed')
+
+
 def test_messenger_message_starts_with_app_name():
     manager = object.__new__(NotificationManager)
     manager.app_name = 'Test App'
@@ -182,7 +209,7 @@ def test_local_discord_icon_is_not_sent_as_avatar_url():
 
 
 def test_messenger_error_saves_last_bitblt_frame():
-    from ok.gui.Communicate import communicate
+    from ok.ui.qt.Communicate import communicate
 
     automation = MessengerAutomation(('QQ.exe',), SimpleNamespace())
     automation._last_frame = np.zeros((2, 2, 3), dtype=np.uint8)
@@ -268,6 +295,17 @@ def test_notification_pipeline_stops_with_app_exit_event():
     assert not pipeline.thread.is_alive()
     assert pipeline.stop_event.is_set()
     assert pipeline.submit('late', 'ignored', []) is False
+
+
+def test_exit_event_stop_bindings_can_be_removed():
+    exit_event = ExitEvent()
+    listener = Mock()
+    exit_event.bind_stop(listener)
+    exit_event.unbind_stop(listener)
+
+    exit_event.set()
+
+    listener.stop.assert_not_called()
 
 
 def test_messenger_layout_regions_are_dpi_scaled_and_edge_anchored():

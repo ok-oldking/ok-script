@@ -124,7 +124,7 @@ class Config(dict):
         if self.validator is not None:
             valid, message = self.validator(key, value)
             if not valid:
-                from ok.gui.Communicate import communicate
+                from ok.core.events import communicate
                 communicate.config_validation.emit(message)
                 return False
         return True

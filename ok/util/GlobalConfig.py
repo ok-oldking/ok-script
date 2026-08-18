@@ -1,8 +1,7 @@
 import os
 import threading
 
-from qfluentwidgets import FluentIcon
-
+from ok.core.icons import Icon
 from ok.util.config import ConfigOption, Config
 from ok.util.file import get_relative_path, read_json_file, write_json_file
 from ok.util.logger import Logger
@@ -87,7 +86,7 @@ def create_basic_options(enable_blur=False):
         config_type.update(_blur_options_type)
         description.update(_blur_options_description)
     return ConfigOption('Basic Options', default, config_type=config_type,
-                        config_description=description, icon=FluentIcon.GAME)
+                        config_description=description, icon=Icon.GAME)
 
 
 basic_options = create_basic_options()
@@ -159,7 +158,7 @@ def create_notification_options():
             'enable any additional providers you want to receive them.'),
         config_description=descriptions,
         config_type=config_type,
-        icon=FluentIcon.RINGER,
+        icon=Icon.RINGER,
         show_at_tab=True,
     )
 
@@ -348,7 +347,7 @@ def create_app_launcher_options(pyappify_module, basic_config=None):
         config_type[APP_LAUNCHER_ACTION] = {
             'type': 'button',
             'text': APP_LAUNCHER_OPEN,
-            'icon': FluentIcon.UPDATE,
+            'icon': Icon.UPDATE,
             'callback': show_launcher,
         }
 
@@ -362,7 +361,7 @@ def create_app_launcher_options(pyappify_module, basic_config=None):
             APP_LAUNCHER_ACTION: 'Open the app launcher to manage updates',
         },
         config_type=config_type,
-        icon=FluentIcon.APPLICATION,
+        icon=Icon.APPLICATION,
     )
     return option, AppLauncherConfig(pyappify_module, launcher_config, basic_config)
 

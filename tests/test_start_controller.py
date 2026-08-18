@@ -3,8 +3,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-import ok.gui.StartController as start_controller_module
-from ok.gui.StartController import StartController
+import ok.ui.qt.StartController as start_controller_module
+from ok.ui.qt.StartController import StartController
 from ok.util.gpu_driver_settings import GpuDriverPostProcessing
 
 
@@ -41,7 +41,25 @@ class TestStartController(unittest.TestCase):
         controller.start_method = 'start'
         controller.STARTED_WINDOW_STABLE_SECONDS = 2
         controller.STARTED_WINDOW_POLL_INTERVAL = 1
+        controller.starting = False
         return controller
+
+    def test_start_marks_starting_before_background_handler_runs(self):
+        controller = self.make_controller()
+        controller.handler = Mock()
+
+        controller.start()
+
+        self.assertTrue(controller.starting)
+        controller.handler.post.assert_called_once()
+
+    def test_do_start_clears_starting_after_completion(self):
+        controller = self.make_controller()
+        controller._do_start = Mock(return_value=True)
+
+        self.assertTrue(controller.do_start())
+
+        self.assertFalse(controller.starting)
 
     def test_started_window_must_be_usable_and_stable_before_continuing(self):
         controller = self.make_controller()

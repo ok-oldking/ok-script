@@ -1,0 +1,42 @@
+from PySide6.QtGui import QFontMetrics
+from qfluentwidgets import TextEdit
+
+from ok.ui.qt.common.design_system import control_width
+from ok.ui.qt.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
+
+
+class LabelAndTextEdit(ConfigLabelAndWidget):
+    MIN_INPUT_WIDTH = 280
+    HORIZONTAL_PADDING = 32
+
+    def __init__(self, config_desc, config, key: str):
+        super().__init__(config_desc, config, key)
+        self.key = key
+        self.text_edit = TextEdit()
+        self.text_edit.setMinimumWidth(self.MIN_INPUT_WIDTH)
+        font = self.text_edit.font()
+        font_metrics = QFontMetrics(font)
+        row_height = font_metrics.lineSpacing()
+        self.text_edit.setFixedHeight(row_height * 6)
+        self.update_value()
+        self.text_edit.textChanged.connect(self.value_changed)
+        self.add_widget(self.text_edit, stretch=0)
+        # The editor is six lines high, so this row must not be compressed to
+        # LabelAndWidget's generic one-line minimum inside an ExpandSettingCard.
+        self.setMinimumHeight(self.sizeHint().height())
+
+    def update_value(self):
+        value = self.config.get(self.key)
+        self.text_edit.setText(value)
+        self._update_width(value)
+
+    def value_changed(self):
+        value = self.text_edit.toPlainText()
+        self.update_config(value)
+        self._update_width(value)
+
+    def _update_width(self, value):
+        font_metrics = QFontMetrics(self.text_edit.font())
+        lines = value.splitlines() or [""]
+        content_width = max(font_metrics.horizontalAdvance(line) for line in lines)
+        self.text_edit.setFixedWidth(max(self.MIN_INPUT_WIDTH, control_width(content_width + self.HORIZONTAL_PADDING)))

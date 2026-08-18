@@ -10,8 +10,8 @@ from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon
 
 from ok import og
-from ok.gui.tasks.ConfigCard import ConfigCard
-from ok.gui.tasks.LabelAndMultiSelection import LabelAndMultiSelection
+from ok.ui.qt.tasks.ConfigCard import ConfigCard
+from ok.ui.qt.tasks.LabelAndMultiSelection import LabelAndMultiSelection
 
 
 class FakeConfig(dict):

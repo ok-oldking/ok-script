@@ -10,7 +10,7 @@ from ok.device.capture import HwndWindow, BrowserCaptureMethod, update_capture_m
     ADBCaptureMethod
 from ok.device.interaction import PostMessageInteraction, GenshinInteraction, ForegroundPostMessageInteraction, \
     PynputInteraction, PyDirectInteraction, BrowserInteraction, ADBInteraction
-from ok.gui.Communicate import communicate
+from ok.core.events import communicate
 from ok.util.collection import parse_ratio
 from ok.util.config import Config
 from ok.util.file import delete_if_exists
@@ -36,6 +36,10 @@ def resolve_emulator_window_exe(exe_path, instance_name=None):
     install_root = os.path.dirname(os.path.dirname(normalized_path))
     return os.path.join(
         install_root, 'nx_device', version, 'shell', 'MuMuNxDevice.exe')
+
+
+def method_name(method):
+    return method.__name__ if isinstance(method, type) else str(method)
 
 
 class DeviceManager:
@@ -125,13 +129,23 @@ class DeviceManager:
             if self.hwnd_window.exe_full_path:
                 kill_exe(abs_path=self.hwnd_window.exe_full_path)
 
+    def close(self):
+        """Stop capture resources before Qt/Python teardown begins."""
+        capture_method = self.capture_method
+        self.capture_method = None
+        if capture_method is not None:
+            try:
+                capture_method.close()
+            except Exception as e:
+                logger.error(f'capture method close failed: {e}')
+
     def select_hwnd(self, exe, hwnd):
         self.config['selected_exe'] = exe
         self.config['selected_hwnd'] = hwnd
 
     def refresh(self):
         logger.debug('calling refresh')
-        self.handler.post(self.do_refresh, remove_existing=True, skip_if_running=True)
+        return self.handler.post(self.do_refresh, remove_existing=True, skip_if_running=True)
 
     @property
     def adb(self):
@@ -297,7 +311,10 @@ class DeviceManager:
 
         if self.exit_event.is_set():
             return
-        self.do_start()
+        try:
+            self.do_start(notify=False)
+        finally:
+            communicate.adb_devices.emit(True)
 
         logger.debug(f'refresh {self.device_dict}')
 
@@ -516,6 +533,46 @@ class DeviceManager:
     def get_preferred_capture(self):
         return self.config.get("capture")
 
+    def available_capture_methods(self, device=None):
+        """Return valid capture method identifiers for a selected device."""
+        device = device or self.get_preferred_device()
+        if not device:
+            return []
+        kind = device.get('device')
+        if kind == 'windows':
+            configured = (self.windows_capture_config or {}).get('capture_method', [])
+            methods = configured if isinstance(configured, list) else [configured]
+            return [method_name(item) for item in (methods or ['windows']) if item]
+        if kind == 'browser':
+            return ['browser']
+        methods = ['adb']
+        emulator = device.get('emulator')
+        if emulator is not None:
+            try:
+                from ok.alas.emulator_windows import Emulator
+                if (emulator and emulator.type == Emulator.MuMuPlayer12
+                        and 'MuMuPlayerGlobal' not in str(emulator.path)):
+                    methods.append('ipc')
+            except (AttributeError, ImportError):
+                pass
+        return methods
+
+    def available_interaction_methods(self, device=None):
+        """Return valid interaction method identifiers for a selected device."""
+        device = device or self.get_preferred_device()
+        if not device:
+            return []
+        kind = device.get('device')
+        if kind == 'windows':
+            configured = (self.windows_capture_config or {}).get('interaction', [])
+            methods = configured if isinstance(configured, list) else [configured]
+            return [method_name(item) for item in (methods or ['Pynput']) if item]
+        if kind == 'browser':
+            return ['BrowserInteraction']
+        if kind == 'adb':
+            return ['ADBInteraction']
+        return ['Default Interaction']
+
     def set_hwnd_name(self, hwnd_name):
         preferred = self.get_preferred_device()
         if preferred.get("hwnd") != hwnd_name:
@@ -587,12 +644,14 @@ class DeviceManager:
     def start(self):
         self.handler.post(self.do_start, remove_existing=True, skip_if_running=True)
 
-    def do_start(self):
+    def do_start(self, notify=True):
         logger.debug(f'do_start')
         preferred = self.get_preferred_device()
         if preferred is None:
             if self.device_dict:
                 self.set_preferred_device()
+            if notify:
+                communicate.adb_devices.emit(True)
             return
 
         if preferred['device'] == 'windows':
@@ -662,7 +721,8 @@ class DeviceManager:
                     self.interaction.width = width
                     self.interaction.height = height
 
-        communicate.adb_devices.emit(True)
+        if notify:
+            communicate.adb_devices.emit(True)
 
     def update_resolution_for_hwnd(self):
         if self.hwnd_window is not None and self.hwnd_window.frame_aspect_ratio == 0 and self.adb_capture_config:

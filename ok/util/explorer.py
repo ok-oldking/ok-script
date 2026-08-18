@@ -3,6 +3,7 @@
 import ctypes
 import os
 import sys
+import time
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
@@ -63,8 +64,19 @@ def _open_or_focus(folder, item_name=None, item_path=None):
         # OneDrive Documents) instead of navigating to the requested child.
         logger.info(f'Explorer launching directory: path={str(folder)!r}, verb="explore"')
         os.startfile(str(folder), 'explore')
+    _focus_explorer_after_launch(folder, item_name)
     logger.info('Explorer launch request completed')
     return True
+
+
+def _focus_explorer_after_launch(folder, item_name=None, attempts=20, delay=0.05):
+    """Wait for a newly launched Explorer window and bring it to the front."""
+    for _ in range(attempts):
+        if _focus_existing_explorer_window(folder, item_name):
+            return True
+        time.sleep(delay)
+    logger.warning(f'Explorer window did not become focusable: folder={str(folder)!r}')
+    return False
 
 
 def _open_and_select_item(item_path):
@@ -217,6 +229,11 @@ def _activate_window(window):
         if win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
         win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
+        flags = win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW
+        # A brief topmost transition reliably raises Explorer above a Tauri or
+        # browser window without leaving Explorer permanently always-on-top.
+        win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0, flags)
+        win32gui.SetWindowPos(hwnd, win32con.HWND_NOTOPMOST, 0, 0, 0, 0, flags)
         win32gui.BringWindowToTop(hwnd)
         win32gui.SetForegroundWindow(hwnd)
     except Exception as error:

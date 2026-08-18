@@ -1,7 +1,7 @@
 import unittest
 
 from ok import Logger
-from ok.gui.common.config import Language, cfg
+from ok.ui.qt.common.config import Language, cfg
 from ok.test import init_ok, destroy_ok
 
 

@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from ok import og
-from ok.gui.MainWindow import MainWindow
+from ok.ui.qt.MainWindow import MainWindow
 
 
 class _NotificationHarness:
@@ -11,6 +11,7 @@ class _NotificationHarness:
 
     def __init__(self):
         self.tray = SimpleNamespace(showMessage=Mock())
+        self.notification_manager = Mock()
         self.navigate_tab = Mock()
 
     def window(self):
@@ -41,8 +42,8 @@ class TestMainWindowNotifications(unittest.TestCase):
         self.addCleanup(setattr, og, "app", original_app)
 
         with (
-            patch("ok.gui.MainWindow.QCoreApplication.translate", return_value="Translated status"),
-            patch("ok.gui.util.app.show_info_bar") as show_info_bar,
+            patch("ok.ui.qt.MainWindow.QCoreApplication.translate", return_value="Translated status"),
+            patch("ok.ui.qt.util.app.show_info_bar") as show_info_bar,
         ):
             harness.show_notification("Stopped", "Original task name", tray=True)
 
@@ -53,7 +54,8 @@ class TestMainWindowNotifications(unittest.TestCase):
             "Translated task name",
             False,
         )
-        self.assertEqual("Translated task name", harness.tray.showMessage.call_args.args[0])
+        harness.notification_manager.notify_system.assert_called_once_with(
+            "Translated task name", "Translated status", False, True)
 
     def test_task_lifecycle_notifications_do_not_use_the_tray(self):
         harness = _ExecutorPausedHarness()

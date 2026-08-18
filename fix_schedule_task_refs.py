@@ -90,7 +90,7 @@ def main(argv=None):
         print("No onetime_tasks loaded, nothing to correct.")
         return 1
 
-    from ok.gui.tasks.schedule_index_sync import sync_schedule_task_indexes
+    from ok.ui.qt.tasks.schedule_index_sync import sync_schedule_task_indexes
 
     corrected = sync_schedule_task_indexes(onetime_tasks=tasks)
     print(f"Corrected {corrected} schedule task(s).")

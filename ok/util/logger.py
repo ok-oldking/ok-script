@@ -149,7 +149,7 @@ class SafeFileHandler(TimedRotatingFileHandler):
 class CommunicateHandler(logging.Handler):
     def __init__(self):
         super().__init__()
-        from ok.gui.Communicate import communicate
+        from ok.core.events import communicate
         self.communicate = communicate
 
     def emit(self, record):

@@ -40,6 +40,8 @@ MANIFEST
 venv/
 my_build/
 site/
+node_modules/
+*.tsbuildinfo
 
 # PyInstaller
 # Usually these files are written by a python script from a template

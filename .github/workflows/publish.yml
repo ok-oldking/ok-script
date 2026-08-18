@@ -34,6 +34,18 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install web dependencies
+        run: npm ci
+
+      - name: Build web UI
+        run: npm run build
+
       - name: Install build tools
         run: python -m pip install --upgrade build twine
 

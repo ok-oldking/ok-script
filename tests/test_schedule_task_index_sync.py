@@ -11,7 +11,7 @@ import sys
 
 import pytest
 
-import ok.gui.tasks.schedule_index_sync as sync_patch
+import ok.ui.qt.tasks.schedule_index_sync as sync_patch
 
 
 class _FakeTask:

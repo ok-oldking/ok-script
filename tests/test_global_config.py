@@ -7,10 +7,10 @@ from unittest.mock import patch
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon
+from ok.core.icons import Icon
 
 from ok import og
-from ok.gui.tasks.ConfigItemFactory import config_widget
+from ok.ui.qt.tasks.ConfigItemFactory import config_widget
 from ok.util.GlobalConfig import (
     APP_LAUNCHER_ACTION,
     APP_LAUNCHER_AUTO_START,
@@ -77,7 +77,7 @@ class TestBasicOptions(unittest.TestCase):
         save_file.assert_called_once_with()
 
     def test_global_config_tab_renders_options_without_card_container(self):
-        from ok.gui.settings.GlobalConfigTab import GlobalConfigTab
+        from ok.ui.qt.settings.GlobalConfigTab import GlobalConfigTab
 
         original_app = getattr(og, 'app', None)
         original_folder = Config.config_folder
@@ -197,10 +197,10 @@ class TestBasicOptions(unittest.TestCase):
 
             self.assertFalse(option.show_at_tab)
             self.assertFalse(option.default_config)
-            self.assertEqual(FluentIcon.APPLICATION, option.icon)
+            self.assertEqual(Icon.APPLICATION, option.icon)
             launcher_button = option.config_type[APP_LAUNCHER_ACTION]
             self.assertEqual(APP_LAUNCHER_OPEN, launcher_button['text'])
-            self.assertEqual(FluentIcon.UPDATE, launcher_button['icon'])
+            self.assertEqual(Icon.UPDATE, launcher_button['icon'])
             launcher_button['callback']()
             self.assertEqual([True], launcher_opened)
             self.assertFalse(config[APP_LAUNCHER_AUTO_START])
@@ -237,7 +237,7 @@ class TestBasicOptions(unittest.TestCase):
             original_app = getattr(og, 'app', None)
             original_config = getattr(og, 'config', None)
             try:
-                from ok.gui.settings.GlobalConfigCard import GlobalConfigCard
+                from ok.ui.qt.settings.GlobalConfigCard import GlobalConfigCard
 
                 og.app = SimpleNamespace(tr=lambda text: text)
                 og.config = {'gui_title': 'Demo App'}

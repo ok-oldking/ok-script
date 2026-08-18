@@ -14,14 +14,20 @@ from ok.util.GlobalConfig import (
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
+_DEFAULT_SYSTEM_NOTIFIER = object()
 
 
 class NotificationManager:
-    def __init__(self, global_config, executor, exit_event=None, app_name=None, app_icon=None):
+    def __init__(self, global_config, executor, exit_event=None, app_name=None, app_icon=None,
+                 system_notifier=_DEFAULT_SYSTEM_NOTIFIER):
         self.config = global_config.get_config(NOTIFICATION_OPTION_NAME)
         self.exit_event = exit_event
         self.app_name = str(app_name or 'ok-script')
         self.app_icon = str(app_icon or '')
+        if system_notifier is _DEFAULT_SYSTEM_NOTIFIER:
+            from ok.notification.system import WindowsSystemNotifier
+            system_notifier = WindowsSystemNotifier(self.app_name, self.app_icon)
+        self.system_notifier = system_notifier
         self.ocr = NotificationPPOCR(executor.ocr_lib)
         self.pipeline = NotificationPipeline(self._send, exit_event=exit_event, interval=5)
         self.queue = self.pipeline.queue
@@ -53,8 +59,16 @@ class NotificationManager:
             frames = [images]
         self.pipeline.submit(title or '', message, frames)
 
+    def notify_system(self, title, message, error=False, tray=True):
+        if not tray or not self.system_enabled or self.system_notifier is None:
+            return False
+        return self.system_notifier.show(title, message, error)
+
     def stop(self):
-        return self.pipeline.stop(wait=True)
+        stopped = self.pipeline.stop(wait=True)
+        if self.system_notifier is not None:
+            self.system_notifier.close()
+        return stopped
 
     def _send(self, title, message, images):
         if self.pipeline.stop_event.is_set():

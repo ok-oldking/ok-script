@@ -10,11 +10,11 @@ from PySide6.QtWidgets import QApplication
 from qfluentwidgets import ExpandLayout
 
 from ok import og
-from ok.gui.Communicate import communicate
-from ok.gui.tasks.TaskCard import TaskCard
-from ok.gui.tasks.TaskTab import TaskTab
-from ok.gui.tasks.LabelAndWidget import LabelAndWidget
-from ok.gui.widget.ExpandCardLayout import ExpandCardLayout
+from ok.ui.qt.Communicate import communicate
+from ok.ui.qt.tasks.TaskCard import TaskCard
+from ok.ui.qt.tasks.TaskTab import TaskTab
+from ok.ui.qt.tasks.LabelAndWidget import LabelAndWidget
+from ok.ui.qt.widget.ExpandCardLayout import ExpandCardLayout
 
 
 class FakeConfig(dict):
@@ -102,6 +102,11 @@ class TestTaskUi(unittest.TestCase):
         self.assertIsInstance(tab.taskCardLayout, ExpandLayout)
         self.assertIs(tab.taskCardLayout, tab.task_cards_view.layout())
         self.assertIsNot(tab.taskCardLayout, tab.view.layout())
+        margins = tab.taskCardLayout.contentsMargins()
+        self.assertEqual(
+            (margins.left(), margins.top(), margins.right(), margins.bottom()),
+            (0, 0, 0, 0),
+        )
 
     def test_task_card_uses_native_expansion_state(self):
         values = {"Long text": "A configuration value long enough to use the multiline text editor"}

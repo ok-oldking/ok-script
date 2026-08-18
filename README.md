@@ -1,5 +1,12 @@
 # ok-script
 
+## 无界面、桌面与 Web 模式
+
+自动化核心现已与 Qt 解耦。使用 `ok-script` 可无界面运行，使用
+`ok-script[qt]` 启用原有桌面界面，或使用 `ok-script[web]` 启用 FastAPI
+浏览器界面；对应命令为 `ok run_task`、`ok gui` 和 `ok web`。详见
+[运行时架构](docs/architecture.md)。
+
 [简体中文](README.md) | [English](README_en.md)
 
 [![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)
@@ -24,6 +31,29 @@ ok-script 支持 Python 3.11 及以上版本，推荐使用 Python 3.12。
 
 ```powershell
 python -m pip install ok-script
+```
+
+只安装应用所需的依赖配置。`default` 为无界面模式，Web、Qt、ADB 和 OCR
+能力分别按需安装：
+
+```powershell
+python -m pip install "ok-script[default]"
+python -m pip install "ok-script[qt]"
+python -m pip install "ok-script[web]"
+python -m pip install "ok-script[adb]"
+python -m pip install "ok-script[ocr]"
+```
+
+ok-script 不会自动选择 OpenCV。用户必须根据自己的应用选择版本，并且只安装
+一个变体：`opencv-python`、`opencv-contrib-python`、`opencv-python-headless`
+或 `opencv-contrib-python-headless`。
+
+以无界面模式开发本仓库时，同时安装 `pyproject.toml` 中的 `default` 和 `dev`
+依赖组；再根据需要添加 `--group web`、`--group qt`、`--group adb` 或
+`--group ocr`：
+
+```powershell
+python -m pip install --editable . --group default --group dev
 ```
 
 如果要创建完整的自动化项目，建议从 [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) 模板开始，而不是直接在本仓库中编写业务脚本。
@@ -72,6 +102,36 @@ python -m pip install ok-script
 - [PyPI](https://pypi.org/project/ok-script/)
 - [GitHub](https://github.com/ok-oldking/ok-script)
 
+## 致谢
+
+ok-script 的开发离不开以下开源项目：
+
+- [PyAppify](https://github.com/ok-oldking/pyappify)：用于应用更新和打包。
+- [OnnxOCR](https://github.com/ok-oldking/OnnxOCR)：提供支持 Intel NPU 的 OCR，
+  支持通过 OpenVINO 或 ONNX Runtime 推理，并使用 PaddleOCR v5 模型。
+- [PySide6](https://wiki.qt.io/Qt_for_Python)：提供基于 Qt 的桌面界面绑定。
+- [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets)：Qt
+  界面使用的 Fluent UI 组件。
+- [OpenCV](https://opencv.org/)、[NumPy](https://numpy.org/) 和
+  [Pillow](https://python-pillow.org/)：用于图像处理和计算机视觉。
+- [FastAPI](https://fastapi.tiangolo.com/)、[Uvicorn](https://www.uvicorn.org/)
+  和 [pywebview](https://pywebview.flowrl.com/)：用于 Web 界面支持。
+- [adbutils](https://github.com/openatx/adbutils)：用于 Android 设备连接。
+
+上述依赖均受其各自许可证约束，详情请参阅对应项目页面。
+
 ## 许可证
 
-本项目采用 [AGPL-3.0 许可证](LICENSE.txt)。
+本项目采用 [Apache License 2.0 + Commons Clause 及附加条款](LICENSE.txt)。
+
+允许的使用方式：
+
+- 可用于闭源项目或商业项目。
+- 可以 fork、本项目改进，并保持 fork 开源且免费。
+
+限制：
+
+- 禁止直接出售本项目，或仅改名、稍作修改后将其作为竞争产品出售或推广。
+- 禁止将本项目用于黑客攻击、未授权访问、恶意软件、欺诈或其他违法活动。
+- 任何使用 ok-script 的项目，都必须在项目网站、GitHub 或软件本身至少一处提及并链接 [ok-script.com](https://ok-script.com/) 或 [ok-script GitHub](https://github.com/ok-oldking/ok-script)。
+- Qt UI 的使用还必须遵守 [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 的许可证。

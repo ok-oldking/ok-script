@@ -1,7 +1,7 @@
 import colorsys
 import unittest
 
-from ok.gui.common.accent_color import (
+from ok.ui.qt.common.accent_color import (
     QFLUENT_DARK_SATURATION_FACTOR,
     qfluent_theme_source_color,
 )

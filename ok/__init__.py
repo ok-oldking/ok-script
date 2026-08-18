@@ -11,13 +11,10 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-# Fix for PySide6 KeyError: 'PATH'
-if "PATH" not in os.environ:
-    os.environ["PATH"] = ""
-
 from ok.util.handler import Handler, ExitEvent
 from ok.util.logger import Logger
 from ok.util.file import get_path_relative_to_exe
+from ok.core.ui_config import resolve_ui_config, resolve_window_size
 os.environ["PYTHONIOENCODING"] = "utf-8"
 
 if TYPE_CHECKING:
@@ -56,8 +53,9 @@ if TYPE_CHECKING:
     )
     from ok.feature.Feature import Feature
     from ok.feature.FeatureSet import FeatureSet
-    from ok.gui.Communicate import communicate
-    from ok.gui.MainWindow import MainWindow
+    from ok.core.icons import Icon
+    from ok.core.events import communicate
+    from ok.ui.qt.MainWindow import MainWindow
     from ok.task.DiagnosisTask import DiagnosisTask
     from ok.task.TaskExecutor import TaskExecutor
     from ok.task.exceptions import (
@@ -68,6 +66,7 @@ if TYPE_CHECKING:
         WaitFailedException,
     )
     from ok.task.task import BaseTask, FindFeature, OCR, TriggerTask
+    from ok.task.web import WebCustomTab, WebTabConfig, task_tab_action, task_tab_query
     from ok.util.Analytics import Analytics
     from ok.util.GlobalConfig import (GlobalConfig, register_app_launcher_options,
                                       register_basic_options, register_notification_options)
@@ -93,8 +92,9 @@ if TYPE_CHECKING:
     from ok.util.window import windows_graphics_available
 
 _LAZY_IMPORTS = {
-    'communicate': ('ok.gui.Communicate', 'communicate'),
-    'MainWindow': ('ok.gui.MainWindow', 'MainWindow'),
+    'communicate': ('ok.core.events', 'communicate'),
+    'Icon': ('ok.core.icons', 'Icon'),
+    'MainWindow': ('ok.ui.qt.MainWindow', 'MainWindow'),
     'TaskExecutor': ('ok.task.TaskExecutor', 'TaskExecutor'),
     'DeviceManager': ('ok.device.DeviceManager', 'DeviceManager'),
     'FeatureSet': ('ok.feature.FeatureSet', 'FeatureSet'),
@@ -132,6 +132,10 @@ _LAZY_IMPORTS = {
     'DiagnosisTask': ('ok.task.DiagnosisTask', 'DiagnosisTask'),
     'BaseTask': ('ok.task.task', 'BaseTask'),
     'TriggerTask': ('ok.task.task', 'TriggerTask'),
+    'WebTabConfig': ('ok.task.web', 'WebTabConfig'),
+    'WebCustomTab': ('ok.task.web', 'WebCustomTab'),
+    'task_tab_action': ('ok.task.web', 'task_tab_action'),
+    'task_tab_query': ('ok.task.web', 'task_tab_query'),
     'FindFeature': ('ok.task.task', 'FindFeature'),
     'OCR': ('ok.task.task', 'OCR'),
     'Feature': ('ok.feature.Feature', 'Feature'),
@@ -157,6 +161,7 @@ _LAZY_IMPORTS = {
     'calculate_color_percentage': ('ok.util.color', 'calculate_color_percentage'),
     'get_mask_in_color_range': ('ok.util.color', 'get_mask_in_color_range'),
     'is_pure_black': ('ok.util.color', 'is_pure_black'),
+    'run_web': ('ok.ui.web.server', 'run_web'),
 }
 
 __all__ = [
@@ -196,7 +201,7 @@ logger = Logger.get_logger("ok")
 class CommunicateHandler(logging.Handler):
     def __init__(self):
         super().__init__()
-        from ok.gui.Communicate import communicate
+        from ok.core.events import communicate
         self.communicate = communicate
 
     def emit(self, record):
@@ -204,13 +209,74 @@ class CommunicateHandler(logging.Handler):
         self.communicate.log.emit(record.levelno, log_message)
 
 
-class App:
+_OK_CONFIG_DEFAULTS = {
+    'window_x': -1,
+    'window_y': -1,
+    'window_width': -1,
+    'window_height': -1,
+    'window_maximized': False,
+    'navigation_expanded': True,
+    'use_overlay': False,
+    'show_overlay_logs': True,
+}
+
+
+def _create_ok_config(config):
+    """Load UI state once for both the Qt and headless/web facades."""
+    from ok.util.config import Config
+
+    defaults = dict(_OK_CONFIG_DEFAULTS)
+    for key in ('use_overlay', 'show_overlay_logs'):
+        if key in config:
+            defaults[key] = bool(config[key])
+    return Config('_ok', defaults)
+
+
+class _OverlayConfigMixin:
+    def overlay_state(self):
+        return {
+            'boxes': bool(self.ok_config.get('use_overlay', False)),
+            'logs': bool(self.ok_config.get('show_overlay_logs', True)),
+        }
+
+    def initialize_overlay(self):
+        """Apply persisted overlay state independently of the active UI."""
+        if self.ok_config.get('use_overlay', False) or callable(self.config.get('blur_area')):
+            overlay = self.get_overlay_view()
+            overlay.set_boxes_enabled(self.ok_config.get('use_overlay', False))
+
+    def sync_overlay_source(self, *_args):
+        """Refresh a lazy overlay from the currently selected capture window."""
+        overlay = self.overlay_window
+        if overlay is None:
+            return
+        device_manager = getattr(og, 'device_manager', None)
+        overlay.sync_source_window(getattr(device_manager, 'hwnd_window', None))
+
+    def set_overlay_setting(self, name, value):
+        key = {'boxes': 'use_overlay', 'logs': 'show_overlay_logs'}.get(name)
+        if key is None:
+            raise ValueError(f'Unknown overlay setting: {name}')
+
+        self.ok_config[key] = bool(value)
+        overlay = self.overlay_window
+        if name == 'boxes' and value:
+            overlay = self.get_overlay_view()
+        if overlay is not None:
+            self.sync_overlay_source()
+            # This also schedules a repaint so a changed log setting takes
+            # effect immediately in the native overlay.
+            overlay.set_boxes_enabled(self.ok_config.get('use_overlay', False))
+        return self.overlay_state()
+
+
+class App(_OverlayConfigMixin):
     def __init__(self, config, task_executor,
                  exit_event=None):
         from PySide6.QtGui import QIcon
-        from ok.gui.Communicate import communicate
+        from ok.core.events import communicate
+        from ok.ui.qt.events import install_qt_event_dispatcher
         from ok.util.clazz import init_class_by_name
-        from ok.util.config import Config
 
         super().__init__()
         og.exit_event = exit_event
@@ -218,11 +284,14 @@ class App:
         self.config = config
         self.auth_config = None
         self.global_config = task_executor.global_config if task_executor else None
-        from ok.gui.util.app import init_app_config
+        from ok.ui.qt.util.app import init_app_config
         self.app, self.locale = init_app_config()
-        self.ok_config = Config('_ok', {'window_x': -1, 'window_y': -1, 'window_width': -1, 'window_height': -1,
-                                        'window_maximized': False, 'navigation_expanded': True,
-                                        'use_overlay': False, 'show_overlay_logs': True})
+        install_qt_event_dispatcher()
+        self.app.aboutToQuit.connect(self._close_device_manager)
+        if task_executor is not None:
+            task_executor.locale = self.locale
+            task_executor.load_tr()
+        self.ok_config = _create_ok_config(config)
         communicate.quit.connect(self.quit)
 
         self.about = self.config.get('about')
@@ -240,7 +309,7 @@ class App:
         self.exit_event = exit_event
         self.icon = QIcon(get_path_relative_to_exe(config.get('gui_icon')) or ":/icon/icon.ico")
 
-        from ok.gui.StartController import StartController
+        from ok.core.start_controller import StartController
         self.start_controller = StartController(self.config, exit_event)
         if self.config.get('debug'):
             self.to_translate = set()
@@ -248,14 +317,6 @@ class App:
             self.to_translate = None
             
         self.po_translation = None
-        if not config.get('window_size'):
-            logger.info(f'no config.window_size was set use default')
-            config['window_size'] = {
-                'width': 1000,
-                'height': 800,
-                'min_width': 600,
-                'min_height': 450,
-            }
         og.app = self
         og.executor = task_executor
         if task_executor:
@@ -272,9 +333,18 @@ class App:
         logger.debug('init app end')
 
     def quit(self):
+        if self.overlay_window is not None:
+            self.overlay_window.close()
         self.exit_event.set()
+        self._close_device_manager()
         from PySide6.QtCore import QMetaObject, Qt
         QMetaObject.invokeMethod(self.app, "quit", Qt.QueuedConnection)
+
+    @staticmethod
+    def _close_device_manager():
+        device_manager = getattr(og, 'device_manager', None)
+        if device_manager is not None:
+            device_manager.close()
 
     def tr(self, key):
         from PySide6.QtCore import QCoreApplication
@@ -291,7 +361,7 @@ class App:
         if self.po_translation is None:
             locale_name = self.locale.name()
             try:
-                from ok.gui.i18n.GettextTranslator import get_translations
+                from ok.core.translation import get_translations
                 self.po_translation = get_translations(locale_name)
                 self.po_translation.install()
                 logger.info(f'translation installed for {locale_name}')
@@ -306,14 +376,14 @@ class App:
 
     def gen_tr_po_files(self):
         folder = ""
-        from ok.gui.common.config import Language
+        from ok.ui.qt.common.config import Language
         for locale in Language:
-            from ok.gui.i18n.GettextTranslator import update_po_file
+            from ok.core.translation import update_po_file
             folder = update_po_file(self.to_translate, locale.value.name())
         return folder
 
     def show_message_window(self, title, message):
-        from ok.gui.MessageWindow import MessageWindow
+        from ok.ui.qt.MessageWindow import MessageWindow
         message_window = MessageWindow(self.icon, title, message, exit_event=self.exit_event)
         message_window.show()
 
@@ -342,9 +412,9 @@ class App:
     def get_overlay_view(self):
         """Return the overlay widget exposed to tasks, custom tabs, and my_app."""
         if self.overlay_window is None:
-            from ok.gui.Communicate import communicate
-            from ok.gui.overlay.OverlayWindow import OverlayWindow
-            self.overlay_window = OverlayWindow(og.device_manager.hwnd_window)
+            from ok.core.events import communicate
+            from ok.ui.overlay import Win32GdiOverlay
+            self.overlay_window = Win32GdiOverlay(og.device_manager.hwnd_window)
             communicate.window.connect(self.overlay_window.update_overlay)
             self.overlay_window.set_boxes_enabled(self.ok_config.get('use_overlay', False))
         return self.overlay_window
@@ -353,10 +423,7 @@ class App:
         self.do_show_main()
 
     def do_show_main(self):
-        from ok.gui.MainWindow import MainWindow
-
-        if self.ok_config.get('use_overlay', False) or callable(self.config.get('blur_area')):
-            self.get_overlay_view()
+        from ok.ui.qt.MainWindow import MainWindow
 
         self.main_window = MainWindow(self, self.config, self.ok_config, self.icon, self.title, self.version,
                                       self.debug,
@@ -366,9 +433,10 @@ class App:
         # Set the window title here
         self.main_window.setWindowIcon(self.icon)
 
-        self.main_window.set_window_size(self.config['window_size']['width'], self.config['window_size']['height'],
-                                         self.config['window_size']['min_width'],
-                                         self.config['window_size']['min_height'])
+        window_size = resolve_window_size(self.config)
+        self.main_window.set_window_size(window_size['width'], window_size['height'],
+                                         window_size['min_width'],
+                                         window_size['min_height'])
 
         og.main_window = self.main_window
 
@@ -399,11 +467,12 @@ class App:
         sys.exit(self.app.exec())
 
 
-class HeadlessApp:
+class HeadlessApp(_OverlayConfigMixin):
     """Small app facade for running tasks without creating any UI windows."""
 
-    def __init__(self, config, exit_event=None):
-        from ok.gui.Communicate import communicate
+    def __init__(self, config, exit_event=None, task_executor=None):
+        from ok.core.events import communicate
+        from ok.core.translation import LocaleName
         from ok.util.clazz import init_class_by_name
 
         og.exit_event = exit_event
@@ -413,15 +482,30 @@ class HeadlessApp:
         self.headless = True
         self.global_config = og.global_config
         self.icon = None
+        self.overlay_window = None
+        self.ok_config = _create_ok_config(config)
         self.exit_event = exit_event
         self.po_translation = None
         self.to_translate = None
         communicate.quit.connect(self.quit)
+        communicate.adb_devices.connect(self.sync_overlay_source)
 
-        from ok.gui.common.config import cfg
-        self.locale = cfg.get(cfg.language).value
-        from ok.gui.StartController import StartController
+        self.locale = LocaleName(config.get("locale", "en_US"))
+        from ok.core.start_controller import StartController
         self.start_controller = StartController(self.config, exit_event)
+
+        self.notification_manager = None
+        if task_executor is not None:
+            from ok.notification import NotificationManager
+            ui_config = resolve_ui_config(config)
+            is_web = (config.get('web_runtime')
+                      or (ui_config is not None and ui_config['type'] == 'web'))
+            notification_kwargs = {'system_notifier': None} if is_web else {}
+            self.notification_manager = NotificationManager(
+                self.global_config, task_executor, exit_event,
+                app_name=config.get('gui_title'), app_icon=config.get('gui_icon'),
+                **notification_kwargs)
+        communicate.notification.connect(self.show_notification)
 
         og.app = self
         if my_app := self.config.get('my_app'):
@@ -431,17 +515,12 @@ class HeadlessApp:
         logger.debug('init headless app end')
 
     def tr(self, key):
-        from PySide6.QtCore import QCoreApplication
-
         if not key:
             return key
-        if ok_tr := QCoreApplication.translate("app", key):
-            if ok_tr != key:
-                return ok_tr
         if self.po_translation is None:
             locale_name = self.locale.name()
             try:
-                from ok.gui.i18n.GettextTranslator import get_translations
+                from ok.core.translation import get_translations
                 self.po_translation = get_translations(locale_name)
                 self.po_translation.install()
                 logger.info(f'headless translation installed for {locale_name}')
@@ -454,11 +533,37 @@ class HeadlessApp:
         return key
 
     def quit(self):
+        from ok.core.events import communicate
+        communicate.adb_devices.disconnect(self.sync_overlay_source)
+        communicate.notification.disconnect(self.show_notification)
+        if self.notification_manager is not None:
+            self.notification_manager.stop()
+        if self.overlay_window is not None:
+            self.overlay_window.close()
         if self.exit_event:
             self.exit_event.set()
 
+    def show_notification(self, message, title=None, error=False, tray=False,
+                          _show_tab=None, params=None, images=None):
+        """Deliver configured notifications when no Qt MainWindow exists."""
+        translated_message = self.tr(message)
+        if params:
+            translated_message = translated_message.format(**params)
+        translated_title = self.tr(title) if title else ''
+        if self.notification_manager is not None:
+            self.notification_manager.notify_system(
+                translated_title, translated_message, error, tray)
+            self.notification_manager.submit(translated_title, translated_message, images)
+
     def get_overlay_view(self):
-        return None
+        if self.overlay_window is None:
+            from ok.core.events import communicate
+            from ok.ui.overlay import Win32GdiOverlay
+            hwnd_window = getattr(getattr(og, 'device_manager', None), 'hwnd_window', None)
+            self.overlay_window = Win32GdiOverlay(hwnd_window)
+            communicate.window.connect(self.overlay_window.update_overlay)
+            self.overlay_window.set_boxes_enabled(self.ok_config.get('use_overlay', False))
+        return self.overlay_window
 
 
 def get_my_id():
@@ -504,6 +609,12 @@ class OK:
         import pyappify
         from ok.util.config import Config
 
+        self.config = config
+        ui_config = resolve_ui_config(config)
+        if ui_config is not None and ui_config["type"] == "web":
+            from ok.ui.web.requirements import check_web_requirements
+            check_web_requirements()
+
         check_mutex_fn = _resolve('check_mutex')
         config_logger_fn = _resolve('config_logger')
         global_config_class = _resolve('GlobalConfig')
@@ -522,7 +633,6 @@ class OK:
         if pyappify.app_profile:
             config['profile'] = pyappify.app_profile
         og.config = config
-        self.config = config
         config["config_folder"] = config.get("config_folder") or 'configs'
         Config.config_folder = config["config_folder"]
         config['debug'] = config.get("debug", False)
@@ -535,6 +645,8 @@ class OK:
         logger.info(
             f"pyappify  app_version:{pyappify.app_version}, app_profile:{pyappify.app_profile}, pyappify_version:{pyappify.pyappify_version} pyappify_upgradeable:{pyappify.pyappify_upgradeable}, pyappify_executable:{pyappify.pyappify_executable}")
         self.args = parse_arguments()
+        self._runtime_start_lock = threading.Lock()
+        self._runtime_started = False
         self.task_executor = None
         self._app = None
         self._headless_app = None
@@ -584,16 +696,29 @@ class OK:
     @property
     def headless_app(self):
         if self._headless_app is None:
-            self._headless_app = HeadlessApp(self.config, self.exit_event)
+            self._headless_app = HeadlessApp(self.config, self.exit_event, self.task_executor)
         return self._headless_app
 
     def should_init_task_manager_headless(self):
-        return not self.config.get("use_gui") or self.args.get('headless', False)
+        ui_config = resolve_ui_config(self.config)
+        return (ui_config is None
+                or ui_config["type"] != "qt"
+                or self.args.get('headless', False))
 
     def start(self):
         logger.info(f'OK start id:{id(self)} pid:{os.getpid()}')
         try:
-            use_gui = self.config.get("use_gui") and not self.args.get('headless', False)
+            ui_config = resolve_ui_config(self.config)
+            if ui_config is not None and ui_config["type"] == "web":
+                from ok.ui.web.server import run_web
+                return run_web(
+                    self.config,
+                    open_browser=ui_config["launch_mode"] != "server",
+                    launch_mode=ui_config["launch_mode"],
+                    ok_instance=self,
+                )
+            use_gui = (ui_config is not None and ui_config["type"] == "qt"
+                       and not self.args.get('headless', False))
             if not use_gui and self.args.get('task', 0) > 0:
                 self.run_task(self.args.get('task'), exit_after=self.args.get('exit', False))
                 return
@@ -604,36 +729,52 @@ class OK:
                 self.app.exec()
             else:
                 self.task_executor.start()
-                if self.config.get("debug"):
-                    from ok.gui.Communicate import communicate
-                    from PySide6.QtWidgets import QApplication
-                    app = QApplication(sys.argv)
-                    from ok.gui.overlay.OverlayWindow import OverlayWindow
-                    self.overlay_window = OverlayWindow(og.device_manager.hwnd_window)
-                    communicate.window.connect(self.overlay_window.update_overlay)
-                    app.exec()
-                else:
-                    try:
-                        # Starting the task in a separate thread (optional)
-                        # This allows the main thread to remain responsive to keyboard interrupts
-                        task_thread = threading.Thread(target=self.wait_task)
-                        task_thread.start()
-
-                        # Wait for the task thread to end (which it won't, in this case, without an interrupt)
-                        task_thread.join()
-                    except KeyboardInterrupt:
-                        self.exit_event.set()
-                        logger.info("Keyboard interrupt received, exiting script.")
-                    finally:
-                        # Clean-up code goes here (if any)
-                        # This block ensures that the script terminates gracefully,
-                        # releasing resources or performing necessary clean-up operations.
-                        logger.info("Script has terminated.")
+                try:
+                    task_thread = threading.Thread(target=self.wait_task)
+                    task_thread.start()
+                    task_thread.join()
+                except KeyboardInterrupt:
+                    self.exit_event.set()
+                    logger.info("Keyboard interrupt received, exiting script.")
+                finally:
+                    logger.info("Script has terminated.")
+        except SystemExit:
+            self.quit()
+            raise
         except Exception as e:
             logger.error("start error", e)
             self.exit_event.set()
             if self._app or self._headless_app:
                 self.quit()
+
+    def start_runtime(self):
+        """Start UI-independent runtime initialization exactly once.
+
+        Qt calls this after its main window is visible, while the web adapter
+        calls it from the ASGI lifespan. Device discovery and configured
+        automatic startup therefore have one owner in the core runtime.
+        """
+        with self._runtime_start_lock:
+            if self._runtime_started:
+                return False
+            self._runtime_started = True
+
+        from ok.core.events import communicate
+        from ok.util.GlobalConfig import basic_options
+
+        task_number = self.args.get('task', 0)
+        app = self.headless_app if self.should_init_task_manager_headless() else self.app
+        app.initialize_overlay()
+        communicate.start_success.emit()
+        if task_number > 0:
+            logger.info(f'start runtime with task param {task_number - 1} {self.args.get("exit", False)}')
+            app.start_controller.start(task_number - 1, exit_after=self.args.get('exit', False))
+        elif self.global_config.get_config(basic_options).get('Auto Start Game When App Starts'):
+            logger.info('start runtime with Auto Start Game When App Starts')
+            app.start_controller.start()
+        else:
+            self.device_manager.refresh()
+        return True
 
     def run_task(self, task=1, exit_after=False):
         """
@@ -794,7 +935,7 @@ class OK:
 
         logger.info(f"do_init, config: {self.config}")
         self.init_device_manager()
-        from ok.gui.debug.Screenshot import Screenshot
+        from ok.core.screenshot import Screenshot
         self.screenshot = Screenshot(self.exit_event, self.debug)
 
         template_matching = self.config.get('template_matching')
@@ -829,10 +970,24 @@ class OK:
                                           config_folder=self.config.get("config_folder"), debug=self.debug,
                                           global_config=self.global_config, ocr_target_height=ocr_target_height,
                                           config=self.config)
-        from ok.gui.tasks.TaskManger import TaskManager
+        onetime_tasks = list(self.config.get('onetime_tasks', []))
+        ui_config = resolve_ui_config(self.config)
+        if ((ui_config is not None and ui_config["type"] == "web")
+                or self.config.get("web_runtime", False)):
+            from ok.task.web import configured_web_custom_tabs
+            existing = {tuple(task[:2]) for task in onetime_tasks
+                        if isinstance(task, (list, tuple)) and len(task) >= 2}
+            for web_task in configured_web_custom_tabs(self.config.get('web_tabs', [])):
+                if tuple(web_task) not in existing:
+                    onetime_tasks.append(web_task)
+                    existing.add(tuple(web_task))
+        if self.should_init_task_manager_headless():
+            from ok.core.task_manager import TaskManager
+        else:
+            from ok.ui.qt.tasks.TaskManger import TaskManager
         task_app = self.headless_app if self.should_init_task_manager_headless() else self.app
         og.task_manager = TaskManager(task_executor=self.task_executor, app=task_app,
-                                      onetime_tasks=self.config.get('onetime_tasks', []),
+                                      onetime_tasks=onetime_tasks,
                                       trigger_tasks=self.config.get('trigger_tasks', []),
                                       scene=self.config.get('scene'))
         og.executor = self.task_executor
@@ -906,6 +1061,7 @@ def run_task(config, task=1, debug=False, exit_after=False):
     from ok.task.task import TriggerTask
 
     headless_config = dict(config)
+    headless_config.pop("gui", None)
     headless_config["use_gui"] = False
     headless_config["debug"] = debug
     if isinstance(task, type) and issubclass(task, TriggerTask):

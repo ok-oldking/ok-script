@@ -27,8 +27,8 @@ ok-script 支持把一次性任务（`onetime_tasks`）注册为 Windows 计划�
 为保留 ok 原生 `-t N` 机制、不修改任何运行时解析 / 创建 / 修改对话框逻辑，
 ok-script 在**每次启动时**自动修正旧索引：
 
-- 挂载点：`MainWindow.showEvent` 首次显示时（`parse_arguments_to_map` 之前），原生内联调用
-- 实现：`ok/gui/tasks/schedule_index_sync.py`（同步逻辑），`MainWindow.showEvent` 直接调用
+- 挂载点：`MainWindow.showEvent` 首次显示时（`start_runtime` 之前），原生内联调用
+- 实现：`ok/ui/qt/tasks/schedule_index_sync.py`（同步逻辑），`MainWindow.showEvent` 直接调用
   `sync_schedule_task_indexes()`
 - 原理：以缓存任务名（`schedule_tasks_cache.json` 中的 `name`，创建时选择的
   任务名，不随排序变化）为权威身份，在当前 `onetime_tasks` 中查找新索引，
@@ -41,7 +41,7 @@ ok-script 在**每次启动时**自动修正旧索引：
 3. 已经是正确索引时跳过（幂等，不写缓存、不调 COM）；
 4. 有变更时同步更新缓存 / `xml_config` / Windows 计划任务
    （COM `RegisterTaskDefinition`，失败回退 `schtasks /Create /XML /F`）；
-5. 改写本次进程 `sys.argv`，保证本次启动也使用正确索引；
+5. 改写本次进程 `sys.argv` 与 `og.ok.args['task']`，保证本次启动也使用正确索引；
 6. 每次进程只校正一次（进程级 guard）。
 
 > 注意：纯 headless（无 GUI）的应用不经过 `showEvent` 挂载点，不会触发
