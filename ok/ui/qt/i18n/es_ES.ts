@@ -1650,59 +1650,59 @@
         </message>
         <message>
             <source>SMTP Username</source>
-            <translation>Usuario SMTP</translation>
+            <translation>Nombre de usuario</translation>
         </message>
         <message>
             <source>SMTP Password</source>
-            <translation>Contraseña SMTP</translation>
+            <translation>Contraseña</translation>
         </message>
         <message>
             <source>SMTP Use TLS</source>
-            <translation>Usar TLS para SMTP</translation>
+            <translation>Cifrado</translation>
         </message>
         <message>
             <source>SMTP Default Sender</source>
-            <translation>Remitente SMTP predeterminado</translation>
+            <translation>Remitente</translation>
         </message>
         <message>
             <source>SMTP Default Recipient</source>
-            <translation>Destinatario SMTP predeterminado</translation>
+            <translation>Destinatario</translation>
         </message>
         <message>
             <source>Send notifications through an SMTP email server</source>
             <translation>Enviar notificaciones a través de un servidor de correo SMTP</translation>
         </message>
         <message>
-            <source>SMTP server host (e.g. smtp.gmail.com)</source>
-            <translation>Servidor SMTP (p. ej. smtp.gmail.com)</translation>
+            <source>SMTP server address (e.g. smtp.qq.com)</source>
+            <translation>Dirección del servidor SMTP (p. ej., smtp.qq.com)</translation>
         </message>
         <message>
             <source>SMTP server port (587 for STARTTLS)</source>
             <translation>Puerto del servidor SMTP (587 para STARTTLS)</translation>
         </message>
         <message>
-            <source>Username for SMTP authentication</source>
-            <translation>Usuario para autenticación SMTP</translation>
+            <source>Username for SMTP authentication (your own email address)</source>
+            <translation>Nombre de usuario para autenticación (introduce tu propia dirección de correo)</translation>
         </message>
         <message>
-            <source>Password or app-specific token for SMTP</source>
-            <translation>Contraseña o token específico de la aplicación para SMTP</translation>
+            <source>Get an authorization code from your email settings</source>
+            <translation>Obtén un código de autorización en la configuración de tu correo</translation>
         </message>
         <message>
             <source>Use STARTTLS encryption (recommended for port 587)</source>
             <translation>Usar cifrado STARTTLS (recomendado para el puerto 587)</translation>
         </message>
         <message>
-            <source>Default sender email address (From header)</source>
-            <translation>Dirección de correo del remitente predeterminado (cabecera From)</translation>
+            <source>Sender email address</source>
+            <translation>Dirección de correo del remitente</translation>
         </message>
         <message>
-            <source>Default recipient(s), comma-separated</source>
-            <translation>Destinatario(s) predeterminado(s), separados por comas</translation>
+            <source>Recipient email address(es), comma-separated</source>
+            <translation>Dirección de correo del destinatario (varias separadas por comas)</translation>
         </message>
         <message>
-            <source>SMTP server port (587 for STARTTLS, 465 for SMTPS)</source>
-            <translation>Puerto del servidor SMTP (587 para STARTTLS, 465 para SMTPS)</translation>
+            <source>SMTP server port (587 or 465)</source>
+            <translation>Puerto del servidor SMTP (587 o 465)</translation>
         </message>
         <message>
             <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>

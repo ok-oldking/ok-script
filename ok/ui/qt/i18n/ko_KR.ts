@@ -1651,59 +1651,59 @@
         </message>
         <message>
             <source>SMTP Username</source>
-            <translation>SMTP 사용자 이름</translation>
+            <translation>사용자 이름</translation>
         </message>
         <message>
             <source>SMTP Password</source>
-            <translation>SMTP 비밀번호</translation>
+            <translation>비밀번호</translation>
         </message>
         <message>
             <source>SMTP Use TLS</source>
-            <translation>SMTP TLS 사용</translation>
+            <translation>암호화</translation>
         </message>
         <message>
             <source>SMTP Default Sender</source>
-            <translation>SMTP 기본 발신자</translation>
+            <translation>발신자</translation>
         </message>
         <message>
             <source>SMTP Default Recipient</source>
-            <translation>SMTP 기본 수신자</translation>
+            <translation>수신자</translation>
         </message>
         <message>
             <source>Send notifications through an SMTP email server</source>
             <translation>SMTP 메일 서버를 통해 알림 보내기</translation>
         </message>
         <message>
-            <source>SMTP server host (e.g. smtp.gmail.com)</source>
-            <translation>SMTP 서버 호스트 (예: smtp.gmail.com)</translation>
+            <source>SMTP server address (e.g. smtp.qq.com)</source>
+            <translation>SMTP 서버 주소 (예: smtp.qq.com)</translation>
         </message>
         <message>
             <source>SMTP server port (587 for STARTTLS)</source>
             <translation>SMTP 서버 포트 (STARTTLS는 587)</translation>
         </message>
         <message>
-            <source>Username for SMTP authentication</source>
-            <translation>SMTP 인증 사용자 이름</translation>
+            <source>Username for SMTP authentication (your own email address)</source>
+            <translation>인증용 사용자 이름 (자신의 이메일 주소 입력)</translation>
         </message>
         <message>
-            <source>Password or app-specific token for SMTP</source>
-            <translation>SMTP 비밀번호 또는 앱 전용 토큰</translation>
+            <source>Get an authorization code from your email settings</source>
+            <translation>메일 설정 화면에서 인증 코드를 받으세요</translation>
         </message>
         <message>
             <source>Use STARTTLS encryption (recommended for port 587)</source>
             <translation>STARTTLS 암호화 사용 (587 포트 권장)</translation>
         </message>
         <message>
-            <source>Default sender email address (From header)</source>
-            <translation>기본 발신자 이메일 주소 (From 헤더)</translation>
+            <source>Sender email address</source>
+            <translation>발신자 이메일 주소</translation>
         </message>
         <message>
-            <source>Default recipient(s), comma-separated</source>
-            <translation>기본 수신자 (여러 명은 쉼표로 구분)</translation>
+            <source>Recipient email address(es), comma-separated</source>
+            <translation>수신자 이메일 주소 (여러 개는 쉼표로 구분)</translation>
         </message>
         <message>
-            <source>SMTP server port (587 for STARTTLS, 465 for SMTPS)</source>
-            <translation>SMTP 서버 포트 (587은 STARTTLS, 465는 SMTPS)</translation>
+            <source>SMTP server port (587 or 465)</source>
+            <translation>SMTP 서버 포트 (587 또는 465)</translation>
         </message>
         <message>
             <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>

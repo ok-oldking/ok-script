@@ -1642,59 +1642,59 @@
         </message>
         <message>
             <source>SMTP Username</source>
-            <translation>SMTP ユーザー名</translation>
+            <translation>ユーザー名</translation>
         </message>
         <message>
             <source>SMTP Password</source>
-            <translation>SMTP パスワード</translation>
+            <translation>パスワード</translation>
         </message>
         <message>
             <source>SMTP Use TLS</source>
-            <translation>SMTP で TLS を使用</translation>
+            <translation>暗号化</translation>
         </message>
         <message>
             <source>SMTP Default Sender</source>
-            <translation>SMTP 既定の送信元</translation>
+            <translation>送信者</translation>
         </message>
         <message>
             <source>SMTP Default Recipient</source>
-            <translation>SMTP 既定の受信先</translation>
+            <translation>受信者</translation>
         </message>
         <message>
             <source>Send notifications through an SMTP email server</source>
             <translation>SMTP メールサーバーで通知を送信</translation>
         </message>
         <message>
-            <source>SMTP server host (e.g. smtp.gmail.com)</source>
-            <translation>SMTP サーバーのホスト（例: smtp.gmail.com）</translation>
+            <source>SMTP server address (e.g. smtp.qq.com)</source>
+            <translation>SMTP サーバーのアドレス（例: smtp.qq.com）</translation>
         </message>
         <message>
             <source>SMTP server port (587 for STARTTLS)</source>
             <translation>SMTP サーバーのポート（STARTTLS は 587）</translation>
         </message>
         <message>
-            <source>Username for SMTP authentication</source>
-            <translation>SMTP 認証のユーザー名</translation>
+            <source>Username for SMTP authentication (your own email address)</source>
+            <translation>認証用ユーザー名（自分のメールアドレスを入力）</translation>
         </message>
         <message>
-            <source>Password or app-specific token for SMTP</source>
-            <translation>SMTP のパスワードまたはアプリ固有トークン</translation>
+            <source>Get an authorization code from your email settings</source>
+            <translation>メール設定画面で認可コードを取得してください</translation>
         </message>
         <message>
             <source>Use STARTTLS encryption (recommended for port 587)</source>
             <translation>STARTTLS 暗号化を使用（ポート 587 に推奨）</translation>
         </message>
         <message>
-            <source>Default sender email address (From header)</source>
-            <translation>既定の送信元メールアドレス（From ヘッダー）</translation>
+            <source>Sender email address</source>
+            <translation>送信者のメールアドレス</translation>
         </message>
         <message>
-            <source>Default recipient(s), comma-separated</source>
-            <translation>既定の受信先（複数はカンマ区切り）</translation>
+            <source>Recipient email address(es), comma-separated</source>
+            <translation>受信者のメールアドレス（複数の場合はカンマ区切り）</translation>
         </message>
         <message>
-            <source>SMTP server port (587 for STARTTLS, 465 for SMTPS)</source>
-            <translation>SMTP サーバーのポート（587 は STARTTLS、465 は SMTPS）</translation>
+            <source>SMTP server port (587 or 465)</source>
+            <translation>SMTP サーバーのポート（587または465）</translation>
         </message>
         <message>
             <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>

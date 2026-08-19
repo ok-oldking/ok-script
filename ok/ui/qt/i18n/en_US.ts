@@ -1675,36 +1675,36 @@
             <translation>Send notifications through an SMTP email server</translation>
         </message>
         <message>
-            <source>SMTP server host (e.g. smtp.gmail.com)</source>
-            <translation>SMTP server host (e.g. smtp.gmail.com)</translation>
+            <source>SMTP server address (e.g. smtp.qq.com)</source>
+            <translation>SMTP server address (e.g. smtp.qq.com)</translation>
         </message>
         <message>
             <source>SMTP server port (587 for STARTTLS)</source>
             <translation>SMTP server port (587 for STARTTLS)</translation>
         </message>
         <message>
-            <source>Username for SMTP authentication</source>
-            <translation>Username for SMTP authentication</translation>
+            <source>Username for SMTP authentication (your own email address)</source>
+            <translation>Username for SMTP authentication (your own email address)</translation>
         </message>
         <message>
-            <source>Password or app-specific token for SMTP</source>
-            <translation>Password or app-specific token for SMTP</translation>
+            <source>Get an authorization code from your email settings</source>
+            <translation>Get an authorization code from your email settings</translation>
         </message>
         <message>
             <source>Use STARTTLS encryption (recommended for port 587)</source>
             <translation>Use STARTTLS encryption (recommended for port 587)</translation>
         </message>
         <message>
-            <source>Default sender email address (From header)</source>
-            <translation>Default sender email address (From header)</translation>
+            <source>Sender email address</source>
+            <translation>Sender email address</translation>
         </message>
         <message>
-            <source>Default recipient(s), comma-separated</source>
-            <translation>Default recipient(s), comma-separated</translation>
+            <source>Recipient email address(es), comma-separated</source>
+            <translation>Recipient email address(es), comma-separated</translation>
         </message>
         <message>
-            <source>SMTP server port (587 for STARTTLS, 465 for SMTPS)</source>
-            <translation>SMTP server port (587 for STARTTLS, 465 for SMTPS)</translation>
+            <source>SMTP server port (587 or 465)</source>
+            <translation>SMTP server port (587 or 465)</translation>
         </message>
         <message>
             <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>

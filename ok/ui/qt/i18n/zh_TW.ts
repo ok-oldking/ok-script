@@ -1646,59 +1646,59 @@
         </message>
         <message>
             <source>SMTP Username</source>
-            <translation>SMTP 使用者名稱</translation>
+            <translation>使用者名稱</translation>
         </message>
         <message>
             <source>SMTP Password</source>
-            <translation>SMTP 密碼</translation>
+            <translation>密碼</translation>
         </message>
         <message>
             <source>SMTP Use TLS</source>
-            <translation>SMTP 使用 TLS</translation>
+            <translation>加密</translation>
         </message>
         <message>
             <source>SMTP Default Sender</source>
-            <translation>SMTP 預設寄件人</translation>
+            <translation>寄件人</translation>
         </message>
         <message>
             <source>SMTP Default Recipient</source>
-            <translation>SMTP 預設收件人</translation>
+            <translation>收件人</translation>
         </message>
         <message>
             <source>Send notifications through an SMTP email server</source>
             <translation>透過 SMTP 郵件伺服器傳送通知</translation>
         </message>
         <message>
-            <source>SMTP server host (e.g. smtp.gmail.com)</source>
-            <translation>SMTP 伺服器位址（例如 smtp.gmail.com）</translation>
+            <source>SMTP server address (e.g. smtp.qq.com)</source>
+            <translation>SMTP 伺服器位址（例如 smtp.qq.com）</translation>
         </message>
         <message>
             <source>SMTP server port (587 for STARTTLS)</source>
             <translation>SMTP 伺服器連接埠（STARTTLS 使用 587）</translation>
         </message>
         <message>
-            <source>Username for SMTP authentication</source>
-            <translation>SMTP 驗證使用者名稱</translation>
+            <source>Username for SMTP authentication (your own email address)</source>
+            <translation>認證使用者名稱，填入自己的信箱即可</translation>
         </message>
         <message>
-            <source>Password or app-specific token for SMTP</source>
-            <translation>SMTP 密碼或應用程式專用權杖</translation>
+            <source>Get an authorization code from your email settings</source>
+            <translation>在信箱設定介面取得授權碼</translation>
         </message>
         <message>
             <source>Use STARTTLS encryption (recommended for port 587)</source>
             <translation>使用 STARTTLS 加密（建議用於 587 連接埠）</translation>
         </message>
         <message>
-            <source>Default sender email address (From header)</source>
-            <translation>預設寄件人電子郵件位址（From 標頭）</translation>
+            <source>Sender email address</source>
+            <translation>寄件人信箱位址</translation>
         </message>
         <message>
-            <source>Default recipient(s), comma-separated</source>
-            <translation>預設收件人，多個以逗號分隔</translation>
+            <source>Recipient email address(es), comma-separated</source>
+            <translation>收件人信箱位址，多個以逗號分隔</translation>
         </message>
         <message>
-            <source>SMTP server port (587 for STARTTLS, 465 for SMTPS)</source>
-            <translation>SMTP 伺服器連接埠（587 用 STARTTLS，465 用 SMTPS）</translation>
+            <source>SMTP server port (587 or 465)</source>
+            <translation>SMTP 伺服器連接埠（587或465）</translation>
         </message>
         <message>
             <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>
