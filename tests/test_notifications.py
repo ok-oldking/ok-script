@@ -3,7 +3,7 @@ import smtplib
 import tempfile
 import time
 from types import SimpleNamespace
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import ANY, MagicMock, Mock, patch
 
 import numpy as np
 import pytest
@@ -188,6 +188,25 @@ def test_smtp_provider_send_auth_failure():
             None, 'Title', 'Message', [])
 
     assert result is False
+
+
+def test_smtp_provider_uses_implicit_ssl_on_port_465():
+    server = MagicMock()
+    server.__enter__.return_value = server
+    with patch('ok.notification.providers.smtplib.SMTP_SSL',
+               return_value=server) as smtp_ssl, \
+            patch('ok.notification.providers.smtplib.SMTP') as smtp:
+        result = SmtpProvider(
+            'smtp.example.com', 465, 'user', 'secret', True,
+            'sender@example.com', 'to@example.com').send(
+            None, 'Title', 'Message', [])
+
+    assert result is True
+    smtp_ssl.assert_called_once_with('smtp.example.com', 465, timeout=30, context=ANY)
+    smtp.assert_not_called()
+    server.starttls.assert_not_called()
+    server.login.assert_called_once_with('user', 'secret')
+    server.send_message.assert_called_once()
 
 
 def test_smtp_provider_missing_config():

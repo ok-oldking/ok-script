@@ -1701,6 +1701,14 @@
             <source>Default recipient(s), comma-separated</source>
             <translation>기본 수신자 (여러 명은 쉼표로 구분)</translation>
         </message>
+        <message>
+            <source>SMTP server port (587 for STARTTLS, 465 for SMTPS)</source>
+            <translation>SMTP 서버 포트 (587은 STARTTLS, 465는 SMTPS)</translation>
+        </message>
+        <message>
+            <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>
+            <translation>TLS 암호화 활성화 (587 포트는 STARTTLS, 465 포트는 SMTPS)</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

@@ -1696,6 +1696,14 @@
             <source>Default recipient(s), comma-separated</source>
             <translation>預設收件人，多個以逗號分隔</translation>
         </message>
+        <message>
+            <source>SMTP server port (587 for STARTTLS, 465 for SMTPS)</source>
+            <translation>SMTP 伺服器連接埠（587 用 STARTTLS，465 用 SMTPS）</translation>
+        </message>
+        <message>
+            <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>
+            <translation>啟用 TLS 加密（587 連接埠用 STARTTLS，465 連接埠用 SMTPS）</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

@@ -1692,6 +1692,14 @@
             <source>Default recipient(s), comma-separated</source>
             <translation>既定の受信先（複数はカンマ区切り）</translation>
         </message>
+        <message>
+            <source>SMTP server port (587 for STARTTLS, 465 for SMTPS)</source>
+            <translation>SMTP サーバーのポート（587 は STARTTLS、465 は SMTPS）</translation>
+        </message>
+        <message>
+            <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>
+            <translation>TLS 暗号化を有効化（ポート 587 は STARTTLS、465 は SMTPS）</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

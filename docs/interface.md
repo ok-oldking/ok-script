@@ -81,10 +81,10 @@ ok-script 将任务配置、设备连接、脚本开发、模板管理和识别�
 SMTP 渠道基于 Python 标准库 `smtplib` 发送邮件，不需要额外依赖：
 
 1. 打开 **SMTP Notification** 开关，展开 SMTP 配置字段。
-2. 填写 **SMTP Host**（服务器地址）与 **SMTP Port**（端口，默认 587，配合 STARTTLS）。
+2. 填写 **SMTP Host**（服务器地址）与 **SMTP Port**（端口：587 使用 STARTTLS，465 使用隐式 SSL/SMTPS）。
 3. 填写 **SMTP Username** 与 **SMTP Password**，建议使用邮箱服务商提供的“应用专用密码”而不是登录密码。
 4. 填写 **SMTP Default Sender**（发件人地址，即邮件的 From 头）与 **SMTP Default Recipient**（收件人，多个地址用英文逗号分隔）。
-5. 保持 **SMTP Use TLS** 开启（STARTTLS，推荐用于 587 端口）。
+5. 开启 **SMTP Use TLS**：端口 587 时自动使用 STARTTLS，端口 465 时自动使用隐式 SSL（SMTPS）。
 
 常用服务器参数示例：
 

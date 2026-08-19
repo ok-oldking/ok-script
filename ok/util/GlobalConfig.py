@@ -175,10 +175,10 @@ def create_notification_options():
         QQ_BOT_CHANNEL_ID: 'QQ channel ID to receive notifications',
         SMTP_NOTIFICATION_ENABLED: 'Send notifications through an SMTP email server',
         SMTP_HOST: 'SMTP server host (e.g. smtp.gmail.com)',
-        SMTP_PORT: 'SMTP server port (587 for STARTTLS)',
+        SMTP_PORT: 'SMTP server port (587 for STARTTLS, 465 for SMTPS)',
         SMTP_USERNAME: 'Username for SMTP authentication',
         SMTP_PASSWORD: 'Password or app-specific token for SMTP',
-        SMTP_USE_TLS: 'Use STARTTLS encryption (recommended for port 587)',
+        SMTP_USE_TLS: 'Enable TLS encryption (STARTTLS for 587, SMTPS for 465)',
         SMTP_DEFAULT_SENDER: 'Default sender email address (From header)',
         SMTP_DEFAULT_RECIPIENT: 'Default recipient(s), comma-separated',
     }

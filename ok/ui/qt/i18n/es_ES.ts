@@ -1700,6 +1700,14 @@
             <source>Default recipient(s), comma-separated</source>
             <translation>Destinatario(s) predeterminado(s), separados por comas</translation>
         </message>
+        <message>
+            <source>SMTP server port (587 for STARTTLS, 465 for SMTPS)</source>
+            <translation>Puerto del servidor SMTP (587 para STARTTLS, 465 para SMTPS)</translation>
+        </message>
+        <message>
+            <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>
+            <translation>Habilitar cifrado TLS (STARTTLS en el puerto 587, SMTPS en el 465)</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

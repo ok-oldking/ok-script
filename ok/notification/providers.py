@@ -200,9 +200,13 @@ class SmtpProvider:
 
         context = ssl.create_default_context()
         try:
-            with smtplib.SMTP(self.host, self.port, timeout=30) as server:
+            if self.use_tls and self.port == 465:
+                server = smtplib.SMTP_SSL(self.host, self.port, timeout=30, context=context)
+            else:
+                server = smtplib.SMTP(self.host, self.port, timeout=30)
+            with server:
                 server.ehlo()
-                if self.use_tls:
+                if self.use_tls and self.port != 465:
                     server.starttls(context=context)
                     server.ehlo()
                 if self.username:

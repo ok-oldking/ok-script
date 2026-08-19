@@ -81,10 +81,10 @@ Notification settings live under Settings → Notification. The Windows system t
 The SMTP channel sends email with the Python standard library `smtplib`; no extra dependency is required:
 
 1. Turn on the **SMTP Notification** toggle to reveal the SMTP fields.
-2. Fill in **SMTP Host** (server address) and **SMTP Port** (default 587, paired with STARTTLS).
+2. Fill in **SMTP Host** (server address) and **SMTP Port** (587 uses STARTTLS, 465 uses implicit SSL/SMTPS).
 3. Fill in **SMTP Username** and **SMTP Password**. Prefer an app-specific password issued by your mail provider over your login password.
 4. Fill in **SMTP Default Sender** (the From header address) and **SMTP Default Recipient** (separate multiple recipients with commas).
-5. Keep **SMTP Use TLS** enabled (STARTTLS, recommended for port 587).
+5. Turn on **SMTP Use TLS**: port 587 automatically uses STARTTLS, port 465 automatically uses implicit SSL (SMTPS).
 
 Example server parameters:
 
