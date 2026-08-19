@@ -1637,6 +1637,70 @@
             <source>Requires the local WeChat client window to be open and running</source>
             <translation>로컬 WeChat 클라이언트 창이 열려 있고 실행 중이어야 합니다</translation>
         </message>
+        <message>
+            <source>SMTP Notification</source>
+            <translation>SMTP 알림</translation>
+        </message>
+        <message>
+            <source>SMTP Host</source>
+            <translation>SMTP 호스트</translation>
+        </message>
+        <message>
+            <source>SMTP Port</source>
+            <translation>SMTP 포트</translation>
+        </message>
+        <message>
+            <source>SMTP Username</source>
+            <translation>SMTP 사용자 이름</translation>
+        </message>
+        <message>
+            <source>SMTP Password</source>
+            <translation>SMTP 비밀번호</translation>
+        </message>
+        <message>
+            <source>SMTP Use TLS</source>
+            <translation>SMTP TLS 사용</translation>
+        </message>
+        <message>
+            <source>SMTP Default Sender</source>
+            <translation>SMTP 기본 발신자</translation>
+        </message>
+        <message>
+            <source>SMTP Default Recipient</source>
+            <translation>SMTP 기본 수신자</translation>
+        </message>
+        <message>
+            <source>Send notifications through an SMTP email server</source>
+            <translation>SMTP 메일 서버를 통해 알림 보내기</translation>
+        </message>
+        <message>
+            <source>SMTP server host (e.g. smtp.gmail.com)</source>
+            <translation>SMTP 서버 호스트 (예: smtp.gmail.com)</translation>
+        </message>
+        <message>
+            <source>SMTP server port (587 for STARTTLS)</source>
+            <translation>SMTP 서버 포트 (STARTTLS는 587)</translation>
+        </message>
+        <message>
+            <source>Username for SMTP authentication</source>
+            <translation>SMTP 인증 사용자 이름</translation>
+        </message>
+        <message>
+            <source>Password or app-specific token for SMTP</source>
+            <translation>SMTP 비밀번호 또는 앱 전용 토큰</translation>
+        </message>
+        <message>
+            <source>Use STARTTLS encryption (recommended for port 587)</source>
+            <translation>STARTTLS 암호화 사용 (587 포트 권장)</translation>
+        </message>
+        <message>
+            <source>Default sender email address (From header)</source>
+            <translation>기본 발신자 이메일 주소 (From 헤더)</translation>
+        </message>
+        <message>
+            <source>Default recipient(s), comma-separated</source>
+            <translation>기본 수신자 (여러 명은 쉼표로 구분)</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

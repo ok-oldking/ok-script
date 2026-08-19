@@ -72,6 +72,27 @@ The debug overlay draws recognition state over the captured frame:
 
 The overlay is a development and diagnostic aid. Production task logic must use values returned by APIs such as `find_one`, `wait_feature`, and `ocr`, not overlay state.
 
+## Notification settings
+
+Notification settings live under Settings → Notification. The Windows system tray notification is enabled by default; every other channel is disabled until you turn it on. Fields for a channel only appear once the channel is enabled.
+
+### SMTP email notifications
+
+The SMTP channel sends email with the Python standard library `smtplib`; no extra dependency is required:
+
+1. Turn on the **SMTP Notification** toggle to reveal the SMTP fields.
+2. Fill in **SMTP Host** (server address) and **SMTP Port** (default 587, paired with STARTTLS).
+3. Fill in **SMTP Username** and **SMTP Password**. Prefer an app-specific password issued by your mail provider over your login password.
+4. Fill in **SMTP Default Sender** (the From header address) and **SMTP Default Recipient** (separate multiple recipients with commas).
+5. Keep **SMTP Use TLS** enabled (STARTTLS, recommended for port 587).
+
+Example server parameters:
+
+- Gmail: `smtp.gmail.com:587`; enable two-step verification in your Google account and generate an app password.
+- QQ Mail: `smtp.qq.com:587`; enable SMTP in QQ Mail settings and use the generated authorization code.
+
+The email subject is the notification title and the body is the notification message. Screenshots attached to the notification are sent as PNG attachments; a failure to encode one attachment does not affect the others.
+
 ## Recommended workflow
 
 1. Connect the target on the capture page and verify screenshots.

@@ -1634,6 +1634,70 @@
             <source>Requires the local WeChat client window to be open and running</source>
             <translation>需要本地微信客户端窗口保持打开并运行</translation>
         </message>
+        <message>
+            <source>SMTP Notification</source>
+            <translation>SMTP 邮件通知</translation>
+        </message>
+        <message>
+            <source>SMTP Host</source>
+            <translation>SMTP 服务器</translation>
+        </message>
+        <message>
+            <source>SMTP Port</source>
+            <translation>SMTP 端口</translation>
+        </message>
+        <message>
+            <source>SMTP Username</source>
+            <translation>SMTP 用户名</translation>
+        </message>
+        <message>
+            <source>SMTP Password</source>
+            <translation>SMTP 密码</translation>
+        </message>
+        <message>
+            <source>SMTP Use TLS</source>
+            <translation>SMTP 使用 TLS</translation>
+        </message>
+        <message>
+            <source>SMTP Default Sender</source>
+            <translation>SMTP 默认发件人</translation>
+        </message>
+        <message>
+            <source>SMTP Default Recipient</source>
+            <translation>SMTP 默认收件人</translation>
+        </message>
+        <message>
+            <source>Send notifications through an SMTP email server</source>
+            <translation>通过 SMTP 邮件服务器发送通知</translation>
+        </message>
+        <message>
+            <source>SMTP server host (e.g. smtp.gmail.com)</source>
+            <translation>SMTP 服务器地址（例如 smtp.gmail.com）</translation>
+        </message>
+        <message>
+            <source>SMTP server port (587 for STARTTLS)</source>
+            <translation>SMTP 服务器端口（STARTTLS 使用 587）</translation>
+        </message>
+        <message>
+            <source>Username for SMTP authentication</source>
+            <translation>SMTP 认证用户名</translation>
+        </message>
+        <message>
+            <source>Password or app-specific token for SMTP</source>
+            <translation>SMTP 密码或应用专用令牌</translation>
+        </message>
+        <message>
+            <source>Use STARTTLS encryption (recommended for port 587)</source>
+            <translation>使用 STARTTLS 加密（建议 587 端口使用）</translation>
+        </message>
+        <message>
+            <source>Default sender email address (From header)</source>
+            <translation>默认发件人邮箱地址（From 头）</translation>
+        </message>
+        <message>
+            <source>Default recipient(s), comma-separated</source>
+            <translation>默认收件人，多个以逗号分隔</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

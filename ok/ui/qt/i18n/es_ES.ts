@@ -1636,6 +1636,70 @@
             <source>Requires the local WeChat client window to be open and running</source>
             <translation>Requiere que la ventana del cliente local de WeChat esté abierta y en ejecución</translation>
         </message>
+        <message>
+            <source>SMTP Notification</source>
+            <translation>Notificación por SMTP</translation>
+        </message>
+        <message>
+            <source>SMTP Host</source>
+            <translation>Servidor SMTP</translation>
+        </message>
+        <message>
+            <source>SMTP Port</source>
+            <translation>Puerto SMTP</translation>
+        </message>
+        <message>
+            <source>SMTP Username</source>
+            <translation>Usuario SMTP</translation>
+        </message>
+        <message>
+            <source>SMTP Password</source>
+            <translation>Contraseña SMTP</translation>
+        </message>
+        <message>
+            <source>SMTP Use TLS</source>
+            <translation>Usar TLS para SMTP</translation>
+        </message>
+        <message>
+            <source>SMTP Default Sender</source>
+            <translation>Remitente SMTP predeterminado</translation>
+        </message>
+        <message>
+            <source>SMTP Default Recipient</source>
+            <translation>Destinatario SMTP predeterminado</translation>
+        </message>
+        <message>
+            <source>Send notifications through an SMTP email server</source>
+            <translation>Enviar notificaciones a través de un servidor de correo SMTP</translation>
+        </message>
+        <message>
+            <source>SMTP server host (e.g. smtp.gmail.com)</source>
+            <translation>Servidor SMTP (p. ej. smtp.gmail.com)</translation>
+        </message>
+        <message>
+            <source>SMTP server port (587 for STARTTLS)</source>
+            <translation>Puerto del servidor SMTP (587 para STARTTLS)</translation>
+        </message>
+        <message>
+            <source>Username for SMTP authentication</source>
+            <translation>Usuario para autenticación SMTP</translation>
+        </message>
+        <message>
+            <source>Password or app-specific token for SMTP</source>
+            <translation>Contraseña o token específico de la aplicación para SMTP</translation>
+        </message>
+        <message>
+            <source>Use STARTTLS encryption (recommended for port 587)</source>
+            <translation>Usar cifrado STARTTLS (recomendado para el puerto 587)</translation>
+        </message>
+        <message>
+            <source>Default sender email address (From header)</source>
+            <translation>Dirección de correo del remitente predeterminado (cabecera From)</translation>
+        </message>
+        <message>
+            <source>Default recipient(s), comma-separated</source>
+            <translation>Destinatario(s) predeterminado(s), separados por comas</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

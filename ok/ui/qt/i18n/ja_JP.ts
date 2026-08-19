@@ -1628,6 +1628,70 @@
             <source>Requires the local WeChat client window to be open and running</source>
             <translation>ローカルの WeChat クライアントウィンドウを開いて実行しておく必要があります</translation>
         </message>
+        <message>
+            <source>SMTP Notification</source>
+            <translation>SMTP 通知</translation>
+        </message>
+        <message>
+            <source>SMTP Host</source>
+            <translation>SMTP ホスト</translation>
+        </message>
+        <message>
+            <source>SMTP Port</source>
+            <translation>SMTP ポート</translation>
+        </message>
+        <message>
+            <source>SMTP Username</source>
+            <translation>SMTP ユーザー名</translation>
+        </message>
+        <message>
+            <source>SMTP Password</source>
+            <translation>SMTP パスワード</translation>
+        </message>
+        <message>
+            <source>SMTP Use TLS</source>
+            <translation>SMTP で TLS を使用</translation>
+        </message>
+        <message>
+            <source>SMTP Default Sender</source>
+            <translation>SMTP 既定の送信元</translation>
+        </message>
+        <message>
+            <source>SMTP Default Recipient</source>
+            <translation>SMTP 既定の受信先</translation>
+        </message>
+        <message>
+            <source>Send notifications through an SMTP email server</source>
+            <translation>SMTP メールサーバーで通知を送信</translation>
+        </message>
+        <message>
+            <source>SMTP server host (e.g. smtp.gmail.com)</source>
+            <translation>SMTP サーバーのホスト（例: smtp.gmail.com）</translation>
+        </message>
+        <message>
+            <source>SMTP server port (587 for STARTTLS)</source>
+            <translation>SMTP サーバーのポート（STARTTLS は 587）</translation>
+        </message>
+        <message>
+            <source>Username for SMTP authentication</source>
+            <translation>SMTP 認証のユーザー名</translation>
+        </message>
+        <message>
+            <source>Password or app-specific token for SMTP</source>
+            <translation>SMTP のパスワードまたはアプリ固有トークン</translation>
+        </message>
+        <message>
+            <source>Use STARTTLS encryption (recommended for port 587)</source>
+            <translation>STARTTLS 暗号化を使用（ポート 587 に推奨）</translation>
+        </message>
+        <message>
+            <source>Default sender email address (From header)</source>
+            <translation>既定の送信元メールアドレス（From ヘッダー）</translation>
+        </message>
+        <message>
+            <source>Default recipient(s), comma-separated</source>
+            <translation>既定の受信先（複数はカンマ区切り）</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

@@ -60,3 +60,9 @@ pip-delete-this-directory.txt
 # Temp
 myRes/
 /config.py
+
+# Test and build residue
+.pytest_cache/
+pytest-cache-files-*/
+.tmp-pytest/
+tmp_install/

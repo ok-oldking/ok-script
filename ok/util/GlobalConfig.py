@@ -31,6 +31,14 @@ QQ_BOT_NOTIFICATION_ENABLED = 'QQ Bot API Notification'
 QQ_BOT_APP_ID = 'QQ Bot API App ID'
 QQ_BOT_TOKEN = 'QQ Bot API Token'
 QQ_BOT_CHANNEL_ID = 'QQ Bot API Channel ID'
+SMTP_NOTIFICATION_ENABLED = 'SMTP Notification'
+SMTP_HOST = 'SMTP Host'
+SMTP_PORT = 'SMTP Port'
+SMTP_USERNAME = 'SMTP Username'
+SMTP_PASSWORD = 'SMTP Password'
+SMTP_USE_TLS = 'SMTP Use TLS'
+SMTP_DEFAULT_SENDER = 'SMTP Default Sender'
+SMTP_DEFAULT_RECIPIENT = 'SMTP Default Recipient'
 
 _LEGACY_NOTIFICATION_KEYS = {
     'QQ Notification': QQ_NOTIFICATION_ENABLED,
@@ -106,6 +114,14 @@ def create_notification_options():
         QQ_BOT_APP_ID: '',
         QQ_BOT_TOKEN: '',
         QQ_BOT_CHANNEL_ID: '',
+        SMTP_NOTIFICATION_ENABLED: False,
+        SMTP_HOST: '',
+        SMTP_PORT: 587,
+        SMTP_USERNAME: '',
+        SMTP_PASSWORD: '',
+        SMTP_USE_TLS: True,
+        SMTP_DEFAULT_SENDER: '',
+        SMTP_DEFAULT_RECIPIENT: '',
         # Desktop automation is intentionally last and marked unreliable.
         QQ_NOTIFICATION_ENABLED: False,
         QQ_NICKNAME: '',
@@ -129,6 +145,14 @@ def create_notification_options():
         QQ_BOT_APP_ID: {'type': 'line_edit'},
         QQ_BOT_TOKEN: {'type': 'line_edit'},
         QQ_BOT_CHANNEL_ID: {'type': 'line_edit'},
+        SMTP_NOTIFICATION_ENABLED: {
+            'sub_configs': {True: [SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD,
+                                   SMTP_USE_TLS, SMTP_DEFAULT_SENDER, SMTP_DEFAULT_RECIPIENT]}},
+        SMTP_HOST: {'type': 'line_edit', 'minimum_width': 480, 'maximum_width': 640},
+        SMTP_USERNAME: {'type': 'line_edit'},
+        SMTP_PASSWORD: {'type': 'line_edit'},
+        SMTP_DEFAULT_SENDER: {'type': 'line_edit'},
+        SMTP_DEFAULT_RECIPIENT: {'type': 'line_edit'},
     }
     descriptions = {
         SYSTEM_NOTIFICATION_ENABLED: 'Show notifications using the Windows system tray',
@@ -149,6 +173,14 @@ def create_notification_options():
         QQ_BOT_APP_ID: 'QQ Bot application ID',
         QQ_BOT_TOKEN: 'QQ Bot application token',
         QQ_BOT_CHANNEL_ID: 'QQ channel ID to receive notifications',
+        SMTP_NOTIFICATION_ENABLED: 'Send notifications through an SMTP email server',
+        SMTP_HOST: 'SMTP server host (e.g. smtp.gmail.com)',
+        SMTP_PORT: 'SMTP server port (587 for STARTTLS)',
+        SMTP_USERNAME: 'Username for SMTP authentication',
+        SMTP_PASSWORD: 'Password or app-specific token for SMTP',
+        SMTP_USE_TLS: 'Use STARTTLS encryption (recommended for port 587)',
+        SMTP_DEFAULT_SENDER: 'Default sender email address (From header)',
+        SMTP_DEFAULT_RECIPIENT: 'Default recipient(s), comma-separated',
     }
     return ConfigOption(
         NOTIFICATION_OPTION_NAME,

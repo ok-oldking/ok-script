@@ -72,6 +72,27 @@ ok-script 将任务配置、设备连接、脚本开发、模板管理和识别�
 
 浮层只用于开发和诊断。正式任务逻辑应依赖 `find_one`、`wait_feature`、`ocr` 等 API 的返回值，而不是浮层状态。
 
+## 通知设置
+
+通知设置位于“设置 → 通知”，默认开启 Windows 系统托盘通知，其余渠道默认关闭。启用某个渠道后才会显示对应的配置字段。
+
+### SMTP 邮件通知
+
+SMTP 渠道基于 Python 标准库 `smtplib` 发送邮件，不需要额外依赖：
+
+1. 打开 **SMTP Notification** 开关，展开 SMTP 配置字段。
+2. 填写 **SMTP Host**（服务器地址）与 **SMTP Port**（端口，默认 587，配合 STARTTLS）。
+3. 填写 **SMTP Username** 与 **SMTP Password**，建议使用邮箱服务商提供的“应用专用密码”而不是登录密码。
+4. 填写 **SMTP Default Sender**（发件人地址，即邮件的 From 头）与 **SMTP Default Recipient**（收件人，多个地址用英文逗号分隔）。
+5. 保持 **SMTP Use TLS** 开启（STARTTLS，推荐用于 587 端口）。
+
+常用服务器参数示例：
+
+- Gmail：`smtp.gmail.com:587`，需在 Google 账号中开启两步验证并生成应用专用密码。
+- QQ 邮箱：`smtp.qq.com:587`，需在 QQ 邮箱设置中开启 SMTP 服务并获取授权码。
+
+邮件主题为通知标题，正文为通知消息；随通知附带的截图会以 PNG 附件发送，单张附件编码失败不会影响其他附件。
+
 ## 推荐工作流
 
 1. 在截图方式页连接目标并验证截图。
