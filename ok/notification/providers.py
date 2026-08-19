@@ -191,7 +191,9 @@ class SmtpProvider:
         msg.set_content(str(message or ''))
         self._attach_images(msg, images)
 
-        context = ssl.create_default_context()
+        # Secure default context (TLS 1.2+, certificate verification on).
+        # NOSONAR: SonarPython flags create_default_context() as S4423 false positive.
+        context = ssl.create_default_context()  # NOSONAR
         try:
             self._deliver(msg, context)
             return True
