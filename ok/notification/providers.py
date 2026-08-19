@@ -189,29 +189,11 @@ class SmtpProvider:
         msg['From'] = str(sender or self.default_sender)
         msg['To'] = self.default_recipient
         msg.set_content(str(message or ''))
-        for index, frame in enumerate(images or []):
-            try:
-                msg.add_attachment(
-                    _png_bytes(frame),
-                    maintype='image', subtype='png',
-                    filename=f'notification_{index + 1}.png')
-            except Exception as e:
-                logger.error('SMTP attachment encoding failed', e)
+        self._attach_images(msg, images)
 
         context = ssl.create_default_context()
         try:
-            if self.use_tls and self.port == 465:
-                server = smtplib.SMTP_SSL(self.host, self.port, timeout=30, context=context)
-            else:
-                server = smtplib.SMTP(self.host, self.port, timeout=30)
-            with server:
-                server.ehlo()
-                if self.use_tls and self.port != 465:
-                    server.starttls(context=context)
-                    server.ehlo()
-                if self.username:
-                    server.login(self.username, self.password)
-                server.send_message(msg)
+            self._deliver(msg, context)
             return True
         except smtplib.SMTPAuthenticationError as e:
             logger.error('SMTP authentication failed', e)
@@ -222,3 +204,29 @@ class SmtpProvider:
         except Exception as e:
             logger.error('SMTP notification failed', e)
             return False
+
+    def _deliver(self, msg, context):
+        """Connect to the SMTP server and send the message."""
+        if self.use_tls and self.port == 465:
+            server = smtplib.SMTP_SSL(self.host, self.port, timeout=30, context=context)
+        else:
+            server = smtplib.SMTP(self.host, self.port, timeout=30)
+        with server:
+            server.ehlo()
+            if self.use_tls and self.port != 465:
+                server.starttls(context=context)
+                server.ehlo()
+            if self.username:
+                server.login(self.username, self.password)
+            server.send_message(msg)
+
+    def _attach_images(self, msg, images):
+        """Attach notification images to the message, skipping frames that fail to encode."""
+        for index, frame in enumerate(images or []):
+            try:
+                msg.add_attachment(
+                    _png_bytes(frame),
+                    maintype='image', subtype='png',
+                    filename=f'notification_{index + 1}.png')
+            except Exception as e:
+                logger.error('SMTP attachment encoding failed', e)
