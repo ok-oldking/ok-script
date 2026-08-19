@@ -116,13 +116,72 @@ def _is_own_task_path(path: str, root_path: str) -> bool:
 
 
 def _name_to_index_map(onetime_tasks: Sequence) -> Dict[str, int]:
-    """构建任务名 -> 当前 1-based 索引 的映射。"""
-    name_to_index = {}
+    """构建任务标识 -> 当前 1-based 索引 的映射。
+
+    一个任务会注册多个键：任务名、类名、模块路径.类名（稳定标识）。
+    重名/重类时保持第一个（与既有行为一致），由 _collect_corrections 的
+    主匹配 + 类名回退逻辑兜底。
+    """
+    id_to_index = {}
     for index, task in enumerate(onetime_tasks, start=1):
         name = getattr(task, "name", None)
+        class_name = task.__class__.__name__
+        module_path = f"{task.__class__.__module__}.{class_name}"
         if name:
-            name_to_index.setdefault(str(name), index)
-    return name_to_index
+            id_to_index.setdefault(str(name), index)
+        id_to_index.setdefault(class_name, index)
+        id_to_index.setdefault(module_path, index)
+    return id_to_index
+
+
+def _task_at_index(onetime_tasks: Sequence, index: Optional[int]):
+    """按 1-based 索引取 onetime_tasks 中的任务实例；越界/空返回 None。"""
+    tasks = list(onetime_tasks or [])
+    if index is None or not (1 <= index <= len(tasks)):
+        return None
+    return tasks[index - 1]
+
+
+def _resolve_identifier_index(
+        onetime_tasks: Sequence, identifier: str
+) -> Optional[int]:
+    """给定标识（模块路径.类名）在当前 onetime_tasks 中解析索引。
+
+    优先按"模块路径.类名"精确匹配；匹配失败（项目重构/模块移动/目录重命名）
+    时回退到按类名匹配当前任务，视为同一任务类。
+    """
+    if not identifier:
+        return None
+    identifier = str(identifier).strip()
+    tasks = list(onetime_tasks or [])
+    if not tasks:
+        return None
+
+    def full_match(candidate, target):
+        return f"{candidate.__class__.__module__}.{candidate.__class__.__name__}".lower() == target.lower()
+
+    def class_match(candidate, target):
+        return candidate.__class__.__name__.lower() == target.rsplit(".", 1)[-1].lower()
+
+    exact = [i for i, t in enumerate(tasks, start=1) if full_match(t, identifier)]
+    if len(exact) == 1:
+        return exact[0]
+    if len(exact) > 1:
+        logger.warning(
+            f"schedule index sync: multiple tasks match identifier {identifier!r}, skip"
+        )
+        return None
+
+    # 模块路径匹配失败：回退到类名（兼容模块路径变化）
+    by_class = [i for i, t in enumerate(tasks, start=1) if class_match(t, identifier)]
+    if len(by_class) == 1:
+        return by_class[0]
+    if len(by_class) > 1:
+        logger.warning(
+            f"schedule index sync: multiple tasks match class {identifier.rsplit('.', 1)[-1]!r}, skip"
+        )
+        return None
+    return None
 
 
 def _extract_task_target(item: dict) -> Optional[str]:
@@ -204,16 +263,17 @@ def _register_task_xml(path: str, new_xml: str) -> bool:
     return _register_task_xml_via_schtasks(path, new_xml)
 
 
-def _apply_correction(item: dict, new_index: int) -> bool:
-    """改写单个缓存任务的 -t 索引，并同步 Windows 计划任务。
+def _apply_correction(item: dict, new_target) -> bool:
+    """改写单个缓存任务的 -t 目标，并同步 Windows 计划任务。
 
+    new_target 可为数字索引（int）或模块路径.类名（str）。
     仅当 Windows 计划任务（若存在）成功用新 XML 重新注册后，才改写缓存字段并返回 True；
     注册失败或无法改写时返回 False，保持缓存不变，下次启动会重试。
     """
     old_xml = item.get("xml_config") or ""
     old_actions = item.get("actions") or ""
-    new_xml = _replace_task_target(old_xml, new_index)
-    new_actions = _replace_task_target(old_actions, new_index)
+    new_xml = _replace_task_target(old_xml, new_target)
+    new_actions = _replace_task_target(old_actions, new_target)
 
     path = item.get("path") or ""
     if path:
@@ -226,52 +286,81 @@ def _apply_correction(item: dict, new_index: int) -> bool:
 
     item["xml_config"] = new_xml
     item["actions"] = new_actions
-    item["task_index"] = new_index
+    if isinstance(new_target, int):
+        item["task_index"] = new_target
     return True
 
 
 def _collect_corrections(
-        data: dict, name_to_index: Dict[str, int], root_path: str
-) -> List[Tuple[str, dict, int, str]]:
+        data: dict, name_to_index: Dict[str, int], root_path: str,
+        onetime_tasks: Sequence = (),
+) -> List[Tuple[str, dict, object, str]]:
     """收集需要修正的缓存任务。
 
-    仅处理本应用（root_path）下的任务，且任务名在当前 onetime_tasks 中存在、
-    -t 目标不是当前索引时才收集，返回 [(task_key, item, new_index, old_target), ...]。
+    返回 [(task_key, item, new_target, old_target), ...]，new_target 为数字索引或
+    模块路径.类名（str）。仅处理本应用（root_path）下的任务：
+      - 旧格式 `-t N`（数字）：任务名存在且 -t 不是当前索引时修正为当前索引；
+      - 新格式 `-t 模块路径.类名`：模块路径匹配失败（模块移动/重命名）且类名唯一
+        匹配时，修正为当前实际的模块路径.类名。
     """
-    corrections: List[Tuple[str, dict, int, str]] = []
+    corrections: List[Tuple[str, dict, object, str]] = []
     for task_key, item in data.items():
         if not isinstance(item, dict):
             continue
         # 只处理本应用（如 ok-ef）下的任务，其它 ok-* 应用只读任务不动
         if not _is_own_task_path(str(item.get("path") or task_key), root_path):
             continue
-        name = item.get("name")
-        # 任务名在当前 onetime_tasks 中不存在，跳过
-        if not name or str(name) not in name_to_index:
-            continue
-        new_index = name_to_index[str(name)]
         old_target = _extract_task_target(item)
         if old_target is None:
             continue
-        # 已是正确索引则跳过（幂等）
-        if old_target.isdigit() and int(old_target) == new_index:
-            continue
-        corrections.append((task_key, item, new_index, old_target))
+
+        if old_target.isdigit():
+            # 旧格式：数字索引，按任务名校正
+            name = item.get("name")
+            if not name or str(name) not in name_to_index:
+                continue
+            new_index = name_to_index[str(name)]
+            # 已是正确索引则跳过（幂等）
+            if int(old_target) == new_index:
+                continue
+            corrections.append((task_key, item, new_index, old_target))
+        elif "." in old_target:
+            # 新格式：模块路径.类名（稳定标识）
+            current_module_path = _resolve_identifier_index(onetime_tasks, old_target)
+            if current_module_path is None:
+                # 任务在当前 onetime_tasks 中找不到（已删除或类名也匹配不到），跳过
+                continue
+            task = _task_at_index(onetime_tasks, current_module_path)
+            if task is None:
+                continue
+            new_identifier = f"{task.__class__.__module__}.{task.__class__.__name__}"
+            # 已是当前模块路径则跳过（幂等）
+            if new_identifier == old_target:
+                continue
+            corrections.append((task_key, item, new_identifier, old_target))
+        else:
+            # 历史任务名格式（如 -t 日常任务）：按任务名校正为当前数字索引
+            name = item.get("name")
+            if not name or str(name) not in name_to_index:
+                continue
+            new_index = name_to_index[str(name)]
+            corrections.append((task_key, item, new_index, old_target))
     return corrections
 
 
-def _perform_corrections(corrections: List[Tuple[str, dict, int, str]]) -> Tuple[int, Dict[str, int]]:
-    """逐项应用索引修正，返回 (成功修正数, 旧 -t 目标 -> 新索引 的 argv 映射)。
+def _perform_corrections(corrections) -> Tuple[int, Dict[str, int]]:
+    """逐项应用修正，返回 (成功修正数, 旧 -t 目标 -> 新目标 的 argv 映射)。
 
-    仅统计并记录真正注册成功的修正；失败的条目保持缓存原样，下次启动会重试。
+    new_target 可为数字索引或模块路径.类名。仅统计并记录真正注册成功的修正；
+    失败的条目保持缓存原样，下次启动会重试。
     """
     changed = 0
     argv_target_map: Dict[str, int] = {}
-    for task_key, item, new_index, old_target in corrections:
+    for task_key, item, new_target, old_target in corrections:
         try:
-            if _apply_correction(item, new_index):
+            if _apply_correction(item, new_target):
                 changed += 1
-                argv_target_map.setdefault(old_target, new_index)
+                argv_target_map.setdefault(str(old_target), str(new_target))
         except Exception:
             logger.exception(f"schedule index sync failed for {task_key}")
     return changed, argv_target_map
@@ -362,7 +451,9 @@ def sync_schedule_task_indexes(onetime_tasks: Optional[Sequence] = None) -> int:
             f"schedule index sync: read {len(data)} cache entries from {cache_file}"
         )
 
-        corrections = _collect_corrections(data, name_to_index, _schedule_root_path().rstrip("\\"))
+        corrections = _collect_corrections(
+            data, name_to_index, _schedule_root_path().rstrip("\\"), tasks
+        )
         if not corrections:
             logger.info("schedule index sync: no stale indexes to correct")
             return 0
@@ -376,7 +467,7 @@ def sync_schedule_task_indexes(onetime_tasks: Optional[Sequence] = None) -> int:
             _rewrite_current_process_argv(argv_target_map)
             _write_cache(cache_file, data)
             detail = ", ".join(
-                f"{item.get('name')} -> -t {idx}" for _, item, idx, _ in corrections
+                f"{item.get('name')} -> -t {target}" for _, item, target, _ in corrections
             )
             logger.info(f"schedule index sync corrected {changed} task(s): {detail}")
         else:

@@ -368,7 +368,11 @@ def parse_arguments_to_map(description="main script"):
 
     # Add your arguments here.  This is just an example - adapt this to your needs!
     parser.add_argument("--help", action="help", help="show this help message and exit")
-    parser.add_argument("-t", "--task", help="which task to execute as index starting with 1", type=int, default=0)
+    parser.add_argument(
+        "-t", "--task",
+        help="which task to execute as 1-based index, task name, or class name",
+        type=str, default="0",
+    )
     parser.add_argument("-e", "--exit", action="store_true", help="exit after task")
     parser.add_argument("-h", "--headless", action="store_true", help="start without ui")
 
@@ -376,6 +380,16 @@ def parse_arguments_to_map(description="main script"):
 
     # Convert the args object to a dictionary
     arg_map = vars(args)  # vars() returns the __dict__ attribute of an object
+
+    # -t 支持数字索引（旧格式）或任务名/类名（新格式）：
+    # 数字原样转 int；名字/类名保持字符串，由运行时 get_task 解析为对应任务。
+    task = arg_map.get("task")
+    if isinstance(task, str):
+        stripped = task.strip()
+        if stripped.isdigit():
+            arg_map["task"] = int(stripped)
+        else:
+            arg_map["task"] = stripped
 
     return arg_map
 

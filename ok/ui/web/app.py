@@ -1020,11 +1020,21 @@ class WebRuntime:
         if task_index not in available_indices:
             raise ValueError("Invalid scheduled task")
         trigger = normalize_trigger_type(body.get("trigger_type", "Daily"))
+        # 根据索引反查任务实例，取模块路径.类名作为稳定标识
+        task_identifier = None
+        try:
+            tasks = list(self.executor.onetime_tasks or [])
+            if 1 <= task_index <= len(tasks):
+                task = tasks[task_index - 1]
+                task_identifier = f"{task.__class__.__module__}.{task.__class__.__name__}"
+        except Exception:
+            logger.exception("Failed to resolve task_identifier for scheduled task")
         success = self.schedule_manager.create_task(
             task_name=str(body.get("name") or ""), task_index=task_index, trigger_type=trigger,
             timeout_hours=int(body.get("timeout_hours", 0)), start_hour=int(body.get("start_hour", 9)),
             start_minute=int(body.get("start_minute", 0)), auto_exit=bool(body.get("auto_exit", True)), enabled=True,
             interval_days=int(body.get("interval_days", 0)), interval_hours=int(body.get("interval_hours", 0)),
+            task_identifier=task_identifier,
         )
         if not success:
             raise RuntimeError("Failed to create scheduled task")

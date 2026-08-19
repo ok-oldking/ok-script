@@ -719,8 +719,10 @@ class OK:
                 )
             use_gui = (ui_config is not None and ui_config["type"] == "qt"
                        and not self.args.get('headless', False))
-            if not use_gui and self.args.get('task', 0) > 0:
-                self.run_task(self.args.get('task'), exit_after=self.args.get('exit', False))
+            task_arg = self.args.get('task', 0)
+            has_task = bool(task_arg) if isinstance(task_arg, str) else task_arg > 0
+            if not use_gui and has_task:
+                self.run_task(task_arg, exit_after=self.args.get('exit', False))
                 return
             if use_gui:
                 if not self.init_error:
@@ -762,11 +764,18 @@ class OK:
         from ok.core.events import communicate
         from ok.util.GlobalConfig import basic_options
 
-        task_number = self.args.get('task', 0)
+        task_arg = self.args.get('task', 0)
         app = self.headless_app if self.should_init_task_manager_headless() else self.app
         app.initialize_overlay()
         communicate.start_success.emit()
-        if task_number > 0:
+        if task_arg:
+            if isinstance(task_arg, str):
+                # -t 传任务名/类名：解析为当前 onetime_tasks 中的任务实例再启动
+                start_task = self.get_onetime_task(task_arg)
+                logger.info(f'start runtime with task name {task_arg}')
+                app.start_controller.start(start_task, exit_after=self.args.get('exit', False))
+                return True
+            task_number = task_arg
             logger.info(f'start runtime with task param {task_number - 1} {self.args.get("exit", False)}')
             app.start_controller.start(task_number - 1, exit_after=self.args.get('exit', False))
         elif self.global_config.get_config(basic_options).get('Auto Start Game When App Starts'):
@@ -840,9 +849,38 @@ class OK:
 
     def find_task_by_name(self, tasks, task):
         normalized_task = task.lower()
+
+        # 1) 若传入的是"模块路径.类名"形式（含点，如 src.tasks.onetime.DailyTask），
+        #    优先按完整标识精确匹配（唯一、不随名称变化）。
+        if "." in task:
+            full_matches = [
+                candidate for candidate in tasks
+                if f"{candidate.__class__.__module__}.{candidate.__class__.__name__}".lower() == normalized_task
+            ]
+            if len(full_matches) == 1:
+                return full_matches[0]
+            if len(full_matches) > 1:
+                names = ', '.join(candidate.__class__.__name__ for candidate in full_matches)
+                raise ValueError(f'Multiple tasks matched "{task}": {names}')
+
+            # 2) 模块路径+类名精确匹配失败（项目重构/模块移动/目录重命名等）：
+            #    回退到按类名匹配当前任务；若命中，说明是同一任务类、只是模块路径变了。
+            class_name = task.rsplit(".", 1)[-1]
+            class_matches = [
+                candidate for candidate in tasks
+                if candidate.__class__.__name__.lower() == class_name.lower()
+            ]
+            if len(class_matches) == 1:
+                return class_matches[0]
+            if len(class_matches) > 1:
+                names = ', '.join(candidate.__class__.__name__ for candidate in class_matches)
+                raise ValueError(f'Multiple tasks matched "{task}": {names}')
+
+        # 3) 非模块路径形式（或模块路径与类名都未命中）：按 name / 类名精确匹配
         exact_matches = [
             candidate for candidate in tasks
-            if candidate.name.lower() == normalized_task or candidate.__class__.__name__.lower() == normalized_task
+            if candidate.name.lower() == normalized_task
+            or candidate.__class__.__name__.lower() == normalized_task
         ]
         if len(exact_matches) == 1:
             return exact_matches[0]

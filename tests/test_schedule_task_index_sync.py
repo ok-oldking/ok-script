@@ -21,6 +21,20 @@ class _FakeTask:
         self.name = name
 
 
+class _RealDailyTask:
+    """带真实模块路径的任务（模拟 src.tasks.onetime.DailyTask）。"""
+
+    def __init__(self, name="日常任务"):
+        self.name = name
+
+
+class _RealDeliverTask:
+    """另一个带真实模块路径的任务。"""
+
+    def __init__(self, name="自动送货"):
+        self.name = name
+
+
 def _make_cache_entry(path, name, actions="", xml_config="", task_index=-1):
     return {
         "path": path,
@@ -387,4 +401,51 @@ def test_rewrite_from_xml_only(isolated):
     entry = saved["\\ok-ef\\daily"]
     assert entry["task_index"] == 1
     assert "-t 1" in entry["xml_config"]
+    assert registered == [("\\ok-ef\\daily", entry["xml_config"])]
+
+
+def _real_module_path(task):
+    return f"{task.__class__.__module__}.{task.__class__.__name__}"
+
+
+def test_module_path_identifier_no_change(isolated):
+    """模块路径标识（-t src.模块.类名）已正确时，无需修正（幂等）。"""
+    patch_mod, cache_file, registered = isolated
+    daily = _RealDailyTask()
+    onetime_tasks = [daily]
+    identifier = _real_module_path(daily)
+    data = {
+        "\\ok-ef\\daily": _make_cache_entry(
+            "\\ok-ef\\daily", "日常任务", actions=f"main.py -t {identifier} -e",
+            xml_config=_xml_with(f"main.py -t {identifier} -e"), task_index=-1),
+    }
+    cache_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    assert patch_mod.sync_schedule_task_indexes(onetime_tasks=onetime_tasks) == 0
+    saved = json.loads(cache_file.read_text(encoding="utf-8"))
+    assert f"-t {identifier}" in saved["\\ok-ef\\daily"]["actions"]
+    assert registered == []
+
+
+def test_module_path_class_name_fallback(isolated):
+    """模块路径变化（模块移动/重命名）时，类名回退匹配并修正为新模块路径。"""
+    patch_mod, cache_file, registered = isolated
+    daily = _RealDailyTask()
+    onetime_tasks = [daily]
+    current_identifier = _real_module_path(daily)
+    # 旧的错误模块路径：模块变了，但类名 _RealDailyTask 还在
+    stale_identifier = f"old.broken.module.{daily.__class__.__name__}"
+    data = {
+        "\\ok-ef\\daily": _make_cache_entry(
+            "\\ok-ef\\daily", "日常任务", actions=f"main.py -t {stale_identifier} -e",
+            xml_config=_xml_with(f"main.py -t {stale_identifier} -e"), task_index=-1),
+    }
+    cache_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    assert patch_mod.sync_schedule_task_indexes(onetime_tasks=onetime_tasks) == 1
+    saved = json.loads(cache_file.read_text(encoding="utf-8"))
+    entry = saved["\\ok-ef\\daily"]
+    assert f"-t {current_identifier}" in entry["actions"]
+    assert f"-t {current_identifier}" in entry["xml_config"]
+    assert f"-t {stale_identifier}" not in entry["actions"]
     assert registered == [("\\ok-ef\\daily", entry["xml_config"])]
