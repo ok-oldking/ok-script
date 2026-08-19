@@ -20,6 +20,7 @@ __pycache__/
 showcase_genshin/config/
 logs/
 **/logs/
+.venv/
 build/
 develop-eggs/
 dist/
@@ -55,3 +56,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 .vscode
 .vs
+
+# Temp
+myRes/
+/config.py
