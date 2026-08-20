@@ -131,6 +131,10 @@ class DeviceManager:
 
     def close(self):
         """Stop capture resources before Qt/Python teardown begins."""
+        hwnd_window = self.hwnd_window
+        if hwnd_window is not None:
+            hwnd_window.stop()
+
         capture_method = self.capture_method
         self.capture_method = None
         if capture_method is not None:

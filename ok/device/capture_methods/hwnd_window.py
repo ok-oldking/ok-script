@@ -68,7 +68,7 @@ class HwndWindow:
         self.global_config = global_config
         self.mute_option.validator = self.validate_mute_config
         self.update_window(title, exe_name, frame_width, frame_height, player_id, hwnd_class, top_hwnd_class)
-        self.thread = threading.Thread(target=self.update_window_size, name="update_window_size")
+        self.thread = threading.Thread(target=self.update_window_size, name="update_window_size", daemon=True)
         self.thread.start()
 
     def validate_mute_config(self, key, value):
@@ -82,7 +82,13 @@ class HwndWindow:
         return True, None
 
     def stop(self):
-        self.stop_event.set()
+        try:
+            self.stop_event.set()
+            window_thread = getattr(self, 'thread', None)
+            if window_thread is not None and window_thread is not threading.current_thread():
+                window_thread.join(timeout=1)
+        except Exception as error:
+            logger.error(f'hwnd window close failed: {error}')
 
     def _front_hwnd_candidates(self):
         return list(dict.fromkeys(hwnd for hwnd in (self.top_hwnd, self.hwnd) if hwnd))
@@ -183,12 +189,15 @@ class HwndWindow:
         self.do_update_window_size()
 
     def update_window_size(self):
-        while not self.app_exit_event.is_set() and not self.stop_event.is_set():
-            self.do_update_window_size()
-            time.sleep(0.2)
-        if self.hwnd and self.mute_option.get('Mute Game while in Background'):
-            logger.info(f'exit reset mute state to 0')
-            set_mute_state(self.hwnd, 0)
+        try:
+            while not self.app_exit_event.is_set() and not self.stop_event.is_set():
+                self.do_update_window_size()
+                time.sleep(0.2)
+            if self.hwnd and self.mute_option.get('Mute Game while in Background'):
+                logger.info(f'exit reset mute state to 0')
+                set_mute_state(self.hwnd, 0)
+        except Exception as error:
+            logger.error(f'update_window_size exception: {error}')
 
     def get_abs_cords(self, x, y):
         return self.x + x, self.y + y
