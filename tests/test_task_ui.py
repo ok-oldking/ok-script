@@ -8,6 +8,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import ExpandLayout
+from shiboken6 import delete
 
 from ok import og
 from ok.ui.qt.Communicate import communicate
@@ -94,6 +95,28 @@ class TestTaskUi(unittest.TestCase):
             card.card.titleLabel.geometry().center().y(),
             card.card.contentLabel.geometry().center().y(),
         )
+
+    def test_destroyed_task_card_disconnects_from_task_events(self):
+        task = SimpleNamespace(
+            name="Disposable task",
+            description="",
+            config=FakeConfig(),
+            default_config={},
+            config_description={},
+            config_type={},
+            icon=None,
+            instructions=None,
+            is_custom=False,
+            show_create_shortcut=False,
+            enabled=False,
+        )
+        card = TaskCard(task, onetime=False)
+        callback = card.update_buttons
+        self.assertIn(callback, communicate.task._subscribers)
+
+        delete(card)
+
+        self.assertNotIn(callback, communicate.task._subscribers)
 
     def test_task_cards_use_a_nested_expand_layout(self):
         tab = TaskTab()

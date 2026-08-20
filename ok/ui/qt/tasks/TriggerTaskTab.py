@@ -17,6 +17,7 @@ class TriggerTaskTab(TaskTab):
     def refresh_ui(self):
         for w in self.card_widgets:
             self.remove_task_card(w)
+            w.dispose()
             w.deleteLater()
         self.card_widgets.clear()
         

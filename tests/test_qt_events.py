@@ -1,5 +1,8 @@
 import unittest
 
+from PySide6.QtCore import QObject
+from shiboken6 import delete
+
 from ok.ui.qt.events import QtEventDispatcher
 
 
@@ -27,6 +30,16 @@ class TestQtEventDispatcher(unittest.TestCase):
         dispatcher._invoke_callback(lambda *args: calls.append(args), (1, 2, 3), {})
 
         self.assertEqual([(1, 2, 3)], calls)
+
+    def test_callback_for_deleted_qobject_is_discarded(self):
+        dispatcher = QtEventDispatcher()
+        owner = QObject()
+        callback = owner.objectName
+        delete(owner)
+
+        # Calling the bound method directly raises because its C++ object is
+        # gone; queued application events must instead be harmlessly dropped.
+        dispatcher._invoke_callback(callback, (), {})
 
 
 if __name__ == "__main__":

@@ -1,8 +1,10 @@
 """Qt main-thread scheduler for core events."""
 
 import inspect
+import weakref
 
 from PySide6.QtCore import QCoreApplication, QObject, QThread, Signal, Slot
+from shiboken6 import isValid
 
 from ok.core.events import set_event_dispatcher
 
@@ -34,10 +36,19 @@ class QtEventDispatcher(QObject):
 
     def __init__(self):
         super().__init__()
-        self._positional_limits = {}
+        # Subscribers are often bound QObject methods.  A regular dict would
+        # keep their Python wrappers alive after the UI releases them.
+        self._positional_limits = weakref.WeakKeyDictionary()
         self.requested.connect(self._invoke)
 
     def _invoke_callback(self, callback, args, kwargs):
+        # The framework-neutral event bus can have callbacks queued while a Qt
+        # widget is being torn down.  Unlike a native Qt signal, it cannot
+        # automatically discard a bound method when the underlying C++ QObject
+        # has already been deleted.
+        owner = getattr(callback, "__self__", None)
+        if isinstance(owner, QObject) and not isValid(owner):
+            return
         try:
             limit = self._positional_limits.get(callback, _MISSING)
             if limit is _MISSING:

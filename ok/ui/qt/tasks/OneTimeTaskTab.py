@@ -53,6 +53,7 @@ class OneTimeTaskTab(TaskTab):
         # Remove old cards
         for w in self.card_widgets:
             self.remove_task_card(w)
+            w.dispose()
             w.deleteLater()
         self.card_widgets.clear()
         
