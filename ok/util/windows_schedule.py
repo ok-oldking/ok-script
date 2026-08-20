@@ -66,6 +66,7 @@ class ScheduleTaskInfo:
     description: str = ""  # 描述
     xml_config: str = ""  # XML 配置
     task_index: int = -1  # 对应的任务索引 (-1 表示自定义任务)
+    task_identifier: Optional[str] = ""  # 任务稳定标识（模块路径.类名，如 src.tasks.onetime.DailyTask）
     interval_days: int = 0  # 自定义间隔（天数），0 表示不使用
     interval_hours: int = 0  # 自定义间隔（小时数），0 表示不使用
     read_only: bool = False  # 是否为其他 ok-* 应用的只读任务
@@ -745,7 +746,8 @@ class WindowsScheduleManager:
                     start_hour: int = 9, start_minute: int = 0,
                     auto_exit: bool = True, enabled: bool = True,
                     description: str = "", interval_days: int = 0,
-                    interval_hours: int = 0) -> bool:
+                    interval_hours: int = 0,
+                    task_identifier: Optional[str] = None) -> bool:
         """
         创建计划任务
 
@@ -761,6 +763,8 @@ class WindowsScheduleManager:
             description: 任务描述
             interval_days: 自定义间隔（天数），仅当 trigger_type 为 CUSTOM 时有效
             interval_hours: 自定义间隔（小时数），仅当 trigger_type 为 CUSTOM 时有效
+            task_identifier: 可选的任务稳定标识（模块路径.类名）。提供时 -t 使用该标识
+                （对排序免疫）；缺省时使用 task_index（旧数字索引格式）。
 
         Returns:
             是否成功
@@ -786,13 +790,14 @@ class WindowsScheduleManager:
                     success = self._create_task_via_com(
                         scheduler_task_name, task_index, trigger_type, timeout_hours,
                         start_hour, start_minute, auto_exit, enabled,
-                        description_with_meta, task_path, interval_days, interval_hours)
+                        description_with_meta, task_path, interval_days, interval_hours,
+                        task_identifier)
                 else:
                     success = self._create_task_via_schtasks(
                         scheduler_task_name, task_index, trigger_type, enabled,
                         task_path, timeout_hours, start_hour, start_minute,
                         auto_exit, interval_days, interval_hours,
-                        description_with_meta)
+                        description_with_meta, task_identifier)
 
                 if success:
                     # 更新缓存
@@ -806,6 +811,7 @@ class WindowsScheduleManager:
                         task_index=task_index,
                         interval_days=interval_days,
                         interval_hours=interval_hours,
+                        task_identifier=task_identifier,
                     )
                     self.cache.add_or_update(task_info)
                     self._notify_update(task_info)
@@ -821,7 +827,8 @@ class WindowsScheduleManager:
                      start_hour: int = 9, start_minute: int = 0,
                      auto_exit: bool = True, enabled: bool = True,
                      description: str = "", interval_days: int = 0,
-                     interval_hours: int = 0) -> bool:
+                     interval_hours: int = 0,
+                     task_identifier: Optional[str] = None) -> bool:
         """Create the replacement before removing the previous scheduled task."""
         with self.lock:
             current = self.cache.get(task_name)
@@ -831,7 +838,7 @@ class WindowsScheduleManager:
             if not self.create_task(
                     task_name, task_index, trigger_type, timeout_hours,
                     start_hour, start_minute, auto_exit, enabled, description,
-                    interval_days, interval_hours):
+                    interval_days, interval_hours, task_identifier):
                 return False
             replacement = next((item for item in self.cache.get_all()
                                 if item.name == task_name and item.path != old_path), None)
@@ -854,7 +861,8 @@ class WindowsScheduleManager:
                              start_hour: int, start_minute: int,
                              auto_exit: bool, enabled: bool, description: str,
                              task_path: str, interval_days: int = 0,
-                             interval_hours: int = 0) -> bool:
+                             interval_hours: int = 0,
+                             task_identifier: Optional[str] = None) -> bool:
         """通过 COM API 创建任务"""
         try:
             import win32com.client
@@ -865,13 +873,13 @@ class WindowsScheduleManager:
                 return self._create_task_via_schtasks(
                     task_name, task_index, trigger_type, enabled, task_path,
                     timeout_hours, start_hour, start_minute, auto_exit,
-                    interval_days, interval_hours)
+                    interval_days, interval_hours, description, task_identifier)
 
             # 生成 XML 配置
             xml_config = self._generate_task_xml(
                 task_name, task_index, trigger_type, timeout_hours,
                 description, start_hour, start_minute, auto_exit,
-                interval_days, interval_hours)
+                interval_days, interval_hours, task_identifier)
 
             # 确保已连接
             self.SCHEDULE_SERVICE.Connect()
@@ -917,13 +925,14 @@ class WindowsScheduleManager:
                                   auto_exit: bool = True,
                                   interval_days: int = 0,
                                   interval_hours: int = 0,
-                                  description: str = "") -> bool:
+                                  description: str = "",
+                                  task_identifier: Optional[str] = None) -> bool:
         """通过 schtasks 命令创建任务（降级方案）"""
         try:
             xml_config = self._generate_task_xml(
                 task_name, task_index, trigger_type, timeout_hours,
                 description, start_hour, start_minute, auto_exit,
-                interval_days, interval_hours)
+                interval_days, interval_hours, task_identifier)
             xml_file: Optional[Path] = None
 
             try:
@@ -1064,12 +1073,17 @@ class WindowsScheduleManager:
                            trigger_type: TriggerType, timeout_hours: int = 0,
                            description: str = "", start_hour: int = 9,
                            start_minute: int = 0, auto_exit: bool = True,
-                           interval_days: int = 0, interval_hours: int = 0) -> str:
+                           interval_days: int = 0, interval_hours: int = 0,
+                           task_identifier: Optional[str] = None) -> str:
         """
         生成任务 XML 配置
 
         UTF-16 编码（Windows 要求）
         最高权限运行（HighestAvailable）
+
+        Args:
+            task_identifier: 可选的任务稳定标识（模块路径.类名，如 src.tasks.onetime.DailyTask）。
+                提供时 -t 使用该标识（对排序免疫）；缺省时使用 task_index（旧数字索引格式）。
         """
         import sys
 
@@ -1078,8 +1092,11 @@ class WindowsScheduleManager:
 
         current_user = self._resolve_current_user_id()
 
-        # 构建命令行参数
-        cmd_args = f"-t {task_index}"
+        # 构建命令行参数：优先用稳定标识，否则用旧数字索引
+        if task_identifier:
+            cmd_args = f"-t {task_identifier}"
+        else:
+            cmd_args = f"-t {task_index}"
         if auto_exit:
             cmd_args += " -e"
 
