@@ -1,7 +1,8 @@
 from ok.notification.pipeline import NotificationPipeline
 from ok.notification.ppocr import NotificationPPOCR
 from ok.notification.providers import (
-    DiscordProvider, QQBotProvider, TelegramBotProvider, WeComWebhookProvider)
+    DiscordProvider, QQBotProvider, SmtpProvider, TelegramBotProvider,
+    WeComWebhookProvider)
 from ok.notification.windows_messenger import MessengerAutomation
 from ok.util.GlobalConfig import (
     DISCORD_NOTIFICATION_ENABLED, DISCORD_WEBHOOK, NOTIFICATION_OPTION_NAME,
@@ -10,6 +11,9 @@ from ok.util.GlobalConfig import (
     QQ_BOT_APP_ID, QQ_BOT_CHANNEL_ID, QQ_BOT_NOTIFICATION_ENABLED,
     QQ_BOT_TOKEN, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
     TELEGRAM_NOTIFICATION_ENABLED, WECOM_NOTIFICATION_ENABLED, WECOM_WEBHOOK,
+    SMTP_DEFAULT_RECIPIENT, SMTP_DEFAULT_SENDER, SMTP_HOST,
+    SMTP_NOTIFICATION_ENABLED, SMTP_PASSWORD, SMTP_PORT, SMTP_USE_TLS,
+    SMTP_USERNAME,
 )
 from ok.util.logger import Logger
 
@@ -46,6 +50,7 @@ class NotificationManager:
             self.config.get(TELEGRAM_NOTIFICATION_ENABLED),
             self.config.get(WECOM_NOTIFICATION_ENABLED),
             self.config.get(QQ_BOT_NOTIFICATION_ENABLED),
+            self.config.get(SMTP_NOTIFICATION_ENABLED),
         ))
 
     def submit(self, title, message, images=None):
@@ -89,6 +94,13 @@ class NotificationManager:
             self._safe_send('QQ Bot', QQBotProvider().send,
                             self.config.get(QQ_BOT_APP_ID), self.config.get(QQ_BOT_TOKEN),
                             self.config.get(QQ_BOT_CHANNEL_ID), title, message, images)
+        if self.config.get(SMTP_NOTIFICATION_ENABLED):
+            self._safe_send('SMTP', SmtpProvider(
+                self.config.get(SMTP_HOST), self.config.get(SMTP_PORT),
+                self.config.get(SMTP_USERNAME), self.config.get(SMTP_PASSWORD),
+                self.config.get(SMTP_USE_TLS), self.config.get(SMTP_DEFAULT_SENDER),
+                self.config.get(SMTP_DEFAULT_RECIPIENT)).send,
+                            None, title, message, images)
         if self.pipeline.stop_event.is_set():
             return False
         if self.config.get(QQ_NOTIFICATION_ENABLED):

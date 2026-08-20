@@ -1637,6 +1637,78 @@
             <source>Requires the local WeChat client window to be open and running</source>
             <translation>로컬 WeChat 클라이언트 창이 열려 있고 실행 중이어야 합니다</translation>
         </message>
+        <message>
+            <source>SMTP Notification</source>
+            <translation>SMTP 알림</translation>
+        </message>
+        <message>
+            <source>SMTP Host</source>
+            <translation>SMTP 호스트</translation>
+        </message>
+        <message>
+            <source>SMTP Port</source>
+            <translation>SMTP 포트</translation>
+        </message>
+        <message>
+            <source>SMTP Username</source>
+            <translation>사용자 이름</translation>
+        </message>
+        <message>
+            <source>SMTP Password</source>
+            <translation>비밀번호</translation>
+        </message>
+        <message>
+            <source>SMTP Use TLS</source>
+            <translation>암호화</translation>
+        </message>
+        <message>
+            <source>SMTP Default Sender</source>
+            <translation>발신자</translation>
+        </message>
+        <message>
+            <source>SMTP Default Recipient</source>
+            <translation>수신자</translation>
+        </message>
+        <message>
+            <source>Send notifications through an SMTP email server</source>
+            <translation>SMTP 메일 서버를 통해 알림 보내기</translation>
+        </message>
+        <message>
+            <source>SMTP server address (e.g. smtp.qq.com)</source>
+            <translation>SMTP 서버 주소 (예: smtp.qq.com)</translation>
+        </message>
+        <message>
+            <source>SMTP server port (587 for STARTTLS)</source>
+            <translation>SMTP 서버 포트 (STARTTLS는 587)</translation>
+        </message>
+        <message>
+            <source>Username for SMTP authentication (your own email address)</source>
+            <translation>인증용 사용자 이름 (자신의 이메일 주소 입력)</translation>
+        </message>
+        <message>
+            <source>Get an authorization code from your email settings</source>
+            <translation>메일 설정 화면에서 인증 코드를 받으세요</translation>
+        </message>
+        <message>
+            <source>Use STARTTLS encryption (recommended for port 587)</source>
+            <translation>STARTTLS 암호화 사용 (587 포트 권장)</translation>
+        </message>
+        <message>
+            <source>Sender email address</source>
+            <translation>발신자 이메일 주소</translation>
+        </message>
+        <message>
+            <source>Recipient email address(es), comma-separated</source>
+            <translation>수신자 이메일 주소 (여러 개는 쉼표로 구분)</translation>
+        </message>
+        <message>
+            <source>SMTP server port (587 or 465)</source>
+            <translation>SMTP 서버 포트 (587 또는 465)</translation>
+        </message>
+        <message>
+            <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>
+            <translation>TLS 암호화 활성화 (587 포트는 STARTTLS, 465 포트는 SMTPS)</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

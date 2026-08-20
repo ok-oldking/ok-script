@@ -1628,6 +1628,78 @@
             <source>Requires the local WeChat client window to be open and running</source>
             <translation>ローカルの WeChat クライアントウィンドウを開いて実行しておく必要があります</translation>
         </message>
+        <message>
+            <source>SMTP Notification</source>
+            <translation>SMTP 通知</translation>
+        </message>
+        <message>
+            <source>SMTP Host</source>
+            <translation>SMTP ホスト</translation>
+        </message>
+        <message>
+            <source>SMTP Port</source>
+            <translation>SMTP ポート</translation>
+        </message>
+        <message>
+            <source>SMTP Username</source>
+            <translation>ユーザー名</translation>
+        </message>
+        <message>
+            <source>SMTP Password</source>
+            <translation>パスワード</translation>
+        </message>
+        <message>
+            <source>SMTP Use TLS</source>
+            <translation>暗号化</translation>
+        </message>
+        <message>
+            <source>SMTP Default Sender</source>
+            <translation>送信者</translation>
+        </message>
+        <message>
+            <source>SMTP Default Recipient</source>
+            <translation>受信者</translation>
+        </message>
+        <message>
+            <source>Send notifications through an SMTP email server</source>
+            <translation>SMTP メールサーバーで通知を送信</translation>
+        </message>
+        <message>
+            <source>SMTP server address (e.g. smtp.qq.com)</source>
+            <translation>SMTP サーバーのアドレス（例: smtp.qq.com）</translation>
+        </message>
+        <message>
+            <source>SMTP server port (587 for STARTTLS)</source>
+            <translation>SMTP サーバーのポート（STARTTLS は 587）</translation>
+        </message>
+        <message>
+            <source>Username for SMTP authentication (your own email address)</source>
+            <translation>認証用ユーザー名（自分のメールアドレスを入力）</translation>
+        </message>
+        <message>
+            <source>Get an authorization code from your email settings</source>
+            <translation>メール設定画面で認可コードを取得してください</translation>
+        </message>
+        <message>
+            <source>Use STARTTLS encryption (recommended for port 587)</source>
+            <translation>STARTTLS 暗号化を使用（ポート 587 に推奨）</translation>
+        </message>
+        <message>
+            <source>Sender email address</source>
+            <translation>送信者のメールアドレス</translation>
+        </message>
+        <message>
+            <source>Recipient email address(es), comma-separated</source>
+            <translation>受信者のメールアドレス（複数の場合はカンマ区切り）</translation>
+        </message>
+        <message>
+            <source>SMTP server port (587 or 465)</source>
+            <translation>SMTP サーバーのポート（587または465）</translation>
+        </message>
+        <message>
+            <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>
+            <translation>TLS 暗号化を有効化（ポート 587 は STARTTLS、465 は SMTPS）</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
