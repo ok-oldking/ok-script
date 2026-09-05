@@ -1,15 +1,17 @@
 import os
+import smtplib
 import tempfile
 import time
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, MagicMock, Mock, patch
 
 import numpy as np
 import pytest
 import win32con
 
 from ok.notification.providers import (
-    DiscordProvider, QQBotProvider, TelegramBotProvider, WeComWebhookProvider)
+    DiscordProvider, QQBotProvider, SmtpProvider, TelegramBotProvider,
+    WeComWebhookProvider)
 from ok.notification.manager import NotificationManager
 from ok.notification.pipeline import NotificationPipeline
 from ok.notification.ppocr import NotificationPPOCR
@@ -21,6 +23,7 @@ from ok.task.task import BaseTask
 from ok.util.handler import ExitEvent
 from ok.util.GlobalConfig import (
     DISCORD_NOTIFICATION_ENABLED, QQ_NICKNAME, QQ_NOTIFICATION_ENABLED,
+    SMTP_NOTIFICATION_ENABLED, SMTP_PORT, SMTP_USE_TLS,
     SYSTEM_NOTIFICATION_ENABLED, WECHAT_NOTIFICATION_ENABLED,
     GlobalConfig, create_notification_options, register_notification_options,
 )
@@ -36,6 +39,10 @@ def test_notification_options_have_safe_provider_defaults():
     assert not option.default_config[DISCORD_NOTIFICATION_ENABLED]
     assert not option.default_config[QQ_NOTIFICATION_ENABLED]
     assert not option.default_config[WECHAT_NOTIFICATION_ENABLED]
+    assert not option.default_config[SMTP_NOTIFICATION_ENABLED]
+    assert option.default_config[SMTP_PORT] == 587
+    assert option.default_config[SMTP_USE_TLS]
+    assert option.config_type[SMTP_NOTIFICATION_ENABLED]['sub_configs'][True]
     assert option.config_type['Discord Webhook']['minimum_width'] == 480
     assert 'open and running' in option.config_description[QQ_NOTIFICATION_ENABLED]
     assert 'open and running' in option.config_description[WECHAT_NOTIFICATION_ENABLED]
@@ -131,6 +138,81 @@ def test_qq_bot_provider_uses_bot_authorization_header():
     assert post.call_args.args[0] == 'https://api.sgroup.qq.com/channels/channel/messages'
     assert kwargs['headers'] == {'Authorization': 'Bot app.secret'}
     assert kwargs['json']['content'] == 'Title\nMessage\n[1 image(s) attached]'
+
+
+def test_smtp_provider_send_success():
+    server = MagicMock()
+    server.__enter__.return_value = server
+    frame = np.zeros((2, 2, 3), dtype=np.uint8)
+    with patch('ok.notification.providers.smtplib.SMTP', return_value=server) as smtp:
+        result = SmtpProvider(
+            'smtp.example.com', 587, 'user', 'secret', True,
+            'sender@example.com', 'to@example.com').send(
+            None, 'Title', 'Message', [frame])
+
+    assert result is True
+    smtp.assert_called_once_with('smtp.example.com', 587, timeout=30)
+    server.ehlo.assert_called()
+    server.starttls.assert_called_once()
+    server.login.assert_called_once_with('user', 'secret')
+    sent = server.send_message.call_args.args[0]
+    assert sent['Subject'] == 'Title'
+    assert sent['From'] == 'sender@example.com'
+    assert sent['To'] == 'to@example.com'
+    assert len(list(sent.iter_attachments())) == 1
+
+
+def test_smtp_provider_skips_login_when_username_is_empty():
+    server = MagicMock()
+    server.__enter__.return_value = server
+    with patch('ok.notification.providers.smtplib.SMTP', return_value=server):
+        result = SmtpProvider(
+            'smtp.example.com', 587, '', '', False,
+            'sender@example.com', 'to@example.com').send(
+            None, 'Title', 'Message', [])
+
+    assert result is True
+    server.starttls.assert_not_called()
+    server.login.assert_not_called()
+    server.send_message.assert_called_once()
+
+
+def test_smtp_provider_send_auth_failure():
+    server = MagicMock()
+    server.__enter__.return_value = server
+    server.login.side_effect = smtplib.SMTPAuthenticationError(535, b'bad credentials')
+    with patch('ok.notification.providers.smtplib.SMTP', return_value=server):
+        result = SmtpProvider(
+            'smtp.example.com', 587, 'user', 'wrong', True,
+            'sender@example.com', 'to@example.com').send(
+            None, 'Title', 'Message', [])
+
+    assert result is False
+
+
+def test_smtp_provider_uses_implicit_ssl_on_port_465():
+    server = MagicMock()
+    server.__enter__.return_value = server
+    with patch('ok.notification.providers.smtplib.SMTP_SSL',
+               return_value=server) as smtp_ssl, \
+            patch('ok.notification.providers.smtplib.SMTP') as smtp:
+        result = SmtpProvider(
+            'smtp.example.com', 465, 'user', 'secret', True,
+            'sender@example.com', 'to@example.com').send(
+            None, 'Title', 'Message', [])
+
+    assert result is True
+    smtp_ssl.assert_called_once_with('smtp.example.com', 465, timeout=30, context=ANY)
+    smtp.assert_not_called()
+    server.starttls.assert_not_called()
+    server.login.assert_called_once_with('user', 'secret')
+    server.send_message.assert_called_once()
+
+
+def test_smtp_provider_missing_config():
+    provider = SmtpProvider('', 587, '', '', True, '', '')
+
+    assert provider.send(None, 'Title', 'Message', []) is False
 
 
 def test_manager_does_not_queue_when_external_providers_are_disabled():

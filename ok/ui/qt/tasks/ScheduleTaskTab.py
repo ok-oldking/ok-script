@@ -855,6 +855,7 @@ class ScheduleTaskTab(Tab):
         self.task_updated_signal.connect(self.on_task_updated_ui)
         self.init_ui()
         self.setup_manager()
+        self.render_tasks(self.schedule_manager.cache.get_all())
         self.load_tasks()
 
     @property
@@ -899,14 +900,8 @@ class ScheduleTaskTab(Tab):
             self.schedule_manager.start_background_sync(interval=30)
 
     def load_tasks(self):
-        """加载任务列表"""
-        try:
-            tasks = self.schedule_manager.query_all_tasks(force_sync=True)
-            self.render_tasks(tasks)
-            logger.info(f"Loaded {len(tasks)} tasks")
-        except Exception as e:
-            logger.error(f"Failed to load tasks: {e}")
-            self.show_error(self.tr("Failed to load tasks") + f": {e}")
+        """Load without blocking construction or the Qt event loop."""
+        self.on_refresh(notify=False)
 
     def render_tasks(self, tasks: List[ScheduleTaskInfo]):
         """渲染任务列表（智能更新，只在数据变化时重新渲染）"""
@@ -1042,14 +1037,16 @@ class ScheduleTaskTab(Tab):
     def on_tasks_loaded(self, tasks: List[ScheduleTaskInfo]):
         """后台刷新完成后在主线程更新 UI"""
         self.refreshing = False
-        self.refresh_btn.setEnabled(True)
+        self.setEnabled(True)
         self.render_tasks(tasks)
-        self.show_success(self.tr("Tasks refreshed"))
+        logger.info(f"Loaded {len(tasks)} tasks")
+        if self._notify_refresh:
+            self.show_success(self.tr("Tasks refreshed"))
 
     def on_refresh_failed(self, error_message: str):
         """后台刷新失败处理"""
         self.refreshing = False
-        self.refresh_btn.setEnabled(True)
+        self.setEnabled(True)
         self.show_error(self.tr("Refresh failed") + f": {error_message}")
 
     def update_table(self):
@@ -1152,13 +1149,15 @@ class ScheduleTaskTab(Tab):
         if table:
             table.update_task_row(task_info)
 
-    def on_refresh(self):
+    def on_refresh(self, checked=False, *, notify=True):
         """刷新任务列表"""
         if self.refreshing:
             return
 
         self.refreshing = True
-        self.refresh_btn.setEnabled(False)
+        self._notify_refresh = notify
+        # Prevent scheduler mutations from waiting on the worker's lock in Qt.
+        self.setEnabled(False)
 
         def refresh():
             try:
@@ -1170,8 +1169,9 @@ class ScheduleTaskTab(Tab):
         # 后台线程刷新
         import threading
 
-        thread = threading.Thread(target=refresh, daemon=True)
-        thread.start()
+        self.refresh_thread = threading.Thread(
+            target=refresh, daemon=True, name="ScheduleRefresh")
+        self.refresh_thread.start()
 
     def on_create_task(self):
         """创建任务"""

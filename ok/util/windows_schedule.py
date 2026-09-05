@@ -18,6 +18,8 @@ import tempfile
 import threading
 import time
 import uuid
+from contextlib import contextmanager
+from functools import wraps
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from enum import Enum
@@ -27,6 +29,14 @@ from typing import Dict, List, Optional, Callable
 from ok.util.config import Config
 
 logger = logging.getLogger(__name__)
+
+
+def scheduler_com_operation(method):
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        with self._com_session():
+            return method(self, *args, **kwargs)
+    return wrapped
 
 
 class TriggerType(Enum):
@@ -304,10 +314,36 @@ class WindowsScheduleManager:
         self.sync_thread: Optional[threading.Thread] = None
         self.update_callbacks: List[Callable] = []
 
-        self._init_com_service()
+        self._com_depth = 0
+
+    @contextmanager
+    def _com_session(self):
+        """Keep COM initialization, use and release on the calling thread."""
+        with self.lock:
+            if self._com_depth:
+                yield
+                return
+            self._com_depth = 1
+            pythoncom = None
+            try:
+                try:
+                    import pythoncom as com
+                    com.CoInitialize()
+                    pythoncom = com
+                except ImportError:
+                    pass
+                self._init_com_service()
+                yield
+            finally:
+                self.SCHEDULE_FOLDER = None
+                self.SCHEDULE_SERVICE = None
+                self._com_depth = 0
+                if pythoncom is not None:
+                    pythoncom.CoUninitialize()
 
     def _init_com_service(self):
         """初始化 COM 服务"""
+        logger.info(f"Initializing Windows Task Scheduler COM service, root={self.SCHEDULE_ROOT_PATH}")
         try:
             import win32com.client
 
@@ -363,10 +399,10 @@ class WindowsScheduleManager:
         Returns:
             任务列表
         """
-        with self.lock:
-            if not force_sync:
-                return self.cache.get_all()
+        if not force_sync:
+            return self.cache.get_all()
 
+        with self._com_session():
             tasks = []
             try:
                 if self.is_com_available():
@@ -789,6 +825,7 @@ class WindowsScheduleManager:
 
         return "SYSTEM"
 
+    @scheduler_com_operation
     def create_task(self, task_name: str, task_index: int,
                     trigger_type: TriggerType, timeout_hours: int = 0,
                     start_hour: int = 9, start_minute: int = 0,
@@ -870,6 +907,7 @@ class WindowsScheduleManager:
                 logger.error(f"Failed to create task: {e}")
                 return False
 
+    @scheduler_com_operation
     def replace_task(self, task_name: str, task_index: int,
                      trigger_type: TriggerType, timeout_hours: int = 0,
                      start_hour: int = 9, start_minute: int = 0,
@@ -1039,6 +1077,7 @@ class WindowsScheduleManager:
             logger.error(f"Failed to delete task: {e}")
             return False
 
+    @scheduler_com_operation
     def _delete_task_by_path(self, task_path: str) -> bool:
         if self.is_com_available():
             try:
@@ -1087,6 +1126,7 @@ class WindowsScheduleManager:
             logger.error(f"Failed to {action} task: {e}")
             return False
 
+    @scheduler_com_operation
     def _set_task_enabled(self, task_path: str, enabled: bool) -> bool:
         if self.is_com_available():
             try:
