@@ -87,4 +87,9 @@ jobs:
       - name: Create release for tag
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md
+        run: |
+          release_flags=()
+          if [[ "$GITHUB_REF_NAME" =~ (a|b|rc|dev)[0-9]+ ]]; then
+            release_flags+=(--prerelease --latest=false)
+          fi
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md "${release_flags[@]}"
