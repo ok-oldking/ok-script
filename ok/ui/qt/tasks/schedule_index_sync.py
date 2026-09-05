@@ -10,9 +10,8 @@ ok-script 的 Windows 计划任务通过 `-t N`（1-based 索引）定位 onetim
 
 方案
 ----
-保留 ok 原生 `-t`，不修改任何运行时解析 / 创建 / 修改对话框逻辑，
-仅在每次启动时（MainWindow.__init__ 构造 ScheduleTaskTab 之前、start_runtime 之前）
-自动校正并把 -t 目标统一迁移为稳定标识（模块路径.类名，如
+启动时先从本地缓存解析本次启动参数；Windows 计划任务迁移在后台线程执行，
+不会阻塞窗口显示。自动校正并把 -t 目标统一迁移为稳定标识（模块路径.类名，如
 ``src.tasks.onetime.DailyTask``，对排序免疫）：
 
 1. 读取 schedule_tasks_cache.json；
@@ -24,13 +23,14 @@ ok-script 的 Windows 计划任务通过 `-t N`（1-based 索引）定位 onetim
    过期模块路径均迁移），并同步更新缓存 / xml_config / Windows 计划任务
    （COM，失败回退 schtasks）；同时回填缓存的 ``task_index`` / ``task_identifier``
    元数据（无需改写 Windows 时仅回填元数据）；
-5. 改写本次进程 ``sys.argv``，保证本次启动也使用正确目标；
+5. GUI 在启动前从本地缓存改写本次进程参数；后台迁移不再改写运行中进程参数；
 6. 幂等：每次进程只校正一次，目标与元数据均已正确时不写文件、不调 COM，
    找不到 name 的任务跳过。
 
 调用点
 ------
-- ``ok.ui.qt.MainWindow.MainWindow.__init__``：构造 ScheduleTaskTab（加载任务缓存）之前；
+- ``MainWindow.__init__``：仅调用 resolve_current_schedule_task 解析本地参数；
+- ``ScheduleTaskTab``：后台迁移后重载缓存，再查询 Windows 计划任务；
 - ``fix_schedule_task_refs.py``：headless 无法启动 GUI 时的手动校正，复用本模块。
 """
 
@@ -263,9 +263,13 @@ def _register_task_xml(path: str, new_xml: str) -> bool:
     """
     if not path or not new_xml:
         return False
+    pythoncom = None
     try:
+        import pythoncom as com
         import win32com.client
 
+        com.CoInitialize()
+        pythoncom = com
         service = win32com.client.Dispatch("Schedule.Service")
         service.Connect()
         folder_path, task_file_name = path.rsplit("\\", 1)
@@ -282,6 +286,10 @@ def _register_task_xml(path: str, new_xml: str) -> bool:
         return True
     except Exception as e:
         logger.warning(f"schedule index sync: COM update failed for {path}: {e}")
+    finally:
+        if pythoncom is not None:
+            folder = task_def = service = None
+            pythoncom.CoUninitialize()
     return _register_task_xml_via_schtasks(path, new_xml)
 
 
@@ -480,7 +488,26 @@ def _write_cache(cache_file: Path, data: dict):
     logger.info(f"schedule index sync: cache written to {cache_file}")
 
 
-def sync_schedule_task_indexes(onetime_tasks: Optional[Sequence] = None) -> int:
+def resolve_current_schedule_task():
+    """Resolve launch arguments from cache without calling Windows services."""
+    tasks = _onetime_tasks()
+    cache_file = _cache_file()
+    if not tasks or cache_file is None or not cache_file.exists():
+        return
+    data = _load_cache_data(cache_file)
+    if not data:
+        return
+    corrections, _ = _collect_corrections(
+        data, _name_to_index_map(tasks), _schedule_root_path(), tasks)
+    targets = {}
+    for _, _, new_target, old_target, _ in corrections:
+        targets.setdefault(str(old_target), set()).add(str(new_target))
+    # An old index shared by different schedules cannot identify this launch.
+    _rewrite_current_process_argv({old: next(iter(values))
+                                   for old, values in targets.items() if len(values) == 1})
+
+
+def sync_schedule_task_indexes(onetime_tasks: Optional[Sequence] = None, *, rewrite_argv=True) -> int:
     """启动时校正计划任务 -t 目标并回填元数据，返回被处理的任务数。
 
     把所有可定位的 -t 目标统一迁移为稳定标识（模块路径.类名），
@@ -537,7 +564,7 @@ def sync_schedule_task_indexes(onetime_tasks: Optional[Sequence] = None) -> int:
 
         changed, argv_target_map = _perform_corrections(corrections)
         metadata_changed = _apply_metadata_updates(metadata_updates)
-        if changed:
+        if changed and rewrite_argv:
             _rewrite_current_process_argv(argv_target_map)
         if changed or metadata_changed:
             _write_cache(cache_file, data)

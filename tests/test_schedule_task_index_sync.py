@@ -93,6 +93,36 @@ def test_replace_task_target():
     assert sync_patch._replace_task_target("", 3) == ""
 
 
+def test_launch_resolution_does_not_wait_for_windows_migration(isolated, monkeypatch):
+    from types import SimpleNamespace
+    from ok import og
+
+    sync, cache_file, registered = isolated
+    task = _make_task("Daily")
+    entry = _make_cache_entry("\\ok-ef\\Daily", "Daily",
+                              actions="main.py -t 5 -e",
+                              xml_config=_xml_with("main.py -t 5 -e"))
+    original = json.dumps({entry["path"]: entry})
+    cache_file.write_text(original, encoding="utf-8")
+    monkeypatch.setattr(sync, "_onetime_tasks", lambda: [task])
+    monkeypatch.setattr(sys, "argv", ["main.py", "-t", "5", "-e"])
+    monkeypatch.setattr(og, "ok", SimpleNamespace(args={"task": 5}))
+
+    sync.resolve_current_schedule_task()
+
+    assert sys.argv[2] == _identifier(task)
+    assert og.ok.args["task"] == _identifier(task)
+    assert registered == []
+    assert cache_file.read_text(encoding="utf-8") == original
+    # Migration must not overwrite arguments after runtime has already started.
+    monkeypatch.setattr(sys, "argv", ["main.py", "-t", "5"])
+    og.ok.args["task"] = 5
+    assert sync.sync_schedule_task_indexes([task], rewrite_argv=False) == 1
+    assert sys.argv[2] == "5"
+    assert og.ok.args["task"] == 5
+    assert len(registered) == 1
+
+
 def test_extract_task_target():
     """从 actions / xml_config 提取当前 -t 目标（索引、任务名或稳定标识）。"""
     item = _make_cache_entry("\\ok-ef\\x", "日常任务", actions="main.py -t 15 -e", task_index=15)

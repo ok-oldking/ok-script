@@ -1000,11 +1000,14 @@ class WebRuntime:
         return self.templates()
 
     def schedule_tasks(self):
-        from ok.util.windows_schedule import format_next_run_time, trigger_type_for_task
+        from ok.util.windows_schedule import format_next_run_time, trigger_type_for_task, resolve_schedule_task_index
         available = [{"index": index + 1, "name": task.name} for index, task in enumerate(self.executor.onetime_tasks or []) if getattr(task, "support_schedule_task", False) and getattr(task, "visible", True)]
         tasks = []
         for task in self.schedule_manager.query_all_tasks(force_sync=True):
             value = _json_value(task)
+            if task.task_identifier and not task.read_only:
+                value["task_index"] = resolve_schedule_task_index(
+                    task.task_identifier, self.executor.onetime_tasks)
             value["trigger_type"] = trigger_type_for_task(task).value
             value["next_run_time"] = format_next_run_time(task.next_run_time)
             tasks.append(value)
@@ -1054,13 +1057,16 @@ class WebRuntime:
         return self.schedule_tasks()
 
     def update_schedule_task(self, name, body):
-        from ok.util.windows_schedule import normalize_trigger_type
+        from ok.util.windows_schedule import normalize_trigger_type, resolve_schedule_task_index
         current = self.schedule_manager.cache.get(name)
         if current is None:
             current = next((item for item in self.schedule_manager.cache.values() if item.path == name or item.name == name), None)
         if current is None or current.read_only:
             raise ValueError("Scheduled task is not editable")
         task_index = int(body.get("task_index", current.task_index))
+        if current.task_identifier:
+            task_index = resolve_schedule_task_index(
+                current.task_identifier, self.executor.onetime_tasks)
         available_indices = {
             index + 1 for index, task in enumerate(self.executor.onetime_tasks or [])
             if getattr(task, "support_schedule_task", False) and getattr(task, "visible", True)

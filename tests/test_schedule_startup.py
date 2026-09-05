@@ -53,10 +53,16 @@ class TestScheduleStartup(unittest.TestCase):
             self.assertIsNone(manager.SCHEDULE_FOLDER)
 
     def test_stalled_scheduler_does_not_block_qt_startup(self):
+        self._assert_stalled_scheduler_does_not_block_qt_startup(False)
+
+    def test_stalled_migration_does_not_block_qt_startup(self):
+        self._assert_stalled_scheduler_does_not_block_qt_startup(True)
+
+    def _assert_stalled_scheduler_does_not_block_qt_startup(self, block_migration):
         entered = threading.Event()
         release = threading.Event()
 
-        def stalled_connect():
+        def stalled_connect(*args, **kwargs):
             entered.set()
             release.wait(5)
 
@@ -71,7 +77,10 @@ class TestScheduleStartup(unittest.TestCase):
                 success(message)
 
         with patch("ok.util.windows_schedule.WindowsScheduleCache") as cache, \
-                patch.object(WindowsScheduleManager, "_init_com_service", side_effect=stalled_connect), \
+                patch("ok.ui.qt.tasks.schedule_index_sync.sync_schedule_task_indexes",
+                      side_effect=stalled_connect if block_migration else None) as migrate, \
+                patch.object(WindowsScheduleManager, "_init_com_service",
+                             side_effect=None if block_migration else stalled_connect), \
                 patch.object(WindowsScheduleManager, "_query_tasks_via_schtasks", return_value=[]):
             cache.return_value.get_all.return_value = []
             tab = TestTab({"gui_title": "OK-Test"})
@@ -92,6 +101,8 @@ class TestScheduleStartup(unittest.TestCase):
                 tab.refresh_thread.join(2)
                 QTest.qWait(30)
                 self.assertFalse(tab.refreshing)
+                migrate.assert_called_once_with(rewrite_argv=False)
+                cache.return_value.load_cache.assert_called_once()
                 self.assertTrue(tab.isEnabled())
                 self.assertEqual(2, render.call_count)
                 success.assert_not_called()

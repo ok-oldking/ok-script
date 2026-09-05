@@ -40,6 +40,7 @@ from ok import Logger, og
 from ok.ui.qt.widget.Tab import Tab
 from ok.util.windows_schedule import (
     WindowsScheduleManager, ScheduleTaskInfo, TriggerType,
+    resolve_schedule_task_index,
     format_next_run_time as core_format_next_run_time,
     infer_trigger_type as core_infer_trigger_type,
     normalize_trigger_type as core_normalize_trigger_type,
@@ -497,6 +498,9 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
             self.viewLayout.setContentsMargins(16, 12, 16, 12)
 
             self.task_index, auto_exit_default = self._parse_args(task_info.actions)
+            if task_info.task_identifier:
+                self.task_index = resolve_schedule_task_index(
+                    task_info.task_identifier, og.executor.onetime_tasks)
             timeout_default = self._parse_timeout(task_info.xml_config)
             start_hour_default, start_minute_default = self._parse_start_time(task_info.next_run_time)
             interval_days_default, interval_hours_default = self._parse_custom_interval(task_info)
@@ -1161,6 +1165,9 @@ class ScheduleTaskTab(Tab):
 
         def refresh():
             try:
+                from ok.ui.qt.tasks.schedule_index_sync import sync_schedule_task_indexes
+                sync_schedule_task_indexes(rewrite_argv=False)
+                self.schedule_manager.cache.load_cache()
                 tasks = self.schedule_manager.query_all_tasks(force_sync=True)
                 self.tasks_loaded.emit(tasks)
             except Exception as e:

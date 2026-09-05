@@ -162,6 +162,18 @@ def extract_task_target(*texts) -> Optional[str]:
     return None
 
 
+def resolve_schedule_task_index(identifier: str, tasks) -> int:
+    """Resolve an identifier to a current 1-based index, rejecting ambiguity."""
+    tasks = list(tasks or [])
+    target = identifier.lower()
+    matches = [index for index, task in enumerate(tasks, 1)
+               if f"{type(task).__module__}.{type(task).__name__}".lower() == target]
+    if not matches:
+        matches = [index for index, task in enumerate(tasks, 1)
+                   if type(task).__name__.lower() == target.rsplit(".", 1)[-1]]
+    return matches[0] if len(matches) == 1 else -1
+
+
 def parse_task_target_fields(xml_config: str = "", actions: str = "") -> tuple:
     """从 XML / actions 文本解析 -t 目标，返回 (task_index, task_identifier)。
 
