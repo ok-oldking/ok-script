@@ -1,3 +1,4 @@
+import sys
 import unittest
 import threading
 import time
@@ -5,6 +6,9 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
+
+if sys.platform != 'win32':
+    raise unittest.SkipTest('Windows Graphics Capture tests require Win32')
 
 import ok.device.capture_methods.windows_graphics as windows_graphics_module
 from ok.device.capture_methods.browser import BrowserWindowAdapter

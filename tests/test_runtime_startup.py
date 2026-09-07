@@ -164,9 +164,11 @@ def test_device_refresh_always_publishes_completion_event():
         refresh_emulators=lambda current: None,
         refresh_phones=lambda current: None,
         update_pc_device=lambda: None,
+        update_macos_device=lambda: None,
         update_browser_device=lambda: None,
         exit_event=SimpleNamespace(is_set=lambda: False),
         do_start=lambda notify=True: start_calls.append(notify),
+        get_preferred_device=lambda: None,
         device_dict={},
     )
     events = []
@@ -179,3 +181,22 @@ def test_device_refresh_always_publishes_completion_event():
 
     assert start_calls == [False]
     assert events == [True]
+
+
+def test_device_refresh_skips_adb_discovery_for_selected_macos_target():
+    calls = []
+    manager = SimpleNamespace(
+        refresh_emulators=lambda current: calls.append('emulators'),
+        refresh_phones=lambda current: calls.append('phones'),
+        update_pc_device=lambda: calls.append('pc'),
+        update_macos_device=lambda: calls.append('macos'),
+        update_browser_device=lambda: calls.append('browser'),
+        exit_event=SimpleNamespace(is_set=lambda: False),
+        do_start=lambda notify=True: calls.append(('start', notify)),
+        get_preferred_device=lambda: {'device': 'macos'},
+        device_dict={},
+    )
+
+    DeviceManager.do_refresh(manager)
+
+    assert calls == ['pc', 'macos', 'browser', ('start', False)]

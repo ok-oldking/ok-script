@@ -1,4 +1,5 @@
 import os
+import sys
 import unittest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -19,6 +20,10 @@ class _NavigationStateHarness:
         self.ok_config = {'navigation_expanded': expanded}
 
 
+@unittest.skipIf(
+    sys.platform == 'darwin' and os.environ.get('QT_QPA_PLATFORM') == 'offscreen',
+    'qframelesswindow requires a native macOS window server for this test',
+)
 class TestNavigationState(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

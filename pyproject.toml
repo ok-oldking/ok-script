@@ -25,24 +25,29 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Intended Audience :: Developers",
     "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS :: MacOS X",
 ]
 dependencies = [
-    "pywin32>=306,!=312",
     "pyappify>=1.0.9",
     "typing-extensions>=4.11.0",
     "requests>=2.32.3",
     "psutil>=6.0.0",
-    "pydirectinput==1.0.4",
-    "pycaw==20240210",
-    "mouse==0.7.1",
-    "pynput>=1.8.1",
+    "pywin32>=306,!=312; sys_platform == 'win32'",
+    "pydirectinput==1.0.4; sys_platform == 'win32'",
+    "pycaw==20240210; sys_platform == 'win32'",
+    "mouse==0.7.1; sys_platform == 'win32'",
+    "pynput>=1.8.1; sys_platform == 'win32'",
+    "pyobjc-framework-Cocoa>=10.3; sys_platform == 'darwin'",
+    "pyobjc-framework-Quartz>=10.3; sys_platform == 'darwin'",
+    "pyobjc-framework-ScreenCaptureKit>=10.3; sys_platform == 'darwin'",
+    "pyobjc-framework-ApplicationServices>=10.3; sys_platform == 'darwin'",
 ]
 
 [project.optional-dependencies]
 default = [
     "numpy>=1.26.4",
     "Pillow>=10.0",
-    "ok-d3dshot>=0.1.5",
+    "ok-d3dshot>=0.1.5; sys_platform == 'win32'",
     "OpenCC==1.2.0",
 ]
 web = [
@@ -84,7 +89,7 @@ ok = "ok.cli:main"
 default = [
     "numpy>=1.26.4",
     "Pillow>=10.0",
-    "ok-d3dshot>=0.1.5",
+    "ok-d3dshot>=0.1.5; sys_platform == 'win32'",
     "OpenCC==1.2.0",
 ]
 web = [

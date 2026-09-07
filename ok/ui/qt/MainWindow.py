@@ -16,7 +16,11 @@ _pyappify_stop_lock = threading.Lock()
 
 
 def request_pyappify_shutdown():
-    """Terminate the launcher without ever blocking Qt's GUI thread."""
+    """Terminate the Windows launcher without blocking Qt's GUI thread."""
+    if not is_windows():
+        logger.info('PyAppify launcher shutdown is unavailable on this platform')
+        return None
+
     def stop_launcher():
         if not _pyappify_stop_lock.acquire(blocking=False):
             return
@@ -48,6 +52,7 @@ MessageBoxBase.keyPressEvent = _patched_message_box_base_keyPressEvent
 
 
 from ok.util.config import Config
+from ok.platform import is_windows
 
 from ok.ui.qt.Communicate import communicate
 from ok.ui.qt.common.accent_color import qfluent_theme_source_color
@@ -279,6 +284,7 @@ class MainWindow(FluentWindow):
         communicate.notification.connect(self.show_notification)
         communicate.config_validation.connect(self.config_validation)
         communicate.starting_emulator.connect(self.starting_emulator)
+        communicate.macos_start_status.connect(self.macos_start_status)
         communicate.global_config.connect(self.goto_global_config)
 
         logger.info('main window __init__ done')
@@ -311,6 +317,8 @@ class MainWindow(FluentWindow):
     @staticmethod
     def _get_dwm_accent_color():
         """Return the DWM accent color as a compatibility fallback."""
+        if not is_windows():
+            return None
         try:
             import ctypes
             from ctypes import wintypes
@@ -335,6 +343,8 @@ class MainWindow(FluentWindow):
 
     def get_system_primary_theme_color(self):
         """Return a qfluent source color matching the Windows primary fill."""
+        if not is_windows():
+            return None
         dark = isDarkTheme()
         try:
             from ok.rotypes.Windows.UI.ViewManagement import UIColorType, get_color_value
@@ -552,6 +562,8 @@ class MainWindow(FluentWindow):
         self.switchTo(self.about_tab)
 
     def show_startup_version_change_notice(self):
+        if not is_windows():
+            return
         version_change = get_startup_version_change()
         if not version_change:
             return
@@ -563,21 +575,24 @@ class MainWindow(FluentWindow):
         first_show = event.type() == QEvent.Show and not self.shown
         if first_show:
             self.shown = True
-            pyappify.hide_pyappify()
-            if update_pyappify := self.config.get("update_pyappify"):
-                pyappify.upgrade(
-                    update_pyappify.get('to_version'),
-                    update_pyappify.get('sha256'),
-                    [update_pyappify.get('zip_url')],
-                    exit_event=self.exit_event,
-                )
+            if is_windows():
+                pyappify.hide_pyappify()
+                if update_pyappify := self.config.get("update_pyappify"):
+                    pyappify.upgrade(
+                        update_pyappify.get('to_version'),
+                        update_pyappify.get('sha256'),
+                        [update_pyappify.get('zip_url')],
+                        exit_event=self.exit_event,
+                    )
+            elif self.config.get("update_pyappify"):
+                logger.info('Ignoring Windows PyAppify update configuration on this platform')
             logger.info("Window has fully displayed")
             from ok import og
             og.ok.start_runtime()
             if self.basic_global_config.get(KILL_LAUNCHER_AFTER_START):
                 logger.info(f'MainWindow showEvent Kill Launcher After Start')
                 request_pyappify_shutdown()
-            startup_version_change = get_startup_version_change()
+            startup_version_change = get_startup_version_change() if is_windows() else None
             if self.version != self.main_window_config.get('last_version'):
                 self.main_window_config['last_version'] = self.version
                 if not self.config.get('auth') and not startup_version_change:
@@ -680,6 +695,21 @@ class MainWindow(FluentWindow):
             else:
                 self.emulator_starting_dialog.restart_countdown(seconds_left)
             self.emulator_starting_dialog.show()
+
+    def macos_start_status(self, token, phase, seconds_left):
+        from ok import og
+        if token is not og.app.start_controller._start_cancel:
+            return
+        if phase == 'done':
+            if self.emulator_starting_dialog:
+                self.emulator_starting_dialog.close()
+            return
+        if self.emulator_starting_dialog is None:
+            self.emulator_starting_dialog = StartLoadingDialog(seconds_left, self)
+        dialog = self.emulator_starting_dialog
+        dialog.set_macos_status(phase, seconds_left)
+        if phase == 'foreground' and not dialog.isVisible():
+            dialog.show()
 
     def config_validation(self, message):
         title = self.tr('Error')

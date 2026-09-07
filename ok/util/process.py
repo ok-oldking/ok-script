@@ -4,6 +4,7 @@ import atexit
 import ctypes
 import glob
 import hashlib
+import ntpath
 import os
 import re
 import subprocess
@@ -24,6 +25,7 @@ WINDOWS_START_METHOD_START = 'start'
 WINDOWS_START_METHOD_OS_STARTFILE = 'os.startfile'
 
 _mutex_handle = None
+_mutex_file = None
 _mutex_owner_file = None
 _mutex_cleanup_registered = False
 _exit_watchdog_lock = threading.Lock()
@@ -201,13 +203,24 @@ def _terminate_previous_instances(owner_file):
 
 
 def _release_mutex():
-    global _mutex_handle, _mutex_owner_file
+    global _mutex_handle, _mutex_file, _mutex_owner_file
     if _mutex_handle:
         try:
             ctypes.windll.kernel32.CloseHandle(_mutex_handle)
         except (AttributeError, OSError):
             pass
         _mutex_handle = None
+    if _mutex_file is not None:
+        try:
+            import fcntl
+            fcntl.flock(_mutex_file.fileno(), fcntl.LOCK_UN)
+        except (ImportError, OSError, ValueError):
+            pass
+        try:
+            _mutex_file.close()
+        except (OSError, ValueError):
+            pass
+        _mutex_file = None
     if _mutex_owner_file and _read_owner_pid(_mutex_owner_file) == os.getpid():
         try:
             os.unlink(_mutex_owner_file)
@@ -233,6 +246,52 @@ def _retain_mutex(handle, owner_file):
 
 
 def check_mutex(wait_time=5, kill_wait_time=3):
+    if os.name != 'nt':
+        return _check_posix_mutex(wait_time, kill_wait_time)
+    return _check_windows_mutex(wait_time, kill_wait_time)
+
+
+def _check_posix_mutex(wait_time=5, kill_wait_time=3):
+    """Acquire a per-working-directory advisory lock on POSIX platforms."""
+    del kill_wait_time  # POSIX advisory locks are released automatically on process exit.
+    global _mutex_file, _mutex_owner_file, _mutex_cleanup_registered
+    if _mutex_file is not None:
+        return True
+
+    import fcntl
+
+    path = os.getcwd()
+    mutex_name = hashlib.sha256(path.encode()).hexdigest()
+    owner_file = os.path.join(tempfile.gettempdir(), f'ok-script-{mutex_name}.pid')
+    lock_file = open(owner_file, 'a+', encoding='ascii')
+    deadline = time.monotonic() + max(0, wait_time)
+
+    while True:
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            break
+        except BlockingIOError:
+            if time.monotonic() >= deadline:
+                logger.error(
+                    f'Another instance of this application is already running {mutex_name}.')
+                lock_file.close()
+                return False
+            time.sleep(0.25)
+
+    lock_file.seek(0)
+    lock_file.truncate()
+    lock_file.write(str(os.getpid()))
+    lock_file.flush()
+    _mutex_file = lock_file
+    _mutex_owner_file = owner_file
+    if not _mutex_cleanup_registered:
+        atexit.register(_release_mutex)
+        _mutex_cleanup_registered = True
+    logger.info(f'POSIX mutex acquired {mutex_name}')
+    return True
+
+
+def _check_windows_mutex(wait_time=5, kill_wait_time=3):
     if _mutex_handle:
         return True
     _LPSECURITY_ATTRIBUTES = wintypes.LPVOID
@@ -248,7 +307,7 @@ def check_mutex(wait_time=5, kill_wait_time=3):
     _ERROR_ALREADY_EXISTS = 183
     path = os.getcwd()
     # Try to create a named mutex
-    mutex_name = hashlib.md5(path.encode()).hexdigest()
+    mutex_name = hashlib.sha256(path.encode()).hexdigest()
     owner_file = os.path.join(tempfile.gettempdir(), f'ok-script-{mutex_name}.pid')
     mutex = _CreateMutex(0, False, mutex_name)
     if not mutex:
@@ -300,14 +359,20 @@ def check_mutex(wait_time=5, kill_wait_time=3):
 
 
 def restart_as_admin():
+    if os.name != 'nt':
+        logger.info('Administrator restart is unavailable on this platform')
+        return False
     import ctypes
     if ctypes.windll.shell32.IsUserAnAdmin() == 0:
         import sys
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 0)
         sys.exit()
+    return True
 
 
 def all_pids() -> list[int]:
+    if os.name != 'nt':
+        return psutil.pids()
     pidbuffer = 512
     bytes_written = ctypes.c_uint32()
     while True:
@@ -401,7 +466,9 @@ def execute(game_cmd: str, arguments=None, start_method=WINDOWS_START_METHOD_STA
             if os.path.exists(game_path):
                 try:
                     logger.info(f'try execute {game_cmd} {arguments} with {start_method}')
-                    working_dir = os.path.dirname(game_path)
+                    is_windows_path = bool(re.match(r'^[A-Za-z]:[\\/]', game_path))
+                    working_dir = (ntpath.dirname(game_path) if is_windows_path
+                                   else os.path.dirname(game_path))
 
                     if start_method == WINDOWS_START_METHOD_OS_STARTFILE:
                         _, args_part = _split_game_command(game_cmd, game_path, arguments)
@@ -694,5 +761,10 @@ def create_shortcut(exe_path=None, shortcut_name_post=None, description=None, ta
 
 
 def prevent_sleeping(yes=True):
-    # Prevent the system from sleeping
+    # The current implementation is a Windows execution-state helper. macOS
+    # power assertions are outside the foreground MVP and must not block tasks.
+    if os.name != 'nt':
+        logger.debug(f'prevent_sleeping({yes}) is unavailable on this platform')
+        return False
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000002 if yes else 0x80000000)
+    return True

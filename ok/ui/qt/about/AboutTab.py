@@ -2,6 +2,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGridLayout, QWidget, QSizePolicy
 from qfluentwidgets import BodyLabel
 
+from ok.platform import is_windows
 from ok.ui.qt.about.ProjectCard import ProjectCard
 from ok.ui.qt.about.VersionCard import VersionCard
 from ok.ui.qt.about.UpdateCard import ChangeLogView, UpdateCard
@@ -27,20 +28,23 @@ class AboutTab(Tab):
         self.add_widget(self.version_card)
 
         self.update_card = None
-        if callable(getattr(pyappify_module, 'get_version_list', None)):
+        if is_windows() and callable(getattr(pyappify_module, 'get_version_list', None)):
             links = config.get('links') or {}
             self.update_card = UpdateCard(
                 config.get('version'), pyappify_module, self, exit_event=exit_event,
                 download_url=get_localized_app_config(links, 'download'),
             )
             self.add_card(self.tr("App update"), self.update_card)
-        else:
+        elif is_windows():
             logger.warning(
                 "pyappify.get_version_list is unavailable; update controls are disabled. "
                 f"Loaded module: {getattr(pyappify_module, '__file__', type(pyappify_module).__name__)!r}"
             )
+        else:
+            logger.info('PyAppify update controls are unavailable on this platform')
 
-        if version_change := get_startup_version_change(pyappify_module):
+        version_change = get_startup_version_change(pyappify_module) if is_windows() else None
+        if version_change:
             update_note_label = ChangeLogView(version_change.content)
             update_note_label.setContentsMargins(0, 0, 0, 0)
             self.add_card(self._startup_version_change_title(version_change), update_note_label)

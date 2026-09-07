@@ -19,6 +19,13 @@ class TestScheduleStartup(unittest.TestCase):
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
 
+    def setUp(self):
+        # These are synthetic Windows scheduler contracts on every CI host.
+        # Non-Windows rejection is covered separately; no native backend runs.
+        supported = patch.object(WindowsScheduleManager, 'is_supported', return_value=True)
+        supported.start()
+        self.addCleanup(supported.stop)
+
     def test_constructor_and_cached_reads_do_not_connect_to_scheduler(self):
         with patch("ok.util.windows_schedule.WindowsScheduleCache") as cache, \
                 patch.object(WindowsScheduleManager, "_init_com_service") as connect:

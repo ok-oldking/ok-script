@@ -14,6 +14,7 @@ from ok.ui.web.server import (
 )
 
 
+@pytest.mark.skipif(sys.platform != 'win32', reason='Win32 native webview test')
 def test_native_resize_handle_is_invisible_but_not_click_through():
     control = SimpleNamespace(Handle=SimpleNamespace(ToInt64=Mock(return_value=123)))
     user32 = SimpleNamespace(
@@ -316,6 +317,7 @@ def test_native_resize_bounds_respect_edges_and_minimum_size():
     )
 
 
+@pytest.mark.skipif(sys.platform != 'win32', reason='Win32 native webview test')
 def test_rounded_window_region_tracks_native_window_size():
     native_window = SimpleNamespace(
         Handle=SimpleNamespace(ToInt32=Mock(return_value=1234)),
@@ -417,6 +419,7 @@ def test_webview_geometry_state_ignores_stale_debounce_callback():
     assert state["window_width"] == 1200
 
 
+@pytest.mark.skipif(sys.platform != 'win32', reason='Win32 native webview test')
 def test_winforms_drag_move_uses_zero_size_with_nosize_flag():
     native_window = SimpleNamespace(
         _scale=1.5,

@@ -14,6 +14,7 @@ import logging
 import os
 import re
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -34,6 +35,8 @@ logger = logging.getLogger(__name__)
 def scheduler_com_operation(method):
     @wraps(method)
     def wrapped(self, *args, **kwargs):
+        if not self.is_supported():
+            return False
         with self._com_session():
             return method(self, *args, **kwargs)
     return wrapped
@@ -327,6 +330,8 @@ class WindowsScheduleManager:
         self.update_callbacks: List[Callable] = []
 
         self._com_depth = 0
+        if not self.is_supported():
+            logger.info("NATIVE_SCHEDULER_UNSUPPORTED: Windows Task Scheduler is unavailable on this platform; no native scheduler is configured")
 
     @contextmanager
     def _com_session(self):
@@ -355,6 +360,11 @@ class WindowsScheduleManager:
 
     def _init_com_service(self):
         """初始化 COM 服务"""
+        if not self.is_supported():
+            logger.info("NATIVE_SCHEDULER_UNSUPPORTED: Windows Task Scheduler is unavailable on this platform; no native scheduler is configured")
+            self.SCHEDULE_SERVICE = None
+            self.SCHEDULE_FOLDER = None
+            return
         logger.info(f"Initializing Windows Task Scheduler COM service, root={self.SCHEDULE_ROOT_PATH}")
         try:
             import win32com.client
@@ -376,9 +386,13 @@ class WindowsScheduleManager:
             logger.warning(f"Failed to initialize COM service: {e}, will use schtasks command")
             self.SCHEDULE_SERVICE = None
 
+    def is_supported(self) -> bool:
+        """是否支持原生计划任务；非 Windows 不提供后台调度替代实现。"""
+        return sys.platform == "win32"
+
     def is_com_available(self) -> bool:
         """检查 COM 服务是否可用"""
-        return self.SCHEDULE_SERVICE is not None
+        return self.is_supported() and self.SCHEDULE_SERVICE is not None
 
     def register_update_callback(self, callback: Callable[[ScheduleTaskInfo], None]):
         """注册更新回调（用于 UI 实时更新）"""
@@ -411,6 +425,9 @@ class WindowsScheduleManager:
         Returns:
             任务列表
         """
+        if not self.is_supported():
+            # Cached Windows tasks are not runnable here; preserve them on disk.
+            return []
         if not force_sync:
             return self.cache.get_all()
 
@@ -866,6 +883,8 @@ class WindowsScheduleManager:
         Returns:
             是否成功
         """
+        if not self.is_supported():
+            return False
         with self.lock:
             try:
                 original_task_name = (task_name or "").strip() or f"AutoTask_{task_index}"
@@ -928,6 +947,8 @@ class WindowsScheduleManager:
                      interval_hours: int = 0,
                      task_identifier: Optional[str] = None) -> bool:
         """Create the replacement before removing the previous scheduled task."""
+        if not self.is_supported():
+            return False
         with self.lock:
             current = self.cache.get(task_name)
             if current is None or current.read_only or not current.path:
@@ -1014,7 +1035,7 @@ class WindowsScheduleManager:
             return self._create_task_via_schtasks(
                 task_name, task_index, trigger_type, enabled,
                 task_path, timeout_hours, start_hour, start_minute,
-                auto_exit, interval_days, interval_hours)
+                auto_exit, interval_days, interval_hours, description, task_identifier)
 
     def _create_task_via_schtasks(self, task_name: str, task_index: int,
                                   trigger_type: TriggerType, enabled: bool,
@@ -1069,6 +1090,8 @@ class WindowsScheduleManager:
 
     def delete_task(self, task_name: str) -> bool:
         """删除计划任务"""
+        if not self.is_supported():
+            return False
         with self.lock:
             try:
                 if self._is_read_only_task(task_name):
@@ -1117,6 +1140,8 @@ class WindowsScheduleManager:
         return self._change_task_enabled(task_name, False)
 
     def _change_task_enabled(self, task_name: str, enabled: bool) -> bool:
+        if not self.is_supported():
+            return False
         action = "enable" if enabled else "disable"
         with self.lock:
             try:
@@ -1361,6 +1386,9 @@ class WindowsScheduleManager:
             force: 是否强制同步（忽略缓存）
         """
 
+        if not self.is_supported():
+            return None
+
         def _sync():
             try:
                 self.query_all_tasks(force_sync=force)
@@ -1379,7 +1407,7 @@ class WindowsScheduleManager:
         Args:
             interval: 同步间隔（秒）
         """
-        if self.running:
+        if not self.is_supported() or self.running:
             return
 
         self.running = True

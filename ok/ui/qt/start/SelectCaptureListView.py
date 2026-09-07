@@ -39,6 +39,9 @@ class SelectCaptureListView(ListWidget):
                         if current_capture == method_name:
                             selected = i
                             break
+            elif device.get('device') == "macos":
+                self.reduce_row_to_1()
+                self.item(0).setText("ScreenCaptureKit")
             elif device.get('device') == "browser":
                 title = self.tr("Browser Capture")
                 self.reduce_row_to_1()

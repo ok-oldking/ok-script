@@ -96,6 +96,77 @@ class TestTaskUi(unittest.TestCase):
             card.card.contentLabel.geometry().center().y(),
         )
 
+    def test_task_card_shows_experimental_status_without_blocking_enablement(self):
+        task = SimpleNamespace(
+            name="Experimental task",
+            description="",
+            config=FakeConfig(),
+            default_config={},
+            config_description={},
+            config_type={},
+            icon=None,
+            instructions=None,
+            is_custom=False,
+            show_create_shortcut=False,
+            enabled=False,
+            get_device_compatibility_state=lambda: {
+                'status': 'experimental',
+                'level': 'MAC_BASIC',
+                'missing': (),
+                'reason': 'Awaiting real-game validation',
+            },
+        )
+        card = TaskCard(task, onetime=False)
+        self.addCleanup(communicate.task.disconnect, card.update_buttons)
+        self.addCleanup(card.close)
+
+        self.assertEqual('[MAC_BASIC · experimental]', card.compatibility_label.text())
+        import sys
+        self.assertEqual(sys.platform == 'darwin', card.compatibility_label.isHidden())
+        self.assertTrue(card.enable_button.isEnabled())
+        self.assertEqual('Awaiting real-game validation', card.compatibility_label.toolTip())
+
+    def test_task_card_blocks_unsupported_or_missing_capabilities(self):
+        task = SimpleNamespace(
+            name="Unsupported task",
+            description="",
+            config=FakeConfig(),
+            default_config={},
+            config_description={},
+            config_type={},
+            icon=None,
+            instructions=None,
+            is_custom=False,
+            show_create_shortcut=False,
+            enabled=False,
+            get_device_compatibility_state=lambda: {
+                'status': 'unsupported',
+                'level': None,
+                'missing': (),
+                'reason': 'Unavailable on this provider',
+            },
+        )
+        card = TaskCard(task, onetime=False)
+        self.addCleanup(communicate.task.disconnect, card.update_buttons)
+        self.addCleanup(card.close)
+
+        self.assertEqual('[unsupported]', card.compatibility_label.text())
+        self.assertFalse(card.enable_button.isEnabled())
+
+        task.get_device_compatibility_state = lambda: {
+            'status': 'missing-capabilities',
+            'level': 'MAC_LOCKED_GAMEPLAY',
+            'missing': ('keyboard_hold', 'mouse_middle'),
+            'reason': 'Provider is incomplete',
+        }
+        card.update_buttons(task)
+
+        self.assertEqual(
+            '[MAC_LOCKED_GAMEPLAY · missing: keyboard_hold, mouse_middle]',
+            card.compatibility_label.text(),
+        )
+        self.assertFalse(card.enable_button.isEnabled())
+
     def test_destroyed_task_card_disconnects_from_task_events(self):
         task = SimpleNamespace(
             name="Disposable task",
@@ -112,11 +183,42 @@ class TestTaskUi(unittest.TestCase):
         )
         card = TaskCard(task, onetime=False)
         callback = card.update_buttons
+        device_callback = card._on_device_changed
         self.assertIn(callback, communicate.task._subscribers)
+        self.assertIn(device_callback, communicate.adb_devices._subscribers)
 
         delete(card)
 
         self.assertNotIn(callback, communicate.task._subscribers)
+        self.assertNotIn(device_callback, communicate.adb_devices._subscribers)
+
+    def test_device_refresh_recomputes_compatibility_state(self):
+        states = iter((
+            {'status': 'experimental', 'level': 'MAC_BASIC', 'missing': (), 'reason': ''},
+            {'status': 'unsupported', 'level': None, 'missing': (), 'reason': 'Provider changed'},
+        ))
+        task = SimpleNamespace(
+            name="Provider-sensitive task",
+            description="",
+            config=FakeConfig(),
+            default_config={},
+            config_description={},
+            config_type={},
+            icon=None,
+            instructions=None,
+            is_custom=False,
+            show_create_shortcut=False,
+            enabled=False,
+            get_device_compatibility_state=lambda: next(states),
+        )
+        card = TaskCard(task, onetime=False)
+        self.addCleanup(card.close)
+
+        self.assertEqual('[MAC_BASIC · experimental]', card.compatibility_label.text())
+        communicate.adb_devices.emit(True)
+
+        self.assertEqual('[unsupported]', card.compatibility_label.text())
+        self.assertFalse(card.enable_button.isEnabled())
 
     def test_task_cards_use_a_nested_expand_layout(self):
         tab = TaskTab()

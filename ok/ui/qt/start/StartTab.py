@@ -1,4 +1,5 @@
 import os
+import sys
 import zipfile
 from pathlib import Path
 
@@ -71,6 +72,15 @@ class StartTab(Tab):
         horizontal_layout.addWidget(self.interaction_container, 1)
 
         from ok import og
+
+        if sys.platform == 'darwin' and config.get('macos'):
+            # This page connects capture only. Task start/resume and its
+            # foreground preparation delay belong to the task cards.
+            self.start_card.start_button.hide()
+            from ok.ui.qt.MacOSDevicePanel import MacOSDevicePanel
+            self.macos_panel = MacOSDevicePanel(og.device_manager, exit_event)
+            self.add_widget(self.macos_panel)
+            self.macos_panel.refresh()
 
         self.debug_widget = QWidget()
         self.debug_layout = QHBoxLayout(self.debug_widget)
@@ -320,6 +330,8 @@ class StartTab(Tab):
                 method = self.tr("Emulator")
             elif device['device'] == "browser":
                 method = self.tr("Browser")
+            elif device['device'] == "macos":
+                method = "macOS（仅前台操作）"
             else:
                 method = self.tr("Android")
             connected = self.tr("Connected") if device['connected'] else self.tr("Disconnected")

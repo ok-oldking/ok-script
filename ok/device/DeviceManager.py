@@ -1,23 +1,68 @@
+from __future__ import annotations
+
+import ntpath
 import os
 import re
+import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from typing import TYPE_CHECKING
 
-import cv2
-import numpy as np
+if TYPE_CHECKING:
+    import numpy as np
 
-from ok.device.capture import HwndWindow, BrowserCaptureMethod, update_capture_method, NemuIpcCaptureMethod, \
-    ADBCaptureMethod
-from ok.device.interaction import PostMessageInteraction, GenshinInteraction, ForegroundPostMessageInteraction, \
-    PynputInteraction, PyDirectInteraction, BrowserInteraction, ADBInteraction
+from ok.device.capabilities import DeviceCapabilities, NO_DEVICE_CAPABILITIES
+from ok.device.capture_methods import ADBCaptureMethod, NemuIpcCaptureMethod
+from ok.device.interaction_methods import ADBInteraction, BrowserInteraction
+from ok.device.services import create_cursor_service
 from ok.core.events import communicate
+from ok.platform import (
+    MACOS,
+    PlatformUnavailableError,
+    is_macos,
+    is_windows,
+    require_platform,
+    require_windows,
+)
 from ok.util.collection import parse_ratio
 from ok.util.config import Config
 from ok.util.file import delete_if_exists
 from ok.util.handler import Handler
 from ok.util.logger import Logger
 from ok.util.process import kill_exe
-from ok.util.window import windows_graphics_available, find_hwnd
+
+
+if is_windows():
+    from ok.device.capture import HwndWindow, BrowserCaptureMethod, update_capture_method
+    from ok.device.interaction import (
+        PostMessageInteraction,
+        GenshinInteraction,
+        ForegroundPostMessageInteraction,
+        PynputInteraction,
+        PyDirectInteraction,
+    )
+    from ok.util.window import windows_graphics_available, find_hwnd
+else:
+    class _UnavailableWindowsComponent:
+        def __init__(self, *_args, **_kwargs):
+            require_windows(type(self).__name__)
+
+    HwndWindow = _UnavailableWindowsComponent
+    BrowserCaptureMethod = _UnavailableWindowsComponent
+    PostMessageInteraction = _UnavailableWindowsComponent
+    GenshinInteraction = _UnavailableWindowsComponent
+    ForegroundPostMessageInteraction = _UnavailableWindowsComponent
+    PynputInteraction = _UnavailableWindowsComponent
+    PyDirectInteraction = _UnavailableWindowsComponent
+
+    def update_capture_method(*_args, **_kwargs):
+        raise PlatformUnavailableError('Windows capture is unavailable on this platform')
+
+    def windows_graphics_available():
+        return False
+
+    def find_hwnd(*_args, **_kwargs):
+        raise PlatformUnavailableError('Win32 window discovery is unavailable on this platform')
 
 logger = Logger.get_logger(__name__)
 
@@ -27,19 +72,37 @@ def resolve_emulator_window_exe(exe_path, instance_name=None):
     if not exe_path:
         return exe_path
 
-    normalized_path = os.path.normpath(exe_path)
-    if os.path.basename(normalized_path).lower() != 'mumunxmain.exe':
+    # Emulator paths are Windows paths even when this pure helper is tested
+    # from another host, so use ntpath rather than the host path module.
+    normalized_path = ntpath.normpath(exe_path)
+    if ntpath.basename(normalized_path).lower() != 'mumunxmain.exe':
         return exe_path
 
     match = re.search(r'-(\d+(?:\.\d+)+)-\d+$', instance_name or '')
     version = match.group(1) if match else '12.0'
-    install_root = os.path.dirname(os.path.dirname(normalized_path))
-    return os.path.join(
+    install_root = ntpath.dirname(ntpath.dirname(normalized_path))
+    return ntpath.join(
         install_root, 'nx_device', version, 'shell', 'MuMuNxDevice.exe')
 
 
 def method_name(method):
     return method.__name__ if isinstance(method, type) else str(method)
+
+
+def _windows_interaction_class(selected_interaction):
+    require_windows('Windows interaction backend selection')
+    mapping = {
+        'PostMessage': PostMessageInteraction,
+        'Genshin': GenshinInteraction,
+        'ForegroundPostMessage': ForegroundPostMessageInteraction,
+        'Pynput': PynputInteraction,
+        'PyDirect': PyDirectInteraction,
+    }
+    if isinstance(selected_interaction, type):
+        return selected_interaction
+    if selected_interaction:
+        return mapping.get(selected_interaction, selected_interaction)
+    return PynputInteraction
 
 
 class DeviceManager:
@@ -50,8 +113,11 @@ class DeviceManager:
         self._adb = None
         self.executor = None
         self.capture_method = None
+        self.cursor_service = create_cursor_service()
         self.global_config = global_config
         self._adb_lock = threading.Lock()
+        self._device_lifecycle_lock = threading.RLock()
+        self._closing = False
         if app_config.get('adb'):
             self.packages = app_config.get('adb').get('packages')
         else:
@@ -59,19 +125,57 @@ class DeviceManager:
         supported_resolution = app_config.get(
             'supported_resolution', {})
         self.supported_ratio = parse_ratio(supported_resolution.get('ratio'))
-        self.windows_capture_config = app_config.get('windows')
+        self.coordinate_mode = supported_resolution.get('coordinate_mode', 'legacy')
+        if self.coordinate_mode not in ('legacy', 'anchored'):
+            raise ValueError('unknown supported_resolution coordinate_mode')
+        configured_windows = app_config.get('windows')
+        configured_macos = app_config.get('macos')
+        configured_browser = app_config.get('browser')
+        self.windows_capture_config = configured_windows if is_windows() else None
+        self.macos_window_config = configured_macos if is_macos() else None
         self.adb_capture_config = app_config.get('adb')
-        self.browser_config = app_config.get('browser')
+        # The existing browser capture implementation is HWND/WGC based. Keep
+        # it available on Windows without importing it into the Darwin graph.
+        self.browser_config = configured_browser if is_windows() else None
         self.debug = app_config.get('debug')
         self.interaction = None
         self.device_dict = {}
         self.exit_event = exit_event
         self.resolution_dict = {}
-        default_capture = 'windows' if app_config.get('windows') else (
-            'browser' if app_config.get('browser') else 'adb')
-        self.config = Config("devices",
-                             {"preferred": "", "pc_full_path": "", 'capture': default_capture, 'selected_exe': '',
-                              'selected_hwnd': 0, 'interaction': ''})
+        self.win_interaction_class = None
+        self.hwnd_window = None
+        self.window_target = None
+        self.window_discovery = None
+        self.permission_service = None
+
+        if configured_windows and not is_windows():
+            logger.info('Windows desktop configuration is unavailable on this platform')
+        if configured_browser and not is_windows():
+            logger.info('The current browser capture provider is Windows-only')
+        if configured_macos and not is_macos():
+            logger.info('macOS desktop configuration is unavailable on this platform')
+
+        if self.windows_capture_config is not None:
+            default_capture = 'windows'
+        elif self.macos_window_config is not None:
+            default_capture = 'macos'
+        elif self.browser_config is not None:
+            default_capture = 'browser'
+        elif self.adb_capture_config is not None:
+            default_capture = 'adb'
+        else:
+            default_capture = ''
+        device_defaults = {
+            "preferred": "",
+            "pc_full_path": "",
+            'capture': default_capture,
+            'selected_exe': '',
+            'selected_hwnd': 0,
+            'interaction': '',
+        }
+        if self.macos_window_config is not None:
+            device_defaults['macos_target_hint'] = {}
+        self.config = Config("devices", device_defaults)
         self.handler = Handler(exit_event, 'RefreshAdb')
         if self.windows_capture_config is not None:
             if isinstance(self.windows_capture_config.get('exe'), str):
@@ -82,12 +186,11 @@ class DeviceManager:
                                           hwnd_class=self.windows_capture_config.get('hwnd_class'),
                                           global_config=self.global_config, device_manager=self,
                                           top_hwnd_class=self.windows_capture_config.get('top_hwnd_class'))
+            from ok.device.window_target.windows import WindowsHwndWindowTarget
+            self.window_target = WindowsHwndWindowTarget(self.hwnd_window)
             interaction = self.windows_capture_config.get('interaction')
             if isinstance(interaction, list):
-                if interaction:
-                    selected_interaction = interaction[0]
-                else:
-                    selected_interaction = 'Pynput'
+                selected_interaction = interaction[0] if interaction else 'Pynput'
             else:
                 selected_interaction = interaction
 
@@ -104,23 +207,9 @@ class DeviceManager:
                     if saved_interaction == item_name:
                         selected_interaction = interaction
 
-            if selected_interaction == 'PostMessage':
-                self.win_interaction_class = PostMessageInteraction
-            elif selected_interaction == 'Genshin':
-                self.win_interaction_class = GenshinInteraction
-            elif selected_interaction == 'ForegroundPostMessage':
-                self.win_interaction_class = ForegroundPostMessageInteraction
-            elif selected_interaction == 'Pynput':
-                self.win_interaction_class = PynputInteraction
-            elif selected_interaction == 'PyDirect':
-                self.win_interaction_class = PyDirectInteraction
-            elif selected_interaction:
-                self.win_interaction_class = selected_interaction
-            else:
-                self.win_interaction_class = PynputInteraction
-        else:
-            self.hwnd_window = None
+            self.win_interaction_class = _windows_interaction_class(selected_interaction)
 
+        self.update_macos_device()
         logger.info('__init__ end')
 
     def stop_hwnd(self):
@@ -130,7 +219,26 @@ class DeviceManager:
                 kill_exe(abs_path=self.hwnd_window.exe_full_path)
 
     def close(self):
-        """Stop capture resources before Qt/Python teardown begins."""
+        """Block/release input before capture and Qt/Python teardown."""
+        lock = getattr(self, '_device_lifecycle_lock', None)
+        if lock is None:
+            return self._close_locked()
+        with lock:
+            self._closing = True
+            return self._close_locked()
+
+    def _close_locked(self):
+        interaction = self.interaction
+        if interaction is not None:
+            try:
+                interaction.on_destroy()
+            except Exception as e:
+                logger.error(f'interaction close failed: {e}')
+                try:
+                    interaction.invalidate('device manager closing', shutdown=True)
+                except Exception as invalidate_error:
+                    logger.error(f'interaction invalidation failed: {invalidate_error}')
+        self.interaction = None
         hwnd_window = self.hwnd_window
         if hwnd_window is not None:
             hwnd_window.stop()
@@ -146,6 +254,154 @@ class DeviceManager:
     def select_hwnd(self, exe, hwnd):
         self.config['selected_exe'] = exe
         self.config['selected_hwnd'] = hwnd
+
+    def _require_macos_window_config(self):
+        require_platform('macOS desktop window target', (MACOS,))
+        if self.macos_window_config is None:
+            raise PlatformUnavailableError(
+                'macOS desktop window target is not configured by this application')
+
+    def _macos_hints(self):
+        self._require_macos_window_config()
+        from ok.device.window_target import WindowMatchHints
+        return WindowMatchHints.from_mapping(self.macos_window_config)
+
+    def _macos_stable_hint(self):
+        from ok.device.window_target import StableWindowHint
+        return StableWindowHint.from_mapping(
+            self.config.get('macos_target_hint', {}))
+
+    def _ensure_macos_window_services(self):
+        self._require_macos_window_config()
+        if self.window_discovery is None:
+            from ok.device.window_target import create_macos_window_discovery
+            self.window_discovery = create_macos_window_discovery()
+        if self.permission_service is None:
+            from ok.device.services import create_permission_service
+            self.permission_service = create_permission_service()
+
+    def discover_macos_windows(self, manual_window_id=None):
+        """Enumerate/select without binding or starting capture/input providers."""
+        self._ensure_macos_window_services()
+        return self.window_discovery.select(
+            self._macos_hints(),
+            stable_hint=self._macos_stable_hint(),
+            manual_window_id=manual_window_id,
+        )
+
+    def bind_macos_window(self, manual_window_id=None):
+        """Bind an unambiguous or explicitly selected macOS window target."""
+        self._invalidate_macos_capture('macOS target selection started')
+        selection = self.discover_macos_windows(manual_window_id)
+        if selection.selected is None:
+            self.window_target = None
+            self.update_macos_device()
+            return selection
+
+        stable_hint = selection.stable_hint
+        self.window_target = None
+        self.update_macos_device()
+        target = self.window_discovery.bind(
+            selection.selected,
+            self._macos_hints(),
+            stable_hint=stable_hint,
+        )
+        self.window_target = target
+        self.config['macos_target_hint'] = stable_hint.to_mapping()
+        self.update_macos_device()
+        return selection
+
+    def refresh_macos_window_target(self):
+        self._require_macos_window_config()
+        if self.window_target is None:
+            return self.bind_macos_window()
+        self._invalidate_macos_capture('macOS target refresh started')
+        try:
+            return self.window_target.refresh()
+        finally:
+            self.update_macos_device()
+
+    def prepare_macos_capture(self, timeout=8.0, *, manual_window_id=None):
+        """Prepare capture only; all GUI/start/resume callers share this contract.
+
+        Selection, provider creation and bounded fresh-frame recovery are owned
+        here. Input remains stopped until Quartz performs its final handoff.
+        """
+        with self._device_lifecycle_lock:
+            if self._closing or self.exit_event.is_set():
+                raise RuntimeError('macOS device is stopping')
+            if manual_window_id is not None:
+                selection = self.bind_macos_window(manual_window_id=manual_window_id)
+                if selection.selected is None:
+                    raise RuntimeError(f'MAC_GAME_WINDOW_NOT_FOUND: {selection.status.value}')
+            self.prepare_macos_device()
+            return self.capture_method.wait_until_ready(timeout=timeout)
+
+    def prepare_macos_device(self):
+        """Explicit startup only: bind a unique target before creating providers."""
+        self._require_macos_window_config()
+        with self._device_lifecycle_lock:
+            if self._closing or self.exit_event.is_set():
+                raise RuntimeError('macOS device is stopping')
+            if self.window_target is None:
+                selection = self.bind_macos_window()
+                if selection.selected is None:
+                    raise RuntimeError(
+                        'MAC_GAME_WINDOW_NOT_FOUND: select the official game window; '
+                        f'window selection: {selection.status.value}')
+            elif not self.window_target.exists():
+                # Start is recovery of this binding, not permission to replace
+                # a dead process or guess between multiple game surfaces.
+                result = self.refresh_macos_window_target()
+                if not result.current.exists:
+                    code = getattr(self.window_target, 'unavailable_code', 'MAC_TARGET_UNAVAILABLE')
+                    raise RuntimeError(
+                        f'{code}: window recovery {result.status.value}; '
+                        'wait and retry, or manually select and bind the game window')
+            self.config['preferred'] = 'macos'
+            self._do_start_locked(notify=False)
+
+    def macos_permission_status(self):
+        self._ensure_macos_window_services()
+        return self.permission_service.snapshot()
+
+    def request_macos_permission(self, kind):
+        self._ensure_macos_window_services()
+        return self.permission_service.request(kind)
+
+    def _invalidate_macos_capture(self, reason):
+        self._invalidate_macos_input(reason)
+        capture_method = getattr(self, 'capture_method', None)
+        invalidator = getattr(capture_method, 'invalidate', None)
+        if callable(invalidator):
+            invalidator(reason)
+
+    def _invalidate_macos_input(self, reason):
+        interaction = getattr(self, 'interaction', None)
+        invalidator = getattr(interaction, 'invalidate', None)
+        if callable(invalidator):
+            invalidator(reason)
+
+    def _on_macos_capture_input_invalidated(self, capture, reason):
+        """Ignore callbacks from a capture provider that has been replaced."""
+        if capture is self.capture_method:
+            self._invalidate_macos_input(reason)
+
+    def _on_macos_interaction_invalidated(self, reason):
+        """Pause automation after a foreground/input safety gate closes."""
+        logger.error(f'macOS foreground automation paused: {reason}')
+        executor = getattr(self, 'executor', None)
+        exit_event = getattr(self, 'exit_event', None)
+        if executor is None or (exit_event is not None and exit_event.is_set()):
+            return
+        pause = getattr(executor, 'pause', None)
+        if callable(pause):
+            pause()
+
+    def macos_capture_diagnostics(self):
+        capture_method = getattr(self, 'capture_method', None)
+        diagnostics = getattr(capture_method, 'diagnostics', None)
+        return diagnostics() if callable(diagnostics) else None
 
     def refresh(self):
         logger.debug('calling refresh')
@@ -304,11 +560,50 @@ class DeviceManager:
                 "resolution": f"{width}x{height}"
             }
 
+    def update_macos_device(self):
+        """Expose target identity and the current Stage D capture state."""
+        if self.macos_window_config is None:
+            return
+        target = self.window_target
+        if target is None:
+            target_bound = False
+            snapshot = None
+        else:
+            target_bound = bool(target.exists())
+            snapshot = target.snapshot if target_bound else None
+        candidate = snapshot.candidate if snapshot is not None else None
+        nick = (
+            candidate.application_name or candidate.title
+            if candidate is not None else 'macOS Window'
+        )
+        capture_diagnostics = self.macos_capture_diagnostics()
+        capture_state = getattr(capture_diagnostics, 'state', None)
+        capture_state_value = getattr(capture_state, 'value', None)
+        self.device_dict['macos'] = {
+            'address': '',
+            'imei': 'macos',
+            'device': 'macos',
+            'nick': nick,
+            'capture': 'ScreenCaptureKit',
+            'connected': target_bound and capture_state_value == 'running',
+            'capture_state': capture_state_value or 'unavailable',
+            'target_bound': target_bound,
+            'process_id': candidate.process_id if candidate is not None else 0,
+            'window_id': candidate.window_id if candidate is not None else 0,
+            'bundle_identifier': (
+                candidate.bundle_identifier if candidate is not None else None),
+        }
+
     def do_refresh(self, current=False):
         try:
-            self.refresh_emulators(current)
-            self.refresh_phones(current)
+            preferred = self.get_preferred_device()
+            macos_selected = bool(
+                preferred is not None and preferred.get('device') == 'macos')
+            if not macos_selected:
+                self.refresh_emulators(current)
+                self.refresh_phones(current)
             self.update_pc_device()
+            self.update_macos_device()
             self.update_browser_device()
         except Exception as e:
             logger.error('refresh error', e)
@@ -367,7 +662,7 @@ class DeviceManager:
         logger.debug(f'refresh_phones done')
 
     def refresh_emulators(self, current=False):
-        if self.adb_capture_config is None:
+        if self.adb_capture_config is None or not is_windows():
             return
         from ok.alas.emulator_windows import EmulatorManager
         manager = EmulatorManager()
@@ -490,6 +785,9 @@ class DeviceManager:
         if device is None:
             return None
         try:
+            import cv2
+            import numpy as np
+
             png_bytes = self.shell_device(device, "screencap -p", encoding=None, timeout=10)
             if png_bytes is not None and len(png_bytes) > 0:
                 image_data = np.frombuffer(png_bytes, dtype=np.uint8)
@@ -534,6 +832,16 @@ class DeviceManager:
         preferred = self.device_dict.get(imei)
         return preferred
 
+    @property
+    def capabilities(self) -> DeviceCapabilities:
+        """返回当前 interaction 后端声明的能力，未就绪时 fail closed。"""
+        interaction = self.interaction
+        if interaction is None:
+            return NO_DEVICE_CAPABILITIES
+        getter = getattr(interaction, 'get_capabilities', None)
+        capabilities = getter() if callable(getter) else getattr(interaction, 'capabilities', None)
+        return capabilities if isinstance(capabilities, DeviceCapabilities) else NO_DEVICE_CAPABILITIES
+
     def get_preferred_capture(self):
         return self.config.get("capture")
 
@@ -549,6 +857,8 @@ class DeviceManager:
             return [method_name(item) for item in (methods or ['windows']) if item]
         if kind == 'browser':
             return ['browser']
+        if kind == 'macos':
+            return ['ScreenCaptureKit']
         methods = ['adb']
         emulator = device.get('emulator')
         if emulator is not None:
@@ -575,6 +885,8 @@ class DeviceManager:
             return ['BrowserInteraction']
         if kind == 'adb':
             return ['ADBInteraction']
+        if kind == 'macos':
+            return ['QuartzForegroundInteraction']
         return ['Default Interaction']
 
     def set_hwnd_name(self, hwnd_name):
@@ -592,31 +904,29 @@ class DeviceManager:
 
     def set_interaction(self, interaction):
         interaction_name = interaction.__name__ if isinstance(interaction, type) else interaction
-        
-        config_interaction = self.windows_capture_config.get('interaction') if self.windows_capture_config else None
-        if isinstance(interaction, str):
-            if isinstance(config_interaction, list):
-                for item in config_interaction:
-                    if isinstance(item, type) and item.__name__ == interaction:
-                        interaction = item
-                        break
-            elif isinstance(config_interaction, type) and config_interaction.__name__ == interaction:
-                interaction = config_interaction
+        preferred = self.get_preferred_device() or {}
+        is_windows_device = preferred.get('device') == 'windows'
+
+        if is_windows_device:
+            require_windows('Windows interaction selection')
+            config_interaction = (
+                self.windows_capture_config.get('interaction')
+                if self.windows_capture_config else None
+            )
+            if isinstance(interaction, str):
+                if isinstance(config_interaction, list):
+                    for item in config_interaction:
+                        if isinstance(item, type) and item.__name__ == interaction:
+                            interaction = item
+                            break
+                elif (isinstance(config_interaction, type)
+                      and config_interaction.__name__ == interaction):
+                    interaction = config_interaction
 
         if self.config.get("interaction") != interaction_name:
             self.config['interaction'] = interaction_name
-            if interaction == 'PostMessage':
-                self.win_interaction_class = PostMessageInteraction
-            elif interaction == 'Genshin':
-                self.win_interaction_class = GenshinInteraction
-            elif interaction == 'ForegroundPostMessage':
-                self.win_interaction_class = ForegroundPostMessageInteraction
-            elif interaction == 'Pynput':
-                self.win_interaction_class = PynputInteraction
-            elif interaction and interaction != 'PyDirect':
-                self.win_interaction_class = interaction
-            else:
-                self.win_interaction_class = PyDirectInteraction
+            if is_windows_device:
+                self.win_interaction_class = _windows_interaction_class(interaction)
             self.start()
 
     def get_hwnd_name(self):
@@ -624,13 +934,17 @@ class DeviceManager:
         return preferred.get('hwnd')
 
     def ensure_hwnd(self, title, exe, frame_width=0, frame_height=0, player_id=-1, hwnd_class=None, top_hwnd_class=None):
+        require_windows('HWND window management')
         if self.hwnd_window is None:
             self.hwnd_window = HwndWindow(self.exit_event, title, exe, frame_width, frame_height, player_id,
                                           hwnd_class, global_config=self.global_config, device_manager=self, top_hwnd_class=top_hwnd_class)
+            from ok.device.window_target.windows import WindowsHwndWindowTarget
+            self.window_target = WindowsHwndWindowTarget(self.hwnd_window)
         else:
             self.hwnd_window.update_window(title, exe, frame_width, frame_height, player_id, hwnd_class, top_hwnd_class)
 
     def use_windows_capture(self):
+        require_windows('Windows capture provider')
         selected_method = self.config.get('capture')
         valid_methods = self.windows_capture_config.get('capture_method', [])
         if not selected_method or selected_method not in valid_methods:
@@ -649,6 +963,17 @@ class DeviceManager:
         self.handler.post(self.do_start, remove_existing=True, skip_if_running=True)
 
     def do_start(self, notify=True):
+        lock = getattr(self, '_device_lifecycle_lock', None)
+        if lock is None:
+            return self._do_start_locked(notify)
+        with lock:
+            exit_event = getattr(self, 'exit_event', None)
+            if self._closing or (exit_event is not None and exit_event.is_set()):
+                logger.info('skip device start while closing')
+                return
+            return self._do_start_locked(notify)
+
+    def _do_start_locked(self, notify=True):
         logger.debug(f'do_start')
         preferred = self.get_preferred_device()
         if preferred is None:
@@ -659,6 +984,7 @@ class DeviceManager:
             return
 
         if preferred['device'] == 'windows':
+            require_windows('Windows desktop device')
             title = self.windows_capture_config.get('title')
             exe = self.windows_capture_config.get('exe')
             if not exe and not title and preferred.get('real_hwnd'):
@@ -673,6 +999,62 @@ class DeviceManager:
             elif self.interaction:
                 self.interaction.capture = self.capture_method
             preferred['connected'] = self.capture_method is not None and self.capture_method.connected()
+        elif preferred['device'] == 'macos':
+            require_platform('macOS desktop device', (MACOS,))
+            from ok.device.capture_methods import ScreenCaptureKitCaptureMethod
+            from ok.device.interaction_methods import QuartzForegroundInteraction
+            target_available = bool(
+                self.window_target is not None and self.window_target.exists())
+            if target_available:
+                self._ensure_macos_window_services()
+                if (
+                        not isinstance(
+                            self.capture_method, ScreenCaptureKitCaptureMethod)
+                        or self.capture_method.target is not self.window_target):
+                    if self.capture_method is not None:
+                        self.capture_method.close()
+                    self.capture_method = ScreenCaptureKitCaptureMethod(
+                        self.exit_event,
+                        self.window_target,
+                        self.permission_service,
+                        on_input_invalidated=self._on_macos_capture_input_invalidated,
+                    )
+                if (
+                        not isinstance(self.interaction, QuartzForegroundInteraction)
+                        or self.interaction.capture is not self.capture_method
+                        or self.interaction.target is not self.window_target):
+                    if self.interaction is not None:
+                        destroy = getattr(self.interaction, 'on_destroy', None)
+                        if callable(destroy):
+                            destroy()
+                    self.interaction = QuartzForegroundInteraction(
+                        self.capture_method,
+                        self.window_target,
+                        self.permission_service,
+                        exit_event=self.exit_event,
+                        on_invalidated=self._on_macos_interaction_invalidated,
+                    )
+                    self.cursor_service = self.interaction.cursor_service
+            else:
+                self._invalidate_macos_input('selected macOS target is unavailable')
+                if self.capture_method is not None:
+                    self.capture_method.close()
+                self.capture_method = None
+                self.interaction = None
+                self.cursor_service = create_cursor_service()
+            preferred['target_bound'] = bool(
+                self.window_target is not None and self.window_target.exists())
+            preferred['connected'] = bool(
+                preferred['target_bound']
+                and self.capture_method is not None
+                and self.capture_method.connected())
+            capture_diagnostics = self.macos_capture_diagnostics()
+            capture_state = getattr(capture_diagnostics, 'state', None)
+            preferred['capture_state'] = (
+                getattr(capture_state, 'value', None) or 'unavailable')
+            logger.info(
+                'macOS capture/input state: '
+                f'{capture_diagnostics}; capabilities={self.capabilities.enabled_names()}')
         elif preferred['device'] == 'browser':
             if not isinstance(self.capture_method, BrowserCaptureMethod):
                 if self.capture_method is not None:
@@ -737,6 +1119,8 @@ class DeviceManager:
     @property
     def device(self):
         if preferred := self.get_preferred_device():
+            if preferred.get('device') == 'macos':
+                return None
             if self._device is None:
                 logger.debug(f'get device connect {preferred}')
                 self._device = self.adb_connect(preferred.get('address'))
@@ -788,6 +1172,10 @@ class DeviceManager:
         preferred = self.get_preferred_device()
         if preferred['device'] == 'windows' or preferred['device'] == 'browser':
             return True
+        if preferred['device'] == 'macos':
+            return bool(
+                self.capture_method is not None
+                and self.capture_method.connected())
         elif self.device is not None:
             try:
                 state = self.shell('echo 1', timeout=3)
@@ -825,6 +1213,7 @@ class DeviceManager:
         if not path:
             return None
         elif emulator := device.get('emulator'):
+            require_windows('Windows emulator launch')
             from ok.alas.platform_windows import get_emulator_exe
             return get_emulator_exe(emulator)
         else:
@@ -866,6 +1255,7 @@ class DeviceManager:
         import time
         logger.info(f'update_capture {config}')
         if 'windows' in config:
+            require_windows('Windows capture update')
             win_config = config['windows']
             reset_selected_hwnd = any(
                 key in win_config for key in ('title', 'exe', 'hwnd_class', 'top_hwnd_class', 'selected_hwnd')
@@ -960,6 +1350,7 @@ class DeviceManager:
                         raise Exception(f"Failed to resize ADB to {resolution}: {e}")
 
         elif 'browser' in config:
+            require_windows('Current browser capture provider')
             browser_config = config['browser']
             self.clear_devices()
             if not getattr(self, 'browser_config', None):
@@ -989,6 +1380,7 @@ class DeviceManager:
         logger.info(f'ensure_capture {config}')
         self.clear_devices()
         if 'windows' in config:
+            require_windows('Windows capture ensure')
             win_config = config['windows']
             for key in ('title', 'hwnd_class', 'top_hwnd_class'):
                 if key in win_config:
@@ -1077,6 +1469,7 @@ class DeviceManager:
                         raise Exception(f"Failed to resize ADB to {resolution}: {e}")
 
         elif 'browser' in config:
+            require_windows('Current browser capture provider')
             browser_config = config['browser']
             if not getattr(self, 'browser_config', None):
                 self.browser_config = {}

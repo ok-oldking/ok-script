@@ -3,7 +3,7 @@ import hashlib
 import importlib
 import logging
 import os
-import platform
+import platform as stdlib_platform
 import sys
 import threading
 import time
@@ -15,6 +15,7 @@ from ok.util.handler import Handler, ExitEvent
 from ok.util.logger import Logger
 from ok.util.file import get_path_relative_to_exe
 from ok.core.ui_config import resolve_ui_config, resolve_window_size
+from ok.platform import is_windows
 os.environ["PYTHONIOENCODING"] = "utf-8"
 
 if TYPE_CHECKING:
@@ -226,7 +227,10 @@ def _create_ok_config(config):
 
     defaults = dict(_OK_CONFIG_DEFAULTS)
     if 'use_overlay' in config:
-        defaults['use_overlay'] = bool(config['use_overlay'])
+        requested = bool(config['use_overlay'])
+        defaults['use_overlay'] = requested and is_windows()
+        if requested and not is_windows():
+            logger.info('Native game overlay is unavailable on this platform')
     return Config('_ok', defaults)
 
 
@@ -264,6 +268,10 @@ class _OverlayConfigMixin:
     def set_overlay_setting(self, name, value):
         if name != 'boxes':
             raise ValueError(f'Unknown overlay setting: {name}')
+        if value and not is_windows():
+            logger.info('Ignoring native overlay enable request on an unsupported platform')
+            self.ok_config['use_overlay'] = False
+            return self.overlay_state()
 
         self.ok_config['use_overlay'] = bool(value)
         overlay = self.overlay_window
@@ -427,7 +435,7 @@ class App(_OverlayConfigMixin):
 
     def get_overlay_view(self):
         """Return the overlay widget exposed to tasks, custom tabs, and my_app."""
-        if not self.ok_config.get('use_overlay', False):
+        if not is_windows() or not self.ok_config.get('use_overlay', False):
             return None
         if self.overlay_window is None:
             from ok.core.events import communicate
@@ -581,7 +589,7 @@ class HeadlessApp(_OverlayConfigMixin):
             self.notification_manager.submit(translated_title, translated_message, images)
 
     def get_overlay_view(self):
-        if not self.ok_config.get('use_overlay', False):
+        if not is_windows() or not self.ok_config.get('use_overlay', False):
             return None
         if self.overlay_window is None:
             from ok.core.events import communicate
@@ -649,8 +657,6 @@ class OK:
         register_basic = _resolve('register_basic_options')
         register_notifications = _resolve('register_notification_options')
         parse_arguments = _resolve('parse_arguments_to_map')
-        default_start_method = _resolve('WINDOWS_START_METHOD_START')
-        wgc_available = _resolve('windows_graphics_available')
 
         if config.get('check_mutex', True):
             if not check_mutex_fn():
@@ -680,8 +686,13 @@ class OK:
         self._app = None
         self._headless_app = None
         self.global_config = global_config_class(config.get('global_configs'))
-        windows_config = config.get('windows')
+        configured_windows = config.get('windows')
+        windows_config = configured_windows if is_windows() else None
+        if configured_windows and not is_windows():
+            logger.info('Ignoring Windows provider configuration on this platform')
         if windows_config:
+            default_start_method = _resolve('WINDOWS_START_METHOD_START')
+            wgc_available = _resolve('windows_graphics_available')
             windows_config.setdefault('start_exe', True)
             windows_config.setdefault('start_method', default_start_method)
             capture_methods = windows_config.get('capture_method', [])
@@ -694,20 +705,24 @@ class OK:
                     available_methods.append(method)
 
         register_basic(self.global_config, enable_blur=callable(config.get('blur_area')))
-        register_launcher(self.global_config, pyappify)
+        if is_windows():
+            register_launcher(self.global_config, pyappify)
+        else:
+            logger.info('PyAppify launcher controls are unavailable on this platform')
         register_notifications(self.global_config)
         og.global_config = self.global_config
         og.set_use_dml()
-        try:
-            import ctypes
-            # Set DPI Awareness (Windows 10 and 8)
-            errorCode = ctypes.windll.shcore.SetProcessDpiAwareness(2)
-            logger.info(f'SetProcessDpiAwareness {errorCode}')
-            if self.debug:
-                import win32api
-                win32api.SetConsoleCtrlHandler(self.console_handler, True)
-        except Exception as e:
-            logger.error(f'SetProcessDpiAwareness error', e)
+        if is_windows():
+            try:
+                import ctypes
+                # Set DPI Awareness (Windows 10 and 8)
+                errorCode = ctypes.windll.shcore.SetProcessDpiAwareness(2)
+                logger.info(f'SetProcessDpiAwareness {errorCode}')
+                if self.debug:
+                    import win32api
+                    win32api.SetConsoleCtrlHandler(self.console_handler, True)
+            except Exception as e:
+                logger.error(f'SetProcessDpiAwareness error', e)
         self.config = config
         try:
             self.do_init()
@@ -1168,6 +1183,11 @@ class OkGlobals:
         logger.info(f'app path {self.app_path}')
 
     def set_use_dml(self):
+        if not is_windows():
+            self.use_dml = False
+            logger.info('DirectML is unavailable on this platform')
+            return
+
         from ok.util.process import get_first_gpu_free_memory_mib
 
         use_dml_txt_option = self.global_config.get_config('Basic Options').get('Use DirectML')
@@ -1180,7 +1200,7 @@ class OkGlobals:
         elif use_dml_txt_option == 'Yes':
             use_dml = True
         if use_dml:
-            window_build_number_str = platform.version().split(".")[-1]
+            window_build_number_str = stdlib_platform.version().split(".")[-1]
             window_build_number = int(window_build_number_str) if window_build_number_str.isdigit() else 0
             use_dml = window_build_number >= 18362
         logger.info(f'use_dml result is {use_dml}')

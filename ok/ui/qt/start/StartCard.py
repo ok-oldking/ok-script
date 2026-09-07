@@ -1,16 +1,18 @@
-from ctypes import windll, wintypes
-
 from PySide6.QtCore import Qt, Signal
-from _ctypes import byref
 from qfluentwidgets import FluentIcon, PrimaryPushButton, SettingCard, PushButton
 
 from ok import Handler
 from ok import Logger
 from ok import og
+from ok.platform import is_windows
 from ok.ui.qt.Communicate import communicate
 from ok.ui.qt.widget.StatusBar import StatusBar
 
 logger = Logger.get_logger(__name__)
+
+if is_windows():
+    from ctypes import windll, wintypes
+    from _ctypes import byref
 
 
 class StartCard(SettingCard):
@@ -49,7 +51,11 @@ class StartCard(SettingCard):
 
         self.handler = Handler(exit_event, "StartCard")
         self.current_hotkey = "UNINIT"
-        self.handler.post(self.check_hotkey, 0.1)
+        self.hotkey_supported = is_windows()
+        if self.hotkey_supported:
+            self.handler.post(self.check_hotkey, 0.1)
+        else:
+            logger.info('Global Start/Stop hotkey is unavailable on this platform')
         logger.debug('basic_options.start/stop: {}'.format(self.basic_options.get('Start/Stop')))
 
     def status_clicked(self):
@@ -114,6 +120,8 @@ class StartCard(SettingCard):
             self.status_bar.show()
 
     def check_hotkey(self):
+        if not self.hotkey_supported:
+            return
         new_hotkey = self.basic_options.get('Start/Stop')
         if new_hotkey != self.current_hotkey:
             self.rebind_hotkey(new_hotkey)
@@ -130,6 +138,9 @@ class StartCard(SettingCard):
         self.handler.post(self.check_hotkey, 0.1)
 
     def rebind_hotkey(self, hotkey):
+        if not self.hotkey_supported:
+            logger.info('Ignoring global hotkey binding on an unsupported platform')
+            return False
         windll.user32.UnregisterHotKey(None, 999)
         vk_map = {'F9': 0x78, 'F10': 0x79, 'F11': 0x7A, 'F12': 0x7B}
 

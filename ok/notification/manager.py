@@ -1,9 +1,4 @@
 from ok.notification.pipeline import NotificationPipeline
-from ok.notification.ppocr import NotificationPPOCR
-from ok.notification.providers import (
-    DiscordProvider, QQBotProvider, SmtpProvider, TelegramBotProvider,
-    WeComWebhookProvider)
-from ok.notification.windows_messenger import MessengerAutomation
 from ok.util.GlobalConfig import (
     DISCORD_NOTIFICATION_ENABLED, DISCORD_WEBHOOK, NOTIFICATION_OPTION_NAME,
     QQ_NICKNAME, QQ_NOTIFICATION_ENABLED, SYSTEM_NOTIFICATION_ENABLED,
@@ -15,6 +10,7 @@ from ok.util.GlobalConfig import (
     SMTP_NOTIFICATION_ENABLED, SMTP_PASSWORD, SMTP_PORT, SMTP_USE_TLS,
     SMTP_USERNAME,
 )
+from ok.platform import is_windows
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -29,9 +25,13 @@ class NotificationManager:
         self.app_name = str(app_name or 'ok-script')
         self.app_icon = str(app_icon or '')
         if system_notifier is _DEFAULT_SYSTEM_NOTIFIER:
-            from ok.notification.system import WindowsSystemNotifier
-            system_notifier = WindowsSystemNotifier(self.app_name, self.app_icon)
+            if is_windows():
+                from ok.notification.system import WindowsSystemNotifier
+                system_notifier = WindowsSystemNotifier(self.app_name, self.app_icon)
+            else:
+                system_notifier = None
         self.system_notifier = system_notifier
+        from ok.notification.ppocr import NotificationPPOCR
         self.ocr = NotificationPPOCR(executor.ocr_lib)
         self.pipeline = NotificationPipeline(self._send, exit_event=exit_event, interval=5)
         self.queue = self.pipeline.queue
@@ -76,6 +76,14 @@ class NotificationManager:
         return stopped
 
     def _send(self, title, message, images):
+        from ok.notification.providers import (
+            DiscordProvider,
+            QQBotProvider,
+            SmtpProvider,
+            TelegramBotProvider,
+            WeComWebhookProvider,
+        )
+
         if self.pipeline.stop_event.is_set():
             return False
         if self.config.get(DISCORD_NOTIFICATION_ENABLED):
@@ -104,24 +112,32 @@ class NotificationManager:
         if self.pipeline.stop_event.is_set():
             return False
         if self.config.get(QQ_NOTIFICATION_ENABLED):
-            self._safe_send('QQ', MessengerAutomation(
-                ('QQ.exe',), self.ocr, exit_event=self.pipeline.stop_event,
-                window_titles=('QQ',),
-                search_point_96dpi=(200, 65), left_panel_width_96dpi=377,
-                post_activate=False, image_method='context_menu', paste_match_end=True,
-                dismiss_search_after_contact=True).send,
-                            self.config.get(QQ_NICKNAME), '', messenger_message, images)
+            if is_windows():
+                from ok.notification.windows_messenger import MessengerAutomation
+                self._safe_send('QQ', MessengerAutomation(
+                    ('QQ.exe',), self.ocr, exit_event=self.pipeline.stop_event,
+                    window_titles=('QQ',),
+                    search_point_96dpi=(200, 65), left_panel_width_96dpi=377,
+                    post_activate=False, image_method='context_menu', paste_match_end=True,
+                    dismiss_search_after_contact=True).send,
+                                self.config.get(QQ_NICKNAME), '', messenger_message, images)
+            else:
+                logger.warning('QQ desktop notifications are unavailable on this platform')
         if self.pipeline.stop_event.is_set():
             return False
         if self.config.get(WECHAT_NOTIFICATION_ENABLED):
-            self._safe_send('WeChat', MessengerAutomation(
-                ('WeChat.exe', 'Weixin.exe'), self.ocr,
-                exit_event=self.pipeline.stop_event,
-                window_titles=('WeChat', 'Weixin', '微信'),
-                search_point_96dpi=(163, 56), left_panel_width_96dpi=295,
-                search_first_word=True, post_activate=False,
-                image_method='context_menu').send,
-                            self.config.get(WECHAT_NICKNAME), '', messenger_message, images)
+            if is_windows():
+                from ok.notification.windows_messenger import MessengerAutomation
+                self._safe_send('WeChat', MessengerAutomation(
+                    ('WeChat.exe', 'Weixin.exe'), self.ocr,
+                    exit_event=self.pipeline.stop_event,
+                    window_titles=('WeChat', 'Weixin', '微信'),
+                    search_point_96dpi=(163, 56), left_panel_width_96dpi=295,
+                    search_first_word=True, post_activate=False,
+                    image_method='context_menu').send,
+                                self.config.get(WECHAT_NICKNAME), '', messenger_message, images)
+            else:
+                logger.warning('WeChat desktop notifications are unavailable on this platform')
 
     def _messenger_message(self, title, message):
         content = f'{title}\n{message}' if title else message

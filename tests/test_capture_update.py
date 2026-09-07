@@ -1,5 +1,9 @@
+import sys
 import unittest
 from unittest.mock import Mock, patch
+
+if sys.platform != 'win32':
+    raise unittest.SkipTest('Windows capture update tests require Win32')
 
 import ok.device.capture_methods.update as capture_update
 

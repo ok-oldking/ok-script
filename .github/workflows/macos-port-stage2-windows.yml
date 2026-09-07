@@ -1,0 +1,48 @@
+name: macOS Foreground Branch Windows Regression
+
+on:
+  push:
+    branches:
+      - feature/macos-foreground-mvp
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-foreground-ok-script-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-windows:
+    name: Preserve Windows behavior
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    env:
+      PYTHONIOENCODING: UTF-8
+      QT_QPA_PLATFORM: offscreen
+
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install test dependencies
+        shell: pwsh
+        run: |
+          python -m pip install "pip==26.2.1"
+          python -m pip install -e ".[default,web,qt,adb,ocr,dev]" "opencv-python==5.0.0.93" "pytest-subtests==0.15.0"
+          python -m pip check
+
+      - name: Run framework tests
+        shell: pwsh
+        run: python -m pytest -q --disable-warnings

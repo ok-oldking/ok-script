@@ -117,6 +117,7 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
 
         self.assertIsNone(version_change)
 
+    @unittest.skipUnless(sys.platform == 'win32', 'PyAppify About-tab updates are Windows-only')
     def test_about_tab_shows_update_note_above_other_projects(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         long_note = "很长的更新说明：" + "修复启动提示、关于页面跳转和更新日志展示。" * 40
@@ -188,6 +189,7 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         card.deleteLater()
         app.processEvents()
 
+    @unittest.skipUnless(sys.platform == 'win32', 'PyAppify About-tab updates are Windows-only')
     def test_about_tab_places_update_card_directly_below_version_card(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         from PySide6.QtWidgets import QApplication

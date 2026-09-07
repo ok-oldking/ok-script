@@ -1,13 +1,18 @@
-import win32api
 from PySide6.QtCore import Qt, QPoint, QTimer, QRectF
 from PySide6.QtGui import QPainter, QColor, QPen, QFont, QGuiApplication, QBrush, QImage
 from PySide6.QtWidgets import QWidget
 
 from ok import Logger
 from ok import og
+from ok.platform import is_windows
 from ok.ui.qt.Communicate import communicate
 
 logger = Logger.get_logger(__name__)
+
+if is_windows():
+    import win32api
+else:
+    win32api = None
 
 
 class OverlayWidget(QWidget):
@@ -17,7 +22,10 @@ class OverlayWidget(QWidget):
         self.setMouseTracking(True)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_mouse_position)
-        self.timer.start(50)
+        if is_windows():
+            self.timer.start(50)
+        else:
+            logger.info('Win32 overlay coordinate helper is unavailable on this platform')
         self._copied = False
         self._accumulated_coords = []
         self._click_points = []
@@ -29,6 +37,8 @@ class OverlayWidget(QWidget):
         self.blur_images = []
 
     def update_mouse_position(self):
+        if not is_windows():
+            return
         try:
             if not self.isVisible():
                 return

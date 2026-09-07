@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import numpy as np
 
 from ok import og
-from ok.ui.overlay import Win32GdiOverlay
+from ok.ui.overlay.win32_gdi import Win32GdiOverlay
 
 
 class TestWin32GdiOverlay(unittest.TestCase):

@@ -3,6 +3,7 @@ import os
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from ok.platform import is_windows
 from ok.ui.qt.MainWindow import MainWindow, request_pyappify_shutdown, update_check_delay_ms
 
 
@@ -20,9 +21,13 @@ class TestMainWindowStartupTab(unittest.TestCase):
     def test_pyappify_shutdown_does_not_block_gui_thread(self, kill_pyappify):
         thread = request_pyappify_shutdown()
 
-        self.assertTrue(thread.daemon)
-        thread.join(1)
-        kill_pyappify.assert_called_once_with()
+        if is_windows():
+            self.assertTrue(thread.daemon)
+            thread.join(1)
+            kill_pyappify.assert_called_once_with()
+        else:
+            self.assertIsNone(thread)
+            kill_pyappify.assert_not_called()
 
     def test_started_check_cancels_pending_timer(self):
         timer = SimpleNamespace(isActive=lambda: True, stop=Mock())

@@ -9,7 +9,7 @@ from ok.task.exceptions import FinishedException, TaskDisabledException, WaitFai
 from ok.util.GlobalConfig import basic_options
 from ok.util.logger import Logger, config_logger
 from ok.util.process import is_cuda_12_or_above, prevent_sleeping
-from ok.util.window import ratio_text_to_number
+from ok.util.collection import parse_ratio
 
 logger = Logger.get_logger(__name__)
 
@@ -207,8 +207,8 @@ class TaskExecutor:
     def nullable_frame(self):
         return self._frame
 
-    def check_frame_and_resolution(self, supported_ratio, min_size, time_out=8.0):
-        if supported_ratio is None or min_size is None:
+    def check_frame_and_resolution(self, supported_ratio, min_size, time_out=8.0, *, allowed_ratios=None):
+        if allowed_ratios is None and (supported_ratio is None or min_size is None):
             return True, '0x0'
         logger.info(f'start check_frame_and_resolution')
         self.device_manager.update_resolution_for_hwnd()
@@ -220,17 +220,22 @@ class TaskExecutor:
         if frame is None:
             logger.error(f'check_frame_and_resolution failed can not get frame after {time_out} {time.time() - start}')
             return False, '0x0'
-        width = self.method.width
-        height = self.method.height
+        if allowed_ratios is not None:
+            height, width = frame.shape[:2]
+        else:
+            width = self.method.width
+            height = self.method.height
         actual_ratio = 0
         if height == 0:
             actual_ratio = 0
         else:
             actual_ratio = width / height
-        supported_ratio = ratio_text_to_number(supported_ratio)
+        ratios = [parse_ratio(ratio) for ratio in (
+            allowed_ratios if allowed_ratios is not None else [supported_ratio])]
         # Calculate the difference between the actual and supported ratios
-        difference = abs(actual_ratio - supported_ratio)
-        support = difference <= 0.01 * supported_ratio
+        support = bool(ratios) and any(
+            ratio and ratio > 0 and abs(actual_ratio - ratio) <= 0.01 * ratio
+            for ratio in ratios)
         if not support:
             logger.error(f'resolution error {width}x{height} {frame is None}')
         if not support and frame is not None:
@@ -394,6 +399,20 @@ class TaskExecutor:
 
     def start(self):
         with self.lock:
+            interaction = self.interaction
+            get_capabilities = getattr(interaction, 'get_capabilities', None)
+            capabilities = (get_capabilities() if callable(get_capabilities)
+                            else getattr(interaction, 'capabilities', None))
+            if getattr(capabilities, 'foreground_only', False) is True:
+                # Startup/resume is explicit. Never reopen from the polling loop:
+                # after focus loss only another user start may arm the provider.
+                for task in self.get_all_tasks():
+                    if task.enabled:
+                        task.ensure_device_capabilities()
+                if self.exit_event.is_set():
+                    raise RuntimeError('executor is stopping')
+                if not interaction.should_capture():
+                    interaction.on_run()
             if self.thread is None:
                 # Application shutdown must not be held hostage by a custom
                 # task or interaction backend that ignores exit_event.
@@ -548,6 +567,9 @@ class TaskExecutor:
             elif time.time() - self._last_frame_time > 0.2:
                 self.reset_scene()
             try:
+                # Re-check immediately before execution so a device/provider change
+                # cannot let an already queued task reach an unsupported empty method.
+                task.ensure_device_capabilities()
                 task.start_time = time.time()
                 task.running = True
                 self.current_task = task
@@ -624,6 +646,13 @@ class TaskExecutor:
 
     def stop(self):
         logger.info('stop')
+        interaction = self.interaction
+        invalidator = getattr(interaction, 'invalidate', None)
+        if callable(invalidator):
+            try:
+                invalidator('executor stop')
+            except Exception as error:
+                logger.error(f'interaction stop invalidation failed: {error}')
         self.exit_event.set()
         self._wake_executor()
 

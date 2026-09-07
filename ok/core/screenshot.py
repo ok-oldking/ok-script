@@ -17,6 +17,28 @@ logger = Logger.get_logger(__name__)
 _CLEANUP_FOLDERS = object()
 
 
+def _find_annotation_font():
+    """Return a usable annotation font without assuming a Windows install."""
+    candidate_groups = []
+    windows_dir = os.environ.get('WINDIR')
+    if windows_dir:
+        candidate_groups.append((
+            os.path.join(windows_dir, 'Fonts'),
+            ['msyh.ttc', 'msyh.ttf', 'simsun.ttf', 'simsun.ttc', 'arial.ttf', 'arial.ttc'],
+        ))
+    candidate_groups.extend((
+        ('/System/Library/Fonts', ['PingFang.ttc', 'Helvetica.ttc', 'Arial.ttf']),
+        ('/Library/Fonts', ['Arial Unicode.ttf', 'Arial.ttf']),
+        ('/usr/share/fonts/truetype/dejavu', ['DejaVuSans.ttf']),
+    ))
+    for directory, filenames in candidate_groups:
+        if not os.path.isdir(directory):
+            continue
+        if font := find_first_existing_file(filenames, directory):
+            return font
+    return None
+
+
 class Screenshot:
 
     def __init__(self, exit_event, debug):
@@ -45,10 +67,8 @@ class Screenshot:
             self.exit_event.bind_queue(self.task_queue)
             self.thread = threading.Thread(target=self._worker, name="screenshot")
             self.thread.start()
-            fonts_dir = os.path.join(os.environ['WINDIR'], 'Fonts')
-            font = find_first_existing_file(
-                ['msyh.ttc', 'msyh.ttf', 'simsun.ttf', 'simsun.ttc', 'arial.ttf', 'arial.ttc'], fonts_dir)
-            if os.path.exists(font):
+            font = _find_annotation_font()
+            if font:
                 logger.debug(f"load font {font}")
                 self.pil_font = ImageFont.truetype(font, 30)
             else:

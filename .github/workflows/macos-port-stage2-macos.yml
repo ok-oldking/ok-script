@@ -1,0 +1,78 @@
+name: macOS Foreground Branch Source Guardrails
+
+on:
+  push:
+    branches:
+      - feature/macos-foreground-mvp
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-foreground-ok-script-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-contracts:
+    name: Platform source contracts
+    runs-on: macos-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile Python sources without importing optional backends
+        shell: bash
+        run: python -m compileall -q ok scripts
+
+      - name: Verify platform dependency markers and foreground-only source policy
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import tomllib
+
+          root = Path('.')
+          project = tomllib.loads((root / 'pyproject.toml').read_text(encoding='utf-8'))['project']
+          dependencies = project['dependencies']
+
+          for package in ('pywin32', 'pydirectinput', 'pycaw', 'mouse', 'pynput'):
+              requirement = next(item for item in dependencies if item.lower().startswith(package.lower()))
+              assert "sys_platform == 'win32'" in requirement, requirement
+
+          for package in (
+              'pyobjc-framework-Cocoa',
+              'pyobjc-framework-Quartz',
+              'pyobjc-framework-ScreenCaptureKit',
+              'pyobjc-framework-ApplicationServices',
+          ):
+              requirement = next(item for item in dependencies if item.lower().startswith(package.lower()))
+              assert "sys_platform == 'darwin'" in requirement, requirement
+
+          production = [
+              path for path in (root / 'ok').rglob('*.py')
+              if '__pycache__' not in path.parts
+          ]
+          forbidden = (
+              'CGEvent.postToPid',
+              'CGVirtualDisplay',
+              'BetterDisplay',
+          )
+          violations = []
+          for path in production:
+              text = path.read_text(encoding='utf-8')
+              for token in forbidden:
+                  if token in text:
+                      violations.append(f'{path}: {token}')
+          if violations:
+              raise SystemExit('Forbidden macOS foreground-MVP source token(s):\n' + '\n'.join(violations))
+          PY

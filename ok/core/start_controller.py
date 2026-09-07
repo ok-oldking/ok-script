@@ -1,8 +1,10 @@
 import time
+import threading
+import math
 
 from ok import Handler, og
 from ok import Logger
-from ok.device.capture import BaseWindowsCaptureMethod, BrowserCaptureMethod
+from ok.device.capture_methods.base import BaseWindowsCaptureMethod
 from ok.core.events import communicate
 from ok.core.notifications import alert_error, alert_info
 from ok.util.process import is_admin, execute, WINDOWS_START_METHOD_START
@@ -24,6 +26,9 @@ class StartController:
         self.start_exe = windows_config.get('start_exe', True)
         self.start_method = windows_config.get('start_method', WINDOWS_START_METHOD_START)
         self.starting = False
+        self._start_cancel = threading.Event()
+        self._handoff_lock = threading.Lock()
+        self._handoff_pending = False
 
     def tr(self, message):
         app = getattr(og, "app", None)
@@ -31,6 +36,7 @@ class StartController:
 
     @staticmethod
     def _mark_task_enabled(task):
+        task.ensure_device_capabilities()
         if not task.enabled:
             task._enabled = True
             task.info_clear()
@@ -39,6 +45,10 @@ class StartController:
         communicate.task.emit(task)
 
     def start(self, task=None, exit_after=False):
+        if self.starting:
+            return False
+        self._start_cancel = threading.Event()
+        self._handoff_pending = True
         self.starting = True
         try:
             self.handler.post(lambda: self.do_start(task, exit_after))
@@ -46,15 +56,133 @@ class StartController:
             self.starting = False
             raise
 
+    def cancel_start(self):
+        # Cancellation belongs to the foreground handoff, not a running task.
+        with self._handoff_lock:
+            if self._handoff_pending:
+                self._start_cancel.set()
+                return True
+        return False
+
+    def _wait_for_macos_foreground(self):
+        target = og.device_manager.window_target
+        if target is None or not target.process_id:
+            raise RuntimeError('请先绑定游戏主窗口 / Bind the game window first')
+        process_id = target.process_id
+        deadline = time.monotonic() + min(self.start_timeout, 30)
+        last_seconds = None
+        while not self.exit_event.is_set() and not self._start_cancel.is_set():
+            remaining = max(0, math.ceil(deadline - time.monotonic()))
+            if remaining != last_seconds:
+                self._publish_macos_status('foreground', remaining)
+                last_seconds = remaining
+            # Observe only: do not invalidate a minimized target while the user
+            # is switching apps. The normal startup checks the actual binding,
+            # capture, geometry and fresh frame again after this wait.
+            if target.discovery.system.frontmost_process_id() == process_id:
+                return
+            if time.monotonic() >= deadline:
+                raise RuntimeError('等待游戏前台超时 / Timed out waiting for game foreground')
+            self._start_cancel.wait(.1)
+        raise RuntimeError('启动已取消 / Start cancelled')
+
     def do_start(self, task=None, exit_after=False):
         self.starting = True
+        self._prepared_macos_capture = None
+        previous = []
+        macos = False
         try:
-            return self._do_start(task, exit_after)
+            device = og.device_manager.get_preferred_device() if og.device_manager is not None else None
+            macos = isinstance(device, dict) and device.get('device') == 'macos'
+            if macos:
+                if not hasattr(self, '_start_cancel'):
+                    self._start_cancel = threading.Event()
+                self._connect_macos_for_task(task)
+                self._prepared_macos_capture = og.device_manager.capture_method
+                self._wait_for_macos_foreground()
+                self._wait_for_macos_preparation(task)
+                with self._handoff_lock:
+                    self._check_start_cancelled()
+                    self._handoff_pending = False
+                communicate.starting_emulator.emit(True, None, 0)
+                # Snapshot immediately before mutation, not before user handoff.
+                previous = [(item, item.enabled, getattr(item, 'exit_after_task', False),
+                             getattr(item, 'paused', False))
+                            for item in og.executor.get_all_tasks()]
+            result = self._do_start(task, exit_after)
+            if macos and not result:
+                self._rollback_start(previous)
+            return result
+        except Exception as error:
+            if not macos:
+                raise
+            self._rollback_start(previous)
+            logger.error(f'macOS start failed: {error}')
+            communicate.starting_emulator.emit(True, str(error), 0)
+            return False
         finally:
+            self._prepared_macos_capture = None
+            if macos:
+                self._publish_macos_status('done', 0)
             self.starting = False
+            self._handoff_pending = False
+
+    def _publish_macos_status(self, phase, seconds):
+        communicate.macos_start_status.emit(self._start_cancel, phase, seconds)
+
+    def _connect_macos_for_task(self, task):
+        # Clicking a task is also an explicit connection attempt. Discovery still
+        # requires a unique credible window; input is not armed by capture setup.
+        self._check_start_cancelled()
+        og.device_manager.prepare_macos_capture(timeout=8.0)
+        communicate.adb_devices.emit(True)
+        self._check_start_cancelled()
+        if isinstance(task, int):
+            task = og.executor.onetime_tasks[task]
+        if task is not None:
+            task.ensure_device_capabilities()
+
+    def _wait_for_macos_preparation(self, task):
+        if isinstance(task, int):
+            task = og.executor.onetime_tasks[task]
+        seconds = getattr(task, 'config', {}).get('Preparation Seconds', 8)
+        if type(seconds) is not int or not 0 <= seconds <= 300:
+            raise RuntimeError('准备时间须为 0–300 的整数秒 / Invalid preparation delay')
+        target = og.device_manager.window_target
+        process_id = target.process_id
+        deadline = time.monotonic() + seconds
+        logger.info(f'MAC_START_PREPARATION: seconds={seconds}')
+        last_seconds = None
+        while True:
+            self._check_start_cancelled()
+            if (og.device_manager.window_target is not target or not process_id
+                    or target.discovery.system.frontmost_process_id() != process_id):
+                raise RuntimeError('准备期间游戏失去前台，启动已取消 / Preparation cancelled: game lost foreground')
+            remaining = deadline - time.monotonic()
+            display_seconds = max(0, math.ceil(remaining))
+            if display_seconds != last_seconds:
+                self._publish_macos_status('preparation', display_seconds)
+                last_seconds = display_seconds
+            if remaining <= 0:
+                return
+            self._start_cancel.wait(min(.1, remaining))
+
+    @staticmethod
+    def _rollback_start(previous):
+        # Undo only this attempt's newly enabled tasks, never the user's existing
+        # enabled/queued work or persisted Trigger preferences.
+        for task, enabled, exit_after, paused in previous:
+            if not enabled and task.enabled:
+                task._enabled = False
+                task.executor.remove_onetime_task(task)
+            task.exit_after_task = exit_after
+            task._paused = paused
+            communicate.task.emit(task)
 
     def _do_start(self, task=None, exit_after=False):
-        communicate.starting_emulator.emit(False, None, self.start_timeout)
+        device = og.device_manager.get_preferred_device() if og.device_manager is not None else None
+        if not (isinstance(device, dict) and device.get('device') == 'macos'):
+            communicate.starting_emulator.emit(False, None, self.start_timeout)
         tasks_to_enable = []
         try:
             if isinstance(task, int):
@@ -62,6 +190,7 @@ class StartController:
                 logger.info(f"enable param task {task}")
 
             if task and task.enabled and task.paused:
+                self._check_start_cancelled()
                 logger.info(f"resume paused task {task}")
                 if exit_after:
                     task.exit_after_task = True
@@ -71,6 +200,7 @@ class StartController:
                 return True
 
             if task and og.executor.current_task and og.executor.current_task != task:
+                self._check_start_cancelled()
                 logger.info(f"queue task while another task is running {task}")
                 if exit_after:
                     task.exit_after_task = True
@@ -115,8 +245,10 @@ class StartController:
                     task.exit_after_task = True
 
             for task in tasks_to_enable:
+                self._check_start_cancelled()
                 self._mark_task_enabled(task)
 
+            self._check_start_cancelled()
             og.executor.start()
             communicate.starting_emulator.emit(True, None, 0)
             return True
@@ -124,6 +256,11 @@ class StartController:
             logger.error(f'do_start exception: {e}', e)
             communicate.starting_emulator.emit(True, self.tr(f'Start failed: {e}'), 0)
             return False
+
+    def _check_start_cancelled(self):
+        cancel = getattr(self, '_start_cancel', None)
+        if self.exit_event.is_set() or (cancel is not None and cancel.is_set()):
+            raise RuntimeError('启动已取消 / Start cancelled')
 
     def _wait_until_device_ready(self, refresh_first=True):
         wait_until = time.time() + self.start_timeout
@@ -140,7 +277,9 @@ class StartController:
             if remaining_time <= 0:
                 communicate.starting_emulator.emit(True, self.tr('Start game timeout!'), 0)
                 return False
-            communicate.starting_emulator.emit(False, None, int(remaining_time))
+            device = og.device_manager.get_preferred_device()
+            if not (device and device.get('device') == 'macos'):
+                communicate.starting_emulator.emit(False, None, int(remaining_time))
             time.sleep(2)
         return False
 
@@ -178,6 +317,14 @@ class StartController:
     def start_device(self, initial_refresh_done=False):
         device = og.device_manager.get_preferred_device()
         logger.info(f'start_device: {device}')
+
+        if device and device['device'] == 'macos':
+            # do_start already prepared this provider before user handoff.
+            # Direct callers (or provider replacement) still use the same owner.
+            prepared = getattr(self, '_prepared_macos_capture', None)
+            if prepared is None or prepared is not og.device_manager.capture_method:
+                og.device_manager.prepare_macos_capture(timeout=8.0)
+            return True
 
         if device and not device['connected']:
             if device['device'] == "windows" and not is_admin():
@@ -257,7 +404,12 @@ class StartController:
             not is_windows_capture
             or og.global_config.get_config('Basic Options').get('Auto Resize Game Window', True)
         )
-        supported, resolution = og.executor.check_frame_and_resolution(supported_ratio, min_size)
+        allowed_ratios = supported_resolution.get('allowed_ratios')
+        if allowed_ratios is None:
+            supported, resolution = og.executor.check_frame_and_resolution(supported_ratio, min_size)
+        else:
+            supported, resolution = og.executor.check_frame_and_resolution(
+                supported_ratio, min_size, allowed_ratios=allowed_ratios)
         if not supported:
             resize_success = False
             if resize_to and is_windows_capture and auto_resize_enabled:
@@ -268,7 +420,7 @@ class StartController:
                     resolution=resolution)
                 if supported_ratio:
                     error += self.tr(', the supported ratio is {supported_ratio}').format(
-                        supported_ratio=supported_ratio)
+                        supported_ratio=' / '.join(allowed_ratios) if allowed_ratios is not None else supported_ratio)
                 if min_size:
                     error += self.tr(', the supported min resolution is {min_size}').format(
                         min_size=f'{min_size[0]}x{min_size[1]}')
@@ -284,18 +436,18 @@ class StartController:
     def check_device_error(self):
         try:
             device = og.device_manager.get_preferred_device()
+            if not device:
+                return self.tr('No game selected!')
             error_msg = self.tr("{} is not connected, please select the game window.").format(
                 device['nick'])
             logger.info(f'test check_device_error msg: {error_msg}')
-            if not device:
-                return self.tr('No game selected!')
             if og.device_manager.capture_method is None:
                 return self.tr("Selected capture method is not supported by the game or your system!")
             if not og.device_manager.device_connected():
                 logger.error(f'Emulator is not connected {og.device_manager.device}')
                 return self.tr("Emulator is not connected, start the emulator first!")
-            if isinstance(og.device_manager.capture_method,
-                          BrowserCaptureMethod) and not og.device_manager.capture_method.connected():
+            if (device and device.get('device') == 'browser'
+                    and not og.device_manager.capture_method.connected()):
                 logger.info(f"start browser")
                 og.device_manager.capture_method.start_browser()
             if not og.device_manager.capture_method.connected():

@@ -1,23 +1,28 @@
 import time
-from ctypes import windll, wintypes
 
 from PySide6.QtCore import Qt, Signal, QCoreApplication
 from PySide6.QtWidgets import QWidget, QFileDialog, QCompleter, QVBoxLayout, QHBoxLayout
-from _ctypes import byref
 from qfluentwidgets import PushButton, FlowLayout, ComboBox, SearchLineEdit, TextEdit
 
 from ok import Config, og
 from ok import Handler
 from ok import Logger
-from ok.capture.windows.dump import dump_threads
-from ok.device.capture import ImageCaptureMethod
-from ok.device.interaction import DoNothingInteraction
+from ok.platform import is_windows
 from ok.ui.qt.i18n.GettextTranslator import convert_to_mo_files
 from ok.ui.qt.util.Alert import alert_info, alert_error
 from ok.ui.qt.widget.Tab import Tab
 from ok.util.explorer import open_explorer_folder, reveal_in_explorer
 
 logger = Logger.get_logger(__name__)
+
+if is_windows():
+    from ctypes import windll, wintypes
+    from _ctypes import byref
+    from ok.capture.windows.dump import dump_threads
+else:
+    def dump_threads():
+        logger.info('Windows thread dump hotkey is unavailable on this platform')
+        return False
 
 
 class DebugTab(Tab):
@@ -40,6 +45,9 @@ class DebugTab(Tab):
 
         dump_button = PushButton(self.tr("Dump Threads(HotKey:Ctrl+Alt+D)"))
         dump_button.clicked.connect(lambda: self.handler.post(dump_threads))
+        if not is_windows():
+            dump_button.setEnabled(False)
+            dump_button.setToolTip(self.tr('Windows-only debug action'))
         layout.addWidget(dump_button)
         # self.dump_shortcut = QShortcut(QKeySequence("Ctrl+Alt+D"), self)
         # self.dump_shortcut.activated.connect(dump_threads)
@@ -100,16 +108,20 @@ class DebugTab(Tab):
         self.result_edit = TextEdit()
         call_task_container.addWidget(self.result_edit, stretch=1)
         self.update_result_text.connect(self.result_edit.setText)
-        self.handler.post(self.bind_hot_keys)
-        self.handler.post(self.check_hotkey, 0.1)
-
-        og.app.app.aboutToQuit.connect(self.unregister)
+        if is_windows():
+            self.handler.post(self.bind_hot_keys)
+            self.handler.post(self.check_hotkey, 0.1)
+            og.app.app.aboutToQuit.connect(self.unregister)
+        else:
+            logger.info('Win32 debug hotkeys are unavailable on this platform')
 
     def gen_tr(self):
         folder = og.app.gen_tr_po_files()
         reveal_in_explorer(folder)
 
     def check_hotkey(self):
+        if not is_windows():
+            return
         # Example event type, you should use the appropriate QEvent.Type for your case
         msg = wintypes.MSG()
 
@@ -127,6 +139,8 @@ class DebugTab(Tab):
         self.handler.post(self.check_hotkey, 0.1)
 
     def bind_hot_keys(self):
+        if not is_windows():
+            return False
         MOD_ALT = 0x0001
         MOD_CONTROL = 0x0002
         VK_D = 0x44  # Virtual-Key code for 'D'
@@ -140,6 +154,8 @@ class DebugTab(Tab):
 
     @staticmethod
     def unregister():
+        if not is_windows():
+            return False
         # Unregister the hotkeys
         logger.debug('Unregister the hotkeys')
         windll.user32.UnregisterHotKey(None, 1)
@@ -158,6 +174,8 @@ class DebugTab(Tab):
         try:
             images = self.config.get("target_images")
             if images:
+                from ok.device.capture import ImageCaptureMethod
+                from ok.device.interaction import DoNothingInteraction
                 og.device_manager.capture_method = ImageCaptureMethod(og.device_manager.exit_event, images)
                 og.device_manager.interaction = DoNothingInteraction(og.device_manager.capture_method)
             else:

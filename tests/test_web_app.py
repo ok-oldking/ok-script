@@ -181,8 +181,14 @@ def test_web_overlay_toggle_resyncs_latest_capture_window():
     finally:
         og.device_manager = previous_device_manager
 
-    app.overlay_window.sync_source_window.assert_called_once_with(source_window)
-    app.overlay_window.set_boxes_enabled.assert_called_once_with(True)
+    if sys.platform == 'win32':
+        app.overlay_window.sync_source_window.assert_called_once_with(source_window)
+        app.overlay_window.set_boxes_enabled.assert_called_once_with(True)
+    else:
+        assert app.ok_config['use_overlay'] is False
+        app.get_overlay_view.assert_not_called()
+        app.overlay_window.sync_source_window.assert_not_called()
+        app.overlay_window.set_boxes_enabled.assert_not_called()
 
 
 def test_turning_boxes_off_closes_and_releases_overlay():

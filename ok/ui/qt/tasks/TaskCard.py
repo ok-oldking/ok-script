@@ -1,3 +1,5 @@
+import sys
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget, QSizePolicy
 from qfluentwidgets import FluentIcon, PrimaryPushButton, PushButton, SwitchButton, MessageBox
@@ -8,6 +10,12 @@ from ok.ui.qt.common.OKIcon import OKIcon
 from ok.ui.qt.tasks.ConfigCard import ConfigCard
 
 logger = Logger.get_logger(__name__)
+
+
+def macos_device_selected():
+    manager = getattr(og, 'device_manager', None)
+    device = manager.get_preferred_device() if manager is not None else None
+    return isinstance(device, dict) and device.get('device') == 'macos'
 
 
 class TaskCard(ConfigCard):
@@ -25,6 +33,11 @@ class TaskCard(ConfigCard):
         self.button_layout.setSpacing(8)
         self.button_container.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.addWidget(self.button_container)
+
+        self.compatibility_label = QLabel(self)
+        self.compatibility_label.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        self.compatibility_label.setMaximumWidth(360)
+        self.compatibility_label.hide()
 
         self.waiting_label = QLabel(self)
         self.waiting_label.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
@@ -61,6 +74,7 @@ class TaskCard(ConfigCard):
 
         # Collect all buttons in display order
         self.all_buttons = [b for b in [
+            self.compatibility_label,
             self.waiting_label,
             self.instructions_button,
             self.edit_button,
@@ -72,14 +86,27 @@ class TaskCard(ConfigCard):
 
         self.update_buttons(self.task)
         communicate.task.connect(self.update_buttons)
+        communicate.adb_devices.connect(self._on_device_changed)
         task_callback = self.update_buttons
+        device_callback = self._on_device_changed
         self.destroyed.connect(
-            lambda *_args: communicate.task.disconnect(task_callback)
+            lambda *_args: (
+                communicate.task.disconnect(task_callback),
+                communicate.adb_devices.disconnect(device_callback),
+            )
         )
+
+    def _on_device_changed(self, *_args):
+        self.update_buttons(self.task)
 
     def dispose(self):
         """Release subscriptions before the Qt widget is deleted."""
         communicate.task.disconnect(self.update_buttons)
+        communicate.adb_devices.disconnect(self._on_device_changed)
+
+    def closeEvent(self, event):
+        self.dispose()
+        super().closeEvent(event)
 
     def _compact_header(self):
         """Display the task name and description in one compact row."""
@@ -103,6 +130,36 @@ class TaskCard(ConfigCard):
         self.setViewportMargins(0, compact_height, 0, 0)
         self.setFixedHeight(compact_height)
 
+    def update_compatibility(self):
+        getter = getattr(self.task, 'get_device_compatibility_state', None)
+        state = getter() if callable(getter) else {
+            'status': 'compatible', 'level': None, 'missing': (), 'reason': ''
+        }
+        status = state.get('status', 'compatible')
+        level = state.get('level')
+        missing = tuple(state.get('missing') or ())
+        if status == 'missing-capabilities':
+            detail = f"missing: {', '.join(missing)}"
+        elif status in {'experimental', 'unsupported', 'validated'}:
+            detail = status
+        else:
+            detail = ''
+        if level and detail:
+            text = f'[{level} · {detail}]'
+        else:
+            text = f'[{detail}]' if detail else ''
+        self.compatibility_label.setText(text)
+        self.compatibility_label.setToolTip(state.get('reason') or text)
+        # Keep enforcement and diagnostic detail, without crowding Mac task rows.
+        self.compatibility_label.setVisible(bool(text) and sys.platform != 'darwin')
+        if sys.platform == 'darwin':
+            self.card.titleLabel.setToolTip(state.get('reason') or text)
+        if macos_device_selected() and getattr(self, 'onetime', False):
+            # This button requests connection/start, not permission to post input.
+            # The controller rechecks requirements after provider creation.
+            return status != 'unsupported'
+        return status not in {'missing-capabilities', 'unsupported'}
+
     def update_content(self):
         content = ""
         if self.onetime:
@@ -119,7 +176,10 @@ class TaskCard(ConfigCard):
         self.setExpand(False)
         if self.task.enabled and self.task.paused:
             logger.info(f"resume paused task {self.task}")
-            self.task.unpause()
+            if macos_device_selected() or self.task.get_device_capabilities().foreground_only:
+                og.app.start_controller.start(self.task)
+            else:
+                self.task.unpause()
             return
         if self.task.first_run_alert:
             if not self.task.config.get('_first_run_alert'):
@@ -193,6 +253,7 @@ class TaskCard(ConfigCard):
             # Determine visibility for instructions button
             has_instructions = bool(getattr(self.task, 'instructions', None))
             self.instructions_button.setVisible(has_instructions)
+            device_compatible = self.update_compatibility()
             self.update_content()
 
             if self.onetime:
@@ -215,9 +276,13 @@ class TaskCard(ConfigCard):
                     self.start_button.setVisible(True)
                     self.pause_button.setVisible(False)
                     self.stop_button.setVisible(False)
+                self.start_button.setEnabled(device_compatible)
             else:
                 if self.enable_button:
                     self.enable_button.setChecked(task.enabled)
+                    # Keep an already-enabled incompatible task toggle usable so
+                    # the user can turn it off; new enablement remains blocked.
+                    self.enable_button.setEnabled(device_compatible or task.enabled)
 
             self._rebuild_button_layout()
 

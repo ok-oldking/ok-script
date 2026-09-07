@@ -1,4 +1,15 @@
-import win32con
+"""Platform-neutral and ADB key helpers.
+
+The Win32 virtual-key table is loaded lazily from ``windows_keys`` so importing
+ADB/common interaction code on another platform does not require PyWin32.
+"""
+
+from __future__ import annotations
+
+import importlib
+
+from ok.platform import WINDOWS, require_platform
+
 
 PYDIRECT_KEY_MAP = {
     'alt_l': 'altleft',
@@ -30,80 +41,9 @@ PYDIRECT_KEY_MAP = {
 }
 
 
-
 def normalize_pydirect_key(key):
     key = str(key)
     return PYDIRECT_KEY_MAP.get(key.lower(), key)
-
-
-
-vk_key_dict = {
-    'F1': win32con.VK_F1,
-    'F2': win32con.VK_F2,
-    'F3': win32con.VK_F3,
-    'F4': win32con.VK_F4,
-    'F5': win32con.VK_F5,
-    'F6': win32con.VK_F6,
-    'F7': win32con.VK_F7,
-    'F8': win32con.VK_F8,
-    'F9': win32con.VK_F9,
-    'F10': win32con.VK_F10,
-    'F11': win32con.VK_F11,
-    'F12': win32con.VK_F12,
-    'ESC': win32con.VK_ESCAPE,
-    'CTRL': win32con.VK_CONTROL,
-    'CONTROL': win32con.VK_CONTROL,
-    'LCTRL': win32con.VK_LCONTROL,
-    'RCTRL': win32con.VK_RCONTROL,
-    'CTRL_L': win32con.VK_LCONTROL,
-    'CTRL_R': win32con.VK_RCONTROL,
-    'LCONTROL': win32con.VK_LCONTROL,
-    'RCONTROL': win32con.VK_RCONTROL,
-    'ALT': win32con.VK_MENU,
-    'LALT': win32con.VK_LMENU,
-    'RALT': win32con.VK_RMENU,
-    'ALT_L': win32con.VK_LMENU,
-    'ALT_R': win32con.VK_RMENU,
-    'SHIFT': win32con.VK_SHIFT,
-    'LSHIFT': win32con.VK_LSHIFT,
-    'RSHIFT': win32con.VK_RSHIFT,
-    'SHIFT_L': win32con.VK_LSHIFT,
-    'SHIFT_R': win32con.VK_RSHIFT,
-    'TAB': win32con.VK_TAB,
-    'ENTER': win32con.VK_RETURN,
-    'RETURN': win32con.VK_RETURN,
-    'SPACE': win32con.VK_SPACE,
-    'LEFT': win32con.VK_LEFT,
-    'UP': win32con.VK_UP,
-    'RIGHT': win32con.VK_RIGHT,
-    'DOWN': win32con.VK_DOWN,
-    'BACKSPACE': win32con.VK_BACK,
-    'PAGEUP': win32con.VK_PRIOR,
-    'PAGE_UP': win32con.VK_PRIOR,
-    'PAGEDOWN': win32con.VK_NEXT,
-    'PAGE_DOWN': win32con.VK_NEXT,
-    'HOME': win32con.VK_HOME,
-    'END': win32con.VK_END,
-    'INSERT': win32con.VK_INSERT,
-    'DELETE': win32con.VK_DELETE,
-    'CAPSLOCK': win32con.VK_CAPITAL,
-    'CAPS_LOCK': win32con.VK_CAPITAL,
-    'NUMLOCK': win32con.VK_NUMLOCK,
-    'NUM_LOCK': win32con.VK_NUMLOCK,
-    'SCROLLLOCK': win32con.VK_SCROLL,
-    'SCROLL_LOCK': win32con.VK_SCROLL,
-    'PRINTSCREEN': win32con.VK_SNAPSHOT,
-    'PRINT_SCREEN': win32con.VK_SNAPSHOT,
-    'WIN': win32con.VK_LWIN,
-    'WINDOWS': win32con.VK_LWIN,
-    'COMMAND': win32con.VK_LWIN,
-    'CMD': win32con.VK_LWIN,
-    'CMD_L': win32con.VK_LWIN,
-    'CMD_R': win32con.VK_RWIN,
-    'META': win32con.VK_LWIN,
-    # Add more keys as needed
-}
-
 
 
 ADB_KEY_MAP = {
@@ -151,3 +91,21 @@ ADB_KEY_MAP = {
     'printscreen': 'KEYCODE_SYSRQ',
     'print_screen': 'KEYCODE_SYSRQ',
 }
+
+
+__all__ = [
+    'ADB_KEY_MAP',
+    'PYDIRECT_KEY_MAP',
+    'normalize_pydirect_key',
+    'vk_key_dict',
+]
+
+
+def __getattr__(name):
+    if name != 'vk_key_dict':
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    require_platform('Win32 virtual-key map', (WINDOWS,))
+    value = importlib.import_module(
+        'ok.device.interaction_methods.windows_keys').vk_key_dict
+    globals()[name] = value
+    return value

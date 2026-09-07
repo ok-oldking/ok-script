@@ -1,13 +1,17 @@
 import time
 
-import win32gui
-from pynput import mouse, keyboard
-
 from ok import og
+from ok.platform import PlatformUnavailableError, is_windows
 from ok.ui.qt.Communicate import communicate
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
+
+if is_windows():
+    import win32gui
+else:
+    win32gui = None
+
 
 class Recorder:
     def __init__(self):
@@ -20,6 +24,7 @@ class Recorder:
         self.target_title = None
         self.is_active = False
         self.inactive_start_time = 0
+        self._mouse_module = None
 
     def on_window(self, visible, *args):
         if self.is_recording:
@@ -40,6 +45,12 @@ class Recorder:
                     self.inactive_start_time = time.time()
 
     def start(self, target_title):
+        if not is_windows():
+            raise PlatformUnavailableError(
+                'Input script recording is currently available only on Windows')
+        from pynput import keyboard, mouse
+
+        self._mouse_module = mouse
         self.is_recording = True
         self.events = []
         self.last_event_time = time.time()
@@ -143,9 +154,9 @@ class Recorder:
         rel_x, rel_y = self.get_relative_coords(x, y)
         
         btn_str = "left"
-        if button == mouse.Button.right:
+        if button == self._mouse_module.Button.right:
             btn_str = "right"
-        elif button == mouse.Button.middle:
+        elif button == self._mouse_module.Button.middle:
             btn_str = "middle"
             
         if pressed:
