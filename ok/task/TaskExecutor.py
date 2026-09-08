@@ -532,6 +532,18 @@ class TaskExecutor:
         ]
         return min(delays, default=default)
 
+    def _prepare_task_for_run(self, is_trigger_task):
+        """Prepare a task's input backend before the first frame is requested.
+
+        Foreground interaction backends such as Pynput only report a capture
+        frame while the target window is active.  One-time tasks used to
+        request that frame first and only bring the target window forward from
+        inside ``task.run()``, which is too late and can leave the task waiting
+        indefinitely.
+        """
+        if not is_trigger_task and self.interaction is not None:
+            self.interaction.on_run()
+
     def execute(self):
         logger.info(f"start execute")
         while not self.exit_event.is_set():
@@ -553,6 +565,7 @@ class TaskExecutor:
                 self.current_task = task
                 if not is_trigger_task:
                     communicate.task.emit(task)
+                self._prepare_task_for_run(is_trigger_task)
                 if cycled or self._frame is None:
                     if self.next_frame(time_out=4) is None and is_trigger_task:
                         logger.info("no frame available, skip remaining trigger tasks")

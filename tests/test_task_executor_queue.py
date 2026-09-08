@@ -131,6 +131,60 @@ class TestTaskExecutorQueue(unittest.TestCase):
         task.on_destroy.assert_called_once_with()
         interaction.on_destroy.assert_called_once_with()
 
+    def test_prepare_one_time_task_before_first_frame(self):
+        executor = self.make_executor([])
+        interaction = SimpleNamespace(on_run=Mock(), on_destroy=Mock())
+        executor.device_manager = SimpleNamespace(interaction=interaction)
+
+        executor._prepare_task_for_run(is_trigger_task=False)
+
+        interaction.on_run.assert_called_once_with()
+
+    def test_prepare_trigger_task_does_not_force_foreground(self):
+        executor = self.make_executor([])
+        interaction = SimpleNamespace(on_run=Mock())
+        executor.device_manager = SimpleNamespace(interaction=interaction)
+
+        executor._prepare_task_for_run(is_trigger_task=True)
+
+        interaction.on_run.assert_not_called()
+
+    def test_one_time_task_prepares_interaction_before_first_frame(self):
+        executor = self.make_executor([])
+        executor.paused = False
+        executor._frame = None
+        executor._last_frame_time = time.time()
+        executor.reset_scene = lambda check_enabled=True: None
+        interaction = SimpleNamespace(on_run=Mock())
+        executor.device_manager = SimpleNamespace(interaction=interaction)
+
+        task = SimpleNamespace(
+            name="FishingOnce",
+            start_time=None,
+            running=False,
+            exit_after_task=False,
+            config={},
+            run=Mock(),
+            disable=Mock(),
+            on_destroy=Mock(),
+        )
+        events = []
+        interaction.on_run.side_effect = lambda: events.append("on_run")
+        executor.next_frame = Mock(
+            side_effect=lambda time_out=6: events.append("next_frame"))
+        task.run.side_effect = lambda: (
+            events.append("run"),
+            executor.exit_event.set(),
+        )
+        executor.next_task = lambda: (task, False, False)
+
+        with patch.object(task_executor_module.communicate.task, "emit"), \
+                patch.object(task_executor_module.communicate.task_done, "emit"), \
+                patch.object(task_executor_module, "prevent_sleeping"):
+            executor.execute()
+
+        self.assertEqual(["on_run", "next_frame", "run"], events)
+
 
 if __name__ == '__main__':
     unittest.main()
