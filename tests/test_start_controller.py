@@ -122,6 +122,63 @@ class TestStartController(unittest.TestCase):
         self.assertEqual(['execute', 'stable', 'ready'], call_order)
         execute.assert_called_once_with(r'C:\game.exe', arguments=None, start_method='os.startfile')
 
+    def _execute_with_config(self, config, device=None, dx11=False):
+        """Run start_device against a fake device manager and return the execute mock."""
+        controller = self.make_controller()
+        controller.config = config
+        device = device if device is not None else {'connected': False, 'device': 'windows'}
+        device_manager = Mock()
+        device_manager.get_preferred_device.return_value = device
+        device_manager.get_exe_path.return_value = r'C:\game.exe'
+        fake_og = SimpleNamespace(
+            device_manager=device_manager,
+            global_config=Mock(),
+        )
+        fake_og.global_config.get_config.return_value = {'Launch with DX11': True} if dx11 else None
+        controller._wait_until_started_window_stable = Mock(return_value=True)
+        controller._wait_until_device_ready = Mock(return_value=True)
+        controller.start_method = 'start'
+        execute = Mock(return_value=True)
+
+        with patch.object(start_controller_module, 'og', fake_og), \
+                patch.object(start_controller_module, 'is_admin', return_value=True), \
+                patch.object(start_controller_module, 'execute', execute):
+            self.assertTrue(controller.start_device())
+
+        return execute
+
+    def test_windows_args_list_is_passed_to_execute(self):
+        execute = self._execute_with_config(
+            {'windows': {'args': ['-start=launcher', '-popupwindow']}})
+
+        execute.assert_called_once_with(r'C:\game.exe', arguments='-start=launcher -popupwindow',
+                                       start_method='start')
+
+    def test_windows_args_may_be_a_single_string(self):
+        execute = self._execute_with_config({'windows': {'args': '-start=launcher -popupwindow'}})
+
+        execute.assert_called_once_with(r'C:\game.exe', arguments='-start=launcher -popupwindow',
+                                       start_method='start')
+
+    def test_windows_args_are_appended_after_the_dx11_switch(self):
+        execute = self._execute_with_config({'windows': {'args': ['-start=launcher']}}, dx11=True)
+
+        execute.assert_called_once_with(r'C:\game.exe',
+                                       arguments='-dx11 -d3d11 -force-d3d11 -start=launcher',
+                                       start_method='start')
+
+    def test_empty_windows_args_do_not_change_the_launch_command(self):
+        execute = self._execute_with_config({'windows': {'args': []}})
+
+        execute.assert_called_once_with(r'C:\game.exe', arguments=None, start_method='start')
+
+    def test_windows_args_are_not_applied_when_an_emulator_is_started(self):
+        execute = self._execute_with_config(
+            {'windows': {'args': ['-start=launcher']}},
+            device={'connected': False, 'device': 'adb', 'emulator': 'MuMuPlayer'})
+
+        execute.assert_called_once_with(r'C:\game.exe', arguments=None, start_method='start')
+
     def test_gpu_driver_warning_identifies_each_enabled_vendor_feature(self):
         controller = self.make_controller()
         emit = Mock()

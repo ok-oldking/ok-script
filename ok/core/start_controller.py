@@ -175,6 +175,54 @@ class StartController:
             time.sleep(self.STARTED_WINDOW_POLL_INTERVAL)
         return False
 
+    @staticmethod
+    def _normalize_launch_args(args):
+        """Normalize configured launch arguments into a single argument string.
+
+        `args` may be a string (`'-dx11 -popupwindow'`) or an iterable of tokens
+        (`['-start=launcher', '-popupwindow']`). Empty values collapse to `None`
+        so that no trailing whitespace is ever appended to the command line.
+        """
+        if args is None:
+            return None
+        if isinstance(args, str):
+            tokens = args.split()
+        else:
+            try:
+                tokens = list(args)
+            except TypeError:
+                tokens = [args]
+        tokens = [str(token).strip() for token in tokens]
+        tokens = [token for token in tokens if token]
+        return ' '.join(tokens) if tokens else None
+
+    def _configured_launch_args(self):
+        """Read the `windows.args` option from the project config.
+
+        Projects can declare the extra command line arguments used to start the
+        game, e.g. `{'windows': {'args': ['-start=launcher']}}`.
+        """
+        config = getattr(self, 'config', None) or {}
+        return (config.get('windows') or {}).get('args')
+
+    def _build_launch_arguments(self, device=None):
+        """Build the command line arguments used when launching the game.
+
+        Merges the global `Launch with DX11` switch with the per project
+        `windows.args` option. `windows.args` only applies when the launched
+        executable is the Windows client itself, never when an emulator is
+        started on behalf of the project. Returns `None` when nothing applies.
+        """
+        args = None
+        dx11_config = og.global_config.get_config('Launch with DX11')
+        if dx11_config and dx11_config.get('Launch with DX11'):
+            args = "-dx11 -d3d11 -force-d3d11"
+        if device is None or device.get('device') == 'windows':
+            extra_args = self._normalize_launch_args(self._configured_launch_args())
+            if extra_args:
+                args = f"{args} {extra_args}".strip() if args else extra_args
+        return args
+
     def start_device(self, initial_refresh_done=False):
         device = og.device_manager.get_preferred_device()
         logger.info(f'start_device: {device}')
@@ -189,10 +237,9 @@ class StartController:
             path = og.device_manager.get_exe_path(device)
             if path:
                 logger.info(f"starting game {path}")
-                args = None
-                dx11_config = og.global_config.get_config('Launch with DX11')
-                if dx11_config and dx11_config.get('Launch with DX11'):
-                    args = "-dx11 -d3d11 -force-d3d11"
+                args = self._build_launch_arguments(device)
+                if args:
+                    logger.info(f"launch arguments: {args}")
                 if not execute(path, arguments=args, start_method=self.start_method):
                     communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
                     return False

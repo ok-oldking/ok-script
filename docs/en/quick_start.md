@@ -61,6 +61,7 @@ For a Windows client:
 - `exe`: accepted executable names, such as `['StarRail.exe']`
 - `start_exe`: whether the application starts and checks the game process; defaults to `True`
 - `start_method`: process launch method; defaults to `start`, with `os.startfile` also available
+- `args`: extra command line arguments used to start the game, such as `['-start=launcher']`; a plain string (`'-start=launcher -popupwindow'`) is also accepted. Only appended when the Windows client itself is launched, never when an emulator is started.
 - `interaction`: input backend, such as `Genshin`, `PostMessage`, or `Pynput`
 
 For an Android emulator or physical device:
