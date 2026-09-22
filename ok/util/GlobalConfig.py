@@ -296,6 +296,7 @@ class AppLauncherConfig(dict):
         self.default = {
             APP_LAUNCHER_AUTO_START: False,
             APP_LAUNCHER_UPDATE_METHOD: UPDATE_METHOD_VALUES['AUTO_UPDATE'],
+            APP_LAUNCHER_AUTO_START_DELAY: '10',
         }
         super().__init__(self._to_display_config(launcher_config))
 
@@ -303,10 +304,25 @@ class AppLauncherConfig(dict):
         display_config = {
             APP_LAUNCHER_AUTO_START: launcher_config['auto_start'],
             APP_LAUNCHER_UPDATE_METHOD: UPDATE_METHOD_VALUES[launcher_config['update_method']],
+            APP_LAUNCHER_AUTO_START_DELAY: self._read_delay(launcher_config),
         }
         if self.basic_config is not None and KILL_LAUNCHER_AFTER_START in self.basic_config:
             display_config[KILL_LAUNCHER_AFTER_START] = self.basic_config[KILL_LAUNCHER_AFTER_START]
         return display_config
+
+    def _read_delay(self, launcher_config):
+        """get_app_config() only surfaces fields known to PyAppify, so read the
+        raw app.json for the delay."""
+        delay = launcher_config.get('auto_start_delay_secs')
+        try:
+            path = self.pyappify_module.get_app_json_path()
+            if path:
+                data = read_json_file(path)
+                if isinstance(data, dict) and data.get('auto_start_delay_secs') is not None:
+                    delay = data['auto_start_delay_secs']
+        except Exception as e:
+            logger.error('Failed to read auto start delay from app.json', e)
+        return str(10 if delay is None else delay)
 
     def get_default(self, key):
         if key == KILL_LAUNCHER_AFTER_START and self.basic_config is not None:
@@ -321,6 +337,7 @@ class AppLauncherConfig(dict):
             auto_start=self.default[APP_LAUNCHER_AUTO_START],
             update_method=UPDATE_METHOD_LABELS[self.default[APP_LAUNCHER_UPDATE_METHOD]],
         )
+        self[APP_LAUNCHER_AUTO_START_DELAY] = '10'
 
     def __setitem__(self, key, value):
         if value == self.get(key):
@@ -329,6 +346,18 @@ class AppLauncherConfig(dict):
             self._update_launcher(auto_start=value)
         elif key == APP_LAUNCHER_UPDATE_METHOD and value in UPDATE_METHOD_LABELS:
             self._update_launcher(update_method=UPDATE_METHOD_LABELS[value])
+        elif key == APP_LAUNCHER_AUTO_START_DELAY:
+            try:
+                seconds = max(0, min(3600, int(value)))
+            except (TypeError, ValueError):
+                return
+            path = self.pyappify_module.get_app_json_path()
+            data = read_json_file(path)
+            if not isinstance(data, dict):
+                data = {}
+            data['auto_start_delay_secs'] = seconds
+            write_json_file(path, data)
+            super().__setitem__(key, str(seconds))
         elif key == KILL_LAUNCHER_AFTER_START and isinstance(value, bool) and self.basic_config is not None:
             self.basic_config[key] = value
             super().__setitem__(key, self.basic_config[key])
@@ -373,6 +402,11 @@ def create_app_launcher_options(pyappify_module, basic_config=None):
             'type': 'drop_down',
             'options': list(UPDATE_METHOD_LABELS),
         },
+        APP_LAUNCHER_AUTO_START_DELAY: {
+            'type': 'line_edit',
+            'minimum_width': 56,
+            'maximum_width': 56,
+        },
     }
     show_launcher = getattr(pyappify_module, 'show_pyappify', None)
     if callable(show_launcher):
@@ -390,6 +424,7 @@ def create_app_launcher_options(pyappify_module, basic_config=None):
         config_description={
             APP_LAUNCHER_AUTO_START: 'Start the launcher automatically when you sign in',
             APP_LAUNCHER_UPDATE_METHOD: 'Choose how the launcher installs updates',
+            APP_LAUNCHER_AUTO_START_DELAY: 'Seconds to wait before auto-starting the app (0 = start immediately)',
             APP_LAUNCHER_ACTION: 'Open the app launcher to manage updates',
         },
         config_type=config_type,
