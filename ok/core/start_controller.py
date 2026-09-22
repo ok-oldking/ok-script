@@ -24,6 +24,7 @@ class StartController:
         self.start_exe = windows_config.get('start_exe', True)
         self.start_method = windows_config.get('start_method', WINDOWS_START_METHOD_START)
         self.starting = False
+        self.announce_start = False
 
     def tr(self, message):
         app = getattr(og, "app", None)
@@ -53,51 +54,11 @@ class StartController:
         finally:
             self.starting = False
 
-    def _do_start(self, task=None, exit_after=False):
-        communicate.starting_emulator.emit(False, None, self.start_timeout)
+    def _finish_start(self, task=None, exit_after=False):
+        """Enable pending tasks and start the executor, shared by the
+        direct-start and the launch flow."""
         tasks_to_enable = []
         try:
-            if isinstance(task, int):
-                task = og.executor.onetime_tasks[task]
-                logger.info(f"enable param task {task}")
-
-            if task and task.enabled and task.paused:
-                logger.info(f"resume paused task {task}")
-                if exit_after:
-                    task.exit_after_task = True
-                    communicate.task.emit(task)
-                task.unpause()
-                communicate.starting_emulator.emit(True, None, 0)
-                return True
-
-            if task and og.executor.current_task and og.executor.current_task != task:
-                logger.info(f"queue task while another task is running {task}")
-                if exit_after:
-                    task.exit_after_task = True
-                self._mark_task_enabled(task)
-                if og.executor.paused:
-                    og.executor.start()
-                communicate.starting_emulator.emit(True, None, 0)
-                return True
-        except Exception as e:
-            logger.error(f'do_start resume exception: {e}', e)
-            communicate.starting_emulator.emit(True, self.tr(f'Start failed: {e}'), 0)
-            return False
-
-        try:
-            logger.info(f'do_start: call do_refresh {self.start_exe}')
-            og.device_manager.do_refresh(True)
-        except Exception as e:
-            logger.error(f'do_start do_refresh exception: {e}', e)
-            communicate.starting_emulator.emit(True, self.tr(str(e)), 0)
-            return False
-
-        try:
-            if self.start_exe:
-                if not self.start_device(initial_refresh_done=True):
-                    return False
-            else:
-                logger.info('windows.start_exe is False, skip start_device')
             self.check_gpu_driver_post_processing()
 
             def add_task_to_enable(enable_task):
@@ -124,6 +85,101 @@ class StartController:
             logger.error(f'do_start exception: {e}', e)
             communicate.starting_emulator.emit(True, self.tr(f'Start failed: {e}'), 0)
             return False
+
+    def _do_start(self, task=None, exit_after=False):
+        device = og.device_manager.get_preferred_device()
+        device_connected = (device is not None and device.get('connected')
+                            and og.device_manager.capture_method is not None
+                            and og.device_manager.capture_method.connected())
+
+        try:
+            if isinstance(task, int):
+                task = og.executor.onetime_tasks[task]
+                logger.info(f"enable param task {task}")
+
+            if task and task.enabled and task.paused:
+                if not device_connected:
+                    # The game is not running: queuing/resuming would only run
+                    # the task against a dead window. Fall through to the
+                    # launch flow below.
+                    logger.info('do_start: task paused but game not connected, go through launch flow')
+                else:
+                    logger.info(f"resume paused task {task}")
+                    if exit_after:
+                        task.exit_after_task = True
+                        communicate.task.emit(task)
+                    task.unpause()
+                    communicate.starting_emulator.emit(True, None, 0)
+                    return True
+
+            if (device_connected and task and og.executor.current_task
+                    and og.executor.current_task != task):
+                logger.info(f"queue task while another task is running {task}")
+                if exit_after:
+                    task.exit_after_task = True
+                self._mark_task_enabled(task)
+                if og.executor.paused:
+                    self.announce_start = True
+                    og.executor.start()
+                communicate.starting_emulator.emit(True, None, 0)
+                return True
+        except Exception as e:
+            logger.error(f'do_start resume exception: {e}', e)
+            communicate.starting_emulator.emit(True, self.tr(f'Start failed: {e}'), 0)
+            return False
+
+        # Already connected: skip the refresh/launch flow entirely.
+        if device_connected:
+            logger.info('do_start: preferred device already connected, start directly')
+            return self._finish_start(task, exit_after)
+
+        communicate.starting_emulator.emit(False, None, self.start_timeout)
+        try:
+            logger.info(f'do_start: call do_refresh {self.start_exe}')
+            og.device_manager.do_refresh(True)
+        except Exception as e:
+            logger.error(f'do_start do_refresh exception: {e}', e)
+            communicate.starting_emulator.emit(True, self.tr(str(e)), 0)
+            return False
+
+        try:
+            device = og.device_manager.get_preferred_device()
+            launched_path = og.device_manager.get_exe_path(device) if device else None
+            will_launch = self.start_exe and device is not None and not device.get('connected')
+            if self.start_exe:
+                if not self.start_device(initial_refresh_done=True):
+                    return False
+            else:
+                logger.info('windows.start_exe is False, skip start_device')
+            self.reselect_launched_device(launched_path)
+            if task and task.enabled and task.paused:
+                logger.info(f"resume paused task after launch {task}")
+                task.unpause()
+            # Only a start that actually brought the game up announces itself
+            # (task tab switch + Start Success); plain resumes stay quiet.
+            self.announce_start = will_launch
+            return self._finish_start(task, exit_after)
+        except Exception as e:
+            logger.error(f'do_start exception: {e}', e)
+            communicate.starting_emulator.emit(True, self.tr(f'Start failed: {e}'), 0)
+            return False
+
+    def reselect_launched_device(self, launched_path):
+        """Point the preferred device back at the window of the game we just launched.
+
+        A relaunch creates a new hwnd and therefore a new device imei, so the
+        previous selection can go stale when multiple windows are listed.
+        """
+        if not launched_path:
+            return
+        launched_path = str(launched_path).lower()
+        for device in og.device_manager.get_devices():
+            full_path = str(device.get('full_path') or '').lower()
+            if full_path == launched_path:
+                if og.device_manager.config.get('preferred') != device.get('imei'):
+                    logger.info(f'reselect launched device {device.get("imei")}')
+                    og.device_manager.set_preferred_device(imei=device.get('imei'))
+                return
 
     def _wait_until_device_ready(self, refresh_first=True):
         wait_until = time.time() + self.start_timeout

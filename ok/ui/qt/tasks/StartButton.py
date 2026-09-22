@@ -4,7 +4,6 @@ from qfluentwidgets import PushButton
 
 from ok import Logger, og
 from ok.ui.qt.Communicate import communicate
-from ok.ui.qt.util.Alert import show_alert
 
 logger = Logger.get_logger(__name__)
 
@@ -17,6 +16,12 @@ class StartButton(PushButton):
         self.animation = QPropertyAnimation(self, b"color")
         self.update_paused(True)
         communicate.executor_paused.connect(self.update_paused)
+        communicate.starting_emulator.connect(self.on_starting_result)
+
+    def on_starting_result(self, done, error, seconds_left):
+        # A failed start leaves the executor paused; resync the check state.
+        if error and og.executor.paused:
+            self.update_paused(True)
 
     def update_paused(self, paused):
         if paused:
@@ -32,9 +37,9 @@ class StartButton(PushButton):
     def toggle_text(self):
         if self.isChecked():
             logger.info("Click Start Executor")
-            if not og.executor.start():
-                show_alert("Error", "No Task to Run, Please Enable Task First!")
-                self.setChecked(False)
+            # Share the unified start flow: direct start when the game is
+            # already connected, launch+connect otherwise.
+            og.app.start_controller.start()
         else:
             logger.info("Click Pause Executor")
             og.executor.pause()

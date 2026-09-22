@@ -217,6 +217,7 @@ _OK_CONFIG_DEFAULTS = {
     'window_maximized': False,
     'navigation_expanded': True,
     'use_overlay': False,
+    'auto_reconnect_when_restored': False,
 }
 
 
