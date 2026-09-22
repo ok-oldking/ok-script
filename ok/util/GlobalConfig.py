@@ -13,6 +13,7 @@ APP_LAUNCHER_AUTO_START = 'Auto Start {app_name}'
 APP_LAUNCHER_UPDATE_METHOD = 'Auto Update'
 APP_LAUNCHER_ACTION = 'Launcher'
 APP_LAUNCHER_OPEN = 'Open Launcher'
+APP_LAUNCHER_AUTO_START_DELAY = 'Auto Start Delay (seconds)'
 KILL_LAUNCHER_AFTER_START = 'Kill Launcher After Start'
 NOTIFICATION_OPTION_NAME = 'Notification'
 SYSTEM_NOTIFICATION_ENABLED = 'System Notification'
@@ -352,6 +353,8 @@ class AppLauncherConfig(dict):
             except (TypeError, ValueError):
                 return
             path = self.pyappify_module.get_app_json_path()
+            if not path:
+                return
             data = read_json_file(path)
             if not isinstance(data, dict):
                 data = {}
