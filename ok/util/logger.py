@@ -49,6 +49,9 @@ class Logger:
         stack_trace_str = self.exception_to_str(exception)
         self.logger.error(f"{self.name}:{message} {stack_trace_str}")
 
+    def exception(self, message, *args, **kwargs):
+        self.logger.exception(f"{self.name}:{message}", *args, **kwargs)
+
     def critical(self, message):
         self.logger.critical(f"{self.name}:{message}")
 
