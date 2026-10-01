@@ -193,6 +193,12 @@ class StartController:
                 dx11_config = og.global_config.get_config('Launch with DX11')
                 if dx11_config and dx11_config.get('Launch with DX11'):
                     args = "-dx11 -d3d11 -force-d3d11"
+                if device['device'] == "windows":
+                    launch_arguments = (self.config.get('windows') or {}).get('launch_arguments')
+                    if callable(launch_arguments):
+                        launch_arguments = launch_arguments()
+                    if launch_arguments:
+                        args = f'{args or ""} {launch_arguments}'.strip()
                 if not execute(path, arguments=args, start_method=self.start_method):
                     communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
                     return False

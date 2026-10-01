@@ -74,6 +74,7 @@ python -m pip install -r requirements.txt
   - `exe`：游戏可执行文件名列表，例如 `['StarRail.exe']`。
   - `start_exe`：是否由脚本启动并检查游戏进程，默认为 `True`。设为 `False` 后，启动任务时不会自动启动或检查游戏。
   - `start_method`：启动游戏的方式，默认为 `start`，也可使用 `os.startfile`。
+  - `launch_arguments`：额外的 Windows 启动参数，可填写字符串或无参数回调函数（返回字符串或 `None`）。回调在每次启动前执行，可读取当前设置；参数会追加到 DX11 参数后。不配置则不添加额外参数。
   - `interaction`：交互方式，例如 `Genshin`、`PostMessage` 或 `Pynput`。
 - **`adb`**：适配安卓模拟器或真机时填写。
   - `packages`：游戏包名列表，例如 `['com.abc.efg1']`。
