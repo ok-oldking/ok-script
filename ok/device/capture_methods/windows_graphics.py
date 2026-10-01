@@ -157,6 +157,17 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         return 0
 
     def start_or_stop(self, capture_cursor=False):
+        # Lifecycle changes may call close(), which needs get_frame_lock.
+        # Always acquire it before lock, just as do_get_frame() does, so a
+        # concurrent startup refresh cannot deadlock a frame request.
+        if not self.get_frame_lock.acquire(timeout=WGC_FRAME_WAIT_TIMEOUT):
+            raise TimeoutError('Windows Graphics Capture is busy, please retry starting the game')
+        try:
+            return self._start_or_stop(capture_cursor)
+        finally:
+            self.get_frame_lock.release()
+
+    def _start_or_stop(self, capture_cursor=False):
         with self.lock:
             if self.exit_event.is_set():
                 logger.warning('start_or_stop exit_event.is_set() return')
@@ -297,8 +308,12 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     def do_get_frame(self):
         # frame_requested and last_frame represent one in-flight request. Keep
         # concurrent task/UI callers from consuming each other's response.
-        with self.get_frame_lock:
+        if not self.get_frame_lock.acquire(timeout=WGC_FRAME_WAIT_TIMEOUT):
+            raise TimeoutError('Windows Graphics Capture is busy, please retry starting the game')
+        try:
             return self._do_get_frame()
+        finally:
+            self.get_frame_lock.release()
 
     def _do_get_frame(self):
         if self.exit_event.is_set():

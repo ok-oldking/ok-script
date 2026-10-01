@@ -61,6 +61,23 @@ class TestStartController(unittest.TestCase):
 
         self.assertFalse(controller.starting)
 
+    def test_capture_refresh_timeout_closes_loading_and_reports_error(self):
+        controller = self.make_controller()
+        controller.start_exe = True
+        controller.tr = lambda message: message
+        message = 'Windows Graphics Capture is busy, please retry starting the game'
+        device_manager = SimpleNamespace(do_refresh=Mock(side_effect=TimeoutError(message)))
+        emit = Mock()
+        fake_communicate = SimpleNamespace(starting_emulator=SimpleNamespace(emit=emit))
+
+        with patch.object(start_controller_module, 'og', SimpleNamespace(device_manager=device_manager)), \
+                patch.object(start_controller_module, 'communicate', fake_communicate):
+            self.assertFalse(controller.do_start())
+
+        self.assertFalse(controller.starting)
+        self.assertEqual((False, None, controller.start_timeout), emit.call_args_list[0].args)
+        self.assertEqual((True, message, 0), emit.call_args_list[-1].args)
+
     def test_started_window_must_be_usable_and_stable_before_continuing(self):
         controller = self.make_controller()
         window = FakeWindow([(80, 80), (120, 120), (140, 120), (140, 120), (140, 120)])

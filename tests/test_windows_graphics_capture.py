@@ -2,7 +2,7 @@ import unittest
 import threading
 import time
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 
@@ -26,6 +26,108 @@ class _FakeFramePool:
 
     def TryGetNextFrame(self):
         return self.frame
+
+
+class _ObservedRLock:
+    def __init__(self):
+        self.lock = threading.RLock()
+        self.attempted = threading.Event()
+
+    def acquire(self, **kwargs):
+        self.attempted.set()
+        return self.lock.acquire(**kwargs)
+
+    def release(self):
+        self.lock.release()
+
+    def __enter__(self):
+        self.acquire()
+        return self
+
+    def __exit__(self, *_args):
+        self.release()
+
+
+class TestWindowsGraphicsCaptureLifecycle(unittest.TestCase):
+    def _method(self):
+        method = object.__new__(WindowsGraphicsCaptureMethod)
+        method.lock = threading.RLock()
+        method.get_frame_lock = _ObservedRLock()
+        method.exit_event = threading.Event()
+        method.frame_requested = threading.Event()
+        method.frame_event = threading.Event()
+        method._frame_cancel_generation = 0
+        method._hwnd_window = SimpleNamespace(exists=True, capture_target_signature='new')
+        method.get_capture_hwnd = lambda: 123
+        method.capture_target_signature = 'old'
+        method.frame_pool = Mock()
+        method.session = None
+        method.rtdevice = method.dxdevice = method.immediatedc = method.cputex = None
+        method.contexts = {}
+        method.last_start_failure_key = 123
+        method.last_start_failure_time = time.time()
+        return method
+
+    def test_target_change_does_not_hold_capture_lock_while_waiting_for_frame_request(self):
+        method = self._method()
+        pool = method.frame_pool
+        results = []
+        errors = []
+
+        def refresh():
+            try:
+                results.append(method.start_or_stop())
+            except Exception as error:
+                errors.append(error)
+
+        # Simulate a frame consumer already owning the request lock while the
+        # startup thread discovers a changed window target.
+        with method.get_frame_lock:
+            method.get_frame_lock.attempted.clear()
+            worker = threading.Thread(target=refresh, daemon=True)
+            worker.start()
+            self.assertTrue(method.get_frame_lock.attempted.wait(1))
+            acquired = method.lock.acquire(timeout=.2)
+            if acquired:
+                method.lock.release()
+        worker.join(1)
+
+        self.assertTrue(acquired, 'startup held the capture lock while waiting for a frame request')
+        self.assertFalse(worker.is_alive())
+        self.assertEqual([], errors)
+        self.assertEqual([False], results)
+        pool.Close.assert_called_once()
+        self.assertIsNone(method.frame_pool)
+
+    def test_busy_capture_reports_error_instead_of_waiting_indefinitely(self):
+        for operation in ('start_or_stop', 'do_get_frame'):
+            with self.subTest(operation=operation):
+                method = self._method()
+                errors = []
+
+                def call():
+                    try:
+                        getattr(method, operation)()
+                    except Exception as error:
+                        errors.append(error)
+
+                with method.get_frame_lock, patch.object(windows_graphics_module, 'WGC_FRAME_WAIT_TIMEOUT', .05):
+                    worker = threading.Thread(target=call, daemon=True)
+                    worker.start()
+                    worker.join(.5)
+                    self.assertFalse(worker.is_alive())
+                self.assertEqual(1, len(errors))
+                self.assertIsInstance(errors[0], TimeoutError)
+                self.assertIn('Windows Graphics Capture is busy', str(errors[0]))
+
+    def test_frame_request_can_restart_changed_target_without_deadlocking_itself(self):
+        method = self._method()
+        pool = method.frame_pool
+
+        self.assertIsNone(method.do_get_frame())
+
+        pool.Close.assert_called_once()
+        self.assertIsNone(method.frame_pool)
 
 
 class TestCaptureTargetSignature(unittest.TestCase):
