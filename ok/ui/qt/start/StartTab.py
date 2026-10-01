@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QAbstractItemView, QVBoxLayout, QHBoxLayout, QWidget, QListWidgetItem, QSizePolicy
-from qfluentwidgets import ListWidget, PushButton, FluentIcon, SwitchButton, SearchLineEdit
+from qfluentwidgets import ListWidget, PushButton, FluentIcon, SwitchButton, SearchLineEdit, CheckBox
 
 from ok.ui.qt.Communicate import communicate
 from ok.ui.qt.common.design_system import DesignToken
@@ -57,6 +57,13 @@ class StartTab(Tab):
             device_view_layout.addWidget(self.device_search_box)
         device_view_layout.addWidget(self.device_list)
         self.device_container = Card(self.tr("Choose Window"), device_view_widget, stretch=1)
+        from ok import og
+        self.auto_reconnect_switch = CheckBox(self.tr("Auto Reconnect"))
+        self.auto_reconnect_switch.setToolTip(self.tr("Auto Reconnect When Game Restored"))
+        self.auto_reconnect_switch.setChecked(
+            og.app.ok_config.get('auto_reconnect_when_restored', False))
+        self.auto_reconnect_switch.toggled.connect(self.on_auto_reconnect_toggled)
+        self.device_container.add_top_widget(self.auto_reconnect_switch)
         horizontal_layout.addWidget(self.device_container, 2)
         self.device_list.itemSelectionChanged.connect(self.device_index_changed)
 
@@ -265,6 +272,10 @@ class StartTab(Tab):
         og.device_manager.refresh()
         self.start_card.refresh_button.setDisabled(True)
         self.start_card.refresh_button.setText(self.tr("Refreshing"))
+
+    def on_auto_reconnect_toggled(self, checked):
+        from ok import og
+        og.app.ok_config['auto_reconnect_when_restored'] = bool(checked)
 
     def capture_index_changed(self):  # i is an index
         i = self.capture_list.currentRow()

@@ -737,10 +737,21 @@ class MainWindow(FluentWindow):
         return self.trigger_tab
 
     def executor_paused(self, paused):
-        task_tab = self.startup_task_tab()
-        if not paused and self.stackedWidget.currentIndex() == 0 and task_tab:
-            self.switchTo(task_tab)
-        self.show_notification(self.tr("Start Success.") if not paused else self.tr("Pause Success."), tray=False)
+        # Only a full start (Start Game button, task start, auto start) announces
+        # itself by switching to the task tab; a plain resume stays where it is.
+        from ok import og
+        controller = getattr(getattr(og, 'app', None), 'start_controller', None)
+        announce_start = bool(getattr(controller, 'announce_start', False))
+        if not paused:
+            if controller is not None:
+                controller.announce_start = False
+            if announce_start:
+                task_tab = self.startup_task_tab()
+                if self.stackedWidget.currentIndex() == 0 and task_tab:
+                    self.switchTo(task_tab)
+                self.show_notification(self.tr("Start Success."), tray=False)
+        else:
+            self.show_notification(self.tr("Pause Success."), tray=False)
 
     def _check_okscript_args(self):
         """Check sys.argv for .okscript files and import them."""
