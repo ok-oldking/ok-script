@@ -1,4 +1,4 @@
-from ok.task.exceptions import CaptureException
+from ok.task.exceptions import CaptureBusyException, CaptureException
 
 
 class BaseCaptureMethod:
@@ -40,6 +40,11 @@ class BaseCaptureMethod:
                 if frame.shape[2] == 4:
                     frame = frame[:, :, :3]
             return frame
+        except CaptureBusyException:
+            # Normal backpressure: another caller owns the capture request.
+            # Report "no frame this round" and let callers retry on their own
+            # schedule instead of raising a capture error.
+            return None
         except Exception as e:
             raise CaptureException(str(e)) from e
 

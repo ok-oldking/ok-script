@@ -7,6 +7,7 @@ from ok.device.capture_methods import bitblt
 from ok.device.capture_methods.bitblt import BitBltCaptureMethod, ForegroundBitBltCaptureMethod
 from ok.device.capture_methods.desktop_duplication import DesktopDuplicationCaptureMethod
 from ok.device.capture_methods.windows_graphics import WindowsGraphicsCaptureMethod
+from ok.task.exceptions import CaptureBusyException
 
 logger = Logger.get_logger(__name__)
 
@@ -44,31 +45,71 @@ def update_capture_method(config, capture_method, hwnd, exit_event=None, selecte
         return None
 
 def get_win_graphics_capture(capture_method, hwnd, exit_event):
-    if windows_graphics_available():
-        target_method = WindowsGraphicsCaptureMethod
-        capture_method = get_capture(capture_method, target_method, hwnd, exit_event)
-        if capture_method.start_or_stop() and _capture_can_produce_frame(capture_method, WGC_FIRST_FRAME_TIMEOUT):
+    if not windows_graphics_available():
+        return None
+
+    target_method = WindowsGraphicsCaptureMethod
+    capture_method = get_capture(capture_method, target_method, hwnd, exit_event)
+
+    try:
+        started = capture_method.start_or_stop()
+    except CaptureBusyException:
+        # A concurrent request already owns this WGC instance. That is evidence
+        # of active use, not a startup failure. Keep WGC selected and let the
+        # normal caller retry.
+        logger.debug('WGC startup validation deferred because capture is busy')
+        return capture_method
+
+    if started:
+        try:
+            if _capture_can_produce_frame(capture_method, WGC_FIRST_FRAME_TIMEOUT):
+                return capture_method
+        except CaptureBusyException:
+            # Do not close or cache a WGC instance merely because another
+            # caller occupied its request lock for the probe interval.
+            logger.debug('WGC first-frame probe deferred because capture is busy')
             return capture_method
-        if isinstance(capture_method, WindowsGraphicsCaptureMethod):
-            capture_hwnd = capture_method.get_capture_hwnd()
-            if capture_hwnd:
-                capture_method.last_start_failure_key = capture_hwnd
-                capture_method.last_start_failure_time = time.time()
-            capture_method.close()
+
+    # Only genuine startup failure, or an acquired probe that produced no
+    # frame, reaches this point.
+    if isinstance(capture_method, WindowsGraphicsCaptureMethod):
+        capture_hwnd = capture_method.get_capture_hwnd()
+        if capture_hwnd:
+            capture_method.last_start_failure_key = capture_hwnd
+            capture_method.last_start_failure_time = time.time()
+        capture_method.close()
+
+    return None
 
 
 def _capture_can_produce_frame(capture_method, timeout):
-    deadline = time.time() + timeout
-    while time.time() < deadline:
+    deadline = time.monotonic() + max(0.0, float(timeout))
+
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            logger.warning(f'{capture_method.get_name()} did not produce a frame within {timeout}s')
+            return False
+
         try:
-            if capture_method.get_frame() is not None:
-                return True
+            frame = capture_method.get_frame_for_probe(remaining)
+        except CaptureBusyException:
+            # Preserve the distinction for get_win_graphics_capture(): a busy
+            # WGC must not be closed, cached as failed, or replaced by BitBlt.
+            raise
         except Exception as e:
             logger.warning(f'{capture_method.get_name()} did not produce a frame: {e}')
             return False
-        time.sleep(0.05)
-    logger.warning(f'{capture_method.get_name()} did not produce a frame within {timeout}s')
-    return False
+
+        if frame is not None:
+            return True
+
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            logger.warning(f'{capture_method.get_name()} did not produce a frame within {timeout}s')
+            return False
+
+        time.sleep(min(0.05, remaining))
 
 def get_capture(capture_method, target_method, hwnd, exit_event):
     if not isinstance(capture_method, target_method):
