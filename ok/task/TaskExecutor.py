@@ -568,7 +568,9 @@ class TaskExecutor:
                 self._prepare_task_for_run(is_trigger_task)
                 if cycled or self._frame is None:
                     if self.next_frame(time_out=4) is None and is_trigger_task:
-                        logger.info("no frame available, skip remaining trigger tasks")
+                        # Normal while the game is closed or minimized; keep it
+                        # out of the default log to avoid flooding.
+                        logger.debug("no frame available, skip remaining trigger tasks")
                         self.trigger_task_index = len(self.trigger_tasks) - 1
                         self.current_task = None
                         task.running = False
