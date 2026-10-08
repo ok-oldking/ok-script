@@ -17,6 +17,13 @@ from ok.device.capture_methods.bitblt_utils import get_crop_point
 
 logger = Logger.get_logger(__name__)
 
+
+def auto_reconnect_when_restored():
+    """Read the user opt-in "auto reconnect when a minimized game is restored" flag."""
+    from ok import og
+    ok_config = getattr(getattr(og, 'app', None), 'ok_config', None)
+    return bool(ok_config is not None and ok_config.get('auto_reconnect_when_restored', False))
+
 class HwndWindow:
 
     def __init__(self, exit_event, title, exe_name=None, frame_width=0, frame_height=0, player_id=-1, hwnd_class=None,
@@ -62,6 +69,7 @@ class HwndWindow:
         self.hwnd_class = hwnd_class
         self.top_hwnd_class = top_hwnd_class
         self.pos_valid = False
+        self._paused_by_minimize = False
         self._hwnd_title = ""
         self.monitors_bounds = get_monitors_bounds()
         self.mute_option = global_config.get_config(basic_options)
@@ -290,14 +298,23 @@ class HwndWindow:
                             cropped_window_height = int(width / self.frame_aspect_ratio)
                             height = cropped_window_height
                     pos_valid = check_pos(x, y, width, height, self.monitors_bounds)
-                    if isinstance(self.device_manager.capture_method,
-                                  BaseWindowsCaptureMethod) and not pos_valid and pos_valid != self.pos_valid and self.device_manager.executor is not None:
-                        if self.device_manager.executor.pause():
-                            logger.error(f'og.executor.pause pos_invalid: {x, y, width, height}')
-                            communicate.notification.emit('Paused because game window is minimized or out of screen!',
-                                                          None,
-                                                          True, True, "start", None, None)
                     if pos_valid != self.pos_valid:
+                        executor = self.device_manager.executor
+                        if isinstance(self.device_manager.capture_method,
+                                      BaseWindowsCaptureMethod) and executor is not None:
+                            if not pos_valid:
+                                if executor.pause():
+                                    self._paused_by_minimize = True
+                                    logger.error(f'og.executor.pause pos_invalid: {x, y, width, height}')
+                                    communicate.notification.emit(
+                                        'Paused because game window is minimized or out of screen!',
+                                        None,
+                                        True, True, "start", None, None)
+                            elif self._paused_by_minimize:
+                                self._paused_by_minimize = False
+                                if executor.paused and auto_reconnect_when_restored():
+                                    logger.info('game window restored, auto resume executor')
+                                    executor.start()
                         self.pos_valid = pos_valid
                 else:
                     if self.global_config.get_config('Basic Options').get(
@@ -306,6 +323,9 @@ class HwndWindow:
                         communicate.quit.emit()
                     else:
                         communicate.notification.emit('Game Exited', None, True, True, None, None, None)
+                        executor = self.device_manager.executor
+                        if executor is not None and executor.pause():
+                            self._paused_by_minimize = True
                     self.hwnd = 0
                     visible = False
                 if visible != self.visible:
