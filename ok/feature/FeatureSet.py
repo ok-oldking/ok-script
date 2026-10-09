@@ -1,4 +1,5 @@
 # FeatureSet.py
+import copy
 import glob
 import json
 import math
@@ -7,6 +8,7 @@ import re
 import shutil
 import subprocess
 import threading
+from functools import lru_cache
 
 import cv2
 import numpy as np
@@ -454,7 +456,7 @@ def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcente
         if ok_compressed is None:
             with Image.open(image_path) as img:
                 ok_compressed = 'ok_compressed' in img.info.keys()
-        whole_image = cv2.imread(image_path)
+        whole_image = _load_image_cached(image_path)
         if whole_image is None:
             logger.error(f'Could not read image {image_path}')
             raise ValueError(f'Could not read image {image_path}')
@@ -500,6 +502,7 @@ def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcente
 
     return feature_dict, box_dict, ok_compressed, load_success, loaded_image_keys
 
+@lru_cache(maxsize=4)
 def load_json(coco_json):
     with open(coco_json, 'r') as file:
         data = json.load(file)
@@ -653,7 +656,7 @@ def compress_copy_coco(coco_json, target_folder, image_folder, generate_label_en
     target_image_folder = os.path.join(target_folder, 'images')
     os.makedirs(target_image_folder, exist_ok=True)
 
-    data = load_json(coco_json)
+    data = copy.deepcopy(load_json(coco_json))
     if generate_label_enmu:
         labels = [cat['name'] for cat in data.get('categories', [])]
         generate_label_enum(generate_label_enmu, labels)
@@ -692,7 +695,7 @@ def compress_copy_coco(coco_json, target_folder, image_folder, generate_label_en
     return target_coco_json
 
 def compress_coco(coco_json) -> None:
-    data = load_json(coco_json)
+    data = copy.deepcopy(load_json(coco_json))
     coco_folder = os.path.dirname(coco_json)
     category_map = {cat['id']: cat['name'] for cat in data.get('categories', [])}
 
@@ -888,3 +891,7 @@ def save_image_with_metadata(image, image_path, new_path):
     except Exception as e:
         logger.error(f'save_image_with_metadata error {image} {image_path}', e)
         raise e
+
+@lru_cache(maxsize=4)
+def _load_image_cached(image_path):
+    return cv2.imread(image_path)
