@@ -16,6 +16,7 @@ from ok.device.capture_methods.bitblt_utils import (
     composite_hwnds,
     get_crop_point,
 )
+from ok.task.exceptions import CaptureBusyException
 
 logger = Logger.get_logger(__name__)
 
@@ -142,7 +143,12 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     @hwnd_window.setter
     def hwnd_window(self, hwnd_window):
         self._hwnd_window = hwnd_window
-        self.start_or_stop()
+        try:
+            self.start_or_stop()
+        except CaptureBusyException:
+            # Another request owns get_frame_lock and will validate the latest
+            # capture_target_signature before obtaining its next frame.
+            logger.debug('WGC target refresh deferred because capture is busy')
 
     def connected(self):
         return self.hwnd_window is not None and self.hwnd_window.exists and self.frame_pool is not None
@@ -157,11 +163,15 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         return 0
 
     def start_or_stop(self, capture_cursor=False):
-        # Lifecycle changes may call close(), which needs get_frame_lock.
-        # Always acquire it before lock, just as do_get_frame() does, so a
-        # concurrent startup refresh cannot deadlock a frame request.
-        if not self.get_frame_lock.acquire(timeout=WGC_FRAME_WAIT_TIMEOUT):
-            raise TimeoutError('Windows Graphics Capture is busy, please retry starting the game')
+        """Start, stop, or refresh WGC without violating the lock order.
+
+        Lifecycle operations and frame requests both acquire get_frame_lock
+        before self.lock. A contended lock means another valid WGC operation
+        is in progress; it is retryable and must not be reported as a capture
+        failure.
+        """
+        if not self.get_frame_lock.acquire(blocking=False):
+            raise CaptureBusyException('Windows Graphics Capture is busy')
         try:
             return self._start_or_stop(capture_cursor)
         finally:
@@ -306,16 +316,37 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 self.capture_target_signature = None
 
     def do_get_frame(self):
-        # frame_requested and last_frame represent one in-flight request. Keep
-        # concurrent task/UI callers from consuming each other's response.
-        if not self.get_frame_lock.acquire(timeout=WGC_FRAME_WAIT_TIMEOUT):
-            raise TimeoutError('Windows Graphics Capture is busy, please retry starting the game')
+        """Capture one frame, or report a retryable busy state.
+
+        frame_requested, frame_event, and last_frame represent one in-flight
+        request. Only one caller may operate on them at a time.
+        """
+        if not self.get_frame_lock.acquire(blocking=False):
+            raise CaptureBusyException('Windows Graphics Capture is busy')
         try:
             return self._do_get_frame()
         finally:
             self.get_frame_lock.release()
 
-    def _do_get_frame(self):
+    def get_frame_for_probe(self, timeout):
+        """Try to produce a frame within the caller's absolute time budget.
+
+        Unlike BaseCaptureMethod.get_frame(), this deliberately propagates
+        CaptureBusyException so capture-method selection can distinguish BUSY
+        from a WGC instance that actually failed to produce a frame.
+        """
+        timeout = max(0.0, float(timeout))
+        deadline = time.monotonic() + timeout
+
+        if not self.get_frame_lock.acquire(timeout=timeout):
+            raise CaptureBusyException('Windows Graphics Capture is busy')
+
+        try:
+            return self._do_get_frame(frame_deadline=deadline)
+        finally:
+            self.get_frame_lock.release()
+
+    def _do_get_frame(self, frame_deadline=None):
         if self.exit_event.is_set():
             return None
         if self.start_or_stop():
@@ -324,7 +355,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 logger.warning('no frame for 10 sec, try to restart')
                 self.close()
                 self.last_frame_time = time.time()
-                return self._do_get_frame()
+                return self._do_get_frame(frame_deadline=frame_deadline)
 
             # A frame left by a request that timed out is not necessarily the
             # latest frame anymore. Every call starts a fresh request instead of
@@ -336,7 +367,9 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                 self.frame_event.clear()
                 self.frame_requested.set()
 
-            deadline = time.monotonic() + WGC_FRAME_WAIT_TIMEOUT
+            deadline = frame_deadline
+            if deadline is None:
+                deadline = time.monotonic() + WGC_FRAME_WAIT_TIMEOUT
             while frame is None:
                 if self.exit_event.is_set():
                     with self.lock:

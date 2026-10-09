@@ -10,6 +10,7 @@ import ok.device.capture_methods.windows_graphics as windows_graphics_module
 from ok.device.capture_methods.browser import BrowserWindowAdapter
 from ok.device.capture_methods.hwnd_window import HwndWindow
 from ok.device.capture_methods.windows_graphics import WindowsGraphicsCaptureMethod
+from ok.task.exceptions import CaptureBusyException
 
 
 class _FakeFrame:
@@ -68,7 +69,7 @@ class TestWindowsGraphicsCaptureLifecycle(unittest.TestCase):
         method.last_start_failure_time = time.time()
         return method
 
-    def test_target_change_does_not_hold_capture_lock_while_waiting_for_frame_request(self):
+    def test_busy_target_change_is_deferred_without_holding_capture_lock(self):
         method = self._method()
         pool = method.frame_pool
         results = []
@@ -94,15 +95,24 @@ class TestWindowsGraphicsCaptureLifecycle(unittest.TestCase):
 
         self.assertTrue(acquired, 'startup held the capture lock while waiting for a frame request')
         self.assertFalse(worker.is_alive())
-        self.assertEqual([], errors)
-        self.assertEqual([False], results)
+        self.assertEqual([], results)
+        self.assertEqual(1, len(errors))
+        self.assertIsInstance(errors[0], CaptureBusyException)
+        pool.Close.assert_not_called()
+        self.assertIs(pool, method.frame_pool)
+
+        # Once the request owner releases its lock, the refresh can safely
+        # close the old target and retry the new one.
+        self.assertFalse(method.start_or_stop())
         pool.Close.assert_called_once()
         self.assertIsNone(method.frame_pool)
 
-    def test_busy_capture_reports_error_instead_of_waiting_indefinitely(self):
+    def test_busy_capture_reports_retryable_busy_without_entering_capture(self):
         for operation in ('start_or_stop', 'do_get_frame'):
             with self.subTest(operation=operation):
                 method = self._method()
+                method._start_or_stop = Mock()
+                method._do_get_frame = Mock()
                 errors = []
 
                 def call():
@@ -117,8 +127,41 @@ class TestWindowsGraphicsCaptureLifecycle(unittest.TestCase):
                     worker.join(.5)
                     self.assertFalse(worker.is_alive())
                 self.assertEqual(1, len(errors))
-                self.assertIsInstance(errors[0], TimeoutError)
+                self.assertIsInstance(errors[0], CaptureBusyException)
                 self.assertIn('Windows Graphics Capture is busy', str(errors[0]))
+                method._start_or_stop.assert_not_called()
+                method._do_get_frame.assert_not_called()
+
+    def test_busy_frame_probe_propagates_busy_without_entering_capture(self):
+        method = self._method()
+        method._do_get_frame = Mock()
+        errors = []
+
+        def probe():
+            try:
+                method.get_frame_for_probe(.01)
+            except Exception as error:
+                errors.append(error)
+
+        with method.get_frame_lock:
+            worker = threading.Thread(target=probe, daemon=True)
+            worker.start()
+            worker.join(.5)
+            self.assertFalse(worker.is_alive())
+
+        self.assertEqual(1, len(errors))
+        self.assertIsInstance(errors[0], CaptureBusyException)
+        method._do_get_frame.assert_not_called()
+
+    def test_busy_window_setter_defers_refresh(self):
+        method = self._method()
+        method.start_or_stop = Mock(side_effect=CaptureBusyException('busy'))
+        window = object()
+
+        method.hwnd_window = window
+
+        self.assertIs(window, method.hwnd_window)
+        method.start_or_stop.assert_called_once()
 
     def test_frame_request_can_restart_changed_target_without_deadlocking_itself(self):
         method = self._method()
@@ -331,6 +374,24 @@ class TestWindowsGraphicsCaptureGetFrame(unittest.TestCase):
         self.assertFalse(method.frame_requested.is_set())
         self.assertIsNone(method.last_frame)
 
+    def test_probe_uses_outer_deadline_after_waiting_for_request_lock(self):
+        method = self._method(_FakeFrame())
+        method.get_frame_lock = Mock()
+        method.get_frame_lock.acquire.return_value = True
+        method.frame_event.wait = Mock()
+
+        # The lock consumes 0.1s of the 0.25s budget. The frame loop must
+        # still expire at 10.25, rather than starting a new four-second wait.
+        with patch.object(windows_graphics_module.time, 'monotonic',
+                          side_effect=[10.0, 10.1, 10.25]):
+            result = method.get_frame_for_probe(.25)
+
+        self.assertIsNone(result)
+        method.get_frame_lock.acquire.assert_called_once_with(timeout=.25)
+        method.get_frame_lock.release.assert_called_once()
+        method.frame_event.wait.assert_called_once_with(.05)
+        self.assertFalse(method.frame_requested.is_set())
+
     def test_exit_event_interrupts_pending_frame_wait(self):
         method = self._method(_FakeFrame())
         method.last_frame = None
@@ -373,26 +434,28 @@ class TestWindowsGraphicsCaptureGetFrame(unittest.TestCase):
         values = iter((2, 3))
         method.convert_dx_frame = lambda _frame: np.full((2, 2, 3), next(values), dtype=np.uint8)
 
-        def deliver_frames():
-            for _ in range(2):
-                if not method.frame_requested.wait(1):
-                    return
-                method.frame_arrived_callback()
-
-        producer = threading.Thread(target=deliver_frames)
-        producer.start()
         results = []
         with patch.object(windows_graphics_module, 'composite_hwnds', side_effect=lambda captured, *_: captured):
-            consumers = [threading.Thread(target=lambda: results.append(method.do_get_frame())) for _ in range(2)]
-            for consumer in consumers:
-                consumer.start()
-            for consumer in consumers:
-                consumer.join(2)
-        producer.join(1)
+            consumer = threading.Thread(target=lambda: results.append(method.do_get_frame()))
+            consumer.start()
+            self.assertTrue(method.frame_requested.wait(1))
 
-        self.assertTrue(all(not consumer.is_alive() for consumer in consumers))
+            # Normal consumers retry when busy without cancelling or consuming
+            # the request already owned by the first caller.
+            self.assertIsNone(method.get_frame())
+            self.assertTrue(method.frame_requested.is_set())
+            method.frame_arrived_callback()
+            consumer.join(1)
+            self.assertFalse(consumer.is_alive())
+
+            producer = threading.Thread(target=lambda: (
+                method.frame_requested.wait(1) and method.frame_arrived_callback()))
+            producer.start()
+            results.append(method.do_get_frame())
+            producer.join(1)
+
         self.assertFalse(producer.is_alive())
-        self.assertEqual([2, 3], sorted(int(result[0, 0, 0]) for result in results))
+        self.assertEqual([2, 3], [int(result[0, 0, 0]) for result in results])
 
 if __name__ == '__main__':
     unittest.main()
