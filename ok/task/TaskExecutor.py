@@ -15,6 +15,8 @@ logger = Logger.get_logger(__name__)
 
 
 class TaskExecutor:
+    # Opt-in one-time tasks may start or clean up a device without a capture.
+    supports_frame_independent_tasks = True
     _frame: object
     paused: bool
     pause_start: float
@@ -247,11 +249,21 @@ class TaskExecutor:
         return (self.method is not None and self.method.connected()
                 and self.interaction is not None and self.interaction.should_capture())
 
+    def _has_pending_frame_independent_task(self):
+        """Yield idle/trigger polling, never interrupt another one-time task."""
+        idle = self.current_task is None or any(
+            self.current_task is task for task in self.trigger_tasks)
+        return idle and any(
+            task.enabled and not getattr(task, 'requires_initial_frame', True)
+            for task in tuple(self.onetime_task_queue))
+
     def next_frame(self, time_out=6):
         self.reset_scene()
         start = time.time()
         while not self.exit_event.is_set():
             self.check_enabled()
+            if self._has_pending_frame_independent_task():
+                return None
             if time_out is not None and time.time() - start >= time_out:
                 return None
             if self.can_capture():
@@ -314,6 +326,8 @@ class TaskExecutor:
         task = None
         while True:
             self.check_enabled(check_pause=False)
+            if self._has_pending_frame_independent_task():
+                return
             next_sleep_check = None
             if self.current_task is not None:
                 task = self.current_task
@@ -565,8 +579,10 @@ class TaskExecutor:
                 self.current_task = task
                 if not is_trigger_task:
                     communicate.task.emit(task)
-                self._prepare_task_for_run(is_trigger_task)
-                if cycled or self._frame is None:
+                needs_frame = is_trigger_task or getattr(task, 'requires_initial_frame', True)
+                if needs_frame:
+                    self._prepare_task_for_run(is_trigger_task)
+                if needs_frame and (cycled or self._frame is None):
                     if self.next_frame(time_out=4) is None and is_trigger_task:
                         logger.info("no frame available, skip remaining trigger tasks")
                         self.trigger_task_index = len(self.trigger_tasks) - 1
@@ -630,7 +646,8 @@ class TaskExecutor:
                 task.info_set(task._app.tr('Error'), error)
                 logger.error(f"{name} exception stopped", e)
                 if self._frame is not None:
-                    communicate.screenshot.emit(self.frame, name, True, None)
+                    image = self.frame if getattr(task, 'requires_initial_frame', True) else self._frame
+                    communicate.screenshot.emit(image, name, True, None)
                 self.current_task = None
                 communicate.task.emit(None)
         self.destroy()
