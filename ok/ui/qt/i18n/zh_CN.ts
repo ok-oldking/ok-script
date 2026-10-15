@@ -696,6 +696,10 @@
     <context>
         <name>StartCard</name>
         <message>
+            <source>Resume</source>
+            <translation>继续</translation>
+        </message>
+        <message>
             <source>Start</source>
             <translation>开始</translation>
         </message>
@@ -761,6 +765,10 @@
         <message>
             <source>No game selected!</source>
             <translation>未选择游戏窗口</translation>
+        </message>
+        <message>
+            <source>Game window is not connected. Open the game, or use 'Start Game' to launch it.</source>
+            <translation>游戏窗口未连接：请打开游戏，或点“启动游戏”来启动。</translation>
         </message>
         <message>
             <source>Selected capture method is not supported by the game or your system!</source>
@@ -856,6 +864,14 @@
     </context>
     <context>
         <name>StartTab</name>
+        <message>
+            <source>Auto Reconnect</source>
+            <translation>自动重连</translation>
+        </message>
+        <message>
+            <source>Auto Reconnect When Game Restored</source>
+            <translation>最小化窗口后，调出游戏时自动重连</translation>
+        </message>
         <message>
             <source>Choose Window</source>
             <translation>选择窗口</translation>
@@ -1313,6 +1329,10 @@
         <message>
             <source>Paused because game window is minimized or out of screen!</source>
             <translation>已暂停：游戏窗口最小化或者部分在屏幕外！</translation>
+        </message>
+        <message>
+            <source>Game window restored, resumed!</source>
+            <translation>游戏窗口已恢复，已继续执行！</translation>
         </message>
         <message>
             <source>Paused because game exited</source>

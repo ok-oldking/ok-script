@@ -36,15 +36,22 @@ class StartCard(SettingCard):
         self.hBoxLayout.addWidget(self.refresh_button, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(6)
 
-        self.start_button = PrimaryPushButton(FluentIcon.PLAY, self.tr("Start"), self)
+        self.start_button = PrimaryPushButton(FluentIcon.PAUSE, self.tr("Pause"), self)
         self.hBoxLayout.addWidget(self.start_button, 0, Qt.AlignRight)
+        self.hBoxLayout.addSpacing(6)
+
+        self.launch_button = PushButton(FluentIcon.PLAY, self.tr("Start Game"), self)
+        self.hBoxLayout.addWidget(self.launch_button, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(20)
 
         self.hotkey_changed.connect(self.update_status)
         self.update_status()
-        self.start_button.clicked.connect(self.clicked)
+        self.start_button.clicked.connect(self.toggle_pause)
+        self.launch_button.clicked.connect(self.launch_clicked)
         communicate.executor_paused.connect(self.update_status)
         communicate.window.connect(self.update_status)
+        communicate.adb_devices.connect(self.update_status)
+        communicate.starting_emulator.connect(self.update_status)
         communicate.task.connect(self.update_task)
 
         self.handler = Handler(exit_event, "StartCard")
@@ -63,11 +70,18 @@ class StartCard(SettingCard):
             self.status_bar.show()
 
     @staticmethod
-    def clicked():
-        if not og.executor.paused:
-            og.executor.pause()
-        else:
+    def toggle_pause():
+        if og.executor.paused:
+            # Resume shares the full start flow: a silent fast-resume when the
+            # game is already connected, launch+connect when it is not. Once
+            # the game is up it never touches the game process again.
             og.app.start_controller.start()
+        else:
+            og.executor.pause()
+
+    @staticmethod
+    def launch_clicked():
+        og.app.start_controller.start()
 
     def update_task(self, task):
         self.update_status()
@@ -75,13 +89,21 @@ class StartCard(SettingCard):
     def update_status(self):
         hotkey = self.basic_options.get('Start/Stop')
         suffix = f'({hotkey})' if hotkey and hotkey != 'None' else ''
+        starting = bool(getattr(og.app.start_controller, 'starting', False))
+
+        device = og.device_manager.get_preferred_device()
+        connected = bool(device) and bool(device.get('connected'))
+        can_launch = bool(device) and not connected and bool(device.get('full_path'))
+
+        # The pause/resume control belongs to the game session: it appears
+        # once a game is connected and disappears when the game exits.
+        # Launching is the pre-session action.
+        self.start_button.setVisible(connected)
+        self.launch_button.setVisible(not connected)
+        self.launch_button.setEnabled(can_launch and not starting)
 
         if og.executor.paused:
-            device = og.device_manager.get_preferred_device()
-            if device and not device['connected'] and device.get('full_path'):
-                self.start_button.setText(self.tr("Start Game") + suffix)
-            else:
-                self.start_button.setText(self.tr("Start") + suffix)
+            self.start_button.setText(self.tr("Resume") + suffix)
             self.start_button.setIcon(FluentIcon.PLAY)
             self.status_bar.hide()
         else:
@@ -125,7 +147,7 @@ class StartCard(SettingCard):
             if msg.message == 0x0312:  # WM_HOTKEY
                 logger.debug(f'hotkey pressed {msg}')
                 if msg.wParam == 999:
-                    self.clicked()
+                    self.toggle_pause()
 
         self.handler.post(self.check_hotkey, 0.1)
 
