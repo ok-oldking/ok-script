@@ -175,6 +175,27 @@ class StartController:
             time.sleep(self.STARTED_WINDOW_POLL_INTERVAL)
         return False
 
+    def _recheck_resolution_after_stable(self, settle=2.0, grace=15.0):
+        """游戏渲染稳定后复核一次分辨率，避免把加载界面的临时尺寸当成最终分辨率。"""
+        hwnd_window = getattr(og.device_manager, 'hwnd_window', None)
+        if hwnd_window is None:
+            return None
+        hwnd_window.do_update_window_size()
+        baseline = (hwnd_window.width, hwnd_window.height)
+        last_size, stable_since = baseline, time.monotonic()
+        deadline = time.monotonic() + grace
+        while not self.exit_event.is_set() and time.monotonic() < deadline:
+            hwnd_window.do_update_window_size()
+            size = (hwnd_window.width, hwnd_window.height)
+            if size != last_size:
+                logger.info(f'post-start resolution recheck: window size changed '
+                            f'{last_size[0]}x{last_size[1]} -> {size[0]}x{size[1]}')
+                last_size, stable_since = size, time.monotonic()
+            elif size != baseline and time.monotonic() - stable_since >= settle:
+                break
+            time.sleep(self.STARTED_WINDOW_POLL_INTERVAL)
+        return self.check_resolution()
+
     def start_device(self, initial_refresh_done=False):
         device = og.device_manager.get_preferred_device()
         logger.info(f'start_device: {device}')
@@ -206,6 +227,8 @@ class StartController:
                     return False
                 if not self._wait_until_device_ready():
                     return False
+                if device['device'] == "windows":
+                    self._recheck_resolution_after_stable()
             else:
                 communicate.starting_emulator.emit(True,
                                                    self.tr('Game path does not exist, Please open game manually!'), 0)
