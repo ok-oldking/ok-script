@@ -12,7 +12,7 @@ logger = Logger.get_logger(__name__)
 
 class StartController:
     STARTED_WINDOW_MIN_SIZE = (100, 100)
-    STARTED_WINDOW_STABLE_SECONDS = 2
+    STARTED_WINDOW_STABLE_SECONDS = 5
     STARTED_WINDOW_POLL_INTERVAL = 0.2
 
     def __init__(self, app_config, exit_event):
@@ -21,6 +21,8 @@ class StartController:
         self.handler = Handler(exit_event, __name__)
         self.start_timeout = app_config.get('start_timeout', 60)
         windows_config = app_config.get('windows') or {}
+        self.window_stable_seconds = windows_config.get(
+            'window_stable_seconds', self.STARTED_WINDOW_STABLE_SECONDS)
         self.start_exe = windows_config.get('start_exe', True)
         self.start_method = windows_config.get('start_method', WINDOWS_START_METHOD_START)
         self.starting = False
@@ -161,8 +163,8 @@ class StartController:
                         logger.info(f'waiting for started window to stabilize, current size {size[0]}x{size[1]}')
                         stable_size = size
                         stable_since = now
-                    elif now - stable_since >= self.STARTED_WINDOW_STABLE_SECONDS:
-                        logger.info(f'started window size stable for {self.STARTED_WINDOW_STABLE_SECONDS}s: {size[0]}x{size[1]}')
+                    elif now - stable_since >= self.window_stable_seconds:
+                        logger.info(f'started window size stable for {self.window_stable_seconds}s: {size[0]}x{size[1]}')
                         return True
                 else:
                     stable_size = None

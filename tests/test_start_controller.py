@@ -40,7 +40,7 @@ class TestStartController(unittest.TestCase):
         controller.start_timeout = 20
         controller.config = {}
         controller.start_method = 'start'
-        controller.STARTED_WINDOW_STABLE_SECONDS = 2
+        controller.window_stable_seconds = 2
         controller.STARTED_WINDOW_POLL_INTERVAL = 1
         controller.starting = False
         return controller
@@ -94,7 +94,7 @@ class TestStartController(unittest.TestCase):
 
     def test_started_window_wait_does_not_restart_countdown(self):
         controller = self.make_controller()
-        controller.STARTED_WINDOW_STABLE_SECONDS = 1
+        controller.window_stable_seconds = 1
         controller.STARTED_WINDOW_POLL_INTERVAL = 0.2
         window = FakeWindow([(120, 120)] * 6)
         clock = FakeClock()
