@@ -236,6 +236,62 @@ class TestStartController(unittest.TestCase):
         )
         self.assertEqual('GPU Driver Warning', title)
 
+    def test_auto_hdr_error_is_translated_and_does_not_block_startup(self):
+        controller = self.make_controller()
+        controller.config = {'windows': {'check_auto_hdr': True}}
+        controller.start_exe = True
+        controller.start_device = Mock(return_value=True)
+        controller.check_gpu_driver_post_processing = Mock()
+        controller.tr = Mock(return_value='Translated Auto HDR error')
+        executor = SimpleNamespace(get_all_tasks=Mock(return_value=[]), start=Mock())
+        device_manager = SimpleNamespace(
+            do_refresh=Mock(),
+            get_preferred_device=Mock(return_value={'device': 'windows', 'full_path': r'C:\launcher.exe'}),
+            hwnd_window=SimpleNamespace(exe_full_path=r'C:\Game\game.exe'),
+        )
+        with patch.object(start_controller_module, 'og',
+                          SimpleNamespace(device_manager=device_manager, executor=executor)), \
+                patch('ok.util.gpu_driver_settings.is_auto_hdr_enabled', return_value=True) as detector, \
+                patch.object(start_controller_module, 'alert_error') as alert:
+            self.assertTrue(controller.do_start())
+
+        detector.assert_called_once_with(r'C:\Game\game.exe')
+        controller.tr.assert_called_once_with('Auto HDR is enabled, tasks might not work correctly!')
+        alert.assert_called_once_with('Translated Auto HDR error', tray=True)
+        executor.start.assert_called_once()
+        controller.start_device.assert_called_once_with(initial_refresh_done=True)
+
+    def test_auto_hdr_check_is_opt_in_and_windows_only(self):
+        for windows_config, device in (({}, {'device': 'windows'}),
+                                       ({'check_auto_hdr': False}, {'device': 'windows'}),
+                                       ({'check_auto_hdr': True}, {'device': 'adb'})):
+            with self.subTest(windows_config=windows_config, device=device):
+                controller = self.make_controller()
+                controller.config = {'windows': windows_config}
+                device_manager = SimpleNamespace(get_preferred_device=Mock(return_value=device))
+                with patch.object(start_controller_module, 'og', SimpleNamespace(device_manager=device_manager)), \
+                        patch('ok.util.gpu_driver_settings.is_auto_hdr_enabled') as detector, \
+                        patch.object(start_controller_module, 'alert_error') as alert:
+                    controller.check_auto_hdr()
+                detector.assert_not_called()
+                alert.assert_not_called()
+
+    def test_auto_hdr_disabled_unknown_and_failed_checks_do_not_alert(self):
+        for state in (False, None, OSError('Registry unavailable')):
+            with self.subTest(state=state):
+                controller = self.make_controller()
+                controller.config = {'windows': {'check_auto_hdr': True}}
+                device_manager = SimpleNamespace(get_preferred_device=Mock(return_value={
+                    'device': 'windows', 'full_path': r'C:\Game\game.exe',
+                }))
+                detector = Mock(side_effect=state) if isinstance(state, Exception) else Mock(return_value=state)
+                with patch.object(start_controller_module, 'og', SimpleNamespace(device_manager=device_manager)), \
+                        patch('ok.util.gpu_driver_settings.is_auto_hdr_enabled', detector), \
+                        patch.object(start_controller_module, 'alert_error') as alert:
+                    controller.check_auto_hdr()
+                detector.assert_called_once_with(r'C:\Game\game.exe')
+                alert.assert_not_called()
+
     def test_resolution_mismatch_is_info_only_when_auto_resize_is_disabled(self):
         controller = self.make_controller()
         controller.config = {

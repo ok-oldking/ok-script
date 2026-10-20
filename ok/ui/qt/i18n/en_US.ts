@@ -1710,6 +1710,10 @@
             <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>
             <translation>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</translation>
         </message>
+        <message>
+            <source>Auto HDR is enabled, tasks might not work correctly!</source>
+            <translation>Auto HDR is enabled, tasks might not work correctly!</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3699,6 +3703,10 @@
         <message>
             <source>Update available.</source>
             <translation>Update available.</translation>
+        </message>
+        <message>
+            <source>Auto HDR is enabled, tasks might not work correctly!</source>
+            <translation>Auto HDR is enabled, tasks might not work correctly!</translation>
         </message>
     </context>
     <context>

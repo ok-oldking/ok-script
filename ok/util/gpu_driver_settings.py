@@ -1,6 +1,7 @@
 import ctypes
 import importlib
 import importlib.util
+import ntpath
 import os
 import re
 import struct
@@ -41,6 +42,7 @@ MONITOR_DEFAULTTONEAREST = 2
 NVIDIA_FILTER_PROFILE_LOG_MAX_AGE_SECONDS = 300
 NVIDIA_OVERLAY_LOG_TAIL_BYTES = 2 * 1024 * 1024
 NVIDIA_OVERLAY_TARGET_CONTEXT_LINES = 300
+AUTO_HDR_APP_OVERRIDE = 0x1000
 
 NV_DRS_DB_PATHS = (
     os.path.join(os.environ.get("ProgramData", ""), "NVIDIA Corporation", "Drs", "nvdrsdb0.bin"),
@@ -344,6 +346,66 @@ def is_windows_hdr_enabled(target_hwnd: Optional[int] = None) -> Optional[GpuDri
         enabled=True,
         detail=detail,
     )
+
+
+def is_auto_hdr_enabled(target_exe_path: Optional[str] = None) -> Optional[bool]:
+    """Read the configured Auto HDR preference, not runtime activation.
+
+    A per-game opt-out or explicit override takes priority over global settings.
+    An ordinary per-game allow flag inherits the global setting.
+    These registry fields are undocumented Windows implementation details.
+    Return None when the registry cannot be read.
+    """
+    if os.name != "nt":
+        return None
+
+    import winreg
+
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                            r"Software\Microsoft\DirectX\UserGpuPreferences") as key:
+            if target_exe_path:
+                name = ntpath.normpath(target_exe_path)
+                try:
+                    settings, _ = winreg.QueryValueEx(key, name)
+                except FileNotFoundError:
+                    settings = None
+                flags = _auto_hdr_flags(settings)
+                if flags is not None and (flags & AUTO_HDR_APP_OVERRIDE or not flags & 1):
+                    enabled = bool(flags & 1)
+                    logger.info(f"Windows Auto HDR configured: {enabled} ({name}: flags={flags:#x})")
+                    return enabled
+
+            try:
+                settings, _ = winreg.QueryValueEx(key, "DirectXUserGlobalSettings")
+            except FileNotFoundError:
+                return False
+            flags = _auto_hdr_flags(settings)
+            enabled = bool(flags & 1) if flags is not None else None
+            logger.info(f"Windows Auto HDR configured: {enabled} (global setting, no game override)")
+            return enabled
+    except FileNotFoundError:
+        return False
+    except OSError as e:
+        logger.debug(f"Windows Auto HDR check failed: {e}")
+        return None
+
+
+def _auto_hdr_flags(settings) -> Optional[int]:
+    if not isinstance(settings, str):
+        return None
+    for setting in settings.split(";"):
+        name, separator, value = setting.partition("=")
+        if separator and name.strip().lower() == "autohdrenable":
+            try:
+                flags = int(value.strip(), 0)
+            except ValueError:
+                return None
+            # Low bit: allow Auto HDR. Bit 0x1000: explicit per-game override.
+            # Observed on Windows build 26300: global off + 2097 => off;
+            # toggling the game's Auto HDR on changes 2097 to 6193 (0x1831).
+            return flags if flags >= 0 else None
+    return None
 
 
 def _log_nvidia_filter_profile_state(profile_in_use: Optional[bool], detail: str):

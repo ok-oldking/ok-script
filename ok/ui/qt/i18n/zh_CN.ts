@@ -1706,6 +1706,10 @@
             <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>
             <translation>启用 TLS 加密（587 端口用 STARTTLS，465 端口用 SMTPS）</translation>
         </message>
+        <message>
+            <source>Auto HDR is enabled, tasks might not work correctly!</source>
+            <translation>显示设置自动HDR已打开, 可能导致任务运行异常!</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3695,6 +3699,10 @@
         <message>
             <source>Update available.</source>
             <translation>有可用更新。</translation>
+        </message>
+        <message>
+            <source>Auto HDR is enabled, tasks might not work correctly!</source>
+            <translation>显示设置自动HDR已打开, 可能导致任务运行异常!</translation>
         </message>
     </context>
     <context>

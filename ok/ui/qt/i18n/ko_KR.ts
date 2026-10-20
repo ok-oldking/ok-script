@@ -1709,6 +1709,10 @@
             <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>
             <translation>TLS 암호화 활성화 (587 포트는 STARTTLS, 465 포트는 SMTPS)</translation>
         </message>
+        <message>
+            <source>Auto HDR is enabled, tasks might not work correctly!</source>
+            <translation>자동 HDR이 켜져 있습니다. 작업이 올바르게 작동하지 않을 수 있습니다!</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3698,6 +3702,10 @@
         <message>
             <source>Update available.</source>
             <translation>업데이트가 있습니다.</translation>
+        </message>
+        <message>
+            <source>Auto HDR is enabled, tasks might not work correctly!</source>
+            <translation>자동 HDR이 켜져 있습니다. 작업이 올바르게 작동하지 않을 수 있습니다!</translation>
         </message>
     </context>
     <context>

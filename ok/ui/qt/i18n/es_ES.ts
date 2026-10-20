@@ -1708,6 +1708,10 @@
             <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>
             <translation>Habilitar cifrado TLS (STARTTLS en el puerto 587, SMTPS en el 465)</translation>
         </message>
+        <message>
+            <source>Auto HDR is enabled, tasks might not work correctly!</source>
+            <translation>El HDR automático está activado, ¡las tareas podrían no funcionar correctamente!</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3697,6 +3701,10 @@
         <message>
             <source>Update available.</source>
             <translation>Hay una actualización disponible.</translation>
+        </message>
+        <message>
+            <source>Auto HDR is enabled, tasks might not work correctly!</source>
+            <translation>El HDR automático está activado, ¡las tareas podrían no funcionar correctamente!</translation>
         </message>
     </context>
     <context>

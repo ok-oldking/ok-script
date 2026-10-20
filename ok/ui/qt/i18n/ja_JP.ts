@@ -1700,6 +1700,10 @@
             <source>Enable TLS encryption (STARTTLS for 587, SMTPS for 465)</source>
             <translation>TLS 暗号化を有効化（ポート 587 は STARTTLS、465 は SMTPS）</translation>
         </message>
+        <message>
+            <source>Auto HDR is enabled, tasks might not work correctly!</source>
+            <translation>自動HDRが有効です。タスクが正常に動作しない可能性があります！</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3689,6 +3693,10 @@
         <message>
             <source>Update available.</source>
             <translation>更新があります。</translation>
+        </message>
+        <message>
+            <source>Auto HDR is enabled, tasks might not work correctly!</source>
+            <translation>自動HDRが有効です。タスクが正常に動作しない可能性があります！</translation>
         </message>
     </context>
     <context>

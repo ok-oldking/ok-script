@@ -100,6 +100,7 @@ class StartController:
                     return False
             else:
                 logger.info('windows.start_exe is False, skip start_device')
+            self.check_auto_hdr()
             self.check_gpu_driver_post_processing()
 
             def add_task_to_enable(enable_task):
@@ -216,6 +217,25 @@ class StartController:
             return False
         communicate.starting_emulator.emit(True, None, 0)
         return True
+
+    def check_auto_hdr(self):
+        if not (self.config.get('windows') or {}).get('check_auto_hdr', False):
+            return
+        try:
+            from ok.util.gpu_driver_settings import is_auto_hdr_enabled
+
+            device_manager = og.device_manager
+            device = device_manager.get_preferred_device()
+            if not device or device.get('device') != 'windows':
+                return
+            hwnd_window = getattr(device_manager, 'hwnd_window', None)
+            target_exe_path = getattr(hwnd_window, 'exe_full_path', None) or device.get('full_path')
+            if is_auto_hdr_enabled(target_exe_path):
+                message = self.tr('Auto HDR is enabled, tasks might not work correctly!')
+                logger.error(message)
+                alert_error(message, tray=True)
+        except Exception as e:
+            logger.error(f'check_auto_hdr exception: {e}', e)
 
     def check_gpu_driver_post_processing(self):
         try:

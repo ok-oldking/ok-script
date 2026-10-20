@@ -1,11 +1,81 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from ok.util import gpu_driver_settings as gpu_settings
 from ok.util.gpu_driver_settings import GpuDriverPostProcessing
 
 
 class TestGpuDriverSettings(unittest.TestCase):
+    def test_auto_hdr_resolves_global_inheritance_and_game_overrides(self):
+        target = r"C:\Game\game.exe"
+        cases = [
+            ("AutoHDREnable=1;", "AutoHDREnable=2096;", False),
+            ("AutoHDREnable=1;", "AutoHDREnable=48;", False),
+            ("AutoHDREnable=0;", "AutoHDREnable=2097;", False),
+            ("AutoHDREnable=0;", "AutoHDREnable=49;", False),
+            ("AutoHDREnable=1;", "AutoHDREnable=2097;", True),
+            ("AutoHDREnable=1;", "AutoHDREnable=49;", True),
+            ("AutoHDREnable=0;SwapEffectUpgradeEnable=1;",
+             "GpuPreference=2;AutoHDREnable=2097;", False),
+            ("AutoHDREnable=0;SwapEffectUpgradeEnable=1;",
+             "SwapEffectUpgradeEnable=1;AutoHDREnable=6193;GpuPreference=2;", True),
+            ("AutoHDREnable=1;", "AutoHDREnable=6192;", False),
+            ("AutoHDREnable=0;", "AutoHDREnable=6192;", False),
+            ("AutoHDREnable=1;", "GpuPreference=2;", True),
+            ("AutoHDREnable=0;", "GpuPreference=2;", False),
+            ("AutoHDREnable=1;", None, True),
+            ("AutoHDREnable=0;", None, False),
+            (None, "AutoHDREnable=1;", False),
+            (None, "AutoHDREnable=6193;", True),
+            (None, None, False),
+            ("AutoHDREnable=invalid;", "AutoHDREnable=2097;", None),
+        ]
+        for global_settings, game_settings, expected in cases:
+            with self.subTest(global_settings=global_settings, game_settings=game_settings):
+                values = {"DirectXUserGlobalSettings": global_settings, target: game_settings}
+                registry = MagicMock()
+
+                def query_value(key, name):
+                    if values[name] is None:
+                        raise FileNotFoundError(name)
+                    return values[name], 1
+
+                registry.QueryValueEx.side_effect = query_value
+                with patch.dict('sys.modules', winreg=registry), \
+                        patch.object(gpu_settings, 'os') as fake_os:
+                    fake_os.name = 'nt'
+                    self.assertIs(expected, gpu_settings.is_auto_hdr_enabled('C:/Game/game.exe'))
+
+    def test_auto_hdr_without_executable_checks_only_global_setting(self):
+        registry = MagicMock()
+        registry.QueryValueEx.return_value = ("SwapEffectUpgradeEnable=1;AutoHDREnable=1;", 1)
+        with patch.dict('sys.modules', winreg=registry), \
+                patch.object(gpu_settings, 'os') as fake_os:
+            fake_os.name = 'nt'
+            self.assertIs(True, gpu_settings.is_auto_hdr_enabled())
+        self.assertEqual('DirectXUserGlobalSettings', registry.QueryValueEx.call_args.args[1])
+        self.assertEqual(1, registry.QueryValueEx.call_count)
+
+    def test_auto_hdr_missing_registry_and_read_failure_are_non_fatal(self):
+        for error, expected in ((FileNotFoundError(), False), (PermissionError(), None)):
+            with self.subTest(error=type(error).__name__):
+                registry = MagicMock()
+                registry.OpenKey.side_effect = error
+                with patch.dict('sys.modules', winreg=registry), \
+                        patch.object(gpu_settings, 'os') as fake_os:
+                    fake_os.name = 'nt'
+                    self.assertIs(expected, gpu_settings.is_auto_hdr_enabled(r'C:\Game\game.exe'))
+
+    def test_auto_hdr_preference_ignores_invalid_values(self):
+        for settings in (None, 1, '', 'AutoHDREnable=invalid;', 'AutoHDREnable=-1;'):
+            with self.subTest(settings=settings):
+                self.assertIsNone(gpu_settings._auto_hdr_flags(settings))
+
+    def test_auto_hdr_is_unknown_on_other_platforms(self):
+        with patch.object(gpu_settings, 'os') as fake_os:
+            fake_os.name = 'posix'
+            self.assertIsNone(gpu_settings.is_auto_hdr_enabled())
+
     def test_rtx_hdr_reports_drs_hit_without_precondition_checks(self):
         drs_hit = GpuDriverPostProcessing("NVIDIA", "RTX HDR", True, "Global Profile: value=1")
 
