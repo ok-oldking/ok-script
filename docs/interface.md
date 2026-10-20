@@ -32,6 +32,15 @@ ok-script 将任务配置、设备连接、脚本开发、模板管理和识别�
 
 如果画面正常但输入没有响应，请检查交互方式和管理员权限。更多配置步骤参见[快速开始](quick_start/README.md)。
 
+HDR 游戏使用普通 `WGC`。仅在使用 Windows AutoHDR 时（不推荐），
+将 `windows.capture_method` 设置为 `['WGC_HDR', 'WGC', 'BitBlt']`。
+`WGC_HDR` 使用 `WindowsGraphicsCaptureHDRMethod` 捕获浮点 HDR 像素，
+按照 BetterGI 的四分之一曝光和线性 RGB 转 sRGB 算法转换为 SDR。
+HDR 截图启动失败时会尝试后续截图方式。SDR 内容应选择普通 `WGC`；
+固定曝光转换可能使 SDR 画面变暗，也不能精确逆转所有游戏的 HDR 色调映射。
+HDR 转换通过 CPU 查找表完成。使用 `WGC_HDR` 时不显示 Auto HDR 启动提醒；
+回退到其他截图方式后仍会检查并提醒。
+
 ## 脚本与 API 浏览
 
 ![脚本与 API 浏览界面](ok_py/image_scripting.png)

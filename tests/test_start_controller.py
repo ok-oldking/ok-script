@@ -261,6 +261,29 @@ class TestStartController(unittest.TestCase):
         executor.start.assert_called_once()
         controller.start_device.assert_called_once_with(initial_refresh_done=True)
 
+    def test_auto_hdr_alert_depends_on_active_capture_even_after_fallback(self):
+        from ok.device.capture_methods.windows_graphics import WindowsGraphicsCaptureMethod
+        from ok.device.capture_methods.windows_graphics_hdr import WindowsGraphicsCaptureHDRMethod
+
+        for capture_type in (WindowsGraphicsCaptureHDRMethod, WindowsGraphicsCaptureMethod):
+            with self.subTest(capture_type=capture_type.__name__):
+                controller = self.make_controller()
+                controller.config = {'windows': {'check_auto_hdr': True, 'capture_method': ['WGC_HDR', 'WGC']}}
+                device_manager = SimpleNamespace(
+                    get_preferred_device=Mock(return_value={'device': 'windows', 'full_path': r'C:\Game\game.exe'}),
+                    capture_method=object.__new__(capture_type),
+                )
+                with patch.object(start_controller_module, 'og', SimpleNamespace(device_manager=device_manager)), \
+                        patch('ok.util.gpu_driver_settings.is_auto_hdr_enabled', return_value=True) as detector, \
+                        patch.object(start_controller_module, 'alert_error') as alert:
+                    controller.check_auto_hdr()
+                if capture_type is WindowsGraphicsCaptureHDRMethod:
+                    detector.assert_not_called()
+                    alert.assert_not_called()
+                else:
+                    detector.assert_called_once_with(r'C:\Game\game.exe')
+                    alert.assert_called_once()
+
     def test_auto_hdr_check_is_opt_in_and_windows_only(self):
         for windows_config, device in (({}, {'device': 'windows'}),
                                        ({'check_auto_hdr': False}, {'device': 'windows'}),

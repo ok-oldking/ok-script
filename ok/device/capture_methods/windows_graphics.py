@@ -25,7 +25,17 @@ WGC_FRAME_WAIT_TIMEOUT = 4.0
 
 class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
     name = "Windows Graphics Capture"
-    description = "fast, most compatible, capped at 60fps"
+    description = "Fast, support HDR (not AutoHDR)"
+
+    @property
+    def pixel_format(self):
+        from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
+        return DirectXPixelFormat.B8G8R8A8UIntNormalized
+
+    def read_mapped_frame(self, mapinfo):
+        return np.ctypeslib.as_array(ctypes.cast(mapinfo.pData, PBYTE),
+                                    (self.last_size.Height, mapinfo.RowPitch // 4, 4))[
+            :, :self.last_size.Width].copy()
 
     def __init__(self, hwnd_window):
         super().__init__(hwnd_window)
@@ -114,10 +124,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
             immediate_dc.CopyResource(self.cputex, tex)
             mapinfo = immediate_dc.Map(self.cputex, 0, self.d3d11.D3D11_MAP_READ, 0)
             mapped = True
-            img = np.ctypeslib.as_array(ctypes.cast(mapinfo.pData, PBYTE),
-                                        (self.last_size.Height, mapinfo.RowPitch // 4, 4))[
-                :, :self.last_size.Width].copy()
-            return img
+            return self.read_mapped_frame(mapinfo)
         except OSError as e:
             if e.winerror == self.d3d11.DXGI_ERROR_DEVICE_REMOVED or e.winerror == self.d3d11.DXGI_ERROR_DEVICE_RESET:
                 need_reset_framepool = True
@@ -213,7 +220,6 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                     from ok.rotypes.Windows.Graphics.Capture import Direct3D11CaptureFramePool, \
                         IGraphicsCaptureItemInterop, \
                         IGraphicsCaptureItem, GraphicsCaptureItem
-                    from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
                     from ok.rotypes.Windows.Graphics.DirectX.Direct3D11 import IDirect3DDevice, \
                         IDirect3DDxgiInterfaceAccess
                     from ok.rotypes.roapi import GetActivationFactory
@@ -236,7 +242,7 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
                     self.evtoken = item.add_Closed(delegate)
 
                     self.frame_pool = Direct3D11CaptureFramePool.CreateFreeThreaded(self.rtdevice,
-                                                                                    DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                                                                                    self.pixel_format,
                                                                                     1, item.Size)
                     self.session = self.frame_pool.CreateCaptureSession(item)
                     pool = self.frame_pool
@@ -428,14 +434,13 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
 
     def reset_framepool(self, size, reset_device=False):
         logger.info(f'reset_framepool')
-        from ok.rotypes.Windows.Graphics.DirectX import DirectXPixelFormat
         if self.cputex:
             self.cputex.Release()
             self.cputex = None
         if reset_device:
             self.create_device()
         self.frame_pool.Recreate(self.rtdevice,
-                                 DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, size)
+                                 self.pixel_format, 2, size)
 
     def crop_image(self, frame):
         if frame is not None:

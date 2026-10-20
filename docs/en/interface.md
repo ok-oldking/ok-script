@@ -32,6 +32,15 @@ The capture page connects a target and selects the screen-capture and input back
 
 If capture works but input does not, check the interaction backend and administrator privileges. See the [quick-start guide](quick_start.md) for setup details.
 
+Use ordinary `WGC` for HDR games. Only when using Windows AutoHDR (not recommended),
+set `windows.capture_method` to `['WGC_HDR', 'WGC', 'BitBlt']`.
+`WGC_HDR` uses `WindowsGraphicsCaptureHDRMethod` to capture floating-point HDR pixels
+and convert them to SDR using BetterGI's quarter-exposure and linear-to-sRGB algorithm.
+The remaining methods are fallbacks if HDR capture cannot start. Select ordinary `WGC`
+for SDR content; this fixed conversion can darken SDR images and does not exactly undo
+every game's HDR tone mapping. HDR conversion uses a CPU lookup table. The Auto HDR
+startup alert is suppressed while `WGC_HDR` is active; it still applies after fallback.
+
 ## Browse scripts and APIs
 
 ![Script and API browser](../ok_py/image_scripting.png)

@@ -228,6 +228,10 @@ class StartController:
             device = device_manager.get_preferred_device()
             if not device or device.get('device') != 'windows':
                 return
+            from ok.device.capture_methods.windows_graphics_hdr import WindowsGraphicsCaptureHDRMethod
+
+            if isinstance(getattr(device_manager, 'capture_method', None), WindowsGraphicsCaptureHDRMethod):
+                return
             hwnd_window = getattr(device_manager, 'hwnd_window', None)
             target_exe_path = getattr(hwnd_window, 'exe_full_path', None) or device.get('full_path')
             if is_auto_hdr_enabled(target_exe_path):

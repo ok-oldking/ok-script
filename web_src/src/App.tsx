@@ -169,7 +169,7 @@ function MethodList({ items, label, onSelect, disabled }: {
       disabled={disabled}
       key={item.id}
       onClick={() => onSelect(item.id)}
-    >{item.label}</button>)}
+    >{t(item.label)}</button>)}
     {!items.length && <div className="empty-option">{t("No options available")}</div>}
   </div>;
 }

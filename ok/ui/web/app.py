@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from ok.core.events import EventMessage, communicate
+from ok.core.capture_labels import capture_method_label
 from ok.core.template_store import CocoTemplateStore
 from ok.task.web import WebTabConfig, call_task_tab_operation, task_tab_operations
 from ok.ui.web.requirements import WEB_REQUIREMENTS_MESSAGE, check_web_requirements
@@ -429,7 +430,7 @@ class WebRuntime:
         selected = self.device_manager.get_preferred_capture()
         return [{
             "id": _method_name(method),
-            "label": self.ok.headless_app.tr(_method_name(method)),
+            "label": self.ok.headless_app.tr(capture_method_label(_method_name(method))),
             "selected": _method_name(method) == selected,
         } for method in methods if method]
 

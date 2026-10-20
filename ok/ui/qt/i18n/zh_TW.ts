@@ -590,7 +590,7 @@
         </message>
         <message>
             <source>WGC</source>
-            <translation>WGC - &gt;=Win10，快</translation>
+            <translation>WGC - 速度快，支援 HDR（不支援 AutoHDR）</translation>
         </message>
         <message>
             <source>BitBlt</source>
@@ -599,6 +599,22 @@
         <message>
             <source>DXGI</source>
             <translation>DXGI - 最慢，备用</translation>
+        </message>
+        <message>
+            <source>WGC - Fast, support HDR (not AutoHDR)</source>
+            <translation>WGC - 速度快，支援 HDR（不支援 AutoHDR）</translation>
+        </message>
+        <message>
+            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - 僅在使用 Windows AutoHDR 時使用（不建議）</translation>
+        </message>
+        <message>
+            <source>Fast, support HDR (not AutoHDR)</source>
+            <translation>速度快，支援 HDR（不支援 AutoHDR）</translation>
+        </message>
+        <message>
+            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
+            <translation>僅在使用 Windows AutoHDR 時使用（不建議）</translation>
         </message>
     </context>
     <context>
@@ -1707,6 +1723,42 @@
         <message>
             <source>Auto HDR is enabled, tasks might not work correctly!</source>
             <translation>顯示設定中的自動 HDR 已開啟，可能導致任務執行異常！</translation>
+        </message>
+        <message>
+            <source>WGC - Fast, support HDR (not AutoHDR)</source>
+            <translation>WGC - 速度快，支援 HDR（不支援 AutoHDR）</translation>
+        </message>
+        <message>
+            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - 僅在使用 Windows AutoHDR 時使用（不建議）</translation>
+        </message>
+        <message>
+            <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
+            <translation>解析度 {resolution} 檢查失敗，部分任務可能無法正常運作！</translation>
+        </message>
+        <message>
+            <source>, the supported ratio is {supported_ratio}</source>
+            <translation>，支援的視窗比例為 {supported_ratio}</translation>
+        </message>
+        <message>
+            <source>, the supported min resolution is {min_size}</source>
+            <translation>，支援的最低解析度為 {min_size}</translation>
+        </message>
+        <message>
+            <source>{vendor} {feature} is enabled and may cause malfunctions!</source>
+            <translation>{vendor} {feature} 已啟用，可能導致功能異常！</translation>
+        </message>
+        <message>
+            <source>GPU Driver Warning</source>
+            <translation>GPU 驅動警告</translation>
+        </message>
+        <message>
+            <source>Fast, support HDR (not AutoHDR)</source>
+            <translation>速度快，支援 HDR（不支援 AutoHDR）</translation>
+        </message>
+        <message>
+            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
+            <translation>僅在使用 Windows AutoHDR 時使用（不建議）</translation>
         </message>
     </context>
     <context>
@@ -3701,6 +3753,42 @@
         <message>
             <source>Auto HDR is enabled, tasks might not work correctly!</source>
             <translation>顯示設定中的自動 HDR 已開啟，可能導致任務執行異常！</translation>
+        </message>
+        <message>
+            <source>WGC - Fast, support HDR (not AutoHDR)</source>
+            <translation>WGC - 速度快，支援 HDR（不支援 AutoHDR）</translation>
+        </message>
+        <message>
+            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - 僅在使用 Windows AutoHDR 時使用（不建議）</translation>
+        </message>
+        <message>
+            <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
+            <translation>解析度 {resolution} 檢查失敗，部分任務可能無法正常運作！</translation>
+        </message>
+        <message>
+            <source>, the supported ratio is {supported_ratio}</source>
+            <translation>，支援的視窗比例為 {supported_ratio}</translation>
+        </message>
+        <message>
+            <source>, the supported min resolution is {min_size}</source>
+            <translation>，支援的最低解析度為 {min_size}</translation>
+        </message>
+        <message>
+            <source>{vendor} {feature} is enabled and may cause malfunctions!</source>
+            <translation>{vendor} {feature} 已啟用，可能導致功能異常！</translation>
+        </message>
+        <message>
+            <source>GPU Driver Warning</source>
+            <translation>GPU 驅動警告</translation>
+        </message>
+        <message>
+            <source>Fast, support HDR (not AutoHDR)</source>
+            <translation>速度快，支援 HDR（不支援 AutoHDR）</translation>
+        </message>
+        <message>
+            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
+            <translation>僅在使用 Windows AutoHDR 時使用（不建議）</translation>
         </message>
     </context>
     <context>

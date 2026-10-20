@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QListWidgetItem
 from qfluentwidgets import ListWidget
 
 from ok import og
+from ok.core.capture_labels import capture_method_label
 
 
 class SelectCaptureListView(ListWidget):
@@ -29,10 +30,11 @@ class SelectCaptureListView(ListWidget):
                         self.takeItem(self.count() - 1)
                     for i, method in enumerate(methods):
                         method_name = method.__name__ if isinstance(method, type) else str(method)
+                        label = self.tr(capture_method_label(method_name))
                         if i < self.count():
-                            self.item(i).setText(self.tr(method_name))
+                            self.item(i).setText(label)
                         else:
-                            self.addItem(QListWidgetItem(self.tr(method_name)))
+                            self.addItem(QListWidgetItem(label))
                     current_capture = og.device_manager.get_preferred_capture()
                     for i, method in enumerate(methods):
                         method_name = method.__name__ if isinstance(method, type) else str(method)

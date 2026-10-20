@@ -29,6 +29,7 @@ if TYPE_CHECKING:
         ImageCaptureMethod,
         NemuIpcCaptureMethod,
         WindowsGraphicsCaptureMethod,
+        WindowsGraphicsCaptureHDRMethod,
     )
     from ok.device.interaction import (
         BaseInteraction,
@@ -125,6 +126,7 @@ _LAZY_IMPORTS = {
     'BrowserCaptureMethod': ('ok.device.capture', 'BrowserCaptureMethod'),
     'ADBCaptureMethod': ('ok.device.capture', 'ADBCaptureMethod'),
     'WindowsGraphicsCaptureMethod': ('ok.device.capture', 'WindowsGraphicsCaptureMethod'),
+    'WindowsGraphicsCaptureHDRMethod': ('ok.device.capture', 'WindowsGraphicsCaptureHDRMethod'),
     'BitBltCaptureMethod': ('ok.device.capture', 'BitBltCaptureMethod'),
     'NemuIpcCaptureMethod': ('ok.device.capture', 'NemuIpcCaptureMethod'),
     'DesktopDuplicationCaptureMethod': ('ok.device.capture', 'DesktopDuplicationCaptureMethod'),
@@ -714,7 +716,7 @@ class OK:
             capture_methods = windows_config.get('capture_method', [])
             available_methods = []
             for method in capture_methods:
-                if method == 'WGC':
+                if method in ('WGC', 'WGC_HDR'):
                     if wgc_available():
                         available_methods.append(method)
                 else:

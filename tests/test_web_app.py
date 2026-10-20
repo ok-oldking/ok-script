@@ -56,6 +56,22 @@ def test_device_payload_includes_filterable_window_metadata():
     assert "game.exe" in payload["keywords"]
 
 
+def test_capture_labels_describe_hdr_without_changing_selection_ids():
+    runtime = object.__new__(WebRuntime)
+    runtime.ok = SimpleNamespace(
+        device_manager=SimpleNamespace(
+            available_capture_methods=lambda device: ['WGC', 'WGC_HDR'],
+            get_preferred_capture=lambda: 'WGC_HDR',
+        ),
+        headless_app=SimpleNamespace(tr=lambda source: source),
+    )
+    assert runtime._capture_methods({'device': 'windows'}) == [
+        {'id': 'WGC', 'label': 'WGC - Fast, support HDR (not AutoHDR)', 'selected': False},
+        {'id': 'WGC_HDR', 'label': 'WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)',
+         'selected': True},
+    ]
+
+
 def test_theme_ui_exposes_system_accent_palette(monkeypatch):
     palette = {"light": "#0067c0", "dark": "#4cc2ff"}
     monkeypatch.setattr("ok.ui.web.app._windows_system_accents", lambda: palette)

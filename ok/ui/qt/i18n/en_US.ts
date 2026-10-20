@@ -592,7 +592,7 @@
         </message>
         <message>
             <source>WGC</source>
-            <translation>WGC - &gt;=Win10, Fast</translation>
+            <translation>WGC - Fast, support HDR (not AutoHDR)</translation>
         </message>
         <message>
             <source>BitBlt</source>
@@ -601,6 +601,22 @@
         <message>
             <source>DXGI</source>
             <translation>DXGI - Slowest, use as backup</translation>
+        </message>
+        <message>
+            <source>WGC - Fast, support HDR (not AutoHDR)</source>
+            <translation>WGC - Fast, support HDR (not AutoHDR)</translation>
+        </message>
+        <message>
+            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</translation>
+        </message>
+        <message>
+            <source>Fast, support HDR (not AutoHDR)</source>
+            <translation>Fast, support HDR (not AutoHDR)</translation>
+        </message>
+        <message>
+            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
+            <translation>Only use when using Windows AutoHDR (Not Recommended)</translation>
         </message>
     </context>
     <context>
@@ -1713,6 +1729,42 @@
         <message>
             <source>Auto HDR is enabled, tasks might not work correctly!</source>
             <translation>Auto HDR is enabled, tasks might not work correctly!</translation>
+        </message>
+        <message>
+            <source>WGC - Fast, support HDR (not AutoHDR)</source>
+            <translation>WGC - Fast, support HDR (not AutoHDR)</translation>
+        </message>
+        <message>
+            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</translation>
+        </message>
+        <message>
+            <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
+            <translation>Resolution {resolution} check failed, some tasks might not work correctly!</translation>
+        </message>
+        <message>
+            <source>, the supported ratio is {supported_ratio}</source>
+            <translation>, the supported ratio is {supported_ratio}</translation>
+        </message>
+        <message>
+            <source>, the supported min resolution is {min_size}</source>
+            <translation>, the supported min resolution is {min_size}</translation>
+        </message>
+        <message>
+            <source>{vendor} {feature} is enabled and may cause malfunctions!</source>
+            <translation>{vendor} {feature} is enabled and may cause malfunctions!</translation>
+        </message>
+        <message>
+            <source>GPU Driver Warning</source>
+            <translation>GPU Driver Warning</translation>
+        </message>
+        <message>
+            <source>Fast, support HDR (not AutoHDR)</source>
+            <translation>Fast, support HDR (not AutoHDR)</translation>
+        </message>
+        <message>
+            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
+            <translation>Only use when using Windows AutoHDR (Not Recommended)</translation>
         </message>
     </context>
     <context>
@@ -3707,6 +3759,42 @@
         <message>
             <source>Auto HDR is enabled, tasks might not work correctly!</source>
             <translation>Auto HDR is enabled, tasks might not work correctly!</translation>
+        </message>
+        <message>
+            <source>WGC - Fast, support HDR (not AutoHDR)</source>
+            <translation>WGC - Fast, support HDR (not AutoHDR)</translation>
+        </message>
+        <message>
+            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</translation>
+        </message>
+        <message>
+            <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
+            <translation>Resolution {resolution} check failed, some tasks might not work correctly!</translation>
+        </message>
+        <message>
+            <source>, the supported ratio is {supported_ratio}</source>
+            <translation>, the supported ratio is {supported_ratio}</translation>
+        </message>
+        <message>
+            <source>, the supported min resolution is {min_size}</source>
+            <translation>, the supported min resolution is {min_size}</translation>
+        </message>
+        <message>
+            <source>{vendor} {feature} is enabled and may cause malfunctions!</source>
+            <translation>{vendor} {feature} is enabled and may cause malfunctions!</translation>
+        </message>
+        <message>
+            <source>GPU Driver Warning</source>
+            <translation>GPU Driver Warning</translation>
+        </message>
+        <message>
+            <source>Fast, support HDR (not AutoHDR)</source>
+            <translation>Fast, support HDR (not AutoHDR)</translation>
+        </message>
+        <message>
+            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
+            <translation>Only use when using Windows AutoHDR (Not Recommended)</translation>
         </message>
     </context>
     <context>
