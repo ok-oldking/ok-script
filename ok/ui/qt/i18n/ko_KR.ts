@@ -606,16 +606,16 @@
             <translation>WGC - 빠름, HDR 지원 (AutoHDR 미지원)</translation>
         </message>
         <message>
-            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - Windows AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
+            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
         </message>
         <message>
             <source>Fast, support HDR (not AutoHDR)</source>
             <translation>빠름, HDR 지원 (AutoHDR 미지원)</translation>
         </message>
         <message>
-            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>Windows AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
+            <source>Only use when using AutoHDR (Not Recommended)</source>
+            <translation>AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
         </message>
     </context>
     <context>
@@ -856,6 +856,10 @@
         <message>
             <source>GPU Driver Warning</source>
             <translation>GPU 드라이버 경고</translation>
+        </message>
+        <message>
+            <source>Try using Alt+F3 to turn it off.</source>
+            <translation>Alt+F3을 눌러 꺼 보세요.</translation>
         </message>
     </context>
     <context>
@@ -1734,8 +1738,8 @@
             <translation>WGC - 빠름, HDR 지원 (AutoHDR 미지원)</translation>
         </message>
         <message>
-            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - Windows AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
+            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
         </message>
         <message>
             <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
@@ -1762,8 +1766,12 @@
             <translation>빠름, HDR 지원 (AutoHDR 미지원)</translation>
         </message>
         <message>
-            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>Windows AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
+            <source>Only use when using AutoHDR (Not Recommended)</source>
+            <translation>AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
+        </message>
+        <message>
+            <source>Try using Alt+F3 to turn it off.</source>
+            <translation>Alt+F3을 눌러 꺼 보세요.</translation>
         </message>
     </context>
     <context>
@@ -3764,8 +3772,8 @@
             <translation>WGC - 빠름, HDR 지원 (AutoHDR 미지원)</translation>
         </message>
         <message>
-            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - Windows AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
+            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
         </message>
         <message>
             <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
@@ -3792,8 +3800,12 @@
             <translation>빠름, HDR 지원 (AutoHDR 미지원)</translation>
         </message>
         <message>
-            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>Windows AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
+            <source>Only use when using AutoHDR (Not Recommended)</source>
+            <translation>AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
+        </message>
+        <message>
+            <source>Try using Alt+F3 to turn it off.</source>
+            <translation>Alt+F3을 눌러 꺼 보세요.</translation>
         </message>
     </context>
     <context>

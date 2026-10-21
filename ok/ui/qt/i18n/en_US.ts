@@ -607,16 +607,16 @@
             <translation>WGC - Fast, support HDR (not AutoHDR)</translation>
         </message>
         <message>
-            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</translation>
+            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - Only use when using AutoHDR (Not Recommended)</translation>
         </message>
         <message>
             <source>Fast, support HDR (not AutoHDR)</source>
             <translation>Fast, support HDR (not AutoHDR)</translation>
         </message>
         <message>
-            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>Only use when using Windows AutoHDR (Not Recommended)</translation>
+            <source>Only use when using AutoHDR (Not Recommended)</source>
+            <translation>Only use when using AutoHDR (Not Recommended)</translation>
         </message>
     </context>
     <context>
@@ -857,6 +857,10 @@
         <message>
             <source>GPU Driver Warning</source>
             <translation>GPU Driver Warning</translation>
+        </message>
+        <message>
+            <source>Try using Alt+F3 to turn it off.</source>
+            <translation>Try using Alt+F3 to turn it off.</translation>
         </message>
     </context>
     <context>
@@ -1735,8 +1739,8 @@
             <translation>WGC - Fast, support HDR (not AutoHDR)</translation>
         </message>
         <message>
-            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</translation>
+            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - Only use when using AutoHDR (Not Recommended)</translation>
         </message>
         <message>
             <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
@@ -1763,8 +1767,12 @@
             <translation>Fast, support HDR (not AutoHDR)</translation>
         </message>
         <message>
-            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>Only use when using Windows AutoHDR (Not Recommended)</translation>
+            <source>Only use when using AutoHDR (Not Recommended)</source>
+            <translation>Only use when using AutoHDR (Not Recommended)</translation>
+        </message>
+        <message>
+            <source>Try using Alt+F3 to turn it off.</source>
+            <translation>Try using Alt+F3 to turn it off.</translation>
         </message>
     </context>
     <context>
@@ -3765,8 +3773,8 @@
             <translation>WGC - Fast, support HDR (not AutoHDR)</translation>
         </message>
         <message>
-            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</translation>
+            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - Only use when using AutoHDR (Not Recommended)</translation>
         </message>
         <message>
             <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
@@ -3793,8 +3801,12 @@
             <translation>Fast, support HDR (not AutoHDR)</translation>
         </message>
         <message>
-            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>Only use when using Windows AutoHDR (Not Recommended)</translation>
+            <source>Only use when using AutoHDR (Not Recommended)</source>
+            <translation>Only use when using AutoHDR (Not Recommended)</translation>
+        </message>
+        <message>
+            <source>Try using Alt+F3 to turn it off.</source>
+            <translation>Try using Alt+F3 to turn it off.</translation>
         </message>
     </context>
     <context>

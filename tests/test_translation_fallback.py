@@ -25,9 +25,10 @@ class TestTranslationFallback(unittest.TestCase):
         catalogs = json.loads((root / 'web_src/src/i18n/catalogs.json').read_text(encoding='utf-8'))
         sources = [
             'Fast, support HDR (not AutoHDR)',
-            'Only use when using Windows AutoHDR (Not Recommended)',
+            'Only use when using AutoHDR (Not Recommended)',
             'GPU Driver Warning',
             '{vendor} {feature} is enabled and may cause malfunctions!',
+            'Try using Alt+F3 to turn it off.',
             'Resolution {resolution} check failed, some tasks might not work correctly!',
             ', the supported ratio is {supported_ratio}',
             ', the supported min resolution is {min_size}',
@@ -59,7 +60,7 @@ class TestTranslationFallback(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         catalogs = json.loads((root / 'web_src/src/i18n/catalogs.json').read_text(encoding='utf-8'))
         self.assertEqual('WGC - Fast, support HDR (not AutoHDR)', capture_method_label('WGC'))
-        self.assertEqual('WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)',
+        self.assertEqual('WGC_HDR - Only use when using AutoHDR (Not Recommended)',
                          capture_method_label('WGC_HDR'))
         for locale, catalog in catalogs.items():
             for method in ('WGC', 'WGC_HDR'):

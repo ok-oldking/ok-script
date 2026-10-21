@@ -605,16 +605,16 @@
             <translation>WGC - 速度快，支援 HDR（不支援 AutoHDR）</translation>
         </message>
         <message>
-            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - 僅在使用 Windows AutoHDR 時使用（不建議）</translation>
+            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - 僅在使用 AutoHDR 時使用（不建議）</translation>
         </message>
         <message>
             <source>Fast, support HDR (not AutoHDR)</source>
             <translation>速度快，支援 HDR（不支援 AutoHDR）</translation>
         </message>
         <message>
-            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>僅在使用 Windows AutoHDR 時使用（不建議）</translation>
+            <source>Only use when using AutoHDR (Not Recommended)</source>
+            <translation>僅在使用 AutoHDR 時使用（不建議）</translation>
         </message>
     </context>
     <context>
@@ -855,6 +855,10 @@
         <message>
             <source>GPU Driver Warning</source>
             <translation>GPU 驅動警告</translation>
+        </message>
+        <message>
+            <source>Try using Alt+F3 to turn it off.</source>
+            <translation>可嘗試按 Alt+F3 將其關閉。</translation>
         </message>
     </context>
     <context>
@@ -1729,8 +1733,8 @@
             <translation>WGC - 速度快，支援 HDR（不支援 AutoHDR）</translation>
         </message>
         <message>
-            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - 僅在使用 Windows AutoHDR 時使用（不建議）</translation>
+            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - 僅在使用 AutoHDR 時使用（不建議）</translation>
         </message>
         <message>
             <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
@@ -1757,8 +1761,12 @@
             <translation>速度快，支援 HDR（不支援 AutoHDR）</translation>
         </message>
         <message>
-            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>僅在使用 Windows AutoHDR 時使用（不建議）</translation>
+            <source>Only use when using AutoHDR (Not Recommended)</source>
+            <translation>僅在使用 AutoHDR 時使用（不建議）</translation>
+        </message>
+        <message>
+            <source>Try using Alt+F3 to turn it off.</source>
+            <translation>可嘗試按 Alt+F3 將其關閉。</translation>
         </message>
     </context>
     <context>
@@ -3759,8 +3767,8 @@
             <translation>WGC - 速度快，支援 HDR（不支援 AutoHDR）</translation>
         </message>
         <message>
-            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - 僅在使用 Windows AutoHDR 時使用（不建議）</translation>
+            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - 僅在使用 AutoHDR 時使用（不建議）</translation>
         </message>
         <message>
             <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
@@ -3787,8 +3795,12 @@
             <translation>速度快，支援 HDR（不支援 AutoHDR）</translation>
         </message>
         <message>
-            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>僅在使用 Windows AutoHDR 時使用（不建議）</translation>
+            <source>Only use when using AutoHDR (Not Recommended)</source>
+            <translation>僅在使用 AutoHDR 時使用（不建議）</translation>
+        </message>
+        <message>
+            <source>Try using Alt+F3 to turn it off.</source>
+            <translation>可嘗試按 Alt+F3 將其關閉。</translation>
         </message>
     </context>
     <context>

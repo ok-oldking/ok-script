@@ -57,6 +57,9 @@ class SelectInteractionListView(ListWidget):
                 self.reduce_row_to_1()
                 self.item(0).setText(f"{title}")
                 selected = 0
+            for i in range(self.count()):
+                item = self.item(i)
+                item.setToolTip(item.text())
             self.blockSignals(False)
             self.setCurrentRow(selected)
 

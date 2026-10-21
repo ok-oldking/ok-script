@@ -605,16 +605,16 @@
             <translation>WGC - 高速、HDR 対応（AutoHDR 非対応）</translation>
         </message>
         <message>
-            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - Windows AutoHDR 使用時のみ使用（非推奨）</translation>
+            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - AutoHDR 使用時のみ使用（非推奨）</translation>
         </message>
         <message>
             <source>Fast, support HDR (not AutoHDR)</source>
             <translation>高速、HDR 対応（AutoHDR 非対応）</translation>
         </message>
         <message>
-            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>Windows AutoHDR 使用時のみ使用（非推奨）</translation>
+            <source>Only use when using AutoHDR (Not Recommended)</source>
+            <translation>AutoHDR 使用時のみ使用（非推奨）</translation>
         </message>
     </context>
     <context>
@@ -855,6 +855,10 @@
         <message>
             <source>GPU Driver Warning</source>
             <translation>GPU ドライバー警告</translation>
+        </message>
+        <message>
+            <source>Try using Alt+F3 to turn it off.</source>
+            <translation>Alt+F3 を押して無効にしてみてください。</translation>
         </message>
     </context>
     <context>
@@ -1725,8 +1729,8 @@
             <translation>WGC - 高速、HDR 対応（AutoHDR 非対応）</translation>
         </message>
         <message>
-            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - Windows AutoHDR 使用時のみ使用（非推奨）</translation>
+            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - AutoHDR 使用時のみ使用（非推奨）</translation>
         </message>
         <message>
             <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
@@ -1753,8 +1757,12 @@
             <translation>高速、HDR 対応（AutoHDR 非対応）</translation>
         </message>
         <message>
-            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>Windows AutoHDR 使用時のみ使用（非推奨）</translation>
+            <source>Only use when using AutoHDR (Not Recommended)</source>
+            <translation>AutoHDR 使用時のみ使用（非推奨）</translation>
+        </message>
+        <message>
+            <source>Try using Alt+F3 to turn it off.</source>
+            <translation>Alt+F3 を押して無効にしてみてください。</translation>
         </message>
     </context>
     <context>
@@ -3755,8 +3763,8 @@
             <translation>WGC - 高速、HDR 対応（AutoHDR 非対応）</translation>
         </message>
         <message>
-            <source>WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - Windows AutoHDR 使用時のみ使用（非推奨）</translation>
+            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
+            <translation>WGC_HDR - AutoHDR 使用時のみ使用（非推奨）</translation>
         </message>
         <message>
             <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
@@ -3783,8 +3791,12 @@
             <translation>高速、HDR 対応（AutoHDR 非対応）</translation>
         </message>
         <message>
-            <source>Only use when using Windows AutoHDR (Not Recommended)</source>
-            <translation>Windows AutoHDR 使用時のみ使用（非推奨）</translation>
+            <source>Only use when using AutoHDR (Not Recommended)</source>
+            <translation>AutoHDR 使用時のみ使用（非推奨）</translation>
+        </message>
+        <message>
+            <source>Try using Alt+F3 to turn it off.</source>
+            <translation>Alt+F3 を押して無効にしてみてください。</translation>
         </message>
     </context>
     <context>

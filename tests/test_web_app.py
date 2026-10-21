@@ -67,7 +67,7 @@ def test_capture_labels_describe_hdr_without_changing_selection_ids():
     )
     assert runtime._capture_methods({'device': 'windows'}) == [
         {'id': 'WGC', 'label': 'WGC - Fast, support HDR (not AutoHDR)', 'selected': False},
-        {'id': 'WGC_HDR', 'label': 'WGC_HDR - Only use when using Windows AutoHDR (Not Recommended)',
+        {'id': 'WGC_HDR', 'label': 'WGC_HDR - Only use when using AutoHDR (Not Recommended)',
          'selected': True},
     ]
 

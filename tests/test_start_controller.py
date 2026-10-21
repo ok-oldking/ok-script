@@ -231,7 +231,8 @@ class TestStartController(unittest.TestCase):
         warning, title, *args = emit.call_args.args
         self.assertEqual(
             'NVIDIA RTX HDR is enabled and may cause malfunctions!\n'
-            'AMD Radeon Image Sharpening is enabled and may cause malfunctions!',
+            'AMD Radeon Image Sharpening is enabled and may cause malfunctions!\n'
+            'Try using Alt+F3 to turn it off.',
             warning,
         )
         self.assertEqual('GPU Driver Warning', title)

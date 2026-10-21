@@ -333,6 +333,7 @@ class StartTab(Tab):
                 # Add a new item
                 item = QListWidgetItem(item_text)
                 self.device_list.addItem(item)
+            item.setToolTip(item_text)
             item.setData(Qt.UserRole, device)
 
         # Remove any extra items

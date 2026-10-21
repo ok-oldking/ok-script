@@ -168,6 +168,7 @@ function MethodList({ items, label, onSelect, disabled }: {
       className={`option-row ${item.selected ? "selected" : ""}`}
       disabled={disabled}
       key={item.id}
+      title={t(item.label)}
       onClick={() => onSelect(item.id)}
     >{t(item.label)}</button>)}
     {!items.length && <div className="empty-option">{t("No options available")}</div>}
@@ -1453,6 +1454,7 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
                 className={`option-row ${device.selected ? "selected" : ""}`}
                 disabled={pending !== null}
                 key={device.id}
+                title={device.label}
                 onClick={() => void perform("device", () => runtimeApi.selectDevice(device.id))}
               ><span>{device.label}</span>{!device.connected && <small>{t("Disconnected")}</small>}</button>)}
               {!devices.length && <div className="empty-option">{loading ? t("Loading") : t("No windows found")}</div>}

@@ -264,6 +264,9 @@ class StartController:
                 )
                 for feature in enabled_features
             ]
+            if any(feature.vendor == 'NVIDIA' and feature.feature in (
+                    'Filter Profile', 'RTX HDR', 'RTX Dynamic Vibrance') for feature in enabled_features):
+                warning_lines.append(self.tr('Try using Alt+F3 to turn it off.'))
             logger.warning('\n'.join(warning_lines))
             communicate.notification.emit(
                 '\n'.join(warning_lines),

@@ -80,11 +80,28 @@ class TestGpuDriverSettings(unittest.TestCase):
         drs_hit = GpuDriverPostProcessing("NVIDIA", "RTX HDR", True, "Global Profile: value=1")
 
         with patch.object(gpu_settings, "_detect_nvidia_drs_flags", return_value=drs_hit), \
+                patch.object(gpu_settings, "_nvidia_filter_profile_in_use_state", return_value=(True, "slot=1")), \
                 patch.object(gpu_settings, "_windows_hdr_enabled_state") as hdr_state:
             result = gpu_settings.is_nvidia_rtx_hdr_enabled(r"C:\Game\game.exe")
 
         self.assertEqual(drs_hit, result)
         hdr_state.assert_not_called()
+
+    def test_rtx_hdr_does_not_use_saved_setting_without_active_filter_profile(self):
+        for active in (False, None):
+            with self.subTest(active=active), \
+                    patch.object(gpu_settings, "_nvidia_filter_profile_in_use_state",
+                                 return_value=(active, "slot unavailable or off")), \
+                    patch.object(gpu_settings, "_detect_nvidia_drs_flags") as detect_flags:
+                self.assertIsNone(gpu_settings.is_nvidia_rtx_hdr_enabled(r"C:\Game\game.exe"))
+                detect_flags.assert_not_called()
+
+    def test_rtx_hdr_does_not_fall_back_to_unscoped_database_or_driver_flags(self):
+        with patch.object(gpu_settings, "_nvidia_filter_profile_in_use_state", return_value=(True, "slot=1")), \
+                patch.object(gpu_settings, "_scan_nvapi_profiles", return_value=[]), \
+                patch.object(gpu_settings, "_read_nv_drs_db_values", return_value=[1, 1]) as read_db:
+            self.assertIsNone(gpu_settings.is_nvidia_rtx_hdr_enabled(r"C:\Game\game.exe"))
+        read_db.assert_not_called()
 
     def test_unknown_nvidia_filter_profile_does_not_block_detected_features(self):
         with patch.object(gpu_settings, "os") as fake_os, \
@@ -102,7 +119,7 @@ class TestGpuDriverSettings(unittest.TestCase):
         vibrance_enabled.assert_called_once_with()
         rtx_hdr_enabled.assert_not_called()
 
-    def test_get_enabled_reports_rtx_hdr_when_windows_hdr_is_on(self):
+    def test_get_enabled_does_not_report_configured_rtx_hdr_when_filter_profile_is_unknown(self):
         rtx_hdr = GpuDriverPostProcessing("NVIDIA", "RTX HDR", True, "Global Profile: value=1")
 
         with patch.object(gpu_settings, "os") as fake_os, \
@@ -112,12 +129,28 @@ class TestGpuDriverSettings(unittest.TestCase):
                              return_value=(None, "profile unavailable")), \
                 patch.object(gpu_settings, "is_nvidia_image_sharpening_enabled", return_value=None), \
                 patch.object(gpu_settings, "is_nvidia_rtx_dynamic_vibrance_enabled", return_value=None), \
-                patch.object(gpu_settings, "is_nvidia_rtx_hdr_enabled", return_value=rtx_hdr), \
+                patch.object(gpu_settings, "is_nvidia_rtx_hdr_enabled", return_value=rtx_hdr) as rtx_hdr_enabled, \
                 patch.object(gpu_settings, "is_amd_image_sharpening_enabled", return_value=None):
             fake_os.name = "nt"
             result = gpu_settings.get_enabled_gpu_driver_post_processing(r"C:\Game\game.exe", 100)
 
-        self.assertEqual([rtx_hdr], result)
+        self.assertEqual([], result)
+        rtx_hdr_enabled.assert_not_called()
+
+    def test_get_enabled_checks_rtx_hdr_when_windows_hdr_and_filter_profile_are_on(self):
+        rtx_hdr = GpuDriverPostProcessing("NVIDIA", "RTX HDR", True)
+        with patch.object(gpu_settings, "os") as fake_os, \
+                patch.object(gpu_settings, "is_windows_hdr_enabled",
+                             return_value=GpuDriverPostProcessing("Windows", "HDR", True)), \
+                patch.object(gpu_settings, "_nvidia_filter_profile_in_use_state", return_value=(True, "slot=1")), \
+                patch.object(gpu_settings, "is_nvidia_image_sharpening_enabled", return_value=None), \
+                patch.object(gpu_settings, "is_nvidia_rtx_dynamic_vibrance_enabled", return_value=None), \
+                patch.object(gpu_settings, "is_nvidia_rtx_hdr_enabled", return_value=rtx_hdr) as rtx_hdr_enabled, \
+                patch.object(gpu_settings, "is_amd_image_sharpening_enabled", return_value=None):
+            fake_os.name = "nt"
+            result = gpu_settings.get_enabled_gpu_driver_post_processing(r"C:\Game\game.exe", 100)
+        self.assertIn(rtx_hdr, result)
+        rtx_hdr_enabled.assert_called_once_with(r"C:\Game\game.exe")
 
     def test_get_enabled_reports_nvidia_filter_profile_when_in_use(self):
         with patch.object(gpu_settings, "os") as fake_os, \
@@ -197,6 +230,32 @@ class TestGpuDriverSettings(unittest.TestCase):
 
         self.assertEqual((None, "target exe unavailable"), result)
         log_paths.assert_not_called()
+
+    def test_nvidia_filter_profile_matches_basename_metadata_and_escaped_game_path(self):
+        for metadata in (
+                '"drsName": "game.exe",',
+                r'"procPath": "C:\\Game\\game.exe",'):
+            with self.subTest(metadata=metadata):
+                slot, detail = gpu_settings._nvidia_filter_profile_slot_from_text(
+                    metadata + '\nGameFilter  current active slot =  0\n', r'C:\Game\game.exe',
+                )
+                self.assertEqual(0, slot)
+                self.assertIn('slot=0', detail)
+
+    def test_nvidia_filter_profile_does_not_associate_other_games_slot_with_target(self):
+        text = (
+            '"drsName": "game.exe"\n'
+            '"drsName": "othergame.exe"\n'
+            'GameFilter  current active slot =  1\n'
+        )
+        slot, _ = gpu_settings._nvidia_filter_profile_slot_from_text(text, r'C:\Game\game.exe')
+        self.assertIsNone(slot)
+
+    def test_nvidia_filter_profile_requires_exact_basename(self):
+        slot, _ = gpu_settings._nvidia_filter_profile_slot_from_text(
+            '"drsName": "othergame.exe"\nGameFilter  current active slot =  1\n', r'C:\Game\game.exe',
+        )
+        self.assertIsNone(slot)
 
 
 if __name__ == "__main__":
