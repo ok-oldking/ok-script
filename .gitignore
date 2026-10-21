@@ -66,3 +66,6 @@ myRes/
 pytest-cache-files-*/
 .tmp-pytest/
 tmp_install/
+
+# Locally imported plugins
+/ok_import/

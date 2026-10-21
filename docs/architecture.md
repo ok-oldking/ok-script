@@ -16,6 +16,19 @@ small `connect`, `disconnect`, and `emit` API without depending on a UI toolkit.
 The Qt adapter installs a main-thread dispatcher; the web adapter subscribes to
 the same stream and forwards serializable events over a WebSocket.
 
+## Imported plugin window hooks (Qt)
+
+An imported task may implement `on_main_window(window)` to attach its desktop
+UI. The Qt app calls it after the existing application window hook and before
+the first window show; later imports/reloads are notified on the GUI thread.
+Each live task instance gets one attempt per window, including failed attempts.
+Exceptions are logged per plugin, and window destruction removes the event
+subscription. Tasks without this optional method keep their existing behavior.
+
+Keep the callback short; plugins own background work and unload cleanup. This
+Qt-only hook is not invoked by the headless or Web runtime and does not require
+Qt imports in task definitions or the framework-neutral core.
+
 ## Install a mode
 
 ```bash

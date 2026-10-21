@@ -488,6 +488,9 @@ class App(_OverlayConfigMixin):
             if hasattr(og.my_app, 'on_show_main_window'):
                 og.my_app.on_show_main_window(self.main_window)
 
+        from ok.ui.qt.plugin_window_hooks import install_plugin_window_hooks
+        install_plugin_window_hooks(self.main_window)
+
         self.main_window.show()
         self.main_window.bring_to_front()
 
