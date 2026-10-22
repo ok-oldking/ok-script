@@ -634,7 +634,11 @@ def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder, generate_la
     compress_copy_coco(coco_json_path, target_folder, x_anylabeling_folder, generate_label_enmu=generate_label_enmu)
 
 def compress_copy_coco(coco_json, target_folder, image_folder, generate_label_enmu=None) -> str:
+    """Export templates, retaining page assignments from the previous export."""
     import shutil
+
+    target_coco_json = os.path.join(target_folder, os.path.basename(coco_json))
+    previous_data = load_json(target_coco_json) if os.path.exists(target_coco_json) else None
 
     # Clear target folder before writing
     if os.path.exists(target_folder):
@@ -681,17 +685,17 @@ def compress_copy_coco(coco_json, target_folder, image_folder, generate_label_en
         annotation['bbox'] = [round(bbox[0]), round(bbox[1]), w, h]
         annotation['area'] = w * h
 
-    target_coco_json = os.path.join(target_folder, os.path.basename(coco_json))
     with open(target_coco_json, 'w') as json_file:
         json.dump(data, json_file, indent=4)
 
     logger.info(f'Copied COCO JSON to: {target_coco_json}')
 
-    compress_coco(target_coco_json)
+    compress_coco(target_coco_json, previous_data=previous_data)
 
     return target_coco_json
 
-def compress_coco(coco_json) -> None:
+def compress_coco(coco_json, previous_data=None) -> None:
+    """Pack nonoverlapping crops, preserving prior pages when supplied."""
     data = load_json(coco_json)
     coco_folder = os.path.dirname(coco_json)
     category_map = {cat['id']: cat['name'] for cat in data.get('categories', [])}
@@ -724,19 +728,18 @@ def compress_coco(coco_json) -> None:
 
     image_info_map = {img['id']: img for img in data['images']}
 
-    # Sort image_ids by source file modification time (oldest first)
-    # to minimize changes to generated packed images when new images are added
-    def _get_mtime(img_id):
-        info = image_info_map.get(img_id)
-        if info:
-            path = os.path.join(coco_folder, info['file_name'])
-            try:
-                return os.path.getmtime(path)
-            except OSError:
-                pass
-        return float('inf')
+    # IDs survive saves and checkouts; filesystem timestamps do not.
+    image_ids.sort()
 
-    image_ids.sort(key=_get_mtime)
+    previous_pages = {}
+    page_global_index = 0
+    for info in (previous_data or {}).get('images', []):
+        filename = os.path.basename(info['file_name'])
+        stem, extension = os.path.splitext(filename)
+        if extension.lower() == '.png' and stem.isdecimal():
+            index = int(stem)
+            page_global_index = max(page_global_index, index + 1)
+            previous_pages[info['id']] = (index, info.get('width'), info.get('height'))
 
     dims_to_img_ids = {}
     
@@ -763,34 +766,47 @@ def compress_coco(coco_json) -> None:
         dims_to_img_ids[dims].append(img_id)
 
     new_files = []
-    page_global_index = 0
     
     for dims, group_img_ids in dims_to_img_ids.items():
         W, H = dims
-        pages = []
+        def fits(page, rects):
+            return not any(
+                c[0] < p[2] and c[2] > p[0] and c[1] < p[3] and c[3] > p[1]
+                for c in rects for p in page['occupancy']
+            )
+
+        # Reserve surviving assignments before placing new images. Inserting a
+        # page in one resolution group must not renumber later groups.
+        unassigned = []
+        pages_by_index = {}
         for img_id in group_img_ids:
+            previous = previous_pages.get(img_id)
+            if previous is None or previous[1:] != dims:
+                unassigned.append(img_id)
+                continue
+            index = previous[0]
+            page = pages_by_index.setdefault(index, {
+                'index': index, 'image_ids': [], 'occupancy': [],
+            })
+            if fits(page, image_rects[img_id]):
+                page['image_ids'].append(img_id)
+                page['occupancy'].extend(image_rects[img_id])
+            else:
+                unassigned.append(img_id)
+        pages = [pages_by_index[index] for index in sorted(pages_by_index)]
+
+        for img_id in unassigned:
             current_rects = image_rects[img_id]
             assigned_page = None
 
             for page in pages:
-                conflict = False
-                for c_rect in current_rects:
-                    c_x1, c_y1, c_x2, c_y2 = c_rect[:4]
-                    for p_rect in page['occupancy']:
-                        p_x1, p_y1, p_x2, p_y2 = p_rect[:4]
-                        if (c_x1 < p_x2 and c_x2 > p_x1 and
-                                c_y1 < p_y2 and c_y2 > p_y1):
-                            conflict = True
-                            break
-                    if conflict:
-                        break
-
-                if not conflict:
+                if fits(page, current_rects):
                     assigned_page = page
                     break
 
             if assigned_page is None:
-                assigned_page = {'image_ids': [], 'occupancy': []}
+                assigned_page = {'index': page_global_index, 'image_ids': [], 'occupancy': []}
+                page_global_index += 1
                 pages.append(assigned_page)
 
             assigned_page['image_ids'].append(img_id)
@@ -823,9 +839,8 @@ def compress_coco(coco_json) -> None:
                         roi = src_img[r_y1_c:r_y2_c, r_x1_c:r_x2_c]
                         canvas[r_y1_c:r_y2_c, r_x1_c:r_x2_c] = roi
             
-            new_fname = f"{page_global_index}.png"
-            temp_fname = f"temp_packed_{page_global_index}.png"
-            page_global_index += 1
+            new_fname = f"{page['index']}.png"
+            temp_fname = f"temp_packed_{page['index']}.png"
 
             save_path_abs = os.path.join(coco_folder, img_dir_rel, temp_fname)
             final_path_abs = os.path.join(coco_folder, img_dir_rel, new_fname)
