@@ -83,6 +83,7 @@ jobs:
             printf '**Release Note %s -> %s:**\n\n' "$previous_tag" "$GITHUB_REF_NAME" > RELEASE_NOTES.md
             git log --no-merges --format='- %s' "$previous_tag..$GITHUB_REF_NAME" >> RELEASE_NOTES.md
           fi
+          printf '\n[PyPI](https://pypi.org/project/ok-script/%s/)\n' "${GITHUB_REF_NAME#v}" >> RELEASE_NOTES.md
 
       - name: Create release for tag
         env:
