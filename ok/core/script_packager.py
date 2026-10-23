@@ -33,7 +33,7 @@ def load_manifest(folder=None):
     manifest_path = os.path.join(folder, MANIFEST_FILE)
     if os.path.exists(manifest_path):
         try:
-            with open(manifest_path, 'r', encoding='utf-8') as f:
+            with open(manifest_path, 'r', encoding='utf-8-sig') as f:
                 return json.load(f)
         except Exception as e:
             logger.error(f"Failed to load manifest: {e}")
@@ -69,7 +69,36 @@ def validate_filename(name):
 
 def _validate_package_id(name):
     """Validate the manifest identifier used as an import directory name."""
-    return validate_filename(name) and name not in {'.', '..'} and Path(name).name == name
+    return validate_filename(name) and not name.startswith('.') and Path(name).name == name
+
+
+def validate_plugin_manifest(manifest, default_id=None):
+    """Validate optional task/tab entry points without importing plugin code."""
+    if not isinstance(manifest, dict):
+        raise ValueError("Plugin manifest must be an object")
+    manifest = dict(manifest)
+    package_id = manifest.get('file_name', default_id)
+    if not isinstance(package_id, str) or not _validate_package_id(package_id):
+        raise ValueError("Invalid manifest: invalid file_name")
+    manifest['file_name'] = package_id
+    manifest.setdefault('script_name', package_id)
+    manifest.setdefault('version', '')
+    for field in ('script_name', 'version'):
+        if not isinstance(manifest[field], str):
+            raise ValueError(f"Invalid manifest: {field} must be a string")
+    for field in ('tasks', 'custom_tabs'):
+        if field not in manifest:
+            continue
+        entries = manifest[field]
+        if not isinstance(entries, list):
+            raise ValueError(f"Invalid manifest: {field} must be a list")
+        for entry in entries:
+            if (not isinstance(entry, (list, tuple)) or len(entry) != 2
+                    or not all(isinstance(part, str) for part in entry)
+                    or not all(part.isidentifier() for part in entry[0].split('.'))
+                    or not entry[1].isidentifier()):
+                raise ValueError(f"Invalid manifest: {field} entries must be [module, class_name]")
+    return manifest
 
 
 def validate_archive(zf, max_size=MAX_ARCHIVE_SIZE):
@@ -79,13 +108,19 @@ def validate_archive(zf, max_size=MAX_ARCHIVE_SIZE):
         raise ValueError("Script package contains too many files")
 
     total_size = 0
+    seen = set()
     for member in members:
         raw_name = member.filename.replace('\\', '/')
         path = PurePosixPath(raw_name)
         if (not raw_name or '\x00' in raw_name or raw_name.startswith('/') or path.is_absolute()
-                or (path.parts and ':' in path.parts[0])
+                or any(':' in part for part in path.parts)
+                or any(part.rstrip(' .') != part for part in path.parts)
                 or any(part in {'', '.', '..'} for part in path.parts)):
             raise ValueError("Unsafe script package path")
+        identity = str(path).casefold()
+        if identity in seen:
+            raise ValueError("Script package contains duplicate paths")
+        seen.add(identity)
         # Unix symlinks can otherwise escape the destination during later use.
         if (member.external_attr >> 16) & 0o170000 == 0o120000:
             raise ValueError("Script package cannot contain symbolic links")
@@ -93,6 +128,32 @@ def validate_archive(zf, max_size=MAX_ARCHIVE_SIZE):
         if total_size > max_size:
             raise ValueError("Script package is too large")
     return members
+
+
+def _archive_manifest(zf, members):
+    names = {member.filename.replace('\\', '/'): member for member in members if not member.is_dir()}
+    if MANIFEST_FILE in names:
+        manifest_name = MANIFEST_FILE
+    else:
+        candidates = [name for name in names
+                      if len(PurePosixPath(name).parts) == 2
+                      and PurePosixPath(name).name == MANIFEST_FILE]
+        if len(candidates) != 1:
+            raise ValueError("Plugin archive must contain one manifest.json at its root or inside one folder")
+        manifest_name = candidates[0]
+    prefix = manifest_name[:-len(MANIFEST_FILE)]
+    if prefix and any(not name.startswith(prefix) for name in names):
+        raise ValueError("Plugin archive contains files outside the plugin folder")
+    manifest = validate_plugin_manifest(json.loads(zf.read(names[manifest_name]).decode('utf-8-sig')))
+    return manifest, prefix
+
+
+def inspect_script_archive(archive_path, max_size=MAX_ARCHIVE_SIZE):
+    """Read a .zip/.okscript package, including a single enclosing directory."""
+    with zipfile.ZipFile(archive_path) as zf:
+        members = validate_archive(zf, max_size=max_size)
+        manifest, _prefix = _archive_manifest(zf, members)
+        return manifest
 
 
 def export_script(selected_files, file_name, script_name, version, task_folder=None, output_folder=None):
@@ -114,10 +175,15 @@ def export_script(selected_files, file_name, script_name, version, task_folder=N
 
     # Save manifest
     manifest = {
+        **load_manifest(task_folder),
         'file_name': file_name,
         'script_name': script_name,
         'version': version
     }
+    try:
+        manifest = validate_plugin_manifest(manifest)
+    except ValueError as error:
+        return False, str(error), ''
     save_manifest(manifest, task_folder)
 
     # Build zip
@@ -128,7 +194,10 @@ def export_script(selected_files, file_name, script_name, version, task_folder=N
     try:
         with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
             # Add selected .py files
-            for py_file in selected_files:
+            declared_modules = [entry[0].split('.')[0] + '.py'
+                                for field in ('tasks', 'custom_tabs')
+                                for entry in manifest.get(field, [])]
+            for py_file in dict.fromkeys([*selected_files, *declared_modules]):
                 if Path(py_file).name != py_file or not py_file.endswith('.py'):
                     raise ValueError(f"Invalid task filename: {py_file}")
                 full_path = os.path.join(task_folder, py_file)
@@ -145,12 +214,12 @@ def export_script(selected_files, file_name, script_name, version, task_folder=N
                 # Skip __pycache__ directories
                 dirs[:] = [d for d in dirs if d != '__pycache__']
                 for fname in files:
-                    if fname == MANIFEST_FILE:
-                        continue  # Already added
                     full_path = os.path.join(root, fname)
                     rel_path = os.path.relpath(full_path, task_folder)
+                    if rel_path == MANIFEST_FILE:
+                        continue  # The package manifest was already added.
                     # Skip .py files (already handled via selected_files)
-                    if rel_path.endswith('.py'):
+                    if rel_path.endswith('.py') and Path(rel_path).parent == Path('.'):
                         continue
                     zf.write(full_path, rel_path)
 
@@ -161,9 +230,9 @@ def export_script(selected_files, file_name, script_name, version, task_folder=N
         return False, str(e), ""
 
 
-def import_script(okscript_path, import_base=None, max_size=MAX_ARCHIVE_SIZE):
+def import_script(okscript_path, import_base=None, max_size=MAX_ARCHIVE_SIZE, prepare_staging=None):
     """
-    Import a .okscript file.
+    Import a .okscript or release .zip file, optionally wrapped in one folder.
 
     Args:
         okscript_path: path to the .okscript file
@@ -177,14 +246,8 @@ def import_script(okscript_path, import_base=None, max_size=MAX_ARCHIVE_SIZE):
     try:
         with zipfile.ZipFile(okscript_path, 'r') as zf:
             members = validate_archive(zf, max_size=max_size)
-            # Read manifest first
-            if MANIFEST_FILE not in zf.namelist():
-                return False, "Invalid .okscript file: missing manifest.json", ""
-
-            manifest_data = json.loads(zf.read(MANIFEST_FILE).decode('utf-8'))
-            file_name = str(manifest_data.get('file_name', '')).strip()
-            if not _validate_package_id(file_name):
-                return False, "Invalid manifest: invalid file_name", ""
+            manifest_data, prefix = _archive_manifest(zf, members)
+            file_name = manifest_data['file_name']
 
             # Extract to ok_import/<file_name>/
             import_base = os.path.abspath(import_base or get_ok_import_folder())
@@ -195,9 +258,19 @@ def import_script(okscript_path, import_base=None, max_size=MAX_ARCHIVE_SIZE):
             backup_folder = os.path.join(staging_root, '.previous')
             os.makedirs(staging_folder)
             try:
-                zf.extractall(staging_folder, members=members)
+                for member in members:
+                    name = member.filename.replace('\\', '/')
+                    if member.is_dir() or not name.startswith(prefix):
+                        continue
+                    relative = PurePosixPath(name[len(prefix):])
+                    target = Path(staging_folder).joinpath(*relative.parts)
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    with zf.open(member) as source, target.open('wb') as output:
+                        shutil.copyfileobj(source, output)
                 if not os.path.isfile(os.path.join(staging_folder, MANIFEST_FILE)):
                     raise ValueError("Invalid .okscript file: missing manifest.json")
+                if prepare_staging is not None:
+                    prepare_staging(staging_folder)
                 if os.path.exists(import_folder):
                     shutil.move(import_folder, backup_folder)
                 try:
@@ -238,6 +311,8 @@ def scan_import_folders():
         return results
 
     for entry in os.listdir(import_base):
+        if entry.startswith('.'):
+            continue
         folder = os.path.join(import_base, entry)
         if not os.path.isdir(folder):
             continue
@@ -248,8 +323,10 @@ def scan_import_folders():
             continue
 
         try:
-            with open(manifest_path, 'r', encoding='utf-8') as f:
-                manifest = json.load(f)
+            with open(manifest_path, 'r', encoding='utf-8-sig') as f:
+                manifest = validate_plugin_manifest(json.load(f), default_id=entry)
+            if manifest['file_name'] != entry:
+                raise ValueError("Plugin folder must match its manifest file_name")
 
             coco_path = os.path.join(folder, 'assets', 'coco_annotations.json')
             has_features = os.path.exists(coco_path)
@@ -259,6 +336,8 @@ def scan_import_folders():
                 'file_name': manifest.get('file_name', entry),
                 'script_name': manifest.get('script_name', entry),
                 'version': manifest.get('version', ''),
+                'tasks': manifest.get('tasks'),
+                'custom_tabs': manifest.get('custom_tabs', []),
                 'has_features': has_features
             })
         except Exception as e:

@@ -6,6 +6,7 @@ import importlib.util
 import inspect
 import os.path
 import sys
+import time
 
 from ok import og
 from ok.core.events import communicate
@@ -67,9 +68,14 @@ class TaskManager:
             for python_file in python_files:
                 self.load_single_user_task(python_file)
 
-    def load_single_user_task(self, python_file, import_namespace=None):
+    def load_single_user_task(self, python_file, import_namespace=None, task_class=None):
         try:
-            instance = self.find_and_instantiate_class(python_file, BaseTask)
+            if task_class is not None:
+                if not isinstance(task_class, type) or not issubclass(task_class, BaseTask):
+                    raise TypeError('Plugin tasks must extend BaseTask')
+                instance = self._instantiate_task(task_class)
+            else:
+                instance = self.find_and_instantiate_class(python_file, BaseTask)
             if python_file in self.task_errors:
                 del self.task_errors[python_file]
             if instance:
@@ -96,6 +102,12 @@ class TaskManager:
     def reload_task_code(self, task):
         python_file, _ = self.task_map.get(task, (None, None))
         if python_file:
+            namespace = getattr(task, 'import_namespace', None)
+            if namespace in self.imported_scripts:
+                # A plugin's tabs and tasks share module/runtime state. Replace
+                # the whole entry so GUI pages cannot retain an unloaded task.
+                self.load_import_folder(self.imported_scripts[namespace]['folder'])
+                return
             self.unload_task(task)
             module_name = os.path.splitext(os.path.basename(python_file))[0]
             if module_name in sys.modules:
@@ -109,12 +121,24 @@ class TaskManager:
         python_file, _ = self.task_map.get(task, (None, None))
         if python_file is not None:
             del self.task_map[task]
-            task.disable()
+            try:
+                task.disable()
+            except Exception as error:
+                logger.error('Failed to disable plugin task', error)
             if task in self.task_executor.onetime_tasks:
                 self.task_executor.onetime_tasks.remove(task)
             if task in self.task_executor.trigger_tasks:
                 self.task_executor.trigger_tasks.remove(task)
+            namespace = getattr(task, 'import_namespace', None)
+            entry = self.imported_scripts.get(namespace)
+            if entry is not None:
+                entry['tasks'] = [current for current in entry['tasks'] if current is not task]
             communicate.task_list_updated.emit()
+            if namespace is not None:
+                try:
+                    task.on_destroy()
+                except Exception as error:
+                    logger.error('Failed to close plugin task', error)
             self._update_debug_watched_files()
 
     def delete_task(self, task):
@@ -155,11 +179,10 @@ class TaskManager:
             if os.path.normpath(imp['folder']) == os.path.normpath(import_folder):
                 # Unload existing if re-importing
                 if imp['file_name'] in self.imported_scripts:
-                    old_tasks = self.imported_scripts[imp['file_name']].get('tasks', [])
-                    for task in old_tasks:
-                        self.unload_task(task)
+                    self.unload_imported_script(imp['file_name'])
                 self._load_import_entry(imp)
-                return
+                return self.imported_scripts[imp['file_name']]
+        raise ValueError('Plugin folder does not contain a valid manifest')
 
     def _load_import_entry(self, imp):
         """Load a single import entry."""
@@ -171,7 +194,11 @@ class TaskManager:
             sys.path.append(folder)
 
         loaded_tasks = []
-        python_files = glob.glob(os.path.join(folder, '*.py'))
+        errors = []
+        declared_tasks = imp.get('tasks')
+        python_files = glob.glob(os.path.join(folder, '*.py')) if declared_tasks is None else []
+        tab_modules = {spec[0] + '.py' for spec in imp.get('custom_tabs', []) if '.' not in spec[0]}
+        python_files = [path for path in python_files if os.path.basename(path) not in tab_modules]
         logger.info(f"Loading imported script '{script_name}' from {folder}, files: {python_files}")
 
         for python_file in python_files:
@@ -180,11 +207,35 @@ class TaskManager:
                 task.group_name = script_name
                 loaded_tasks.append(task)
 
+        if declared_tasks is not None:
+            from ok.core.plugins import import_plugin_class
+            for specification in declared_tasks:
+                try:
+                    task_class = import_plugin_class(folder, specification)
+                    python_file = inspect.getfile(task_class)
+                    task = self.load_single_user_task(
+                        python_file, import_namespace=file_name, task_class=task_class)
+                    if task is not None:
+                        task.group_name = script_name
+                        loaded_tasks.append(task)
+                except Exception as error:
+                    errors.append(f'{specification[0]}.{specification[1]}: {error}')
+                    logger.error('Failed to load plugin task', error)
+
+        from pathlib import Path
+        for python_file, error in self.task_errors.items():
+            if Path(python_file).resolve().is_relative_to(Path(folder).resolve()):
+                errors.append(f'{os.path.basename(python_file)}: {error}')
+
         self.imported_scripts[file_name] = {
             'folder': folder,
             'script_name': script_name,
             'version': imp.get('version', ''),
             'tasks': loaded_tasks,
+            'custom_tabs': imp.get('custom_tabs', []),
+            'errors': errors,
+            'tab_errors': {},
+            'loaded_at': time.monotonic(),
             'has_features': imp.get('has_features', False)
         }
 
@@ -208,33 +259,43 @@ class TaskManager:
         except Exception as e:
             logger.error(f'Failed to reload features: {e}')
 
+    def unload_imported_script(self, file_name):
+        """Detach GUI pages before closing their task-owned background services."""
+        from ok.core.plugins import forget_plugin_modules
+        imp = self.imported_scripts.pop(file_name, None)
+        if imp is None:
+            return
+        communicate.task_list_updated.emit()
+        for task in tuple(imp.get('tasks', ())):
+            self.unload_task(task)
+        folder = imp['folder']
+        if folder in sys.path:
+            sys.path.remove(folder)
+        forget_plugin_modules(folder)
+        communicate.task_list_updated.emit()
+        return imp
+
     def delete_imported_script(self, file_name):
-        """Unload and delete an imported script folder."""
-        if file_name in self.imported_scripts:
-            import shutil
-            imp = self.imported_scripts[file_name]
-            # Disable and unload tasks
-            tasks_to_unload = list(imp.get('tasks', []))
-            for task in tasks_to_unload:
-                task.disable()
-                self.unload_task(task)
-            
-            # Remove from imported mapping
-            del self.imported_scripts[file_name]
-            
-            # Remove folder
-            folder = imp['folder']
-            if os.path.exists(folder):
-                try:
-                    shutil.rmtree(folder)
-                    logger.info(f"Deleted imported script folder: {folder}")
-                except Exception as e:
-                    logger.error(f"Failed to delete {folder}: {e}")
-            
-            # Trigger features reload to remove namespaced features
-            self._reload_features()
-            
-            communicate.task_list_updated.emit()
+        """Unload a plugin and delete only its installation, preserving user data."""
+        import shutil
+        from pathlib import Path
+        from ok.core.script_packager import get_ok_import_folder
+        imp = self.imported_scripts.get(file_name)
+        folder = Path(imp['folder'] if imp else Path(get_ok_import_folder()) / file_name).resolve()
+        base = Path(get_ok_import_folder()).resolve()
+        if folder.parent != base or folder.name != file_name:
+            raise ValueError('Plugin folder must be directly inside ok_import')
+        self.unload_imported_script(file_name)
+        try:
+            if folder.exists():
+                shutil.rmtree(folder)
+        except Exception:
+            # Keep a failed deletion visible and usable instead of silently
+            # hiding a plugin that will load again on the next launch.
+            self.load_imported_tasks()
+            raise
+        self._reload_features()
+        communicate.task_list_updated.emit()
 
     def _init_debug_file_watcher(self):
         """Initialize file watcher for auto-reloading task files."""
@@ -400,13 +461,16 @@ class TaskManager:
                 if cls_obj and isinstance(cls_obj, type):
                     if issubclass(cls_obj, base_class) or issubclass(cls_obj, TriggerTask):
                         logger.info(f"Class '{cls_name}' is a subclass of {base_class.__name__}.")
-                        try:
-                            return cls_obj(executor=self.task_executor, app=self.app)
-                        except TypeError:
-                            return cls_obj(self.task_executor)
+                        return self._instantiate_task(cls_obj)
                     else:
                         logger.info(f"Class '{cls_name}' is not a subclass of {base_class.__name__}.")
         return None
+
+    def _instantiate_task(self, cls):
+        try:
+            return cls(executor=self.task_executor, app=self.app)
+        except TypeError:
+            return cls(self.task_executor)
 
 
 def calculate_md5(file_path):

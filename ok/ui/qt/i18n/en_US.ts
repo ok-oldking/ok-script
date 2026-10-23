@@ -3899,4 +3899,87 @@
             <translation>Download</translation>
         </message>
     </context>
+    <context>
+        <name>PluginTab</name>
+        <message>
+            <source>Plugins</source>
+            <translation>Plugins</translation>
+        </message>
+        <message>
+            <source>Add from ZIP</source>
+            <translation>Add from ZIP</translation>
+        </message>
+        <message>
+            <source>Add from GitHub</source>
+            <translation>Add from GitHub</translation>
+        </message>
+        <message>
+            <source>No plugins installed.</source>
+            <translation>No plugins installed.</translation>
+        </message>
+        <message>
+            <source>Version: {}</source>
+            <translation>Version: {}</translation>
+        </message>
+        <message>
+            <source>Delete plugin</source>
+            <translation>Delete plugin</translation>
+        </message>
+        <message>
+            <source>Working…</source>
+            <translation>Working…</translation>
+        </message>
+        <message>
+            <source>Plugin operation failed: {}</source>
+            <translation>Plugin operation failed: {}</translation>
+        </message>
+        <message>
+            <source>Install plugin</source>
+            <translation>Install plugin</translation>
+        </message>
+        <message>
+            <source>GitHub repository</source>
+            <translation>GitHub repository</translation>
+        </message>
+        <message>
+            <source>Release asset</source>
+            <translation>Release asset</translation>
+        </message>
+        <message>
+            <source>Plugin installed.</source>
+            <translation>Plugin installed.</translation>
+        </message>
+        <message>
+            <source>Delete plugin "{}"?</source>
+            <translation>Delete plugin "{}"?</translation>
+        </message>
+        <message>
+            <source>Plugin deleted.</source>
+            <translation>Plugin deleted.</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>Check for updates</translation>
+        </message>
+        <message>
+            <source>Update to {}</source>
+            <translation>Update to {}</translation>
+        </message>
+        <message>
+            <source>Update check failed: {}</source>
+            <translation>Update check failed: {}</translation>
+        </message>
+        <message>
+            <source>Update available for {}: {}</source>
+            <translation>Update available for {}: {}</translation>
+        </message>
+        <message>
+            <source>Plugin is up to date.</source>
+            <translation>Plugin is up to date.</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>Checking for updates…</translation>
+        </message>
+    </context>
 </TS>

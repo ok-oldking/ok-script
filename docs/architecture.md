@@ -16,6 +16,11 @@ small `connect`, `disconnect`, and `emit` API without depending on a UI toolkit.
 The Qt adapter installs a main-thread dispatcher; the web adapter subscribes to
 the same stream and forwards serializable events over a WebSocket.
 
+Imported plugin manifests may declare tasks and custom Qt tabs. The Qt adapter
+owns page creation and disposal; the core loader and release downloader remain
+independent of Qt. See [imported plugins](en/plugins.md) for the opt-in manager,
+package format, and task-owned page factories.
+
 ## Install a mode
 
 ```bash

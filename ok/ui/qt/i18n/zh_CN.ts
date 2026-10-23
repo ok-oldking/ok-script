@@ -3895,4 +3895,87 @@
             <translation>下载</translation>
         </message>
     </context>
+    <context>
+        <name>PluginTab</name>
+        <message>
+            <source>Plugins</source>
+            <translation>插件</translation>
+        </message>
+        <message>
+            <source>Add from ZIP</source>
+            <translation>从 ZIP 添加</translation>
+        </message>
+        <message>
+            <source>Add from GitHub</source>
+            <translation>从 GitHub 添加</translation>
+        </message>
+        <message>
+            <source>No plugins installed.</source>
+            <translation>尚未安装插件。</translation>
+        </message>
+        <message>
+            <source>Version: {}</source>
+            <translation>版本：{}</translation>
+        </message>
+        <message>
+            <source>Delete plugin</source>
+            <translation>删除插件</translation>
+        </message>
+        <message>
+            <source>Working…</source>
+            <translation>正在处理…</translation>
+        </message>
+        <message>
+            <source>Plugin operation failed: {}</source>
+            <translation>插件操作失败：{}</translation>
+        </message>
+        <message>
+            <source>Install plugin</source>
+            <translation>安装插件</translation>
+        </message>
+        <message>
+            <source>GitHub repository</source>
+            <translation>GitHub 仓库</translation>
+        </message>
+        <message>
+            <source>Release asset</source>
+            <translation>发行附件</translation>
+        </message>
+        <message>
+            <source>Plugin installed.</source>
+            <translation>插件已安装。</translation>
+        </message>
+        <message>
+            <source>Delete plugin "{}"?</source>
+            <translation>删除插件“{}”？</translation>
+        </message>
+        <message>
+            <source>Plugin deleted.</source>
+            <translation>插件已删除。</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>检查更新</translation>
+        </message>
+        <message>
+            <source>Update to {}</source>
+            <translation>更新至 {}</translation>
+        </message>
+        <message>
+            <source>Update check failed: {}</source>
+            <translation>检查更新失败：{}</translation>
+        </message>
+        <message>
+            <source>Update available for {}: {}</source>
+            <translation>{} 有可用更新：{}</translation>
+        </message>
+        <message>
+            <source>Plugin is up to date.</source>
+            <translation>插件已是最新版本。</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>正在检查更新…</translation>
+        </message>
+    </context>
 </TS>

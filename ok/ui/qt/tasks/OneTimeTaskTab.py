@@ -9,6 +9,7 @@ logger = Logger.get_logger(__name__)
 class OneTimeTaskTab(TaskTab):
     def __init__(self, is_standalone=True, group_name=None):
         super().__init__()
+        self.timer.setParent(self)
         self.is_standalone = is_standalone
         self.group_name = group_name
         self.card_widgets = []
@@ -39,7 +40,15 @@ class OneTimeTaskTab(TaskTab):
             
         from ok.ui.qt.Communicate import communicate
         communicate.task_list_updated.connect(self.refresh_ui)
+        callback = self.refresh_ui
+        self.destroyed.connect(lambda *_: communicate.task_list_updated.disconnect(callback))
         self.refresh_ui()
+
+    def dispose(self):
+        from ok.core.events import communicate
+        communicate.task_list_updated.disconnect(self.refresh_ui)
+        for card in self.card_widgets:
+            card.dispose()
 
     def delete_script(self):
         from qfluentwidgets import MessageBox

@@ -63,6 +63,7 @@ nav:
       - 进阶指南: after_quick_start/README.md
       - API 参考: api_doc/README.md
       - Web 自定义页: task_web_tabs.md
+      - 导入插件: plugins.md
       - 构建文档网站: building-site.md
   - English:
       - Documentation home: en/index.md
@@ -72,4 +73,5 @@ nav:
       - Advanced guide: en/advanced.md
       - API reference: en/api_reference.md
       - Task-backed web tabs: en/task_web_tabs.md
+      - Imported plugins: en/plugins.md
       - Build the documentation site: en/building-site.md

@@ -3893,4 +3893,87 @@
             <translation>下載</translation>
         </message>
     </context>
+    <context>
+        <name>PluginTab</name>
+        <message>
+            <source>Plugins</source>
+            <translation>外掛程式</translation>
+        </message>
+        <message>
+            <source>Add from ZIP</source>
+            <translation>從 ZIP 新增</translation>
+        </message>
+        <message>
+            <source>Add from GitHub</source>
+            <translation>從 GitHub 新增</translation>
+        </message>
+        <message>
+            <source>No plugins installed.</source>
+            <translation>尚未安裝外掛程式。</translation>
+        </message>
+        <message>
+            <source>Version: {}</source>
+            <translation>版本：{}</translation>
+        </message>
+        <message>
+            <source>Delete plugin</source>
+            <translation>刪除外掛程式</translation>
+        </message>
+        <message>
+            <source>Working…</source>
+            <translation>正在處理…</translation>
+        </message>
+        <message>
+            <source>Plugin operation failed: {}</source>
+            <translation>外掛程式操作失敗：{}</translation>
+        </message>
+        <message>
+            <source>Install plugin</source>
+            <translation>安裝外掛程式</translation>
+        </message>
+        <message>
+            <source>GitHub repository</source>
+            <translation>GitHub 儲存庫</translation>
+        </message>
+        <message>
+            <source>Release asset</source>
+            <translation>發行附件</translation>
+        </message>
+        <message>
+            <source>Plugin installed.</source>
+            <translation>外掛程式已安裝。</translation>
+        </message>
+        <message>
+            <source>Delete plugin "{}"?</source>
+            <translation>刪除外掛程式「{}」？</translation>
+        </message>
+        <message>
+            <source>Plugin deleted.</source>
+            <translation>外掛程式已刪除。</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>檢查更新</translation>
+        </message>
+        <message>
+            <source>Update to {}</source>
+            <translation>更新至 {}</translation>
+        </message>
+        <message>
+            <source>Update check failed: {}</source>
+            <translation>檢查更新失敗：{}</translation>
+        </message>
+        <message>
+            <source>Update available for {}: {}</source>
+            <translation>{} 有可用更新：{}</translation>
+        </message>
+        <message>
+            <source>Plugin is up to date.</source>
+            <translation>外掛程式已是最新版本。</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>正在檢查更新…</translation>
+        </message>
+    </context>
 </TS>

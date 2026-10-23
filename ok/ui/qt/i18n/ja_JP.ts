@@ -3889,4 +3889,87 @@
             <translation>ダウンロード</translation>
         </message>
     </context>
+    <context>
+        <name>PluginTab</name>
+        <message>
+            <source>Plugins</source>
+            <translation>プラグイン</translation>
+        </message>
+        <message>
+            <source>Add from ZIP</source>
+            <translation>ZIP から追加</translation>
+        </message>
+        <message>
+            <source>Add from GitHub</source>
+            <translation>GitHub から追加</translation>
+        </message>
+        <message>
+            <source>No plugins installed.</source>
+            <translation>プラグインはインストールされていません。</translation>
+        </message>
+        <message>
+            <source>Version: {}</source>
+            <translation>バージョン：{}</translation>
+        </message>
+        <message>
+            <source>Delete plugin</source>
+            <translation>プラグインを削除</translation>
+        </message>
+        <message>
+            <source>Working…</source>
+            <translation>処理中…</translation>
+        </message>
+        <message>
+            <source>Plugin operation failed: {}</source>
+            <translation>プラグインの操作に失敗しました：{}</translation>
+        </message>
+        <message>
+            <source>Install plugin</source>
+            <translation>プラグインをインストール</translation>
+        </message>
+        <message>
+            <source>GitHub repository</source>
+            <translation>GitHub リポジトリ</translation>
+        </message>
+        <message>
+            <source>Release asset</source>
+            <translation>リリースのファイル</translation>
+        </message>
+        <message>
+            <source>Plugin installed.</source>
+            <translation>プラグインをインストールしました。</translation>
+        </message>
+        <message>
+            <source>Delete plugin "{}"?</source>
+            <translation>プラグイン「{}」を削除しますか？</translation>
+        </message>
+        <message>
+            <source>Plugin deleted.</source>
+            <translation>プラグインを削除しました。</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>更新を確認</translation>
+        </message>
+        <message>
+            <source>Update to {}</source>
+            <translation>{} に更新</translation>
+        </message>
+        <message>
+            <source>Update check failed: {}</source>
+            <translation>更新の確認に失敗しました：{}</translation>
+        </message>
+        <message>
+            <source>Update available for {}: {}</source>
+            <translation>{} の更新があります：{}</translation>
+        </message>
+        <message>
+            <source>Plugin is up to date.</source>
+            <translation>プラグインは最新です。</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>更新を確認中…</translation>
+        </message>
+    </context>
 </TS>

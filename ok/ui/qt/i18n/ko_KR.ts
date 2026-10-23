@@ -3898,4 +3898,87 @@
             <translation>다운로드</translation>
         </message>
     </context>
+    <context>
+        <name>PluginTab</name>
+        <message>
+            <source>Plugins</source>
+            <translation>플러그인</translation>
+        </message>
+        <message>
+            <source>Add from ZIP</source>
+            <translation>ZIP에서 추가</translation>
+        </message>
+        <message>
+            <source>Add from GitHub</source>
+            <translation>GitHub에서 추가</translation>
+        </message>
+        <message>
+            <source>No plugins installed.</source>
+            <translation>설치된 플러그인이 없습니다.</translation>
+        </message>
+        <message>
+            <source>Version: {}</source>
+            <translation>버전: {}</translation>
+        </message>
+        <message>
+            <source>Delete plugin</source>
+            <translation>플러그인 삭제</translation>
+        </message>
+        <message>
+            <source>Working…</source>
+            <translation>처리 중…</translation>
+        </message>
+        <message>
+            <source>Plugin operation failed: {}</source>
+            <translation>플러그인 작업 실패: {}</translation>
+        </message>
+        <message>
+            <source>Install plugin</source>
+            <translation>플러그인 설치</translation>
+        </message>
+        <message>
+            <source>GitHub repository</source>
+            <translation>GitHub 저장소</translation>
+        </message>
+        <message>
+            <source>Release asset</source>
+            <translation>릴리스 파일</translation>
+        </message>
+        <message>
+            <source>Plugin installed.</source>
+            <translation>플러그인이 설치되었습니다.</translation>
+        </message>
+        <message>
+            <source>Delete plugin "{}"?</source>
+            <translation>플러그인 "{}"을(를) 삭제할까요?</translation>
+        </message>
+        <message>
+            <source>Plugin deleted.</source>
+            <translation>플러그인이 삭제되었습니다.</translation>
+        </message>
+        <message>
+            <source>Check for updates</source>
+            <translation>업데이트 확인</translation>
+        </message>
+        <message>
+            <source>Update to {}</source>
+            <translation>{}(으)로 업데이트</translation>
+        </message>
+        <message>
+            <source>Update check failed: {}</source>
+            <translation>업데이트 확인 실패: {}</translation>
+        </message>
+        <message>
+            <source>Update available for {}: {}</source>
+            <translation>{}의 업데이트가 있습니다: {}</translation>
+        </message>
+        <message>
+            <source>Plugin is up to date.</source>
+            <translation>플러그인이 최신 버전입니다.</translation>
+        </message>
+        <message>
+            <source>Checking for updates…</source>
+            <translation>업데이트 확인 중…</translation>
+        </message>
+    </context>
 </TS>

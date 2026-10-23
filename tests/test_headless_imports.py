@@ -13,6 +13,7 @@ class TestHeadlessImports(unittest.TestCase):
             "import ok; "
             "from ok import Icon; "
             "from ok.core.events import communicate; "
+            "from ok.core.plugins import github_release_assets; "
             "from ok.task.task import BaseTask; "
             "from ok.task.TaskExecutor import TaskExecutor; "
             "from ok.util.GlobalConfig import basic_options"

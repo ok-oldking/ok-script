@@ -13,6 +13,7 @@
 | [界面与开发工具](interface.md) | 想了解可视化工作流的开发者 | 任务配置、截图与交互、脚本、模板和调试浮层 |
 | [进阶指南](after_quick_start/README.md) | 已经可以运行模板项目的开发者 | COCO 模板、i18n、自动化测试、打包和发布 |
 | [API 参考](api_doc/README.md) | 正在实现任务逻辑的开发者 | `Box`、`BaseTask`、截图、输入、OCR 和找图 API |
+| [导入插件](plugins.md) | 插件开发者与用户 | ZIP/GitHub 安装、任务、自定义 Qt 页与清理 |
 
 ## 最短上手路线
 

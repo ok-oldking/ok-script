@@ -191,13 +191,21 @@ class MainWindow(FluentWindow):
             from ok.ui.qt.tasks.EditTaskTab import EditTaskTab
             self.edit_task_tab = EditTaskTab()
             self.addSubInterface(self.edit_task_tab, FluentIcon.EDIT, self.tr('Script'),
-                                 position=NavigationItemPosition.SCROLL)
+                                 position=NavigationItemPosition.BOTTOM)
 
         if og.task_manager.has_custom or debug:
             from ok.ui.qt.tasks.TemplateTab import TemplateTab
             self.template_tab = TemplateTab(config=config)
             self.addSubInterface(self.template_tab, FluentIcon.PHOTO, self.tr('Templates'),
                                  position=NavigationItemPosition.SCROLL)
+
+        self._add_plugin_tab()
+        bottom_tabs = [getattr(self, name, None) for name in ('edit_task_tab', 'plugin_tab')]
+        bottom_layout = self.navigationInterface.panel.bottomLayout
+        for index, tab in enumerate(tab for tab in bottom_tabs if tab is not None):
+            item = self.navigationInterface.widget(tab.objectName())
+            bottom_layout.removeWidget(item)
+            bottom_layout.insertWidget(index, item, 0, Qt.AlignBottom)
         
         # Initial load of imported tabs
         self.update_imported_tabs()
@@ -442,47 +450,17 @@ class MainWindow(FluentWindow):
 
     def update_imported_tabs(self):
         """Update navigation tabs for imported scripts."""
-        from ok import og
-        from ok.ui.qt.tasks.OneTimeTaskTab import OneTimeTaskTab
-        
-        imported_scripts = og.task_manager.imported_scripts
-        
-        # Remove tabs for scripts that no longer exist
-        scripts_to_remove = [
-            fn for fn in self.imported_tabs
-            if fn not in imported_scripts or not any(
-                getattr(task, 'visible', True) for task in imported_scripts[fn].get('tasks', [])
-            )
-        ]
-        for fn in scripts_to_remove:
-            tab = self.imported_tabs.pop(fn)
-            # Remove from navigation. MSFluentWindow provides navigation object
-            self.navigationInterface.removeWidget(tab.objectName())
-            self.stackedWidget.removeWidget(tab)
-            tab.deleteLater()
-            
-        # Add tabs for new scripts
-        for file_name, imp in imported_scripts.items():
-            if file_name not in self.imported_tabs:
-                script_name = imp['script_name']
-                tasks = [task for task in imp.get('tasks', []) if getattr(task, 'visible', True)]
-                if tasks:
-                    group_tab = OneTimeTaskTab(is_standalone=False, group_name=script_name)
-                    group_icon = resolve_icon(
-                        tasks[0].group_icon if hasattr(tasks[0], 'group_icon') else FluentIcon.APPLICATION)
-                    self.imported_tabs[file_name] = group_tab
-                    
-                    # Inserting after TemplateTab if it exists
-                    if hasattr(self, 'template_tab'):
-                        # Using our custom logic or standard addSubInterface
-                        # qfluentwidgets typically appends to the current section
-                        self.addSubInterface(group_tab, group_icon, self.app.tr(script_name),
-                                             position=NavigationItemPosition.SCROLL)
-                    else:
-                        self.addSubInterface(group_tab, group_icon, self.app.tr(script_name),
-                                             position=NavigationItemPosition.SCROLL)
+        from ok.ui.qt.plugins.imported_tabs import ImportedTabs
+        if not hasattr(self, '_imported_tab_controller'):
+            self._imported_tab_controller = ImportedTabs(self)
+        self._imported_tab_controller.refresh()
 
-        self.update_navigation_width()
+    def _add_plugin_tab(self):
+        if self.config.get('plugin', False):
+            from ok.ui.qt.plugins.PluginTab import PluginTab
+            self.plugin_tab = PluginTab()
+            self.addSubInterface(self.plugin_tab, FluentIcon.APPLICATION, self.plugin_tab.tr('Plugins'),
+                                 position=NavigationItemPosition.BOTTOM)
 
     def restart_admin(self):
         w = MessageBox(QCoreApplication.translate("app", "Alert"),
@@ -734,6 +712,9 @@ class MainWindow(FluentWindow):
             return self.grouped_task_tabs[0]
         if self.imported_tabs:
             return next(iter(self.imported_tabs.values()))
+        controller = getattr(self, '_imported_tab_controller', None)
+        if controller is not None and controller.custom_tabs:
+            return next(iter(controller.custom_tabs.values()))[0]
         return self.trigger_tab
 
     def executor_paused(self, paused):
