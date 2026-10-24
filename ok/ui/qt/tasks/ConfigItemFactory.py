@@ -5,6 +5,8 @@ from ok.ui.qt.tasks.LabelAndFileSelector import LabelAndFileSelector
 from ok.ui.qt.tasks.LabelAndGlobal import LabelAndGlobal
 from ok.ui.qt.tasks.LabelAndLineEdit import LabelAndLineEdit
 from ok.ui.qt.tasks.LabelAndMultiSelection import LabelAndMultiSelection
+from ok.ui.qt.tasks.LabelAndRadioGroup import LabelAndRadioGroup        # 新增导入
+from ok.ui.qt.tasks.LabelAndPresetManager import LabelAndPresetManager  # 新增总控导入
 from ok.ui.qt.tasks.LabelAndSpinBox import LabelAndSpinBox
 from ok.ui.qt.tasks.LabelAndSwitchButton import LabelAndSwitchButton
 from ok.ui.qt.tasks.LabelAndTextEdit import LabelAndTextEdit
@@ -30,6 +32,10 @@ def config_widget(config_type, config_desc, config, key, value, task):
             return LabelAndDropDown(config_desc, the_type['options'], config, key)
         elif resolved_type == 'multi_selection':
             return LabelAndMultiSelection(config_desc, the_type['options'], config, key)
+        elif resolved_type == 'radio_group':  # 补回单选组组件
+            return LabelAndRadioGroup(config_desc, the_type['options'], config, key)
+        elif resolved_type == 'preset_manager':  # 桥接总控方案管理类
+            return LabelAndPresetManager(config_desc, config, key, task, the_type.get('linked_keys', []))
         elif resolved_type == 'global':
             config = task.get_global_config(key)
             desc = task.get_global_config_desc(key)
