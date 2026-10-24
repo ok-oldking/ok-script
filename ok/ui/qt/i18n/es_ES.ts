@@ -1772,6 +1772,112 @@
             <source>Try using Alt+F3 to turn it off.</source>
             <translation>Prueba a pulsar Alt+F3 para desactivarlo.</translation>
         </message>
+        <message>
+            <source>Bark Notification</source>
+            <translation>Notificaciones de Bark</translation>
+        </message>
+        <message>
+            <source>Bark Server URL</source>
+            <translation>URL del servidor de Bark</translation>
+        </message>
+        <message>
+            <source>Bark Device Key</source>
+            <translation>Clave del dispositivo de Bark</translation>
+        </message>
+        <message>
+            <source>Bark Group</source>
+            <translation>Grupo de Bark</translation>
+        </message>
+        <message>
+            <source>Bark Sound</source>
+            <translation>Sonido de Bark</translation>
+        </message>
+        <message>
+            <source>Bark Level</source>
+            <translation>Nivel de Bark</translation>
+        </message>
+        <message>
+            <source>Bark Archive</source>
+            <translation>Historial de Bark</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Bark iOS app</source>
+            <translation>Enviar notificaciones mediante Bark iOS App</translation>
+        </message>
+        <message>
+            <source>Bark server URL; do not change unless needed</source>
+            <translation>URL del servidor Bark; cambiar solo si es necesario</translation>
+        </message>
+        <message>
+            <source>Device key registered in the Bark app</source>
+            <translation>Clave del dispositivo registrada en Bark App</translation>
+        </message>
+        <message>
+            <source>Notification group; leave empty to send without a group</source>
+            <translation>Grupo de notificaciones; dejar vacio para enviar sin grupo</translation>
+        </message>
+        <message>
+            <source>Ringtone name; leave empty to use the app default</source>
+            <translation>Nombre del tono; dejar vacío para usar el tono predeterminado de la app</translation>
+        </message>
+        <message>
+            <source>Normal: display immediately and wake the screen
+Passive: notification list only
+Time Sensitive: show during Focus
+Critical: sound even in silent mode</source>
+            <translation>Normal: mostrar de inmediato y encender la pantalla
+Silenciosa: solo añadir a la lista
+Urgente: mostrar durante Concentración
+Crítica: sonar incluso en modo silencio</translation>
+        </message>
+        <message>
+            <source>Whether to save notifications in Bark history</source>
+            <translation>Guardar o no las notificaciones en el historial de Bark</translation>
+        </message>
+        <message>
+            <source>App Default</source>
+            <translation>Predeterminado de la app</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>Guardar</translation>
+        </message>
+        <message>
+            <source>Do Not Save</source>
+            <translation>No guardar</translation>
+        </message>
+        <message>
+            <source>active</source>
+            <translation>Normal</translation>
+        </message>
+        <message>
+            <source>passive</source>
+            <translation>Silencioso</translation>
+        </message>
+        <message>
+            <source>timeSensitive</source>
+            <translation>Urgente</translation>
+        </message>
+        <message>
+            <source>Bark Icon</source>
+            <translation>Icono de Bark</translation>
+        </message>
+        <message>
+            <source>Bark URL</source>
+            <translation>Enlace de Bark</translation>
+        </message>
+        <message>
+            <source>Notification icon URL; leave empty to use the app default icon</source>
+            <translation>URL del icono; dejar vacío para usar el icono predeterminado de la app</translation>
+        </message>
+        <message>
+            <source>Link to open when the notification is tapped</source>
+            <translation>Enlace que se abre al tocar la notificación</translation>
+        </message>
+        <message>
+            <source>critical</source>
+            <translation>Alerta crítica</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3805,6 +3911,108 @@
         <message>
             <source>Try using Alt+F3 to turn it off.</source>
             <translation>Prueba a pulsar Alt+F3 para desactivarlo.</translation>
+        </message>
+        <message>
+            <source>Bark Notification</source>
+            <translation>Notificaciones de Bark</translation>
+        </message>
+        <message>
+            <source>Bark Server URL</source>
+            <translation>URL del servidor de Bark</translation>
+        </message>
+        <message>
+            <source>Bark Device Key</source>
+            <translation>Clave del dispositivo de Bark</translation>
+        </message>
+        <message>
+            <source>Bark Group</source>
+            <translation>Grupo de Bark</translation>
+        </message>
+        <message>
+            <source>Bark Sound</source>
+            <translation>Sonido de Bark</translation>
+        </message>
+        <message>
+            <source>Bark Level</source>
+            <translation>Nivel de Bark</translation>
+        </message>
+        <message>
+            <source>Bark Archive</source>
+            <translation>Historial de Bark</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Bark iOS app</source>
+            <translation>Enviar notificaciones mediante Bark iOS App</translation>
+        </message>
+        <message>
+            <source>Bark server URL; do not change unless needed</source>
+            <translation>URL del servidor Bark; cambiar solo si es necesario</translation>
+        </message>
+        <message>
+            <source>Device key registered in the Bark app</source>
+            <translation>Clave del dispositivo registrada en Bark App</translation>
+        </message>
+        <message>
+            <source>Notification group; leave empty to send without a group</source>
+            <translation>Grupo de notificaciones; dejar vacio para enviar sin grupo</translation>
+        </message>
+        <message>
+            <source>Ringtone name; leave empty to use the app default</source>
+            <translation>Nombre del tono; dejar vacío para usar el tono predeterminado de la app</translation>
+        </message>
+        <message>
+            <source>Normal: display immediately and wake the screen
+Passive: notification list only
+Time Sensitive: show during Focus
+Critical: sound even in silent mode</source>
+            <translation>Normal: mostrar de inmediato y encender la pantalla
+Silenciosa: solo añadir a la lista
+Urgente: mostrar durante Concentración
+Crítica: sonar incluso en modo silencio</translation>
+        </message>
+        <message>
+            <source>Whether to save notifications in Bark history</source>
+            <translation>Guardar o no las notificaciones en el historial de Bark</translation>
+        </message>
+        <message>
+            <source>App Default</source>
+            <translation>Predeterminado de la app</translation>
+        </message>
+        <message>
+            <source>Do Not Save</source>
+            <translation>No guardar</translation>
+        </message>
+        <message>
+            <source>active</source>
+            <translation>Normal</translation>
+        </message>
+        <message>
+            <source>passive</source>
+            <translation>Silencioso</translation>
+        </message>
+        <message>
+            <source>timeSensitive</source>
+            <translation>Urgente</translation>
+        </message>
+        <message>
+            <source>Bark Icon</source>
+            <translation>Icono de Bark</translation>
+        </message>
+        <message>
+            <source>Bark URL</source>
+            <translation>Enlace de Bark</translation>
+        </message>
+        <message>
+            <source>Notification icon URL; leave empty to use the app default icon</source>
+            <translation>URL del icono; dejar vacío para usar el icono predeterminado de la app</translation>
+        </message>
+        <message>
+            <source>Link to open when the notification is tapped</source>
+            <translation>Enlace que se abre al tocar la notificación</translation>
+        </message>
+        <message>
+            <source>critical</source>
+            <translation>Alerta crítica</translation>
         </message>
     </context>
     <context>
