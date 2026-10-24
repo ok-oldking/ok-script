@@ -1774,6 +1774,112 @@
             <source>Try using Alt+F3 to turn it off.</source>
             <translation>Try using Alt+F3 to turn it off.</translation>
         </message>
+        <message>
+            <source>Bark Notification</source>
+            <translation>Bark Notification</translation>
+        </message>
+        <message>
+            <source>Bark Server URL</source>
+            <translation>Bark Server URL</translation>
+        </message>
+        <message>
+            <source>Bark Device Key</source>
+            <translation>Bark Device Key</translation>
+        </message>
+        <message>
+            <source>Bark Group</source>
+            <translation>Bark Group</translation>
+        </message>
+        <message>
+            <source>Bark Sound</source>
+            <translation>Bark Sound</translation>
+        </message>
+        <message>
+            <source>Bark Level</source>
+            <translation>Bark Level</translation>
+        </message>
+        <message>
+            <source>Bark Archive</source>
+            <translation>Bark Archive</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Bark iOS app</source>
+            <translation>Send notifications through the Bark iOS app</translation>
+        </message>
+        <message>
+            <source>Bark server URL; do not change unless needed</source>
+            <translation>Bark server URL; do not change unless needed</translation>
+        </message>
+        <message>
+            <source>Device key registered in the Bark app</source>
+            <translation>Device key registered in the Bark app</translation>
+        </message>
+        <message>
+            <source>Notification group; leave empty to send without a group</source>
+            <translation>Notification group; leave empty to send without a group</translation>
+        </message>
+        <message>
+            <source>Ringtone name; leave empty to use the app default</source>
+            <translation>Ringtone name; leave empty to use the app default</translation>
+        </message>
+        <message>
+            <source>Normal: display immediately and wake the screen
+Passive: notification list only
+Time Sensitive: show during Focus
+Critical: sound even in silent mode</source>
+            <translation>Normal: display immediately and wake the screen
+Passive: notification list only
+Time Sensitive: show during Focus
+Critical: sound even in silent mode</translation>
+        </message>
+        <message>
+            <source>Whether to save notifications in Bark history</source>
+            <translation>Whether to save notifications in Bark history</translation>
+        </message>
+        <message>
+            <source>App Default</source>
+            <translation>App Default</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>Save</translation>
+        </message>
+        <message>
+            <source>Do Not Save</source>
+            <translation>Do Not Save</translation>
+        </message>
+        <message>
+            <source>active</source>
+            <translation>active</translation>
+        </message>
+        <message>
+            <source>passive</source>
+            <translation>passive</translation>
+        </message>
+        <message>
+            <source>timeSensitive</source>
+            <translation>timeSensitive</translation>
+        </message>
+        <message>
+            <source>Bark Icon</source>
+            <translation>Bark Icon</translation>
+        </message>
+        <message>
+            <source>Bark URL</source>
+            <translation>Bark URL</translation>
+        </message>
+        <message>
+            <source>Notification icon URL; leave empty to use the app default icon</source>
+            <translation>Notification icon URL; leave empty to use the app default icon</translation>
+        </message>
+        <message>
+            <source>Link to open when the notification is tapped</source>
+            <translation>Link to open when the notification is tapped</translation>
+        </message>
+        <message>
+            <source>critical</source>
+            <translation>Critical alert</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3807,6 +3913,108 @@
         <message>
             <source>Try using Alt+F3 to turn it off.</source>
             <translation>Try using Alt+F3 to turn it off.</translation>
+        </message>
+        <message>
+            <source>Bark Notification</source>
+            <translation>Bark Notification</translation>
+        </message>
+        <message>
+            <source>Bark Server URL</source>
+            <translation>Bark Server URL</translation>
+        </message>
+        <message>
+            <source>Bark Device Key</source>
+            <translation>Bark Device Key</translation>
+        </message>
+        <message>
+            <source>Bark Group</source>
+            <translation>Bark Group</translation>
+        </message>
+        <message>
+            <source>Bark Sound</source>
+            <translation>Bark Sound</translation>
+        </message>
+        <message>
+            <source>Bark Level</source>
+            <translation>Bark Level</translation>
+        </message>
+        <message>
+            <source>Bark Archive</source>
+            <translation>Bark Archive</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Bark iOS app</source>
+            <translation>Send notifications through the Bark iOS app</translation>
+        </message>
+        <message>
+            <source>Bark server URL; do not change unless needed</source>
+            <translation>Bark server URL; do not change unless needed</translation>
+        </message>
+        <message>
+            <source>Device key registered in the Bark app</source>
+            <translation>Device key registered in the Bark app</translation>
+        </message>
+        <message>
+            <source>Notification group; leave empty to send without a group</source>
+            <translation>Notification group; leave empty to send without a group</translation>
+        </message>
+        <message>
+            <source>Ringtone name; leave empty to use the app default</source>
+            <translation>Ringtone name; leave empty to use the app default</translation>
+        </message>
+        <message>
+            <source>Normal: display immediately and wake the screen
+Passive: notification list only
+Time Sensitive: show during Focus
+Critical: sound even in silent mode</source>
+            <translation>Normal: display immediately and wake the screen
+Passive: notification list only
+Time Sensitive: show during Focus
+Critical: sound even in silent mode</translation>
+        </message>
+        <message>
+            <source>Whether to save notifications in Bark history</source>
+            <translation>Whether to save notifications in Bark history</translation>
+        </message>
+        <message>
+            <source>App Default</source>
+            <translation>App Default</translation>
+        </message>
+        <message>
+            <source>Do Not Save</source>
+            <translation>Do Not Save</translation>
+        </message>
+        <message>
+            <source>active</source>
+            <translation>active</translation>
+        </message>
+        <message>
+            <source>passive</source>
+            <translation>passive</translation>
+        </message>
+        <message>
+            <source>timeSensitive</source>
+            <translation>timeSensitive</translation>
+        </message>
+        <message>
+            <source>Bark Icon</source>
+            <translation>Bark Icon</translation>
+        </message>
+        <message>
+            <source>Bark URL</source>
+            <translation>Bark URL</translation>
+        </message>
+        <message>
+            <source>Notification icon URL; leave empty to use the app default icon</source>
+            <translation>Notification icon URL; leave empty to use the app default icon</translation>
+        </message>
+        <message>
+            <source>Link to open when the notification is tapped</source>
+            <translation>Link to open when the notification is tapped</translation>
+        </message>
+        <message>
+            <source>critical</source>
+            <translation>Critical alert</translation>
         </message>
     </context>
     <context>

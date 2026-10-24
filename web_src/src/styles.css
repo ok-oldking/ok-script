@@ -502,7 +502,7 @@ h2 { margin: 0 0 8px; color: #f4eff1; font-size: .88rem; line-height: 1.3; font-
 .task-config-row { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(0, 2fr); align-items: center; min-height: 52px; gap: 16px; padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,.045); }
 .task-config-row > span strong, .task-config-row > span small { display: block; }
 .task-config-row > span strong { font-size: .8rem; font-weight: 600; }
-.task-config-row > span small { margin-top: 3px; color: var(--text-muted); font-size: .68rem; }
+.task-config-row > span small { margin-top: 3px; color: var(--text-muted); font-size: .68rem; white-space: pre-line; }
 .task-config-row.sub-config { position: relative; padding-left: 28px; }
 .task-config-row.sub-config::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--accent) 28%, transparent); }
 .task-config-control, .task-config-options { justify-self: end; width: fit-content; max-width: 100%; }

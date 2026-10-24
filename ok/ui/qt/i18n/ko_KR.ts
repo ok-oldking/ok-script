@@ -1773,6 +1773,112 @@
             <source>Try using Alt+F3 to turn it off.</source>
             <translation>Alt+F3을 눌러 꺼 보세요.</translation>
         </message>
+        <message>
+            <source>Bark Notification</source>
+            <translation>Bark 알림</translation>
+        </message>
+        <message>
+            <source>Bark Server URL</source>
+            <translation>Bark 서버 URL</translation>
+        </message>
+        <message>
+            <source>Bark Device Key</source>
+            <translation>Bark 기기 키</translation>
+        </message>
+        <message>
+            <source>Bark Group</source>
+            <translation>Bark 그룹</translation>
+        </message>
+        <message>
+            <source>Bark Sound</source>
+            <translation>Bark 알림음</translation>
+        </message>
+        <message>
+            <source>Bark Level</source>
+            <translation>Bark 알림 수준</translation>
+        </message>
+        <message>
+            <source>Bark Archive</source>
+            <translation>Bark 기록 저장</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Bark iOS app</source>
+            <translation>Bark iOS App을 통해 알림 전송</translation>
+        </message>
+        <message>
+            <source>Bark server URL; do not change unless needed</source>
+            <translation>Bark 서버 URL; 필요한 경우에만 변경하세요</translation>
+        </message>
+        <message>
+            <source>Device key registered in the Bark app</source>
+            <translation>Bark App에 등록된 기기 키</translation>
+        </message>
+        <message>
+            <source>Notification group; leave empty to send without a group</source>
+            <translation>알림 그룹; 비워 두면 그룹을 지정하지 않습니다</translation>
+        </message>
+        <message>
+            <source>Ringtone name; leave empty to use the app default</source>
+            <translation>벨소리 이름; 비워 두면 App 기본 벨소리 사용</translation>
+        </message>
+        <message>
+            <source>Normal: display immediately and wake the screen
+Passive: notification list only
+Time Sensitive: show during Focus
+Critical: sound even in silent mode</source>
+            <translation>일반: 화면을 켜고 즉시 표시
+무음: 알림 목록에만 추가
+시간 민감: 집중 모드에서도 표시
+중요 경고: 무음 모드에서도 소리 재생</translation>
+        </message>
+        <message>
+            <source>Whether to save notifications in Bark history</source>
+            <translation>Bark 기록에 알림을 저장할지 선택합니다</translation>
+        </message>
+        <message>
+            <source>App Default</source>
+            <translation>앱 기본값</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>저장</translation>
+        </message>
+        <message>
+            <source>Do Not Save</source>
+            <translation>저장 안 함</translation>
+        </message>
+        <message>
+            <source>active</source>
+            <translation>일반</translation>
+        </message>
+        <message>
+            <source>passive</source>
+            <translation>무음</translation>
+        </message>
+        <message>
+            <source>timeSensitive</source>
+            <translation>시간 지정</translation>
+        </message>
+        <message>
+            <source>Bark Icon</source>
+            <translation>Bark 아이콘</translation>
+        </message>
+        <message>
+            <source>Bark URL</source>
+            <translation>Bark 이동 링크</translation>
+        </message>
+        <message>
+            <source>Notification icon URL; leave empty to use the app default icon</source>
+            <translation>알림 아이콘 URL; 비워 두면 App 기본 아이콘 사용</translation>
+        </message>
+        <message>
+            <source>Link to open when the notification is tapped</source>
+            <translation>알림을 눌렀을 때 열 링크</translation>
+        </message>
+        <message>
+            <source>critical</source>
+            <translation>중요 경고</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3806,6 +3912,108 @@
         <message>
             <source>Try using Alt+F3 to turn it off.</source>
             <translation>Alt+F3을 눌러 꺼 보세요.</translation>
+        </message>
+        <message>
+            <source>Bark Notification</source>
+            <translation>Bark 알림</translation>
+        </message>
+        <message>
+            <source>Bark Server URL</source>
+            <translation>Bark 서버 URL</translation>
+        </message>
+        <message>
+            <source>Bark Device Key</source>
+            <translation>Bark 기기 키</translation>
+        </message>
+        <message>
+            <source>Bark Group</source>
+            <translation>Bark 그룹</translation>
+        </message>
+        <message>
+            <source>Bark Sound</source>
+            <translation>Bark 알림음</translation>
+        </message>
+        <message>
+            <source>Bark Level</source>
+            <translation>Bark 알림 수준</translation>
+        </message>
+        <message>
+            <source>Bark Archive</source>
+            <translation>Bark 기록 저장</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Bark iOS app</source>
+            <translation>Bark iOS App을 통해 알림 전송</translation>
+        </message>
+        <message>
+            <source>Bark server URL; do not change unless needed</source>
+            <translation>Bark 서버 URL; 필요한 경우에만 변경하세요</translation>
+        </message>
+        <message>
+            <source>Device key registered in the Bark app</source>
+            <translation>Bark App에 등록된 기기 키</translation>
+        </message>
+        <message>
+            <source>Notification group; leave empty to send without a group</source>
+            <translation>알림 그룹; 비워 두면 그룹을 지정하지 않습니다</translation>
+        </message>
+        <message>
+            <source>Ringtone name; leave empty to use the app default</source>
+            <translation>벨소리 이름; 비워 두면 App 기본 벨소리 사용</translation>
+        </message>
+        <message>
+            <source>Normal: display immediately and wake the screen
+Passive: notification list only
+Time Sensitive: show during Focus
+Critical: sound even in silent mode</source>
+            <translation>일반: 화면을 켜고 즉시 표시
+무음: 알림 목록에만 추가
+시간 민감: 집중 모드에서도 표시
+중요 경고: 무음 모드에서도 소리 재생</translation>
+        </message>
+        <message>
+            <source>Whether to save notifications in Bark history</source>
+            <translation>Bark 기록에 알림을 저장할지 선택합니다</translation>
+        </message>
+        <message>
+            <source>App Default</source>
+            <translation>앱 기본값</translation>
+        </message>
+        <message>
+            <source>Do Not Save</source>
+            <translation>저장 안 함</translation>
+        </message>
+        <message>
+            <source>active</source>
+            <translation>일반</translation>
+        </message>
+        <message>
+            <source>passive</source>
+            <translation>무음</translation>
+        </message>
+        <message>
+            <source>timeSensitive</source>
+            <translation>시간 지정</translation>
+        </message>
+        <message>
+            <source>Bark Icon</source>
+            <translation>Bark 아이콘</translation>
+        </message>
+        <message>
+            <source>Bark URL</source>
+            <translation>Bark 이동 링크</translation>
+        </message>
+        <message>
+            <source>Notification icon URL; leave empty to use the app default icon</source>
+            <translation>알림 아이콘 URL; 비워 두면 App 기본 아이콘 사용</translation>
+        </message>
+        <message>
+            <source>Link to open when the notification is tapped</source>
+            <translation>알림을 눌렀을 때 열 링크</translation>
+        </message>
+        <message>
+            <source>critical</source>
+            <translation>중요 경고</translation>
         </message>
     </context>
     <context>
