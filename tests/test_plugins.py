@@ -271,6 +271,11 @@ def test_declared_tasks_reload_and_delete_clean_up_instances_and_modules(tmp_pat
     assert replacement in manager.task_map
     assert replacement.import_namespace == 'demo'
     manager.delete_imported_script('demo')
+    assert not replacement.destroyed
+    assert folder.exists() and replacement in manager.task_map
+    manager.unload_imported_script('demo')  # Simulate normal application shutdown.
+    from ok.core.plugin_staging import apply_pending_plugin_changes
+    apply_pending_plugin_changes()
     assert replacement.destroyed
     assert not manager.task_map and not manager.imported_scripts
     assert not folder.exists()

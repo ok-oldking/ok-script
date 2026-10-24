@@ -310,8 +310,15 @@ def scan_import_folders():
     if not os.path.exists(import_base):
         return results
 
+    from ok.core.plugin_staging import pending_plugin_changes
+    blocked = {namespace for namespace, change in pending_plugin_changes(import_base).items()
+               if change['phase'] in {'recovery', 'applying'}}
+
     for entry in os.listdir(import_base):
         if entry.startswith('.'):
+            continue
+        if entry in blocked:
+            logger.error(f'Skipping plugin until its pending change can be recovered: {entry}')
             continue
         folder = os.path.join(import_base, entry)
         if not os.path.isdir(folder):

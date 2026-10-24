@@ -3980,5 +3980,33 @@
             <source>Checking for updates…</source>
             <translation>업데이트 확인 중…</translation>
         </message>
+        <message>
+            <source>Restart the application to apply plugin changes.</source>
+            <translation>플러그인 변경 사항을 적용하려면 앱을 다시 시작하세요.</translation>
+        </message>
+        <message>
+            <source>Plugin change failed: {}</source>
+            <translation>플러그인 변경 실패: {}</translation>
+        </message>
+        <message>
+            <source>Update failed. Restart to restore the previous version.</source>
+            <translation>업데이트에 실패했습니다. 이전 버전을 복원하려면 다시 시작하세요.</translation>
+        </message>
+        <message>
+            <source>Deletion staged. Restart to apply.</source>
+            <translation>삭제가 예약되었습니다. 다시 시작하면 적용됩니다.</translation>
+        </message>
+        <message>
+            <source>Update staged: {}. Restart to apply.</source>
+            <translation>업데이트 준비 완료: {}. 다시 시작하면 적용됩니다.</translation>
+        </message>
+        <message>
+            <source>Cancel pending change</source>
+            <translation>대기 중인 변경 취소</translation>
+        </message>
+        <message>
+            <source>Backup cleanup pending. Restart to retry.</source>
+            <translation>백업 정리가 대기 중입니다. 다시 시작하여 재시도하세요.</translation>
+        </message>
     </context>
 </TS>

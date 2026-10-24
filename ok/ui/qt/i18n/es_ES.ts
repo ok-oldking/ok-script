@@ -3979,5 +3979,33 @@
             <source>Checking for updates…</source>
             <translation>Buscando actualizaciones…</translation>
         </message>
+        <message>
+            <source>Restart the application to apply plugin changes.</source>
+            <translation>Reinicia la aplicación para aplicar los cambios de complementos.</translation>
+        </message>
+        <message>
+            <source>Plugin change failed: {}</source>
+            <translation>Error al cambiar el complemento: {}</translation>
+        </message>
+        <message>
+            <source>Update failed. Restart to restore the previous version.</source>
+            <translation>La actualización falló. Reinicia para restaurar la versión anterior.</translation>
+        </message>
+        <message>
+            <source>Deletion staged. Restart to apply.</source>
+            <translation>Eliminación preparada. Reinicia para aplicarla.</translation>
+        </message>
+        <message>
+            <source>Update staged: {}. Restart to apply.</source>
+            <translation>Actualización preparada: {}. Reinicia para aplicarla.</translation>
+        </message>
+        <message>
+            <source>Cancel pending change</source>
+            <translation>Cancelar cambio pendiente</translation>
+        </message>
+        <message>
+            <source>Backup cleanup pending. Restart to retry.</source>
+            <translation>Limpieza de copias pendiente. Reinicia para reintentar.</translation>
+        </message>
     </context>
 </TS>

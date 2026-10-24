@@ -897,16 +897,15 @@ class WebRuntime:
             raise ValueError("Select an .okscript file")
         if not content or len(content) > 100 * 1024 * 1024:
             raise ValueError("Invalid or oversized script package")
-        from ok.core.script_packager import import_script
+        from ok.core.plugin_staging import install_or_stage_plugin
         with tempfile.NamedTemporaryFile(suffix=".okscript", delete=False) as handle:
             temporary = Path(handle.name)
             handle.write(content)
         try:
-            success, message, import_folder = import_script(str(temporary))
-            if not success:
-                raise ValueError(message)
-            self.task_manager.load_import_folder(import_folder)
-            return {"message": message}
+            result = install_or_stage_plugin(str(temporary))
+            if not result['restart_required']:
+                self.task_manager.load_import_folder(result['folder'])
+            return {"message": result['message'], "restart_required": result['restart_required']}
         finally:
             temporary.unlink(missing_ok=True)
 

@@ -38,6 +38,29 @@ def make_runtime(tmp_path):
     return runtime
 
 
+def test_importing_existing_plugin_stages_update_without_reloading(tmp_path, monkeypatch):
+    import io
+    import zipfile
+    from ok.core.plugin_staging import pending_plugin_changes
+
+    monkeypatch.chdir(tmp_path)
+    folder = tmp_path / 'ok_import/demo'
+    folder.mkdir(parents=True)
+    (folder / 'manifest.json').write_text(json.dumps({'file_name': 'demo', 'version': '1.0', 'tasks': []}))
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, 'w') as output:
+        output.writestr('manifest.json', json.dumps({'file_name': 'demo', 'version': '2.0', 'tasks': []}))
+    runtime = make_runtime(tmp_path)
+    runtime.task_manager.load_import_folder = Mock()
+
+    result = runtime.import_script_archive('demo.okscript', archive.getvalue())
+
+    assert result['restart_required']
+    runtime.task_manager.load_import_folder.assert_not_called()
+    assert json.loads((folder / 'manifest.json').read_text())['version'] == '1.0'
+    assert pending_plugin_changes()['demo']['version'] == '2.0'
+
+
 def test_about_and_navigation_are_runtime_driven(tmp_path):
     runtime = make_runtime(tmp_path)
 

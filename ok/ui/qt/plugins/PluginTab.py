@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, QTimer, Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
@@ -11,9 +12,12 @@ from ok import og
 from ok.core.events import communicate
 from ok.core.plugins import (
     download_plugin, github_asset_source, github_release_assets, newer_plugin_version,
-    plugin_update_assets, prepare_local_plugin, read_plugin_source, write_plugin_source,
+    plugin_update_assets, prepare_local_plugin, read_plugin_source,
 )
-from ok.core.script_packager import import_script, scan_import_folders
+from ok.core.plugin_staging import (
+    cancel_pending_plugin_change, install_or_stage_plugin, pending_plugin_changes,
+)
+from ok.core.script_packager import get_ok_import_folder, scan_import_folders
 from ok.ui.qt.widget.Tab import Tab
 from ok.ui.qt.widget.ImportWarningDialog import ImportWarningDialog
 
@@ -63,13 +67,21 @@ class PluginTab(Tab):
         self.status_label = BodyLabel('', self)
         self.status_label.setWordWrap(True)
         self.vBoxLayout.addWidget(self.status_label)
+        self.restart_label = BodyLabel(self.tr('Restart the application to apply plugin changes.'), self)
+        self.restart_label.setWordWrap(True)
+        self.restart_label.hide()
+        self.vBoxLayout.addWidget(self.restart_label)
         self.plugins = QWidget(self)
         self.plugins_layout = QVBoxLayout(self.plugins)
         self.plugins_layout.setContentsMargins(0, 0, 0, 0)
         self.vBoxLayout.addWidget(self.plugins)
         communicate.task_list_updated.connect(self.refresh)
+        communicate.plugin_changes_updated.connect(self.refresh)
         callback = self.refresh
-        self.destroyed.connect(lambda *_: communicate.task_list_updated.disconnect(callback))
+        self.destroyed.connect(lambda *_: (
+            communicate.task_list_updated.disconnect(callback),
+            communicate.plugin_changes_updated.disconnect(callback),
+        ))
         self.refresh()
 
     def showEvent(self, event):
@@ -86,6 +98,14 @@ class PluginTab(Tab):
         self._delete_buttons = []
         self._update_buttons = []
         entries = scan_import_folders()
+        self._pending = pending_plugin_changes()
+        installed = {entry['file_name'] for entry in entries}
+        for namespace, change in self._pending.items():
+            if namespace not in installed:
+                entries.append({'file_name': namespace, 'script_name': change.get('script_name', namespace),
+                                'folder': str(Path(get_ok_import_folder()) / namespace), 'version': ''})
+        self.restart_label.setVisible(any(
+            change['phase'] != 'failed' for change in self._pending.values()))
         self._schedule_update_checks(entries)
         if not entries:
             self.plugins_layout.addWidget(BodyLabel(self.tr('No plugins installed.'), self.plugins))
@@ -104,12 +124,29 @@ class PluginTab(Tab):
                 label.setWordWrap(True)
                 text.addWidget(label)
             namespace = entry['file_name']
+            change = self._pending.get(namespace)
+            if change is not None:
+                if change['phase'] == 'failed':
+                    message = self.tr('Plugin change failed: {}').format(change.get('error', ''))
+                elif change['phase'] == 'rollback':
+                    message = self.tr('Update failed. Restart to restore the previous version.')
+                elif change['phase'] == 'committed':
+                    message = self.tr('Backup cleanup pending. Restart to retry.')
+                elif change['phase'] == 'recovery':
+                    message = self.tr('Plugin change failed: {}').format(change.get('error', ''))
+                elif change['action'] == 'delete':
+                    message = self.tr('Deletion staged. Restart to apply.')
+                else:
+                    message = self.tr('Update staged: {}. Restart to apply.').format(change.get('version', ''))
+                label = BodyLabel(message, card)
+                label.setWordWrap(True)
+                text.addWidget(label)
             if namespace in self._check_errors:
                 label = BodyLabel(self.tr('Update check failed: {}').format(self._check_errors[namespace]), card)
                 label.setWordWrap(True)
                 text.addWidget(label)
             layout.addLayout(text, 1)
-            if read_plugin_source(entry['folder']) is not None:
+            if change is None and read_plugin_source(entry['folder']) is not None:
                 check = PushButton(FluentIcon.SYNC, self.tr('Check for updates'), card)
                 check.setEnabled(not self._busy)
                 check.clicked.connect(lambda _checked=False, entry=entry: self.check_updates(entry))
@@ -122,9 +159,15 @@ class PluginTab(Tab):
                     update.clicked.connect(lambda _checked=False, entry=entry: self.update_plugin(entry))
                     self._update_buttons.append(update)
                     layout.addWidget(update)
-            button = PushButton(FluentIcon.DELETE, self.tr('Delete plugin'), card)
-            button.setEnabled(not self._busy)
-            button.clicked.connect(lambda _checked=False, entry=entry: self.delete_plugin(entry))
+            if change is not None:
+                button = PushButton(self.tr('Cancel pending change'), card)
+                button.setProperty('pendingChangeLocked', change['phase'] not in {'pending', 'failed'})
+                button.setEnabled(not self._busy and change['phase'] in {'pending', 'failed'})
+                button.clicked.connect(lambda _checked=False, namespace=namespace: self.cancel_change(namespace))
+            else:
+                button = PushButton(FluentIcon.DELETE, self.tr('Delete plugin'), card)
+                button.setEnabled(not self._busy)
+                button.clicked.connect(lambda _checked=False, entry=entry: self.delete_plugin(entry))
             self._delete_buttons.append(button)
             layout.addWidget(button)
             self.plugins_layout.addWidget(card)
@@ -132,7 +175,7 @@ class PluginTab(Tab):
     def _set_busy(self, busy, quiet=False):
         self._busy = busy
         for button in (self.local_button, self.github_button, *self._delete_buttons, *self._update_buttons):
-            button.setEnabled(not busy)
+            button.setEnabled(not busy and not button.property('pendingChangeLocked'))
         if busy and not quiet:
             self.status_label.setText(self.tr('Working…'))
 
@@ -224,32 +267,21 @@ class PluginTab(Tab):
         self._install_prepared(prepared)
 
     def _install_prepared(self, prepared):
-        namespace = prepared.manifest['file_name']
         manager = og.task_manager
-        try:
-            previous = manager.unload_imported_script(namespace)
-        except Exception:
-            prepared.close()
-            raise
 
         def install():
             try:
-                return import_script(
-                    prepared.path,
-                    prepare_staging=lambda folder: write_plugin_source(folder, prepared.source),
-                )
+                return install_or_stage_plugin(prepared.path, source=prepared.source)
             finally:
                 prepared.close()
 
         def complete(result):
-            success, message, folder = result
-            if not success:
-                if previous is not None:
-                    manager.load_import_folder(previous['folder'])
-                raise ValueError(message)
-            manager.load_import_folder(folder)
+            if result['restart_required']:
+                self.status_label.clear()
+            else:
+                manager.load_import_folder(result['folder'])
+                self.status_label.setText(self.tr('Plugin installed.'))
             self.refresh()
-            self.status_label.setText(self.tr('Plugin installed.'))
 
         self._start_job(install, complete)
 
@@ -260,7 +292,7 @@ class PluginTab(Tab):
             namespace = entry['file_name']
             loaded = og.task_manager.imported_scripts.get(namespace)
             source = read_plugin_source(entry['folder'])
-            if loaded is None or source is None:
+            if loaded is None or source is None or namespace in self._pending:
                 continue
             token = (id(loaded), entry['version'], source['repository'], source.get('tag', ''))
             tokens[namespace] = token
@@ -298,7 +330,7 @@ class PluginTab(Tab):
             self.check_updates(entry, automatic=True)
 
     def check_updates(self, entry, automatic=False):
-        if self._busy:
+        if self._busy or entry['file_name'] in self._pending:
             return
         namespace = entry['file_name']
         token = self._plugin_tokens.get(namespace)
@@ -349,6 +381,16 @@ class PluginTab(Tab):
         try:
             og.task_manager.delete_imported_script(entry['file_name'])
             self.refresh()
-            self.status_label.setText(self.tr('Plugin deleted.'))
+            self.status_label.clear()
+        except Exception as error:
+            self.status_label.setText(self.tr('Plugin operation failed: {}').format(error))
+
+    def cancel_change(self, namespace):
+        if self._busy:
+            return
+        try:
+            cancel_pending_plugin_change(namespace)
+            self.status_label.clear()
+            self.refresh()
         except Exception as error:
             self.status_label.setText(self.tr('Plugin operation failed: {}').format(error))

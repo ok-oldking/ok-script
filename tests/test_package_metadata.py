@@ -22,6 +22,7 @@ def test_pyproject_profiles_are_consistent_and_headless_by_default():
     assert any(requirement.startswith("pytest") for requirement in extras["dev"])
     assert not any(requirement.startswith("pytest") for requirement in project["dependencies"])
     assert "pynput>=1.8.1" in project["dependencies"]
+    assert not any(requirement.startswith("packaging") for requirement in project["dependencies"])
 
     managed_requirements = [
         *project["dependencies"],

@@ -10,6 +10,7 @@ class TestHeadlessImports(unittest.TestCase):
             "import sys; "
             "sys.modules['PySide6'] = None; "
             "sys.modules['qfluentwidgets'] = None; "
+            "sys.modules['packaging'] = None; "
             "import ok; "
             "from ok import Icon; "
             "from ok.core.events import communicate; "

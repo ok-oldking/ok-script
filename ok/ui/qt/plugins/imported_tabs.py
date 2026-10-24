@@ -134,6 +134,7 @@ class ImportedTabs(QObject):
                                  if getattr(task, 'visible', True)))
 
     def _create(self, namespace, entry):
+        from ok.core.plugin_staging import finish_plugin_update
         tasks = [task for task in entry.get('tasks', ()) if getattr(task, 'visible', True)]
         pages = []
         errors = entry.setdefault('tab_errors', {})
@@ -181,6 +182,7 @@ class ImportedTabs(QObject):
             group_tab = ImportedTaskTab(namespace, entry['script_name'])
             self.window.imported_tabs[namespace] = group_tab
             self._add(group_tab, entry['script_name'], getattr(tasks[0], 'group_icon', FluentIcon.APPLICATION))
+        finish_plugin_update(namespace, error='\n'.join(errors.values()) or None)
 
     def dispose(self):
         if self._closed:

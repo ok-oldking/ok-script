@@ -696,6 +696,8 @@ class OK:
         config['debug'] = config.get("debug", False)
         self.debug = config['debug']
         config_logger_fn(self.config)
+        from ok.core.plugin_staging import apply_pending_plugin_changes
+        self.plugin_change_results = apply_pending_plugin_changes()
         logger.info(f"ok-script init {config.get('version')}, {sys.argv}, pid={os.getpid()} config: {config}")
         if self.debug:
             logger.debug(f"environment contains {len(os.environ)} entries")

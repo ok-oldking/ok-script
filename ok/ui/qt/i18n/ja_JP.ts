@@ -3971,5 +3971,33 @@
             <source>Checking for updates…</source>
             <translation>更新を確認中…</translation>
         </message>
+        <message>
+            <source>Restart the application to apply plugin changes.</source>
+            <translation>プラグインの変更を適用するにはアプリを再起動してください。</translation>
+        </message>
+        <message>
+            <source>Plugin change failed: {}</source>
+            <translation>プラグインの変更に失敗しました：{}</translation>
+        </message>
+        <message>
+            <source>Update failed. Restart to restore the previous version.</source>
+            <translation>更新に失敗しました。再起動すると前のバージョンに戻ります。</translation>
+        </message>
+        <message>
+            <source>Deletion staged. Restart to apply.</source>
+            <translation>削除を予約しました。再起動後に適用されます。</translation>
+        </message>
+        <message>
+            <source>Update staged: {}. Restart to apply.</source>
+            <translation>更新を準備しました：{}。再起動後に適用されます。</translation>
+        </message>
+        <message>
+            <source>Cancel pending change</source>
+            <translation>保留中の変更を取り消す</translation>
+        </message>
+        <message>
+            <source>Backup cleanup pending. Restart to retry.</source>
+            <translation>バックアップの削除が保留中です。再起動して再試行してください。</translation>
+        </message>
     </context>
 </TS>

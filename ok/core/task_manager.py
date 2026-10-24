@@ -69,6 +69,7 @@ class TaskManager:
                 self.load_single_user_task(python_file)
 
     def load_single_user_task(self, python_file, import_namespace=None, task_class=None):
+        instance = None
         try:
             if task_class is not None:
                 if not isinstance(task_class, type) or not issubclass(task_class, BaseTask):
@@ -95,6 +96,16 @@ class TaskManager:
                 self._update_debug_watched_files()
                 return instance
         except Exception as e:
+            if import_namespace is not None and instance is not None:
+                for registered in tuple(self.task_map):
+                    if registered is instance:
+                        del self.task_map[registered]
+                for tasks in (self.task_executor.onetime_tasks, self.task_executor.trigger_tasks):
+                    tasks[:] = [task for task in tasks if task is not instance]
+                try:
+                    instance.on_destroy()
+                except Exception as error:
+                    logger.error('Failed to close partially initialized plugin task', error)
             self.task_errors[python_file] = str(e)
             logger.error(f"Error loading {python_file}: {e}")
         return None
@@ -239,6 +250,12 @@ class TaskManager:
             'has_features': imp.get('has_features', False)
         }
 
+        from ok.core.plugin_staging import finish_plugin_update
+        if errors:
+            finish_plugin_update(file_name, error='\n'.join(errors))
+        elif getattr(self, 'file_watcher_factory', None) is None:
+            finish_plugin_update(file_name)
+
         # Reload features if available (FeatureSet.process_data scans ok_import)
         if imp.get('has_features', False):
             self._reload_features()
@@ -276,26 +293,17 @@ class TaskManager:
         return imp
 
     def delete_imported_script(self, file_name):
-        """Unload a plugin and delete only its installation, preserving user data."""
-        import shutil
+        """Queue deletion for the next launch, leaving live code/resources alone."""
         from pathlib import Path
+        from ok.core.plugin_staging import stage_plugin_delete
         from ok.core.script_packager import get_ok_import_folder
         imp = self.imported_scripts.get(file_name)
         folder = Path(imp['folder'] if imp else Path(get_ok_import_folder()) / file_name).resolve()
         base = Path(get_ok_import_folder()).resolve()
         if folder.parent != base or folder.name != file_name:
             raise ValueError('Plugin folder must be directly inside ok_import')
-        self.unload_imported_script(file_name)
-        try:
-            if folder.exists():
-                shutil.rmtree(folder)
-        except Exception:
-            # Keep a failed deletion visible and usable instead of silently
-            # hiding a plugin that will load again on the next launch.
-            self.load_imported_tasks()
-            raise
-        self._reload_features()
-        communicate.task_list_updated.emit()
+        change = stage_plugin_delete(file_name)
+        return change
 
     def _init_debug_file_watcher(self):
         """Initialize file watcher for auto-reloading task files."""

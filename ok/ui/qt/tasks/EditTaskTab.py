@@ -1048,13 +1048,16 @@ class {class_name}({base_class}):
 
     def _do_import(self, file_path):
         from ok.ui.qt.util.Alert import alert_error
-        from ok.ui.qt.tasks.ScriptPackager import import_script
-
-        success, message, import_folder = import_script(file_path)
-        if success:
+        from ok.core.plugin_staging import install_or_stage_plugin
+        try:
+            result = install_or_stage_plugin(file_path)
             from ok.ui.qt.util.app import show_info_bar
+            message = result['message']
+            if result['restart_required']:
+                from PySide6.QtCore import QCoreApplication
+                message = QCoreApplication.translate('PluginTab', 'Restart the application to apply plugin changes.')
             show_info_bar(self.window(), message, title=self.tr('Success'))
-            # Load the imported tasks
-            og.task_manager.load_import_folder(import_folder)
-        else:
-            alert_error(f"{self.tr('Import failed')}: {message}")
+            if not result['restart_required']:
+                og.task_manager.load_import_folder(result['folder'])
+        except Exception as error:
+            alert_error(f"{self.tr('Import failed')}: {error}")

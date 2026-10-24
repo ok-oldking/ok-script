@@ -3975,5 +3975,33 @@
             <source>Checking for updates…</source>
             <translation>正在檢查更新…</translation>
         </message>
+        <message>
+            <source>Restart the application to apply plugin changes.</source>
+            <translation>請重新啟動應用程式以套用外掛程式變更。</translation>
+        </message>
+        <message>
+            <source>Plugin change failed: {}</source>
+            <translation>外掛程式變更失敗：{}</translation>
+        </message>
+        <message>
+            <source>Update failed. Restart to restore the previous version.</source>
+            <translation>更新失敗，請重新啟動以還原舊版本。</translation>
+        </message>
+        <message>
+            <source>Deletion staged. Restart to apply.</source>
+            <translation>已暫存刪除操作，重新啟動後生效。</translation>
+        </message>
+        <message>
+            <source>Update staged: {}. Restart to apply.</source>
+            <translation>已暫存更新：{}，重新啟動後生效。</translation>
+        </message>
+        <message>
+            <source>Cancel pending change</source>
+            <translation>取消待處理操作</translation>
+        </message>
+        <message>
+            <source>Backup cleanup pending. Restart to retry.</source>
+            <translation>備份清理未完成，請重新啟動後重試。</translation>
+        </message>
     </context>
 </TS>

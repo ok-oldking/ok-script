@@ -80,7 +80,7 @@ class EventBus:
         "blur_overlay", "clear_blur_overlay", "adb_devices",
         "config_validation", "tab", "capture_error", "starting_emulator",
         "quit", "start_success", "act", "copyright", "global_config",
-        "restart_admin", "task_tab",
+        "restart_admin", "task_tab", "plugin_changes_updated",
     )
 
     def __init__(self):

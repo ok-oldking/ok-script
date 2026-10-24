@@ -17,6 +17,7 @@ from shiboken6 import delete, isValid
 from ok import og
 from ok.core.events import communicate
 from ok.core import events
+from ok.core.plugin_staging import apply_pending_plugin_changes, pending_plugin_changes, stage_plugin_update
 from ok.core.plugins import PLUGIN_SOURCE_FILE, prepare_local_plugin, read_plugin_source, write_plugin_source
 from ok.core.task_manager import TaskManager
 from ok.ui.qt.events import QtEventDispatcher
@@ -55,6 +56,7 @@ def environment(qt_app, tmp_path, monkeypatch):
     manager.task_executor = executor
     manager.app = SimpleNamespace(debug=False)
     manager.scene = None
+    manager.file_watcher_factory = Mock()
     manager.imported_scripts, manager.task_map, manager.task_errors = {}, {}, {}
     manager._update_debug_watched_files = Mock()
     monkeypatch.setattr(og, 'task_manager', manager)
@@ -104,7 +106,7 @@ def test_plugin_manager_tab_is_opt_in(environment, configured):
         assert window.added[-1][1] == 'Plugins'
 
 
-def test_tab_only_plugin_loads_without_task_cards_and_is_disposed_on_delete(environment):
+def test_tab_only_plugin_stays_live_until_staged_deletion_is_applied(environment):
     install_files(environment, {'file_name': 'demo', 'tasks': [], 'custom_tabs': [['page', 'Page']]},
                   {'page.py': PAGE_SOURCE})
     page, = environment.controller.custom_tabs['demo']
@@ -112,6 +114,10 @@ def test_tab_only_plugin_loads_without_task_cards_and_is_disposed_on_delete(envi
     assert environment.window.imported_tabs == {}
     assert environment.window.stackedWidget.count() == 1
     environment.manager.delete_imported_script('demo')
+    assert not getattr(page, 'disposed', False)
+    assert 'demo' in environment.controller.custom_tabs
+    assert pending_plugin_changes()['demo']['action'] == 'delete'
+    environment.manager.unload_imported_script('demo')  # Normal shutdown owns cleanup.
     assert page.disposed
     assert environment.controller.custom_tabs == {}
     assert environment.window.stackedWidget.count() == 0
@@ -177,6 +183,8 @@ def test_workshop_page_factory_reloads_before_closing_old_runtime(environment):
     assert new is not old
     assert environment.controller.custom_tabs['demo'][0].page is new.page
     environment.manager.delete_imported_script('demo')
+    assert not new.destroyed
+    environment.manager.unload_imported_script('demo')
     assert new.destroyed
 
 
@@ -237,7 +245,7 @@ def test_github_asset_download_flows_into_archive_install(environment, qt_app, m
         delete(tab)
 
 
-def test_failed_install_reloads_previous_plugin(environment, qt_app, monkeypatch):
+def test_failed_staging_leaves_previous_plugin_running(environment, qt_app, monkeypatch):
     import importlib
     module = importlib.import_module('ok.ui.qt.plugins.PluginTab')
     install_files(environment, {'file_name': 'demo', 'tasks': [], 'custom_tabs': [['page', 'Page']]},
@@ -246,7 +254,7 @@ def test_failed_install_reloads_previous_plugin(environment, qt_app, monkeypatch
     archive = environment.root / 'replacement.zip'
     with zipfile.ZipFile(archive, 'w') as output:
         output.writestr('manifest.json', json.dumps({'file_name': 'demo', 'tasks': []}))
-    monkeypatch.setattr(module, 'import_script', lambda _path, **_kwargs: (False, 'synthetic extraction failure', ''))
+    monkeypatch.setattr(module, 'install_or_stage_plugin', Mock(side_effect=ValueError('synthetic extraction failure')))
     tab = PluginTab()
     try:
         tab._install_prepared(prepare_local_plugin(archive))
@@ -254,9 +262,9 @@ def test_failed_install_reloads_previous_plugin(environment, qt_app, monkeypatch
         while tab._jobs and time.monotonic() < deadline:
             qt_app.processEvents()
             time.sleep(0.01)
-        assert old.disposed
+        assert not getattr(old, 'disposed', False)
         replacement, = environment.controller.custom_tabs['demo']
-        assert replacement is not old
+        assert replacement is old
         assert 'synthetic extraction failure' in tab.status_label.text()
         assert not tab._busy
     finally:
@@ -401,7 +409,7 @@ def test_automatic_update_check_defers_during_installs_and_handles_errors_quietl
         delete(tab)
 
 
-def test_manual_update_check_and_install_keep_github_source(environment, qt_app, monkeypatch):
+def test_manual_update_is_staged_without_replacing_running_plugin(environment, qt_app, monkeypatch):
     import importlib
     module = importlib.import_module('ok.ui.qt.plugins.PluginTab')
     folder = github_plugin(environment)
@@ -425,10 +433,18 @@ def test_manual_update_check_and_install_keep_github_source(environment, qt_app,
         update = next(button for button in tab._update_buttons if button.text() == 'Update to v2.0')
         update.click()
         wait_for_jobs(tab, qt_app)
-        assert old_page.disposed
-        assert environment.manager.imported_scripts['demo']['version'] == '2.0'
-        assert read_plugin_source(folder) == {'repository': 'owner/repo', 'tag': 'v2.0', 'asset_name': 'demo-v2.zip'}
+        assert not getattr(old_page, 'disposed', False)
+        assert environment.manager.imported_scripts['demo']['version'] == '1.0'
+        assert read_plugin_source(folder) == {'repository': 'owner/repo', 'tag': 'v1.0', 'asset_name': 'demo-v1.zip'}
+        assert pending_plugin_changes()['demo']['version'] == '2.0'
         assert 'demo' not in tab._updates
+        assert 'demo' not in tab._update_timers
+        assert not tab.restart_label.isHidden()
+        cancel, = tab._delete_buttons
+        assert cancel.text() == 'Cancel pending change'
+        cancel.click()
+        assert pending_plugin_changes() == {}
+        assert environment.manager.imported_scripts['demo']['version'] == '1.0'
         assert tab._update_timers['demo'].isActive()
     finally:
         delete(tab)
@@ -462,5 +478,52 @@ def test_local_install_discards_packaged_github_metadata(environment, qt_app):
         assert read_plugin_source(environment.root / 'ok_import/demo') is None
         assert not tab._update_timers
         assert not tab._update_buttons
+    finally:
+        delete(tab)
+
+
+def test_delete_button_stages_and_cancel_keeps_runtime_running(environment, monkeypatch):
+    import importlib
+    module = importlib.import_module('ok.ui.qt.plugins.PluginTab')
+    folder = github_plugin(environment)
+    page, = environment.controller.custom_tabs['demo']
+    monkeypatch.setattr(module, 'MessageBox', lambda *args: SimpleNamespace(exec=lambda: True))
+    tab = PluginTab()
+    try:
+        tab._delete_buttons[0].click()
+        assert pending_plugin_changes()['demo']['action'] == 'delete'
+        assert folder.exists() and not getattr(page, 'disposed', False)
+        assert environment.controller.custom_tabs['demo'][0] is page
+        assert not tab._update_timers and not tab._update_buttons
+        assert not tab.restart_label.isHidden()
+        tab._delete_buttons[0].click()  # Now the cancel-pending-change button.
+        assert pending_plugin_changes() == {}
+        assert tab.restart_label.isHidden()
+        assert environment.controller.custom_tabs['demo'][0] is page
+        assert tab._update_timers['demo'].isActive()
+    finally:
+        delete(tab)
+
+
+def test_successful_startup_validation_resumes_checks_without_opening_manager(environment):
+    folder = github_plugin(environment)
+    archive = environment.root / 'new.zip'
+    with zipfile.ZipFile(archive, 'w') as output:
+        output.writestr('manifest.json', json.dumps({
+            'file_name': 'demo', 'version': '2.0', 'tasks': [], 'custom_tabs': [['page', 'Page']],
+        }))
+        output.writestr('page.py', PAGE_SOURCE)
+    stage_plugin_update(archive, {'repository': 'owner/repo', 'tag': 'v2.0', 'asset_name': 'new.zip'})
+    environment.manager.unload_imported_script('demo')  # Simulate old-process shutdown.
+    apply_pending_plugin_changes()
+    assert pending_plugin_changes()['demo']['phase'] == 'validating'
+    tab = PluginTab()
+    try:
+        assert not tab._update_timers
+        assert not tab.restart_label.isHidden()
+        environment.manager.load_import_folder(str(folder))
+        assert pending_plugin_changes() == {}
+        assert tab.restart_label.isHidden()
+        assert tab._update_timers['demo'].isActive()
     finally:
         delete(tab)

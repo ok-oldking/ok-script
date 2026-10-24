@@ -3981,5 +3981,33 @@
             <source>Checking for updates…</source>
             <translation>Checking for updates…</translation>
         </message>
+        <message>
+            <source>Restart the application to apply plugin changes.</source>
+            <translation>Restart the application to apply plugin changes.</translation>
+        </message>
+        <message>
+            <source>Plugin change failed: {}</source>
+            <translation>Plugin change failed: {}</translation>
+        </message>
+        <message>
+            <source>Update failed. Restart to restore the previous version.</source>
+            <translation>Update failed. Restart to restore the previous version.</translation>
+        </message>
+        <message>
+            <source>Deletion staged. Restart to apply.</source>
+            <translation>Deletion staged. Restart to apply.</translation>
+        </message>
+        <message>
+            <source>Update staged: {}. Restart to apply.</source>
+            <translation>Update staged: {}. Restart to apply.</translation>
+        </message>
+        <message>
+            <source>Cancel pending change</source>
+            <translation>Cancel pending change</translation>
+        </message>
+        <message>
+            <source>Backup cleanup pending. Restart to retry.</source>
+            <translation>Backup cleanup pending. Restart to retry.</translation>
+        </message>
     </context>
 </TS>

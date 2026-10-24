@@ -3977,5 +3977,33 @@
             <source>Checking for updates…</source>
             <translation>正在检查更新…</translation>
         </message>
+        <message>
+            <source>Restart the application to apply plugin changes.</source>
+            <translation>请重启应用以应用插件变更。</translation>
+        </message>
+        <message>
+            <source>Plugin change failed: {}</source>
+            <translation>插件变更失败：{}</translation>
+        </message>
+        <message>
+            <source>Update failed. Restart to restore the previous version.</source>
+            <translation>更新失败，请重启以恢复旧版本。</translation>
+        </message>
+        <message>
+            <source>Deletion staged. Restart to apply.</source>
+            <translation>已暂存删除操作，重启后生效。</translation>
+        </message>
+        <message>
+            <source>Update staged: {}. Restart to apply.</source>
+            <translation>已暂存更新：{}，重启后生效。</translation>
+        </message>
+        <message>
+            <source>Cancel pending change</source>
+            <translation>取消待处理操作</translation>
+        </message>
+        <message>
+            <source>Backup cleanup pending. Restart to retry.</source>
+            <translation>备份清理未完成，请重启后重试。</translation>
+        </message>
     </context>
 </TS>

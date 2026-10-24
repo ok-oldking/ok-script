@@ -32,8 +32,26 @@ class TestOKMutex(unittest.TestCase):
         check_mutex.assert_not_called()
 
     def test_mutex_failure_stops_initialization(self):
-        check_mutex = self.make_ok({}, mutex_result=False)
+        with patch('ok.core.plugin_staging.apply_pending_plugin_changes') as apply_changes:
+            check_mutex = self.make_ok({}, mutex_result=False)
         check_mutex.assert_called_once_with()
+        apply_changes.assert_not_called()
+
+    def test_staged_changes_apply_after_mutex_before_runtime_initialization(self):
+        order = []
+        def checked():
+            order.append('mutex')
+            return True
+        with patch.object(ok_module, 'check_mutex', side_effect=checked), \
+                patch.object(OK, 'do_init', side_effect=lambda: order.append('initialize')), \
+                patch('ok.core.plugin_staging.apply_pending_plugin_changes',
+                      side_effect=lambda: order.append('apply') or {}), \
+                patch.object(ok_module, 'config_logger'), \
+                patch.object(ok_module, 'GlobalConfig'), \
+                patch.object(ok_module.og, 'set_use_dml'), \
+                patch.object(ok_module, 'parse_arguments_to_map', return_value={}):
+            OK({})
+        self.assertEqual(['mutex', 'apply', 'initialize'], order)
 
 
 if __name__ == '__main__':
