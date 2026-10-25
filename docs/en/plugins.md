@@ -11,7 +11,7 @@ config = {
 
 `plugin` defaults to `False`. It controls the **Plugins** management tab; existing
 packages in `ok_import/` continue to load as before. This manager and custom Qt
-pages are desktop-only. Headless and Web runtimes do not instantiate Qt tabs.
+pages are desktop-only. The headless runtime does not instantiate Qt tabs.
 
 ## Install and delete
 

@@ -18,7 +18,7 @@ def filename_key(value):
 
 
 class CocoTemplateStore:
-    """Own filesystem and COCO mutations shared by desktop and web UIs."""
+    """Own filesystem and COCO mutations used by the desktop UI."""
 
     def __init__(self, folder="ok_templates", coco_name="coco_annotations.json"):
         self.folder = Path(folder).resolve()

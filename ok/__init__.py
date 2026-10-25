@@ -67,7 +67,6 @@ if TYPE_CHECKING:
         WaitFailedException,
     )
     from ok.task.task import BaseTask, FindFeature, OCR, TriggerTask
-    from ok.task.web import WebCustomTab, WebTabConfig, task_tab_action, task_tab_query
     from ok.util.Analytics import Analytics
     from ok.util.GlobalConfig import (GlobalConfig, register_app_launcher_options,
                                       register_basic_options, register_notification_options)
@@ -134,10 +133,6 @@ _LAZY_IMPORTS = {
     'DiagnosisTask': ('ok.task.DiagnosisTask', 'DiagnosisTask'),
     'BaseTask': ('ok.task.task', 'BaseTask'),
     'TriggerTask': ('ok.task.task', 'TriggerTask'),
-    'WebTabConfig': ('ok.task.web', 'WebTabConfig'),
-    'WebCustomTab': ('ok.task.web', 'WebCustomTab'),
-    'task_tab_action': ('ok.task.web', 'task_tab_action'),
-    'task_tab_query': ('ok.task.web', 'task_tab_query'),
     'FindFeature': ('ok.task.task', 'FindFeature'),
     'OCR': ('ok.task.task', 'OCR'),
     'Feature': ('ok.feature.Feature', 'Feature'),
@@ -163,7 +158,6 @@ _LAZY_IMPORTS = {
     'calculate_color_percentage': ('ok.util.color', 'calculate_color_percentage'),
     'get_mask_in_color_range': ('ok.util.color', 'get_mask_in_color_range'),
     'is_pure_black': ('ok.util.color', 'is_pure_black'),
-    'run_web': ('ok.ui.web.server', 'run_web'),
 }
 
 __all__ = [
@@ -223,7 +217,7 @@ _OK_CONFIG_DEFAULTS = {
 
 
 def _create_ok_config(config):
-    """Load UI state once for both the Qt and headless/web facades."""
+    """Load UI state once for both the Qt and headless facades."""
     from ok.util.config import Config
 
     defaults = dict(_OK_CONFIG_DEFAULTS)
@@ -550,14 +544,9 @@ class HeadlessApp(_OverlayConfigMixin):
         self.notification_manager = None
         if task_executor is not None:
             from ok.notification import NotificationManager
-            ui_config = resolve_ui_config(config)
-            is_web = (config.get('web_runtime')
-                      or (ui_config is not None and ui_config['type'] == 'web'))
-            notification_kwargs = {'system_notifier': None} if is_web else {}
             self.notification_manager = NotificationManager(
                 self.global_config, task_executor, exit_event,
-                app_name=config.get('gui_title'), app_icon=config.get('gui_icon'),
-                **notification_kwargs)
+                app_name=config.get('gui_title'), app_icon=config.get('gui_icon'))
         communicate.notification.connect(self.show_notification)
 
         og.app = self
@@ -666,11 +655,6 @@ class OK:
         from ok.util.config import Config
 
         self.config = config
-        ui_config = resolve_ui_config(config)
-        if ui_config is not None and ui_config["type"] == "web":
-            from ok.ui.web.requirements import check_web_requirements
-            check_web_requirements()
-
         check_mutex_fn = _resolve('check_mutex')
         config_logger_fn = _resolve('config_logger')
         global_config_class = _resolve('GlobalConfig')
@@ -769,14 +753,6 @@ class OK:
         logger.info(f'OK start id:{id(self)} pid:{os.getpid()}')
         try:
             ui_config = resolve_ui_config(self.config)
-            if ui_config is not None and ui_config["type"] == "web":
-                from ok.ui.web.server import run_web
-                return run_web(
-                    self.config,
-                    open_browser=ui_config["launch_mode"] != "server",
-                    launch_mode=ui_config["launch_mode"],
-                    ok_instance=self,
-                )
             use_gui = (ui_config is not None and ui_config["type"] == "qt"
                        and not self.args.get('headless', False))
             task_arg = self.args.get('task', 0)
@@ -812,9 +788,9 @@ class OK:
     def start_runtime(self):
         """Start UI-independent runtime initialization exactly once.
 
-        Qt calls this after its main window is visible, while the web adapter
-        calls it from the ASGI lifespan. Device discovery and configured
-        automatic startup therefore have one owner in the core runtime.
+        Qt calls this after its main window is visible. Device discovery and
+        configured automatic startup therefore have one owner in the core
+        runtime.
         """
         with self._runtime_start_lock:
             if self._runtime_started:
@@ -1069,16 +1045,6 @@ class OK:
                                           global_config=self.global_config, ocr_target_height=ocr_target_height,
                                           config=self.config)
         onetime_tasks = list(self.config.get('onetime_tasks', []))
-        ui_config = resolve_ui_config(self.config)
-        if ((ui_config is not None and ui_config["type"] == "web")
-                or self.config.get("web_runtime", False)):
-            from ok.task.web import configured_web_custom_tabs
-            existing = {tuple(task[:2]) for task in onetime_tasks
-                        if isinstance(task, (list, tuple)) and len(task) >= 2}
-            for web_task in configured_web_custom_tabs(self.config.get('web_tabs', [])):
-                if tuple(web_task) not in existing:
-                    onetime_tasks.append(web_task)
-                    existing.add(tuple(web_task))
         if self.should_init_task_manager_headless():
             from ok.core.task_manager import TaskManager
         else:

@@ -40,11 +40,7 @@ i18n/
 
 After editing translations, use **Compile i18n** in the application's developer tools to generate the binary files loaded at runtime.
 
-For changes to ok-script itself, update every language file under `ok/ui/qt/i18n/`, ensure no translation remains unfinished, and regenerate the web catalog:
-
-```bash
-npm run i18n
-```
+For changes to ok-script itself, update every language file under `ok/ui/qt/i18n/`, ensure no translation remains unfinished, and recompile the `.qm` files and `ok/ui/qt/resources.py` with `pyside6-lrelease` and `pyside6-rcc`.
 
 ## 3. Automated task tests
 

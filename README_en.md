@@ -1,11 +1,11 @@
 # ok-script
 
-## Headless, desktop, and web modes
+## Headless and desktop modes
 
 The automation runtime is independent from Qt. Install `ok-script` for
-headless use, `ok-script[qt]` for the existing desktop UI, or `ok-script[web]`
-for the FastAPI browser UI. Run them with `ok run_task`, `ok gui`, and `ok web`
-respectively. See [the runtime architecture](docs/architecture.md) for details.
+headless use or `ok-script[qt]` for the desktop UI. Run them with
+`ok run_task` and `ok gui` respectively. See
+[the runtime architecture](docs/architecture.md) for details.
 
 [简体中文](README.md) | **English**
 
@@ -39,7 +39,6 @@ headless; UI, ADB, and OCR support are separate:
 ```powershell
 python -m pip install "ok-script[default]"
 python -m pip install "ok-script[qt]"
-python -m pip install "ok-script[web]"
 python -m pip install "ok-script[adb]"
 python -m pip install "ok-script[ocr]"
 ```
@@ -50,8 +49,8 @@ version and install exactly one variant appropriate for the application:
 `opencv-contrib-python-headless`.
 
 For headless repository development, combine the matching `default` and `dev`
-dependency groups from `pyproject.toml`. Add `--group web`, `--group qt`,
-`--group adb`, or `--group ocr` as needed:
+dependency groups from `pyproject.toml`. Add `--group qt`, `--group adb`, or
+`--group ocr` as needed:
 
 ```powershell
 python -m pip install --editable . --group default --group dev
@@ -117,9 +116,6 @@ ok-script is made possible by these open-source projects:
   Fluent UI components used by the Qt interface.
 - [OpenCV](https://opencv.org/), [NumPy](https://numpy.org/), and
   [Pillow](https://python-pillow.org/) — image processing and computer vision.
-- [FastAPI](https://fastapi.tiangolo.com/),
-  [Uvicorn](https://www.uvicorn.org/), and
-  [pywebview](https://pywebview.flowrl.com/) — web interface support.
 - [adbutils](https://github.com/openatx/adbutils) — Android device
   connectivity.
 

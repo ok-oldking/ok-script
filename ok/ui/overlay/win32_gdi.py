@@ -2,7 +2,7 @@
 
 Unlike the legacy QWidget overlay, this window owns a small Win32 message loop
 and has no Qt dependency.  It can therefore be created by both the Qt app and
-the headless/web runtime.
+the headless runtime.
 """
 
 from __future__ import annotations

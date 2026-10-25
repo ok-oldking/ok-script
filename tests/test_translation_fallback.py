@@ -1,10 +1,15 @@
 import unittest
-import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from types import SimpleNamespace
 
 from ok import App, HeadlessApp
+
+I18N_DIR = Path(__file__).resolve().parents[1] / 'ok' / 'ui' / 'qt' / 'i18n'
+
+
+def _locales():
+    return sorted(path.stem for path in I18N_DIR.glob('*.ts'))
 
 
 class TestTranslationFallback(unittest.TestCase):
@@ -21,8 +26,6 @@ class TestTranslationFallback(unittest.TestCase):
         )
         facade.tr = lambda key: App.tr(facade, key)
         controller = object.__new__(StartController)
-        root = Path(__file__).resolve().parents[1]
-        catalogs = json.loads((root / 'web_src/src/i18n/catalogs.json').read_text(encoding='utf-8'))
         sources = [
             'Fast, support HDR (not AutoHDR)',
             'Only use when using AutoHDR (Not Recommended)',
@@ -35,7 +38,7 @@ class TestTranslationFallback(unittest.TestCase):
         ]
         values = dict(vendor='NVIDIA', feature='RTX HDR', resolution='5120x2160',
                       supported_ratio='16:9', min_size='1280x720')
-        for locale, catalog in catalogs.items():
+        for locale in _locales():
             translator = QTranslator()
             if locale != 'en_US':
                 self.assertTrue(translator.load(f':/i18n/{locale}.qm'))
@@ -45,47 +48,46 @@ class TestTranslationFallback(unittest.TestCase):
                     for source in sources:
                         with self.subTest(locale=locale, source=source):
                             translated = controller.tr(source)
-                            self.assertEqual(catalog[source], translated)
-                            self.assertEqual(catalog[source].format(**values), translated.format(**values))
-                            if locale != 'en_US':
+                            translated.format(**values)
+                            if locale == 'en_US':
+                                self.assertEqual(source, translated)
+                            else:
                                 self.assertNotEqual(source, translated)
             finally:
                 application.removeTranslator(translator)
 
-    def test_wgc_descriptions_are_available_in_qt_and_web(self):
+    def test_wgc_descriptions_are_translated(self):
         from PySide6.QtCore import QTranslator
         from ok.ui.qt import resources
         from ok.core.capture_labels import capture_method_label
 
-        root = Path(__file__).resolve().parents[1]
-        catalogs = json.loads((root / 'web_src/src/i18n/catalogs.json').read_text(encoding='utf-8'))
         self.assertEqual('WGC - Fast, support HDR (not AutoHDR)', capture_method_label('WGC'))
         self.assertEqual('WGC_HDR - Only use when using AutoHDR (Not Recommended)',
                          capture_method_label('WGC_HDR'))
-        for locale, catalog in catalogs.items():
+        for locale in _locales():
+            if locale == 'en_US':
+                continue
+            translator = QTranslator()
+            self.assertTrue(translator.load(f':/i18n/{locale}.qm'))
             for method in ('WGC', 'WGC_HDR'):
                 with self.subTest(locale=locale, method=method):
                     source = capture_method_label(method)
-                    self.assertTrue(catalog[source].startswith(method + ' - '))
-                    if locale != 'en_US':
-                        translator = QTranslator()
-                        self.assertTrue(translator.load(f':/i18n/{locale}.qm'))
-                        self.assertEqual(catalog[source], translator.translate('SelectCaptureListView', source))
+                    translated = translator.translate('SelectCaptureListView', source)
+                    self.assertTrue(translated.startswith(method + ' - '))
+                    self.assertNotEqual(source, translated)
 
-    def test_auto_hdr_error_is_translated_in_bundled_qt_and_web_catalogs(self):
+    def test_auto_hdr_error_is_translated_in_bundled_qt_catalogs(self):
         from PySide6.QtCore import QTranslator
         from ok.ui.qt import resources  # Register the bundled translation resources.
 
         source = 'Auto HDR is enabled, tasks might not work correctly!'
-        root = Path(__file__).resolve().parents[1]
-        catalogs = json.loads((root / 'web_src/src/i18n/catalogs.json').read_text(encoding='utf-8'))
-        for locale in catalogs:
+        for locale in _locales():
             with self.subTest(locale=locale):
-                tree = ET.parse(root / f'ok/ui/qt/i18n/{locale}.ts')
+                tree = ET.parse(I18N_DIR / f'{locale}.ts')
                 context = next(c for c in tree.findall('context') if c.findtext('name') == 'StartController')
                 expected = next(m.findtext('translation') for m in context.findall('message')
                                 if m.findtext('source') == source)
-                self.assertEqual(expected, catalogs[locale][source])
+                self.assertTrue(expected)
                 if locale != 'en_US':
                     translator = QTranslator()
                     self.assertTrue(translator.load(f':/i18n/{locale}.qm'))

@@ -88,7 +88,7 @@ def main():
         print(f"Updating {filename}...")
         update_translation(filepath, args.context, args.source, translation_text)
         
-    print("Done. Use npm run i18n to regenerate the web catalog when WebUI strings change.")
+    print("Done. Recompile the .qm files and resources.py to apply the change.")
 
 if __name__ == "__main__":
     main()

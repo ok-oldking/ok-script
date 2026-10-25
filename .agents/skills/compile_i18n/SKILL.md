@@ -1,6 +1,6 @@
 ---
 name: Compile i18n
-description: How to update Qt translations and generate the web i18n catalog
+description: How to update and compile Qt translations
 ---
 
 # Compile i18n
@@ -21,12 +21,12 @@ When you are instructed to add or update internationalization (i18n) translation
    & $py .\.agents\skills\compile_i18n\add_translation.py --context "YourContext" --source "Your Source String" --zh_cn "Your Chinese String"
    ```
    **IMPORTANT WARNING: DO NOT use `pyside6-lupdate` as it corrupts and deletes existing translations. Always modify the XML nodes natively or use the python script!**
-4. Check that the translations added for the `WebUI` context are complete. You must replace `<translation type="unfinished" />` with `<translation>Your Translation</translation>`.
-5. Generate the web catalog from the `WebUI` context by running this command from the workspace root:
+4. Check that the added translations are complete. You must replace `<translation type="unfinished" />` with `<translation>Your Translation</translation>`.
+5. Compile the `.qm` files and the Qt resource module from `ok/ui/qt`:
 
 // turbo
 ```powershell
-npm run i18n
+$bin = (Resolve-Path ..\..\..\.venv\Scripts).Path
+Get-ChildItem i18n\*.ts | ForEach-Object { & "$bin\pyside6-lrelease.exe" $_.FullName -qm ($_.FullName -replace '\.ts$', '.qm') }
+& "$bin\pyside6-rcc.exe" qt.qrc -o resources.py
 ```
-
-`npm run dev` and `npm run build` also run this generator automatically.

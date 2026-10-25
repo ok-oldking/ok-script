@@ -1,9 +1,5 @@
-import sys
 import threading
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
-
-import pytest
 
 from ok import OK
 from ok.core.events import communicate
@@ -55,22 +51,6 @@ def make_runtime(*, auto_start=False, task=0, exit_after=False):
     return runtime, controller
 
 
-def test_ok_checks_web_requirements_before_runtime_initialization():
-    failure = SystemExit(
-        "The web UI requires FastAPI and Uvicorn. Install ok-script[web]."
-    )
-
-    with patch(
-        "ok.ui.web.requirements.check_web_requirements", side_effect=failure
-    ) as check_requirements, patch.object(OK, "do_init") as do_init, \
-            pytest.raises(SystemExit) as exit_info:
-        OK({"gui": {"type": "web", "launch_mode": "server"}})
-
-    assert exit_info.value is failure
-    check_requirements.assert_called_once_with()
-    do_init.assert_not_called()
-
-
 def test_start_runtime_refreshes_devices_once_and_emits_start_success():
     runtime, controller = make_runtime()
     events = []
@@ -104,58 +84,6 @@ def test_start_runtime_applies_task_arguments_before_auto_start():
 
     assert runtime.device_manager.refresh_count == 0
     assert controller.calls == [(2, True)]
-
-
-def test_ok_start_routes_nested_browser_gui_to_web_server():
-    runtime = object.__new__(OK)
-    runtime.config = {"gui": {"type": "web", "launch_mode": "browser"}}
-
-    with patch("ok.ui.web.server.run_web", return_value=43210) as run_web:
-        assert runtime.start() == 43210
-
-    run_web.assert_called_once_with(
-        runtime.config, open_browser=True, launch_mode="browser", ok_instance=runtime
-    )
-
-
-def test_ok_start_routes_nested_pywebview_ui_to_pywebview():
-    runtime = object.__new__(OK)
-    runtime.config = {"gui": {"type": "web", "launch_mode": "pywebview"}}
-
-    with patch("ok.ui.web.server.run_web", return_value=43210) as run_web:
-        assert runtime.start() == 43210
-
-    run_web.assert_called_once_with(
-        runtime.config, open_browser=True, launch_mode="pywebview", ok_instance=runtime
-    )
-
-
-def test_ok_start_routes_nested_server_gui_without_opening_window():
-    runtime = object.__new__(OK)
-    runtime.config = {"gui": {"type": "web", "launch_mode": "server"}}
-
-    with patch("ok.ui.web.server.run_web", return_value=43210) as run_web:
-        assert runtime.start() == 43210
-
-    run_web.assert_called_once_with(
-        runtime.config, open_browser=False, launch_mode="server", ok_instance=runtime
-    )
-
-
-def test_ok_start_exits_when_web_requirements_are_missing():
-    runtime = object.__new__(OK)
-    runtime.config = {"gui": {"type": "web", "launch_mode": "server"}}
-    runtime.exit_event = threading.Event()
-    runtime._app = None
-    runtime._headless_app = Mock()
-
-    with patch.dict(sys.modules, {"uvicorn": None}), \
-            pytest.raises(SystemExit, match="Install ok-script\\[web\\]") as exit_info:
-        runtime.start()
-
-    assert exit_info.value.code != 0
-    assert runtime.exit_event.is_set()
-    runtime._headless_app.quit.assert_called_once_with()
 
 
 def test_device_refresh_always_publishes_completion_event():

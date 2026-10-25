@@ -1294,13 +1294,6 @@ class BaseTask(OCR):
             communicate.screenshot.emit(frame, f'notification/notification_{index + 1}', False, None)
         communicate.notification.emit(message, title, error, tray, show_tab, params, frames)
 
-    def emit_web_event(self, event, payload=None):
-        """Publish a serializable event to this task's optional browser tab."""
-        tab = getattr(self, "web_tab", None)
-        if tab is None:
-            raise RuntimeError(f"{self.__class__.__name__} does not declare web_tab")
-        communicate.task_tab.emit(tab.id, str(event), payload)
-
     @property
     def enabled(self):
         return self._enabled

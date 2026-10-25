@@ -45,11 +45,6 @@ default = [
     "ok-d3dshot>=0.1.5",
     "OpenCC==1.2.0",
 ]
-web = [
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.30.0",
-    "pywebview>=5.4",
-]
 qt = [
     "PySide6-Essentials>=6.7.0",
     "PySideSix-Frameless-Window>=0.3.12",
@@ -87,11 +82,6 @@ default = [
     "ok-d3dshot>=0.1.5",
     "OpenCC==1.2.0",
 ]
-web = [
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.30.0",
-    "pywebview>=5.4",
-]
 qt = [
     "PySide6-Essentials>=6.7.0",
     "PySideSix-Frameless-Window>=0.3.12",
@@ -121,6 +111,3 @@ zip-safe = false
 
 [tool.setuptools.packages.find]
 exclude = ["tests*", "docs*"]
-
-[tool.setuptools.package-data]
-"ok.ui.web" = ["static/*.html", "static/*.js", "static/*.css", "static/*.png"]

@@ -2,7 +2,7 @@
 
 The public ``communicate`` object intentionally keeps the old ``signal.emit`` /
 ``signal.connect`` shape.  Core code can therefore publish events without
-importing Qt, while desktop and web adapters subscribe to the same bus.
+importing Qt, while the desktop adapter subscribes to the same bus.
 """
 
 from __future__ import annotations
@@ -80,7 +80,7 @@ class EventBus:
         "blur_overlay", "clear_blur_overlay", "adb_devices",
         "config_validation", "tab", "capture_error", "starting_emulator",
         "quit", "start_success", "act", "copyright", "global_config",
-        "restart_admin", "task_tab", "plugin_changes_updated",
+        "restart_admin", "plugin_changes_updated",
     )
 
     def __init__(self):

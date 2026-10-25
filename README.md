@@ -1,10 +1,9 @@
 # ok-script
 
-## 无界面、桌面与 Web 模式
+## 无界面与桌面模式
 
 自动化核心现已与 Qt 解耦。使用 `ok-script` 可无界面运行，使用
-`ok-script[qt]` 启用原有桌面界面，或使用 `ok-script[web]` 启用 FastAPI
-浏览器界面；对应命令为 `ok run_task`、`ok gui` 和 `ok web`。详见
+`ok-script[qt]` 启用桌面界面；对应命令为 `ok run_task` 和 `ok gui`。详见
 [运行时架构](docs/architecture.md)。
 
 [简体中文](README.md) | [English](README_en.md)
@@ -33,13 +32,12 @@ ok-script 支持 Python 3.11 及以上版本，推荐使用 Python 3.12。
 python -m pip install ok-script
 ```
 
-只安装应用所需的依赖配置。`default` 为无界面模式，Web、Qt、ADB 和 OCR
+只安装应用所需的依赖配置。`default` 为无界面模式，Qt、ADB 和 OCR
 能力分别按需安装：
 
 ```powershell
 python -m pip install "ok-script[default]"
 python -m pip install "ok-script[qt]"
-python -m pip install "ok-script[web]"
 python -m pip install "ok-script[adb]"
 python -m pip install "ok-script[ocr]"
 ```
@@ -49,8 +47,7 @@ ok-script 不会自动选择 OpenCV。用户必须根据自己的应用选择版
 或 `opencv-contrib-python-headless`。
 
 以无界面模式开发本仓库时，同时安装 `pyproject.toml` 中的 `default` 和 `dev`
-依赖组；再根据需要添加 `--group web`、`--group qt`、`--group adb` 或
-`--group ocr`：
+依赖组；再根据需要添加 `--group qt`、`--group adb` 或 `--group ocr`：
 
 ```powershell
 python -m pip install --editable . --group default --group dev
@@ -114,8 +111,6 @@ ok-script 的开发离不开以下开源项目：
   界面使用的 Fluent UI 组件。
 - [OpenCV](https://opencv.org/)、[NumPy](https://numpy.org/) 和
   [Pillow](https://python-pillow.org/)：用于图像处理和计算机视觉。
-- [FastAPI](https://fastapi.tiangolo.com/)、[Uvicorn](https://www.uvicorn.org/)
-  和 [pywebview](https://pywebview.flowrl.com/)：用于 Web 界面支持。
 - [adbutils](https://github.com/openatx/adbutils)：用于 Android 设备连接。
 
 上述依赖均受其各自许可证约束，详情请参阅对应项目页面。

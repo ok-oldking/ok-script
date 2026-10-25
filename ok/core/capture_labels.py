@@ -1,4 +1,4 @@
-"""Capture labels shared by the Qt and web interfaces."""
+"""Capture labels shared by the Qt and headless interfaces."""
 
 
 def capture_method_label(method_name):

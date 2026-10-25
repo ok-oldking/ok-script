@@ -28,13 +28,12 @@ class TestHeadlessImports(unittest.TestCase):
         )
         self.assertEqual(0, result.returncode, result.stderr)
 
-    def test_web_imports_and_semantic_icons_do_not_load_qt(self):
+    def test_semantic_icons_do_not_load_qt(self):
         source = (
             "import sys; "
             "sys.modules['PySide6'] = None; "
             "sys.modules['qfluentwidgets'] = None; "
             "from ok import ConfigOption, Icon; "
-            "from ok.ui.web import create_web_app; "
             "option = ConfigOption('Character Config', icon=Icon.PEOPLE); "
             "assert option.icon == 'people'"
         )

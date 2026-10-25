@@ -9,20 +9,9 @@ class TestCli(unittest.TestCase):
         parser = cli.build_parser()
 
         self.assertEqual("gui", parser.parse_args(["gui"]).command)
-        web = parser.parse_args(["web", "--host", "0.0.0.0", "--port", "9000"])
-        self.assertEqual(("web", "0.0.0.0", 9000), (web.command, web.host, web.port))
-        self.assertEqual(0, parser.parse_args(["web"]).port)
-
-    def test_web_command_uses_shared_launcher(self):
-        config = {"use_gui": True}
-
-        with patch.object(cli, "load_config", return_value=config), \
-                patch("ok.run_web") as run_web:
-            self.assertEqual(0, cli.main(["web", "--host", "localhost"]))
-
-        run_web.assert_called_once_with(
-            config, host="localhost", port=0, open_browser=False
-        )
+        self.assertEqual("run_task", parser.parse_args(["run_task", "DailyTask"]).command)
+        with self.assertRaises(SystemExit):
+            parser.parse_args(["web"])
 
     def test_gui_command_uses_nested_qt_config(self):
         config = {"gui_title": "Test"}
