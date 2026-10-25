@@ -140,6 +140,10 @@ class Screenshot:
     def generate_screen_shot(self, frame, ui_dict, folder, name, show_box, frame_box, processor=None):
         if folder is None:
             return
+        if show_box:
+            # UI captures pass the live mapping, which task events can update
+            # while image processing or drawing releases the GIL.
+            ui_dict = ui_dict.copy()
         pil_image = self.to_pil_image(frame, processor=processor)
         if pil_image is None:
             return
