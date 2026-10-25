@@ -174,6 +174,7 @@ def test_disabled_overlay_is_not_initialized(app_type):
 @pytest.mark.parametrize("app_type", [App, HeadlessApp])
 def test_disabled_overlay_getter_does_not_create_native_window(app_type):
     app = object.__new__(app_type)
+    app.config = {}
     app.ok_config = {"use_overlay": False}
     app.overlay_window = None
 
@@ -216,6 +217,7 @@ def test_turning_boxes_off_closes_and_releases_overlay():
 
 def test_capture_updates_cannot_resurrect_disabled_overlay():
     app = object.__new__(App)
+    app.config = {}
     app.ok_config = {"use_overlay": False}
     app.overlay_window = Mock()
     app._close_overlay = Mock()
