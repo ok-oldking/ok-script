@@ -1,5 +1,9 @@
 from ok.task.exceptions import CaptureBusyException, CaptureException
 
+# How long a one-off capture (debug screenshot, template capture) waits for
+# another caller, usually the task executor, to finish its frame request.
+CAPTURE_BUSY_WAIT = 5.0
+
 
 class BaseCaptureMethod:
     name = "None"
@@ -28,11 +32,20 @@ class BaseCaptureMethod:
         if self._size[0] == 0:
             self.get_frame()
 
-    def get_frame(self):
+    def get_frame(self, busy_wait=0):
+        """Capture a frame.
+
+        :param busy_wait: Seconds to wait when another caller owns the capture.
+            The default 0 returns None immediately, which suits polling loops
+            such as the task executor; one-off captures should wait instead.
+        """
         if self.exit_event.is_set():
             return
         try:
-            frame = self.do_get_frame()
+            if busy_wait > 0:
+                frame = self.do_get_frame_wait(busy_wait)
+            else:
+                frame = self.do_get_frame()
             if frame is not None:
                 if frame.shape[0] <= 10 or frame.shape[1] <= 10:
                     return None
@@ -53,6 +66,11 @@ class BaseCaptureMethod:
 
     def do_get_frame(self):
         pass
+
+    def do_get_frame_wait(self, timeout):
+        # Only capture methods that can report CaptureBusyException need to
+        # override this.
+        return self.do_get_frame()
 
     def draw_rectangle(self):
         pass

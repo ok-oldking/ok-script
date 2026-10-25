@@ -1,5 +1,5 @@
 from ok.device.capture_methods.adb import ADBCaptureMethod
-from ok.device.capture_methods.base import BaseCaptureMethod, BaseWindowsCaptureMethod
+from ok.device.capture_methods.base import CAPTURE_BUSY_WAIT, BaseCaptureMethod, BaseWindowsCaptureMethod
 from ok.device.capture_methods.bitblt import BitBltCaptureMethod, ForegroundBitBltCaptureMethod
 from ok.device.capture_methods.bitblt_utils import (
     BGRA_CHANNEL_COUNT,

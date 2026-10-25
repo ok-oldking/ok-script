@@ -10,7 +10,7 @@ from ok import Config, og
 from ok import Handler
 from ok import Logger
 from ok.capture.windows.dump import dump_threads
-from ok.device.capture import ImageCaptureMethod
+from ok.device.capture import CAPTURE_BUSY_WAIT, ImageCaptureMethod
 from ok.device.interaction import DoNothingInteraction
 from ok.ui.qt.i18n.GettextTranslator import convert_to_mo_files
 from ok.ui.qt.util.Alert import alert_info, alert_error
@@ -215,7 +215,7 @@ def capture(processor=None):
     if og.device_manager.capture_method is not None:
         logger.info(f'og.device_manager.capture_method {og.device_manager.capture_method}')
         try:
-            frame = og.device_manager.capture_method.get_frame()
+            frame = og.device_manager.capture_method.get_frame(busy_wait=CAPTURE_BUSY_WAIT)
             if frame is not None:
                 current_capture = str(og.device_manager.capture_method) + '_' + str(time.time() * 1000)
                 file_path = og.ok.screenshot.generate_screen_shot(frame, og.ok.screenshot.ui_dict,

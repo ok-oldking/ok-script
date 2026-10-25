@@ -383,7 +383,9 @@ class StartController:
     def try_capture_a_frame():
         start = time.time()
         while True:
-            frame = og.device_manager.capture_method.get_frame()
+            # A running executor may own the capture; wait for it rather than
+            # polling a lock it releases only briefly between frames.
+            frame = og.device_manager.capture_method.get_frame(busy_wait=1)
             if frame is not None:
                 return frame
             logger.info(f'try_capture_a_frame: frame is None, retrying...')

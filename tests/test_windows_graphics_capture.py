@@ -2,7 +2,7 @@ import unittest
 import threading
 import time
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import numpy as np
 
@@ -151,6 +151,44 @@ class TestWindowsGraphicsCaptureLifecycle(unittest.TestCase):
 
         self.assertEqual(1, len(errors))
         self.assertIsInstance(errors[0], CaptureBusyException)
+        method._do_get_frame.assert_not_called()
+
+    def _hold_request_lock(self, method, release):
+        held = threading.Event()
+
+        def hold():
+            with method.get_frame_lock:
+                held.set()
+                release.wait(1)
+
+        holder = threading.Thread(target=hold, daemon=True)
+        holder.start()
+        self.assertTrue(held.wait(1))
+        return holder
+
+    def test_waiting_capture_runs_once_request_owner_releases(self):
+        method = self._method()
+        method._do_get_frame = Mock(return_value='frame')
+        release = threading.Event()
+        holder = self._hold_request_lock(method, release)
+        threading.Timer(.05, release.set).start()
+
+        self.assertEqual('frame', method.do_get_frame_wait(1))
+
+        holder.join(1)
+        method._do_get_frame.assert_called_once_with()
+
+    def test_waiting_capture_reports_busy_when_wait_expires(self):
+        method = self._method()
+        method._do_get_frame = Mock()
+        release = threading.Event()
+        holder = self._hold_request_lock(method, release)
+        try:
+            with self.assertRaises(CaptureBusyException):
+                method.do_get_frame_wait(.05)
+        finally:
+            release.set()
+            holder.join(1)
         method._do_get_frame.assert_not_called()
 
     def test_busy_window_setter_defers_refresh(self):
@@ -456,6 +494,57 @@ class TestWindowsGraphicsCaptureGetFrame(unittest.TestCase):
 
         self.assertFalse(producer.is_alive())
         self.assertEqual([2, 3], [int(result[0, 0, 0]) for result in results])
+
+    def test_one_off_capture_waits_for_executor_request_then_gets_own_frame(self):
+        method = self._method(_FakeFrame())
+        method.get_frame_lock = _ObservedRLock()
+        values = iter((2, 3))
+        # BaseCaptureMethod.get_frame() rejects frames of 10px or less.
+        method.convert_dx_frame = lambda _frame: np.full((20, 20, 3), next(values), dtype=np.uint8)
+        results = {}
+
+        with patch.object(windows_graphics_module, 'composite_hwnds', side_effect=lambda captured, *_: captured):
+            executor = threading.Thread(target=lambda: results.update(executor=method.do_get_frame()))
+            executor.start()
+            self.assertTrue(method.frame_requested.wait(1))
+
+            method.get_frame_lock.attempted.clear()
+            one_off = threading.Thread(
+                target=lambda: results.update(one_off=method.get_frame(busy_wait=1)))
+            one_off.start()
+            self.assertTrue(method.get_frame_lock.attempted.wait(1))
+
+            # The waiting caller must not consume the executor's response.
+            method.frame_arrived_callback()
+            executor.join(1)
+            self.assertFalse(executor.is_alive())
+
+            producer = threading.Thread(target=lambda: (
+                method.frame_requested.wait(1) and method.frame_arrived_callback()))
+            producer.start()
+            one_off.join(1)
+            producer.join(1)
+
+        self.assertFalse(one_off.is_alive())
+        self.assertEqual(2, int(results['executor'][0, 0, 0]))
+        self.assertEqual(3, int(results['one_off'][0, 0, 0]))
+
+
+class TestBrowserCaptureBusyWait(unittest.TestCase):
+    def test_waiting_capture_is_forwarded_to_browser_wgc(self):
+        from ok.device.capture_methods.browser import BrowserCaptureMethod
+        method = object.__new__(BrowserCaptureMethod)
+        method.exit_event = threading.Event()
+        method.page = Mock()
+        method.page.is_closed.return_value = False
+        method.wgc_capture = Mock()
+        method.wgc_capture.do_get_frame_wait.return_value = 'frame'
+
+        self.assertEqual('frame', method.do_get_frame_wait(2))
+        self.assertEqual('frame', method.do_get_frame())
+
+        self.assertEqual([call(2), call(0)], method.wgc_capture.do_get_frame_wait.call_args_list)
+
 
 if __name__ == '__main__':
     unittest.main()

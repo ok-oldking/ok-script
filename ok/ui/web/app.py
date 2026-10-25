@@ -525,7 +525,8 @@ class WebRuntime:
             method = self.device_manager.capture_method
             if method is None:
                 raise RuntimeError("No capture method is active")
-            frame = method.get_frame()
+            from ok.device.capture_methods.base import CAPTURE_BUSY_WAIT
+            frame = method.get_frame(busy_wait=CAPTURE_BUSY_WAIT)
             if frame is None:
                 raise RuntimeError("Could not capture a frame")
             folder = Path(getattr(self.ok.screenshot, "screenshot_folder", None) or "screenshots")
@@ -985,7 +986,8 @@ class WebRuntime:
         capture_method = getattr(self.ok.device_manager, "capture_method", None)
         if capture_method is None:
             raise RuntimeError("No capture method available. Please start capture first.")
-        frame = capture_method.get_frame()
+        from ok.device.capture_methods.base import CAPTURE_BUSY_WAIT
+        frame = capture_method.get_frame(busy_wait=CAPTURE_BUSY_WAIT)
         if frame is None:
             raise RuntimeError("Failed to capture frame")
         from ok.util.blur import apply_blur_areas, get_blur_algorithm
