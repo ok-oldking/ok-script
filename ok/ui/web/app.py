@@ -415,6 +415,7 @@ class WebRuntime:
             "running": self.executor.thread is not None and self.executor.thread.is_alive(),
             "starting": bool(start_controller.starting),
             "current_task": current.name if current else None,
+            "exclusive_owner": getattr(self.executor, "exclusive_owner", None),
             "task_count": len(self.executor.get_all_tasks()),
             "hotkey": hotkey if hotkey and hotkey != "None" else None,
         }
@@ -1151,6 +1152,11 @@ class WebRuntime:
         self.executor.stop_current_task()
         return self.status()
 
+    def release_exclusive(self):
+        if (owner := self.executor.exclusive_owner) is not None:
+            self.executor.release_exclusive(owner)
+        return self.status()
+
     def close(self):
         self.ok.quit()
 
@@ -1556,6 +1562,10 @@ def create_web_app(config, ok_instance=None):
     async def stop_task():
         return runtime.stop_task()
 
+    @app.post("/api/executor/release")
+    async def release_executor():
+        return await asyncio.to_thread(runtime.release_exclusive)
+
     @app.websocket("/api/events")
     async def events(websocket: WebSocket, session_key: str = ""):
         await websocket.accept()
@@ -1619,7 +1629,7 @@ def create_web_app(config, ok_instance=None):
                     "kwargs": _json_value(message.kwargs),
                 }
                 if message.name in {
-                    "adb_devices", "executor_paused", "starting_emulator",
+                    "adb_devices", "executor_paused", "executor_exclusive", "starting_emulator",
                     "task", "task_list_updated",
                 }:
                     payload["ui"] = await asyncio.to_thread(runtime.capture_ui)

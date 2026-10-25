@@ -3,6 +3,7 @@ export type ExecutorStatus = {
   running: boolean;
   starting: boolean;
   current_task: string | null;
+  exclusive_owner: string | null;
   task_count: number;
   hotkey: string | null;
 };

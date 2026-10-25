@@ -36,6 +36,7 @@ export const runtimeApi = {
   themeUi: () => request<ThemeUiState>("/api/ui/theme"),
   pause: () => post<ExecutorStatus>("/api/executor/pause"),
   resume: () => post<ExecutorStatus>("/api/executor/resume"),
+  releaseExclusive: () => post<ExecutorStatus>("/api/executor/release"),
   refreshDevices: () => post<{ accepted: boolean }>("/api/devices/refresh"),
   selectDevice: (id: string) => post<CaptureUiState>("/api/devices/select", { id }),
   selectCapture: (id: string) => post<CaptureUiState>("/api/capture-methods/select", { id }),

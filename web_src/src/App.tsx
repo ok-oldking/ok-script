@@ -148,12 +148,13 @@ function taskTabIcon(icon: string): IconComponent {
 const captureStateEvents = new Set([
   "adb_devices",
   "executor_paused",
+  "executor_exclusive",
   "starting_emulator",
   "task",
   "task_list_updated"
 ]);
 
-const taskStateEvents = new Set(["task", "task_done", "executor_paused", "task_list_updated"]);
+const taskStateEvents = new Set(["task", "task_done", "executor_paused", "executor_exclusive", "task_list_updated"]);
 
 function MethodList({ items, label, onSelect, disabled }: {
   items: MethodOption[];
@@ -1432,13 +1433,18 @@ function RuntimeApp({ theme, language, onTheme, onLanguage }: {
     </div>
 
     <main key={activePage} className={`content nav-page-transition ${activePage !== "Capture" ? "task-content" : ""}`}>
+      {status?.exclusive_owner && <section className="exclusive-banner surface-card" role="status">
+        <Info20Regular />
+        <span>{t("{owner} is controlling the app. Other tasks are stopped.", { owner: status.exclusive_owner })}</span>
+        <button type="button" disabled={pending !== null} onClick={() => void perform("release", async () => { await runtimeApi.releaseExclusive(); return runtimeApi.captureUi(); })}>{t("Disconnect")}</button>
+      </section>}
       {activePage === "Capture" ? <>
       <section className="start-card about-identity surface-card">
         <div className="app-avatar">{ui?.icon_url ? <img src={ui.icon_url} alt="" /> : "OK"}</div><div><h1>{ui?.title || "OK-WW"}</h1><p>{ui?.version || "dev"} · {t(ui?.debug ? "Debug" : "Release")}</p></div>
         <div className="start-actions">
           <button type="button" disabled={pending !== null} onClick={() => void tool("capture")}><Camera20Regular />{t("Capture")}</button>
           <button type="button" disabled={pending !== null} onClick={() => void refreshDevices()}><ArrowClockwise20Regular />{pending === "refresh" ? t("Refreshing") : t("Refresh")}</button>
-          <button className="primary-button" type="button" disabled={pending !== null || loading || status?.starting} onClick={() => void perform("start", status?.paused === false ? async () => { await runtimeApi.pause(); return runtimeApi.captureUi(); } : async () => { await runtimeApi.resume(); return runtimeApi.captureUi(); })}><StartStateIcon />{startLabel}</button>
+          <button className="primary-button" type="button" disabled={pending !== null || loading || status?.starting || Boolean(status?.exclusive_owner)} onClick={() => void perform("start", status?.paused === false ? async () => { await runtimeApi.pause(); return runtimeApi.captureUi(); } : async () => { await runtimeApi.resume(); return runtimeApi.captureUi(); })}><StartStateIcon />{startLabel}</button>
         </div>
       </section>
 

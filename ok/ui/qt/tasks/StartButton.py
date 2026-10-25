@@ -17,6 +17,11 @@ class StartButton(PushButton):
         self.animation = QPropertyAnimation(self, b"color")
         self.update_paused(True)
         communicate.executor_paused.connect(self.update_paused)
+        communicate.executor_exclusive.connect(self.update_exclusive)
+        self.update_exclusive(getattr(og.executor, 'exclusive_owner', None))
+
+    def update_exclusive(self, owner):
+        self.setEnabled(owner is None)
 
     def update_paused(self, paused):
         if paused:

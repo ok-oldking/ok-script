@@ -166,6 +166,9 @@ button { -webkit-tap-highlight-color: transparent; }
 :root[data-theme="light"] .switch-thumb { background: #6e6268; }
 :root[data-theme="light"] .toast { border-color: rgba(61,39,50,.14); background: linear-gradient(to right, var(--toast-accent) 0 4px, #fff9fc 4px); color: #34282e; box-shadow: 0 8px 28px rgba(66,34,51,.18); }
 .surface-card { border: 0; border-radius: 11px; background: var(--card-bg); }
+.exclusive-banner { display: flex; flex: 0 0 auto; align-items: center; gap: 10px; padding: 10px 14px; box-shadow: inset 3px 0 var(--accent); }
+.exclusive-banner > svg { flex: 0 0 auto; color: var(--accent); }
+.exclusive-banner > span { flex: 1 1 auto; min-width: 0; }
 .start-card {
   display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; min-height: 68px; padding: 10px 16px 10px 14px;
   margin: 0;

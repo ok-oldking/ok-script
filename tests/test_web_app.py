@@ -107,6 +107,27 @@ def test_web_status_reports_starting_before_executor_runs():
     assert runtime.status()["starting"] is True
 
 
+def test_web_status_reports_and_releases_exclusive_owner():
+    executor = SimpleNamespace(
+        current_task=None,
+        basic_options={"Start/Stop": "None"},
+        paused=True,
+        thread=None,
+        get_all_tasks=lambda: [],
+        exclusive_owner="agent",
+    )
+    executor.release_exclusive = Mock(side_effect=lambda owner: setattr(executor, "exclusive_owner", None))
+    runtime = object.__new__(WebRuntime)
+    runtime.ok = SimpleNamespace(
+        task_executor=executor,
+        headless_app=SimpleNamespace(start_controller=SimpleNamespace(starting=False)),
+    )
+
+    assert runtime.status()["exclusive_owner"] == "agent"
+    assert runtime.release_exclusive()["exclusive_owner"] is None
+    executor.release_exclusive.assert_called_once_with("agent")
+
+
 def test_read_log_filters_complete_records(tmp_path: Path):
     log = tmp_path / "ok-script.log"
     log.write_text(

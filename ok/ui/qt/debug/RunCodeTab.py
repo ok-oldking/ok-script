@@ -1,63 +1,94 @@
-import io
-import sys
-import traceback
+from PySide6.QtGui import QTextCursor
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
+from qfluentwidgets import PushButton, TextEdit, ComboBox, FluentIcon
 
-from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QWidget, QVBoxLayout
-from qfluentwidgets import PushButton, TextEdit
-
-from ok import Config
+from ok import Config, og
+from ok.core.code_runner import CodeSession
+from ok.ui.qt.debug.JobControls import JobControls
+from ok.ui.qt.util.Alert import alert_info
 from ok.ui.qt.widget.Tab import Tab
 
 
 class RunCodeTab(Tab):
-    update_result_text: Signal = Signal(str)
+    """Runs Python code on the task executor's thread, keeping variables between runs."""
 
     def __init__(self, app_config, exit_event):
         super().__init__()
-        self.config = Config('run_code', {'code': ""})
-        
+        self.config = Config('run_code', {'code': "", 'target_task': ""})
+        self.session = CodeSession(og.executor)
+
         container = QWidget()
         layout = QVBoxLayout(container)
-        
+
         self.code_input = TextEdit()
-        self.code_input.setPlaceholderText(self.tr("Enter Python code here..."))
+        self.code_input.setPlaceholderText(self.tr(
+            "Enter Python code here...\n"
+            "og, executor and task (the selected task) are predefined, "
+            "variables are kept between runs, and the value of the last line is shown."))
         if self.config.get('code'):
             self.code_input.setText(self.config.get('code'))
         layout.addWidget(self.code_input, stretch=2)
-        
-        self.run_button = PushButton(self.tr("Run Code"))
-        self.run_button.clicked.connect(self.run_code)
-        layout.addWidget(self.run_button)
-        
+
+        toolbar = QHBoxLayout()
+        self.tasks_combo_box = ComboBox()
+        self.tasks_combo_box.addItem(self.tr('No Task'), userData=None)
+        for task in og.executor.get_all_tasks():
+            self.tasks_combo_box.addItem(task.__class__.__name__, userData=task)
+        target_task = self.config.get('target_task')
+        for index in range(self.tasks_combo_box.count()):
+            task = self.tasks_combo_box.itemData(index)
+            if task is not None and task.__class__.__name__ == target_task:
+                self.tasks_combo_box.setCurrentIndex(index)
+                break
+        toolbar.addWidget(self.tasks_combo_box)
+
+        self.controls = JobControls(self.tr("Run Code"))
+        self.controls.run_clicked.connect(self.run_code)
+        self.controls.output.connect(self.append_output)
+        self.controls.finished.connect(self.show_result)
+        toolbar.addWidget(self.controls, stretch=1)
+
+        reset_button = PushButton(FluentIcon.SYNC, self.tr("Reset Variables"))
+        reset_button.clicked.connect(self.reset_session)
+        toolbar.addWidget(reset_button)
+
+        clear_button = PushButton(FluentIcon.DELETE, self.tr("Clear Output"))
+        toolbar.addWidget(clear_button)
+        layout.addLayout(toolbar)
+
         self.output_area = TextEdit()
         self.output_area.setReadOnly(True)
         self.output_area.setPlaceholderText(self.tr("Output will be shown here..."))
+        clear_button.clicked.connect(self.output_area.clear)
         layout.addWidget(self.output_area, stretch=1)
-        
+
         self.add_card(self.tr("Run Python Code"), container)
-        
-        self.update_result_text.connect(self.output_area.setText)
-        
+
+    def selected_task(self):
+        return self.tasks_combo_box.currentData()
+
     def run_code(self):
         code = self.code_input.toPlainText()
         self.config['code'] = code
-        
-        old_stdout = sys.stdout
-        old_stderr = sys.stderr
-        redirected_output = io.StringIO()
-        sys.stdout = redirected_output
-        sys.stderr = redirected_output
+        task = self.selected_task()
+        self.config['target_task'] = task.__class__.__name__ if task is not None else ""
+        if task is None:
+            self.session.namespace.pop('task', None)
+        self.output_area.clear()
+        self.controls.start(lambda on_output: self.session.submit(code, task=task, on_output=on_output))
 
-        try:
-            from ok import og
-            local_vars = {'og': og}
-            exec(code, globals(), local_vars)
-        except Exception:
-            traceback.print_exc()
-        finally:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
-        
-        output = redirected_output.getvalue()
-        self.update_result_text.emit(output)
+    def reset_session(self):
+        self.session.reset()
+        alert_info(self.tr("Variables reset"))
+
+    def append_output(self, text):
+        self.output_area.moveCursor(QTextCursor.End)
+        self.output_area.insertPlainText(text)
+
+    def show_result(self, result):
+        if result.value is not None:
+            self.append_output(result.value + '\n')
+        if result.error:
+            self.append_output(result.error)
+        elif result.cancelled:
+            self.append_output(self.tr("Cancelled") + '\n')
