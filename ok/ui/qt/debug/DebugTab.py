@@ -1,4 +1,3 @@
-import time
 from ctypes import windll, wintypes
 
 from PySide6.QtCore import Qt, Signal, QCoreApplication
@@ -12,6 +11,7 @@ from ok import Handler
 from ok import Logger
 from ok.capture.windows.dump import dump_threads
 from ok.core.code_runner import submit_call, submit_task_call, wait_result
+from ok.core.screenshot import screenshot_file_stem
 from ok.device.capture import CAPTURE_BUSY_WAIT
 from ok.task.exceptions import ExecutorBusyException
 from ok.ui.qt.debug.JobControls import JobControls
@@ -237,13 +237,12 @@ def capture(processor=None):
         try:
             frame = og.device_manager.capture_method.get_frame(busy_wait=CAPTURE_BUSY_WAIT)
             if frame is not None:
-                current_capture = str(og.device_manager.capture_method) + '_' + str(time.time() * 1000)
+                current_capture = screenshot_file_stem(og.device_manager.capture_method.__class__.__name__)
                 file_path = og.ok.screenshot.generate_screen_shot(frame, og.ok.screenshot.ui_dict,
                                                                   og.ok.screenshot.screenshot_folder,
                                                                   current_capture, True, None, processor=processor)
 
                 reveal_in_explorer(file_path)
-                logger.info(f'captured screenshot: {current_capture}')
                 alert_info(QCoreApplication.translate('DebugTab', 'Capture Success'), True)
             else:
                 alert_error(QCoreApplication.translate('DebugTab', 'Capture returned None'))

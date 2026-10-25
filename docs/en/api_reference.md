@@ -53,7 +53,7 @@ Important attributes include `x`, `y`, `width`, `height`, `confidence`, and `nam
 | --- | --- |
 | `frame()` | Return the current cached frame. |
 | `next_frame()` | Request and return a fresh frame. |
-| `screenshot(name=None, frame=None, show_box=False, frame_box=None)` | Save a screenshot for debugging or test data. |
+| `screenshot(name=None, frame=None, show_box=False, frame_box=None)` | Save a screenshot for debugging or test data as `screenshots/YYYY-MM-DD_HH-MM-SS-mmm_<name>_original.png` (plus `_boxed.png` with `show_box`); logs `screenshot saved: <absolute path>`. |
 | `screen_width()` / `screen_height()` | Return the active capture dimensions. |
 | `width_of_screen(percent)` | Convert a screen-width ratio to pixels. |
 | `box_of_screen(...)` | Build a `Box` from relative screen coordinates. |

@@ -377,6 +377,7 @@ def screenshot(self, name=None, frame=None, show_box=False, frame_box=None)
 ```
 
 将当前屏幕或指定帧的图像保存到 `screenshots` 目录中，主要用于调试。保存的截图会显示在软件的UI界面中。
+文件名格式为 `YYYY-MM-DD_HH-MM-SS-mmm_<name>_original.png`（`show_box=True` 时另存 `_boxed.png`），未指定 `name` 时为 `screenshot`；保存成功后会以 `screenshot saved: <绝对路径>` 记录日志。
 
 - **参数:**
     - `name` (str): 截图的名称，必须提供。
