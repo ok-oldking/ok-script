@@ -29,7 +29,8 @@ VALID_NAMED_KEYS = {
     'caps_lock', 'num_lock', 'scroll_lock', 'print_screen',
     'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12',
     'num0', 'num1', 'num2', 'num3', 'num4', 'num5', 'num6', 'num7', 'num8', 'num9',
-    'windows', 'win', 'command', 'cmd', 'cmd_l', 'cmd_r', 'meta'
+    'windows', 'win', 'command', 'cmd', 'cmd_l', 'cmd_r', 'meta',
+    'mouse4', 'mouse5', 'xbutton1', 'xbutton2'
 }
 
 logger = Logger.get_logger(__name__)
