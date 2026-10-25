@@ -7,6 +7,7 @@ from numpy import ndarray
 
 from ok.core.events import communicate
 from ok.core.icons import Icon
+from ok.core.notifications import alert_error
 from ok.feature.Box import find_boxes_by_name, find_boxes_within_boundary, Box, find_box_by_name, relative_box, \
     sort_boxes, find_highest_confidence_box
 from ok.feature.FeatureSet import adjust_coordinates, resize_image, scale_box, join_list_elements
@@ -777,7 +778,7 @@ class OCR(FindFeature):
             return []
         if box and isinstance(box, str):
             box = self.get_box_by_name(box)
-        if self.executor.paused:
+        if self.executor.blocked_by_pause():
             self.executor.sleep(1)
         if threshold == 0:
             threshold = self.ocr_default_threshold
@@ -1177,6 +1178,13 @@ class BaseTask(OCR):
 
     def enable(self):
         if not self._enabled:
+            owner = getattr(self.executor, 'exclusive_owner', None)
+            if owner is not None and not isinstance(self, TriggerTask):
+                logger.info(f'not enabling {self}, executor held by {owner}')
+                alert_error(self.tr('Cannot start {name}: the app is controlled by {owner}').format(
+                    name=self.tr(self.name), owner=owner))
+                communicate.task.emit(self)
+                return
             self._enabled = True
             self.info_clear()
             self.ensure_capture()

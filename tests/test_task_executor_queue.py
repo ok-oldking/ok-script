@@ -31,6 +31,11 @@ class TestTaskExecutorQueue(unittest.TestCase):
         executor.onetime_task_queue = []
         executor.trigger_tasks = []
         executor.trigger_task_index = -1
+        executor.current_job = None
+        executor._job_queue = []
+        executor._exclusive_owner = None
+        executor.thread = None
+        executor.debug_mode = False
         return executor
 
     def test_active_sleep_uses_condition_instead_of_millisecond_polling(self):

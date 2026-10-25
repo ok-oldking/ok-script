@@ -76,7 +76,7 @@ class EventBus:
     _event_names = (
         "log", "fps", "frame_time", "scene", "draw_box", "clear_box",
         "task", "task_list_updated", "task_done", "window",
-        "loading_progress", "notification", "executor_paused", "screenshot",
+        "loading_progress", "notification", "executor_paused", "executor_exclusive", "screenshot",
         "blur_overlay", "clear_blur_overlay", "adb_devices",
         "config_validation", "tab", "capture_error", "starting_emulator",
         "quit", "start_success", "act", "copyright", "global_config",

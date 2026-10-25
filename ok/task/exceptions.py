@@ -28,6 +28,14 @@ class CaptureBusyException(Exception):
     pass
 
 
+class ExecutorBusyException(Exception):
+    """The executor is held exclusively by another owner, such as a connected agent."""
+
+    def __init__(self, owner):
+        self.owner = owner
+        super().__init__(f"Executor is held exclusively by {owner}")
+
+
 class HotkeyConfigException(Exception):
     def __init__(self, key):
         self.key = key

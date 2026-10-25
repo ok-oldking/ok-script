@@ -56,6 +56,11 @@ class StartController:
             self.starting = False
 
     def _do_start(self, task=None, exit_after=False):
+        if (owner := getattr(getattr(og, 'executor', None), 'exclusive_owner', None)) is not None:
+            logger.info(f'do_start refused, executor held by {owner}')
+            communicate.starting_emulator.emit(
+                True, self.tr('Cannot start: the app is controlled by {owner}').format(owner=owner), 0)
+            return False
         communicate.starting_emulator.emit(False, None, self.start_timeout)
         tasks_to_enable = []
         try:

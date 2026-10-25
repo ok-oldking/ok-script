@@ -1,17 +1,51 @@
+import itertools
 import sys
 import threading
 import time
+from concurrent.futures import Future
 
 from ok.core.events import communicate
 from ok.core.notifications import alert_info
 from ok.task.exceptions import FinishedException, TaskDisabledException, WaitFailedException, CaptureException, \
-    HotkeyConfigException
+    HotkeyConfigException, ExecutorBusyException
 from ok.util.GlobalConfig import basic_options
 from ok.util.logger import Logger, config_logger
 from ok.util.process import is_cuda_12_or_above, prevent_sleeping
 from ok.util.window import ratio_text_to_number
 
 logger = Logger.get_logger(__name__)
+
+
+class ExecutorJob:
+    """A callable that runs once on the executor thread, outside the task queue.
+
+    ``future`` resolves to the callable's return value, or raises what it
+    raised. A job cancelled while running raises TaskDisabledException at its
+    next sleep, frame request or wait.
+    """
+    _ids = itertools.count(1)
+
+    def __init__(self, executor, fn, name=None, owner=None, capture=None, interaction=None, ignore_pause=True):
+        self.id = next(self._ids)
+        self.executor = executor
+        self.fn = fn
+        self.name = name or getattr(fn, '__name__', 'job')
+        self.owner = owner
+        self.capture = capture
+        self.interaction = interaction
+        self.ignore_pause = ignore_pause
+        self.future = Future()
+        self._cancel_requested = threading.Event()
+
+    @property
+    def cancel_requested(self):
+        return self._cancel_requested.is_set()
+
+    def cancel(self):
+        return self.executor.cancel_job(self)
+
+    def __repr__(self):
+        return f'ExecutorJob({self.id}, {self.name}, owner={self.owner})'
 
 
 class TaskExecutor:
@@ -85,6 +119,9 @@ class TaskExecutor:
         self.trigger_tasks = []
         self.onetime_tasks = []
         self.onetime_task_queue = []
+        self.current_job = None
+        self._job_queue = []
+        self._exclusive_owner = None
         self.thread = None
         self.lock = threading.Lock()
         self._wake_condition = threading.Condition()
@@ -122,11 +159,21 @@ class TaskExecutor:
 
     @property
     def interaction(self):
-        return self.device_manager.interaction
+        override = self._job_override('interaction')
+        return override if override is not None else self.device_manager.interaction
 
     @property
     def method(self):
-        return self.device_manager.capture_method
+        override = self._job_override('capture')
+        return override if override is not None else self.device_manager.capture_method
+
+    def _job_override(self, name):
+        # Overrides apply only to the job's own code, which runs on the
+        # executor thread; other threads keep seeing the device manager.
+        job = self.current_job
+        if job is not None and self.is_executor_thread():
+            return getattr(job, name)
+        return None
 
     def ocr_lib(self, name="default"):
         if name not in self._ocr_lib:
@@ -242,7 +289,7 @@ class TaskExecutor:
         return support, f"{width}x{height}"
 
     def can_capture(self):
-        if self.device_manager.get_preferred_device() is None:
+        if self._job_override('capture') is None and self.device_manager.get_preferred_device() is None:
             return False
         return (self.method is not None and self.method.connected()
                 and self.interaction is not None and self.interaction.should_capture())
@@ -281,7 +328,7 @@ class TaskExecutor:
 
     @property
     def frame(self):
-        while self.paused and not self.debug_mode:
+        while self.blocked_by_pause():
             self.sleep(1)
         if self.exit_event.is_set():
             logger.info("frame Exit event set. Exiting early.")
@@ -290,12 +337,37 @@ class TaskExecutor:
             self.next_frame()
         return self._frame
 
+    def blocked_by_pause(self):
+        """Whether the calling code should wait because the executor is paused.
+
+        debug_mode ignores pause everywhere; a job ignores it only for its own
+        code on the executor thread.
+        """
+        if not self.paused or self.debug_mode:
+            return False
+        job = self.current_job
+        return not (job is not None and job.ignore_pause and self.is_executor_thread())
+
     def check_enabled(self, check_pause=True):
-        if check_pause and self.paused:
+        if check_pause and self.blocked_by_pause():
             self.sleep(1)
+        if not self.is_executor_thread():
+            if self.current_task and not self.current_task._enabled:
+                logger.info(f'{self.current_task} is disabled, raise Exception')
+                self.current_task = None
+                raise TaskDisabledException()
+            return
+        job = self.current_job
+        if job is not None and job.cancel_requested:
+            logger.info(f'{job} is cancelled, raise Exception')
+            raise TaskDisabledException()
         if self.current_task and not self.current_task._enabled:
             logger.info(f'{self.current_task} is disabled, raise Exception')
             self.current_task = None
+            raise TaskDisabledException()
+        if self.current_task and self._exclusive_owner is not None:
+            # Trigger tasks keep their enabled setting, so stop them here.
+            logger.info(f'{self.current_task} stopped, executor held by {self._exclusive_owner}')
             raise TaskDisabledException()
 
     def sleep(self, timeout: float):
@@ -337,7 +409,7 @@ class TaskExecutor:
             if self.exit_event.is_set():
                 logger.info("sleep Exit event set. Exiting early.")
                 sys.exit(0)
-            if not (self.paused or (
+            if not (self.blocked_by_pause() or (
                     self.current_task is not None and self.current_task.paused) or self.interaction is None or not self.interaction.should_capture()):
                 to_sleep = self.pause_end_time - time.time()
                 if to_sleep <= 0:
@@ -392,19 +464,144 @@ class TaskExecutor:
             task.disable()
             task.unpause()
 
+    def _start_thread_locked(self):
+        if self.thread is None:
+            # Application shutdown must not be held hostage by a custom
+            # task or interaction backend that ignores exit_event.
+            self.thread = threading.Thread(
+                target=self.execute, name="TaskExecutor", daemon=True)
+            self.thread.start()
+
     def start(self):
         with self.lock:
-            if self.thread is None:
-                # Application shutdown must not be held hostage by a custom
-                # task or interaction backend that ignores exit_event.
-                self.thread = threading.Thread(
-                    target=self.execute, name="TaskExecutor", daemon=True)
-                self.thread.start()
+            self._start_thread_locked()
             if self.paused:
                 self.paused = False
                 communicate.executor_paused.emit(self.paused)
                 self.pause_end_time += self.pause_start - time.time()
             self._wake_executor()
+
+    @property
+    def exclusive_owner(self):
+        return self._exclusive_owner
+
+    def submit(self, fn, name=None, owner=None, capture=None, interaction=None, ignore_pause=True):
+        """Run ``fn`` once on the executor thread and return its ExecutorJob.
+
+        Jobs run before queued tasks, as soon as the running task finishes, and
+        also while the executor is paused unless ``ignore_pause`` is False.
+        ``capture`` and ``interaction`` replace the device manager's methods for
+        the job's own code. While the executor is held exclusively, only the
+        holder's jobs are accepted.
+        """
+        job = ExecutorJob(self, fn, name=name, owner=owner, capture=capture, interaction=interaction,
+                          ignore_pause=ignore_pause)
+        with self.lock:
+            if self._exclusive_owner is not None and owner != self._exclusive_owner:
+                raise ExecutorBusyException(self._exclusive_owner)
+            if self.exit_event.is_set():
+                job.future.cancel()
+                return job
+            self._job_queue.append(job)
+            self._start_thread_locked()
+        logger.info(f'submitted {job}')
+        self._wake_executor()
+        return job
+
+    def cancel_job(self, job):
+        """Cancel a queued job, or make a running job stop at its next check."""
+        with self.lock:
+            if job in self._job_queue:
+                self._job_queue.remove(job)
+                return job.future.cancel()
+        if job.future.cancel():
+            return True
+        if job.future.done():
+            return False
+        job._cancel_requested.set()
+        self._wake_executor()
+        return True
+
+    def acquire_exclusive(self, owner):
+        """Hold the executor for ``owner`` until release_exclusive(owner).
+
+        Stops the running task, disables enabled one-time tasks and cancels
+        other owners' jobs. Trigger tasks are skipped but keep their enabled
+        setting, so they resume on release; one-time tasks stay stopped.
+        Returns False if ``owner`` already holds the executor.
+        """
+        if owner is None:
+            raise ValueError('owner is required')
+        with self.lock:
+            if self._exclusive_owner == owner:
+                return False
+            if self._exclusive_owner is not None:
+                raise ExecutorBusyException(self._exclusive_owner)
+            self._exclusive_owner = owner
+            stale_jobs = [job for job in self._job_queue if job.owner != owner]
+            self._job_queue = [job for job in self._job_queue if job.owner == owner]
+        logger.info(f'executor held exclusively by {owner}')
+        for job in stale_jobs:
+            job.future.cancel()
+        job = self.current_job
+        if job is not None and job.owner != owner:
+            job._cancel_requested.set()
+        for task in list(self.onetime_tasks):
+            if task.enabled:
+                task.disable()
+        self._wake_executor()
+        communicate.executor_exclusive.emit(owner)
+        return True
+
+    def release_exclusive(self, owner):
+        """Release the executor held by ``owner`` and cancel its remaining jobs."""
+        with self.lock:
+            if owner is None or self._exclusive_owner != owner:
+                return False
+            self._exclusive_owner = None
+            owned_jobs = [job for job in self._job_queue if job.owner == owner]
+            self._job_queue = [job for job in self._job_queue if job.owner != owner]
+        logger.info(f'executor released by {owner}')
+        for job in owned_jobs:
+            job.future.cancel()
+        job = self.current_job
+        if job is not None and job.owner == owner:
+            job._cancel_requested.set()
+        self._wake_executor()
+        communicate.executor_exclusive.emit(None)
+        return True
+
+    def _pop_job(self):
+        with self.lock:
+            if self._job_queue:
+                return self._job_queue.pop(0)
+        return None
+
+    def _run_job(self, job):
+        owner = self._exclusive_owner
+        if owner is not None and job.owner != owner:
+            job.future.cancel()
+            return
+        if not job.future.set_running_or_notify_cancel():
+            return
+        logger.info(f'start {job}')
+        self.current_job = job
+        start = time.time()
+        try:
+            self.reset_scene(check_enabled=False)
+            result = job.fn()
+        except BaseException as e:
+            if isinstance(e, TaskDisabledException):
+                logger.info(f'{job} cancelled')
+            elif not isinstance(e, (FinishedException, SystemExit)):
+                logger.error(f'{job} raised', e)
+            job.future.set_exception(e)
+        else:
+            job.future.set_result(result)
+        finally:
+            self.current_job = None
+            self.reset_scene(check_enabled=False)
+        logger.info(f'end {job}, cost: {time.time() - start:.2f}s')
 
     def wait_condition(self, condition, time_out=0, pre_action=None, post_action=None, settle_time=-1,
                        raise_if_not_found=False):
@@ -547,10 +744,15 @@ class TaskExecutor:
     def execute(self):
         logger.info(f"start execute")
         while not self.exit_event.is_set():
-            if self.paused:
-                logger.info(f'executor is paused sleep')
-                self.sleep(1)
             wake_version = self._get_wake_version()
+            job = self._pop_job()
+            if job is not None:
+                self._run_job(job)
+                continue
+            if self.paused or self._exclusive_owner is not None:
+                # Only jobs run now; wait for one, or for start() / release.
+                self._wait_for_activity(1, wake_version)
+                continue
             task, cycled, is_trigger_task = self.next_task()
             if not task:
                 self._wait_for_activity(self.next_trigger_delay(), wake_version)
@@ -649,6 +851,10 @@ class TaskExecutor:
                 return
             self._destroyed = True
         logger.info(f'Executor destroy')
+        with self.lock:
+            jobs, self._job_queue = self._job_queue, []
+        for job in jobs:
+            job.future.cancel()
         onetime_tasks, self.onetime_tasks = self.onetime_tasks, []
         trigger_tasks, self.trigger_tasks = self.trigger_tasks, []
         for task in (*onetime_tasks, *trigger_tasks):
