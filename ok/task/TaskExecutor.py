@@ -476,18 +476,37 @@ class TaskExecutor:
         if task is not None:
             if self.current_task != task:
                 raise Exception(f"Can only pause current task {self.current_task}")
+            if not self.paused:
+                self.paused = True
+                self._wake_executor()
+                communicate.executor_paused.emit(self.paused)
+                self.reset_scene(check_enabled=False)
+                self.pause_start = time.time()
+                return True
         elif not self.paused:
             self.paused = True
+            if self.current_task is not None and getattr(self.current_task, '_enabled', False):
+                self.current_task._paused = True
+                communicate.task.emit(self.current_task)
             self._wake_executor()
             communicate.executor_paused.emit(self.paused)
             self.reset_scene(check_enabled=False)
             self.pause_start = time.time()
             return True
+        else:
+            communicate.executor_paused.emit(True)
+            return True
 
-    def stop_current_task(self):
+    def stop_current_task(self, pause_executor=False):
         if task := self.current_task:
             task.disable()
-            task.unpause()
+            task.running = False
+            task._paused = False
+            self.current_task = None
+            self._wake_executor()
+            communicate.task.emit(task)
+        if pause_executor:
+            self.pause()
 
     def _start_thread_locked(self):
         if self.thread is None:
@@ -502,6 +521,9 @@ class TaskExecutor:
             self._start_thread_locked()
             if self.paused:
                 self.paused = False
+                if self.current_task is not None and getattr(self.current_task, '_paused', False):
+                    self.current_task._paused = False
+                    communicate.task.emit(self.current_task)
                 communicate.executor_paused.emit(self.paused)
                 self.pause_end_time += self.pause_start - time.time()
             self._wake_executor()

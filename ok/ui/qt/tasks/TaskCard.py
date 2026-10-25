@@ -72,6 +72,7 @@ class TaskCard(ConfigCard):
 
         self.update_buttons(self.task)
         communicate.task.connect(self.update_buttons)
+        communicate.executor_paused.connect(self._on_executor_paused)
         task_callback = self.update_buttons
         self.destroyed.connect(
             lambda *_args: communicate.task.disconnect(task_callback)
@@ -79,7 +80,30 @@ class TaskCard(ConfigCard):
 
     def dispose(self):
         """Release subscriptions before the Qt widget is deleted."""
-        communicate.task.disconnect(self.update_buttons)
+        try:
+            communicate.task.disconnect(self.update_buttons)
+        except Exception:
+            pass
+        try:
+            communicate.executor_paused.disconnect(self._on_executor_paused)
+        except Exception:
+            pass
+
+    def _on_executor_paused(self, _paused):
+        try:
+            from shiboken6 import isValid
+            if not isValid(self):
+                communicate.executor_paused.disconnect(self._on_executor_paused)
+                return
+        except Exception:
+            pass
+        try:
+            self.update_buttons(self.task)
+        except RuntimeError:
+            try:
+                communicate.executor_paused.disconnect(self._on_executor_paused)
+            except Exception:
+                pass
 
     def _compact_header(self):
         """Display the task name and description in one compact row."""
@@ -117,7 +141,8 @@ class TaskCard(ConfigCard):
 
     def start_clicked(self):
         self.setExpand(False)
-        if self.task.enabled and self.task.paused:
+        is_task_paused = self.task.paused or (getattr(og.executor, 'paused', False) and self.task.running)
+        if self.task.enabled and is_task_paused:
             logger.info(f"resume paused task {self.task}")
             self.task.unpause()
             return
@@ -139,7 +164,11 @@ class TaskCard(ConfigCard):
 
     def stop_clicked(self):
         self.task.disable()
-        self.task.unpause()
+        self.task.running = False
+        self.task._paused = False
+        if getattr(og.executor, 'current_task', None) == self.task:
+            og.executor.current_task = None
+        communicate.task.emit(self.task)
 
     def pause_clicked(self):
         self.task.pause()
@@ -197,7 +226,8 @@ class TaskCard(ConfigCard):
 
             if self.onetime:
                 if self.task.enabled:
-                    if self.task.paused:
+                    is_task_paused = self.task.paused or (getattr(og.executor, 'paused', False) and self.task.running)
+                    if is_task_paused:
                         self.start_button.setText(self.tr("Resume"))
                         self.start_button.setVisible(True)
                         self.pause_button.setVisible(False)

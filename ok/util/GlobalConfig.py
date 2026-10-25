@@ -66,15 +66,18 @@ _basic_options_default = {
     'Use DirectML': 'Yes',
     'Trigger Interval': 1,
     'Start/Stop': 'F9',
+    'Stop Task': 'F10',
     KILL_LAUNCHER_AFTER_START: True,
     'Launch with DX11': False
 }
 _basic_options_type = {'Use DirectML': {'type': "drop_down", 'options': ['Auto', 'Yes', 'No']},
                        ENABLE_MCP_SERVER: {'type': 'mcp_server'},
-                       'Start/Stop': {'type': "drop_down", 'options': ['None', 'F9', 'F10', 'F11', 'F12']}}
+                       'Start/Stop': {'type': 'drop_down', 'options': ['None', 'F9', 'F10', 'F11', 'F12']},
+                       'Stop Task': {'type': 'drop_down', 'options': ['None', 'F9', 'F10', 'F11', 'F12']}}
 _basic_options_description = {'Use DirectML': 'Use GPU to Improve Performance',
                               ENABLE_MCP_SERVER: 'Allow local coding agents to control this app and run Python code',
                               'Start/Stop': 'HotKey',
+                              'Stop Task': 'HotKey to Stop Active Task',
                               'Trigger Interval': 'Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)'}
 _blur_options_default = {'Enable Blur': False, 'Blur Algorithm': 'Inpaint', 'Blur Interval': 1}
 _blur_options_type = {
