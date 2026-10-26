@@ -1,0 +1,4 @@
+interface:
+  display_name: "Develop Automation Tasks"
+  short_description: "Develop and debug tasks locally through MCP"
+  default_prompt: "Use $develop to implement an automation task, reset and verify its starting state, and debug it through the local MCP server."

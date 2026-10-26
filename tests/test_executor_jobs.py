@@ -111,6 +111,33 @@ class ExecutorJobTestCase(unittest.TestCase):
 
 
 class TestExecutorJobs(ExecutorJobTestCase):
+    def test_snapshot_copy_does_not_block_executor_jobs(self):
+        copying = threading.Event()
+        release = threading.Event()
+        frame = np.zeros((20, 30, 3), dtype=np.uint8)
+
+        def slow_copy():
+            copying.set()
+            if not release.wait(5):
+                raise TimeoutError('Snapshot copy was not released')
+            return frame.copy()
+
+        self.executor._frame_snapshot = (SimpleNamespace(copy=slow_copy), 123.0)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            snapshot = pool.submit(self.executor.get_frame_snapshot)
+            try:
+                self.assertTrue(copying.wait(WAIT))
+                # Job submission and execution must remain available while an
+                # observation thread copies the previous frame.
+                work = pool.submit(lambda: self.executor.submit(lambda: 42).future.result(WAIT))
+                self.assertEqual(work.result(WAIT), 42)
+            finally:
+                release.set()
+            copied_frame, captured_at = snapshot.result(WAIT)
+        self.assertEqual(captured_at, 123.0)
+        self.assertTrue(np.array_equal(copied_frame, frame))
+        self.assertFalse(np.shares_memory(copied_frame, frame))
+
     def test_job_runs_on_executor_thread_while_paused(self):
         def job():
             self.executor.sleep(0.01)

@@ -28,6 +28,7 @@ pip install "ok-script[default]"     # headless runtime profile
 pip install "ok-script[qt]"          # desktop UI
 pip install "ok-script[adb]"         # ADB devices
 pip install "ok-script[ocr]"         # ONNX OCR
+pip install "ok-script[mcp]"         # localhost agent tools
 ```
 
 OpenCV is not part of any profile. Users must choose the version and exactly one
@@ -49,7 +50,18 @@ Add the `qt`, `adb`, or `ocr` group for the use case being developed.
 ```bash
 ok run_task DailyTask --config src.config:config
 ok gui --config src.config:config
+ok mcp --config src.config:config
 ```
+
+GUI startup takes over the registered console instance of the same project
+working directory. The instance marker records its PID, creation time, mode,
+and interpreter, allowing `pythonw.exe` GUI entry points to replace a development
+`python.exe` process even when they use separate launcher scripts. Process
+creation time protects against stale markers referring to reused PIDs.
 
 New desktop imports should use `ok.ui.qt`. Existing `ok.gui` imports remain
 available as a migration shim.
+
+The optional `mcp` profile provides a localhost development server with four
+tools for running task files, checking status, stopping, and observing the UI.
+See [MCP task development](mcp.md) for the task contract and local artifacts.

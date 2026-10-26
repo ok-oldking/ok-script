@@ -39,6 +39,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+mcp = [
+    "mcp==2.3.0",
+]
 default = [
     "numpy>=1.26.4",
     "Pillow>=10.0",
@@ -76,6 +79,9 @@ Repository = "https://github.com/ok-oldking/ok-script"
 ok = "ok.cli:main"
 
 [dependency-groups]
+mcp = [
+    "mcp==2.3.0",
+]
 default = [
     "numpy>=1.26.4",
     "Pillow>=10.0",

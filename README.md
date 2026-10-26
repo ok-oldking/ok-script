@@ -6,6 +6,9 @@
 `ok-script[qt]` 启用桌面界面；对应命令为 `ok run_task` 和 `ok gui`。详见
 [运行时架构](docs/architecture.md)。
 
+本地 AI 编程代理可使用 `ok mcp` 执行任务文件、查询状态、停止任务和观察界面。
+详见 [MCP 任务开发指南](docs/mcp.md)。
+
 [简体中文](README.md) | [English](README_en.md)
 
 [![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)

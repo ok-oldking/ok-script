@@ -7,6 +7,9 @@ headless use or `ok-script[qt]` for the desktop UI. Run them with
 `ok run_task` and `ok gui` respectively. See
 [the runtime architecture](docs/architecture.md) for details.
 
+For local coding agents, `ok mcp` exposes task-file execution and UI screenshots.
+See [MCP task development](docs/mcp.md) for setup and the reset-before-retry workflow.
+
 [简体中文](README.md) | **English**
 
 [![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)

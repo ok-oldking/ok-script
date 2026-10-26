@@ -72,4 +72,5 @@ nav:
       - Advanced guide: en/advanced.md
       - API reference: en/api_reference.md
       - Imported plugins: en/plugins.md
+      - MCP task development: mcp.md
       - Build the documentation site: en/building-site.md

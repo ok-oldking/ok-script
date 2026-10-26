@@ -1,0 +1,4 @@
+interface:
+  display_name: "Set Up Local Environment"
+  short_description: "Prepare an ok-script virtual environment"
+  default_prompt: "Use $setup-env to prepare the local ok-script virtual environment and verify its dependencies."

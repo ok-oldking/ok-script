@@ -665,8 +665,11 @@ class OK:
         default_start_method = _resolve('WINDOWS_START_METHOD_START')
         wgc_available = _resolve('windows_graphics_available')
 
+        self.args = parse_arguments()
+        use_gui = resolve_ui_config(config) is not None and not self.args.get('headless', False)
         if config.get('check_mutex', True):
-            if not check_mutex_fn():
+            acquired = check_mutex_fn(gui=True) if use_gui else check_mutex_fn()
+            if not acquired:
                 raise RuntimeError(
                     'Another application instance is still running and could not be stopped safely.')
         og.ok = self
@@ -688,9 +691,9 @@ class OK:
         pyappify.logger = logger
         logger.info(
             f"pyappify  app_version:{pyappify.app_version}, app_profile:{pyappify.app_profile}, pyappify_version:{pyappify.pyappify_version} pyappify_upgradeable:{pyappify.pyappify_upgradeable}, pyappify_executable:{pyappify.pyappify_executable}")
-        self.args = parse_arguments()
         self._runtime_start_lock = threading.Lock()
         self._runtime_started = False
+        self._mcp_server = None
         self.task_executor = None
         self._app = None
         self._headless_app = None
@@ -752,6 +755,7 @@ class OK:
     def start(self):
         logger.info(f'OK start id:{id(self)} pid:{os.getpid()}')
         try:
+            self.start_mcp_server()
             ui_config = resolve_ui_config(self.config)
             use_gui = (ui_config is not None and ui_config["type"] == "qt"
                        and not self.args.get('headless', False))
@@ -766,7 +770,8 @@ class OK:
                 logger.debug('start app.exec()')
                 self.app.exec()
             else:
-                self.task_executor.start()
+                if self._mcp_server is None:
+                    self.task_executor.start()
                 try:
                     task_thread = threading.Thread(target=self.wait_task)
                     task_thread.start()
@@ -784,6 +789,16 @@ class OK:
             self.exit_event.set()
             if self._app or self._headless_app:
                 self.quit()
+
+    def start_mcp_server(self):
+        """Start the optional localhost bridge after runtime initialization."""
+        config = self.config.get('mcp') or {}
+        if not config.get('enabled', False) or self._mcp_server is not None:
+            return
+        from ok.core.mcp_server import LocalMcpServer
+        server = LocalMcpServer(self, config)
+        server.start()
+        self._mcp_server = server
 
     def start_runtime(self):
         """Start UI-independent runtime initialization exactly once.
@@ -1097,6 +1112,8 @@ class OK:
 
     def quit(self):
         logger.info('quit app')
+        if getattr(self, '_mcp_server', None) is not None:
+            self._mcp_server.stop()
         self.exit_event.set()
         if self._app:
             self._app.quit()

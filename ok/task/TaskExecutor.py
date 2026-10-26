@@ -92,6 +92,8 @@ class TaskExecutor:
         self.pause_start = time.time()
         self.pause_end_time = time.time()
         self._last_frame_time = 0
+        self._snapshot_enabled = False
+        self._frame_snapshot = None
         self.paused = True
         self.config = config
         self.scene = None
@@ -254,6 +256,23 @@ class TaskExecutor:
     def nullable_frame(self):
         return self._frame
 
+    def enable_frame_snapshots(self):
+        """Keep an independent observation frame while an MCP runner is attached."""
+        with self.lock:
+            self._snapshot_enabled = True
+
+    def get_frame_snapshot(self):
+        """Return a copied frame and capture time without calling a capture backend.
+
+        Unlike the scene cache this survives reset_scene(), so another thread
+        can observe a running job without touching its capture backend.
+        """
+        with self.lock:
+            snapshot = getattr(self, '_frame_snapshot', None)
+        # Published snapshots are never mutated. Keep the reference alive while
+        # copying without blocking queue operations on a potentially large image.
+        return (snapshot[0].copy(), snapshot[1]) if snapshot is not None else None
+
     def check_frame_and_resolution(self, supported_ratio, min_size, time_out=8.0):
         if supported_ratio is None or min_size is None:
             return True, '0x0'
@@ -309,6 +328,10 @@ class TaskExecutor:
                         logger.warning(f"captured wrong size frame: {width}x{height}")
                     self._frame = frame
                     self._last_frame_time = time.time()
+                    if getattr(self, '_snapshot_enabled', False):
+                        snapshot = (frame.copy(), self._last_frame_time)
+                        with self.lock:
+                            self._frame_snapshot = snapshot
                     if self.blur_overlay_processor:
                         self.blur_overlay_processor.next_frame(frame)
                     return self._frame
@@ -365,8 +388,10 @@ class TaskExecutor:
             logger.info(f'{self.current_task} is disabled, raise Exception')
             self.current_task = None
             raise TaskDisabledException()
-        if self.current_task and self._exclusive_owner is not None:
-            # Trigger tasks keep their enabled setting, so stop them here.
+        if (self.current_task and self._exclusive_owner is not None
+                and (job is None or job.owner != self._exclusive_owner)):
+            # Stop scheduled tasks, but allow the exclusive owner's job to
+            # supply a task context for normal lifecycle checks.
             logger.info(f'{self.current_task} stopped, executor held by {self._exclusive_owner}')
             raise TaskDisabledException()
 
@@ -513,7 +538,8 @@ class TaskExecutor:
         with self.lock:
             if job in self._job_queue:
                 self._job_queue.remove(job)
-                return job.future.cancel()
+        # Future callbacks can release ownership or submit follow-up work.
+        # Never invoke them while holding the executor's queue lock.
         if job.future.cancel():
             return True
         if job.future.done():

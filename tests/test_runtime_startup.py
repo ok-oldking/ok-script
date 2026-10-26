@@ -1,5 +1,6 @@
 import threading
 from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 from ok import OK
 from ok.core.events import communicate
@@ -107,3 +108,17 @@ def test_device_refresh_always_publishes_completion_event():
 
     assert start_calls == [False]
     assert events == [True]
+
+
+def test_headless_mcp_waits_for_agent_without_starting_regular_tasks():
+    runtime, _ = make_runtime(auto_start=True)
+    runtime.config['mcp'] = {'enabled': True}
+    runtime._mcp_server = None
+    runtime.exit_event = threading.Event()
+    runtime.task_executor = Mock()
+    runtime.wait_task = runtime.exit_event.set
+    with patch('ok.core.mcp_server.LocalMcpServer') as server_class:
+        runtime.start()
+    server_class.return_value.start.assert_called_once_with()
+    runtime.task_executor.start.assert_not_called()
+    assert runtime.exit_event.is_set()

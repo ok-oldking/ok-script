@@ -11,7 +11,7 @@ def test_pyproject_profiles_are_consistent_and_headless_by_default():
     extras = project["optional-dependencies"]
     groups = metadata["dependency-groups"]
 
-    assert set(extras) == {"default", "qt", "adb", "ocr", "dev"}
+    assert set(extras) == {"default", "qt", "adb", "ocr", "dev", "mcp"}
     assert extras == groups
     assert extras["adb"] == ["adbutils>=2.2.1"]
     assert extras["ocr"] == ["onnxocr-ppocrv5"]
