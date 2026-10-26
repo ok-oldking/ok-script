@@ -9,6 +9,8 @@ Read the applicable skill before doing the corresponding work:
 | Create or repair a virtual environment; install missing dependencies | [setup-env](.agents/skills/setup-env/SKILL.md) |
 | Configure a local target, source link, GUI/MCP launchers, or shortcut | [setup-project](.agents/skills/setup-project/SKILL.md) |
 | Implement or debug automation tasks locally or through MCP | [develop](.agents/skills/develop/SKILL.md) |
+| Annotate screenshots, generate template assets, or use named image features | [generate-templates](.agents/skills/generate-templates/SKILL.md) |
+| Write or run automation regression tests | [write-test](.agents/skills/write-test/SKILL.md) |
 | Select the interpreter for Python commands | [use-venv](.agents/skills/use_venv/SKILL.md) |
 
 ## Python Environment

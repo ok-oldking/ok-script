@@ -8,7 +8,7 @@ from ok.core import skills
 def test_checkout_skills_are_discovered_independently_of_working_directory(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     catalog = {skill['id']: skill for skill in skills.list_skills()}
-    assert {'develop', 'setup-env', 'setup-project', 'use_venv'} <= catalog.keys()
+    assert {'develop', 'generate-templates', 'setup-env', 'setup-project', 'use_venv'} <= catalog.keys()
     assert catalog['use_venv']['name'] == 'use-venv'
     for skill in catalog.values():
         assert skill['description']

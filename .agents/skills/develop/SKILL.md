@@ -7,6 +7,8 @@ description: Implement and debug ok-script automation tasks using local files an
 
 Read [docs/mcp.md](../../../docs/mcp.md) for the current server, tools, task contract, and artifacts. The coding agent already has local file and process access: write code and read logs/images directly. Use [setup-env](../setup-env/SKILL.md) or [setup-project](../setup-project/SKILL.md) only when setup is missing.
 
+For screenshot annotations and named template features, use [generate-templates](../generate-templates/SKILL.md): retain originals in `ok_templates`, update its COCO annotations, generate runtime assets with the existing exporter, and verify `find_feature`/`find_one` against those assets.
+
 ## Connect to the local runtime
 
 Use the project's venv and existing development launcher. Without a custom launcher, start `python -m ok mcp --config <module>:<config>` through that interpreter from the project directory. Keep it running between attempts. The agent can start this process itself; launch background console helpers hidden on Windows.
