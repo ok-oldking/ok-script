@@ -792,13 +792,45 @@ class OK:
 
     def start_mcp_server(self):
         """Start the optional localhost bridge after runtime initialization."""
+        from ok.util.GlobalConfig import ENABLE_MCP_SERVER, basic_options
         config = self.config.get('mcp') or {}
-        if not config.get('enabled', False) or self._mcp_server is not None:
+        enabled = (config.get('enabled', False)
+                   or self.global_config.get_config(basic_options).get(ENABLE_MCP_SERVER, False))
+        if not enabled or self._mcp_server is not None:
             return
         from ok.core.mcp_server import LocalMcpServer
         server = LocalMcpServer(self, config)
         server.start()
         self._mcp_server = server
+
+    def stop_mcp_server(self):
+        """Stop only this runtime's MCP server, leaving the application running."""
+        server = self._mcp_server
+        if server is None:
+            return
+        server.stop()
+        server.join()
+        if server._thread is not None and server._thread.is_alive():
+            raise RuntimeError('MCP server is still stopping; try again shortly')
+        self._mcp_server = None
+
+    def set_mcp_enabled(self, enabled):
+        """Apply a confirmed GUI preference immediately and persist on success."""
+        from ok.util.GlobalConfig import ENABLE_MCP_SERVER, basic_options
+        previous = self.config.get('mcp')
+        self.config['mcp'] = {**(previous or {}), 'enabled': enabled}
+        try:
+            if enabled:
+                self.start_mcp_server()
+            else:
+                self.stop_mcp_server()
+        except Exception:
+            if previous is None:
+                self.config.pop('mcp', None)
+            else:
+                self.config['mcp'] = previous
+            raise
+        self.global_config.get_config(basic_options)[ENABLE_MCP_SERVER] = enabled
 
     def start_runtime(self):
         """Start UI-independent runtime initialization exactly once.

@@ -1782,6 +1782,14 @@
             <source>Try using Alt+F3 to turn it off.</source>
             <translation>可尝试按 Alt+F3 将其关闭。</translation>
         </message>
+        <message>
+            <source>Enable MCP Server</source>
+            <translation>启用 MCP 服务器</translation>
+        </message>
+        <message>
+            <source>Allow local coding agents to control this app and run Python code</source>
+            <translation>允许本地编程代理控制此应用并运行 Python 代码</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3245,6 +3253,29 @@
         <message>
             <source>Backup cleanup pending. Restart to retry.</source>
             <translation>备份清理未完成，请重启后重试。</translation>
+        </message>
+    </context>
+    <context>
+        <name>LabelAndMcpServer</name>
+        <message>
+            <source>Enable MCP Server?</source>
+            <translation>启用 MCP 服务器？</translation>
+        </message>
+        <message>
+            <source>MCP lets local coding agents control this app and execute Python code with your account permissions, including reading and changing files. Only connect trusted agents and keep the connection token private. Enable the server now?</source>
+            <translation>MCP 允许本地编程代理控制此应用，并以您的账户权限执行 Python 代码，包括读取和修改文件。请仅连接可信的代理，并妥善保管连接令牌。现在启用服务器吗？</translation>
+        </message>
+        <message>
+            <source>MCP server error</source>
+            <translation>MCP 服务器错误</translation>
+        </message>
+        <message>
+            <source>Yes</source>
+            <translation>是</translation>
+        </message>
+        <message>
+            <source>No</source>
+            <translation>否</translation>
         </message>
     </context>
 </TS>

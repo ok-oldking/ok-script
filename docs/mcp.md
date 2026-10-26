@@ -19,7 +19,9 @@ its chosen ok-script version. OpenCV remains a separate installation chosen by
 the application.
 
 The default URL is `http://127.0.0.1:8765/mcp`. Use `--port 8766` to change it,
-or `--port 0` to choose an available port. The process stays running between
+or `--port 0` to choose an available port. If a requested port is occupied, the
+server tries the next port (+1) until it binds successfully, up to 65535. Other
+bind errors are reported immediately. The process stays running between
 attempts. Its regular task scheduler stays paused in this headless mode.
 
 Starting a GUI for the same project replaces its registered console instance
@@ -28,6 +30,17 @@ points when the user-facing GUI should have MCP disabled. Close the GUI before
 starting another console development session.
 
 To enable the same tools in the desktop application:
+
+Open **Settings > Basic Options > Enable MCP Server** (off by default). Enabling
+it shows a security warning: connected agents can execute Python with your
+account permissions and read or change files. Confirming starts the server
+immediately; cancelling leaves it off. Turning it off, or resetting Basic
+Options, stops this instance's server immediately. The confirmed preference is
+saved for subsequent launches. If enabling from settings fails, the switch stays
+disabled and shows the error, including installation instructions if the MCP
+profile is missing.
+
+You can also opt in explicitly from the command line:
 
 ```powershell
 .\.venv\Scripts\python.exe -m ok gui --config src.config:config --mcp
@@ -40,12 +53,41 @@ Applications using `OK(config).start()` can enable MCP through their config:
 ```
 
 The server binds only to IPv4 loopback and validates HTTP Host and Origin.
-Read `logs/mcp/connection.json` for the URL, bearer token and process ID after
-startup. Configure the agent's MCP client with that URL and the HTTP header
+Each instance writes `logs/mcp/connections/<pid>-<port>.json` containing its URL,
+bearer token, process ID, process start time and project directory. These records
+are removed when that server stops. `logs/mcp/connection.json` remains a
+compatibility snapshot of the most recently started server; it can be stale
+after that instance stops. Configure the agent's MCP client with the selected URL
+and the HTTP header
 `Authorization: Bearer <token>`. Set the environment variable
 `OK_SCRIPT_MCP_TOKEN` before starting the process if you need a stable token;
 otherwise a new token is generated on each startup. Treat this token as local
 developer access: task files execute Python with the process's permissions.
+
+## Discover running servers
+
+Multiple projects can run MCP on the same PC: the first available port is
+reserved during startup, so instances cannot select the same port. Discover
+them from their project connection files instead of assuming port 8765:
+
+```python
+from ok.core.mcp_server import discover_mcp_servers
+
+servers = discover_mcp_servers([r'E:\projects\app-one', r'E:\projects\app-two'])
+for server in servers:
+    url = server['url']
+    headers = {'Authorization': f"Bearer {server['token']}"}
+    project = server['project_directory']
+```
+
+Omit the argument to discover servers for the current project. For a custom
+artifact directory, pass `artifact_directory='logs/dev'` (or an absolute path).
+Discovery reads per-instance records and the compatibility snapshot, removes
+duplicates, and checks process identity and ownership of the listening port.
+Missing, malformed and stale records are ignored. It does not scan ports or
+send network requests. Results contain credentials; keep them private. Distinct
+records also preserve multiple servers sharing an artifact directory. The
+application's existing single-instance policy for a project still applies.
 
 ## Skill discovery
 
@@ -76,6 +118,7 @@ Clients supporting MCP resources can also discover these skills through
 | `run_task` | `file_path` | Immediately returns a run ID, source hash and absolute artifact paths. |
 | `get_run_status` | `run_id` | Execution state, phase, brief error and artifact paths. |
 | `stop_task` | `run_id` | Requests cancellation and returns the current state. |
+| `exit_process` | Nonempty `reason` | Returns `state: exiting`, this runtime's `pid`, and the reason; schedules process shutdown with a forced-exit fallback. |
 | `screenshot` | None | Saves the target image and returns its absolute path, dimensions, capture timestamp and `cached` flag. |
 
 States are `queued`, `running`, `stopping`, `succeeded`, `failed`, and
@@ -139,6 +182,30 @@ capture backend from a second thread. Inspect `cached` and `captured_at` to
 judge freshness. Before the first captured frame it reports that no image is
 available. A task can call `self.executor.next_frame()` to update observations.
 
+## Exit and restart the runtime
+
+Call `exit_process(reason="Capture state cannot be reset")` when runtime state
+cannot be cleared or reliably reset, a task remains stuck after cooperative
+cancellation, or changed configuration/imported helpers require a fresh process.
+It exits the ok-script process serving the current connection, including its GUI
+when present. It does not accept a target PID or restart the target application.
+
+The tool returns `{"state": "exiting", "pid": ..., "reason": ...}` and schedules
+shutdown after a short delay to allow the response to reach the client. Repeated
+requests return the original acknowledgement. Normal runtime cleanup cancels
+active work and removes this server's connection record. A watchdog forces this
+process to exit after a five-second cleanup grace period (with an additional
+one-second fallback if shutdown diagnostics hang). Forced exit may skip task
+cleanup and leave incomplete artifacts or stale connection files; discovery
+ignores records for dead processes. A disconnect alone is not proof of exit.
+
+Preserve available logs and screenshots before calling. Wait locally for the
+returned PID to exit, then relaunch through the project's existing development
+launcher and virtual environment. Rediscover the connection URL/token, since
+they may change. Run IDs belong to the old process; reconnect before submitting
+new work. Restore and verify the target application's starting state before
+testing again: restarting the runtime does not reset the target UI.
+
 ## Task file contract
 
 Each file defines a synchronous `class Task(BaseTask)` with these methods:
@@ -200,4 +267,5 @@ through a thin harness or the GUI and inspect local evidence. For new tasks,
 iterate on the submitted file before registering it in the project. Reset and
 starting-state verification run before every attempt, including the first one.
 Preserve failure evidence before the next reset. No MCP tools are needed for
-file editing, log reading, or process management.
+file editing or log reading. Use `exit_process` for runtime shutdown and local
+process tools to wait for exit and relaunch.

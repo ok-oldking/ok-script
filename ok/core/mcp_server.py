@@ -1,13 +1,18 @@
 """Optional localhost MCP transport for task development and explicit reloading."""
 
 import asyncio
+import errno
 import json
 import os
 import secrets
 import socket
 import threading
 import time
+from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
+
+import psutil
 
 from ok import og
 from ok.core.mcp_runner import McpTaskRunner
@@ -16,6 +21,66 @@ from ok.util.logger import Logger
 
 
 logger = Logger.get_logger(__name__)
+
+
+def bind_mcp_socket(port):
+    """Reserve the first available loopback port, incrementing on conflicts only."""
+    if not 0 <= port <= 65535:
+        raise ValueError('mcp.port must be between 0 and 65535')
+    while True:
+        try:
+            return socket.create_server(('127.0.0.1', port))
+        except OSError as error:
+            if error.errno != errno.EADDRINUSE and getattr(error, 'winerror', None) != 10048:
+                raise
+            if port == 65535:
+                raise OSError(errno.EADDRINUSE, 'No available MCP port up to 65535') from error
+            port += 1
+
+
+def discover_mcp_servers(project_directories=None, *, artifact_directory='logs/mcp'):
+    """Read live servers from project connection files, without scanning ports.
+
+    Pass one project directory or an iterable of directories; defaults to cwd.
+    For projects with a custom artifact directory, pass that path explicitly.
+    Results include credentials, project paths and instance connection-file paths.
+    """
+    if project_directories is None:
+        project_directories = [Path.cwd()]
+    elif isinstance(project_directories, (str, os.PathLike)):
+        project_directories = [project_directories]
+    servers = {}
+    for project in project_directories:
+        directory = (Path(project) / artifact_directory).resolve()
+        paths = sorted((directory / 'connections').glob('*.json'))
+        paths.append(directory / 'connection.json')  # Also support older servers.
+        for path in paths:
+            try:
+                record = json.loads(path.read_text(encoding='utf-8'))
+                url = urlsplit(record['url'])
+                pid = record['pid']
+                if (url.scheme != 'http' or url.hostname != '127.0.0.1'
+                        or url.path != '/mcp' or not url.port
+                        or url.username or url.password or url.query or url.fragment
+                        or type(pid) is not int or pid <= 0
+                        or not isinstance(record['token'], str) or not record['token']):
+                    continue
+                process = psutil.Process(pid)
+                if ('process_start_time' in record
+                        and record['process_start_time'] != process.create_time()):
+                    continue
+                if not any(connection.status == psutil.CONN_LISTEN
+                           and connection.laddr.ip == '127.0.0.1'
+                           and connection.laddr.port == url.port
+                           for connection in process.net_connections(kind='tcp')):
+                    continue
+                servers.setdefault((pid, record['url']), {
+                    **record, 'project_directory': record.get('project_directory', str(Path(project).resolve())),
+                    'connection_file': str(path),
+                })
+            except (OSError, ValueError, KeyError, TypeError, psutil.Error):
+                continue
+    return list(servers.values())
 
 
 class _BearerAuth:
@@ -35,7 +100,7 @@ class _BearerAuth:
         await self.app(scope, receive, send)
 
 
-def create_mcp_app(runner, token, port):
+def create_mcp_app(runner, token, port, request_exit=None):
     """Build the task and skill ASGI app, importing the optional SDK only here."""
     try:
         from mcp.server import MCPServer
@@ -55,6 +120,9 @@ def create_mcp_app(runner, token, port):
         'verify_start_state(), and run(). Call run_task with its absolute path. '
         'Read logs and screenshots directly from the returned local paths. '
         'Use assertions in run() to verify success. A stopping run still owns the executor. '
+        'If runtime state cannot be cleared or reset, code is stuck, or cached dependencies '
+        'require a restart, call exit_process with the reason. Wait for the returned PID '
+        'to exit, relaunch the project, reconnect, then restore and verify the target state. '
         'screenshot returns a saved image path; during execution it returns the latest cached frame.'))
 
     @mcp.tool()
@@ -116,6 +184,20 @@ def create_mcp_app(runner, token, port):
         return await asyncio.to_thread(runner.stop_task, run_id)
 
     @mcp.tool()
+    async def exit_process(reason: str) -> dict[str, Any]:
+        """Exit this ok-script runtime when state cannot be reset or a restart is needed.
+
+        Requires a nonempty diagnostic reason. Returns the current process PID
+        and schedules shutdown, including forced termination if cleanup hangs.
+        Works even when a task is stuck. This also closes the GUI if present.
+        Wait for that PID to exit before relaunching and reconnecting. The target
+        application is not restarted or reset by this tool.
+        """
+        if request_exit is None:
+            raise RuntimeError('Process exit is not configured for this MCP app')
+        return request_exit(reason)
+
+    @mcp.tool()
     async def screenshot() -> dict[str, Any]:
         """Save the target UI and return its absolute path, size, capture time and cached flag.
 
@@ -147,6 +229,32 @@ class LocalMcpServer:
         self._socket = None
         self._thread = None
         self._error = None
+        self._connection = None
+        self._connection_file = None
+        self._exit_lock = threading.Lock()
+        self._exit_request = None
+        self._exit_timer = None
+
+    def exit_process(self, reason):
+        """Schedule exit without waiting on executor ownership or runner locks."""
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError('A nonempty reason is required to exit the process')
+        with self._exit_lock:
+            if self._exit_request is None:
+                self._exit_request = {'state': 'exiting', 'pid': os.getpid(), 'reason': reason.strip()}
+                # Give the HTTP transport time to deliver the acknowledgement.
+                self._exit_timer = threading.Timer(0.25, self._exit_process)
+                self._exit_timer.daemon = True
+                self._exit_timer.start()
+            return dict(self._exit_request)
+
+    def _exit_process(self):
+        from ok.util.process import start_exit_watchdog
+
+        # Arm before any logging or cleanup: either can be blocked by bad state.
+        start_exit_watchdog(grace_period=5.0)
+        logger.warning(f"MCP requested process exit: {self._exit_request['reason']}")
+        self.runtime.quit()
 
     def _prepare_device(self):
         executor = self.runtime.task_executor
@@ -169,9 +277,9 @@ class LocalMcpServer:
         if self._thread is not None:
             return
         try:
-            self._socket = socket.create_server(('127.0.0.1', self.port))
+            self._socket = bind_mcp_socket(self.port)
             self.port = self._socket.getsockname()[1]
-            app = create_mcp_app(self.runner, self.token, self.port)
+            app = create_mcp_app(self.runner, self.token, self.port, self.exit_process)
             import uvicorn
             self._server = uvicorn.Server(uvicorn.Config(
                 app, host='127.0.0.1', port=self.port, log_level='warning', access_log=False,
@@ -182,6 +290,8 @@ class LocalMcpServer:
                     self._server.run(sockets=[self._socket])
                 except BaseException as error:
                     self._error = error
+                finally:
+                    self._remove_connection_files()
 
             self._thread = threading.Thread(target=serve, name='ok-mcp', daemon=True)
             self._thread.start()
@@ -191,13 +301,20 @@ class LocalMcpServer:
                     raise RuntimeError(f'MCP server failed to start: {self._error}')
                 if time.monotonic() >= deadline or self.runtime.exit_event.wait(0.02):
                     raise RuntimeError('MCP server startup interrupted or timed out')
-            self.runner.artifact_directory.mkdir(parents=True, exist_ok=True)
-            connection_file = self.runner.artifact_directory / 'connection.json'
-            connection_file.write_text(json.dumps({
+            directory = self.runner.artifact_directory
+            (directory / 'connections').mkdir(parents=True, exist_ok=True)
+            self._connection = {
                 'url': f'http://127.0.0.1:{self.port}/mcp', 'token': self.token, 'pid': os.getpid(),
-            }, indent=2), encoding='utf-8')
+                'process_start_time': psutil.Process().create_time(),
+                'project_directory': str(Path.cwd()),
+            }
+            self._connection_file = directory / 'connections' / f'{os.getpid()}-{self.port}.json'
+            for path in (self._connection_file, directory / 'connection.json'):
+                temporary = path.with_suffix(f'.{os.getpid()}-{self.port}.tmp')
+                temporary.write_text(json.dumps(self._connection, indent=2), encoding='utf-8')
+                temporary.replace(path)
             self.runtime.exit_event.bind_stop(self)
-            logger.info(f'MCP ready at http://127.0.0.1:{self.port}/mcp; connection details: {connection_file}')
+            logger.info(f'MCP ready at http://127.0.0.1:{self.port}/mcp; connection details: {self._connection_file}')
         except BaseException:
             self.stop()
             self.join()
@@ -207,9 +324,28 @@ class LocalMcpServer:
 
     def stop(self):
         self.runner.close()
+        self._remove_connection_files()
         if self._server is not None:
             self._server.should_exit = True
+
+    def _remove_connection_files(self):
+        if self._connection_file is None:
+            return
+        # connection.json is a compatibility snapshot shared by instances. Leave
+        # it alone here: another process may replace it while we are stopping.
+        for path in (self._connection_file,):
+            try:
+                if json.loads(path.read_text(encoding='utf-8')) == self._connection:
+                    path.unlink(missing_ok=True)
+            except FileNotFoundError:
+                pass
+            except (OSError, ValueError) as error:
+                logger.error(f'Could not remove MCP connection file {path}: {error}')
 
     def join(self, timeout=6):
         if self._thread is not None and self._thread is not threading.current_thread():
             self._thread.join(timeout)
+        if self._thread is None or not self._thread.is_alive():
+            if self._socket is not None:
+                self._socket.close()
+            self.runtime.exit_event.unbind_stop(self)

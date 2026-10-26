@@ -1786,6 +1786,14 @@
             <source>Try using Alt+F3 to turn it off.</source>
             <translation>Try using Alt+F3 to turn it off.</translation>
         </message>
+        <message>
+            <source>Enable MCP Server</source>
+            <translation>Enable MCP Server</translation>
+        </message>
+        <message>
+            <source>Allow local coding agents to control this app and run Python code</source>
+            <translation>Allow local coding agents to control this app and run Python code</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3249,6 +3257,29 @@
         <message>
             <source>Backup cleanup pending. Restart to retry.</source>
             <translation>Backup cleanup pending. Restart to retry.</translation>
+        </message>
+    </context>
+    <context>
+        <name>LabelAndMcpServer</name>
+        <message>
+            <source>Enable MCP Server?</source>
+            <translation>Enable MCP Server?</translation>
+        </message>
+        <message>
+            <source>MCP lets local coding agents control this app and execute Python code with your account permissions, including reading and changing files. Only connect trusted agents and keep the connection token private. Enable the server now?</source>
+            <translation>MCP lets local coding agents control this app and execute Python code with your account permissions, including reading and changing files. Only connect trusted agents and keep the connection token private. Enable the server now?</translation>
+        </message>
+        <message>
+            <source>MCP server error</source>
+            <translation>MCP server error</translation>
+        </message>
+        <message>
+            <source>Yes</source>
+            <translation>Yes</translation>
+        </message>
+        <message>
+            <source>No</source>
+            <translation>No</translation>
         </message>
     </context>
 </TS>

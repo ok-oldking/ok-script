@@ -1776,6 +1776,14 @@
             <source>Try using Alt+F3 to turn it off.</source>
             <translation>Alt+F3 を押して無効にしてみてください。</translation>
         </message>
+        <message>
+            <source>Enable MCP Server</source>
+            <translation>MCP サーバーを有効にする</translation>
+        </message>
+        <message>
+            <source>Allow local coding agents to control this app and run Python code</source>
+            <translation>ローカルのコーディングエージェントにこのアプリの操作と Python コードの実行を許可する</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3239,6 +3247,29 @@
         <message>
             <source>Backup cleanup pending. Restart to retry.</source>
             <translation>バックアップの削除が保留中です。再起動して再試行してください。</translation>
+        </message>
+    </context>
+    <context>
+        <name>LabelAndMcpServer</name>
+        <message>
+            <source>Enable MCP Server?</source>
+            <translation>MCP サーバーを有効にしますか？</translation>
+        </message>
+        <message>
+            <source>MCP lets local coding agents control this app and execute Python code with your account permissions, including reading and changing files. Only connect trusted agents and keep the connection token private. Enable the server now?</source>
+            <translation>MCP を使用すると、ローカルのコーディングエージェントがこのアプリを操作し、ファイルの読み取りや変更を含む Python コードをあなたのアカウント権限で実行できます。信頼できるエージェントのみ接続し、接続トークンを他人に公開しないでください。今すぐサーバーを有効にしますか？</translation>
+        </message>
+        <message>
+            <source>MCP server error</source>
+            <translation>MCP サーバーエラー</translation>
+        </message>
+        <message>
+            <source>Yes</source>
+            <translation>はい</translation>
+        </message>
+        <message>
+            <source>No</source>
+            <translation>いいえ</translation>
         </message>
     </context>
 </TS>

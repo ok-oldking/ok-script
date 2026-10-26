@@ -47,6 +47,9 @@ def config_widget(config_type, config_desc, config, key, value, task):
             if not buttons:
                 buttons = [the_type]
             return LabelAndButtons(config_desc, key, buttons)
+        elif resolved_type == 'mcp_server':
+            from ok.ui.qt.tasks.LabelAndMcpServer import LabelAndMcpServer
+            return LabelAndMcpServer(config_desc, config, key)
         else:
             raise Exception('Unknown config type')
     if isinstance(value, bool):

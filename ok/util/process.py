@@ -71,12 +71,12 @@ def _write_shutdown_thread_dump():
 
 
 def start_exit_watchdog(grace_period=3.0, exit_code=0, force_exit=None):
-    """Force termination if Python remains alive after the Qt loop exits.
+    """Force termination if Python remains alive after shutdown is requested.
 
     The watchdog is daemonized, so a normal interpreter exit cancels it. It is
-    deliberately armed only by the Qt adapter after QApplication.exec() has
-    returned; at that point continued execution means shutdown is already in
-    progress and a remaining non-daemon worker must not keep the app alive.
+    armed by the Qt adapter after QApplication.exec() returns, or by an explicit
+    MCP process-exit request before cleanup. A remaining non-daemon worker or
+    blocked cleanup must not keep a runtime that is shutting down alive.
     """
     global _exit_watchdog_started
     with _exit_watchdog_lock:

@@ -1785,6 +1785,14 @@
             <source>Try using Alt+F3 to turn it off.</source>
             <translation>Alt+F3을 눌러 꺼 보세요.</translation>
         </message>
+        <message>
+            <source>Enable MCP Server</source>
+            <translation>MCP 서버 활성화</translation>
+        </message>
+        <message>
+            <source>Allow local coding agents to control this app and run Python code</source>
+            <translation>로컬 코딩 에이전트가 이 앱을 제어하고 Python 코드를 실행하도록 허용</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3248,6 +3256,29 @@
         <message>
             <source>Backup cleanup pending. Restart to retry.</source>
             <translation>백업 정리가 대기 중입니다. 다시 시작하여 재시도하세요.</translation>
+        </message>
+    </context>
+    <context>
+        <name>LabelAndMcpServer</name>
+        <message>
+            <source>Enable MCP Server?</source>
+            <translation>MCP 서버를 활성화하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>MCP lets local coding agents control this app and execute Python code with your account permissions, including reading and changing files. Only connect trusted agents and keep the connection token private. Enable the server now?</source>
+            <translation>MCP를 사용하면 로컬 코딩 에이전트가 이 앱을 제어하고 파일 읽기 및 변경을 포함한 Python 코드를 사용자 계정 권한으로 실행할 수 있습니다. 신뢰할 수 있는 에이전트만 연결하고 연결 토큰을 비공개로 유지하세요. 지금 서버를 활성화하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>MCP server error</source>
+            <translation>MCP 서버 오류</translation>
+        </message>
+        <message>
+            <source>Yes</source>
+            <translation>예</translation>
+        </message>
+        <message>
+            <source>No</source>
+            <translation>아니요</translation>
         </message>
     </context>
 </TS>
