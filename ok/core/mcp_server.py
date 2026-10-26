@@ -1,4 +1,4 @@
-"""Optional localhost MCP transport for the file-based development runner."""
+"""Optional localhost MCP transport for task development and explicit reloading."""
 
 import asyncio
 import json
@@ -9,6 +9,7 @@ import threading
 import time
 from typing import Any
 
+from ok import og
 from ok.core.mcp_runner import McpTaskRunner
 from ok.core.skills import get_skill as read_skill, list_skills as discover_skills
 from ok.util.logger import Logger
@@ -45,6 +46,11 @@ def create_mcp_app(runner, token, port):
     mcp = MCPServer('ok-script', instructions=(
         'Call list_skills to discover packaged ok-script instructions, then get_skill '
         'with the relevant skill ID before working. Skills are also MCP resources. '
+        'These skills are for the consuming application: its tasks, config, assets, '
+        'environment and tests, not for developing or publishing the ok-script library. '
+        'For existing tasks, prefer list_tasks, edit the returned source files in place, '
+        'then reload_tasks with task_ids (omit task_ids to reload all). Poll get_run_status '
+        'until the reload finishes before testing. Read the reload-tasks skill for this workflow. '
         'Write a local Python file defining class Task(BaseTask) with reset_to_start(), '
         'verify_start_state(), and run(). Call run_task with its absolute path. '
         'Read logs and screenshots directly from the returned local paths. '
@@ -69,6 +75,26 @@ def create_mcp_app(runner, token, port):
 
     for skill in discover_skills():
         register_skill_resource(skill)
+
+    @mcp.tool()
+    async def list_tasks() -> list[dict[str, Any]]:
+        """List registered task IDs, absolute source paths, types and plugin ownership.
+
+        Use these IDs with reload_tasks after editing existing tasks in place.
+        """
+        return await asyncio.to_thread(runner.list_tasks)
+
+    @mcp.tool()
+    async def reload_tasks(task_ids: list[str] | None = None) -> dict[str, Any]:
+        """Reload registered task source after editing; preferred for existing tasks.
+
+        Pass IDs from list_tasks, or omit task_ids to reload all tasks/plugins.
+        Returns a run ID immediately. Poll get_run_status until terminal before
+        testing; failures preserve existing instances. Shares executor ownership
+        with run_task, so wait for active runs to finish first. Module siblings
+        and whole plugins reload together. This does not run automation actions.
+        """
+        return await asyncio.to_thread(runner.reload_tasks, task_ids)
 
     @mcp.tool()
     async def run_task(file_path: str) -> dict[str, Any]:
@@ -115,7 +141,8 @@ class LocalMcpServer:
         self.token = os.environ.get('OK_SCRIPT_MCP_TOKEN') or secrets.token_urlsafe(32)
         app = runtime.headless_app if runtime.should_init_task_manager_headless() else runtime.app
         self.runner = McpTaskRunner(runtime.task_executor, app, runtime.screenshot,
-                                    config.get('artifact_directory', 'logs/mcp'), self._prepare_device)
+                                    config.get('artifact_directory', 'logs/mcp'), self._prepare_device,
+                                    task_manager=og.task_manager)
         self._server = None
         self._socket = None
         self._thread = None

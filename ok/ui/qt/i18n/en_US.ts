@@ -243,6 +243,18 @@
             <source>No Capture Available or Selected</source>
             <translation>No Capture Available or Selected</translation>
         </message>
+        <message>
+            <source>Reload tasks</source>
+            <translation>Reload tasks</translation>
+        </message>
+        <message>
+            <source>Waiting to reload tasks...</source>
+            <translation>Waiting to reload tasks...</translation>
+        </message>
+        <message>
+            <source>Reloaded {count} tasks</source>
+            <translation>Reloaded {count} tasks</translation>
+        </message>
     </context>
     <context>
         <name>GlobalConfigCard</name>

@@ -252,6 +252,18 @@
             <source>No Capture Available or Selected</source>
             <translation>截圖方式不可用或未選取</translation>
         </message>
+        <message>
+            <source>Reload tasks</source>
+            <translation>重新載入任務</translation>
+        </message>
+        <message>
+            <source>Waiting to reload tasks...</source>
+            <translation>等待重新載入任務…</translation>
+        </message>
+        <message>
+            <source>Reloaded {count} tasks</source>
+            <translation>已重新載入 {count} 個任務</translation>
+        </message>
     </context>
     <context>
         <name>GlobalConfigCard</name>

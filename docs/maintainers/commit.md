@@ -1,10 +1,6 @@
----
-name: commit
-description: Generate a commit message based on current changes and commit all staged and unstaged changes to git
----
-
-
 # Commit Changes
+
+Repository-maintainer instructions for ok-script. These are not consumer skills and are not exposed through MCP.
 
 When instructed to commit changes, follow these steps:
 

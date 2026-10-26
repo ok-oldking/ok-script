@@ -1,9 +1,13 @@
 ---
 name: generate-templates
-description: Create or update template matching features from screenshots using ok_templates COCO annotations, generate runtime assets with the existing exporter, and verify their use through find_feature or find_one.
+description: Create template matching assets for a third-party ok-script application from its screenshots and COCO annotations, then verify them with find_feature or find_one.
 ---
 
 # Generate and use templates
+
+Work on the consuming application's screenshots, annotations, task code, and
+assets using the installed library. All project-relative paths below refer to
+that application's root, not the ok-script library directory.
 
 Use the existing pipeline: original screenshots in `ok_templates/`, annotations
 in `ok_templates/coco_annotations.json`, and `compress_copy_coco` to generate

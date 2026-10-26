@@ -4,6 +4,7 @@ from qfluentwidgets import PushButton, TextEdit, ComboBox, FluentIcon
 
 from ok import Config, og
 from ok.core.code_runner import CodeSession
+from ok.core.events import communicate
 from ok.ui.qt.debug.JobControls import JobControls
 from ok.ui.qt.util.Alert import alert_info
 from ok.ui.qt.widget.Tab import Tab
@@ -63,6 +64,23 @@ class RunCodeTab(Tab):
         layout.addWidget(self.output_area, stretch=1)
 
         self.add_card(self.tr("Run Python Code"), container)
+        communicate.task_list_updated.connect(self.refresh_tasks)
+        callback = self.refresh_tasks
+        self.destroyed.connect(lambda *_: communicate.task_list_updated.disconnect(callback))
+
+    def refresh_tasks(self):
+        selected = self.selected_task()
+        key = (type(selected).__module__, type(selected).__qualname__) if selected is not None else None
+        self.tasks_combo_box.blockSignals(True)
+        self.tasks_combo_box.clear()
+        self.tasks_combo_box.addItem(self.tr('No Task'), userData=None)
+        for task in og.executor.get_all_tasks():
+            self.tasks_combo_box.addItem(type(task).__name__, userData=task)
+            if (type(task).__module__, type(task).__qualname__) == key:
+                self.tasks_combo_box.setCurrentIndex(self.tasks_combo_box.count() - 1)
+        self.tasks_combo_box.blockSignals(False)
+        # A code session's globals can otherwise keep invoking an unloaded task.
+        self.session.namespace.pop('task', None)
 
     def selected_task(self):
         return self.tasks_combo_box.currentData()

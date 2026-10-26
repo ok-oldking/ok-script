@@ -9,30 +9,41 @@ import numpy as np
 import pytest
 from PIL import Image
 
+from ok import og
 from ok.core.mcp_runner import McpTaskRunner, TERMINAL_STATES
+from ok.core.task_manager import TaskManager
 from ok.util.config import Config
 from test_executor_jobs import make_test_executor
 
 
 @pytest.fixture
 def development(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(Config, 'config_folder', str(tmp_path / 'configs'))
     frame = np.zeros((20, 30, 3), dtype=np.uint8)
     capture = SimpleNamespace(connected=lambda: True, get_frame=lambda: frame.copy())
     interaction = SimpleNamespace(should_capture=lambda: True, on_run=Mock(), on_destroy=Mock())
     executor = make_test_executor(capture, interaction)
-    app = SimpleNamespace(state={}, events=[], started=threading.Event(), release=threading.Event())
+    app = SimpleNamespace(state={}, events=[], started=threading.Event(), release=threading.Event(),
+                          debug=False, locale='en_US')
+    monkeypatch.setattr(og, 'config', {})
+    manager = TaskManager(executor, app)
+    monkeypatch.setattr(og, 'task_manager', manager)
     screens = SimpleNamespace(screenshot_folder=str(tmp_path / 'screenshots'),
                               to_pil_image=lambda image: Image.fromarray(image[:, :, ::-1]))
-    runner = McpTaskRunner(executor, app, screens, tmp_path / 'artifacts')
+    runner = McpTaskRunner(executor, app, screens, tmp_path / 'artifacts', task_manager=manager)
     yield SimpleNamespace(runner=runner, executor=executor, app=app, root=tmp_path,
-                          capture=capture, screens=screens)
+                          capture=capture, screens=screens, manager=manager)
     app.release.set()
     runner.close()
     executor.stop()
     if executor.thread is not None:
         executor.thread.join(3)
         assert not executor.thread.is_alive()
+    import sys
+    for name, module in tuple(sys.modules.items()):
+        if str(getattr(module, '__file__', '')).startswith(str(tmp_path)):
+            sys.modules.pop(name, None)
 
 
 def write_task(root, body="self._app.state['value'] = 'first'", *, reset=None, verify=None):
@@ -57,6 +68,19 @@ class Task(BaseTask):
 '''
     path.write_text(source, encoding='utf-8')
     return path
+
+
+def register_task(dev, name='registered_task'):
+    path = dev.root / f'{name}.py'
+    path.write_text('''from ok import BaseTask
+class RegisteredTask(BaseTask):
+    value = 'first'
+    def run(self): self._app.state['value'] = self.value
+    def on_destroy(self): self._app.events.append('registered_cleanup')
+''', encoding='utf-8')
+    task = dev.manager.load_single_user_task(str(path))
+    assert task is not None
+    return path, task
 
 
 def wait_run(runner, run_id):
@@ -271,3 +295,115 @@ def test_closing_runner_cancels_work_and_prevents_new_attempts(development):
         dev.runner.run_task(str(path))
     dev.app.release.set()
     assert wait_run(dev.runner, run_id)['state'] == 'cancelled'
+
+
+def test_discover_edit_reload_and_run_existing_task(development):
+    import os
+    dev = development
+    path, old = register_task(dev)
+    _, other = register_task(dev, 'untouched_task')
+    entry, _ = dev.runner.list_tasks()
+    assert entry['task_id'] == 'registered_task.RegisteredTask'
+    assert entry['file_path'] == str(path)
+    assert entry['kind'] == 'onetime' and entry['plugin'] is None
+    stamp = path.stat().st_mtime_ns
+    path.write_text(path.read_text().replace("'first'", "'other'"))
+    os.utime(path, ns=(stamp, stamp))
+    record = dev.runner.reload_tasks([entry['task_id']])
+    assert record['operation'] == 'reload_tasks'
+    status = wait_run(dev.runner, record['run_id'])
+    assert status['state'] == 'succeeded', status
+    assert status['result'][0]['task_id'] == entry['task_id']
+    assert dev.executor.onetime_tasks[0] is not old
+    assert dev.executor.onetime_tasks[1] is other
+    assert dev.app.events == ['registered_cleanup']
+    assert dev.executor.exclusive_owner is None
+    assert json.loads(Path(status['artifact_directory'], 'status.json').read_text()) == status
+    harness = write_task(dev.root,
+        "from registered_task import RegisteredTask; "
+        "self.get_task_by_class(RegisteredTask).run(); assert self._app.state['value'] == 'other'")
+    result = wait_run(dev.runner, dev.runner.run_task(str(harness))['run_id'])
+    assert result['state'] == 'succeeded', result
+    assert dev.app.state['value'] == 'other'
+
+
+def test_reload_all_returns_all_replacements(development):
+    dev = development
+    _, first = register_task(dev)
+    _, second = register_task(dev, 'other_task')
+    status = wait_run(dev.runner, dev.runner.reload_tasks()['run_id'])
+    assert status['state'] == 'succeeded', status
+    assert len(status['result']) == 2
+    assert first not in dev.executor.onetime_tasks and second not in dev.executor.onetime_tasks
+
+
+def test_failed_reload_keeps_original_and_records_traceback(development):
+    dev = development
+    path, old = register_task(dev)
+    path.write_text('invalid syntax !!!!')
+    status = wait_run(dev.runner, dev.runner.reload_tasks()['run_id'])
+    assert status['state'] == 'failed'
+    assert 'SyntaxError' in status['error']
+    assert 'SyntaxError' in Path(status['log_path']).read_text()
+    assert dev.executor.onetime_tasks == [old]
+    assert not dev.app.events
+    assert dev.executor.exclusive_owner is None
+
+
+@pytest.mark.parametrize('ids', [['missing.Task'], ['RegisteredTask'], 'registered_task.RegisteredTask', [1]])
+def test_invalid_reload_selection_does_not_take_ownership(development, ids):
+    dev = development
+    _, old = register_task(dev)
+    old._enabled = True
+    with pytest.raises((TypeError, ValueError)):
+        dev.runner.reload_tasks(ids)
+    assert old.enabled
+    assert dev.executor.exclusive_owner is None
+    assert dev.executor.onetime_tasks == [old]
+
+
+def test_reload_rejects_active_file_run(development):
+    dev = development
+    register_task(dev)
+    path = write_task(dev.root, 'self._app.started.set(); self._app.release.wait(3)')
+    run_id = dev.runner.run_task(str(path))['run_id']
+    assert dev.app.started.wait(2)
+    with pytest.raises(RuntimeError, match='still active'):
+        dev.runner.reload_tasks()
+    dev.app.release.set()
+    assert wait_run(dev.runner, run_id)['state'] == 'succeeded'
+
+
+def test_running_reload_finishes_transaction_before_releasing_ownership(development, monkeypatch):
+    dev = development
+    _, old = register_task(dev)
+    dispatch = dev.manager._dispatch_reload
+    def blocked_reload(tasks):
+        dev.app.started.set()
+        assert dev.app.release.wait(3)
+        return dispatch(tasks)
+    monkeypatch.setattr(dev.manager, '_dispatch_reload', blocked_reload)
+    run_id = dev.runner.reload_tasks()['run_id']
+    assert dev.app.started.wait(2)
+    with pytest.raises(RuntimeError, match='still active'):
+        dev.runner.run_task(str(write_task(dev.root)))
+    assert dev.runner.stop_task(run_id)['state'] == 'stopping'
+    assert dev.executor.exclusive_owner == f'mcp:{run_id}'
+    dev.app.release.set()
+    status = wait_run(dev.runner, run_id)
+    assert status['state'] == 'succeeded', status
+    assert old not in dev.executor.onetime_tasks
+    assert dev.executor.exclusive_owner is None
+
+
+def test_cancel_queued_reload_does_not_replace_tasks(development):
+    dev = development
+    _, old = register_task(dev)
+    first = dev.executor.submit(lambda: (dev.app.started.set(), dev.app.release.wait(3)))
+    assert dev.app.started.wait(2)
+    run_id = dev.runner.reload_tasks()['run_id']
+    assert dev.runner.stop_task(run_id)['state'] == 'cancelled'
+    assert dev.executor.onetime_tasks == [old]
+    assert not dev.app.events
+    dev.app.release.set()
+    first.future.result(2)

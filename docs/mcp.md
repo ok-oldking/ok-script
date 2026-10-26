@@ -14,8 +14,9 @@ Use the project's virtual environment when one exists:
 .\.venv\Scripts\python.exe -m ok mcp --config src.config:config
 ```
 
-For an editable checkout, install `--editable . --group default --group mcp`
-instead. OpenCV remains a separate installation chosen by your project.
+Use the application's existing requirements or lockfile when available and keep
+its chosen ok-script version. OpenCV remains a separate installation chosen by
+the application.
 
 The default URL is `http://127.0.0.1:8765/mcp`. Use `--port 8766` to change it,
 or `--port 0` to choose an available port. The process stays running between
@@ -48,16 +49,17 @@ developer access: task files execute Python with the process's permissions.
 
 ## Skill discovery
 
-Skills ship in the pip package, including their helper files and the MCP guide.
-No framework checkout is needed to read them. In a checkout, discovery uses the
-live `.agents/skills` sources; installed releases use the bundled copy.
+All exposed skills are for third-party applications using the library or MCP:
+application setup, task development and reloading, template assets, tests, and
+environment selection. They ship in the pip package with their supporting files
+and this guide. No library source checkout is needed. Skills discovered from a
+checkout and an installed release have the same consumer scope.
 
 Call `list_skills()` for IDs, names, descriptions, resource URIs and absolute
 `SKILL.md` paths, then `get_skill(skill_id)` to read the relevant instructions.
 For example, use `get_skill("develop")` before implementing tasks. Relative
-links resolve from the returned local path. Repository maintenance skills
-(such as commit, deploy and translation updates) still require a checkout to
-perform their work.
+links resolve from the returned local path. Repository commit, package release,
+and library translation maintenance are not exposed as skills or resources.
 
 Clients supporting MCP resources can also discover these skills through
 `resources/list` and read `ok-script://skills/<skill_id>` through
@@ -69,6 +71,8 @@ Clients supporting MCP resources can also discover these skills through
 | --- | --- | --- |
 | `list_skills` | None | Available skill IDs, names, descriptions, URIs and local paths. |
 | `get_skill` | `skill_id` | Skill metadata and full Markdown content. |
+| `list_tasks` | None | Registered task IDs, names, absolute source paths, types and plugin ownership. |
+| `reload_tasks` | Optional `task_ids` list | Immediately returns a run ID for reloading selected registered tasks, or all tasks/plugins when omitted. |
 | `run_task` | `file_path` | Immediately returns a run ID, source hash and absolute artifact paths. |
 | `get_run_status` | `run_id` | Execution state, phase, brief error and artifact paths. |
 | `stop_task` | `run_id` | Requests cancellation and returns the current state. |
@@ -77,6 +81,47 @@ Clients supporting MCP resources can also discover these skills through
 States are `queued`, `running`, `stopping`, `succeeded`, `failed`, and
 `cancelled`. Only the last three are terminal. Run IDs are scoped to the current
 process; saved artifacts remain available after restarting it.
+
+## Preferred workflow for existing tasks
+
+Read the `reload-tasks` skill through `get_skill("reload-tasks")`. Use
+`list_tasks()` to find the existing implementation and its absolute source path,
+edit that file locally, then call:
+
+```python
+reload_tasks(task_ids=["src.tasks.ExistingTask.ExistingTask"])
+reload_tasks()  # All registered tasks and plugins
+```
+
+Use the exact `task_id` returned by `list_tasks`; display names and bare class
+names are not IDs. An empty list selects no tasks. Poll `get_run_status(run_id)`
+until the reload succeeds before testing. The record's `operation` is
+`reload_tasks`, and its `result` contains descriptors for the replacement tasks.
+Reload failures include an error and local `run.log`/`status.json` paths; existing
+task instances remain registered. A failure means subsequent execution would
+still use the old implementation.
+
+Reloads compile the current task source without timestamp-based bytecode caches.
+Tasks sharing a module reload together; selecting any plugin task reloads its
+entire plugin, including pages and helper modules. Unselected task modules and
+helpers outside plugins stay cached. Restart the owned runtime after changing
+those helpers or adding new task registrations to the config. Debug mode does
+not watch or reload task files automatically.
+
+Reloading does not call the automation's `run()`, reset the target application,
+or demonstrate success. Restore and verify the baseline before testing through
+the actual GUI task card or a thin `run_task` harness that calls the registered
+implementation with `self.get_task_by_class(ExistingTask)`. Keep behavior changes
+in the existing task source instead of copying it into a temporary task.
+
+File runs and reloads share the same active-run slot and exclusive executor
+ownership. Wait for the previous run and cleanup to finish before reloading.
+Reload requests stop scheduled one-time tasks and suspend triggers until
+completion; they do not restart stopped one-time tasks. `stop_task` can cancel a
+queued reload. Once the reload transaction starts, it finishes atomically; a
+successful commit reports `succeeded` even if a stop was requested meanwhile.
+
+## Execution ownership
 
 Only one task file runs at a time. Each attempt acquires exclusive executor
 ownership: existing one-time tasks are stopped, and triggers are suspended until
@@ -114,7 +159,7 @@ after constructing the task. Cleanup finishes before ownership is released.
 `succeeded` means the code completed without failure; include application-level
 success checks in `run()`.
 
-See `examples/mcp_observe.py` in the repository for a runnable example. It captures
+See the bundled [examples/mcp_observe.py](../examples/mcp_observe.py) for a runnable example. It captures
 the configured target without changing its state, so its reset is a no-op.
 For an interactive task, replace that recovery method and starting-state check.
 
@@ -149,8 +194,10 @@ They are saved asynchronously by the normal screenshot worker. The MCP
 `screenshot` tool returns only after its observation image has been saved under
 `logs/mcp/observations/`.
 
-The agent's loop is: write the task file, call `run_task` with its absolute path,
-wait for a terminal state, inspect local evidence, edit, and call `run_task`
-again. Reset and starting-state verification run before every attempt, including
-the first one. Preserve failure evidence before the next reset. No MCP tools
-are needed for file editing, log reading, or process management.
+For existing tasks, the agent's loop is: discover the registered source, edit it,
+reload its task ID, wait for success, then run the registered implementation
+through a thin harness or the GUI and inspect local evidence. For new tasks,
+iterate on the submitted file before registering it in the project. Reset and
+starting-state verification run before every attempt, including the first one.
+Preserve failure evidence before the next reset. No MCP tools are needed for
+file editing, log reading, or process management.

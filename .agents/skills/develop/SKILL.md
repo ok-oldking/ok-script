@@ -1,13 +1,17 @@
 ---
 name: develop
-description: Implement and debug ok-script automation tasks using local files and the localhost MCP server, with verified application reset, visual observations, and repeatable GUI execution.
+description: Implement and debug third-party application tasks with the ok-script library or MCP server, preferring in-place task edits and reloads with verified target recovery.
 ---
 
 # Develop
 
+Use this skill inside the consuming application's project. Edit its task modules, configuration, and assets through the installed ok-script APIs and local MCP server. Developing or changing the ok-script library itself is outside this skill's scope.
+
 Read [docs/mcp.md](../../../docs/mcp.md) for the current server, tools, task contract, and artifacts. The coding agent already has local file and process access: write code and read logs/images directly. Use [setup-env](../setup-env/SKILL.md) or [setup-project](../setup-project/SKILL.md) only when setup is missing.
 
 For screenshot annotations and named template features, use [generate-templates](../generate-templates/SKILL.md): retain originals in `ok_templates`, update its COCO annotations, generate runtime assets with the existing exporter, and verify `find_feature`/`find_one` against those assets.
+
+For existing registered tasks, prefer [reload-tasks](../reload-tasks/SKILL.md): discover their source with `list_tasks()`, edit it in place, call `reload_tasks(task_ids=[...])`, and wait for a successful reload before testing. Keep automation behavior in its existing module; use temporary MCP files only as thin validation harnesses. Create new task implementations when the requested functionality is new.
 
 ## Connect to the local runtime
 
@@ -15,11 +19,11 @@ Use the project's venv and existing development launcher. Without a custom launc
 
 Read the configured artifact directory's `connection.json` (normally `logs/mcp/connection.json`) for URL, bearer token, and PID. Check that PID and listener are live; the file can outlast its server. Connect with the supplied URL and `Authorization: Bearer <token>` header. Keep tokens out of normal output. Use a native MCP connection when available, or the installed official SDK and a local client script when it is not.
 
-The tools are `run_task(file_path)`, `get_run_status(run_id)`, `stop_task(run_id)`, and `screenshot()`. Pass an absolute task file path; keep task logic in the file. Do not expand the server with log-reading, file-editing, or inline-code tools for work the agent can already perform locally.
+The tools are `list_tasks()`, `reload_tasks(task_ids=None)`, `run_task(file_path)`, `get_run_status(run_id)`, `stop_task(run_id)`, and `screenshot()`. Reloads return run IDs tracked by the same status and stop tools. Pass an absolute path to `run_task`; keep task logic in files. Read logs and edit files locally rather than adding inline-code, file-editing, or log-reading tools.
 
 ## Define recovery and success before iterating
 
-Create a synchronous `class Task(BaseTask)` defined in the submitted file, with:
+For MCP execution, define a synchronous `class Task(BaseTask)` in the submitted file. For an existing task, make this a thin harness that delegates to its registered instance. Implement:
 
 - `reset_to_start()`: restore the application's baseline before every attempt, including the first. Reuse an existing recovery function when available, or write one. Handle partially completed actions and blocking modal dialogs; make repeated resets safe.
 - `verify_start_state()`: check observable baseline conditions with assertions or return `True`. A failed verification must prevent the main actions.
@@ -35,7 +39,7 @@ Prefer visual geometry, color classification, and template matching for regular 
 2. Put milestone logs, screenshots, bounded waits, and assertions in task code. MCP provides `self.artifact_directory` for per-attempt results; normal task screenshots use the configured screenshot folder. Save evidence around failures before resetting.
 3. Submit the task path with `run_task`. Poll `get_run_status` until `succeeded`, `failed`, or `cancelled`. Inspect local `run.log`, `status.json`, task output, and screenshots. Background-thread logs may be in the application's normal log files.
 4. Use `screenshot()` for additional observations. It captures fresh frames when idle; while a task runs it saves the latest cached frame. Inspect `captured_at` and `cached`. Before the first captured frame there may be no image. Capture again through task code when fresh evidence is needed; normal task screenshots can finish writing asynchronously.
-5. Fix the evidenced cause, then submit again. The runner reloads the submitted task file and creates a new instance. Imported helpers remain cached; restart the owned runtime or deliberately reload changed helpers before testing them.
+5. Fix the evidenced cause in the existing registered task's source, reload its ID through MCP, and wait for success before resubmitting the validation harness. The runner also reloads the submitted harness file on each invocation. Registered task modules and plugin helpers refresh through `reload_tasks`; helpers outside plugins remain cached and require restarting the owned runtime after edits. Do not infer that a failed reload tested the updated code.
 6. Continue through the requested success condition, checking repeat runs and relevant target variations. Bound in-task retries and preserve why an attempt failed; do not retry irreversible actions beyond the user's authorization.
 
 Only one attempt owns the executor. Cancellation is cooperative: `stopping` is not terminal, and a client timeout is not proof that execution stopped. Wait for the task and cleanup to finish before resetting or submitting again. If blocked code requires restarting the runtime, terminate only the verified owned process and wait for its exit before restarting against the same target.

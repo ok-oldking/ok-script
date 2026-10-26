@@ -1124,6 +1124,16 @@ class BaseTask(OCR):
     def post_init(self):
         pass
 
+    def reload_tasks(self, tasks=None):
+        """Reload registered task instances/classes, or all tasks when omitted.
+
+        Example: self.reload_tasks([SomeTask, another_task]). The returned
+        ExecutorJob runs after the current task finishes; never wait for its
+        future from task code. Tasks sharing a module/plugin reload together.
+        """
+        from ok import og
+        return og.task_manager.reload_tasks(tasks)
+
     def create_shortcut(self):
         index = self.executor.onetime_tasks.index(self) + 1
         path = create_shortcut(None, f' {self.name}', arguments=f"-t {index}")

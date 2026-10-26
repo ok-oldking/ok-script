@@ -1,17 +1,17 @@
 ---
 name: setup-project
-description: Set up a local ok-script automation target with a project environment, live source access, application config, separate GUI and MCP launchers, and a Windows shortcut.
+description: Set up a third-party automation application using ok-script, with its own environment, configuration, GUI and MCP launchers, and Windows shortcut.
 ---
 
 # Set Up a Local Automation Project
 
-Work in the user's requested location. Inspect an existing project before adding files. Use [setup-env](../setup-env/SKILL.md) when its environment needs preparation, and [docs/mcp.md](../../../docs/mcp.md) for current CLI and server configuration.
+Work in the consuming application's directory at the user's requested location. Inspect an existing project before adding files. Use [setup-env](../setup-env/SKILL.md) when its environment needs preparation, and [docs/mcp.md](../../../docs/mcp.md) for current CLI and server configuration. Configure the application through the installed library's APIs; no ok-script source checkout is required.
 
 ## Layout and source access
 
-A playground can share one `.venv` and an `ok` link at its root, with a subfolder per target. Keep each target's config, task modules, assets, logs, screenshots, and entry points together. Target launchers must work when invoked by absolute path from another working directory: resolve paths from `__file__`, add the linked source's parent to `sys.path` before importing `ok`, and set the working directory to the target folder.
+A playground can share one environment with a subfolder per target. Keep each target's config, task modules, assets, logs, screenshots, and entry points together. Target launchers must work when invoked by absolute path from another working directory: resolve paths from `__file__`, make the application's task modules importable, and set the working directory to the target folder.
 
-For a live checkout, link `<project-root>\ok` to `<checkout>\ok`. Prefer a directory symbolic link; if Windows denies symlink privileges, use a directory junction. Check any existing destination and verify the resolved target before replacing anything. Never recursively delete through the source link. An editable install is also suitable when a link was not requested.
+Prefer the application's installed ok-script dependency. If the user explicitly requests a source link to an existing library installation, link `<project-root>\ok` to that checkout's `ok` directory and add the link's parent to `sys.path` before importing `ok`. Prefer a directory symbolic link; if Windows denies symlink privileges, use a directory junction. Verify existing destinations and resolved paths before replacing anything; never recursively delete through the link. This is dependency access, not permission to modify library code.
 
 When obtaining a requested test application, record its source and checksum, verify the file type, and preserve existing downloads. Reuse an existing process only when its resolved executable path matches the intended target.
 

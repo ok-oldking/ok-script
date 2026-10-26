@@ -1,9 +1,6 @@
----
-name: deploy
-description: Create and push a version tag to publish to PyPI and create a GitHub Release through GitHub Actions
----
-
 # Deploy to PyPI
+
+Repository-maintainer instructions for publishing ok-script. These are not consumer skills and are not exposed through MCP.
 
 When instructed to deploy, release, or publish to PyPI, follow these steps **in order**. GitHub Actions builds the tagged commit, publishes it with the repository's `PYPI_API_TOKEN` secret, and creates the GitHub Release.
 

@@ -11,6 +11,7 @@ from ok import Handler
 from ok import Logger
 from ok.capture.windows.dump import dump_threads
 from ok.core.code_runner import submit_call, submit_task_call, wait_result
+from ok.core.events import communicate
 from ok.core.screenshot import screenshot_file_stem
 from ok.device.capture import CAPTURE_BUSY_WAIT
 from ok.task.exceptions import ExecutorBusyException
@@ -28,6 +29,7 @@ RESULT_ALERT_LENGTH = 200
 class DebugTab(Tab):
     update_result_text: Signal = Signal(str)
     ocr_done: Signal = Signal(object)
+    reload_done: Signal = Signal(object)
 
     def __init__(self, app_config, exit_event):
 
@@ -56,6 +58,11 @@ class DebugTab(Tab):
         capture_button = PushButton(self.tr("Capture Screenshot"))
         capture_button.clicked.connect(lambda: self.handler.post(capture))
         layout.addWidget(capture_button)
+
+        self.reload_button = PushButton(self.tr('Reload tasks'))
+        self.reload_button.clicked.connect(self.reload_tasks)
+        self.reload_done.connect(self.on_reload_done)
+        layout.addWidget(self.reload_button)
 
         self.ocr_button = PushButton("OCR")
         self.ocr_button.clicked.connect(self.ocr_log)
@@ -98,9 +105,13 @@ class DebugTab(Tab):
         if self.config.get('target_task') in class_names:
             self.tasks_combo_box.setText(self.config.get('target_task'))
             self.task_changed(self.config.get('target_task'))
-        else:
+        elif class_names:
             self.tasks_combo_box.setCurrentIndex(0)
             self.config['target_task'] = class_names[0]
+
+        communicate.task_list_updated.connect(self.refresh_tasks)
+        callback = self.refresh_tasks
+        self.destroyed.connect(lambda *_: communicate.task_list_updated.disconnect(callback))
 
         self.call_controls = JobControls(self.tr("Call"))
         self.call_controls.run_clicked.connect(self.call)
@@ -119,6 +130,38 @@ class DebugTab(Tab):
     def gen_tr(self):
         folder = og.app.gen_tr_po_files()
         reveal_in_explorer(folder)
+
+    def reload_tasks(self):
+        try:
+            job = og.task_manager.reload_tasks()
+        except Exception as error:
+            alert_error(str(error))
+            return
+        self.reload_button.setEnabled(False)
+        self.reload_button.setText(self.tr('Waiting to reload tasks...'))
+        job.future.add_done_callback(lambda _: self.reload_done.emit(job))
+
+    def on_reload_done(self, job):
+        self.reload_button.setEnabled(True)
+        self.reload_button.setText(self.tr('Reload tasks'))
+        try:
+            tasks = job.future.result()
+        except Exception as error:
+            logger.error('Task reload failed', error)
+            alert_error(str(error))
+            return
+        alert_info(self.tr('Reloaded {count} tasks').format(count=len(tasks)))
+
+    def refresh_tasks(self):
+        selected = self.tasks_combo_box.currentText()
+        names = [type(task).__name__ for task in og.executor.get_all_tasks()]
+        self.tasks_combo_box.blockSignals(True)
+        self.tasks_combo_box.clear()
+        self.tasks_combo_box.addItems(names)
+        if selected in names:
+            self.tasks_combo_box.setText(selected)
+        self.tasks_combo_box.blockSignals(False)
+        self.task_changed(self.tasks_combo_box.currentText())
 
     def check_hotkey(self):
         # Example event type, you should use the appropriate QEvent.Type for your case

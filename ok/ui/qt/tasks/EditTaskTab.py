@@ -1,6 +1,6 @@
 import os
 
-from PySide6.QtCore import QFileSystemWatcher, QUrl
+from PySide6.QtCore import QFileSystemWatcher, QUrl, Signal
 from PySide6.QtCore import Qt, QSize, QRect
 from PySide6.QtGui import QFont, QColor, QPainter, QDesktopServices
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QMessageBox, QTreeWidgetItem, QFileDialog
@@ -145,6 +145,8 @@ class CodeEditor(PlainTextEdit):
 
 
 class EditTaskTab(QWidget):
+    reload_done = Signal(object, str, bool, object)
+
     def __init__(self):
         super().__init__()
         self.setObjectName("EditTaskTab")
@@ -153,6 +155,7 @@ class EditTaskTab(QWidget):
         self.all_templates = get_templates()
         self.file_watcher = QFileSystemWatcher(self)
         self.file_watcher.fileChanged.connect(self.on_file_changed)
+        self.reload_done.connect(self._on_reload_done)
         self.init_ui()
 
     def _update_file_watcher(self):
@@ -530,13 +533,12 @@ class EditTaskTab(QWidget):
             super().keyPressEvent(event)
 
     def run_task(self):
-        if self.save_code(silent=True):
-            if self.python_file:
-                for t, data in og.task_manager.task_map.items():
-                    if data[0] == self.python_file:
-                        self._switch_to_task_tab() # Switch first for immediate UI response
-                        og.app.start_controller.start(t) # Launch asynchronously via start_controller
-                        return
+        self.save_code(silent=True, on_reloaded=self._run_reloaded_task)
+
+    def _run_reloaded_task(self):
+        if self.task is not None:
+            self._switch_to_task_tab()
+            og.app.start_controller.start(self.task)
 
     def _switch_to_task_tab(self):
         """Switch to the tab that contains the current task."""
@@ -662,7 +664,7 @@ class EditTaskTab(QWidget):
             self.editor.toPlainText(), init_code, run_code))
         self.editor.verticalScrollBar().setValue(v_scroll)
 
-    def save_code(self, silent=False):
+    def save_code(self, silent=False, on_reloaded=None):
         code = self.editor.toPlainText()
         if self.python_file:
             try:
@@ -670,7 +672,12 @@ class EditTaskTab(QWidget):
                     f.write(code)
                 self._last_mtime = os.path.getmtime(self.python_file)
                 if self.task:
-                    og.task_manager.reload_task_code(self.task)
+                    path = self.python_file
+                    job = og.task_manager.reload_task_code(self.task)
+                    self.editor.document().setModified(False)
+                    job.future.add_done_callback(
+                        lambda _: self.reload_done.emit(job, path, silent, on_reloaded))
+                    return True
                 else:
                     og.task_manager.load_single_user_task(self.python_file)
                     
@@ -690,12 +697,34 @@ class EditTaskTab(QWidget):
                 if not silent:
                     from ok.ui.qt.util.app import show_info_bar
                     show_info_bar(self.window(), self.tr("Task rebuilt successfully."), title=self.tr("Success"))
+                if on_reloaded is not None:
+                    on_reloaded()
                 return True
             except Exception as e:
                 from ok.ui.qt.util.Alert import alert_error
                 alert_error(f"{self.tr('Failed to save')}: {e}")
                 return False
         return False
+
+    def _on_reload_done(self, job, path, silent, on_reloaded):
+        try:
+            job.future.result()
+        except Exception as error:
+            if path == self.python_file:
+                self._update_error_display()
+            from ok.ui.qt.util.Alert import alert_error
+            alert_error(str(error))
+            return
+        if path != self.python_file:
+            return
+        self.task = next((task for task, data in og.task_manager.task_map.items()
+                          if data[0] == path), None)
+        self._update_error_display()
+        if not silent:
+            from ok.ui.qt.util.app import show_info_bar
+            show_info_bar(self.window(), self.tr('Task rebuilt successfully.'), title=self.tr('Success'))
+        if on_reloaded is not None:
+            on_reloaded()
 
     def delete_task(self):
         if not self.python_file:

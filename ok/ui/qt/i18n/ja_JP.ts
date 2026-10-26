@@ -252,6 +252,18 @@
             <source>No Capture Available or Selected</source>
             <translation>キャプチャ方法が利用不可または未選択です</translation>
         </message>
+        <message>
+            <source>Reload tasks</source>
+            <translation>タスクを再読み込み</translation>
+        </message>
+        <message>
+            <source>Waiting to reload tasks...</source>
+            <translation>タスクの再読み込みを待機中…</translation>
+        </message>
+        <message>
+            <source>Reloaded {count} tasks</source>
+            <translation>{count} 個のタスクを再読み込みしました</translation>
+        </message>
     </context>
     <context>
         <name>GlobalConfigCard</name>

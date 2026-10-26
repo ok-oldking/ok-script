@@ -1,4 +1,4 @@
-"""File-based development tasks, independent of the MCP transport and Qt."""
+"""File-based development runs and registered-task reloads, independent of MCP and Qt."""
 
 import hashlib
 import importlib.util
@@ -21,19 +21,22 @@ TERMINAL_STATES = {'succeeded', 'failed', 'cancelled'}
 
 
 class McpTaskRunner:
-    """Run one development file at a time on the existing executor.
+    """Run one development file or registered-task reload at a time.
 
     A file must define ``class Task(BaseTask)`` with ``reset_to_start()``,
     ``verify_start_state()`` and ``run()``. Hooks may assert or return False
-    to reject the attempt. No task is added to the regular scheduler.
+    to reject the attempt. File runs add no tasks to the regular scheduler;
+    reloads replace existing registrations through the task manager.
     """
 
-    def __init__(self, executor, app, screenshot_service, artifact_directory='logs/mcp', prepare=None):
+    def __init__(self, executor, app, screenshot_service, artifact_directory='logs/mcp', prepare=None,
+                 task_manager=None):
         self.executor = executor
         self.app = app
         self.screenshot_service = screenshot_service
         self.artifact_directory = Path(artifact_directory).resolve()
         self.prepare = prepare
+        self.task_manager = task_manager
         self._lock = threading.RLock()
         self._runs = {}
         self._active = None
@@ -62,6 +65,71 @@ class McpTaskRunner:
         if path.suffix.lower() != '.py' or not path.is_file():
             raise ValueError('file_path must point to a Python task file')
         source = path.read_bytes()
+        return self._submit(
+            lambda run_id: self._execute(run_id, path, source), f'mcp:{path.name}',
+            {'operation': 'run_task', 'file_path': str(path),
+             'source_sha256': hashlib.sha256(source).hexdigest(), 'phase': 'loading'})
+
+    def _require_task_manager(self):
+        if self.task_manager is None:
+            raise RuntimeError('No registered task manager is available in this runtime')
+        return self.task_manager
+
+    def _describe_task(self, task):
+        manager = self._require_task_manager()
+        cls = type(task)
+        source = manager.task_map.get(task, (None,))[0] or inspect.getsourcefile(cls)
+        return {
+            'task_id': f'{cls.__module__}.{cls.__qualname__}',
+            'name': str(task.name),
+            'file_path': str(Path(source).resolve()) if source else None,
+            'kind': 'trigger' if isinstance(task, TriggerTask) else 'onetime',
+            'plugin': getattr(task, 'import_namespace', None),
+            'enabled': task.enabled,
+        }
+
+    def list_tasks(self):
+        """Discover registered task IDs and source paths before editing code."""
+        with self._lock:
+            if self._closed:
+                raise RuntimeError('MCP task runner is shutting down')
+            self._require_task_manager()
+            tasks = list(self.executor.onetime_tasks) + list(self.executor.trigger_tasks)
+            return [self._describe_task(task) for task in tasks]
+
+    def reload_tasks(self, task_ids: list[str] | None = None):
+        """Reload selected registered IDs, or all tasks/plugins when omitted.
+
+        Returns a run record immediately; get_run_status/stop_task also apply
+        to reloads. Uses the normal transactional reload on the executor, with
+        GUI dispatch supplied by the task manager when necessary.
+        """
+        manager = self._require_task_manager()
+        with self._lock:
+            selected = None
+            if task_ids is not None:
+                if not isinstance(task_ids, list) or any(not isinstance(item, str) for item in task_ids):
+                    raise TypeError('task_ids must be a list of IDs from list_tasks')
+                registered = {f'{type(task).__module__}.{type(task).__qualname__}': task
+                              for task in self.executor.get_all_tasks()}
+                unknown = [task_id for task_id in task_ids if task_id not in registered]
+                if unknown:
+                    raise ValueError(f'Unknown task IDs: {", ".join(unknown)}; call list_tasks first')
+                selected = [registered[task_id] for task_id in dict.fromkeys(task_ids)]
+
+            def reload(run_id):
+                directory = Path(self._runs[run_id]['record']['artifact_directory'])
+                with (directory / 'run.log').open('a', encoding='utf-8', buffering=1) as output:
+                    with capture_output(output.write):
+                        self._phase(run_id, 'reloading')
+                        replacements = manager._dispatch_reload(selected)
+                        return [self._describe_task(task) for task in replacements]
+
+            return self._submit(reload, 'mcp:reload_tasks', {
+                'operation': 'reload_tasks', 'task_ids': task_ids, 'phase': 'reloading'})
+
+    def _submit(self, execute, name, fields):
+        """Track file runs and reloads with the same ownership and artifacts."""
         with self._lock:
             if self._closed:
                 raise RuntimeError('MCP task runner is shutting down')
@@ -74,18 +142,17 @@ class McpTaskRunner:
                 directory = self.artifact_directory / run_id
                 directory.mkdir(parents=True)
                 record = {
-                    'run_id': run_id, 'file_path': str(path),
-                    'source_sha256': hashlib.sha256(source).hexdigest(),
-                    'state': 'queued', 'phase': 'loading', 'created_at': time.time(),
+                    'run_id': run_id, 'state': 'queued', 'created_at': time.time(),
                     'finished_at': None, 'error': None, 'result': None,
                     'artifact_directory': str(directory), 'log_path': str(directory / 'run.log'),
                     'screenshots_directory': str(Path(self.screenshot_service.screenshot_folder).resolve()),
+                    **fields,
                 }
                 self._runs[run_id] = {'record': record, 'job': None}
                 self._active = run_id
                 self._save(record)
                 job = self.executor.submit(
-                    lambda: self._execute(run_id, path, source), name=f'mcp:{path.name}', owner=owner)
+                    lambda: execute(run_id), name=name, owner=owner)
                 self._runs[run_id]['job'] = job
                 job.future.add_done_callback(lambda future: self._finished(run_id, owner, future))
             except BaseException:
@@ -170,7 +237,10 @@ class McpTaskRunner:
             record = self._runs[run_id]['record']
             try:
                 record['result'] = future.result()
-                record['state'] = 'cancelled' if record['state'] == 'stopping' else 'succeeded'
+                # A reload is a transaction. If it committed while a stop was
+                # requested, report that fact rather than implying a rollback.
+                record['state'] = ('cancelled' if record['state'] == 'stopping'
+                                   and record['operation'] != 'reload_tasks' else 'succeeded')
             except (CancelledError, TaskDisabledException):
                 record['state'] = 'cancelled'
             except BaseException as error:

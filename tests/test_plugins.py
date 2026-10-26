@@ -243,10 +243,10 @@ class DemoTask(BaseTask):
 def make_manager():
     manager = TaskManager.__new__(TaskManager)
     manager.imported_scripts, manager.task_map, manager.task_errors = {}, {}, {}
-    manager.task_executor = SimpleNamespace(onetime_tasks=[], trigger_tasks=[], feature_set=None)
+    manager.task_executor = SimpleNamespace(onetime_tasks=[], trigger_tasks=[], feature_set=None,
+                                            current_task=None)
     manager.app = SimpleNamespace(debug=False)
     manager.scene = None
-    manager._update_debug_watched_files = Mock()
     return manager
 
 
@@ -264,7 +264,7 @@ def test_declared_tasks_reload_and_delete_clean_up_instances_and_modules(tmp_pat
     old, = manager.imported_scripts['demo']['tasks']
     assert old.import_namespace == 'demo'
     assert manager.imported_scripts['demo']['custom_tabs'] == [['page', 'Page']]
-    manager.reload_task_code(old)
+    manager._reload_tasks([old])
     replacement, = manager.imported_scripts['demo']['tasks']
     assert replacement is not old
     assert old.destroyed

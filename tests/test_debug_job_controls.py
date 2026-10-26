@@ -10,6 +10,7 @@ import numpy as np
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
 from PySide6.QtWidgets import QApplication
+from shiboken6 import delete
 
 import ok.task.TaskExecutor as task_executor_module
 import ok.ui.qt.debug.JobControls as job_controls_module
@@ -184,7 +185,7 @@ class DebugTabsTestCase(unittest.TestCase):
     def test_run_code_tab_runs_with_selected_task(self):
         from ok.ui.qt.debug.RunCodeTab import RunCodeTab
         tab = RunCodeTab({}, self.exit_event)
-        self.addCleanup(tab.close)
+        self.addCleanup(delete, tab)
         tab.tasks_combo_box.setCurrentIndex(1)
         tab.code_input.setPlainText('print(task.name)\ntask.answer()')
 
@@ -198,13 +199,56 @@ class DebugTabsTestCase(unittest.TestCase):
         from ok.ui.qt.debug import DebugTab as debug_tab_module
         with patch.object(debug_tab_module, 'alert_info') as alert:
             tab = debug_tab_module.DebugTab({}, self.exit_event)
-            self.addCleanup(tab.close)
+            self.addCleanup(delete, tab)
             tab.target_function_edit.setText('answer')
 
             tab.call()
 
             self.assertTrue(self.process_until(lambda: alert.called))
         self.assertEqual('thinking\n42', tab.result_edit.toPlainText())
+
+    def test_debug_reload_button_queues_reload_and_reports_completion(self):
+        from ok.ui.qt.debug import DebugTab as debug_tab_module
+        from shiboken6 import delete
+
+        entered, release = threading.Event(), threading.Event()
+        def reload_tasks():
+            def reload():
+                entered.set()
+                release.wait(WAIT)
+                return [self.task]
+            return self.executor.submit(reload)
+
+        manager = SimpleNamespace(reload_tasks=Mock(side_effect=reload_tasks))
+        with patch.object(og, 'task_manager', manager, create=True), \
+                patch.object(debug_tab_module, 'alert_info') as alert:
+            tab = debug_tab_module.DebugTab({}, self.exit_event)
+            self.addCleanup(delete, tab)
+            tab.reload_button.click()
+            try:
+                self.assertTrue(entered.wait(WAIT))
+                self.assertFalse(tab.reload_button.isEnabled())
+            finally:
+                release.set()
+            self.assertTrue(self.process_until(lambda: alert.called))
+            manager.reload_tasks.assert_called_once_with()
+            self.assertTrue(tab.reload_button.isEnabled())
+            self.assertIn('1', alert.call_args.args[0])
+
+    def test_run_code_selection_tracks_replaced_instances(self):
+        from ok.core.events import communicate
+        from ok.ui.qt.debug.RunCodeTab import RunCodeTab
+        from shiboken6 import delete
+
+        tab = RunCodeTab({}, self.exit_event)
+        self.addCleanup(delete, tab)
+        tab.tasks_combo_box.setCurrentIndex(1)
+        tab.session.namespace['task'] = self.task
+        replacement = type(self.task)()
+        self.executor.onetime_tasks = [replacement]
+        communicate.task_list_updated.emit()
+        self.assertIs(tab.selected_task(), replacement)
+        self.assertNotIn('task', tab.session.namespace)
 
 
 if __name__ == '__main__':

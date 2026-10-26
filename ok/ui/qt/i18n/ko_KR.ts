@@ -252,6 +252,18 @@
             <source>No Capture Available or Selected</source>
             <translation>캡처 방식을 사용할 수 없거나 선택되지 않음</translation>
         </message>
+        <message>
+            <source>Reload tasks</source>
+            <translation>작업 다시 불러오기</translation>
+        </message>
+        <message>
+            <source>Waiting to reload tasks...</source>
+            <translation>작업을 다시 불러오기를 기다리는 중…</translation>
+        </message>
+        <message>
+            <source>Reloaded {count} tasks</source>
+            <translation>작업 {count}개를 다시 불러왔습니다</translation>
+        </message>
     </context>
     <context>
         <name>GlobalConfigCard</name>

@@ -1,9 +1,6 @@
----
-name: Compile i18n
-description: How to update and compile Qt translations
----
-
 # Compile i18n
+
+Repository-maintainer instructions for ok-script's bundled Qt translations. Consumer applications maintain their own translations separately.
 
 When you are instructed to add or update internationalization (i18n) translations for this project, please follow these steps:
 
@@ -18,7 +15,7 @@ When you are instructed to add or update internationalization (i18n) translation
 3. Ensure that your new translations are correctly added under the appropriate `<context>` and `<message>` blocks in each XML file, without the `type="unfinished"` attribute. If you are adding many translations, or just want to minimize errors, use the provided `add_translation.py` script to automate the XML injection:
    ```powershell
    $py = if (Test-Path .\.venv\Scripts\python.exe) { ".\.venv\Scripts\python.exe" } else { "python" }
-   & $py .\.agents\skills\compile_i18n\add_translation.py --context "YourContext" --source "Your Source String" --zh_cn "Your Chinese String"
+   & $py .\docs\maintainers\scripts\add_translation.py --context "YourContext" --source "Your Source String" --zh_cn "Your Chinese String"
    ```
    **IMPORTANT WARNING: DO NOT use `pyside6-lupdate` as it corrupts and deletes existing translations. Always modify the XML nodes natively or use the python script!**
 4. Check that the added translations are complete. You must replace `<translation type="unfinished" />` with `<translation>Your Translation</translation>`.

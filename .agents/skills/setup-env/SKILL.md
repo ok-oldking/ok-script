@@ -1,34 +1,29 @@
 ---
 name: setup-env
-description: Create or repair an ok-script virtual environment and install the dependency profiles needed for a local automation target, GUI, or MCP development runtime.
+description: Create or repair a third-party application's environment for the ok-script library, GUI, or MCP server using the application's dependency requirements.
 ---
 
 # Set Up the Local Environment
 
-Use the intended project's `.venv`. A framework checkout and a sibling automation project can have separate environments even when they share the `ok` source code. Inspect existing requirements and installed packages before changing them.
+Work in the consuming application's directory and use its configured environment or `.venv`. Inspect its requirements, lockfile, supported Python versions, and installed packages before changing dependencies. Installing and using ok-script does not require a library source checkout.
 
 ## Interpreter and dependencies
 
 - Resolve an existing `.venv\Scripts\python.exe` before any Python command. Use an absolute path when commands change directories. Use `-m pip`, `-m pytest`, and `-m py_compile` through that interpreter.
-- If a new environment is needed, create it with an available supported interpreter (see `requires-python` in [pyproject.toml](../../../pyproject.toml)). Prefer the checkout's interpreter to create a sibling project's venv. Do not recreate a working environment just to install missing packages.
-- Treat `pyproject.toml` as the dependency source of truth. Core dependencies apply even when the project imports `ok` through a source link. Select `default` for the normal vision/capture stack, `qt` for the desktop GUI, `mcp` for the development server, `adb` for Android targets, `ocr` when required, and `dev` for framework tooling. A GUI project developed through MCP normally needs `default`, `qt`, and `mcp`.
+- If a new environment is needed, create it with an available interpreter compatible with the application's requirements and its chosen ok-script release. Inspect installed distribution metadata with `importlib.metadata` when needed. Do not recreate a working environment just to install missing packages.
+- Prefer the application's requirements or lockfile and preserve its chosen ok-script version. Select `default` for the normal vision/capture stack, `qt` for the desktop GUI, `mcp` for the local server, `adb` for Android targets, and `ocr` when required. A GUI application tested through MCP normally needs `default`, `qt`, and `mcp`. Install application test dependencies only when its tests need them.
 - OpenCV is deliberately separate from these profiles. Inspect the installed `opencv-*` packages and choose exactly one compatible variant. Reuse the project's existing choice when suitable; do not install multiple variants that all provide `cv2`.
 
 For an installed release, select the extras actually needed, for example:
 
 ```powershell
-$projectPy = 'E:\projects\my-automation\.venv\Scripts\python.exe'
+$projectPy = (Resolve-Path .\.venv\Scripts\python.exe).Path
 & $projectPy -m pip install 'ok-script[default,qt,mcp]'
 ```
 
-Replace the example path with the actual project. Install the chosen OpenCV variant separately if it is absent.
+Run this from the application's root. Install the chosen OpenCV variant separately if it is absent.
 
-For live checkout development, choose one approach:
-
-- Install the checkout editable into the target environment, with the selected dependency groups. Run pip from the checkout directory; for example `& $projectPy -m pip install --editable . --group default --group qt --group mcp`. Check that pip supports dependency groups, upgrading pip only if needed.
-- When the project uses an `ok` source link, install core dependencies and the selected optional-dependency lists from the checkout's `pyproject.toml` into the target venv. Generate or update the project's requirements from those lists and the selected OpenCV dependency; preserve its additional requirements. There is no need to install a second released copy of `ok-script` just to obtain its dependencies.
-
-The checkout's build reads `OK_SCRIPT_BUILD_VERSION`; without it, `setup.py` attempts an online version lookup. If an editable development install needs a deterministic version, set a valid local version such as `0.0.0+local` for that command and restore the previous environment value afterward. A source link avoids package metadata builds.
+If the application intentionally uses an existing editable library installation or `ok` source link, preserve that arrangement and install its required dependencies in the application's environment. A source link alone does not install dependencies. Modify the application's tasks and configuration; library source changes are outside this skill's scope.
 
 Use the normal package index first. If downloads stall, a reachable alternate index can be supplied to the individual pip command; do not change persistent pip configuration as a side effect of setup.
 
@@ -36,6 +31,6 @@ Use the normal package index first. If downloads stall, a reachable alternate in
 
 Run `& $projectPy -m pip check`. Smoke-test `import ok, cv2` and the selected optional stacks, and verify `ok.__file__` resolves to the intended checkout or installed package. For MCP, also check `import mcp`; for Qt, check `from PySide6 import QtCore` and `import qfluentwidgets`.
 
-Run the relevant launcher with the target venv to catch runtime imports that dependency metadata alone cannot verify. Compile changed scripts and run appropriate existing tests for code changes; do not install framework test tooling into every runtime venv just for convenience.
+Run the application's launcher with its environment to catch runtime imports that dependency metadata alone cannot verify. Compile changed application scripts and run its existing tests when relevant.
 
 Report the environment path, dependency profiles, OpenCV choice, and verification outcome. Continue with [setup-project](../setup-project/SKILL.md) when a target and launchers are also requested.

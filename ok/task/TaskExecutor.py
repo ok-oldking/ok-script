@@ -918,6 +918,11 @@ class TaskExecutor:
 
     def get_task_by_class(self, cls):
         logger.debug(f'get_task_by_class {cls} {self.onetime_tasks} {self.trigger_tasks}')
+        # Imports held by other tasks may refer to the previous class object.
+        key = (cls.__module__, cls.__qualname__)
+        for task in self.get_all_tasks():
+            if (type(task).__module__, type(task).__qualname__) == key:
+                return task
         for onetime_task in self.onetime_tasks:
             if isinstance(onetime_task, cls):
                 return onetime_task

@@ -1,4 +1,4 @@
-"""Discover the same agent skills in a checkout and an installed distribution."""
+"""Discover consumer-application skills from source or an installed distribution."""
 
 from pathlib import Path
 

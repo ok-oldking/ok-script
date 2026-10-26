@@ -56,9 +56,8 @@ def environment(qt_app, tmp_path, monkeypatch):
     manager.task_executor = executor
     manager.app = SimpleNamespace(debug=False)
     manager.scene = None
-    manager.file_watcher_factory = Mock()
+    manager.defer_plugin_validation = True
     manager.imported_scripts, manager.task_map, manager.task_errors = {}, {}, {}
-    manager._update_debug_watched_files = Mock()
     monkeypatch.setattr(og, 'task_manager', manager)
     monkeypatch.setattr(og, 'executor', executor)
     monkeypatch.setattr(og, 'app', SimpleNamespace(tr=lambda text: text))
@@ -177,7 +176,7 @@ def test_workshop_page_factory_reloads_before_closing_old_runtime(environment):
     old_page, = environment.controller.custom_tabs['demo']
     assert old_page.page is old.page
     assert environment.window.imported_tabs == {}
-    environment.manager.reload_task_code(old)
+    environment.manager._reload_tasks([old])
     new, = environment.manager.imported_scripts['demo']['tasks']
     assert old.destroyed and old.stopped
     assert new is not old
@@ -186,6 +185,18 @@ def test_workshop_page_factory_reloads_before_closing_old_runtime(environment):
     assert not new.destroyed
     environment.manager.unload_imported_script('demo')
     assert new.destroyed
+
+
+def test_failed_plugin_reload_keeps_working_page_and_runtime(environment):
+    folder = install_files(environment, {'file_name': 'demo'}, {'entry.py': FACTORY_TASK_SOURCE})
+    old, = environment.manager.imported_scripts['demo']['tasks']
+    page, = environment.controller.custom_tabs['demo']
+    (folder / 'entry.py').write_text('invalid syntax !!!!')
+    with pytest.raises(RuntimeError, match='invalid syntax'):
+        environment.manager._reload_tasks([old])
+    assert environment.manager.imported_scripts['demo']['tasks'] == [old]
+    assert environment.controller.custom_tabs['demo'] == [page]
+    assert not old.destroyed and not old.stopped
 
 
 def test_broken_custom_tab_does_not_block_other_tabs(environment):

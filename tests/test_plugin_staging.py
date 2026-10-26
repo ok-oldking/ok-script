@@ -254,8 +254,7 @@ manager.imported_scripts, manager.task_map, manager.task_errors = {}, {}, {}
 manager.task_executor = SimpleNamespace(onetime_tasks=[], trigger_tasks=[], current_task=None, feature_set=None)
 manager.app = SimpleNamespace(debug=False)
 manager.scene = None
-manager.file_watcher_factory = Mock() if mode in ('qt', 'broken_tab') else None
-manager._update_debug_watched_files = Mock()
+manager.defer_plugin_validation = mode in ('qt', 'broken_tab')
 og.task_manager, og.executor = manager, manager.task_executor
 manager.load_imported_tasks()
 if mode in ('qt', 'broken_tab'):

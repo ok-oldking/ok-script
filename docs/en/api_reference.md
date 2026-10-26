@@ -19,6 +19,27 @@ class ClaimRewardTask(BaseTask):
             self.click_box(reward)
 ```
 
+### Reload task code during development
+
+Debug mode does not watch task files or reload them automatically. Use **Debug →
+Reload tasks** to reload all registered tasks, or request a reload from task code:
+
+```python
+self.reload_tasks()                         # All registered tasks and plugins
+self.reload_tasks([SomeTask, another_task]) # Task classes or task instances
+```
+
+The method returns an `ExecutorJob`. Reloading waits until the current task or
+debug call returns; never wait on the job's future inside that task/call or on
+the GUI thread. A request does not interrupt the running task.
+
+Tasks sharing a module reload together, and selecting an imported plugin task
+reloads its entire plugin. Task modules compile directly from current source.
+If importing or initializing a replacement fails, existing tasks remain
+registered. Successful reloads close old instances, remove their queued runs,
+and preserve trigger enable settings. Unselected modules remain loaded; shared
+helper modules outside plugins require restarting the runtime after edits.
+
 Recognition methods generally return a `Box`, a list of boxes, or `None`/an empty list when no match is found.
 
 ## `Box`
