@@ -85,5 +85,7 @@ backend; do not assert that the game intrinsically requires foreground input.
   validation separately, naming the action, backend, tested target state, visible
   result, cursor/focus side effects, and any remaining untested cases.
 
-Desktop task-card testing is separate from game interaction. A Computer Use
-plugin used to inspect the GUI does not belong in the task's dependencies.
+Do not use Computer Use skills, plugins, or tools for input validation or desktop
+task-card testing. Keep capture and interaction in ok-script APIs and MCP. If the
+GUI Start action cannot be tested through permitted APIs or an application-local
+test harness, report that check as unverified.
