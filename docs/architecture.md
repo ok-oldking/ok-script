@@ -23,12 +23,11 @@ package format, and task-owned page factories.
 ## Install a mode
 
 ```bash
-pip install ok-script                # minimal headless core
+pip install ok-script                # headless core including MCP
 pip install "ok-script[default]"     # headless runtime profile
 pip install "ok-script[qt]"          # desktop UI
 pip install "ok-script[adb]"         # ADB devices
 pip install "ok-script[ocr]"         # ONNX OCR
-pip install "ok-script[mcp]"         # localhost agent tools
 ```
 
 OpenCV is not part of any profile. Users must choose the version and exactly one
@@ -62,6 +61,8 @@ creation time protects against stale markers referring to reused PIDs.
 New desktop imports should use `ok.ui.qt`. Existing `ok.gui` imports remain
 available as a migration shim.
 
-The optional `mcp` profile provides a localhost development server with four
-tools for running task files, checking status, stopping, and observing the UI.
+MCP is included as a required dependency. The localhost development server
+provides skill discovery, task execution and reloading, status, cancellation,
+screenshots, and runtime shutdown. Installing MCP does not start a server;
+enable it explicitly through the CLI, application config, or GUI settings.
 See [MCP task development](mcp.md) for the task contract and local artifacts.

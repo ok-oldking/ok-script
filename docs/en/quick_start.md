@@ -16,10 +16,10 @@ For a new environment, the basic commands are:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install "ok-script[default,mcp]"
+.\.venv\Scripts\python.exe -m pip install "ok-script[default]"
 ```
 
-For an existing application, install its requirements first and add the MCP extra for the same ok-script version. Add `qt`, `adb`, or `ocr` only as needed. OpenCV is a separate dependency: choose exactly one compatible variant, such as `opencv-python` or `opencv-python-headless`. The agent should use your project's existing choice.
+For an existing application, install its requirements first. MCP is a required dependency installed automatically with ok-script starting in 2.0.17. Add `qt`, `adb`, or `ocr` only as needed. OpenCV is a separate dependency: choose exactly one compatible variant, such as `opencv-python` or `opencv-python-headless`. The agent should use your project's existing choice.
 
 The project also needs a configuration for the real target. Ask the agent to inspect the installed configuration handling and existing examples, then set the application's executable/window or ADB package and verify capture and input. Installing the package alone does not create a configured project.
 
@@ -33,7 +33,7 @@ Prefer the project's existing development launcher. Otherwise, from the applicat
 
 Replace `src.config:config` with the project's actual module and configuration object. Leave the runtime running while the agent develops. This mode runs without Qt and pauses the regular scheduler.
 
-An existing desktop application can also enable MCP through **Settings > Basic Options > Enable MCP Server** when the MCP dependency is installed. Review the application's access warning before enabling it. Use a separate MCP-disabled GUI launcher for ordinary use.
+An existing desktop application can also enable MCP through **Settings > Basic Options > Enable MCP Server**. Review the application's access warning before enabling it. Use a separate MCP-disabled GUI launcher for ordinary use.
 
 ## 3. Connect the coding agent
 

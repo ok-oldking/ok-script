@@ -14,11 +14,12 @@ MCP supplies skills and task execution, not a Python API catalog or `get_api` to
 
 ## Install and start
 
-Install the MCP profile alongside the capture and OCR profiles your project uses.
+MCP is a required dependency of ok-script starting in 2.0.17. Install the capture
+and OCR profiles your project needs; no separate MCP extra is required.
 Use the project's virtual environment when one exists:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install "ok-script[default,mcp]"
+.\.venv\Scripts\python.exe -m pip install "ok-script[default]"
 .\.venv\Scripts\python.exe -m ok mcp --config src.config:config
 ```
 
@@ -45,8 +46,8 @@ account permissions and read or change files. Confirming starts the server
 immediately; cancelling leaves it off. Turning it off, or resetting Basic
 Options, stops this instance's server immediately. The confirmed preference is
 saved for subsequent launches. If enabling from settings fails, the switch stays
-disabled and shows the error, including installation instructions if the MCP
-profile is missing.
+disabled and shows the error. Repair the project dependencies if the required
+MCP package is missing or incompatible.
 
 You can also opt in explicitly from the command line:
 

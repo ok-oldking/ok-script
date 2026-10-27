@@ -16,10 +16,10 @@
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install "ok-script[default,mcp]"
+.\.venv\Scripts\python.exe -m pip install "ok-script[default]"
 ```
 
-已有应用先安装自己的依赖，再为相同版本的 ok-script 添加 MCP 扩展。按需添加 `qt`、`adb` 或 `ocr`。OpenCV 需要单独安装，且只能选择一个兼容变体，例如 `opencv-python` 或 `opencv-python-headless`；让代理沿用项目现有选择。
+已有应用先安装自己的依赖。MCP 自 2.0.17 起为必需依赖，随 ok-script 自动安装。按需添加 `qt`、`adb` 或 `ocr`。OpenCV 需要单独安装，且只能选择一个兼容变体，例如 `opencv-python` 或 `opencv-python-headless`；让代理沿用项目现有选择。
 
 项目还需要配置真实目标。让代理检查已安装版本的配置实现及已有示例，设置应用可执行文件、窗口或 ADB 包名，并验证截图和输入。安装包本身不会自动创建已配置的应用。
 
@@ -33,7 +33,7 @@ python -m venv .venv
 
 将 `src.config:config` 替换为实际配置模块和对象。开发期间保持进程运行。该模式不需要 Qt，普通任务调度器保持暂停。
 
-已有桌面应用安装 MCP 依赖后，也可在**设置 > 基础选项 > 启用 MCP 服务**中开启。开启前阅读应用显示的访问提示。日常使用应保留独立的、禁用 MCP 的 GUI 入口。
+已有桌面应用也可在**设置 > 基础选项 > 启用 MCP 服务**中开启。开启前阅读应用显示的访问提示。日常使用应保留独立的、禁用 MCP 的 GUI 入口。
 
 ## 3. 连接编程代理
 

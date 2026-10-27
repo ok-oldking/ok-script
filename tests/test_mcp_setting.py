@@ -71,14 +71,14 @@ def test_cancel_leaves_server_disabled(setting):
 
 def test_failed_start_rolls_back_setting_and_shows_error(setting):
     s = setting
-    s.server.return_value.start.side_effect = RuntimeError('Install the MCP profile')
+    s.server.return_value.start.side_effect = RuntimeError('The required MCP dependency is missing')
     s.widget.switch_button.setChecked(True)
     assert not s.config[ENABLE_MCP_SERVER]
     assert not s.widget.switch_button.isChecked()
     assert s.runtime._mcp_server is None
     assert s.runtime.config['mcp'] == {'port': 0}
     assert s.dialog.call_count == 2
-    assert s.dialog.call_args.args[1] == 'Install the MCP profile'
+    assert s.dialog.call_args.args[1] == 'The required MCP dependency is missing'
 
 
 @pytest.mark.parametrize('reset', [False, True])

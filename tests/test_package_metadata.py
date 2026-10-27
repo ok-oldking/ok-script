@@ -11,7 +11,7 @@ def test_pyproject_profiles_are_consistent_and_headless_by_default():
     extras = project["optional-dependencies"]
     groups = metadata["dependency-groups"]
 
-    assert set(extras) == {"default", "qt", "adb", "ocr", "dev", "mcp"}
+    assert set(extras) == {"default", "qt", "adb", "ocr", "dev"}
     assert extras == groups
     assert extras["adb"] == ["adbutils>=2.2.1"]
     assert extras["ocr"] == ["onnxocr-ppocrv5"]
@@ -22,6 +22,7 @@ def test_pyproject_profiles_are_consistent_and_headless_by_default():
     assert any(requirement.startswith("pytest") for requirement in extras["dev"])
     assert not any(requirement.startswith("pytest") for requirement in project["dependencies"])
     assert "pynput>=1.8.1" in project["dependencies"]
+    assert "mcp==2.3.0" in project["dependencies"]
     assert not any(requirement.startswith("packaging") for requirement in project["dependencies"])
 
     managed_requirements = [

@@ -32,11 +32,11 @@ ok-script 支持 Windows 应用和游戏、安卓模拟器及 ADB 设备，提�
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install "ok-script[default,mcp]"
+.\.venv\Scripts\python.exe -m pip install "ok-script[default]"
 .\.venv\Scripts\python.exe -m ok mcp --config src.config:config
 ```
 
-启动命令要求应用配置已经存在，请使用实际配置入口或项目已有的开发启动器。已有项目应为原版本添加 MCP 扩展。OpenCV 需单独选择并安装一个兼容变体；Qt、ADB 和 OCR 按需安装。
+启动命令要求应用配置已经存在，请使用实际配置入口或项目已有的开发启动器。MCP 自 2.0.17 起随 ok-script 自动安装，无需额外扩展。OpenCV 需单独选择并安装一个兼容变体；Qt、ADB 和 OCR 按需安装。
 
 让代理的 MCP 客户端连接有效 `logs/mcp/connections/<pid>-<port>.json` 记录中的 URL，并使用该记录的 `Authorization: Bearer <token>` 请求头。不要公开凭据。让代理调用 `list_skills`，通过 `get_skill` 读取相关技能，再用 `screenshot` 验证目标。
 

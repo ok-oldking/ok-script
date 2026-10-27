@@ -237,11 +237,11 @@ server.join()
             child.communicate(timeout=10)
 
 
-def test_missing_optional_sdk_has_install_instructions(monkeypatch):
+def test_missing_required_sdk_has_repair_instructions(monkeypatch):
     import sys
     monkeypatch.setitem(sys.modules, 'mcp', None)
     monkeypatch.setitem(sys.modules, 'mcp.server', None)
-    with pytest.raises(RuntimeError, match=r'ok-script\[mcp\]'):
+    with pytest.raises(RuntimeError, match='required MCP dependency'):
         create_mcp_app(None, 'test-token', 8765)
 
 

@@ -11,14 +11,14 @@ Work in the consuming application's directory and use its configured environment
 
 - Resolve an existing `.venv\Scripts\python.exe` before any Python command. Use an absolute path when commands change directories. Use `-m pip`, `-m pytest`, and `-m py_compile` through that interpreter.
 - If a new environment is needed, create it with an available interpreter compatible with the application's requirements and its chosen ok-script release. Inspect installed distribution metadata with `importlib.metadata` when needed. Do not recreate a working environment just to install missing packages.
-- Prefer the application's requirements or lockfile and preserve its chosen ok-script version. Select `default` for the normal vision/capture stack, `qt` for the desktop GUI, `mcp` for the local server, `adb` for Android targets, and `ocr` when required. A GUI application tested through MCP normally needs `default`, `qt`, and `mcp`. Install application test dependencies only when its tests need them.
+- Prefer the application's requirements or lockfile and preserve its chosen ok-script version. Select `default` for the normal vision/capture stack, `qt` for the desktop GUI, `adb` for Android targets, and `ocr` when required. A GUI application tested through MCP normally needs `default` and `qt`. MCP is a required dependency starting in ok-script 2.0.17; older pinned releases may still need their `mcp` extra. Install application test dependencies only when its tests need them.
 - OpenCV is deliberately separate from these profiles. Inspect the installed `opencv-*` packages and choose exactly one compatible variant. Reuse the project's existing choice when suitable; do not install multiple variants that all provide `cv2`.
 
 For an installed release, select the extras actually needed, for example:
 
 ```powershell
 $projectPy = (Resolve-Path .\.venv\Scripts\python.exe).Path
-& $projectPy -m pip install 'ok-script[default,qt,mcp]'
+& $projectPy -m pip install 'ok-script[default,qt]'
 ```
 
 Run this from the application's root. Install the chosen OpenCV variant separately if it is absent.
@@ -29,7 +29,7 @@ Use the normal package index first. If downloads stall, a reachable alternate in
 
 ## Verify the environment
 
-Run `& $projectPy -m pip check`. Smoke-test `import ok, cv2` and the selected optional stacks, and verify `ok.__file__` resolves to the intended checkout or installed package. For MCP, also check `import mcp`; for Qt, check `from PySide6 import QtCore` and `import qfluentwidgets`.
+Run `& $projectPy -m pip check`. Smoke-test `import ok, cv2, mcp` and the selected optional stacks, and verify `ok.__file__` resolves to the intended checkout or installed package. For Qt, check `from PySide6 import QtCore` and `import qfluentwidgets`.
 
 Run the application's launcher with its environment to catch runtime imports that dependency metadata alone cannot verify. Compile changed application scripts and run its existing tests when relevant.
 

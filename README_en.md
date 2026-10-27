@@ -32,11 +32,11 @@ Use an automation application's own virtual environment and preserve its existin
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install "ok-script[default,mcp]"
+.\.venv\Scripts\python.exe -m pip install "ok-script[default]"
 .\.venv\Scripts\python.exe -m ok mcp --config src.config:config
 ```
 
-The command assumes the application's configuration exists; use its actual import target or existing development launcher. For an existing project, add the MCP extra for its chosen ok-script version. Install exactly one compatible OpenCV variant separately; add Qt, ADB, and OCR dependencies only as needed.
+The command assumes the application's configuration exists; use its actual import target or existing development launcher. MCP is installed automatically with ok-script starting in 2.0.17; no extra is needed. Install exactly one compatible OpenCV variant separately; add Qt, ADB, and OCR dependencies only as needed.
 
 Connect the agent's MCP client to the URL in the live `logs/mcp/connections/<pid>-<port>.json` record, with `Authorization: Bearer <token>` from that record. Keep credentials private. Have the agent call `list_skills`, read the relevant skills with `get_skill`, and verify the target with `screenshot`.
 

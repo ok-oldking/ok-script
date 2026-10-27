@@ -1,4 +1,4 @@
-"""Optional localhost MCP transport for task development and explicit reloading."""
+"""Localhost MCP transport for task development and explicit reloading."""
 
 import asyncio
 import errno
@@ -101,12 +101,12 @@ class _BearerAuth:
 
 
 def create_mcp_app(runner, token, port, request_exit=None):
-    """Build the task and skill ASGI app, importing the optional SDK only here."""
+    """Build the task and skill ASGI app, loading the SDK only when the server is enabled."""
     try:
         from mcp.server import MCPServer
         from mcp.server.transport_security import TransportSecuritySettings
     except ImportError as error:
-        raise RuntimeError('Install the MCP profile: pip install "ok-script[mcp]"') from error
+        raise RuntimeError("The required MCP dependency is missing or incompatible. Reinstall this project's pinned ok-script dependencies.") from error
 
     mcp = MCPServer('ok-script', instructions=(
         'Call list_skills to discover packaged ok-script instructions, then get_skill '

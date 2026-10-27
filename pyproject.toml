@@ -36,12 +36,10 @@ dependencies = [
     "pycaw==20240210",
     "mouse==0.7.1",
     "pynput>=1.8.1",
+    "mcp==2.3.0",
 ]
 
 [project.optional-dependencies]
-mcp = [
-    "mcp==2.3.0",
-]
 default = [
     "numpy>=1.26.4",
     "Pillow>=10.0",
@@ -79,9 +77,6 @@ Repository = "https://github.com/ok-oldking/ok-script"
 ok = "ok.cli:main"
 
 [dependency-groups]
-mcp = [
-    "mcp==2.3.0",
-]
 default = [
     "numpy>=1.26.4",
     "Pillow>=10.0",
