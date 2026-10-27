@@ -6,7 +6,10 @@ import win32gui
 
 from ok.device.capture_methods.base import BaseCaptureMethod
 from ok.device.interaction_methods.base import BaseInteraction
-from ok.device.interaction_methods.keys import vk_key_dict
+from ok.device.interaction_methods.keys import (
+    vk_key_dict, is_mouse_button, get_mouse_button,
+    XBUTTON1, MK_XBUTTON1, MK_XBUTTON2, WM_XBUTTONDOWN, WM_XBUTTONUP
+)
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -37,12 +40,27 @@ class PostMessageInteraction(BaseInteraction):
     def send_key_down(self, key, activate=True):
         if activate:
             self.try_activate()
+        if is_mouse_button(key):
+            btn = get_mouse_button(key)
+            mk = MK_XBUTTON1 if btn == XBUTTON1 else MK_XBUTTON2
+            wparam = win32api.MAKELONG(mk, btn)
+            pos = getattr(self, 'mouse_pos', (0, 0))
+            lparam = win32api.MAKELONG(int(pos[0]), int(pos[1]))
+            self.post(WM_XBUTTONDOWN, wparam, lparam)
+            return
         vk_code = self.get_key_by_str(key)
         lparam = self.make_lparam(vk_code, is_up=False)
         self.post(win32con.WM_KEYDOWN, vk_code, lparam)
 
     def send_key_up(self, key):
         # logger.debug(f'send_key_up {key}')
+        if is_mouse_button(key):
+            btn = get_mouse_button(key)
+            wparam = win32api.MAKELONG(0, btn)
+            pos = getattr(self, 'mouse_pos', (0, 0))
+            lparam = win32api.MAKELONG(int(pos[0]), int(pos[1]))
+            self.post(WM_XBUTTONUP, wparam, lparam)
+            return
         vk_code = self.get_key_by_str(key)
         lparam = self.make_lparam(vk_code, is_up=True)
         self.post(win32con.WM_KEYUP, vk_code, lparam)
