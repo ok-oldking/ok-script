@@ -2,8 +2,10 @@
 
 Status: superseded proposal. The selected approach uses existing functions:
 preserve original screenshots under `ok_templates`, update its COCO annotations,
-call `compress_copy_coco` to generate assets, and use `find_feature`/`find_one`.
-The [generate-templates skill](../.agents/skills/generate-templates/SKILL.md)
+call `generate_templates` for individual PNGs, and use `find_feature`/`find_one`.
+The old compression APIs are obsolete. The current
+[export format and configuration](feature-crops.md) are implemented.
+The [generate-templates skill](https://github.com/ok-oldking/ok-script/blob/master/.agents/skills/generate-templates/SKILL.md)
 documents this workflow. The alternative APIs and commands below are not
 implemented and are not required for the selected approach.
 

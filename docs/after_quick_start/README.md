@@ -20,7 +20,7 @@ CI/CD 流程实现项目的自动化管理。
 
 ## 1. 模板匹配 (Template Matching) { #1-模板匹配-template-matching }
 
-`ok-script` 的模板匹配工作流基于 COCO 数据集格式，这使得标注和管理特征点（模板图片）变得高效且精准。
+`ok-script` 使用 COCO 保存可编辑的源截图和标注。运行时使用独立的 PNG 裁剪图，文件名保留原始特征名、源截图分辨率和位置，无需 COCO JSON。
 
 ### 核心优势
 
@@ -31,12 +31,16 @@ CI/CD 流程实现项目的自动化管理。
 
 ### 操作流程
 
-1. **标注工具**: 使用任何支持导出 COCO 格式的标注工具。推荐使用 **`label-studio==1.15.0`**，因为新版本导出的 COCO
-   格式存在兼容性问题。
-2. **放置素材**: 将标注工具导出的 `result.json` 文件以及对应的图片文件夹（通常是 `images` 文件夹）完整地放入项目的
-   `assets` 目录下。
-3. **自动处理**: 运行 `python main_debug.py` 启动程序。在 Debug 模式下，点击开始按钮后，`ok-script` 会自动检测 `assets` 目录下的 COCO
-   文件，并执行**切图和压缩**操作，将大图中的各个标注区域切割成独立的模板图片，并进行优化，以备后续 `find_feature` 等方法调用。
+1. **保留源素材**：在模板页截图并标注稳定的界面特征。原始截图与 `coco_annotations.json` 保存在 `ok_templates` 中，供后续修改和重新导出。
+2. **拆分导出**：点击“保存”，使用默认的 **Split(Recommend)**（拆分，推荐）。独立应用选择 `assets`，自定义脚本选择 `ok_tasks/assets`；PNG 输出到所选目录的 `templates` 子目录。
+3. **配置加载目录**：设置 `template_matching.template_folder` 为 `assets/templates`（默认值）。保留现有阈值、处理器和居中锚点设置；迁移时可以继续保留 `coco_feature_json`。
+4. **按名称匹配**：调用 `find_feature`、`find_one` 或 `wait_feature` 时使用原始特征名，不传入 PNG 文件名或坐标后缀。
+
+例如，`settings_save_1920x1080_1480_920.png` 表示特征 `settings_save`，原始截图分辨率为 1920×1080，左上角坐标为 (1480, 920)。PNG 自身的尺寸就是裁剪区域的尺寸。文件名没有额外前缀，也不编码特征名，支持空格、下划线和中文；Windows 文件名不允许的字符会导致明确报错。
+
+导出目录仅用于模板 PNG。文件名无法解析时会报错，即使只查询单个特征也会验证该目录内所有文件名。请修正报错文件，不要忽略错误或降低匹配阈值。Debug 模式不会代替显式导出步骤。
+
+程序调用使用 `generate_templates`。旧压缩选项和压缩 API 已废弃。完整的参数、迁移、验证及 Windows 文件权限修复说明见[模板导出格式](../feature-crops.md)。
 
 ## 2. 多语言国际化 (i18n) { #2-多语言国际化-i18n }
 

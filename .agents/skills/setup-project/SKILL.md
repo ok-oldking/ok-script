@@ -51,6 +51,13 @@ config = {
 
 Adapt this example; ship an actual valid icon if configuring `gui_icon`. BitBlt and PostMessage are initial candidates, not proof of target compatibility. Register a completed task as `['task_module', 'Task']` in `onetime_tasks`, using an import path available to both launchers.
 
+If the task needs named template matching, add `template_matching` with
+`'template_folder': str(ROOT / 'assets' / 'templates')` and the project's matching
+settings. Keep an existing `coco_feature_json` entry when packed assets are still
+used; both sources can coexist. Keep editable screenshots and COCO annotations
+under `ok_templates`, separate from exported crops. Follow
+[generate-templates](../generate-templates/SKILL.md) for export and verification.
+
 ## Separate launchers
 
 - `start_gui.py` is the user entry point. Explicitly select the Qt GUI and disable MCP. Launch it with the project's `pythonw.exe`. Redirect absent stdout/stderr to a local startup log so startup errors remain observable without a console.

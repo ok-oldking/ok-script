@@ -2942,6 +2942,18 @@
             <source>Invalid relative path. Example: ok_tasks/LabelEnum.py</source>
             <translation>相對路徑無效。範例：ok_tasks/LabelEnum.py</translation>
         </message>
+        <message>
+            <source>Generate function</source>
+            <translation>產生方式</translation>
+        </message>
+        <message>
+            <source>Split(Recommend)</source>
+            <translation>拆分（建議）</translation>
+        </message>
+        <message>
+            <source>Compress (obsolete)</source>
+            <translation>壓縮（已淘汰）</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>

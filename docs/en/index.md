@@ -13,6 +13,7 @@ The documentation follows a practical path: understand the concepts, run a proje
 | [Interface and developer tools](interface.md) | Developers learning the visual workflow | Tasks, capture, interaction, scripting, templates, and debug overlays |
 | [Advanced guide](advanced.md) | Developers with a working template project | COCO templates, i18n, testing, packaging, and publishing |
 | [API reference](api_reference.md) | Developers implementing task logic | `Box`, `BaseTask`, capture, input, OCR, and image matching APIs |
+| [Template export format](../feature-crops.md) | Developers maintaining recognition assets | Split export, readable filenames, configuration, migration, and validation |
 | [Imported plugins](plugins.md) | Developers and plugin users | ZIP/GitHub installation, tasks, custom Qt tabs, and cleanup |
 
 ## Fastest route to a working project

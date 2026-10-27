@@ -10,9 +10,10 @@ assets using the installed library. All project-relative paths below refer to
 that application's root, not the ok-script library directory.
 
 Use the existing pipeline: original screenshots in `ok_templates/`, annotations
-in `ok_templates/coco_annotations.json`, and `compress_copy_coco` to generate
-runtime assets. Keep source screenshots intact so both agents and the Template
-tab can inspect and reannotate them. No new asset format or MCP tools are needed.
+in `ok_templates/coco_annotations.json`, and `generate_templates` to generate
+split runtime assets. Keep source screenshots intact so both agents and the
+Template tab can inspect and reannotate them. The old compression APIs and dialog
+option are obsolete; use the split exporter for new or regenerated assets.
 
 Run from the automation project's root using its interpreter, following
 [use-venv](../use_venv/SKILL.md). For live capture and task execution follow
@@ -91,42 +92,58 @@ all unrelated entries. Review the annotation diff before export.
 
 ## Generate runtime assets
 
-Use the same function as the Template tab's Save action:
+### Split exports (default)
+
+The Template tab defaults to **Split(Recommend)**. Use its split exporter:
 
 ```python
-from ok.feature.FeatureSet import compress_copy_coco
+from ok.feature.FeatureSet import generate_templates
 
-generated_json = compress_copy_coco(
+template_folder = generate_templates(
     coco_json=str(store.coco_path),
-    target_folder=str(Path("assets").resolve()),
+    target_folder=str(Path("assets/templates").resolve()),
     image_folder=str(store.folder),
     generate_label_enmu=None,
 )
-print(generated_json)
+print(template_folder)
 ```
 
-Choose the destination from the existing project config: normally `assets` for
-a standalone app, or `ok_tasks/assets` for custom scripts. The main config uses
-`template_matching.coco_feature_json`; preserve its other matching settings.
-Custom task assets are merged automatically when the configured feature set
-loads. Check for conflicting feature names in the main and custom datasets.
+The Save dialog keeps `assets` and `ok_tasks/assets` as its destination choices;
+Split adds the `templates` subfolder. Use `assets/templates` for a standalone app
+(`template_matching.template_folder`, which defaults to `assets/templates`), or
+`ok_tasks/assets/templates` for custom scripts. Split exports
+contain one crop-sized PNG per feature, named
+`<original_name>_<width>x<height>_<x>_<y>.png`. Names are readable, with no prefix
+or encoding. Spaces, underscores, and Unicode names are supported; characters
+forbidden in Windows filenames produce an error. They need no COCO JSON at runtime.
+Keep the destination dedicated to template PNGs: both export and loading report
+unparseable filenames instead of ignoring them. The exporter preserves the
+authoring dataset and replaces/removes template crops. Keep source and destination
+separate.
 
-Before calling the exporter, resolve source and destination paths and ensure
-they are separate, non-overlapping directories. The exporter deletes the target
-`images/` tree and EVERY top-level `.json` file, so verify these contain only
-generated template data and retain a recoverable copy of an existing export.
-If unrelated assets share this destination, use a dedicated template subfolder
-and update the relevant main config path; do not delete unrelated files. The
-automatic custom-script merge specifically expects `ok_tasks/assets/coco_annotations.json`.
+Use the original name in task code: `self.find_one("settings_save")` loads
+`settings_save_1920x1080_1480_920.png`. The PNG dimensions supply the crop size;
+the filename supplies the reference resolution and top-left position. Do not
+rename a crop to work around an annotation error: correct the source annotation
+and regenerate. Keep previews, notes, and unrelated files outside this folder;
+even a single-feature lookup validates all filenames in the selected folder.
 
-Validate all referenced source files, their recorded dimensions, category/image
-IDs, and bounding boxes before generation. Missing sources can be skipped by
-the exporter rather than producing a useful failure. Never call `compress_coco`
-on the source `ok_templates` dataset; it is an in-place transformation. Keep
-the prior generated COCO available when regenerating: the exporter uses it to
-preserve packed image page assignments.
+`template_matching.template_folder` and the existing `coco_feature_json` can
+coexist; split templates override matching COCO names in
+the same source group. Keep existing thresholds, processors, and anchor settings.
+Main application features retain priority over custom-script features. Imported
+split assets use `ok_import/<module>/assets/templates` and are addressed as
+`<module>/<original_name>`.
+See [the format documentation](../../../docs/feature-crops.md) for details.
 
-The optional keyword is spelled `generate_label_enmu` in the existing API. Its
+When migrating older encoded split exports, regenerate from the source COCO and
+screenshots into the same dedicated folder. The exporter replaces the old files
+with readable names. If an export folder contains an unparseable file, inspect
+and relocate that file before retrying; export leaves existing files intact on
+validation failure. Re-export with the current library to repair older Windows
+exports that viewers cannot open because of temporary-directory permissions.
+
+`generate_templates` uses the optional keyword `generate_label_enmu`. Its
 value is a dotted module/class path, e.g. `ok_tasks.LabelEnum`, not a filename.
 Use it only when the project uses enums; every category must be a valid Python
 identifier and not a keyword. Verify the generated enum imports successfully.
@@ -139,8 +156,8 @@ screenshot. This checks the full annotation/export/load path without a GUI:
 ```python
 from ok.feature.FeatureSet import FeatureSet
 
-features = FeatureSet(False, generated_json, 0.002, 0.002,
-                      default_threshold=0.95)
+features = FeatureSet(False, None, 0.002, 0.002,
+                      default_threshold=0.95, template_folder=template_folder)
 boxes = features.find_feature(source, name, threshold=0.95)
 assert len(boxes) == 1, boxes
 box = boxes[0]

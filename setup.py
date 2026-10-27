@@ -22,7 +22,7 @@ class BuildPyWithSkills(build_py):
         # Retain the repository layout so relative skill links still resolve.
         shutil.copytree(root / '.agents/skills', destination / '.agents/skills',
                         dirs_exist_ok=True, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
-        for relative in ('docs/mcp.md', 'examples/mcp_observe.py'):
+        for relative in ('docs/mcp.md', 'docs/feature-crops.md', 'examples/mcp_observe.py'):
             target = destination / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(root / relative, target)

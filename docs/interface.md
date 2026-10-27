@@ -64,7 +64,10 @@ HDR 转换通过 CPU 查找表完成。使用 `WGC_HDR` 时不显示 Auto HDR �
 - 按名称或类别搜索；
 - 查看每张截图包含的识别特征；
 - 打开标注工具调整框选区域；
-- 保存压缩后的模板素材。
+- 使用默认的 **Split(Recommend)**（拆分，推荐）导出独立的特征 PNG。
+
+保存目标仍为 `assets` 或 `ok_tasks/assets`，拆分导出写入其 `templates` 子目录。
+**Compress (obsolete)**（压缩，已废弃）仅为兼容保留。文件名格式和校验规则见[模板导出格式](feature-crops.md)。
 
 标注时优先使用计划支持的最高分辨率，并选择稳定、具有区分度且不包含动态文字的区域。详细工作流参见[进阶指南](after_quick_start/README.md#1-模板匹配-template-matching)。
 

@@ -2948,6 +2948,18 @@
             <source>Invalid relative path. Example: ok_tasks/LabelEnum.py</source>
             <translation>Invalid relative path. Example: ok_tasks/LabelEnum.py</translation>
         </message>
+        <message>
+            <source>Generate function</source>
+            <translation>Generate function</translation>
+        </message>
+        <message>
+            <source>Split(Recommend)</source>
+            <translation>Split(Recommend)</translation>
+        </message>
+        <message>
+            <source>Compress (obsolete)</source>
+            <translation>Compress (obsolete)</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>

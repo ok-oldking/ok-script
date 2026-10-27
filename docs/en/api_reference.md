@@ -107,9 +107,13 @@ Input methods normally include timing and post-action delay parameters. Use thos
 
 ## Template matching
 
+Use original feature names for templates loaded from `template_matching.template_folder`.
+Existing `coco_feature_json` assets remain readable. See
+[Template export format](../feature-crops.md) for `generate_templates` and filename validation.
+
 | API | Return value and purpose |
 | --- | --- |
-| `find_feature(feature_name, ...)` | Return all matches for one or more named COCO features. |
+| `find_feature(feature_name, ...)` | Return all matches for one or more named features. |
 | `find_one(feature_name, ...)` | Return the best single match. |
 | `wait_feature(feature, time_out=0, ...)` | Poll until a feature appears or timeout expires. |
 | `wait_click_feature(feature, ...)` | Wait for a feature and click it. |

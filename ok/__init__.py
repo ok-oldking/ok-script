@@ -1070,7 +1070,8 @@ class OK:
                                           default_threshold=template_matching.get('default_threshold', 0.8),
                                           feature_processor=template_matching.get('feature_processor'),
                                           hcenter_features=template_matching.get('hcenter_features'),
-                                          vcenter_features=template_matching.get('vcenter_features'))
+                                          vcenter_features=template_matching.get('vcenter_features'),
+                                          template_folder=template_matching.get('template_folder', os.path.join('assets', 'templates')))
         ocr_target_height = 0
         if ocr := self.config.get('ocr'):
             isascii, path = install_path_isascii()

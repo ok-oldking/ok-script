@@ -35,6 +35,12 @@ The current harness initializes one task per test class, replaces capture with `
 - Do not treat no-op input as proof that an in-game click worked. Test action intent with mocks; use the [develop skill](../develop/SKILL.md) when actual GUI/MCP interaction is part of the request.
 - For fixture annotation or named feature creation, follow [generate-templates](../generate-templates/SKILL.md).
 
+For direct split-template tests, construct `FeatureSet(False, None, 0.002, 0.002,
+template_folder=<absolute export folder>)`. For packed COCO tests, pass the JSON
+path as the second argument. Match using the original feature name, without the
+filename's geometry suffix. Keep test screenshots and reports outside the split
+export folder: every filename there is validated, including during lazy lookups.
+
 ## Isolated logic tests
 
 Use `unittest.TestCase` and `unittest.mock` for branches that do not require capture, OCR, or the runtime. Construct normally when inexpensive. Where initialization starts the runtime, `TaskClass.__new__(TaskClass)` can isolate a method, provided the test explicitly initializes every field that method uses. A small fake binding a production method is also appropriate for orchestration tests.

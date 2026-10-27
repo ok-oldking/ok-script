@@ -998,6 +998,9 @@ def add_text_fix(self, fix)
 
 ### 找图 (Image finding) { #找图-image-finding }
 
+使用原始特征名匹配 `template_matching.template_folder` 中的模板。现有 `coco_feature_json` 素材仍可读取。
+使用 `generate_templates` 导出独立 PNG，详见[模板导出格式](../feature-crops.md)。
+
 <a name="find_feature"></a>
 
 ### find\_feature

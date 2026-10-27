@@ -9,7 +9,7 @@ Use this skill inside the consuming application's project. Edit its task modules
 
 Read [docs/mcp.md](../../../docs/mcp.md) for the current server, tools, task contract, and artifacts. The coding agent already has local file and process access: write code and read logs/images directly. Use [setup-env](../setup-env/SKILL.md) or [setup-project](../setup-project/SKILL.md) only when setup is missing.
 
-For screenshot annotations and named template features, use [generate-templates](../generate-templates/SKILL.md): retain originals in `ok_templates`, update its COCO annotations, generate runtime assets with the existing exporter, and verify `find_feature`/`find_one` against those assets.
+For screenshot annotations and named template features, use [generate-templates](../generate-templates/SKILL.md): retain originals and COCO annotations in `ok_templates`, export individual PNGs with `generate_templates` into `assets/templates`, and verify `find_feature`/`find_one` using the original feature names. Existing packed COCO assets and `coco_feature_json` remain supported. The split loader reports malformed filenames; fix the indicated asset instead of lowering matching thresholds or ignoring the error.
 
 For existing registered tasks, prefer [reload-tasks](../reload-tasks/SKILL.md): discover their source with `list_tasks()`, edit it in place, call `reload_tasks(task_ids=[...])`, and wait for a successful reload before testing. Keep automation behavior in its existing module; use temporary MCP files only as thin validation harnesses. Create new task implementations when the requested functionality is new.
 

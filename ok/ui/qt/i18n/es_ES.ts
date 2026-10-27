@@ -2946,6 +2946,18 @@
             <source>Invalid relative path. Example: ok_tasks/LabelEnum.py</source>
             <translation>Ruta relativa no válida. Ejemplo: ok_tasks/LabelEnum.py</translation>
         </message>
+        <message>
+            <source>Generate function</source>
+            <translation>Método de generación</translation>
+        </message>
+        <message>
+            <source>Split(Recommend)</source>
+            <translation>Separar (recomendado)</translation>
+        </message>
+        <message>
+            <source>Compress (obsolete)</source>
+            <translation>Comprimir (obsoleto)</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>

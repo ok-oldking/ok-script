@@ -64,7 +64,11 @@ The template page presents COCO source screenshots and annotation categories as 
 - searching by name or category;
 - seeing which recognition features belong to each image;
 - opening the annotation tool to adjust regions;
-- saving optimized template assets.
+- exporting individual feature PNGs with **Split(Recommend)**, selected by default.
+
+The Save destinations remain `assets` and `ok_tasks/assets`; Split writes into
+their `templates` subfolder. **Compress (obsolete)** is retained only for compatibility.
+See the [export format](../feature-crops.md) for readable filenames and validation.
 
 Annotate at the highest resolution you plan to support. Choose stable, distinctive regions and exclude animated text. See [Template matching with COCO assets](advanced.md#1-template-matching-with-coco-assets) for the complete workflow.
 

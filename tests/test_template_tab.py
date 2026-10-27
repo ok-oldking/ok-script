@@ -4,6 +4,7 @@ import threading
 import time
 import unittest
 from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 import numpy as np
 
@@ -58,6 +59,46 @@ class TestTemplateTabCardCollection(unittest.TestCase):
             (DesignToken.PAGE_MARGIN,) * 4,
         )
         self.assertEqual(layout.spacing(), DesignToken.PAGE_SPACING)
+
+    def test_export_dialog_defaults_to_split_and_switches_to_compress(self):
+        from qfluentwidgets import MessageBoxBase, RadioButton
+
+        for debug in (False, True):
+            for split in (True, False):
+                with self.subTest(debug=debug, split=split):
+                    og.app.debug = debug
+                    observed = []
+
+                    def accept_dialog(dialog):
+                        buttons = {button.text(): button for button in dialog.findChildren(RadioButton)}
+                        self.assertTrue(buttons['Split(Recommend)'].isChecked())
+                        destination = 'assets (standalone app)' if debug else 'ok_tasks/assets (custom scripts)'
+                        self.assertTrue(buttons[destination].isChecked())
+                        if not split:
+                            buttons['Compress (obsolete)'].setChecked(True)
+                            observed.append(buttons[destination].text())
+                        return 1
+
+                    executor = SimpleNamespace(feature_set=Mock())
+                    with patch.object(MessageBoxBase, 'exec', accept_dialog), \
+                            patch('ok.ui.qt.tasks.TemplateTab.os.path.exists', return_value=True), \
+                            patch('ok.feature.FeatureSet.generate_templates') as generate, \
+                            patch('ok.feature.FeatureSet.compress_copy_coco') as compress, \
+                            patch('ok.ui.qt.util.Alert.alert_info'), \
+                            patch('ok.ui.qt.util.Alert.alert_error') as error, \
+                            patch.object(og, 'executor', executor):
+                        self.tab.save_compressed()
+                        chosen, unused = (generate, compress) if split else (compress, generate)
+                        chosen.assert_called_once()
+                        unused.assert_not_called()
+                        folder = os.path.join('assets', 'templates') if split else 'assets'
+                        expected = os.path.abspath(folder if debug else os.path.join('ok_tasks', folder))
+                        self.assertEqual(expected, chosen.call_args.args[1])
+                        executor.feature_set.process_data.assert_called_once()
+                        error.assert_not_called()
+                    if not split:
+                        expected_label = 'assets (standalone app)' if debug else 'ok_tasks/assets (custom scripts)'
+                        self.assertEqual([expected_label], observed)
 
     def test_search_reuses_cards_and_clears_hidden_selection(self):
         boss_path = self._add_item('boss.png', ['boss'])

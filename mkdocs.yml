@@ -70,6 +70,7 @@ nav:
       - Quick start: en/quick_start.md
       - Interface and developer tools: en/interface.md
       - Advanced guide: en/advanced.md
+      - Template export format: feature-crops.md
       - API reference: en/api_reference.md
       - Imported plugins: en/plugins.md
       - MCP task development: mcp.md

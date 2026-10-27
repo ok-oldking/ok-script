@@ -226,7 +226,7 @@ after constructing the task. Cleanup finishes before ownership is released.
 `succeeded` means the code completed without failure; include application-level
 success checks in `run()`.
 
-See the bundled [examples/mcp_observe.py](../examples/mcp_observe.py) for a runnable example. It captures
+See the bundled `examples/mcp_observe.py` ([source](https://github.com/ok-oldking/ok-script/blob/master/examples/mcp_observe.py)) for a runnable example. It captures
 the configured target without changing its state, so its reset is a no-op.
 For an interactive task, replace that recovery method and starting-state check.
 
