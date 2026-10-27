@@ -1,35 +1,36 @@
-# ok-script 文档中心
+# ok-script：开发时用 Token，自动化脚本反复用
 
 [English](en/index.md) · [项目主页](https://github.com/ok-oldking/ok-script)
 
-文档按“理解原理 → 运行项目 → 深入开发 → 查询 API”的顺序组织。第一次使用时，建议依次阅读前两篇。
+把需求交给编程代理，通过 MCP 连接 ok-script，让代理观察目标应用、编写 Python 脚本、运行验证并修复问题。完成后保存脚本，今后直接重复运行。
 
-## 学习路径
+**把 Token 花在开发上，让生成的 Python 自动化独立运行。** 开发可能需要多轮验证，应用更新后也可能需要再次修改。使用本地识别与输入的脚本在日常运行时无需调用大模型，也不消耗模型 Token。
 
-| 文档 | 适合读者 | 主要内容 |
-| --- | --- | --- |
-| [游戏自动化入门](intro_to_automation/README.md) | 没有计算机视觉或自动化经验的读者 | 截图、图像分析、决策、输入和开发工具 |
-| [快速开始](quick_start/README.md) | 准备创建第一个项目的开发者 | Fork 模板、配置环境、连接设备、运行和诊断 |
-| [界面与开发工具](interface.md) | 想了解可视化工作流的开发者 | 任务配置、截图与交互、脚本、模板和调试浮层 |
-| [进阶指南](after_quick_start/README.md) | 已经可以运行模板项目的开发者 | COCO 模板、i18n、自动化测试、打包和发布 |
-| [API 参考](api_doc/README.md) | 正在实现任务逻辑的开发者 | `Box`、`BaseTask`、截图、输入、OCR 和找图 API |
-| [模板导出格式（英文）](feature-crops.md) | 维护识别素材的开发者 | 拆分导出、可读文件名、配置、迁移与校验 |
-| [导入插件](plugins.md) | 插件开发者与用户 | ZIP/GitHub 安装、任务、自定义 Qt 页与清理 |
+## 从 MCP 开始
 
-## 最短上手路线
+1. 在支持 MCP 和本地文件、进程访问的编程代理中打开你的自动化项目目录。
+2. 按[快速开始](quick_start/README.md)安装运行环境并连接本地 MCP 服务。
+3. 描述目标应用、起始状态、操作步骤和可观察的成功条件。
+4. 让代理读取技能、检查已安装的 API、编写 Python，并通过 MCP 实测。
+5. 通过应用 GUI 或命令行运行保存的任务，无需保持代理连接。
 
-1. 安装 Python 3.12（框架最低支持 Python 3.11）。
-2. 使用 [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) 模板创建仓库。
-3. 按照[快速开始](quick_start/README.md)配置 Windows 游戏或 ADB 设备。
-4. 运行调试模式并完成截图测试。
-5. 参考 [API 文档](api_doc/README.md)实现自己的任务。
+## 可以这样提需求
 
-## 常用链接
+> 连接这个项目的 ok-script MCP 服务。读取 develop 技能，检查已安装版本中本任务需要的截图、模板匹配和输入 API，先给出核实过的签名及源码位置。然后实现一个可复用的 Python 任务：打开设置、启用我指定的选项、保存，并验证该选项保持开启。每次尝试前恢复并验证起始界面。只用 ok-script 截图和交互，不使用 Computer Use 工具。把任务保存到项目中，并告诉我如何脱离代理运行。
 
-- [ok-script 源码](https://github.com/ok-oldking/ok-script)
-- [ok-script 应用模板](https://github.com/ok-oldking/ok-script-app)
-- [ok-py 可视化脚本工具](https://github.com/ok-oldking/ok-py)
-- [PyPI 发布页](https://pypi.org/project/ok-script/)
-- [文档网站构建说明](building-site.md)
+[编程代理提示词](agent-prompts.md)提供了查询 API、开发任务和维护已有任务的完整示例。
 
-发现文档与代码不一致时，请在 GitHub 提交 issue，并附上使用的 ok-script 版本、Python 版本和运行环境。
+## 文档导航
+
+| 文档 | 用途 |
+| --- | --- |
+| [MCP 快速开始](quick_start/README.md) | 创建项目、连接代理、运行保存的任务 |
+| [如何向编程代理提需求](agent-prompts.md) | 可复制的 API 查询和任务开发提示词 |
+| [MCP 连接与执行说明（英文）](mcp.md) | 连接、技能发现、任务执行、重载与诊断 |
+| [自动化原理](intro_to_automation/README.md) | 理解 Python 的截图、识别、操作循环 |
+| [界面与开发工具](interface.md) | 运行已有任务并查看识别证据 |
+| [维护和分享任务](after_quick_start/README.md) | 模板、回归测试、国际化和打包 |
+| [导入插件](plugins.md) | 安装和分发可复用任务包 |
+| [构建文档网站](building-site.md) | 预览和检查网站 |
+
+需要具体 API 时，让代理检查项目实际安装版本的源码和方法签名，无需手动查阅静态 API 手册。

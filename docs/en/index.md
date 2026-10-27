@@ -1,35 +1,36 @@
-# ok-script documentation
+# ok-script: spend tokens once, reuse the automation
 
-[简体中文](../index.md) | **English** · [Project home](https://github.com/ok-oldking/ok-script)
+[简体中文](../index.md) · [Project home](https://github.com/ok-oldking/ok-script)
 
-The documentation follows a practical path: understand the concepts, run a project, learn the visual tools and advanced workflows, then consult the API while implementing tasks.
+Use a coding agent to turn a task description into a reusable Python automation script. Connect the agent to ok-script through MCP so it can observe your application, run the script, inspect failures, and verify the result. Keep the finished code and run it whenever you need it.
 
-## Learning path
+**Spend tokens on development; run the resulting Python automation without an LLM.** Development may take several iterations, and later application changes may need another coding session. Ordinary runs of scripts that use local recognition and input do not require model calls or tokens.
 
-| Guide | Audience | Topics |
-| --- | --- | --- |
-| [Introduction to game automation](intro_to_automation.md) | Readers new to computer vision or automation | Capture, analysis, decisions, input, and development tools |
-| [Quick start](quick_start.md) | Developers creating their first project | Template setup, environment, device configuration, execution, and diagnostics |
-| [Interface and developer tools](interface.md) | Developers learning the visual workflow | Tasks, capture, interaction, scripting, templates, and debug overlays |
-| [Advanced guide](advanced.md) | Developers with a working template project | COCO templates, i18n, testing, packaging, and publishing |
-| [API reference](api_reference.md) | Developers implementing task logic | `Box`, `BaseTask`, capture, input, OCR, and image matching APIs |
-| [Template export format](../feature-crops.md) | Developers maintaining recognition assets | Split export, readable filenames, configuration, migration, and validation |
-| [Imported plugins](plugins.md) | Developers and plugin users | ZIP/GitHub installation, tasks, custom Qt tabs, and cleanup |
+## Start with MCP
 
-## Fastest route to a working project
+1. Open your automation project's folder in a local coding agent that supports MCP and local file/process access.
+2. Follow the [quick start](quick_start.md) to install the runtime and connect its local MCP server.
+3. Describe the target, starting state, actions, and observable success condition.
+4. Let the agent discover skills, inspect the installed APIs, write Python, and test through MCP.
+5. Run the saved task from your application's GUI or command line without keeping the agent connected.
 
-1. Install Python 3.12. Python 3.11 or later is supported.
-2. Create a repository from the [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) template.
-3. Follow the [quick-start guide](quick_start.md) to configure a Windows game or ADB device.
-4. Run the application in debug mode and complete the capture test.
-5. Use the [API reference](api_reference.md) while implementing your tasks.
+## What to ask the agent
 
-## Useful links
+> Connect to this project's ok-script MCP server. Read the development skill and inspect the installed package for the capture, template matching, and input APIs needed for my task. Show the verified signatures and source locations before using them. Then implement a reusable Python task that opens Settings, enables my chosen option, saves it, and verifies that the option remains enabled. Restore and verify the starting screen before every attempt. Use ok-script capture and interaction, not Computer Use tools. Save the task in this project and give me the command to run it without an agent.
 
-- [ok-script source](https://github.com/ok-oldking/ok-script)
-- [ok-script App Template](https://github.com/ok-oldking/ok-script-app)
-- [ok-py visual scripting tool](https://github.com/ok-oldking/ok-py)
-- [PyPI package](https://pypi.org/project/ok-script/)
-- [Build the documentation website](building-site.md)
+See [agent prompts](agent-prompts.md) for separate API discovery, task development, and maintenance examples.
 
-If the documentation differs from the behavior you observe, open a GitHub issue and include your ok-script version, Python version, and runtime environment.
+## Guides
+
+| Guide | Purpose |
+| --- | --- |
+| [MCP quick start](quick_start.md) | Set up a project, connect the agent, and run the saved task |
+| [Ask a coding agent](agent-prompts.md) | Copyable prompts for API discovery and reusable tasks |
+| [MCP connection and execution](../mcp.md) | Connection details, skill discovery, task runs, reloads, and diagnostics |
+| [How automation works](intro_to_automation.md) | Understand the Python capture–recognize–act loop |
+| [Interface and developer tools](interface.md) | Run saved tasks and inspect their visual evidence |
+| [Maintain and share tasks](advanced.md) | Templates, regression tests, localization, and packaging |
+| [Imported plugins](plugins.md) | Install and distribute reusable task packages |
+| [Build this documentation](building-site.md) | Preview and validate the site |
+
+API discovery happens against the version installed in your project. Ask the agent to read its source and signatures rather than copying a static API reference.

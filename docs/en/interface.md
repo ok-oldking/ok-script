@@ -1,6 +1,8 @@
 # Interface and developer tools
 
-[简体中文](../interface.md) · [Documentation](index.md) · [Quick start](quick_start.md) · [API reference](api_reference.md)
+[简体中文](../interface.md) · [Documentation](index.md) · [Quick start](quick_start.md) · [Agent prompts](agent-prompts.md)
+
+Use the desktop interface to configure and run saved tasks. For development, connect your coding agent through [MCP](quick_start.md) and ask it to write and test reusable Python in the project. The agent uses ok-script capture and interaction, not Computer Use tools. The interface remains useful for inspecting evidence and running the result after the agent disconnects.
 
 ok-script brings task configuration, device connection, scripting, template management, and recognition debugging into one desktop interface. This page explains the tools shown in the current UI screenshots and how they fit together.
 
@@ -108,9 +110,9 @@ The email subject is the notification title and the body is the notification mes
 
 ## Recommended workflow
 
-1. Connect the target on the capture page and verify screenshots.
-2. Capture and annotate stable features on the template page.
-3. Implement the smallest recognition-and-click sequence in the script page or an IDE.
-4. Enable the debug overlay and inspect search regions and matches.
-5. Package stable behavior into a task and verify its configuration UI.
-6. Add regression tests with fixed screenshots before publishing a build.
+1. Connect the coding agent to the project's MCP server and verify the target capture.
+2. Describe the task using the [agent prompts](agent-prompts.md).
+3. Have the agent discover the installed APIs, save Python code and assets, and validate through MCP.
+4. Inspect logs, screenshots, and recognition overlays when diagnosing failures.
+5. Run the registered task from the GUI after development, with MCP disabled.
+6. Reconnect the agent for changes and add regression tests for recognition or recovery failures.

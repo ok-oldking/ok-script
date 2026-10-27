@@ -1,129 +1,73 @@
-# 快速开始
+# MCP 快速开始
 
-[English](../en/quick_start.md) · [文档中心](../index.md) · [进阶指南](../after_quick_start/README.md) · [API 参考](../api_doc/README.md)
+[English](../en/quick_start.md) · [文档中心](../index.md) · [编程代理提示词](../agent-prompts.md)
 
-本指南帮助你使用 ok-script 模板项目 `ok-script-app` 创建并运行自己的自动化项目。完成后，你将能连接 Windows 游戏或安卓设备、运行诊断，并开始编写任务。
+用编程代理开发自动化，保存 Python 任务后重复运行。你需要 Windows、Python 3.11 或更高版本、目标应用或 ADB 设备，以及支持 MCP 和本地文件、进程访问的编程代理。
 
-## 开始之前
+## 1. 打开应用项目
 
-- Windows 10 或 Windows 11
-- Python 3.11 或更高版本（推荐 Python 3.12）
-- Git
-- Windows 客户端游戏，或已启用 ADB 的安卓模拟器/设备
+使用已有的 ok-script 应用，或从 [ok-script-app 模板](https://github.com/ok-oldking/ok-script-app)创建项目。在编程代理中打开应用目录。业务任务保存在这个项目里，与 ok-script 框架仓库分开。
 
-## 1. Fork 项目
+可以这样告诉代理：
 
-访问 [`ok-script-app`](https://github.com/ok-oldking/ok-script-app)，点击页面右上角的 **Use this template**，从模板创建自己的 GitHub 仓库。
+> 准备这个自动化项目的虚拟环境和依赖，保留现有依赖约束和 ok-script 版本。配置我的目标应用，分别提供 MCP 开发入口和用户 GUI 入口。有可用技能时读取 setup-env 和 setup-project。不要使用 Computer Use 工具。
 
-## 2. Clone 项目
-
-将您复刻的项目克隆到本地。建议为您自己的项目起一个新名字。
-
-```bash
-git clone https://github.com/YOUR_USERNAME/your-project-name.git
-cd your-project-name
-```
-
-*请将 `YOUR_USERNAME` 和 `your-project-name` 替换为您的 GitHub 用户名和您项目的名称。*
-
-## 3. 安装 Python
-
-框架支持 Python 3.11 及以上版本，推荐使用 **Python 3.12**。可以从 [Python 官网](https://www.python.org/downloads/) 下载。安装后确认版本：
-
-### Python 下载渠道
-
-中国大陆用户推荐优先使用国内镜像站：
-
-- **清华大学开源镜像站**：访问[清华大学 Python 镜像仓库](https://mirrors.tuna.tsinghua.edu.cn/python/)，选择所需版本并下载安装包。
-- **华为云镜像站**：访问[华为云 Python 镜像](https://mirrors.huaweicloud.com/python/)，选择对应版本下载。
-- **官方渠道**：网络顺畅时，可前往 [Python 官方网站 Downloads 页面](https://www.python.org/downloads/)下载。
-
-在版本目录中，Windows 64 位系统通常应选择名称包含 `amd64.exe` 的安装程序。安装时建议勾选 **Add Python to PATH**。
-
-```powershell
-python --version
-```
-
-## 4. 创建虚拟环境
-
-建议为项目创建独立的虚拟环境，避免依赖冲突。
+新建环境的基本命令：
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\python.exe -m pip install "ok-script[default,mcp]"
 ```
 
-如果 PowerShell 阻止激活脚本，可以直接使用 `.\.venv\Scripts\python.exe` 执行后续命令。
+已有应用先安装自己的依赖，再为相同版本的 ok-script 添加 MCP 扩展。按需添加 `qt`、`adb` 或 `ocr`。OpenCV 需要单独安装，且只能选择一个兼容变体，例如 `opencv-python` 或 `opencv-python-headless`；让代理沿用项目现有选择。
 
-## 5. 安装依赖
+项目还需要配置真实目标。让代理检查已安装版本的配置实现及已有示例，设置应用可执行文件、窗口或 ADB 包名，并验证截图和输入。安装包本身不会自动创建已配置的应用。
 
-使用 pip 安装项目所需的所有依赖包。
+## 2. 启动 MCP 运行时
+
+优先使用项目已有的开发入口。否则，在应用目录执行：
 
 ```powershell
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m ok mcp --config src.config:config
 ```
 
-## 6. 修改 `config.py`
+将 `src.config:config` 替换为实际配置模块和对象。开发期间保持进程运行。该模式不需要 Qt，普通任务调度器保持暂停。
 
-此文件是项目的核心配置文件。您**必须**根据您要适配的游戏类型，正确配置 `windows` 或 `adb` 部分，**至少需要配置其中一项**。
+已有桌面应用安装 MCP 依赖后，也可在**设置 > 基础选项 > 启用 MCP 服务**中开启。开启前阅读应用显示的访问提示。日常使用应保留独立的、禁用 MCP 的 GUI 入口。
 
-打开 `src/config.py` 文件，找到并修改以下配置：
+## 3. 连接编程代理
 
-- **`windows`**：适配 Windows 客户端游戏时填写。
-  - `exe`：游戏可执行文件名列表，例如 `['StarRail.exe']`。
-  - `start_exe`：是否由脚本启动并检查游戏进程，默认为 `True`。设为 `False` 后，启动任务时不会自动启动或检查游戏。
-  - `check_auto_hdr`：默认为 `False`。设为 `True` 后，启动时检查 Windows 自动 HDR 配置，全局启用或为游戏可执行文件单独启用时显示已翻译的错误提示。为游戏禁用后不会提示；普通允许标记跟随全局设置，Windows 标记的游戏独立覆盖设置则优先生效。此检查反映配置状态，不代表实际生效状态，也不会阻止启动。
-  - `start_method`：启动游戏的方式，默认为 `start`，也可使用 `os.startfile`。
-  - `window_stable_seconds`：由脚本启动游戏后，窗口尺寸需要保持不变的秒数，默认为 `5`。游戏已被检测为连接状态时跳过此等待。
-  - `launch_arguments`：额外的 Windows 启动参数，可填写字符串或无参数回调函数（返回字符串或 `None`）。回调在每次启动前执行，可读取当前设置；参数会追加到 DX11 参数后。不配置则不添加额外参数。
-  - `interaction`：交互方式，例如 `Genshin`、`PostMessage` 或 `Pynput`。
-- **`adb`**：适配安卓模拟器或真机时填写。
-  - `packages`：游戏包名列表，例如 `['com.abc.efg1']`。
+从项目配置的产物目录读取 `logs/mcp/connections/<pid>-<port>.json` 中的有效记录，其中包含服务 URL、bearer token、进程身份和项目目录。默认端口为 8765，但可能变化，不要写死。
 
-*您可以同时保留 `windows` 和 `adb` 的配置，脚本会根据实际运行的游戏窗口或设备进行匹配。*
+代理 MCP 客户端使用以下连接信息：
 
-## 7. 运行脚本
+| 设置 | 值 |
+| --- | --- |
+| 传输 | Streamable HTTP |
+| URL | 有效连接记录中的 `url` |
+| HTTP 请求头 | `Authorization: Bearer <有效记录中的 token>` |
 
-项目提供了两种运行模式：
+各客户端配置格式不同，让代理按它支持的方式配置并保管 token。服务只监听本机回环地址，因此代理应运行在同一台机器上，并能访问项目文件。没有原生 MCP 连接能力时，可让代理用官方 MCP Python SDK 编写本地客户端。
 
-- **调试模式**
+让代理调用 `list_skills()`、读取 `get_skill("develop")`，再用 `screenshot()` 确认目标。如果截图错误或无法截图，先修复配置再执行任务。详见 [MCP 连接说明（英文）](../mcp.md)。
 
-  ```powershell
-  python main_debug.py
-  ```
+## 4. 提出可复用任务需求
 
-  此模式会产生额外的日志，并在游戏界面上绘制方框来标注正在寻找的目标和区域，方便开发和调试。
+> 使用这个项目的 MCP 连接，开发可复用 Python 任务：打开设置、启用“显示详情”、保存，并验证该选项保持开启。先读相关技能并核实已安装 API 的签名。代码保存在正式任务模块里；每次 MCP 尝试前恢复并验证起始状态，记录日志和截图，断言可见结果，并验证重复运行。使用 ok-script 截图和输入，不使用 Computer Use。注册任务，使其无需代理或大模型调用即可运行。
 
-- **正式模式**
+代理在本地编写文件，并将绝对路径提交给 MCP。修改已有任务时，先发现原始源码、原地编辑、重载已注册任务，等待重载成功后再测试。查询 API 和维护任务的完整示例见[提示词指南](../agent-prompts.md)。
 
-  ```powershell
-  python main.py
-  ```
+## 5. 脱离代理运行
 
-  此模式为正式运行版本，不会在游戏界面上绘制额外内容。
+让代理给出项目真实任务名和入口。保存的任务必须已注册，并在普通运行时自行准备状态；GUI/CLI 不会自动调用 MCP 的恢复钩子。
 
-> **重要提示：** Windows 游戏的输入方式可能需要管理员权限。如果交互没有响应，请以管理员身份启动终端或 IDE。模拟器和 ADB 设备通常不需要管理员权限。
+普通 CLI 运行前，停止 MCP 开发运行时并等待退出。同一项目启动 GUI 会替换已注册的控制台运行时并关闭它的 MCP 连接。不要在任务尝试尚未结束时切换模式。典型命令如下：
 
-## 8. 测试截图功能
+```powershell
+.\.venv\Scripts\python.exe -m ok run_task EnableOptionTask --config src.config:config
+.\.venv\Scripts\python.exe -m ok gui --config src.config:config
+```
 
-在程序界面中，点击 "截图测试" 按钮。程序会截取当前屏幕并保存。请检查项目 `screenshots` 目录下是否生成了新的截图文件，以确认功能正常。
+选择 CLI 或 GUI 其中一种运行，不要同时启动。CLI 参数是已注册任务名或类名，不是 Python 文件路径。日常 GUI 使用优先选择应用提供的、禁用 MCP 的 `pythonw.exe` 入口或快捷方式；GUI 需要 Qt 依赖。
 
-## 9. 运行诊断任务
-
-点击界面上的 "运行诊断任务" 按钮。这将执行一个预设的诊断任务，帮助您检查环境和配置是否正确。
-
-## 10. 自定义你的任务
-
-项目的核心在于任务的扩展。您可以根据您的具体需求，修改示例任务文件或创建新的任务文件：
-
-- **`src/tasks/MyOneTimeTask.py`**：用于实现只需要执行一次的单次任务（例如，点击签到）。
-- **`src/tasks/MyTriggerTask.py`**：用于实现基于特定触发器（如时间、图像识别）循环执行的任务（例如，自动战斗）。
-
-通过模仿这两个文件的结构，您可以创建更多符合您业务逻辑的 Task。
-
-## 下一步
-
-- 阅读[进阶指南](../after_quick_start/README.md)，学习模板标注、测试、国际化和发布。
-- 在 [API 参考](../api_doc/README.md)中查询截图、输入、OCR 和找图方法。
-- 如果还不熟悉视觉自动化，先阅读[游戏自动化入门](../intro_to_automation/README.md)。
+将任务源码、配置、识别素材和依赖约束一起保存。本地 Python 识别与输入在日常运行时不消耗模型 Token；新增需求或需要修复时再找编程代理。

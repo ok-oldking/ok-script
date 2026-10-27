@@ -1,6 +1,8 @@
 # Advanced guide
 
-[Documentation](index.md) · [Quick start](quick_start.md) · [API reference](api_reference.md) · [简体中文](../after_quick_start/README.md)
+[Documentation](index.md) · [Quick start](quick_start.md) · [Agent prompts](agent-prompts.md) · [简体中文](../after_quick_start/README.md)
+
+Use MCP to maintain the reusable scripts produced by your coding agent. Ask it to read the relevant bundled skills, inspect installed APIs, and keep changes in the existing project. The guides below cover supporting assets, tests, and distribution; the [agent prompts](agent-prompts.md) show how to request the work. Normal runs should keep using the saved Python implementation without LLM calls.
 
 This guide covers the workflows normally needed after the template project is running: template assets, localization, repeatable tests, and automated releases.
 
@@ -40,7 +42,7 @@ suppressing validation. Use distinctive regions with minimal animation and avoid
 changing text. Debug mode does not replace the explicit export step.
 
 Use `generate_templates` for programmatic export. The old compression option and
-APIs are obsolete. See [Template export format](../feature-crops.md) for the API,
+APIs are obsolete. See [Template export format](../feature-crops.md) for the asset format,
 configuration, migration, validation, and Windows permission recovery.
 
 ## 2. Internationalization

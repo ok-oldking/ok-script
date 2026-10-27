@@ -1,8 +1,16 @@
-# Local MCP task development
+# Develop reusable Python automation through MCP
 
-The optional MCP server lets a local coding agent run Python task files against
-an existing ok-script project. The agent writes and edits files, starts the
-process, and reads local logs and images with its own filesystem tools.
+[Quick start](en/quick_start.md) · [Agent prompts](en/agent-prompts.md) · [中文入门](quick_start/README.md) · [中文提示词](agent-prompts.md)
+
+MCP connects your local coding agent to an ok-script application while it builds and tests reusable Python tasks. Spend model tokens on developing the script, then run the saved task through the application without the agent. Ordinary local recognition and input do not require LLM calls; later changes may need another development session.
+
+The agent writes and edits project files, starts the local runtime, and reads logs and images through its filesystem tools. Use ok-script APIs and MCP for capture and interaction. Do not use Computer Use skills, plugins, or tools in this workflow.
+
+## Ask the agent to discover APIs and build a task
+
+> Connect to this project's MCP server. Call list_skills and read get_skill("develop"). Inspect the installed ok-script source and Python signatures for the APIs this task needs. Write a permanent Python task that opens Settings, enables "Show details", saves, and verifies the option remains enabled. Reset and verify the starting state before every attempt, save diagnostics, and test repeated runs through MCP. Register the finished task and provide its standalone run command without LLM calls.
+
+MCP supplies skills and task execution, not a Python API catalog or `get_api` tool. Use the application's interpreter and inspect its installed package for exact signatures, docstrings, inherited methods, and return behavior. No library checkout is needed. See [agent prompts](en/agent-prompts.md) for API-only discovery and existing-task repair examples.
 
 ## Install and start
 
@@ -269,3 +277,15 @@ starting-state verification run before every attempt, including the first one.
 Preserve failure evidence before the next reset. No MCP tools are needed for
 file editing or log reading. Use `exit_process` for runtime shutdown and local
 process tools to wait for exit and relaunch.
+
+## Run the finished automation without MCP
+
+Register the permanent task in the application's configuration and ensure its normal execution path performs recovery and verification. MCP's reset hooks are not automatically called by the GUI or ordinary CLI. A temporary submitted file does not become a registered task.
+
+After ending the development runtime, run the actual registered task name from the application directory, for example:
+
+```powershell
+.\.venv\Scripts\python.exe -m ok run_task EnableOptionTask --config src.config:config
+```
+
+Alternatively, use the application's MCP-disabled GUI launcher. Keep the task module, configuration, recognition assets, and dependencies together. You can close the coding agent; return to it when the script needs changes.

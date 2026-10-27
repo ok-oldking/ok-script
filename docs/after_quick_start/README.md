@@ -1,6 +1,8 @@
 # ok-script 进阶使用指南
 
-[English](../en/advanced.md) · [文档中心](../index.md) · [快速开始](../quick_start/README.md) · [API 参考](../api_doc/README.md)
+[English](../en/advanced.md) · [文档中心](../index.md) · [快速开始](../quick_start/README.md) · [编程代理提示词](../agent-prompts.md)
+
+通过 MCP 让编程代理维护已经生成的可复用脚本：读取相关技能、检查已安装 API，并在原项目中修改。下面介绍素材、测试和分发；如何提出需求见[编程代理提示词](../agent-prompts.md)。日常运行继续使用保存的 Python 实现，无需大模型调用。
 
 本文档是 [ok-script 自动化脚本开发指南](../quick_start/README.md) 的进阶补充，旨在帮助开发者更深入地利用框架的高级功能，并结合
 CI/CD 流程实现项目的自动化管理。

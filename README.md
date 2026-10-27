@@ -1,21 +1,20 @@
 # ok-script
 
-## 无界面与桌面模式
+**简体中文** | [English](README_en.md)
 
-自动化核心现已与 Qt 解耦。使用 `ok-script` 可无界面运行，使用
-`ok-script[qt]` 启用桌面界面；对应命令为 `ok run_task` 和 `ok gui`。详见
-[运行时架构](docs/architecture.md)。
+**开发时用 Token，写好的 Python 自动化脚本反复用。**
 
-本地 AI 编程代理可使用 `ok mcp` 执行任务文件、查询状态、停止任务和观察界面。
-详见 [MCP 任务开发指南](docs/mcp.md)。
+把需求告诉编程代理，通过 MCP 连接 ok-script，让代理观察应用、检查已安装 API、编写并测试 Python 任务。保存成果后，从应用 GUI 或命令行重复运行，无需代理或大模型调用。
 
-[简体中文](README.md) | [English](README_en.md)
+开发可能需要多轮验证，应用变化后也可能需要修复。目标是把 Token 用在脚本开发和维护上；日常执行由本地 Python 完成截图、识别和输入。
 
-[![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)
+ok-script 支持 Windows 应用和游戏、安卓模拟器及 ADB 设备，提供模板匹配、OCR、目标支持时的后台输入、桌面界面和任务打包。
 
-基于计算机视觉的 Python 自动化框架，面向 Windows 应用、Windows 游戏、安卓模拟器和 ADB 设备。
+[MCP 快速开始](docs/quick_start/README.md) · [编程代理提示词](docs/agent-prompts.md) · [MCP 连接说明（英文）](docs/mcp.md)
 
-ok-script 提供 UI、截图与输入、设备控制、OCR、模板匹配、调试浮层、自动化测试、打包和增量更新能力。它使用 COCO 格式管理模板素材，并支持分辨率自适应与多语言界面。
+## 可以这样告诉编程代理
+
+> 连接这个项目的 ok-script MCP 服务，读取开发技能。检查已安装的截图、匹配和输入 API，给出准确签名和源码位置。开发可复用 Python 任务：打开设置、启用“显示详情”、保存并验证结果。每次尝试前恢复并验证起始界面，测试重复运行，代码保存到项目中。使用 ok-script API 和 MCP，不使用 Computer Use 工具。最后给出不依赖代理或大模型调用的准确运行命令。
 
 ## 特性
 
@@ -27,47 +26,30 @@ ok-script 提供 UI、截图与输入、设备控制、OCR、模板匹配、调�
 - 支持自动化测试、GitHub Actions 构建和安装包发布
 - 支持多语言国际化和在线增量更新
 
-## 快速安装
+## 通过 MCP 连接
 
-ok-script 支持 Python 3.11 及以上版本，推荐使用 Python 3.12。
-
-```powershell
-python -m pip install ok-script
-```
-
-只安装应用所需的依赖配置。`default` 为无界面模式，Qt、ADB 和 OCR
-能力分别按需安装：
+使用自动化应用自己的虚拟环境，并保留现有依赖约束。新项目可以从[应用模板](https://github.com/ok-oldking/ok-script-app)开始，让代理配置目标。支持 Python 3.11 及以上版本。
 
 ```powershell
-python -m pip install "ok-script[default]"
-python -m pip install "ok-script[qt]"
-python -m pip install "ok-script[adb]"
-python -m pip install "ok-script[ocr]"
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install "ok-script[default,mcp]"
+.\.venv\Scripts\python.exe -m ok mcp --config src.config:config
 ```
 
-ok-script 不会自动选择 OpenCV。用户必须根据自己的应用选择版本，并且只安装
-一个变体：`opencv-python`、`opencv-contrib-python`、`opencv-python-headless`
-或 `opencv-contrib-python-headless`。
+启动命令要求应用配置已经存在，请使用实际配置入口或项目已有的开发启动器。已有项目应为原版本添加 MCP 扩展。OpenCV 需单独选择并安装一个兼容变体；Qt、ADB 和 OCR 按需安装。
 
-以无界面模式开发本仓库时，同时安装 `pyproject.toml` 中的 `default` 和 `dev`
-依赖组；再根据需要添加 `--group qt`、`--group adb` 或 `--group ocr`：
+让代理的 MCP 客户端连接有效 `logs/mcp/connections/<pid>-<port>.json` 记录中的 URL，并使用该记录的 `Authorization: Bearer <token>` 请求头。不要公开凭据。让代理调用 `list_skills`，通过 `get_skill` 读取相关技能，再用 `screenshot` 验证目标。
 
-```powershell
-python -m pip install --editable . --group default --group dev
-```
-
-如果要创建完整的自动化项目，建议从 [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) 模板开始，而不是直接在本仓库中编写业务脚本。
+[MCP 快速开始](docs/quick_start/README.md)介绍安装、连接以及脱离代理运行保存的任务。[MCP 说明（英文）](docs/mcp.md)包含执行和重载细节。
 
 ## 文档
 
-从[文档中心](docs/index.md)选择适合你的阅读路径：
+- [MCP 快速开始](docs/quick_start/README.md)
+- [让编程代理查询 API 和开发任务](docs/agent-prompts.md)
+- [文档中心](docs/index.md)
+- [维护和分享可复用任务](docs/after_quick_start/README.md)
 
-1. [游戏自动化入门](docs/intro_to_automation/README.md)：了解截图、识别、决策和输入的基本原理
-2. [快速开始](docs/quick_start/README.md)：从模板仓库创建并运行第一个项目
-3. [进阶指南](docs/after_quick_start/README.md)：模板匹配、国际化、测试和发布
-4. [API 参考](docs/api_doc/README.md)：`Box`、`BaseTask` 及常用任务 API
-
-想先体验完整工具链，也可以使用基于 ok-script 的按键精灵项目 [`ok-py`](https://github.com/ok-oldking/ok-py)。
+具体 Python API 由代理检查已安装包的源码和签名。MCP 提供开发技能和执行工具，没有单独的 API 查询工具。完成的任务可在无界面模式或桌面 GUI 中运行，详见[运行时架构](docs/architecture.md)。
 
 ## 界面预览
 
@@ -77,7 +59,7 @@ python -m pip install --editable . --group default --group dev
 
 | 脚本与 API | 模板管理 |
 | --- | --- |
-| ![脚本与 API 界面](docs/ok_py/image_scripting.png) | ![模板管理界面](docs/ok_py/image_template.png) |
+| ![脚本与 API 界面](docs/ok_py/image_scripting.png) | ![模板管理界面](docs/ok_py/image_template.webp) |
 
 [查看界面与开发工具完整说明](docs/interface.md)，包括模板识别调试浮层。
 
