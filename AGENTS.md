@@ -4,6 +4,8 @@
 
 The skills under `.agents/skills` are shipped to third-party applications using the ok-script library or MCP server. They describe work on the consuming application's tasks, config, assets, environment, and tests; they are not instructions for developing this repository. Read them when doing the corresponding downstream application work:
 
+For requests such as "install ok-script and set up its environment", start with [agent setup](docs/agent-setup.md) and the `setup-env` skill. Setup instructions can be read before installation or MCP startup. The guide includes an instruction that consuming projects can add to their own `AGENTS.md` for discovery.
+
 | Work | Skill |
 | --- | --- |
 | Create or repair a virtual environment; install missing dependencies | [setup-env](.agents/skills/setup-env/SKILL.md) |

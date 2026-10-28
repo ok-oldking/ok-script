@@ -59,6 +59,7 @@ nav:
       - 文档中心: index.md
       - MCP 快速开始: quick_start/README.md
       - 编程代理提示词: agent-prompts.md
+      - 代理安装指南（英文）: agent-setup.md
       - MCP 连接与执行: mcp.md
       - 自动化原理: intro_to_automation/README.md
       - 界面与开发工具: interface.md
@@ -69,6 +70,7 @@ nav:
       - Documentation home: en/index.md
       - MCP quick start: en/quick_start.md
       - Ask a coding agent: en/agent-prompts.md
+      - Agent environment setup: agent-setup.md
       - MCP connection and execution: mcp.md
       - How automation works: en/intro_to_automation.md
       - Interface and developer tools: en/interface.md

@@ -14,6 +14,14 @@ ok-script 支持 Windows 应用和游戏、安卓模拟器及 ADB 设备，提�
 
 ## 可以这样告诉编程代理
 
+首次安装环境：
+
+> 在当前项目中安装 ok-script 并配置运行环境。先读取 https://raw.githubusercontent.com/ok-oldking/ok-script/master/docs/agent-setup.md ，按照其中的安装技能操作，保留项目现有的依赖约束。
+
+[代理安装指南（英文）](docs/agent-setup.md)提供可添加到应用项目 `AGENTS.md` 的简短指令，让后续安装请求也能找到这些技能，无需先安装包或启动 MCP。
+
+开发自动化任务：
+
 > 连接这个项目的 ok-script MCP 服务，读取开发技能。检查已安装的截图、匹配和输入 API，给出准确签名和源码位置。开发可复用 Python 任务：打开设置、启用“显示详情”、保存并验证结果。每次尝试前恢复并验证起始界面，测试重复运行，代码保存到项目中。使用 ok-script API 和 MCP，不使用 Computer Use 工具。最后给出不依赖代理或大模型调用的准确运行命令。
 
 ## 特性

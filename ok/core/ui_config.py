@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 DEFAULT_WINDOW_SIZE = {
     "width": 1200,
     "height": 800,
@@ -6,6 +9,11 @@ DEFAULT_WINDOW_SIZE = {
 }
 
 GUI_TYPES = {"qt"}
+
+
+def resolve_gui_icon(config):
+    """Keep custom icons, otherwise use the PNG shipped with the package."""
+    return config.get("gui_icon") or str(Path(__file__).resolve().parents[1] / "assets/default-icon.png")
 
 
 def resolve_ui_config(config):

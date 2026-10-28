@@ -1,6 +1,24 @@
+from pathlib import Path
+
 import pytest
 
-from ok.core.ui_config import DEFAULT_WINDOW_SIZE, resolve_ui_config, resolve_window_size
+from ok.core.ui_config import DEFAULT_WINDOW_SIZE, resolve_gui_icon, resolve_ui_config, resolve_window_size
+
+
+@pytest.mark.parametrize("config", [{}, {"gui_icon": None}, {"gui_icon": ""}])
+def test_default_icon_is_a_bundled_png_independent_of_working_directory(config, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    icon = Path(resolve_gui_icon(config))
+
+    assert icon.is_absolute()
+    assert icon.is_relative_to(Path(__file__).resolve().parents[1] / "ok")
+    assert icon.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
+@pytest.mark.parametrize("icon", ["assets/custom.png", "C:/app/custom.png", ":/icon/custom.png"])
+def test_explicit_icon_is_preserved(icon):
+    assert resolve_gui_icon({"gui_icon": icon}) == icon
 
 
 def test_missing_gui_config_is_headless():

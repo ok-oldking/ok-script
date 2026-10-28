@@ -14,6 +14,10 @@ MCP supplies skills and task execution, not a Python API catalog or `get_api` to
 
 ## Install and start
 
+If the project has no environment or MCP runtime yet, start with the
+[agent setup guide](agent-setup.md). Its setup skills can be read before
+installation, without connecting to a running server.
+
 MCP is a required dependency of ok-script starting in 2.0.17. Install the capture
 and OCR profiles your project needs; no separate MCP extra is required.
 Use the project's virtual environment when one exists:

@@ -72,6 +72,7 @@ dev = [
 [project.urls]
 Homepage = "https://github.com/ok-oldking/ok-script"
 Repository = "https://github.com/ok-oldking/ok-script"
+"Agent setup" = "https://github.com/ok-oldking/ok-script/blob/master/docs/agent-setup.md"
 
 [project.scripts]
 ok = "ok.cli:main"
@@ -112,3 +113,6 @@ zip-safe = false
 
 [tool.setuptools.packages.find]
 exclude = ["tests*", "docs*"]
+
+[tool.setuptools.package-data]
+ok = ["assets/*.png"]

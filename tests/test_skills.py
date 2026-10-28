@@ -65,6 +65,7 @@ def test_incremental_build_bundles_only_current_consumer_skills(tmp_path, monkey
 
     assert not stale.exists()
     assert not (destination / 'pyproject.toml').exists()
+    assert (destination / 'docs/agent-setup.md').read_bytes() == (root / 'docs/agent-setup.md').read_bytes()
     monkeypatch.setattr(skills, '__file__', str(Path(command.build_lib) / 'ok/core/skills.py'))
     catalog = skills.list_skills()
     assert {skill['id'] for skill in catalog} == CONSUMER_SKILLS

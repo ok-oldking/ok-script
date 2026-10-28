@@ -14,6 +14,14 @@ ok-script supports Windows applications and games, Android emulators, and ADB de
 
 ## Ask your coding agent
 
+For a new environment:
+
+> Install ok-script and set up this project's environment. First read https://raw.githubusercontent.com/ok-oldking/ok-script/master/docs/agent-setup.md and follow its setup skills. Preserve this project's existing dependency constraints.
+
+The [agent setup guide](docs/agent-setup.md) includes a small instruction for your project's `AGENTS.md` so future setup requests use these instructions. It works before installation or MCP startup.
+
+For task development:
+
 > Connect to this project's ok-script MCP server and read its development skill. Inspect the installed capture, matching, and input APIs and show their exact signatures and source locations. Build a reusable Python task that opens Settings, enables "Show details", saves, and verifies the result. Restore and verify the starting screen before every attempt, test repeated runs, and save the task in the project. Use ok-script APIs and MCP, not Computer Use tools. Give me the exact command to run the finished task without an agent or LLM calls.
 
 ## Features

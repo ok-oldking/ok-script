@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 from ok.util.handler import Handler, ExitEvent
 from ok.util.logger import Logger
 from ok.util.file import get_path_relative_to_exe
-from ok.core.ui_config import resolve_ui_config, resolve_window_size
+from ok.core.ui_config import resolve_gui_icon, resolve_ui_config, resolve_window_size
 os.environ["PYTHONIOENCODING"] = "utf-8"
 
 if TYPE_CHECKING:
@@ -333,7 +333,7 @@ class App(_OverlayConfigMixin):
         self.overlay_window = None
         self.main_window = None
         self.exit_event = exit_event
-        self.icon = QIcon(get_path_relative_to_exe(config.get('gui_icon')) or ":/icon/icon.ico")
+        self.icon = QIcon(get_path_relative_to_exe(resolve_gui_icon(config)))
 
         from ok.core.start_controller import StartController
         self.start_controller = StartController(self.config, exit_event)
@@ -654,6 +654,7 @@ class OK:
         import pyappify
         from ok.util.config import Config
 
+        config['gui_icon'] = resolve_gui_icon(config)
         self.config = config
         check_mutex_fn = _resolve('check_mutex')
         config_logger_fn = _resolve('config_logger')
