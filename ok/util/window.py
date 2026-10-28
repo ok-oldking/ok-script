@@ -271,6 +271,10 @@ def compare_path_safe(str1, str2):
 
 
 def get_player_id_from_cmdline(cmdline):
+    # MuMu can put --restart-last-pid before its instance index.
+    for i, arg in enumerate(cmdline[:-1]):
+        if arg == '-v' and cmdline[i + 1].isdigit():
+            return int(cmdline[i + 1])
     for i in range(len(cmdline)):
         if i != 0:
             if cmdline[i].isdigit():

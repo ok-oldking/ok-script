@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 from ok.util.collection import deep_get
 from ok.util.logger import Logger
@@ -10,7 +11,7 @@ logger = Logger.get_logger(__name__)
 
 class NemuIpcCaptureMethod(BaseCaptureMethod):
     name = "Nemu Ipc Capture"
-    description = "mumu player 12 only"
+    description = "MuMu Player native capture"
 
     def __init__(self, device_manager, exit_event, width=0, height=0):
         super().__init__()
@@ -34,16 +35,22 @@ class NemuIpcCaptureMethod(BaseCaptureMethod):
             self.nemu_impl = NemuIpc(
                 nemu_folder=self.base_folder(),
                 instance_id=self.emulator.player_id,
-                display_id=0
+                display_id=0,
+                runtime_version=self.runtime_version()
             )
 
     def base_folder(self):
         return os.path.dirname(os.path.dirname(self.emulator.path))
 
+    def runtime_version(self):
+        match = re.search(r'-(\d+(?:\.\d+)+)-\d+$', getattr(self.emulator, 'name', ''))
+        return match.group(1) if match else '12.0'
+
     def check_mumu_app_keep_alive_400(self):
+        instance_name = getattr(self.emulator, 'name', None) or f'MuMuPlayer-12.0-{self.emulator.player_id}'
         file = os.path.abspath(os.path.join(
             self.base_folder(),
-            f'vms/MuMuPlayer-12.0-{self.emulator.player_id}/configs/customer_config.json'))
+            'vms', instance_name, 'configs/customer_config.json'))
 
         try:
             with open(file, mode='r', encoding='utf-8') as f:

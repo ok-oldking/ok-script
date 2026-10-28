@@ -203,12 +203,13 @@ def retry(func):
 
 
 class NemuIpcImpl:
-    def __init__(self, nemu_folder: str, instance_id: int, display_id: int = 0):
+    def __init__(self, nemu_folder: str, instance_id: int, display_id: int = 0, runtime_version: str = '12.0'):
         """
         Args:
             nemu_folder: Installation path of MuMu12, e.g. E:/ProgramFiles/MuMuPlayer-12.0
             instance_id: Emulator instance ID, starting from 0
             display_id: Always 0 if keep app alive was disabled
+            runtime_version: Selected instance's runtime directory, such as 12.0 or 15.0
         """
         self.nemu_folder: str = nemu_folder
         self.instance_id: int = instance_id
@@ -218,8 +219,8 @@ class NemuIpcImpl:
         list_dll = [
             # MuMuPlayer12
             os.path.abspath(os.path.join(nemu_folder, './shell/sdk/external_renderer_ipc.dll')),
-            # MuMuPlayer12 5.0
-            os.path.abspath(os.path.join(nemu_folder, './nx_device/12.0/shell/sdk/external_renderer_ipc.dll')),
+            # MuMu's versioned runtime layout
+            os.path.abspath(os.path.join(nemu_folder, 'nx_device', runtime_version, 'shell/sdk/external_renderer_ipc.dll')),
         ]
         self.lib = None
         for ipc_dll in list_dll:
@@ -460,11 +461,12 @@ class NemuIpcImpl:
 class NemuIpc:
     _screenshot_interval = Timer(0.1)
 
-    def __init__(self, nemu_folder: str, instance_id: int, display_id: int = 0):
+    def __init__(self, nemu_folder: str, instance_id: int, display_id: int = 0, runtime_version: str = '12.0'):
         self.nemu_ipc = None
         self.nemu_folder = nemu_folder
         self.instance_id = instance_id
         self.display_id = display_id
+        self.runtime_version = runtime_version
         self.nemu_ipc = self.init_nemu_ipc()
 
     def init_nemu_ipc(self) -> NemuIpcImpl:
@@ -481,7 +483,8 @@ class NemuIpc:
             return NemuIpcImpl(
                 nemu_folder=self.nemu_folder,
                 instance_id=self.instance_id,
-                display_id=0
+                display_id=self.display_id,
+                runtime_version=self.runtime_version
             ).__enter__()
         except (NemuIpcIncompatible, NemuIpcError, JobTimeout) as e:
             logger.error('Unable to initialize NemuIpc', e)
