@@ -27,13 +27,22 @@ Import `TaskTestCase` from `ok.test.TaskTestCase`; set class attributes `task_cl
 
 The current harness initializes one task per test class, replaces capture with `ImageCaptureMethod`, and uses `DoNothingInteraction`. `set_image(path)` advances the frame and checks template sizing; `set_images(*paths)` installs a sequence and advances its first frame. Read the capture implementation when testing frame progression rather than assuming repeated reads advance it.
 
-- Store reproducible screenshots under the target project's `tests/images/`, or reuse an existing tracked `ok_templates` source when appropriate. Confirm each fixture exists and loads.
+- Reuse full source screenshots in the target project's `ok_templates/` directly as test fixtures, including screenshots used to author COCO annotations and split features. Pass their paths to `set_image()`; no copy into `tests/images/` is required. Keep referenced images with the project and confirm they exist and load. Additional test-only captures may live under `tests/images/` or the project's existing fixture directory.
 - Load the image before calling the recognition method. Exercise real recognition rather than mocking the method being tested.
 - Assert the detected state, value, feature name, confidence, or box geometry as appropriate. Include an absent or negative case when it distinguishes the regression.
 - For scaling bugs, use representative resolutions and aspect ratios with `subTest`; preserve the intended center/right anchors and allow a justified pixel tolerance. Include positive matches and blank-frame negatives when relevant.
 - Reset relevant mutable task state before each scenario. The task is shared across methods; base `tearDown()` only calls `reset_scene()`. Use scoped patches for replaced methods, and call the base lifecycle methods when overriding them.
 - Do not treat no-op input as proof that an in-game click worked. Test action intent with mocks; use the [develop skill](../develop/SKILL.md) when actual GUI/MCP interaction is part of the request.
 - For fixture annotation or named feature creation, follow [generate-templates](../generate-templates/SKILL.md).
+
+For example, in a `TaskTestCase` method, call
+`self.set_image(str(project_root / "ok_templates" / "settings-open.png"))`, then
+invoke the real task recognition method and assert its result. Resolve
+`project_root` from the test file or the project's existing test configuration.
+Use the generated `assets/templates` features through the real application
+config. Matching a feature against its own authoring screenshot verifies the
+annotation/export/load path; include independent positives and negatives when
+available to catch false matches and appearance changes.
 
 For direct split-template tests, construct `FeatureSet(False, None, 0.002, 0.002,
 template_folder=<absolute export folder>)`. For packed COCO tests, pass the JSON

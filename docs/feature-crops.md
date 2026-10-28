@@ -14,6 +14,11 @@ Use Split for new exports. Existing COCO assets remain readable.
 Keep the original screenshots and COCO annotations in `ok_templates` for editing
 and future exports. Split exports require only the PNG files at runtime.
 
+Coding agents should use this same pipeline: author with `CocoTemplateStore`,
+export with `generate_templates`, and match named features with
+`find_feature`/`find_one`. Hand-cropped runtime PNGs and a custom OpenCV template
+loader bypass the library's annotation, scaling, and export workflow.
+
 ## Configuration
 
 Add `template_folder` alongside the existing configuration; all variance,
@@ -105,6 +110,14 @@ frame = cv2.imread('ok_templates/settings.png')  # Use your actual source screen
 boxes = features.find_feature(frame, 'settings_save', threshold=0.95)
 assert len(boxes) == 1, boxes
 ```
+
+Full screenshots in `ok_templates` can also serve directly as regression-test
+fixtures. Pass a screenshot path to `TaskTestCase.set_image()` to exercise the
+application's real recognition methods, or load it for a `FeatureSet` test as
+above. Keep referenced screenshots with the project; no duplicate under
+`tests/images` is needed. A self-match on the authoring image verifies the export
+path. Add independent positive and negative screenshots when available to test
+recognition robustness, using the application's actual matching settings.
 
 Also verify representative screenshots at the supported resolutions. The GUI
 Save action reloads its feature set. After programmatic export, refresh cached

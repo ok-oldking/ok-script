@@ -1,6 +1,6 @@
 ---
 name: generate-templates
-description: Create template matching assets for a third-party ok-script application from its screenshots and COCO annotations, then verify them with find_feature or find_one.
+description: Create or change named image features using ok-script's ok_templates screenshots, COCO annotations, and split exporter; verify them with find_feature or find_one and reuse screenshots in tests.
 ---
 
 # Generate and use templates
@@ -14,6 +14,13 @@ in `ok_templates/coco_annotations.json`, and `generate_templates` to generate
 split runtime assets. Keep source screenshots intact so both agents and the
 Template tab can inspect and reannotate them. The old compression APIs and dialog
 option are obsolete; use the split exporter for new or regenerated assets.
+
+For new named features, do not write standalone runtime crops into `assets/`,
+invent a template metadata format, or implement a separate `cv2.matchTemplate`
+registry/loader. Use `CocoTemplateStore` for authoring, `generate_templates` for
+runtime exports, and the library's named-feature matching APIs in tasks. A crop
+preview may be written outside the export folder for inspection, but it does not
+replace the source screenshot, COCO annotation, or generated split asset.
 
 Run from the automation project's root using its interpreter, following
 [use-venv](../use_venv/SKILL.md). For live capture and task execution follow
@@ -171,6 +178,15 @@ available, and relevant target sizes. A source-image self-match alone does not
 prove recognition is robust. Use the project's actual threshold, preprocessing,
 and anchor settings for representative verification. Keep evidence of what was
 tested and what remains unverified.
+
+Full screenshots in `ok_templates/` are also reusable offline test fixtures.
+Pass their paths directly to `TaskTestCase.set_image()` to test the application's
+real recognition methods, or load them as frames for `FeatureSet` tests using
+the generated runtime assets. Keep referenced screenshots with the project so
+tests remain reproducible; copying them to `tests/images/` is unnecessary.
+Retain independent positive/negative captures when available, and assert the
+expected state or match geometry rather than only checking that an image loads.
+Follow [write-test](../write-test/SKILL.md) for harness setup and isolation.
 
 In task code, use the existing methods:
 

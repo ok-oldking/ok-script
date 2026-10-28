@@ -11,7 +11,15 @@ Do not use Computer Use skills, plugins, or tools for this workflow, including t
 
 Read [docs/mcp.md](../../../docs/mcp.md) for the current server, tools, task contract, and artifacts. The coding agent already has local file and process access: write code and read logs/images directly. Use [setup-env](../setup-env/SKILL.md) or [setup-project](../setup-project/SKILL.md) only when setup is missing.
 
-For screenshot annotations and named template features, use [generate-templates](../generate-templates/SKILL.md): retain originals and COCO annotations in `ok_templates`, export individual PNGs with `generate_templates` into `assets/templates`, and verify `find_feature`/`find_one` using the original feature names. Existing packed COCO assets and `coco_feature_json` remain supported. The split loader reports malformed filenames; fix the indicated asset instead of lowering matching thresholds or ignoring the error.
+Before creating or changing named image features, read [generate-templates](../generate-templates/SKILL.md) and use the library's authoring/export pipeline:
+
+1. Retain full original screenshots in `ok_templates/` and record feature rectangles and names in `ok_templates/coco_annotations.json` using `CocoTemplateStore`.
+2. Call `ok.feature.FeatureSet.generate_templates` to export split PNGs into `assets/templates/` (or `ok_tasks/assets/templates/` for custom scripts). Let the exporter write the geometry-bearing filenames.
+3. Configure `template_matching.template_folder` and use `find_feature`/`find_one` with the original feature names in task code.
+
+Do not replace this pipeline with hand-cropped runtime PNGs, a custom template registry, or a parallel `cv2.matchTemplate` loader for named features. Crop previews are diagnostics, not runtime assets. Existing packed COCO assets and `coco_feature_json` remain supported. The split loader reports malformed filenames; fix the source annotation and regenerate instead of renaming crops or ignoring the error.
+
+The full screenshots in `ok_templates/` can also serve directly as regression-test fixtures. Follow [write-test](../write-test/SKILL.md) to exercise real task recognition with `TaskTestCase.set_image()` or the exported assets with `FeatureSet`; there is no need to duplicate these images under `tests/images/`. A source-image self-match checks the export path; add independent positive and negative screenshots when available to check recognition robustness.
 
 For existing registered tasks, prefer [reload-tasks](../reload-tasks/SKILL.md): discover their source with `list_tasks()`, edit it in place, call `reload_tasks(task_ids=[...])`, and wait for a successful reload before testing. Keep automation behavior in its existing module; use temporary MCP files only as thin validation harnesses. Create new task implementations when the requested functionality is new.
 

@@ -7,7 +7,7 @@ description: Install the ok-script Python package and create or repair a consumi
 
 Work in the consuming application's directory and use its configured environment or `.venv`. Inspect its requirements, lockfile, supported Python versions, and installed packages before changing dependencies. Installing and using ok-script does not require a library source checkout.
 
-Use this skill for requests such as "install ok-script and set up its environment", even before an MCP server exists. Read this file directly from the repository or installed package; starting MCP is not a prerequisite. After installation and verification, follow the project-creation handoff below.
+Use this skill for requests such as "install ok-script and set up its environment", even before an MCP server exists. Read this file directly from the repository or installed package; starting MCP is not a prerequisite. After installation and verification, generate the local development skill before the project-creation handoff below.
 
 ## Interpreter and dependencies
 
@@ -38,6 +38,34 @@ Run `& $projectPy -m pip check`. Smoke-test `import ok, cv2, mcp` and the select
 If the application already has a launcher, run it with its environment to catch runtime imports that dependency metadata alone cannot verify. Compile changed application scripts and run its existing tests when relevant.
 
 Report the environment path, dependency profiles, OpenCV choice, and verification outcome.
+
+## Generate the project-local development skill
+
+After successful installation, create
+`<cwd>/.agents/skills/ok-script-develop/SKILL.md` in the consuming workspace where
+the user requested setup. This is part of agent setup, including installation-only
+requests; it does not depend on accepting project creation or starting MCP. When
+repairing an environment, add the skill if it is missing.
+
+Use [the generic development skill template](assets/ok-script-develop/SKILL.md)
+as the initial content. Prefer the template shipped with the selected installed
+release; locate this `setup-env` skill through `ok.core.skills.list_skills()` and
+resolve `assets/ok-script-develop/SKILL.md` from its parent directory. If the
+installed release predates the template, use the template accompanying these
+setup instructions without upgrading the dependency.
+
+Create the destination directory as needed and write the template as UTF-8. If
+the destination already exists, read it first and preserve its project-specific
+guidance; merge missing discovery instructions only when needed. Do not replace
+a customized skill with the generic template. Keep the template's generic name
+and description for new skills; do not copy game-specific observations, fixed
+machine paths, or unrelated application skills from another project.
+
+The generated skill discovers the library's version-matched instructions in place;
+do not copy the full consumer skill catalog into the application. Verify the
+generated file has its `name` and `description` frontmatter, and that its discovery
+instructions locate this environment's `develop/SKILL.md`. Report the generated
+or reused skill's path with the environment results.
 
 ## Offer to create a project
 
