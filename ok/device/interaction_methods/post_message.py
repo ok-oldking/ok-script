@@ -233,6 +233,9 @@ class PostMessageInteraction(BaseInteraction):
             self._dynamic_target_hwnd = target_hwnd
 
             local_x, local_y = win32gui.ScreenToClient(target_hwnd, (abs_x, abs_y))
+            # Button messages must use the same target-client coordinates as
+            # the preceding move, including when a child window is selected.
+            self.mouse_pos = (local_x, local_y)
 
             hwnd_descriptions = []
             for index, hwnd_info in enumerate(hwnds):
@@ -251,7 +254,8 @@ class PostMessageInteraction(BaseInteraction):
         except Exception as e:
             logger.error(f'update_mouse_pos conversion error targeting {base_hwnd}', e)
             self._dynamic_target_hwnd = base_hwnd
-            return win32api.MAKELONG(int(x), int(y))
+            self.mouse_pos = (int(x), int(y))
+            return win32api.MAKELONG(*self.mouse_pos)
 
     def mouse_up(self, key="left"):
         if key == "left":
