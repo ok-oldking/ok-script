@@ -85,6 +85,8 @@ python -m venv .venv
 - [白荆回廊](https://github.com/ok-oldking/ok-baijing)（停止维护）
 - [明日方舟：终末地](https://github.com/AliceJump/ok-end-field)
 - [异环](https://github.com/BnanZ0/ok-nte)
+- [棕色尘埃 2](https://github.com/GodRaymond233/ok-bd2)
+- [蓝色星原：旅谣](https://github.com/longer-sausage/OK-AzurPromilia)
 
 ## 社区与发布
 

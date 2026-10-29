@@ -85,6 +85,8 @@ The coding agent discovers Python APIs from the installed package's source and s
 - [Ash Echoes](https://github.com/ok-oldking/ok-baijing) (unmaintained)
 - [Arknights: Endfield](https://github.com/AliceJump/ok-end-field)
 - [Neverness to Everness](https://github.com/BnanZ0/ok-nte)
+- [BrownDust II](https://github.com/GodRaymond233/ok-bd2)
+- [Azur Promilia](https://github.com/longer-sausage/OK-AzurPromilia)
 
 ## Community and releases
 

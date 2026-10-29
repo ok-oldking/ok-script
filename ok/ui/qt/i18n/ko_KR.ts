@@ -93,6 +93,14 @@
             <source>Disclaimer</source>
             <translation>면책 조항</translation>
         </message>
+        <message>
+            <source>BrownDust II</source>
+            <translation>브라운더스트2</translation>
+        </message>
+        <message>
+            <source>Azur Promilia</source>
+            <translation>아주르 프로밀리아</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>

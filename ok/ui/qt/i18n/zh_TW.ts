@@ -93,6 +93,14 @@
             <source>Disclaimer</source>
             <translation>免責聲明</translation>
         </message>
+        <message>
+            <source>BrownDust II</source>
+            <translation>棕色塵埃 2</translation>
+        </message>
+        <message>
+            <source>Azur Promilia</source>
+            <translation>藍色星原：旅謠</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>

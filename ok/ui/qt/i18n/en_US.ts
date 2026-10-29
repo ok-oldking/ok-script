@@ -93,6 +93,14 @@
             <source>Disclaimer</source>
             <translation>Disclaimer</translation>
         </message>
+        <message>
+            <source>BrownDust II</source>
+            <translation>BrownDust II</translation>
+        </message>
+        <message>
+            <source>Azur Promilia</source>
+            <translation>Azur Promilia</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
