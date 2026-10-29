@@ -21,7 +21,7 @@ def development(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(Config, 'config_folder', str(tmp_path / 'configs'))
     frame = np.zeros((20, 30, 3), dtype=np.uint8)
-    capture = SimpleNamespace(connected=lambda: True, get_frame=lambda: frame.copy())
+    capture = SimpleNamespace(connected=lambda: True, get_frame=lambda busy_wait=0: frame.copy())
     interaction = SimpleNamespace(should_capture=lambda: True, on_run=Mock(), on_destroy=Mock())
     executor = make_test_executor(capture, interaction)
     app = SimpleNamespace(state={}, events=[], started=threading.Event(), release=threading.Event(),

@@ -15,6 +15,9 @@ from ok.util.window import ratio_text_to_number
 
 logger = Logger.get_logger(__name__)
 
+# How long next_frame() waits for another caller to finish its capture request.
+NEXT_FRAME_BUSY_WAIT = 0.1
+
 
 class ExecutorJob:
     """A callable that runs once on the executor thread, outside the task queue.
@@ -321,7 +324,13 @@ class TaskExecutor:
             if time_out is not None and time.time() - start >= time_out:
                 return None
             if self.can_capture():
-                frame = self.method.get_frame()
+                # A one-off capture on another thread (debug screenshot,
+                # template capture) owns the request for about one frame.
+                # Waiting for it is far cheaper than the retry sleep below.
+                busy_wait = NEXT_FRAME_BUSY_WAIT
+                if time_out is not None:
+                    busy_wait = min(busy_wait, max(0, time_out - (time.time() - start)))
+                frame = self.method.get_frame(busy_wait=busy_wait)
                 if frame is not None:
                     height, width = frame.shape[:2]
                     if height <= 0 or width <= 0:
