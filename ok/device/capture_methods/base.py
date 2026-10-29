@@ -36,8 +36,8 @@ class BaseCaptureMethod:
         """Capture a frame.
 
         :param busy_wait: Seconds to wait when another caller owns the capture.
-            The default 0 returns None immediately, which suits polling loops
-            such as the task executor; one-off captures should wait instead.
+            The default 0 returns None immediately. The task executor waits
+            briefly; one-off captures should wait longer.
         """
         if self.exit_event.is_set():
             return
