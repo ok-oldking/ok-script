@@ -1792,6 +1792,112 @@
             <source>Allow local coding agents to control this app and run Python code</source>
             <translation>ローカルのコーディングエージェントにこのアプリの操作と Python コードの実行を許可する</translation>
         </message>
+        <message>
+            <source>Bark Notification</source>
+            <translation>Bark 通知</translation>
+        </message>
+        <message>
+            <source>Bark Server URL</source>
+            <translation>Bark サーバー URL</translation>
+        </message>
+        <message>
+            <source>Bark Device Key</source>
+            <translation>Bark デバイスキー</translation>
+        </message>
+        <message>
+            <source>Bark Group</source>
+            <translation>Bark グループ</translation>
+        </message>
+        <message>
+            <source>Bark Sound</source>
+            <translation>Bark 通知音</translation>
+        </message>
+        <message>
+            <source>Bark Level</source>
+            <translation>Bark 通知レベル</translation>
+        </message>
+        <message>
+            <source>Bark Archive</source>
+            <translation>Bark 履歴保存</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Bark iOS app</source>
+            <translation>Bark iOS App 経由で通知を送信</translation>
+        </message>
+        <message>
+            <source>Bark server URL; do not change unless needed</source>
+            <translation>Bark サーバーの URL; 必要な場合のみ変更してください</translation>
+        </message>
+        <message>
+            <source>Device key registered in the Bark app</source>
+            <translation>Bark App に登録したデバイスキー</translation>
+        </message>
+        <message>
+            <source>Notification group; leave empty to send without a group</source>
+            <translation>通知グループ; 空欄の場合はグループを指定しません</translation>
+        </message>
+        <message>
+            <source>Ringtone name; leave empty to use the app default</source>
+            <translation>着信音名; 空欄の場合は App の既定音を使用</translation>
+        </message>
+        <message>
+            <source>Normal: display immediately and wake the screen
+Passive: notification list only
+Time Sensitive: show during Focus
+Critical: sound even in silent mode</source>
+            <translation>通常: 画面を点灯してすぐに表示
+サイレント: 通知リストにのみ追加
+即時通知: 集中モードでも表示
+重大な警告: 消音モードでも音を鳴らす</translation>
+        </message>
+        <message>
+            <source>Whether to save notifications in Bark history</source>
+            <translation>Bark の履歴に通知を保存するか選択</translation>
+        </message>
+        <message>
+            <source>App Default</source>
+            <translation>アプリの既定値</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>保存する</translation>
+        </message>
+        <message>
+            <source>Do Not Save</source>
+            <translation>保存しない</translation>
+        </message>
+        <message>
+            <source>active</source>
+            <translation>通常</translation>
+        </message>
+        <message>
+            <source>passive</source>
+            <translation>サイレント</translation>
+        </message>
+        <message>
+            <source>timeSensitive</source>
+            <translation>即時通知</translation>
+        </message>
+        <message>
+            <source>Bark Icon</source>
+            <translation>Bark アイコン</translation>
+        </message>
+        <message>
+            <source>Bark URL</source>
+            <translation>Bark リンク</translation>
+        </message>
+        <message>
+            <source>Notification icon URL; leave empty to use the app default icon</source>
+            <translation>通知アイコンの URL; 空欄の場合は App の既定アイコンを使用</translation>
+        </message>
+        <message>
+            <source>Link to open when the notification is tapped</source>
+            <translation>通知をタップしたときに開くリンク</translation>
+        </message>
+        <message>
+            <source>critical</source>
+            <translation>重大な警告</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

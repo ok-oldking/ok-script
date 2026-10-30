@@ -90,6 +90,31 @@ HDR 转换通过 CPU 查找表完成。使用 `WGC_HDR` 时不显示 Auto HDR �
 
 通知设置位于“设置 → 通知”，默认开启 Windows 系统托盘通知，其余渠道默认关闭。启用某个渠道后才会显示对应的配置字段。
 
+### Bark 通知
+
+Bark 渠道通过 HTTP API 向 Bark App 发送纯文本通知, 不需要运行桌面聊天客户端。
+
+1. 开启 **Bark Notification**, 默认关闭。
+2. **Bark Server URL** 默认是 `https://api.day.app`, 也可以填写自建服务的根地址或反向代理路径前缀。不要在地址中填写设备密钥或 `/push`。
+3. 在 **Bark Device Key** 中填写 App 中的设备密钥。输入框和本地配置文件均保留原值, 请勿分享配置或含密钥的日志。
+
+开启 Bark 通知后, 服务地址、设备密钥、分组、图标、铃声、提醒级别、跳转链接和历史保存选项直接显示在同一层级。
+
+| 选项 | 默认值 | 说明 |
+| --- | --- | --- |
+| Bark Group | 空 | 留空不设置消息分组 |
+| Bark Icon | 空 | 通知图标的 URL |
+| Bark Sound | 空 | 留空使用 Bark App 默认铃声, 也可填写自定义铃声名 |
+| Bark Level | active | `active` 普通、`passive` 静默、`timeSensitive` 时效性通知、`critical` 重要警告; 实际提醒受手机权限和系统设置影响 |
+| Bark URL | 空 | 点击通知时打开的链接 |
+| Bark Archive | App Default | 跟随 App、保存或不保存历史记录 |
+
+推送复用后台通知队列, 连接与读取超时分别为 2 秒, 不自动重试或跟随重定向。Bark 失败不影响其他渠道发送。
+HTTP 自建服务会以明文传输密钥和正文, 推荐使用 HTTPS。截图不会上传至 Bark 或第三方图片托管服务。
+
+正常推送由 `NotificationManager` 通过通用 `_safe_send` 调度 Bark provider。
+任务原有的 `notification()` 和管理器 `submit()` 接口不变。
+
 ### SMTP 邮件通知
 
 SMTP 渠道基于 Python 标准库 `smtplib` 发送邮件，不需要额外依赖：

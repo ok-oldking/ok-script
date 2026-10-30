@@ -1798,6 +1798,112 @@
             <source>Allow local coding agents to control this app and run Python code</source>
             <translation>允许本地编程代理控制此应用并运行 Python 代码</translation>
         </message>
+        <message>
+            <source>Bark Notification</source>
+            <translation>Bark 通知</translation>
+        </message>
+        <message>
+            <source>Bark Server URL</source>
+            <translation>Bark 服务地址</translation>
+        </message>
+        <message>
+            <source>Bark Device Key</source>
+            <translation>Bark 设备密钥</translation>
+        </message>
+        <message>
+            <source>Bark Group</source>
+            <translation>Bark 消息分组</translation>
+        </message>
+        <message>
+            <source>Bark Sound</source>
+            <translation>Bark 铃声</translation>
+        </message>
+        <message>
+            <source>Bark Level</source>
+            <translation>Bark 提醒级别</translation>
+        </message>
+        <message>
+            <source>Bark Archive</source>
+            <translation>Bark 历史保存</translation>
+        </message>
+        <message>
+            <source>Send notifications through the Bark iOS app</source>
+            <translation>通过 Bark iOS App 发送通知</translation>
+        </message>
+        <message>
+            <source>Bark server URL; do not change unless needed</source>
+            <translation>Bark 服务地址 URL，无特殊需求请勿更改</translation>
+        </message>
+        <message>
+            <source>Device key registered in the Bark app</source>
+            <translation>在 Bark App 中注册的设备密钥</translation>
+        </message>
+        <message>
+            <source>Notification group; leave empty to send without a group</source>
+            <translation>消息分组；留空不设置分组</translation>
+        </message>
+        <message>
+            <source>Ringtone name; leave empty to use the app default</source>
+            <translation>铃声名称；留空使用 App 默认铃声</translation>
+        </message>
+        <message>
+            <source>Normal: display immediately and wake the screen
+Passive: notification list only
+Time Sensitive: show during Focus
+Critical: sound even in silent mode</source>
+            <translation>普通：立即亮屏显示通知
+静默：仅将通知添加到通知列表
+时效性：专注模式下也能显示
+重要警告：静音模式下也会响铃</translation>
+        </message>
+        <message>
+            <source>Whether to save notifications in Bark history</source>
+            <translation>是否将通知保存到 Bark 历史记录</translation>
+        </message>
+        <message>
+            <source>App Default</source>
+            <translation>跟随 App</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <translation>保存</translation>
+        </message>
+        <message>
+            <source>Do Not Save</source>
+            <translation>不保存</translation>
+        </message>
+        <message>
+            <source>active</source>
+            <translation>普通</translation>
+        </message>
+        <message>
+            <source>passive</source>
+            <translation>静默</translation>
+        </message>
+        <message>
+            <source>timeSensitive</source>
+            <translation>时效性</translation>
+        </message>
+        <message>
+            <source>Bark Icon</source>
+            <translation>Bark 图标</translation>
+        </message>
+        <message>
+            <source>Bark URL</source>
+            <translation>Bark 跳转链接</translation>
+        </message>
+        <message>
+            <source>Notification icon URL; leave empty to use the app default icon</source>
+            <translation>通知图标 URL；留空使用 App 默认图标</translation>
+        </message>
+        <message>
+            <source>Link to open when the notification is tapped</source>
+            <translation>点击通知时打开的链接</translation>
+        </message>
+        <message>
+            <source>critical</source>
+            <translation>重要警告</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
