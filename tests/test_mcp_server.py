@@ -17,6 +17,16 @@ from ok.util.logger import SafeFileHandler
 from test_mcp_runner import development, write_task, register_task
 
 
+@pytest.mark.parametrize('options,expected', [({}, 7), ({'retention_days': 0}, 0), ({'retention_days': 2}, 2)])
+def test_server_passes_artifact_retention_to_runner(development, options, expected):
+    dev = development
+    runtime = SimpleNamespace(task_executor=dev.executor, screenshot=dev.screens,
+                              headless_app=dev.app, should_init_task_manager_headless=lambda: True)
+    server = LocalMcpServer(runtime, {'artifact_directory': str(dev.root / 'http'), **options})
+    assert server.runner.retention_days == expected
+    server.runner.close()
+
+
 @pytest.mark.parametrize('mode', ['auto', 'legacy'])
 def test_http_connection_and_tools_end_to_end(development, mode, monkeypatch):
     pytest.importorskip('mcp')

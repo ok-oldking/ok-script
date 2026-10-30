@@ -72,6 +72,15 @@ Applications using `OK(config).start()` can enable MCP through their config:
 "mcp": {"enabled": True, "port": 8765, "artifact_directory": "logs/mcp"}
 ```
 
+MCP artifacts use a seven-day retention period by default. Set `mcp.retention_days`
+to a nonnegative number of days, or `0` to disable cleanup. Cleanup runs on startup
+and at most once per hour when submitting runs/reloads or requesting screenshots.
+It removes expired completed run directories (including their logs, status and
+custom artifacts), their in-memory status records, and old observation images.
+Run age is measured from `finished_at`; observation age uses the image file's
+modification time. Active/nonterminal runs, unrecognized files and connection
+records are preserved. Copy evidence elsewhere if it must outlive retention.
+
 The server binds only to IPv4 loopback and validates HTTP Host and Origin.
 Each instance writes `logs/mcp/connections/<pid>-<port>.json` containing its URL,
 bearer token, process ID, process start time and project directory. These records
@@ -143,7 +152,7 @@ Clients supporting MCP resources can also discover these skills through
 
 States are `queued`, `running`, `stopping`, `succeeded`, `failed`, and
 `cancelled`. Only the last three are terminal. Run IDs are scoped to the current
-process; saved artifacts remain available after restarting it.
+process; saved artifacts remain available after restarting it until retention cleanup.
 
 ## Preferred workflow for existing tasks
 

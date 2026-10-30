@@ -4,6 +4,9 @@ import hashlib
 import importlib.util
 import inspect
 import json
+import math
+import re
+import shutil
 import sys
 import threading
 import time
@@ -15,9 +18,11 @@ from pathlib import Path
 from ok.core.code_runner import capture_output
 from ok.task.exceptions import TaskDisabledException
 from ok.task.task import BaseTask, TriggerTask
+from ok.util.logger import Logger
 
 
 TERMINAL_STATES = {'succeeded', 'failed', 'cancelled'}
+logger = Logger.get_logger(__name__)
 
 
 class McpTaskRunner:
@@ -30,7 +35,10 @@ class McpTaskRunner:
     """
 
     def __init__(self, executor, app, screenshot_service, artifact_directory='logs/mcp', prepare=None,
-                 task_manager=None):
+                 task_manager=None, retention_days=7):
+        if (isinstance(retention_days, bool) or not isinstance(retention_days, (int, float))
+                or not math.isfinite(retention_days) or retention_days < 0):
+            raise ValueError('mcp.retention_days must be a finite nonnegative number')
         self.executor = executor
         self.app = app
         self.screenshot_service = screenshot_service
@@ -42,7 +50,62 @@ class McpTaskRunner:
         self._active = None
         self._observation_job = None
         self._closed = False
+        self.retention_days = retention_days
+        self._next_cleanup = 0
+        self._cleanup_artifacts()
         self.executor.enable_frame_snapshots()
+
+    def _cleanup_artifacts(self):
+        """Expire completed runs and observations, at most hourly during activity."""
+        with self._lock:
+            now = time.monotonic()
+            if self.retention_days == 0 or now < self._next_cleanup:
+                return
+            self._next_cleanup = now + 3600
+            cutoff = time.time() - self.retention_days * 86400
+            try:
+                paths = list(self.artifact_directory.iterdir())
+            except FileNotFoundError:
+                return
+            except OSError as error:
+                logger.warning(f'Could not scan MCP artifacts: {error}')
+                return
+            for path in paths:
+                try:
+                    # Only operate on framework-owned entries inside this root.
+                    # In particular, never follow directory links or junctions.
+                    if path.is_symlink() or path.resolve() != path:
+                        continue
+                    if path.name == 'observations' and path.is_dir():
+                        for image in path.iterdir():
+                            if (re.fullmatch(r'[0-9a-f]{32}\.png', image.name)
+                                    and not image.is_symlink() and image.is_file()
+                                    and image.resolve() == image
+                                    and image.stat().st_mtime < cutoff):
+                                try:
+                                    image.unlink()
+                                except OSError as error:
+                                    logger.warning(f'Could not remove MCP observation {image}: {error}')
+                    elif (re.fullmatch(r'[0-9a-f]{32}', path.name) and path.is_dir()
+                          and path.name != self._active):
+                        try:
+                            record = json.loads((path / 'status.json').read_text(encoding='utf-8'))
+                        except (ValueError, UnicodeError):
+                            continue
+                        if not isinstance(record, dict):
+                            continue
+                        finished = record.get('finished_at')
+                        if (record.get('run_id') == path.name
+                                and isinstance(record.get('state'), str)
+                                and record['state'] in TERMINAL_STATES
+                                and isinstance(finished, (int, float)) and not isinstance(finished, bool)
+                                and math.isfinite(finished) and finished < cutoff):
+                            shutil.rmtree(path)
+                            self._runs.pop(path.name, None)
+                except FileNotFoundError:
+                    pass  # Another server sharing this directory may have removed it.
+                except OSError as error:
+                    logger.warning(f'Could not clean MCP artifacts {path}: {error}')
 
     def _save(self, record):
         path = Path(record['artifact_directory']) / 'status.json'
@@ -135,6 +198,7 @@ class McpTaskRunner:
                 raise RuntimeError('MCP task runner is shutting down')
             if self._active is not None:
                 raise RuntimeError(f'Run {self._active} is still active; wait until it has stopped')
+            self._cleanup_artifacts()
             run_id = uuid.uuid4().hex
             owner = f'mcp:{run_id}'
             self.executor.acquire_exclusive(owner)
@@ -282,6 +346,7 @@ class McpTaskRunner:
         with self._lock:
             if self._closed:
                 raise RuntimeError('MCP task runner is shutting down')
+            self._cleanup_artifacts()
             if (self._active is None and self._observation_job is None and self.executor.current_job is None
                     and self.executor.current_task is None and self.executor.exclusive_owner is None):
                 def capture():

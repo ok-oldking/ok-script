@@ -232,7 +232,7 @@ class LocalMcpServer:
         app = runtime.headless_app if runtime.should_init_task_manager_headless() else runtime.app
         self.runner = McpTaskRunner(runtime.task_executor, app, runtime.screenshot,
                                     config.get('artifact_directory', 'logs/mcp'), self._prepare_device,
-                                    task_manager=og.task_manager)
+                                    task_manager=og.task_manager, retention_days=config.get('retention_days', 7))
         self._server = None
         self._socket = None
         self._thread = None

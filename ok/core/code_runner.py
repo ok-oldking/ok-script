@@ -24,7 +24,7 @@ from typing import Any
 
 from ok.task.exceptions import TaskDisabledException
 
-_log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s', datefmt='%H:%M:%S')
+_log_formatter = logging.Formatter('%(asctime)s.%(msecs)03d %(levelname)s %(message)s', datefmt='%H:%M:%S')
 _capture_lock = threading.Lock()
 _run_ids = itertools.count(1)
 
