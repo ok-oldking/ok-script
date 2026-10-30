@@ -113,6 +113,20 @@ class Config(dict):
     def has_user_config(self):
         return not all(key.startswith('_') for key in self)
 
+    @staticmethod
+    def _matches_default_value_type(default, value):
+        """
+        数值族键按默认值声明类型校验：bool 必须为 bool，int 禁止 bool 充数，
+        float 接受 int|float。其余类型交由任务自定义 validator。
+        """
+        if isinstance(default, bool):
+            return isinstance(value, bool)
+        if isinstance(default, int):
+            return isinstance(value, int) and not isinstance(value, bool)
+        if isinstance(default, float):
+            return isinstance(value, (int, float)) and not isinstance(value, bool)
+        return True
+
     def validate(self, key, value):
         """
         Validate a configuration key-value pair.
@@ -121,6 +135,13 @@ class Config(dict):
         :param value: The value to validate.
         :return: True if valid, False otherwise.
         """
+        default = self.default.get(key)
+        if default is not None and not self._matches_default_value_type(default, value):
+            from ok.core.events import communicate
+            communicate.config_validation.emit(
+                f"配置类型错误: {key} 期望 {type(default).__name__}, 实际 {type(value).__name__}"
+            )
+            return False
         if self.validator is not None:
             valid, message = self.validator(key, value)
             if not valid:
