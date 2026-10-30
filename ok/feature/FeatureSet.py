@@ -6,7 +6,9 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import threading
+import warnings
 
 import cv2
 import numpy as np
@@ -59,6 +61,7 @@ class FeatureSet:
     default_horizontal_variance: float
     default_vertical_variance: float
     coco_json: str
+    template_folder: str
     debug: bool
     load_success: bool
     feature_dict: dict
@@ -70,8 +73,10 @@ class FeatureSet:
 
     def __init__(self, debug, coco_json: str, default_horizontal_variance,
                  default_vertical_variance, default_threshold=0.95, feature_processor=None,
-                 hcenter_features: list = None, vcenter_features: list = None) -> None:
+                 hcenter_features: list = None, vcenter_features: list = None,
+                 template_folder: str = None) -> None:
         self.coco_json = get_path_relative_to_exe(coco_json)
+        self.template_folder = get_path_relative_to_exe(template_folder)
         self.debug = debug
         self.feature_dict = {}
         self.box_dict = {}
@@ -109,7 +114,8 @@ class FeatureSet:
                 self.feature_dict = {}
                 self.box_dict = {}
                 self._processed_images = set()
-                self.load_success = os.path.exists(self.coco_json)
+                self.load_success = any(feature_source_exists(coco, folder)
+                                        for coco, folder, _ in self._feature_sources())
         return self.load_success
 
     def _merge_features(self, features, boxes, image_keys=None, namespace=None, overwrite=False):
@@ -129,53 +135,54 @@ class FeatureSet:
                 if self.feature_processor:
                     self.feature_processor(feature_name, v)
 
+    def _feature_sources(self):
+        yield self.coco_json, self.template_folder, None
+        yield os.path.join('ok_tasks', 'assets', 'coco_annotations.json'), os.path.join('ok_tasks', 'assets', 'templates'), None
+        import_dir = os.path.join(os.getcwd(), 'ok_import')
+        if os.path.isdir(import_dir):
+            for entry in sorted(os.listdir(import_dir)):
+                yield (os.path.join(import_dir, entry, 'assets', 'coco_annotations.json'),
+                       os.path.join(import_dir, entry, 'assets', 'templates'), entry)
+
     def process_data(self, feature_name=None) -> bool:
-        target_feature = feature_name
-        if target_feature is None:
+        if feature_name is None:
             self.feature_dict = {}
             self.box_dict = {}
             self._processed_images = set()
-        features, boxes, compressed, self.load_success, image_keys = read_from_json(self.coco_json, self.width,
-                                                                                   self.height,
-                                                                                   self.hcenter_features,
-                                                                                   self.vcenter_features,
-                                                                                   target_category_name=target_feature,
-                                                                                   processed_images=self._processed_images)
-        self._merge_features(features, boxes, image_keys)
-        # Also process ok_tasks/assets/coco_annotations.json if it exists, merge data
-        ok_tasks_coco = os.path.join('ok_tasks', 'assets', 'coco_annotations.json')
-        if os.path.exists(ok_tasks_coco) and os.path.abspath(ok_tasks_coco) != os.path.abspath(self.coco_json):
+        self.load_success = False
+        for index, (coco, folder, namespace) in enumerate(self._feature_sources()):
+            if not feature_source_exists(coco, folder):
+                continue
+            self.load_success = True
+            target = feature_name
+            if namespace and target:
+                if not target.startswith(f'{namespace}/'):
+                    continue
+                target = target[len(namespace) + 1:]
             try:
-                extra_features, extra_boxes, _, extra_success, extra_image_keys = read_from_json(
-                    ok_tasks_coco, self.width, self.height, self.hcenter_features, self.vcenter_features,
-                    target_category_name=target_feature, processed_images=self._processed_images)
-                if extra_success:
-                    self._merge_features(extra_features, extra_boxes, extra_image_keys)
-                    logger.info(f'Merged {len(extra_features)} features from {ok_tasks_coco}')
+                features, boxes, keys = {}, {}, set()
+                if coco and os.path.isfile(coco):
+                    features, boxes, _, _, keys = read_from_json(
+                        coco, self.width, self.height, self.hcenter_features, self.vcenter_features,
+                        target_category_name=target, processed_images=self._processed_images,
+                        image_key_prefix=namespace)
+                if folder and os.path.isdir(folder):
+                    # COCO loads every feature sharing a source image. Also load their
+                    # split replacements so a cached COCO feature cannot mask a crop.
+                    targets = set(features) | {target} if target else None
+                    crops, crop_boxes, _, _, crop_keys = read_feature_crops(
+                        folder, self.width, self.height, self.hcenter_features, self.vcenter_features,
+                        target_category_name=targets, processed_images=self._processed_images,
+                        image_key_prefix=namespace)
+                    features.update(crops)
+                    boxes.update(crop_boxes)
+                    keys.update(crop_keys)
+                self._merge_features(features, boxes, keys, namespace=namespace,
+                                     overwrite=namespace is not None)
             except Exception as e:
-                logger.error(f'Failed to merge {ok_tasks_coco}: {e}')
-        # Also process ok_import/*/assets/coco_annotations.json with namespace prefix
-        ok_import_dir = os.path.join(os.getcwd(), 'ok_import')
-        if os.path.exists(ok_import_dir):
-            for entry in os.listdir(ok_import_dir):
-                import_coco = os.path.join(ok_import_dir, entry, 'assets', 'coco_annotations.json')
-                if os.path.exists(import_coco):
-                    try:
-                        import_target = None
-                        if target_feature and target_feature.startswith(f"{entry}/"):
-                            import_target = target_feature[len(entry) + 1:]
-                        elif target_feature:
-                            continue
-                        imp_features, imp_boxes, _, imp_success, imp_image_keys = read_from_json(
-                            import_coco, self.width, self.height, self.hcenter_features, self.vcenter_features,
-                            target_category_name=import_target, processed_images=self._processed_images,
-                            image_key_prefix=entry)
-                        if imp_success:
-                            self._merge_features(imp_features, imp_boxes, imp_image_keys, namespace=entry,
-                                                 overwrite=True)
-                            logger.info(f'Merged {len(imp_features)} namespaced features from import {entry}')
-                    except Exception as e:
-                        logger.error(f'Failed to merge import features from {entry}: {e}')
+                if index == 0 or isinstance(e, TemplateFormatError):
+                    raise
+                logger.error(f'Failed to merge features from {folder or coco}: {e}')
         return self.load_success
 
     def ensure_feature(self, feature_name):
@@ -501,7 +508,7 @@ def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcente
     return feature_dict, box_dict, ok_compressed, load_success, loaded_image_keys
 
 def load_json(coco_json):
-    with open(coco_json, 'r') as file:
+    with open(coco_json, 'r', encoding='utf-8') as file:
         data = json.load(file)
         for images in data['images']:
             images['file_name'] = un_fk_label_studio_path(images['file_name'])
@@ -566,6 +573,9 @@ def filter_and_sort_matches(result, threshold, w, h):
 
 
 def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder, generate_label_enmu=None, use_exe=None):
+    """Obsolete packed export; convert annotations to COCO, then use generate_templates."""
+    warnings.warn('compress_copy_x_anylabeling is obsolete; use generate_templates with COCO annotations',
+                  DeprecationWarning, stacklevel=2)
     classes_path = os.path.join(x_anylabeling_folder, "classes.txt")
     output_dir = os.path.join(x_anylabeling_folder, "coco_output")
 
@@ -633,8 +643,165 @@ def compress_copy_x_anylabeling(x_anylabeling_folder, target_folder, generate_la
 
     compress_copy_coco(coco_json_path, target_folder, x_anylabeling_folder, generate_label_enmu=generate_label_enmu)
 
+# Parse geometry from the right so underscores and resolution-like text in the
+# original feature name remain intact.
+_CROP_PATTERN = re.compile(r'(.+)_([0-9]+)x([0-9]+)_([0-9]+)_([0-9]+)\.png')
+_INVALID_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+_RESERVED_FILENAME = re.compile(r'(CON|PRN|AUX|NUL|COM[1-9¹²³]|LPT[1-9¹²³])', re.IGNORECASE)
+
+
+class TemplateFormatError(ValueError):
+    """A split template cannot be interpreted without changing its identity."""
+
+
+def _parse_crop_filename(filename):
+    match = _CROP_PATTERN.fullmatch(filename)
+    if (not match or _INVALID_FILENAME_CHARS.search(filename) or
+            _RESERVED_FILENAME.fullmatch(filename.split('.')[0])):
+        raise TemplateFormatError(
+            f'Invalid template filename {filename!r}; expected '
+            '<original_name>_<width>x<height>_<x>_<y>.png using filename-safe characters')
+    name, iw, ih, x, y = match.groups()
+    iw, ih, x, y = map(int, (iw, ih, x, y))
+    if iw <= 0 or ih <= 0 or x >= iw or y >= ih:
+        raise TemplateFormatError(f'Invalid reference resolution or position in template filename {filename!r}')
+    return name, iw, ih, x, y
+
+
+def _template_files(folder):
+    files = []
+    with os.scandir(folder) as entries:
+        for entry in entries:
+            if entry.is_file():
+                files.append(entry.name)
+    # Validate every filename, including features outside a lazy lookup.
+    return [(filename, _parse_crop_filename(filename)) for filename in sorted(files)]
+
+
+def feature_source_exists(coco_json, template_folder=None):
+    return bool((coco_json and os.path.isfile(coco_json)) or
+                (template_folder and os.path.isdir(template_folder)))
+
+
+def crop_filename(name, width, height, x, y):
+    filename = f'{name}_{width}x{height}_{x}_{y}.png'
+    _parse_crop_filename(filename)
+    return filename
+
+
+def read_feature_crops(folder, width=-1, height=-1, hcenter_features=None, vcenter_features=None,
+                       adjust=True, target_category_name=None, processed_images=None, image_key_prefix=None):
+    features, boxes, keys = {}, {}, set()
+    if not os.path.isdir(folder):
+        return features, boxes, None, False, keys
+    for filename, (name, iw, ih, x, y) in _template_files(folder):
+        if target_category_name and name not in (
+                {target_category_name} if isinstance(target_category_name, str) else target_category_name):
+            continue
+        key = (image_key_prefix, os.path.abspath(folder), filename)
+        if processed_images and key in processed_images:
+            keys.add(key)
+            continue
+        # OpenCV's filename reader cannot handle all Unicode paths on Windows.
+        try:
+            encoded_image = np.fromfile(os.path.join(folder, filename), dtype=np.uint8)
+            image = cv2.imdecode(encoded_image, cv2.IMREAD_COLOR) if encoded_image.size else None
+        except (OSError, cv2.error) as exc:
+            raise TemplateFormatError(f'Could not read template image {filename!r}') from exc
+        if image is None:
+            raise TemplateFormatError(f'Could not read template image {filename!r}')
+        h, w = image.shape[:2]
+        if not iw or not ih or x + w > iw or y + h > ih:
+            raise TemplateFormatError(f'Invalid feature geometry: {filename}')
+        scale = 1
+        if adjust and width > 0 and height > 0:
+            x, y, w, h, scale = adjust_coordinates(
+                x, y, w, h, width, height, iw, ih,
+                hcenter='hcenter' in name or bool(hcenter_features and name in hcenter_features),
+                vcenter='vcenter' in name or bool(vcenter_features and name in vcenter_features))
+            image = cv2.resize(image, (max(1, w), max(1, h)))
+        if name in features:
+            raise TemplateFormatError(f'Multiple boxes found for category {name}')
+        features[name] = Feature(image, x, y, scale)
+        boxes[name] = Box(x, y, image.shape[1], image.shape[0], name=name)
+        keys.add(key)
+    return features, boxes, True, True, keys
+
+
+def generate_templates(coco_json, target_folder=os.path.join('assets', 'templates'), image_folder=None,
+                       generate_label_enmu=None) -> str:
+    """Export cropped PNGs with filename geometry, preserving the source COCO dataset.
+
+    target_folder must contain only PNG files with parseable template filenames.
+    Returns the output folder, which can be used as template_matching.template_folder.
+    """
+    data = load_json(coco_json)
+    images = {info['id']: info for info in data['images']}
+    categories = {cat['id']: cat['name'] for cat in data['categories']}
+    output = os.path.abspath(target_folder)
+    os.makedirs(output, exist_ok=True)
+    existing_files = _template_files(output)
+    with tempfile.TemporaryDirectory(dir=output) as stage:
+        seen = {}
+        filenames = set()
+        source_images = {}
+        for ann in data['annotations']:
+            info = images[ann['image_id']]
+            name = categories[ann['category_id']]
+            if image_folder is None:
+                source = os.path.join(os.path.dirname(coco_json), info['file_name'])
+            else:
+                source = os.path.join(image_folder, os.path.basename(info['file_name']))
+            if source not in source_images:
+                source_images.clear()
+                source_images[source] = cv2.imread(source)
+            image = source_images[source]
+            if image is None:
+                raise ValueError(f'Could not read image {source}')
+            ih, iw = image.shape[:2]
+            x, y, w, h = ann['bbox']
+            if not all(math.isfinite(value) for value in (x, y, w, h)):
+                raise ValueError(f'Invalid feature geometry for {name!r}')
+            x1, y1, x2, y2 = round(x), round(y), round(x + w), round(y + h)
+            if not name or x1 < 0 or y1 < 0 or x2 > iw or y2 > ih or x2 <= x1 or y2 <= y1:
+                raise ValueError(f'Invalid feature geometry or name for {name!r}')
+            filename = crop_filename(name, iw, ih, x1, y1)
+            crop = image[y1:y2, x1:x2]
+            if name.startswith('box_'):
+                crop = np.full_like(crop, 255)
+            if name in seen:
+                prior_filename, prior_crop = seen[name]
+                if prior_filename == filename and np.array_equal(prior_crop, crop):
+                    continue
+                raise ValueError(f'Multiple boxes found for category {name}')
+            if filename.casefold() in filenames:
+                raise ValueError(f'Feature filename collision for {name!r}')
+            filenames.add(filename.casefold())
+            seen[name] = (filename, crop.copy())
+            save_image_with_metadata(crop, os.path.join(stage, filename), os.path.join(stage, filename))
+        if generate_label_enmu:
+            generate_label_enum(generate_label_enmu, list(categories.values()))
+        for filename in os.listdir(stage):
+            # Moving directly from TemporaryDirectory carries its private Windows
+            # ACL into the export. Create a file in output so it inherits the
+            # destination's permissions, then atomically replace the old crop.
+            fd, publish_path = tempfile.mkstemp(dir=output, prefix='.ok-template-', suffix='.tmp')
+            os.close(fd)
+            try:
+                shutil.copyfile(os.path.join(stage, filename), publish_path)
+                os.replace(publish_path, os.path.join(output, filename))
+            finally:
+                if os.path.exists(publish_path):
+                    os.remove(publish_path)
+        for filename, _ in existing_files:
+            if filename.casefold() not in filenames:
+                os.remove(os.path.join(output, filename))
+    return output
+
+
 def compress_copy_coco(coco_json, target_folder, image_folder, generate_label_enmu=None) -> str:
-    """Export templates, retaining page assignments from the previous export."""
+    """Obsolete packed export retained for compatibility; use generate_templates."""
+    warnings.warn('compress_copy_coco is obsolete; use generate_templates', DeprecationWarning, stacklevel=2)
     import shutil
 
     target_coco_json = os.path.join(target_folder, os.path.basename(coco_json))
@@ -695,7 +862,8 @@ def compress_copy_coco(coco_json, target_folder, image_folder, generate_label_en
     return target_coco_json
 
 def compress_coco(coco_json, previous_data=None) -> None:
-    """Pack nonoverlapping crops, preserving prior pages when supplied."""
+    """Obsolete in-place packed export retained for compatibility; use generate_templates."""
+    warnings.warn('compress_coco is obsolete; use generate_templates', DeprecationWarning, stacklevel=2)
     data = load_json(coco_json)
     coco_folder = os.path.dirname(coco_json)
     category_map = {cat['id']: cat['name'] for cat in data.get('categories', [])}

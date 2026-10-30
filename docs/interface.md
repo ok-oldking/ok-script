@@ -1,6 +1,8 @@
 # 界面与开发工具
 
-[English](en/interface.md) · [文档中心](index.md) · [快速开始](quick_start/README.md) · [API 参考](api_doc/README.md)
+[English](en/interface.md) · [文档中心](index.md) · [快速开始](quick_start/README.md) · [编程代理提示词](agent-prompts.md)
+
+桌面界面用于配置和运行已保存的任务。开发时通过 [MCP](quick_start/README.md) 连接编程代理，让它在项目中编写并验证可复用 Python。代理使用 ok-script 截图和交互，不使用 Computer Use 工具。代理断开后，仍可通过界面查看证据并运行成果。
 
 ok-script 将任务配置、设备连接、脚本开发、模板管理和识别调试集中在同一个桌面界面。本页通过界面截图说明各工具的用途和推荐工作流。
 
@@ -64,7 +66,10 @@ HDR 转换通过 CPU 查找表完成。使用 `WGC_HDR` 时不显示 Auto HDR �
 - 按名称或类别搜索；
 - 查看每张截图包含的识别特征；
 - 打开标注工具调整框选区域；
-- 保存压缩后的模板素材。
+- 使用默认的 **Split(Recommend)**（拆分，推荐）导出独立的特征 PNG。
+
+保存目标仍为 `assets` 或 `ok_tasks/assets`，拆分导出写入其 `templates` 子目录。
+**Compress (obsolete)**（压缩，已废弃）仅为兼容保留。文件名格式和校验规则见[模板导出格式](feature-crops.md)。
 
 标注时优先使用计划支持的最高分辨率，并选择稳定、具有区分度且不包含动态文字的区域。详细工作流参见[进阶指南](after_quick_start/README.md#1-模板匹配-template-matching)。
 
@@ -104,7 +109,6 @@ Bark 渠道通过 HTTP API 向 Bark App 发送纯文本通知, 不需要运行�
 | Bark URL | 空 | 点击通知时打开的链接 |
 | Bark Archive | App Default | 跟随 App、保存或不保存历史记录 |
 
-Web 界面支持相同配置和正常推送。
 推送复用后台通知队列, 连接与读取超时分别为 2 秒, 不自动重试或跟随重定向。Bark 失败不影响其他渠道发送。
 HTTP 自建服务会以明文传输密钥和正文, 推荐使用 HTTPS。截图不会上传至 Bark 或第三方图片托管服务。
 
@@ -130,9 +134,9 @@ SMTP 渠道基于 Python 标准库 `smtplib` 发送邮件，不需要额外依�
 
 ## 推荐工作流
 
-1. 在截图方式页连接目标并验证截图。
-2. 在模板页捕获和标注稳定的界面特征。
-3. 在脚本页或 IDE 中实现最小识别与点击流程。
-4. 启用调试浮层检查搜索区域和匹配结果。
-5. 将稳定逻辑封装为任务，并在任务页验证配置体验。
-6. 使用固定截图编写回归测试，然后再进行发布构建。
+1. 将编程代理连接到项目 MCP 服务，验证目标截图。
+2. 参考[提示词示例](agent-prompts.md)描述任务需求。
+3. 让代理发现已安装 API、保存 Python 代码和素材，并通过 MCP 验证。
+4. 出错时检查日志、截图和识别浮层。
+5. 开发完成后关闭 MCP，从 GUI 运行已注册任务。
+6. 需要修改时再连接代理，为识别或恢复问题添加回归测试。

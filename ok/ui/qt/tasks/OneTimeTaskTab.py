@@ -56,7 +56,15 @@ class OneTimeTaskTab(TaskTab):
                        self.tr('Are you sure you want to delete the script "{}"?').format(self.group_name), 
                        self.window())
         if w.exec():
-            og.task_manager.delete_imported_script(self.imported_file_name)
+            from PySide6.QtCore import QCoreApplication
+            from ok.ui.qt.util.app import show_info_bar
+            try:
+                og.task_manager.delete_imported_script(self.imported_file_name)
+                show_info_bar(self.window(), QCoreApplication.translate(
+                    'PluginTab', 'Restart the application to apply plugin changes.'))
+            except Exception as error:
+                from ok.ui.qt.util.Alert import alert_error
+                alert_error(str(error))
 
     def refresh_ui(self):
         # Remove old cards

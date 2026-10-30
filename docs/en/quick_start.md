@@ -1,110 +1,73 @@
-# Quick start
+# MCP quick start
 
-[Documentation](index.md) · [Advanced guide](advanced.md) · [API reference](api_reference.md) · [简体中文](../quick_start/README.md)
+[简体中文](../quick_start/README.md) · [Documentation](index.md) · [Agent prompts](agent-prompts.md)
 
-This guide uses the `ok-script-app` template to create and run an automation project. By the end, you will have connected a Windows game or Android device, run the diagnostics, and be ready to implement tasks.
+Build the automation with a coding agent, then keep running the saved Python task. You need Windows, Python 3.11 or later, a target application or ADB device, and a local coding agent with MCP and file/process access.
 
-## Prerequisites
+## 1. Open an application project
 
-- Windows 10 or Windows 11
-- Python 3.11 or later (Python 3.12 recommended)
-- Git
-- A Windows client, or an Android emulator/device with ADB enabled
+Use your existing ok-script application, or create a project from the [ok-script-app template](https://github.com/ok-oldking/ok-script-app). Open its folder in your coding agent. Keep application tasks in this project, separate from the ok-script framework repository.
 
-## 1. Fork the template
+Ask the agent:
 
-Open [`ok-script-app`](https://github.com/ok-oldking/ok-script-app) and select **Use this template** to create a repository in your GitHub account.
+> Prepare this automation project's virtual environment and dependencies. Preserve its existing requirements and ok-script version. Configure my target application and separate MCP development and user GUI launchers. Use the bundled setup-env and setup-project skills when available. Do not use Computer Use tools.
 
-## 2. Clone your project
-
-```powershell
-git clone https://github.com/YOUR_USERNAME/your-project-name.git
-cd your-project-name
-```
-
-Replace `YOUR_USERNAME` and `your-project-name` with your GitHub account and repository name.
-
-## 3. Install Python
-
-The framework supports Python 3.11 and later. Python **3.12** is recommended.
-
-Download Python from [Python.org Downloads](https://www.python.org/downloads/).
-
-On 64-bit Windows, select the installer whose name contains `amd64.exe`. Enable **Add Python to PATH** during installation, then verify it:
-
-```powershell
-python --version
-```
-
-## 4. Create a virtual environment
+For a new environment, the basic commands are:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\python.exe -m pip install "ok-script[default]"
 ```
 
-If PowerShell blocks activation scripts, use `.\.venv\Scripts\python.exe` directly for the remaining commands.
+For an existing application, install its requirements first. MCP is a required dependency installed automatically with ok-script starting in 2.0.17. Add `qt`, `adb`, or `ocr` only as needed. OpenCV is a separate dependency: choose exactly one compatible variant, such as `opencv-python` or `opencv-python-headless`. The agent should use your project's existing choice.
 
-## 5. Install dependencies
+The project also needs a configuration for the real target. Ask the agent to inspect the installed configuration handling and existing examples, then set the application's executable/window or ADB package and verify capture and input. Installing the package alone does not create a configured project.
+
+## 2. Start the MCP runtime
+
+Prefer the project's existing development launcher. Otherwise, from the application directory:
 
 ```powershell
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m ok mcp --config src.config:config
 ```
 
-## 6. Configure the target
+Replace `src.config:config` with the project's actual module and configuration object. Leave the runtime running while the agent develops. This mode runs without Qt and pauses the regular scheduler.
 
-Open `src/config.py`. Configure at least one of the `windows` or `adb` sections.
+An existing desktop application can also enable MCP through **Settings > Basic Options > Enable MCP Server**. Review the application's access warning before enabling it. Use a separate MCP-disabled GUI launcher for ordinary use.
 
-For a Windows client:
+## 3. Connect the coding agent
 
-- `exe`: accepted executable names, such as `['StarRail.exe']`
-- `start_exe`: whether the application starts and checks the game process; defaults to `True`
-- `check_auto_hdr`: defaults to `False`. Set to `True` to check the Windows Auto HDR preference at startup and show a translated error if enabled globally or explicitly enabled for the executable. A game opt-out suppresses the error; an ordinary saved allow flag follows the global setting unless Windows marks it as an explicit game override. The check reports configuration, not runtime activation, and does not block startup.
-- `start_method`: process launch method; defaults to `start`, with `os.startfile` also available
-- `window_stable_seconds`: seconds the game window dimensions must remain unchanged after the application launches the game; defaults to `5`. This wait is skipped when the game is already detected as connected.
-- `launch_arguments`: extra Windows launch arguments, as a string or a callback taking no arguments and returning a string or `None`. The callback runs before each launch, so it can read current settings. Arguments are appended to any DX11 flags; omit this option for no extra arguments.
-- `interaction`: input backend, such as `Genshin`, `PostMessage`, or `Pynput`
+Use the live record in `logs/mcp/connections/<pid>-<port>.json` under the project's configured artifact directory. It contains the server URL, bearer token, process identity, and project directory. The default port is 8765, but it may change; do not assume it.
 
-For an Android emulator or physical device:
+Configure the agent's MCP client with:
 
-- `packages`: accepted package names, such as `['com.example.game']`
+| Setting | Value |
+| --- | --- |
+| Transport | Streamable HTTP |
+| URL | The live record's `url` |
+| HTTP header | `Authorization: Bearer <token from the live record>` |
 
-Both sections may remain configured. The application selects the available window or device at runtime.
+Client configuration formats differ. Ask your coding agent to configure its supported MCP connection using these values, keeping the token private. The server listens on local loopback, so run the agent on the same machine with access to the project files. An agent without a native connection can use a local client script with the official MCP Python SDK.
 
-## 7. Run the application
+Have the agent call `list_skills()`, read `get_skill("develop")`, and request `screenshot()` to confirm the target. If it captures the wrong application or cannot capture, fix the project configuration before attempting the task. More details are in the [MCP guide](../mcp.md).
 
-Debug mode enables additional logging and draws overlays around recognition targets:
+## 4. Ask for a reusable task
+
+> Use this project's MCP connection to build a reusable Python task that opens Settings, enables "Show details", saves, and verifies that the option stays enabled. Read the relevant skills and inspect installed API signatures. Save the implementation in a permanent task module. Restore and verify the baseline before each MCP attempt, record logs/screenshots, assert the visible result, and test repeated runs. Use ok-script capture and input, not Computer Use. Register the result and make it run without an agent or LLM calls.
+
+The agent writes files locally and submits their absolute paths through MCP. For existing tasks it discovers the original source, edits it, reloads the registered task, and waits for successful reload before testing. See [copyable prompts](agent-prompts.md) for API discovery and maintenance requests.
+
+## 5. Run without the agent
+
+Ask the agent for the exact task name and launcher for your project. The saved task must be registered and perform its own preparation in normal execution; the GUI/CLI do not automatically invoke the MCP reset hooks.
+
+Stop the MCP development runtime and wait for it to exit before ordinary CLI execution. For the same project, starting the GUI replaces the registered console runtime and closes its MCP connection. Do not switch modes during an active attempt. Typical commands are:
 
 ```powershell
-python main_debug.py
+.\.venv\Scripts\python.exe -m ok run_task EnableOptionTask --config src.config:config
+.\.venv\Scripts\python.exe -m ok gui --config src.config:config
 ```
 
-Production mode omits the visual debug overlays:
+Choose the CLI or GUI command; do not run both simultaneously. The CLI selects a registered task name/class, not a Python file path. For everyday GUI use, prefer the application's MCP-disabled `pythonw.exe` launcher or shortcut. Qt dependencies are required for the GUI.
 
-```powershell
-python main.py
-```
-
-> **Important:** Some Windows input backends require administrator privileges. If input does not work, launch the terminal or IDE as administrator. ADB devices and emulators usually do not require elevation.
-
-## 8. Test capture
-
-Select **Screenshot Test** in the application. Confirm that a new image appears in the project's `screenshots` directory.
-
-## 9. Run diagnostics
-
-Select **Run Diagnostic Task**. The built-in task checks the environment and target configuration.
-
-## 10. Implement a task
-
-Use the template tasks as starting points:
-
-- `src/tasks/MyOneTimeTask.py`: a task that runs once, such as claiming a daily reward
-- `src/tasks/MyTriggerTask.py`: a task repeatedly activated by a trigger, such as automated combat
-
-## Next steps
-
-- Read the [advanced guide](advanced.md) for templates, tests, localization, and releases.
-- Consult the [API reference](api_reference.md) for capture, input, OCR, and matching methods.
-- Read the [automation introduction](intro_to_automation.md) if the computer-vision workflow is unfamiliar.
+Keep the task source, configuration, recognition assets, and dependency requirements together. Normal runs of local Python recognition and input require no model tokens. Return to the coding agent when you need a new task or a repair.

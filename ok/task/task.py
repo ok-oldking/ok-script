@@ -7,6 +7,7 @@ from numpy import ndarray
 
 from ok.core.events import communicate
 from ok.core.icons import Icon
+from ok.core.notifications import alert_error
 from ok.feature.Box import find_boxes_by_name, find_boxes_within_boundary, Box, find_box_by_name, relative_box, \
     sort_boxes, find_highest_confidence_box
 from ok.feature.FeatureSet import adjust_coordinates, resize_image, scale_box, join_list_elements
@@ -28,7 +29,8 @@ VALID_NAMED_KEYS = {
     'caps_lock', 'num_lock', 'scroll_lock', 'print_screen',
     'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12',
     'num0', 'num1', 'num2', 'num3', 'num4', 'num5', 'num6', 'num7', 'num8', 'num9',
-    'windows', 'win', 'command', 'cmd', 'cmd_l', 'cmd_r', 'meta'
+    'windows', 'win', 'command', 'cmd', 'cmd_l', 'cmd_r', 'meta',
+    'mouse4', 'mouse5', 'xbutton1', 'xbutton2'
 }
 
 logger = Logger.get_logger(__name__)
@@ -777,7 +779,7 @@ class OCR(FindFeature):
             return []
         if box and isinstance(box, str):
             box = self.get_box_by_name(box)
-        if self.executor.paused:
+        if self.executor.blocked_by_pause():
             self.executor.sleep(1)
         if threshold == 0:
             threshold = self.ocr_default_threshold
@@ -1123,6 +1125,16 @@ class BaseTask(OCR):
     def post_init(self):
         pass
 
+    def reload_tasks(self, tasks=None):
+        """Reload registered task instances/classes, or all tasks when omitted.
+
+        Example: self.reload_tasks([SomeTask, another_task]). The returned
+        ExecutorJob runs after the current task finishes; never wait for its
+        future from task code. Tasks sharing a module/plugin reload together.
+        """
+        from ok import og
+        return og.task_manager.reload_tasks(tasks)
+
     def create_shortcut(self):
         index = self.executor.onetime_tasks.index(self) + 1
         path = create_shortcut(None, f' {self.name}', arguments=f"-t {index}")
@@ -1177,6 +1189,13 @@ class BaseTask(OCR):
 
     def enable(self):
         if not self._enabled:
+            owner = getattr(self.executor, 'exclusive_owner', None)
+            if owner is not None and not isinstance(self, TriggerTask):
+                logger.info(f'not enabling {self}, executor held by {owner}')
+                alert_error(self.tr('Cannot start {name}: the app is controlled by {owner}').format(
+                    name=self.tr(self.name), owner=owner))
+                communicate.task.emit(self)
+                return
             self._enabled = True
             self.info_clear()
             self.ensure_capture()
@@ -1285,13 +1304,6 @@ class BaseTask(OCR):
         for index, frame in enumerate(frames):
             communicate.screenshot.emit(frame, f'notification/notification_{index + 1}', False, None)
         communicate.notification.emit(message, title, error, tray, show_tab, params, frames)
-
-    def emit_web_event(self, event, payload=None):
-        """Publish a serializable event to this task's optional browser tab."""
-        tab = getattr(self, "web_tab", None)
-        if tab is None:
-            raise RuntimeError(f"{self.__class__.__name__} does not declare web_tab")
-        communicate.task_tab.emit(tab.id, str(event), payload)
 
     @property
     def enabled(self):

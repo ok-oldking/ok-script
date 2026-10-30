@@ -1,5 +1,5 @@
 site_name: ok-script
-site_description: Computer-vision automation framework for Python
+site_description: Use MCP and a coding agent to build reusable Python automation
 repo_url: https://github.com/ok-oldking/ok-script
 repo_name: ok-oldking/ok-script
 edit_uri: edit/master/docs/
@@ -57,21 +57,24 @@ markdown_extensions:
 nav:
   - 简体中文:
       - 文档中心: index.md
-      - 游戏自动化入门: intro_to_automation/README.md
-      - 快速开始: quick_start/README.md
+      - MCP 快速开始: quick_start/README.md
+      - 编程代理提示词: agent-prompts.md
+      - 代理安装指南（英文）: agent-setup.md
+      - MCP 连接与执行: mcp.md
+      - 自动化原理: intro_to_automation/README.md
       - 界面与开发工具: interface.md
       - 进阶指南: after_quick_start/README.md
-      - API 参考: api_doc/README.md
-      - Web 自定义页: task_web_tabs.md
       - 导入插件: plugins.md
       - 构建文档网站: building-site.md
   - English:
       - Documentation home: en/index.md
-      - Introduction to automation: en/intro_to_automation.md
-      - Quick start: en/quick_start.md
+      - MCP quick start: en/quick_start.md
+      - Ask a coding agent: en/agent-prompts.md
+      - Agent environment setup: agent-setup.md
+      - MCP connection and execution: mcp.md
+      - How automation works: en/intro_to_automation.md
       - Interface and developer tools: en/interface.md
       - Advanced guide: en/advanced.md
-      - API reference: en/api_reference.md
-      - Task-backed web tabs: en/task_web_tabs.md
+      - Template export format: feature-crops.md
       - Imported plugins: en/plugins.md
       - Build the documentation site: en/building-site.md

@@ -4,6 +4,7 @@ import atexit
 import ctypes
 import glob
 import hashlib
+import json
 import os
 import re
 import subprocess
@@ -70,12 +71,12 @@ def _write_shutdown_thread_dump():
 
 
 def start_exit_watchdog(grace_period=3.0, exit_code=0, force_exit=None):
-    """Force termination if Python remains alive after the Qt loop exits.
+    """Force termination if Python remains alive after shutdown is requested.
 
     The watchdog is daemonized, so a normal interpreter exit cancels it. It is
-    deliberately armed only by the Qt adapter after QApplication.exec() has
-    returned; at that point continued execution means shutdown is already in
-    progress and a remaining non-daemon worker must not keep the app alive.
+    armed by the Qt adapter after QApplication.exec() returns, or by an explicit
+    MCP process-exit request before cleanup. A remaining non-daemon worker or
+    blocked cleanup must not keep a runtime that is shutting down alive.
     """
     global _exit_watchdog_started
     with _exit_watchdog_lock:
@@ -135,19 +136,34 @@ def _current_app_signature():
     return _normalized_path(sys.executable), _normalized_path(os.getcwd()), _normalized_path(entry)
 
 
-def _process_matches_app(proc, executable, working_directory, entry_script):
+def _interpreter_paths(executable, allow_console_pair=False):
+    expected = {_normalized_path(executable)}
+    if allow_console_pair and os.path.basename(executable).lower() in ('python.exe', 'pythonw.exe'):
+        expected.update(_normalized_path(os.path.join(os.path.dirname(executable), name))
+                        for name in ('python.exe', 'pythonw.exe'))
+    return expected
+
+
+def _process_matches_app(proc, executable, working_directory, entry_script, allow_console_pair=False):
     """Strictly identify another invocation without matching unrelated Python jobs."""
     try:
         if proc.pid in (os.getpid(), os.getppid()):
             return False
-        if _normalized_path(proc.exe()) != executable:
+        command = proc.cmdline()
+        # Windows virtual-environment redirectors can report the base Python
+        # binary as proc.exe(), while argv[0] identifies the actual environment.
+        interpreters = {_normalized_path(proc.exe())}
+        if command and os.path.isabs(command[0]):
+            interpreters.add(_normalized_path(command[0]))
+        expected = _interpreter_paths(executable, allow_console_pair)
+        if not interpreters & expected:
             return False
         process_cwd = _normalized_path(proc.cwd())
         if process_cwd != working_directory:
             return False
         if entry_script is None:
             return True
-        for argument in proc.cmdline():
+        for argument in command:
             if not argument or argument.startswith('-'):
                 continue
             candidate = argument if os.path.isabs(argument) else os.path.join(process_cwd, argument)
@@ -158,25 +174,70 @@ def _process_matches_app(proc, executable, working_directory, entry_script):
         return False
 
 
-def _read_owner_pid(owner_file):
+def _read_owner_info(owner_file):
     try:
         with open(owner_file, 'r', encoding='ascii') as file:
-            return int(file.read().strip())
-    except (OSError, ValueError):
-        return None
+            value = json.load(file)
+        if isinstance(value, int) and not isinstance(value, bool):
+            return {'pid': value}  # Legacy PID-only markers.
+        if isinstance(value, dict) and type(value.get('pid')) is int:
+            return value
+    except (OSError, ValueError, TypeError):
+        pass
+    return {}
 
 
-def _find_previous_instances(owner_file):
+def _read_owner_pid(owner_file):
+    return _read_owner_info(owner_file).get('pid')
+
+
+def _find_previous_instances(owner_file, replace_console=False):
     executable, working_directory, entry_script = _current_app_signature()
-    owner_pid = _read_owner_pid(owner_file)
+    info = _read_owner_info(owner_file)
+    owner_pid = info.get('pid')
     if owner_pid and owner_pid not in (os.getpid(), os.getppid()):
         try:
             owner = psutil.Process(owner_pid)
+            created = info.get('create_time')
+            if created is not None and owner.create_time() != created:
+                return []  # The PID was reused after the old application exited.
+            if replace_console:
+                if info.get('mode') == 'gui':
+                    return []
+                recorded_executable = info.get('executable')
+                if (recorded_executable is not None
+                        and _normalized_path(recorded_executable) not in _interpreter_paths(executable, True)):
+                    return []
+                # A recorded console owner can have a different entry script:
+                # start_mcp.py and start_gui.py are the same project instance.
+                # Only widen matching for this PID, never for the process scan.
+                base_executable = getattr(sys, '_base_executable', None) or executable
+                matches = _process_matches_app(owner, executable, working_directory, None,
+                                               allow_console_pair=True)
+                if not matches:
+                    # Some Windows venv redirectors rewrite both exe() and
+                    # argv[0]. When available, the recorded environment was
+                    # checked above; verify the real binary against base Python.
+                    matches = _process_matches_app(owner, base_executable, working_directory, None,
+                                                   allow_console_pair=True)
+                if matches:
+                    if info.get('mode') == 'console':
+                        return [owner]
+                    command = owner.cmdline()
+                    if command and os.path.basename(command[0]).lower() == 'python.exe':
+                        return [owner]  # Console owner written by an older version.
+                return []
             if _process_matches_app(owner, executable, working_directory, entry_script):
+                return [owner]
+            if (_normalized_path(info.get('executable')) == executable
+                    and _process_matches_app(owner, getattr(sys, '_base_executable', None) or executable,
+                                             working_directory, entry_script)):
                 return [owner]
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             pass
 
+    if replace_console:
+        return []
     # Compatibility fallback for a hung instance from a version that did not
     # yet write the PID marker. The complete signature is still required.
     if entry_script is None:
@@ -188,11 +249,12 @@ def _find_previous_instances(owner_file):
     return matches
 
 
-def _terminate_previous_instances(owner_file):
+def _terminate_previous_instances(owner_file, replace_console=False):
     terminated = False
-    for proc in _find_previous_instances(owner_file):
+    for proc in _find_previous_instances(owner_file, replace_console=replace_console):
         try:
-            logger.warning(f'Terminating stuck previous instance pid={proc.pid}')
+            kind = 'console' if replace_console else 'application'
+            logger.warning(f'Terminating previous {kind} instance pid={proc.pid}')
             proc.kill()
             terminated = True
         except (psutil.NoSuchProcess, psutil.AccessDenied, OSError) as error:
@@ -216,14 +278,15 @@ def _release_mutex():
     _mutex_owner_file = None
 
 
-def _retain_mutex(handle, owner_file):
+def _retain_mutex(handle, owner_file, gui=False):
     global _mutex_handle, _mutex_owner_file, _mutex_cleanup_registered
     _mutex_handle = handle
     _mutex_owner_file = owner_file
     try:
         temporary = f'{owner_file}.{os.getpid()}.tmp'
         with open(temporary, 'w', encoding='ascii') as file:
-            file.write(str(os.getpid()))
+            json.dump({'pid': os.getpid(), 'create_time': psutil.Process().create_time(),
+                       'executable': sys.executable, 'mode': 'gui' if gui else 'console'}, file)
         os.replace(temporary, owner_file)
     except OSError as error:
         logger.warning(f'Could not record mutex owner: {error}')
@@ -232,7 +295,8 @@ def _retain_mutex(handle, owner_file):
         _mutex_cleanup_registered = True
 
 
-def check_mutex(wait_time=5, kill_wait_time=3):
+def check_mutex(wait_time=5, kill_wait_time=3, gui=False):
+    """Acquire this project's instance lock, replacing its console owner for GUI startup."""
     if _mutex_handle:
         return True
     _LPSECURITY_ATTRIBUTES = wintypes.LPVOID
@@ -269,11 +333,14 @@ def check_mutex(wait_time=5, kill_wait_time=3):
             if not temp_mutex:
                 raise ctypes.WinError()
             if _GetLastError() != _ERROR_ALREADY_EXISTS:
-                _retain_mutex(temp_mutex, owner_file)
+                _retain_mutex(temp_mutex, owner_file, gui=gui)
                 logger.info(f"Mutex {mutex_name} disappeared. Proceeding.")
                 return True
             ctypes.windll.kernel32.CloseHandle(temp_mutex)
             return False
+
+        if gui:
+            _terminate_previous_instances(owner_file, replace_console=True)
 
         deadline = time.monotonic() + max(0, wait_time)
         while time.monotonic() < deadline:
@@ -295,7 +362,7 @@ def check_mutex(wait_time=5, kill_wait_time=3):
         logger.error(f"Mutex {mutex_name} was not released after terminating its recorded owner.")
         return False
 
-    _retain_mutex(mutex, owner_file)
+    _retain_mutex(mutex, owner_file, gui=gui)
     return True
 
 

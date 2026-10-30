@@ -9,6 +9,8 @@ from typing import NamedTuple, Optional
 
 import pyappify
 
+from ok.util.version import compare_versions
+
 logger = logging.getLogger("ok")
 
 APP_VERSION_ENV = "PYAPPIFY_APP_VERSION"
@@ -40,12 +42,8 @@ def _is_greater_version(pyappify_module, version1, version2):
             )
 
     try:
-        version1 = version1.lstrip("v")
-        version2 = version2.lstrip("v")
-        v1_parts = [int(part) for part in version1.split(".")]
-        v2_parts = [int(part) for part in version2.split(".")]
-        return v1_parts > v2_parts
-    except (ValueError, AttributeError):
+        return compare_versions(version1, version2) > 0
+    except ValueError:
         return False
 
 

@@ -12,7 +12,10 @@ def init_ok(config):
         config['debug'] = True
         config['analytics'] = None
         config['check_mutex'] = False
-        print(f'OKTestRunner init_ok config: {config}')
+        try:
+            print(f'OKTestRunner init_ok config: {config}')
+        except UnicodeEncodeError:
+            print(f'OKTestRunner init_ok config: {str(config).encode("ascii", errors="replace").decode("ascii")}')
         ok = OK(config)
         ok.task_executor.debug_mode = True
         ok.device_manager.capture_method = ImageCaptureMethod(

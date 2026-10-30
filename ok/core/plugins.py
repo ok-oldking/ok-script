@@ -12,9 +12,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
-from packaging.version import InvalidVersion, Version
 
 from ok.core.script_packager import MAX_ARCHIVE_SIZE, inspect_script_archive
+from ok.util.version import compare_versions
 
 PLUGIN_SOURCE_FILE = '.ok-plugin-source.json'
 
@@ -142,8 +142,8 @@ def write_plugin_source(folder, source):
 
 def newer_plugin_version(candidate, installed):
     try:
-        return Version(candidate) > Version(installed)
-    except InvalidVersion as error:
+        return compare_versions(candidate, installed) > 0
+    except ValueError as error:
         raise ValueError(f'Cannot compare plugin versions: {installed!r}, {candidate!r}') from error
 
 

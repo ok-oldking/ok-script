@@ -93,6 +93,14 @@
             <source>Disclaimer</source>
             <translation>Aviso legal</translation>
         </message>
+        <message>
+            <source>BrownDust II</source>
+            <translation>BrownDust II</translation>
+        </message>
+        <message>
+            <source>Azur Promilia</source>
+            <translation>Azur Promilia</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
@@ -251,6 +259,18 @@
         <message>
             <source>No Capture Available or Selected</source>
             <translation>No hay captura disponible o seleccionada</translation>
+        </message>
+        <message>
+            <source>Reload tasks</source>
+            <translation>Recargar tareas</translation>
+        </message>
+        <message>
+            <source>Waiting to reload tasks...</source>
+            <translation>Esperando para recargar las tareas...</translation>
+        </message>
+        <message>
+            <source>Reloaded {count} tasks</source>
+            <translation>Se han recargado {count} tareas</translation>
         </message>
     </context>
     <context>
@@ -1773,6 +1793,14 @@
             <translation>Prueba a pulsar Alt+F3 para desactivarlo.</translation>
         </message>
         <message>
+            <source>Enable MCP Server</source>
+            <translation>Activar servidor MCP</translation>
+        </message>
+        <message>
+            <source>Allow local coding agents to control this app and run Python code</source>
+            <translation>Permitir que los agentes de programación locales controlen esta aplicación y ejecuten código Python</translation>
+        </message>
+        <message>
             <source>Bark Notification</source>
             <translation>Notificaciones de Bark</translation>
         </message>
@@ -3032,6 +3060,18 @@ Crítica: sonar incluso en modo silencio</translation>
             <source>Invalid relative path. Example: ok_tasks/LabelEnum.py</source>
             <translation>Ruta relativa no válida. Ejemplo: ok_tasks/LabelEnum.py</translation>
         </message>
+        <message>
+            <source>Generate function</source>
+            <translation>Método de generación</translation>
+        </message>
+        <message>
+            <source>Split(Recommend)</source>
+            <translation>Separar (recomendado)</translation>
+        </message>
+        <message>
+            <source>Compress (obsolete)</source>
+            <translation>Comprimir (obsoleto)</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>
@@ -3140,879 +3180,6 @@ Crítica: sonar incluso en modo silencio</translation>
         <message>
             <source>Select File or Folder</source>
             <translation>Seleccionar archivo o carpeta</translation>
-        </message>
-    </context>
-    <context>
-        <name>WebUI</name>
-        <message>
-            <source>Automation control</source>
-            <translation>Control de automatización</translation>
-        </message>
-        <message>
-            <source>A local command center for tasks, triggers, and runtime events.</source>
-            <translation>Un centro de control local para tareas, activadores y eventos de ejecución.</translation>
-        </message>
-        <message>
-            <source>Live</source>
-            <translation>En vivo</translation>
-        </message>
-        <message>
-            <source>Reconnecting</source>
-            <translation>Reconectando</translation>
-        </message>
-        <message>
-            <source>Runtime error</source>
-            <translation>Error de ejecución</translation>
-        </message>
-        <message>
-            <source>Executor</source>
-            <translation>Ejecutor</translation>
-        </message>
-        <message>
-            <source>Idle</source>
-            <translation>Inactivo</translation>
-        </message>
-        <message>
-            <source>Current task</source>
-            <translation>Tarea actual</translation>
-        </message>
-        <message>
-            <source>None</source>
-            <translation>Ninguna</translation>
-        </message>
-        <message>
-            <source>Resume</source>
-            <translation>Reanudar</translation>
-        </message>
-        <message>
-            <source>Pause</source>
-            <translation>Pausar</translation>
-        </message>
-        <message>
-            <source>Stop task</source>
-            <translation>Detener tarea</translation>
-        </message>
-        <message>
-            <source>Tasks</source>
-            <translation>Tareas</translation>
-        </message>
-        <message>
-            <source>{count} available</source>
-            <translation>{count} disponibles</translation>
-        </message>
-        <message>
-            <source>Filter tasks</source>
-            <translation>Filtrar tareas</translation>
-        </message>
-        <message>
-            <source>Refresh tasks</source>
-            <translation>Actualizar tareas</translation>
-        </message>
-        <message>
-            <source>Refresh</source>
-            <translation>Actualizar</translation>
-        </message>
-        <message>
-            <source>Trigger</source>
-            <translation>Activador</translation>
-        </message>
-        <message>
-            <source>One-time</source>
-            <translation>Una vez</translation>
-        </message>
-        <message>
-            <source>Running</source>
-            <translation>En ejecución</translation>
-        </message>
-        <message>
-            <source>Paused</source>
-            <translation>Pausado</translation>
-        </message>
-        <message>
-            <source>Start</source>
-            <translation>Iniciar</translation>
-        </message>
-        <message>
-            <source>No tasks match “{query}”.</source>
-            <translation>No hay tareas que coincidan con «{query}».</translation>
-        </message>
-        <message>
-            <source>Live events</source>
-            <translation>Eventos en vivo</translation>
-        </message>
-        <message>
-            <source>Latest 100 messages</source>
-            <translation>Últimos 100 mensajes</translation>
-        </message>
-        <message>
-            <source>Clear</source>
-            <translation>Borrar</translation>
-        </message>
-        <message>
-            <source>Waiting for runtime events…</source>
-            <translation>Esperando eventos de ejecución…</translation>
-        </message>
-        <message>
-            <source>Could not reach the automation runtime</source>
-            <translation>No se pudo conectar con el entorno de automatización</translation>
-        </message>
-        <message>
-            <source>Request failed</source>
-            <translation>La solicitud falló</translation>
-        </message>
-        <message>
-            <source>Action failed</source>
-            <translation>La acción falló</translation>
-        </message>
-        <message>
-            <source>Back</source>
-            <translation>Atrás</translation>
-        </message>
-        <message>
-            <source>Capture</source>
-            <translation>Captura</translation>
-        </message>
-        <message>
-            <source>Capture Method</source>
-            <translation>Método de captura</translation>
-        </message>
-        <message>
-            <source>Choose Interaction</source>
-            <translation>Elegir interacción</translation>
-        </message>
-        <message>
-            <source>Choose Window</source>
-            <translation>Elegir ventana</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <translation>Cerrar</translation>
-        </message>
-        <message>
-            <source>Debug</source>
-            <translation>Depurar</translation>
-        </message>
-        <message>
-            <source>Disable Boxes</source>
-            <translation>Desactivar cuadros</translation>
-        </message>
-        <message>
-            <source>Disconnected</source>
-            <translation>Desconectado</translation>
-        </message>
-        <message>
-            <source>Enable Boxes</source>
-            <translation>Activar cuadros</translation>
-        </message>
-        <message>
-            <source>Export Logs</source>
-            <translation>Exportar registros</translation>
-        </message>
-        <message>
-            <source>Install Folder</source>
-            <translation>Carpeta de instalación</translation>
-        </message>
-        <message>
-            <source>Loading</source>
-            <translation>Cargando</translation>
-        </message>
-        <message>
-            <source>Log Folder</source>
-            <translation>Carpeta de registros</translation>
-        </message>
-        <message>
-            <source>Maximize</source>
-            <translation>Maximizar</translation>
-        </message>
-        <message>
-            <source>Minimize</source>
-            <translation>Minimizar</translation>
-        </message>
-        <message>
-            <source>No options available</source>
-            <translation>No hay opciones disponibles</translation>
-        </message>
-        <message>
-            <source>No windows found</source>
-            <translation>No se encontraron ventanas</translation>
-        </message>
-        <message>
-            <source>Refreshing</source>
-            <translation>Actualizando</translation>
-        </message>
-        <message>
-            <source>Screenshot Folder</source>
-            <translation>Carpeta de capturas</translation>
-        </message>
-        <message>
-            <source>Search title or exe...</source>
-            <translation>Buscar título o ejecutable...</translation>
-        </message>
-        <message>
-            <source>Toggle navigation</source>
-            <translation>Alternar navegación</translation>
-        </message>
-        <message>
-            <source>View Log</source>
-            <translation>Ver registro</translation>
-        </message>
-        <message>
-            <source>{page} is not available in the web UI yet.</source>
-            <translation>{page} aún no está disponible en la interfaz web.</translation>
-        </message>
-        <message>
-            <source>About</source>
-            <translation>Acerca de</translation>
-        </message>
-        <message>
-            <source>Character Code</source>
-            <translation>Código del personaje</translation>
-        </message>
-        <message>
-            <source>Character Settings</source>
-            <translation>Ajustes del personaje</translation>
-        </message>
-        <message>
-            <source>Game Hotkeys</source>
-            <translation>Atajos del juego</translation>
-        </message>
-        <message>
-            <source>Notifications</source>
-            <translation>Notificaciones</translation>
-        </message>
-        <message>
-            <source>Schedule</source>
-            <translation>Programa</translation>
-        </message>
-        <message>
-            <source>Script</source>
-            <translation>Script</translation>
-        </message>
-        <message>
-            <source>Settings</source>
-            <translation>Ajustes</translation>
-        </message>
-        <message>
-            <source>Templates</source>
-            <translation>Plantillas</translation>
-        </message>
-        <message>
-            <source>Triggers</source>
-            <translation>Disparadores</translation>
-        </message>
-        <message>
-            <source>All Levels</source>
-            <translation>Todos los niveles</translation>
-        </message>
-        <message>
-            <source>Capture Preview</source>
-            <translation>Vista previa de captura</translation>
-        </message>
-        <message>
-            <source>Captured game frame</source>
-            <translation>Fotograma del juego capturado</translation>
-        </message>
-        <message>
-            <source>Could not load logs</source>
-            <translation>No se pudieron cargar los registros</translation>
-        </message>
-        <message>
-            <source>Filter logs...</source>
-            <translation>Filtrar registros...</translation>
-        </message>
-        <message>
-            <source>Log level</source>
-            <translation>Nivel de registro</translation>
-        </message>
-        <message>
-            <source>Waiting for ok-script.log</source>
-            <translation>Esperando ok-script.log</translation>
-        </message>
-        <message>
-            <source>lines</source>
-            <translation>líneas</translation>
-        </message>
-        <message>
-            <source>Open Screenshot Folder</source>
-            <translation>Abrir carpeta de capturas</translation>
-        </message>
-        <message>
-            <source>Completed</source>
-            <translation>Completado</translation>
-        </message>
-        <message>
-            <source>Time Elapsed</source>
-            <translation>Tiempo transcurrido</translation>
-        </message>
-        <message>
-            <source>Waiting for {task_name} task to be completed</source>
-            <translation>Esperando a que se complete la tarea {task_name}</translation>
-        </message>
-        <message>
-            <source>Instructions</source>
-            <translation>Instrucciones</translation>
-        </message>
-        <message>
-            <source>Enabled</source>
-            <translation>Habilitado</translation>
-        </message>
-        <message>
-            <source>Disabled</source>
-            <translation>Deshabilitado</translation>
-        </message>
-        <message>
-            <source>Stop</source>
-            <translation>Detener</translation>
-        </message>
-        <message>
-            <source>Reset Config</source>
-            <translation>Restablecer configuración</translation>
-        </message>
-        <message>
-            <source>App Config</source>
-            <translation>Configuración de la app</translation>
-        </message>
-        <message>
-            <source>Application Theme</source>
-            <translation>Tema de la aplicación</translation>
-        </message>
-        <message>
-            <source>Change the appearance of the application</source>
-            <translation>Cambiar la apariencia de tu aplicación</translation>
-        </message>
-        <message>
-            <source>Light</source>
-            <translation>Claro</translation>
-        </message>
-        <message>
-            <source>Dark</source>
-            <translation>Oscuro</translation>
-        </message>
-        <message>
-            <source>Use system setting</source>
-            <translation>Usar configuración del sistema</translation>
-        </message>
-        <message>
-            <source>Language</source>
-            <translation>Idioma</translation>
-        </message>
-        <message>
-            <source>Set your preferred language</source>
-            <translation>Establece tu idioma preferido</translation>
-        </message>
-        <message>
-            <source>Actions</source>
-            <translation>Acciones</translation>
-        </message>
-        <message>
-            <source>Add</source>
-            <translation>Añadir</translation>
-        </message>
-        <message>
-            <source>Auto Exit After Task</source>
-            <translation>Auto Exit After Task</translation>
-        </message>
-        <message>
-            <source>Available Options</source>
-            <translation>Opciones disponibles</translation>
-        </message>
-        <message>
-            <source>Bounding Box</source>
-            <translation>Cuadro delimitador</translation>
-        </message>
-        <message>
-            <source>Cancel</source>
-            <translation>Cancelar</translation>
-        </message>
-        <message>
-            <source>Category name</source>
-            <translation>Nombre de categoría</translation>
-        </message>
-        <message>
-            <source>Choose Task:</source>
-            <translation>Elegir tarea:</translation>
-        </message>
-        <message>
-            <source>Class Name (English only)</source>
-            <translation>Nombre de clase (solo inglés)</translation>
-        </message>
-        <message>
-            <source>Confirm</source>
-            <translation>Confirmar</translation>
-        </message>
-        <message>
-            <source>Confirm Delete</source>
-            <translation>Confirmar eliminación</translation>
-        </message>
-        <message>
-            <source>Copy Task</source>
-            <translation>Copiar tarea</translation>
-        </message>
-        <message>
-            <source>Create</source>
-            <translation>Crear</translation>
-        </message>
-        <message>
-            <source>Create New Task</source>
-            <translation>Crear nueva tarea</translation>
-        </message>
-        <message>
-            <source>Create Schedule Task</source>
-            <translation>Crear tarea programada</translation>
-        </message>
-        <message>
-            <source>Create Task</source>
-            <translation>Crear tarea</translation>
-        </message>
-        <message>
-            <source>Current App</source>
-            <translation>Current App</translation>
-        </message>
-        <message>
-            <source>Days</source>
-            <translation>Días</translation>
-        </message>
-        <message>
-            <source>Delete</source>
-            <translation>Eliminar</translation>
-        </message>
-        <message>
-            <source>Delete Task</source>
-            <translation>Eliminar tarea</translation>
-        </message>
-        <message>
-            <source>Description (Optional)</source>
-            <translation>Descripción (opcional)</translation>
-        </message>
-        <message>
-            <source>File</source>
-            <translation>Archivo</translation>
-        </message>
-        <message>
-            <source>Generate label enum file</source>
-            <translation>Generar archivo enum de etiquetas</translation>
-        </message>
-        <message>
-            <source>Guide</source>
-            <translation>Guía</translation>
-        </message>
-        <message>
-            <source>Hour</source>
-            <translation>Hora</translation>
-        </message>
-        <message>
-            <source>Hours</source>
-            <translation>Horas</translation>
-        </message>
-        <message>
-            <source>Markup</source>
-            <translation>Marcado</translation>
-        </message>
-        <message>
-            <source>Minute</source>
-            <translation>Minuto</translation>
-        </message>
-        <message>
-            <source>Modify</source>
-            <translation>Modificar</translation>
-        </message>
-        <message>
-            <source>Modify Schedule Task</source>
-            <translation>Modificar tarea programada</translation>
-        </message>
-        <message>
-            <source>Move Down</source>
-            <translation>Mover abajo</translation>
-        </message>
-        <message>
-            <source>Move Up</source>
-            <translation>Mover arriba</translation>
-        </message>
-        <message>
-            <source>Next Run</source>
-            <translation>Próxima ejecución</translation>
-        </message>
-        <message>
-            <source>No templates yet</source>
-            <translation>Sin plantillas aún</translation>
-        </message>
-        <message>
-            <source>OK</source>
-            <translation>Aceptar</translation>
-        </message>
-        <message>
-            <source>Other Projects</source>
-            <translation>Otros proyectos</translation>
-        </message>
-        <message>
-            <source>Relative path, e.g. ok_tasks/LabelEnum.py</source>
-            <translation>Ruta relativa, p. ej. ok_tasks/LabelEnum.py</translation>
-        </message>
-        <message>
-            <source>Remove</source>
-            <translation>Eliminar</translation>
-        </message>
-        <message>
-            <source>Run</source>
-            <translation>Ejecutar</translation>
-        </message>
-        <message>
-            <source>Save</source>
-            <translation>Guardar</translation>
-        </message>
-        <message>
-            <source>Save To</source>
-            <translation>Guardar en</translation>
-        </message>
-        <message>
-            <source>Saved</source>
-            <translation>Saved</translation>
-        </message>
-        <message>
-            <source>Screenshot</source>
-            <translation>Captura de pantalla</translation>
-        </message>
-        <message>
-            <source>Search by name or category...</source>
-            <translation>Buscar por nombre o categoría...</translation>
-        </message>
-        <message>
-            <source>Search templates...</source>
-            <translation>Buscar plantillas...</translation>
-        </message>
-        <message>
-            <source>Select Task</source>
-            <translation>Seleccionar tarea</translation>
-        </message>
-        <message>
-            <source>Select task to edit</source>
-            <translation>Select task to edit</translation>
-        </message>
-        <message>
-            <source>Selected Options</source>
-            <translation>Opciones seleccionadas</translation>
-        </message>
-        <message>
-            <source>Status</source>
-            <translation>Estado</translation>
-        </message>
-        <message>
-            <source>Take Screenshot</source>
-            <translation>Tomar captura de pantalla</translation>
-        </message>
-        <message>
-            <source>Task Name</source>
-            <translation>Nombre de la tarea</translation>
-        </message>
-        <message>
-            <source>Task rebuilt successfully.</source>
-            <translation>Tarea reconstruida con éxito.</translation>
-        </message>
-        <message>
-            <source>Timeout</source>
-            <translation>Tiempo de espera</translation>
-        </message>
-        <message>
-            <source>Trigger Type</source>
-            <translation>Tipo de activador</translation>
-        </message>
-        <message>
-            <source>assets (standalone app)</source>
-            <translation>assets (aplicación independiente)</translation>
-        </message>
-        <message>
-            <source>ok_tasks/assets (custom scripts)</source>
-            <translation>ok_tasks/assets (scripts personalizados)</translation>
-        </message>
-        <message>
-            <source>GitHub</source>
-            <translation>GitHub</translation>
-        </message>
-        <message>
-            <source>FAQ</source>
-            <translation>FAQ</translation>
-        </message>
-        <message>
-            <source>Website</source>
-            <translation>Sitio web</translation>
-        </message>
-        <message>
-            <source>ok-py Automation Tool</source>
-            <translation>Herramienta de automatización ok-py</translation>
-        </message>
-        <message>
-            <source>ok-script App Template</source>
-            <translation>Plantilla de aplicación ok-script</translation>
-        </message>
-        <message>
-            <source>Wuthering Waves</source>
-            <translation>Wuthering Waves</translation>
-        </message>
-        <message>
-            <source>Girls' Frontline 2</source>
-            <translation>Girls' Frontline 2</translation>
-        </message>
-        <message>
-            <source>Star Resonance</source>
-            <translation>Star Resonance</translation>
-        </message>
-        <message>
-            <source>Duet Night Abyss</source>
-            <translation>Duet Night Abyss</translation>
-        </message>
-        <message>
-            <source>Chaos Zero Nightmare</source>
-            <translation>Chaos Zero Nightmare</translation>
-        </message>
-        <message>
-            <source>Onmyoji</source>
-            <translation>Onmyoji</translation>
-        </message>
-        <message>
-            <source>Arknights: Endfield</source>
-            <translation>Arknights: Endfield</translation>
-        </message>
-        <message>
-            <source>Neverness to Everness</source>
-            <translation>Neverness to Everness</translation>
-        </message>
-        <message>
-            <source>Discord</source>
-            <translation>Discord</translation>
-        </message>
-        <message>
-            <source>Share</source>
-            <translation>Compartir</translation>
-        </message>
-        <message>
-            <source>Sponsor</source>
-            <translation>Patrocinar</translation>
-        </message>
-        <message>
-            <source>Share Link copied to clipboard</source>
-            <translation>Enlace para compartir copiado al portapapeles</translation>
-        </message>
-        <message>
-            <source>Starting</source>
-            <translation>Iniciando</translation>
-        </message>
-        <message>
-            <source>App update</source>
-            <translation>Actualización de la aplicación</translation>
-        </message>
-        <message>
-            <source>Disclaimer</source>
-            <translation>Aviso legal</translation>
-        </message>
-        <message>
-            <source>Check Test Version</source>
-            <translation>Buscar versiones de prueba</translation>
-        </message>
-        <message>
-            <source>Check for updates</source>
-            <translation>Buscar actualizaciones</translation>
-        </message>
-        <message>
-            <source>Click to check for updates</source>
-            <translation>Haz clic para buscar actualizaciones</translation>
-        </message>
-        <message>
-            <source>Version</source>
-            <translation>Versión</translation>
-        </message>
-        <message>
-            <source>Update</source>
-            <translation>Actualizar</translation>
-        </message>
-        <message>
-            <source>Downgrade</source>
-            <translation>Cambiar a una versión anterior</translation>
-        </message>
-        <message>
-            <source>Current version</source>
-            <translation>Versión actual</translation>
-        </message>
-        <message>
-            <source>Checking for updates…</source>
-            <translation>Buscando actualizaciones…</translation>
-        </message>
-        <message>
-            <source>Starting change to {version}…</source>
-            <translation>Iniciando el cambio a {version}…</translation>
-        </message>
-        <message>
-            <source>Failed to check for updates: {error}</source>
-            <translation>No se pudieron buscar actualizaciones: {error}</translation>
-        </message>
-        <message>
-            <source>No versions are available.</source>
-            <translation>No hay versiones disponibles.</translation>
-        </message>
-        <message>
-            <source>No updates available.</source>
-            <translation>No hay actualizaciones disponibles.</translation>
-        </message>
-        <message>
-            <source>No release notes.</source>
-            <translation>No hay notas de la versión.</translation>
-        </message>
-        <message>
-            <source>Update request accepted. The app will restart to apply it.</source>
-            <translation>Se aceptó la solicitud de actualización. La aplicación se reiniciará para aplicarla.</translation>
-        </message>
-        <message>
-            <source>Failed to change version: {error}</source>
-            <translation>No se pudo cambiar la versión: {error}</translation>
-        </message>
-        <message>
-            <source>Update available.</source>
-            <translation>Hay una actualización disponible.</translation>
-        </message>
-        <message>
-            <source>Auto HDR is enabled, tasks might not work correctly!</source>
-            <translation>El HDR automático está activado, ¡las tareas podrían no funcionar correctamente!</translation>
-        </message>
-        <message>
-            <source>WGC - Fast, support HDR (not AutoHDR)</source>
-            <translation>WGC - Rápido, compatible con HDR (no AutoHDR)</translation>
-        </message>
-        <message>
-            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - Usar solo con AutoHDR (no recomendado)</translation>
-        </message>
-        <message>
-            <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
-            <translation>La comprobación de la resolución {resolution} falló, ¡algunas tareas podrían no funcionar correctamente!</translation>
-        </message>
-        <message>
-            <source>, the supported ratio is {supported_ratio}</source>
-            <translation>, la proporción admitida es {supported_ratio}</translation>
-        </message>
-        <message>
-            <source>, the supported min resolution is {min_size}</source>
-            <translation>, la resolución mínima admitida es {min_size}</translation>
-        </message>
-        <message>
-            <source>{vendor} {feature} is enabled and may cause malfunctions!</source>
-            <translation>¡Se ha activado {vendor} {feature} y puede causar fallos de funcionamiento!</translation>
-        </message>
-        <message>
-            <source>GPU Driver Warning</source>
-            <translation>Advertencia del controlador de GPU</translation>
-        </message>
-        <message>
-            <source>Fast, support HDR (not AutoHDR)</source>
-            <translation>Rápido, compatible con HDR (no AutoHDR)</translation>
-        </message>
-        <message>
-            <source>Only use when using AutoHDR (Not Recommended)</source>
-            <translation>Usar solo con AutoHDR (no recomendado)</translation>
-        </message>
-        <message>
-            <source>Try using Alt+F3 to turn it off.</source>
-            <translation>Prueba a pulsar Alt+F3 para desactivarlo.</translation>
-        </message>
-        <message>
-            <source>Bark Notification</source>
-            <translation>Notificaciones de Bark</translation>
-        </message>
-        <message>
-            <source>Bark Server URL</source>
-            <translation>URL del servidor de Bark</translation>
-        </message>
-        <message>
-            <source>Bark Device Key</source>
-            <translation>Clave del dispositivo de Bark</translation>
-        </message>
-        <message>
-            <source>Bark Group</source>
-            <translation>Grupo de Bark</translation>
-        </message>
-        <message>
-            <source>Bark Sound</source>
-            <translation>Sonido de Bark</translation>
-        </message>
-        <message>
-            <source>Bark Level</source>
-            <translation>Nivel de Bark</translation>
-        </message>
-        <message>
-            <source>Bark Archive</source>
-            <translation>Historial de Bark</translation>
-        </message>
-        <message>
-            <source>Send notifications through the Bark iOS app</source>
-            <translation>Enviar notificaciones mediante Bark iOS App</translation>
-        </message>
-        <message>
-            <source>Bark server URL; do not change unless needed</source>
-            <translation>URL del servidor Bark; cambiar solo si es necesario</translation>
-        </message>
-        <message>
-            <source>Device key registered in the Bark app</source>
-            <translation>Clave del dispositivo registrada en Bark App</translation>
-        </message>
-        <message>
-            <source>Notification group; leave empty to send without a group</source>
-            <translation>Grupo de notificaciones; dejar vacio para enviar sin grupo</translation>
-        </message>
-        <message>
-            <source>Ringtone name; leave empty to use the app default</source>
-            <translation>Nombre del tono; dejar vacío para usar el tono predeterminado de la app</translation>
-        </message>
-        <message>
-            <source>Normal: display immediately and wake the screen
-Passive: notification list only
-Time Sensitive: show during Focus
-Critical: sound even in silent mode</source>
-            <translation>Normal: mostrar de inmediato y encender la pantalla
-Silenciosa: solo añadir a la lista
-Urgente: mostrar durante Concentración
-Crítica: sonar incluso en modo silencio</translation>
-        </message>
-        <message>
-            <source>Whether to save notifications in Bark history</source>
-            <translation>Guardar o no las notificaciones en el historial de Bark</translation>
-        </message>
-        <message>
-            <source>App Default</source>
-            <translation>Predeterminado de la app</translation>
-        </message>
-        <message>
-            <source>Do Not Save</source>
-            <translation>No guardar</translation>
-        </message>
-        <message>
-            <source>active</source>
-            <translation>Normal</translation>
-        </message>
-        <message>
-            <source>passive</source>
-            <translation>Silencioso</translation>
-        </message>
-        <message>
-            <source>timeSensitive</source>
-            <translation>Urgente</translation>
-        </message>
-        <message>
-            <source>Bark Icon</source>
-            <translation>Icono de Bark</translation>
-        </message>
-        <message>
-            <source>Bark URL</source>
-            <translation>Enlace de Bark</translation>
-        </message>
-        <message>
-            <source>Notification icon URL; leave empty to use the app default icon</source>
-            <translation>URL del icono; dejar vacío para usar el icono predeterminado de la app</translation>
-        </message>
-        <message>
-            <source>Link to open when the notification is tapped</source>
-            <translation>Enlace que se abre al tocar la notificación</translation>
-        </message>
-        <message>
-            <source>critical</source>
-            <translation>Alerta crítica</translation>
         </message>
     </context>
     <context>
@@ -4186,6 +3353,57 @@ Crítica: sonar incluso en modo silencio</translation>
         <message>
             <source>Checking for updates…</source>
             <translation>Buscando actualizaciones…</translation>
+        </message>
+        <message>
+            <source>Restart the application to apply plugin changes.</source>
+            <translation>Reinicia la aplicación para aplicar los cambios de complementos.</translation>
+        </message>
+        <message>
+            <source>Plugin change failed: {}</source>
+            <translation>Error al cambiar el complemento: {}</translation>
+        </message>
+        <message>
+            <source>Update failed. Restart to restore the previous version.</source>
+            <translation>La actualización falló. Reinicia para restaurar la versión anterior.</translation>
+        </message>
+        <message>
+            <source>Deletion staged. Restart to apply.</source>
+            <translation>Eliminación preparada. Reinicia para aplicarla.</translation>
+        </message>
+        <message>
+            <source>Update staged: {}. Restart to apply.</source>
+            <translation>Actualización preparada: {}. Reinicia para aplicarla.</translation>
+        </message>
+        <message>
+            <source>Cancel pending change</source>
+            <translation>Cancelar cambio pendiente</translation>
+        </message>
+        <message>
+            <source>Backup cleanup pending. Restart to retry.</source>
+            <translation>Limpieza de copias pendiente. Reinicia para reintentar.</translation>
+        </message>
+    </context>
+    <context>
+        <name>LabelAndMcpServer</name>
+        <message>
+            <source>Enable MCP Server?</source>
+            <translation>¿Activar el servidor MCP?</translation>
+        </message>
+        <message>
+            <source>MCP lets local coding agents control this app and execute Python code with your account permissions, including reading and changing files. Only connect trusted agents and keep the connection token private. Enable the server now?</source>
+            <translation>MCP permite que los agentes de programación locales controlen esta aplicación y ejecuten código Python con los permisos de su cuenta, incluida la lectura y modificación de archivos. Conecte solo agentes de confianza y mantenga privado el token de conexión. ¿Activar el servidor ahora?</translation>
+        </message>
+        <message>
+            <source>MCP server error</source>
+            <translation>Error del servidor MCP</translation>
+        </message>
+        <message>
+            <source>Yes</source>
+            <translation>Sí</translation>
+        </message>
+        <message>
+            <source>No</source>
+            <translation>No</translation>
         </message>
     </context>
 </TS>

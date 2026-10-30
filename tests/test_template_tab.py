@@ -1,7 +1,12 @@
 import os
 import tempfile
+import threading
+import time
 import unittest
 from types import SimpleNamespace
+from unittest.mock import Mock, patch
+
+import numpy as np
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
@@ -54,6 +59,46 @@ class TestTemplateTabCardCollection(unittest.TestCase):
             (DesignToken.PAGE_MARGIN,) * 4,
         )
         self.assertEqual(layout.spacing(), DesignToken.PAGE_SPACING)
+
+    def test_export_dialog_defaults_to_split_and_switches_to_compress(self):
+        from qfluentwidgets import MessageBoxBase, RadioButton
+
+        for debug in (False, True):
+            for split in (True, False):
+                with self.subTest(debug=debug, split=split):
+                    og.app.debug = debug
+                    observed = []
+
+                    def accept_dialog(dialog):
+                        buttons = {button.text(): button for button in dialog.findChildren(RadioButton)}
+                        self.assertTrue(buttons['Split(Recommend)'].isChecked())
+                        destination = 'assets (standalone app)' if debug else 'ok_tasks/assets (custom scripts)'
+                        self.assertTrue(buttons[destination].isChecked())
+                        if not split:
+                            buttons['Compress (obsolete)'].setChecked(True)
+                            observed.append(buttons[destination].text())
+                        return 1
+
+                    executor = SimpleNamespace(feature_set=Mock())
+                    with patch.object(MessageBoxBase, 'exec', accept_dialog), \
+                            patch('ok.ui.qt.tasks.TemplateTab.os.path.exists', return_value=True), \
+                            patch('ok.feature.FeatureSet.generate_templates') as generate, \
+                            patch('ok.feature.FeatureSet.compress_copy_coco') as compress, \
+                            patch('ok.ui.qt.util.Alert.alert_info'), \
+                            patch('ok.ui.qt.util.Alert.alert_error') as error, \
+                            patch.object(og, 'executor', executor):
+                        self.tab.save_compressed()
+                        chosen, unused = (generate, compress) if split else (compress, generate)
+                        chosen.assert_called_once()
+                        unused.assert_not_called()
+                        folder = os.path.join('assets', 'templates') if split else 'assets'
+                        expected = os.path.abspath(folder if debug else os.path.join('ok_tasks', folder))
+                        self.assertEqual(expected, chosen.call_args.args[1])
+                        executor.feature_set.process_data.assert_called_once()
+                        error.assert_not_called()
+                    if not split:
+                        expected_label = 'assets (standalone app)' if debug else 'ok_tasks/assets (custom scripts)'
+                        self.assertEqual([expected_label], observed)
 
     def test_search_reuses_cards_and_clears_hidden_selection(self):
         boss_path = self._add_item('boss.png', ['boss'])
@@ -164,6 +209,41 @@ class TestTemplateTabCardCollection(unittest.TestCase):
 
         self.assertEqual([([], expected_coco)], emitted)
         editor.deleteLater()
+
+    def test_screenshot_captures_off_gui_thread_and_adds_item(self):
+        release = threading.Event()
+        capture_threads = []
+
+        def get_frame(busy_wait=0):
+            capture_threads.append(threading.current_thread())
+            release.wait(5)
+            return np.zeros((20, 20, 3), dtype=np.uint8)
+
+        old_device_manager = getattr(og, 'device_manager', None)
+        old_config = getattr(og, 'config', None)
+        og.device_manager = SimpleNamespace(capture_method=SimpleNamespace(get_frame=get_frame))
+        og.config = {}
+        try:
+            # A slow capture must not block the click handler.
+            self.tab.take_screenshot()
+            self.assertTrue(self.tab._capturing)
+            self.assertFalse(self.tab.screenshot_btn.isEnabled())
+
+            release.set()
+            deadline = time.monotonic() + 5
+            while self.tab._capturing and time.monotonic() < deadline:
+                QApplication.processEvents()
+                time.sleep(.01)
+        finally:
+            release.set()
+            og.device_manager = old_device_manager
+            og.config = old_config
+
+        self.assertFalse(self.tab._capturing)
+        self.assertTrue(self.tab.screenshot_btn.isEnabled())
+        self.assertIsNot(threading.main_thread(), capture_threads[0])
+        self.assertEqual(1, len(self.tab._items_by_path))
+        self.assertTrue(os.path.isfile(next(iter(self.tab._items_by_path))))
 
     def test_next_image_name_reuses_deleted_number_but_reserves_coco_entries(self):
         open(os.path.join(self.temp_dir.name, '0.png'), 'wb').close()

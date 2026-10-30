@@ -1,0 +1,4 @@
+interface:
+  display_name: "Set Up Automation Project"
+  short_description: "Create a local GUI and MCP automation project"
+  default_prompt: "Use $setup-project to configure a local automation target with separate user GUI and agent MCP launchers."

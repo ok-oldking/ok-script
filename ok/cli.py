@@ -57,14 +57,30 @@ def run_gui_command(args):
 
     config = dict(load_config(args.config))
     config["gui"] = {"type": "qt"}
+    if args.mcp:
+        config["mcp"] = {**(config.get("mcp") or {}), "enabled": True}
+        if args.mcp_port is not None:
+            config["mcp"]["port"] = args.mcp_port
     OK(config).start()
     return 0
 
 
-def run_web_command(args):
-    from ok import run_web
+def run_mcp_command(args):
+    from ok import OK
 
-    run_web(load_config(args.config), host=args.host, port=args.port, open_browser=False)
+    config = dict(load_config(args.config))
+    config['gui'] = None
+    config['mcp'] = {**(config.get('mcp') or {}), 'enabled': True}
+    if args.port is not None:
+        config['mcp']['port'] = args.port
+    runtime = OK(config)
+    try:
+        runtime.start_mcp_server()
+        runtime.start()
+    finally:
+        runtime.quit()
+        if runtime._mcp_server is not None:
+            runtime._mcp_server.join()
     return 0
 
 
@@ -94,14 +110,14 @@ def build_parser():
 
     gui_parser = subparsers.add_parser("gui", help="Run the Qt desktop UI")
     gui_parser.add_argument("-c", "--config", help="Config import target")
+    gui_parser.add_argument("--mcp", action="store_true", help="Enable localhost MCP task development")
+    gui_parser.add_argument("--mcp-port", type=int, help="Local MCP port (default: project config or 8765)")
     gui_parser.set_defaults(func=run_gui_command)
 
-    web_parser = subparsers.add_parser("web", help="Run the FastAPI browser UI")
-    web_parser.add_argument("-c", "--config", help="Config import target")
-    web_parser.add_argument("--host", default="127.0.0.1")
-    web_parser.add_argument("--port", type=int, default=0,
-                            help="Port to listen on (default: choose an available port)")
-    web_parser.set_defaults(func=run_web_command)
+    mcp_parser = subparsers.add_parser("mcp", help="Serve task files over localhost MCP without the UI")
+    mcp_parser.add_argument("-c", "--config", help="Config import target")
+    mcp_parser.add_argument("--port", type=int, help="Local MCP port (default: project config or 8765)")
+    mcp_parser.set_defaults(func=run_mcp_command)
 
     return parser
 

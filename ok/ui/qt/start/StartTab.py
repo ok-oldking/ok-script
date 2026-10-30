@@ -1,8 +1,9 @@
 import os
+import threading
 import zipfile
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QAbstractItemView, QVBoxLayout, QHBoxLayout, QWidget, QListWidgetItem, QSizePolicy
 from qfluentwidgets import ListWidget, PushButton, FluentIcon, SwitchButton, SearchLineEdit
 
@@ -21,6 +22,8 @@ logger = Logger.get_logger(__name__)
 
 
 class StartTab(Tab):
+    capture_finished = Signal()
+
     def __init__(self, config, exit_event):
         super().__init__()
         from ok import Logger
@@ -33,6 +36,7 @@ class StartTab(Tab):
 
         self.start_card.refresh_button.clicked.connect(self.refresh_clicked)
         self.start_card.capture_button.clicked.connect(self.capture)
+        self.capture_finished.connect(lambda: self.start_card.capture_button.setEnabled(True))
 
         self.selector_widget = QWidget()
         self.selector_widget.setMinimumHeight(320)
@@ -152,10 +156,19 @@ class StartTab(Tab):
             indicator.blockSignals(False)
         switch._updateText()
 
-    @staticmethod
-    def capture():
+    def capture(self):
+        # Capturing can wait several seconds for a running task to release the
+        # capture method, so keep it off the GUI thread.
         from ok import og
-        return capture(processor=og.config.get('screenshot_processor'))
+        self.start_card.capture_button.setEnabled(False)
+        processor = og.config.get('screenshot_processor')
+        threading.Thread(target=self._capture, args=(processor,), name="StartTabCapture", daemon=True).start()
+
+    def _capture(self, processor):
+        try:
+            capture(processor=processor)
+        finally:
+            self.capture_finished.emit()
 
     @staticmethod
     def open_install_folder():

@@ -189,6 +189,53 @@ def _card_style(selected, dark):
     """
 
 
+def save_template_screenshot():
+    """Capture a frame and save it to ok_templates.
+
+    Returns the saved path, or None when no frame could be captured.
+    """
+    from ok.device.capture_methods.base import CAPTURE_BUSY_WAIT
+    frame = og.device_manager.capture_method.get_frame(busy_wait=CAPTURE_BUSY_WAIT)
+    if frame is None:
+        return None
+
+    from ok.util.blur import apply_blur_areas, get_blur_algorithm
+    frame = apply_blur_areas(frame, og.config.get('blur_area'),
+                             get_blur_algorithm(getattr(og, 'global_config', None)))
+    if processor := og.config.get('screenshot_processor'):
+        frame = processor(frame.copy())
+
+    folder = ensure_template_folder()
+    file_path = os.path.join(folder, f"{get_next_image_name(folder)}.png")
+    if not cv2.imwrite(file_path, frame):
+        raise RuntimeError(f"Could not write screenshot to {file_path}")
+    return file_path
+
+
+class ScreenshotSignals(QObject):
+    # Saved path ('' when no frame was captured) and error message ('' on success).
+    finished = Signal(str, str)
+
+
+class ScreenshotRunnable(QRunnable):
+    """Run save_template_screenshot() off the GUI thread.
+
+    Capturing can wait several seconds for a running task to release the
+    capture method, which would otherwise freeze the UI.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.signals = ScreenshotSignals()
+
+    def run(self):
+        try:
+            self.signals.finished.emit(save_template_screenshot() or '', '')
+        except Exception as e:
+            logger.error(f"Screenshot error: {e}")
+            self.signals.finished.emit('', str(e))
+
+
 class ImageLoaderSignals(QObject):
     finished = Signal(list, int)
 
@@ -506,6 +553,7 @@ class TemplateTab(QWidget):
         self.coco_data: CocoData = {"images": [], "annotations": [], "categories": []}
         self._loaded = False
         self._grid_loading = False
+        self._capturing = False
         self._load_sequence = 0
         self._grid_load_started_at = None
         self.init_ui()
@@ -641,8 +689,8 @@ class TemplateTab(QWidget):
         self.progress_container.setVisible(False)
         self._grid_loading = False
         self.search_box.setEnabled(True)
-        self.screenshot_btn.setEnabled(True)
-        self.center_screenshot_btn.setEnabled(True)
+        self.screenshot_btn.setEnabled(not self._capturing)
+        self.center_screenshot_btn.setEnabled(not self._capturing)
 
         card_build_started_at = perf_counter()
         for img_path, scaled_img, categories in items:
@@ -780,52 +828,45 @@ class TemplateTab(QWidget):
         has_sel = self.selected_image is not None
         self.markup_btn.setVisible(has_sel)
         self.delete_btn.setVisible(has_sel)
-        mutations_enabled = not self._grid_loading and self.markup_window is None
+        mutations_enabled = not self._grid_loading and self.markup_window is None and not self._capturing
         self.markup_btn.setEnabled(mutations_enabled)
         self.delete_btn.setEnabled(mutations_enabled)
         self.screenshot_btn.setEnabled(mutations_enabled)
         self.center_screenshot_btn.setEnabled(mutations_enabled)
 
     def take_screenshot(self):
-        """Capture a frame and save it to ok_templates."""
+        """Capture a frame in the background and save it to ok_templates."""
+        if self._capturing:
+            return
+        if og.device_manager.capture_method is None:
+            from ok.ui.qt.util.Alert import alert_error
+            alert_error(self.tr("No capture method available. Please start capture first."))
+            return
+
+        self._capturing = True
+        self._update_selection_buttons()
+        runnable = ScreenshotRunnable()
+        runnable.signals.finished.connect(self._on_screenshot_finished)
+        QThreadPool.globalInstance().start(runnable)
+
+    def _on_screenshot_finished(self, file_path, error):
+        self._capturing = False
+        self._update_selection_buttons()
+        from ok.ui.qt.util.Alert import alert_error, alert_info
+        if error:
+            alert_error(self.tr("Screenshot failed: {e}").format(e=error))
+            return
+        if not file_path:
+            alert_error(self.tr("Failed to capture frame."))
+            return
         try:
-            if og.device_manager.capture_method is None:
-                from ok.ui.qt.util.Alert import alert_error
-                alert_error(self.tr("No capture method available. Please start capture first."))
-                return
-
-            frame = og.device_manager.capture_method.get_frame()
-            if frame is None:
-                from ok.ui.qt.util.Alert import alert_error
-                alert_error(self.tr("Failed to capture frame."))
-                return
-
-            from ok.util.blur import apply_blur_areas, get_blur_algorithm
-            frame = apply_blur_areas(frame, og.config.get('blur_area'),
-                                     get_blur_algorithm(getattr(og, 'global_config', None)))
-            if processor := og.config.get('screenshot_processor'):
-                frame = processor(frame.copy())
-
-            folder = ensure_template_folder()
-            name = get_next_image_name(
-                folder,
-                self.coco_data
-            )
-            file_path = os.path.join(folder, f"{name}.png")
-            if not cv2.imwrite(file_path, frame):
-                raise RuntimeError(f"Could not write screenshot to {file_path}")
-
             # Add image to COCO data
             self._add_image_to_coco(file_path)
-
-            from ok.ui.qt.util.Alert import alert_info
             alert_info(self.tr("Screenshot saved: {}").format(os.path.basename(file_path)))
-
             self._create_image_item(file_path)
             self.apply_filter()
         except Exception as e:
             logger.error(f"Screenshot error: {e}")
-            from ok.ui.qt.util.Alert import alert_error
             alert_error(self.tr("Screenshot failed: {e}").format(e=e))
 
     def _add_image_to_coco(self, image_path):
@@ -932,8 +973,8 @@ class TemplateTab(QWidget):
         return module_path
 
     def save_compressed(self):
-        """Show a dialog with radio buttons for save destination."""
-        from ok.feature.FeatureSet import compress_copy_coco
+        """Choose the template export format and destination."""
+        from ok.feature.FeatureSet import compress_copy_coco, generate_templates
         from PySide6.QtWidgets import QButtonGroup
         from qfluentwidgets import MessageBoxBase, SubtitleLabel, RadioButton, CheckBox, LineEdit
         coco_json_path = get_coco_path()
@@ -944,12 +985,18 @@ class TemplateTab(QWidget):
             alert_error(self.tr("No annotations to save."))
             return
 
-        tasks_target = os.path.abspath(os.path.join('ok_tasks', 'assets'))
-        dev_target = os.path.abspath('assets')
-
         dlg = MessageBoxBase(self.window())
-        dlg.viewLayout.addWidget(SubtitleLabel(self.tr('Save To'), dlg))
+        dlg.viewLayout.addWidget(SubtitleLabel(self.tr('Generate function'), dlg))
+        radio_split = RadioButton(self.tr('Split(Recommend)'), dlg)
+        radio_compress = RadioButton(self.tr('Compress (obsolete)'), dlg)
+        format_group = QButtonGroup(dlg)
+        format_group.addButton(radio_split)
+        format_group.addButton(radio_compress)
+        radio_split.setChecked(True)
+        dlg.viewLayout.addWidget(radio_split)
+        dlg.viewLayout.addWidget(radio_compress)
 
+        dlg.viewLayout.addWidget(SubtitleLabel(self.tr('Save To'), dlg))
         debug = og.app.debug
         radio_tasks = RadioButton(self.tr('ok_tasks/assets (custom scripts)'), dlg)
         radio_dev = None
@@ -1004,7 +1051,10 @@ class TemplateTab(QWidget):
         if not dlg.exec():
             return
 
-        target_folder = tasks_target if radio_tasks.isChecked() else dev_target
+        target_folder = os.path.abspath(os.path.join('ok_tasks', 'assets')
+                                        if radio_tasks.isChecked() else 'assets')
+        if radio_split.isChecked():
+            target_folder = os.path.join(target_folder, 'templates')
         enum_relative_path_text = enum_relative_path_input.text().strip().replace('\\', '/')
         self.template_tab_config['generate_label_enum'] = generate_label_enum_checkbox.isChecked()
         self.template_tab_config['label_enum_relative_path'] = enum_relative_path_text
@@ -1018,10 +1068,11 @@ class TemplateTab(QWidget):
                 return
 
         try:
-            compress_copy_coco(coco_json_path, target_folder, image_folder,
-                               generate_label_enmu=generate_label_enmu)
+            generate = generate_templates if radio_split.isChecked() else compress_copy_coco
+            generate(coco_json_path, target_folder, image_folder,
+                     generate_label_enmu=generate_label_enmu)
 
-            # Reload feature set data safely (coco_json may have been cleared)
+            # Reload both configured and custom-script feature sources.
             try:
                 if og.executor.feature_set is not None:
                     og.executor.feature_set.process_data()

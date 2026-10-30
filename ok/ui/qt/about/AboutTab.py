@@ -66,6 +66,8 @@ class AboutTab(Tab):
             {"name": self.tr("Onmyoji"), "url": "https://github.com/YunLiuZ/ok-Onmyoji", "website": "https://ok-script.com/ok-onmyoji/"},
             {"name": self.tr("Arknights: Endfield"), "url": "https://github.com/AliceJump/ok-end-field", "website": "https://ok-script.com/ok-end-field/"},
             {"name": self.tr("Neverness to Everness"), "url": "https://github.com/BnanZ0/ok-neverness-to-everness", "website": "https://ok-script.com/ok-nte/"},
+            {"name": self.tr("BrownDust II"), "url": "https://github.com/GodRaymond233/ok-bd2"},
+            {"name": self.tr("Azur Promilia"), "url": "https://github.com/longer-sausage/OK-AzurPromilia"},
         ]
 
         def normalize_url(url):

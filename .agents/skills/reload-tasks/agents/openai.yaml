@@ -1,0 +1,4 @@
+interface:
+  display_name: "Modify and Reload Tasks"
+  short_description: "Edit existing tasks and reload them through MCP"
+  default_prompt: "Use $reload-tasks to modify an existing registered task, reload its source through MCP, and verify the updated implementation."

@@ -232,6 +232,9 @@ class BrowserCaptureMethod(BaseCaptureMethod):
         self.last_hwnd = 0
 
     def do_get_frame(self):
+        return self.do_get_frame_wait(0)
+
+    def do_get_frame_wait(self, timeout):
         if self.exit_event.is_set():
             logger.info(f'BrowserCaptureMethod self.exit_event.is_set()')
             self.close()
@@ -248,7 +251,7 @@ class BrowserCaptureMethod(BaseCaptureMethod):
             return None
 
         if self.wgc_capture:
-            return self.wgc_capture.do_get_frame()
+            return self.wgc_capture.do_get_frame_wait(timeout)
 
         return None
 

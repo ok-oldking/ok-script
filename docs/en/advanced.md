@@ -1,12 +1,16 @@
 # Advanced guide
 
-[Documentation](index.md) · [Quick start](quick_start.md) · [API reference](api_reference.md) · [简体中文](../after_quick_start/README.md)
+[Documentation](index.md) · [Quick start](quick_start.md) · [Agent prompts](agent-prompts.md) · [简体中文](../after_quick_start/README.md)
+
+Use MCP to maintain the reusable scripts produced by your coding agent. Ask it to read the relevant bundled skills, inspect installed APIs, and keep changes in the existing project. The guides below cover supporting assets, tests, and distribution; the [agent prompts](agent-prompts.md) show how to request the work. Normal runs should keep using the saved Python implementation without LLM calls.
 
 This guide covers the workflows normally needed after the template project is running: template assets, localization, repeatable tests, and automated releases.
 
 ## 1. Template matching with COCO assets
 
-ok-script stores template annotations in COCO format.
+ok-script keeps editable source screenshots and annotations in COCO format.
+Runtime templates are individual PNG crops whose filenames preserve the original
+feature name, reference resolution, and position.
 
 ### Why COCO annotations help
 
@@ -16,13 +20,30 @@ ok-script stores template annotations in COCO format.
 
 ### Workflow
 
-1. Capture representative screenshots at the highest supported resolution.
-2. Annotate each reusable UI feature with a COCO-compatible tool. `label-studio==1.15.0` is known to produce compatible exports; newer export formats may differ.
-3. Place `result.json` and its image directory under the application's `assets` directory.
-4. Run `python main_debug.py` and start the application. Debug mode detects the COCO data, crops annotated regions, and optimizes the templates.
-5. Reference category names from methods such as `find_feature`, `find_one`, and `wait_feature`.
+1. Capture and annotate stable UI features in the Template tab. Keep original
+   screenshots and `coco_annotations.json` under `ok_templates`.
+2. Choose **Save → Split(Recommend)**. Select `assets` for a standalone app or
+   `ok_tasks/assets` for custom scripts. Exports go into the selected destination's
+   `templates` subfolder.
+3. Configure `template_matching.template_folder` as `assets/templates` (the default).
+   Keep existing threshold, processor, and center-anchor settings. An existing
+   `coco_feature_json` entry can remain during migration.
+4. Match by the original category name with `find_feature`, `find_one`, or
+   `wait_feature`; do not pass the filename or its geometry suffix.
 
-Use distinctive regions with minimal animation. Avoid including large backgrounds or changing text in a button template.
+For example, `settings_save_1920x1080_1480_920.png` stores the `settings_save`
+feature from (1480, 920) on a 1920 by 1080 screenshot. Its pixel dimensions give
+its crop size. There is no prefix or name encoding. Spaces, underscores, and
+Unicode names are preserved; characters forbidden in Windows filenames are rejected.
+
+Keep only template PNGs in the export folder. Invalid filenames raise an error,
+even during a single-feature lookup. Correct the reported file instead of
+suppressing validation. Use distinctive regions with minimal animation and avoid
+changing text. Debug mode does not replace the explicit export step.
+
+Use `generate_templates` for programmatic export. The old compression option and
+APIs are obsolete. See [Template export format](../feature-crops.md) for the asset format,
+configuration, migration, validation, and Windows permission recovery.
 
 ## 2. Internationalization
 
@@ -40,11 +61,7 @@ i18n/
 
 After editing translations, use **Compile i18n** in the application's developer tools to generate the binary files loaded at runtime.
 
-For changes to ok-script itself, update every language file under `ok/ui/qt/i18n/`, ensure no translation remains unfinished, and regenerate the web catalog:
-
-```bash
-npm run i18n
-```
+Library contributors can find separate [maintainer translation instructions](../maintainers/translations.md).
 
 ## 3. Automated task tests
 

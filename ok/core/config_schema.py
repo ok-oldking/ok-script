@@ -1,4 +1,4 @@
-"""Headless config-field resolution shared by Qt and web renderers."""
+"""Headless config-field resolution used by the Qt renderer."""
 
 from __future__ import annotations
 

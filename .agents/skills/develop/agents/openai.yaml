@@ -1,0 +1,4 @@
+interface:
+  display_name: "Develop Application Tasks"
+  short_description: "Build application tasks using ok-script and MCP"
+  default_prompt: "Use $develop to implement or update an automation task, prefer editing and reloading existing registered tasks through MCP, and verify the target state before execution."

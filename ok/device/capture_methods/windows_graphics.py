@@ -327,7 +327,20 @@ class WindowsGraphicsCaptureMethod(BaseWindowsCaptureMethod):
         frame_requested, frame_event, and last_frame represent one in-flight
         request. Only one caller may operate on them at a time.
         """
-        if not self.get_frame_lock.acquire(blocking=False):
+        return self.do_get_frame_wait(0)
+
+    def do_get_frame_wait(self, timeout):
+        """Like do_get_frame(), but wait up to timeout for the request lock.
+
+        The task executor requests frames almost continuously, so a one-off
+        caller on another thread would otherwise nearly always see BUSY. The
+        timeout only bounds the lock wait; the frame wait is unchanged.
+        """
+        if timeout > 0:
+            acquired = self.get_frame_lock.acquire(timeout=timeout)
+        else:
+            acquired = self.get_frame_lock.acquire(blocking=False)
+        if not acquired:
             raise CaptureBusyException('Windows Graphics Capture is busy')
         try:
             return self._do_get_frame()

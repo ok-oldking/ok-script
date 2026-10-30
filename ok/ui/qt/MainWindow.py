@@ -7,7 +7,7 @@ from PySide6.QtGui import QColor, QScreen
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
 from qfluentwidgets import qconfig, FluentIcon, NavigationItemPosition, MessageBox, InfoBar, \
     InfoBarPosition, MessageBoxBase, FluentWindow, NavigationDisplayMode, isDarkTheme, Theme, \
-    DotInfoBadge, InfoBadgePosition
+    DotInfoBadge, InfoBadgePosition, PushButton
 from qfluentwidgets.components.widgets.scroll_bar import ScrollBarHandleDisplayMode
 from qfluentwidgets.common.style_sheet import updateStyleSheet
 
@@ -264,6 +264,8 @@ class MainWindow(FluentWindow):
         self.setWindowTitle(f'{title} {version} {profile} {dev if debug else ""}')
 
         communicate.executor_paused.connect(self.executor_paused)
+        self.exclusive_bar = None
+        communicate.executor_exclusive.connect(self.executor_exclusive_changed)
         communicate.tab.connect(self.navigate_tab)
         menu = QMenu()
         exit_action = menu.addAction(self.tr("Exit"))
@@ -722,6 +724,30 @@ class MainWindow(FluentWindow):
         if not paused and self.stackedWidget.currentIndex() == 0 and task_tab:
             self.switchTo(task_tab)
         self.show_notification(self.tr("Start Success.") if not paused else self.tr("Pause Success."), tray=False)
+
+    def executor_exclusive_changed(self, owner):
+        if self.exclusive_bar is not None:
+            try:
+                self.exclusive_bar.close()
+            except RuntimeError:
+                # Already deleted by Qt.
+                pass
+            self.exclusive_bar = None
+        if owner is None:
+            return
+        bar = InfoBar.warning(
+            title=self.tr('Remote Control'),
+            content=self.tr('{owner} is controlling the app. Other tasks are stopped.').format(owner=owner),
+            orient=Qt.Horizontal,
+            isClosable=False,
+            position=InfoBarPosition.TOP,
+            duration=-1,
+            parent=self
+        )
+        disconnect_button = PushButton(self.tr('Disconnect'), bar)
+        disconnect_button.clicked.connect(lambda: self.executor.release_exclusive(owner))
+        bar.addWidget(disconnect_button)
+        self.exclusive_bar = bar
 
     def _check_okscript_args(self):
         """Check sys.argv for .okscript files and import them."""

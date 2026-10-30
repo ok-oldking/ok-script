@@ -11,7 +11,7 @@ config = {
 
 `plugin` defaults to `False`. It controls the **Plugins** management tab; existing
 packages in `ok_import/` continue to load as before. This manager and custom Qt
-pages are desktop-only. Headless and Web runtimes do not instantiate Qt tabs.
+pages are desktop-only. The headless runtime does not instantiate Qt tabs.
 
 ## Install and delete
 
@@ -25,17 +25,37 @@ requires acknowledging the checkbox and waiting for the 15-second countdown.
   to a prerelease if there is no eligible stable release. Select the plugin
   package when several assets are available. GitHub's generated source-code
   archives are not selected automatically.
-- **Delete plugin** closes its pages and tasks, then removes its installation
-  from `ok_import/`. Keep persistent user data in the host's configuration/data
+- **Delete plugin** stages removal for the next launch. Keep persistent user data in the host's configuration/data
   directory, outside the plugin installation.
 
 For example, `https://github.com/hxwd94666/WW-Echo-Workshop` publishes an
 `echo-workshop-*.zip` asset containing `echo-workshop/manifest.json`. Both this
 single enclosing-folder format and a manifest at the archive root are supported.
-Installing an existing ID replaces that plugin after closing its old pages and
-task services. Downloads and extraction run in the background; task and widget
+Installing an existing ID stages the replacement and displays a restart notice.
+The current plugin's files, pages, and tasks remain intact for this session.
+First-time installations can load immediately. Downloads and extraction run in the background; task and widget
 initialization run on the GUI thread. Packages must supply their dependencies
 and native binaries; installation does not run build scripts or pip.
+
+## Applying staged changes
+
+Close and reopen the application to apply a queued update or deletion. Changes
+are recorded under `ok_import/.plugin-staging/`, outside the directories scanned
+for plugins. **Cancel pending change** discards an unapplied operation while
+keeping the current installation. Pending plugins are not checked for updates.
+
+At startup, after checking the application mutex and before discovering plugin
+tasks or template assets, the host applies the queued directory changes. An
+update's old directory stays available until its tasks and, in desktop mode,
+its pages initialize successfully. If initialization fails or that launch exits
+before confirmation, the next launch restores the old directory. The manager
+reports the failure; cancel it before retrying a different package.
+
+Deletion first moves the installation outside the plugin search path, then
+cleans it up. Failed backup/trash cleanup is retried on a later launch and does
+not reactivate the removed plugin. Application data outside the plugin directory
+is retained. Plugins should still stop their workers and disconnect callbacks
+during normal application shutdown.
 
 ## GitHub updates
 
@@ -49,8 +69,8 @@ version (or the saved release tag when the manifest has no version). Numeric
 versions and a leading `v` are supported; equal/older versions are not offered.
 If versions cannot be compared, the manager displays the check error.
 
-When an update is available, **Update to ...** downloads and installs the chosen
-release after the import warning. Checks do not install updates automatically.
+When an update is available, **Update to ...** downloads and stages the chosen
+release after the import warning. Restart to activate it. Checks do not install updates automatically.
 Update archives must match the installed plugin ID and contain a newer version.
 Local installations have no GitHub check button. Plugins installed before source
 tracking need to be added once through GitHub to enable update checks.

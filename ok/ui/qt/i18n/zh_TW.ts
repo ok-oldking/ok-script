@@ -93,6 +93,14 @@
             <source>Disclaimer</source>
             <translation>免責聲明</translation>
         </message>
+        <message>
+            <source>BrownDust II</source>
+            <translation>棕色塵埃 2</translation>
+        </message>
+        <message>
+            <source>Azur Promilia</source>
+            <translation>藍色星原：旅謠</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
@@ -251,6 +259,18 @@
         <message>
             <source>No Capture Available or Selected</source>
             <translation>截圖方式不可用或未選取</translation>
+        </message>
+        <message>
+            <source>Reload tasks</source>
+            <translation>重新載入任務</translation>
+        </message>
+        <message>
+            <source>Waiting to reload tasks...</source>
+            <translation>等待重新載入任務…</translation>
+        </message>
+        <message>
+            <source>Reloaded {count} tasks</source>
+            <translation>已重新載入 {count} 個任務</translation>
         </message>
     </context>
     <context>
@@ -1769,6 +1789,14 @@
             <translation>可嘗試按 Alt+F3 將其關閉。</translation>
         </message>
         <message>
+            <source>Enable MCP Server</source>
+            <translation>啟用 MCP 伺服器</translation>
+        </message>
+        <message>
+            <source>Allow local coding agents to control this app and run Python code</source>
+            <translation>允許本機程式設計代理控制此應用程式並執行 Python 程式碼</translation>
+        </message>
+        <message>
             <source>Bark Notification</source>
             <translation>Bark 通知</translation>
         </message>
@@ -3028,6 +3056,18 @@ Critical: sound even in silent mode</source>
             <source>Invalid relative path. Example: ok_tasks/LabelEnum.py</source>
             <translation>相對路徑無效。範例：ok_tasks/LabelEnum.py</translation>
         </message>
+        <message>
+            <source>Generate function</source>
+            <translation>產生方式</translation>
+        </message>
+        <message>
+            <source>Split(Recommend)</source>
+            <translation>拆分（建議）</translation>
+        </message>
+        <message>
+            <source>Compress (obsolete)</source>
+            <translation>壓縮（已淘汰）</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>
@@ -3136,879 +3176,6 @@ Critical: sound even in silent mode</source>
         <message>
             <source>Select File or Folder</source>
             <translation>選擇檔案或資料夾</translation>
-        </message>
-    </context>
-    <context>
-        <name>WebUI</name>
-        <message>
-            <source>Automation control</source>
-            <translation>自動化控制</translation>
-        </message>
-        <message>
-            <source>A local command center for tasks, triggers, and runtime events.</source>
-            <translation>用於管理任務、觸發器和執行階段事件的本機控制中心。</translation>
-        </message>
-        <message>
-            <source>Live</source>
-            <translation>即時</translation>
-        </message>
-        <message>
-            <source>Reconnecting</source>
-            <translation>正在重新連線</translation>
-        </message>
-        <message>
-            <source>Runtime error</source>
-            <translation>執行階段錯誤</translation>
-        </message>
-        <message>
-            <source>Executor</source>
-            <translation>執行器</translation>
-        </message>
-        <message>
-            <source>Idle</source>
-            <translation>閒置</translation>
-        </message>
-        <message>
-            <source>Current task</source>
-            <translation>目前任務</translation>
-        </message>
-        <message>
-            <source>None</source>
-            <translation>無</translation>
-        </message>
-        <message>
-            <source>Resume</source>
-            <translation>繼續</translation>
-        </message>
-        <message>
-            <source>Pause</source>
-            <translation>暫停</translation>
-        </message>
-        <message>
-            <source>Stop task</source>
-            <translation>停止任務</translation>
-        </message>
-        <message>
-            <source>Tasks</source>
-            <translation>任務</translation>
-        </message>
-        <message>
-            <source>{count} available</source>
-            <translation>{count} 個可用</translation>
-        </message>
-        <message>
-            <source>Filter tasks</source>
-            <translation>篩選任務</translation>
-        </message>
-        <message>
-            <source>Refresh tasks</source>
-            <translation>重新整理任務</translation>
-        </message>
-        <message>
-            <source>Refresh</source>
-            <translation>重新整理</translation>
-        </message>
-        <message>
-            <source>Trigger</source>
-            <translation>觸發器</translation>
-        </message>
-        <message>
-            <source>One-time</source>
-            <translation>單次</translation>
-        </message>
-        <message>
-            <source>Running</source>
-            <translation>執行中</translation>
-        </message>
-        <message>
-            <source>Paused</source>
-            <translation>已暫停</translation>
-        </message>
-        <message>
-            <source>Start</source>
-            <translation>開始</translation>
-        </message>
-        <message>
-            <source>No tasks match “{query}”.</source>
-            <translation>沒有與「{query}」相符的任務。</translation>
-        </message>
-        <message>
-            <source>Live events</source>
-            <translation>即時事件</translation>
-        </message>
-        <message>
-            <source>Latest 100 messages</source>
-            <translation>最近 100 則訊息</translation>
-        </message>
-        <message>
-            <source>Clear</source>
-            <translation>清除</translation>
-        </message>
-        <message>
-            <source>Waiting for runtime events…</source>
-            <translation>正在等待執行階段事件…</translation>
-        </message>
-        <message>
-            <source>Could not reach the automation runtime</source>
-            <translation>無法連線至自動化執行階段</translation>
-        </message>
-        <message>
-            <source>Request failed</source>
-            <translation>要求失敗</translation>
-        </message>
-        <message>
-            <source>Action failed</source>
-            <translation>操作失敗</translation>
-        </message>
-        <message>
-            <source>Back</source>
-            <translation>返回</translation>
-        </message>
-        <message>
-            <source>Capture</source>
-            <translation>截圖方式</translation>
-        </message>
-        <message>
-            <source>Capture Method</source>
-            <translation>截圖方式</translation>
-        </message>
-        <message>
-            <source>Choose Interaction</source>
-            <translation>選擇互動方式</translation>
-        </message>
-        <message>
-            <source>Choose Window</source>
-            <translation>選取視窗</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <translation>關閉</translation>
-        </message>
-        <message>
-            <source>Debug</source>
-            <translation>開發工具</translation>
-        </message>
-        <message>
-            <source>Disable Boxes</source>
-            <translation>停用標記框</translation>
-        </message>
-        <message>
-            <source>Disconnected</source>
-            <translation>已離線</translation>
-        </message>
-        <message>
-            <source>Enable Boxes</source>
-            <translation>啟用標記框</translation>
-        </message>
-        <message>
-            <source>Export Logs</source>
-            <translation>匯出日誌</translation>
-        </message>
-        <message>
-            <source>Install Folder</source>
-            <translation>安裝目錄</translation>
-        </message>
-        <message>
-            <source>Loading</source>
-            <translation>載入中</translation>
-        </message>
-        <message>
-            <source>Log Folder</source>
-            <translation>日誌目錄</translation>
-        </message>
-        <message>
-            <source>Maximize</source>
-            <translation>最大化</translation>
-        </message>
-        <message>
-            <source>Minimize</source>
-            <translation>最小化</translation>
-        </message>
-        <message>
-            <source>No options available</source>
-            <translation>沒有可用選項</translation>
-        </message>
-        <message>
-            <source>No windows found</source>
-            <translation>找不到視窗</translation>
-        </message>
-        <message>
-            <source>Refreshing</source>
-            <translation>正在重新整理</translation>
-        </message>
-        <message>
-            <source>Screenshot Folder</source>
-            <translation>截圖目錄</translation>
-        </message>
-        <message>
-            <source>Search title or exe...</source>
-            <translation>搜尋標題或程式...</translation>
-        </message>
-        <message>
-            <source>Toggle navigation</source>
-            <translation>切換導覽列</translation>
-        </message>
-        <message>
-            <source>View Log</source>
-            <translation>查看日誌</translation>
-        </message>
-        <message>
-            <source>{page} is not available in the web UI yet.</source>
-            <translation>頁面「{page}」尚未在 Web UI 中提供。</translation>
-        </message>
-        <message>
-            <source>About</source>
-            <translation>關於</translation>
-        </message>
-        <message>
-            <source>Character Code</source>
-            <translation>角色代碼</translation>
-        </message>
-        <message>
-            <source>Character Settings</source>
-            <translation>角色設定</translation>
-        </message>
-        <message>
-            <source>Game Hotkeys</source>
-            <translation>遊戲快捷鍵</translation>
-        </message>
-        <message>
-            <source>Notifications</source>
-            <translation>通知</translation>
-        </message>
-        <message>
-            <source>Schedule</source>
-            <translation>計劃任務</translation>
-        </message>
-        <message>
-            <source>Script</source>
-            <translation>腳本</translation>
-        </message>
-        <message>
-            <source>Settings</source>
-            <translation>設定</translation>
-        </message>
-        <message>
-            <source>Templates</source>
-            <translation>模板</translation>
-        </message>
-        <message>
-            <source>Triggers</source>
-            <translation>即時觸發</translation>
-        </message>
-        <message>
-            <source>All Levels</source>
-            <translation>全部級別</translation>
-        </message>
-        <message>
-            <source>Capture Preview</source>
-            <translation>截圖預覽</translation>
-        </message>
-        <message>
-            <source>Captured game frame</source>
-            <translation>擷取的遊戲畫面</translation>
-        </message>
-        <message>
-            <source>Could not load logs</source>
-            <translation>無法載入日誌</translation>
-        </message>
-        <message>
-            <source>Filter logs...</source>
-            <translation>篩選日誌...</translation>
-        </message>
-        <message>
-            <source>Log level</source>
-            <translation>日誌級別</translation>
-        </message>
-        <message>
-            <source>Waiting for ok-script.log</source>
-            <translation>等待 ok-script.log</translation>
-        </message>
-        <message>
-            <source>lines</source>
-            <translation>行</translation>
-        </message>
-        <message>
-            <source>Open Screenshot Folder</source>
-            <translation>開啟截圖目錄</translation>
-        </message>
-        <message>
-            <source>Completed</source>
-            <translation>已完成</translation>
-        </message>
-        <message>
-            <source>Time Elapsed</source>
-            <translation>已執行時間</translation>
-        </message>
-        <message>
-            <source>Waiting for {task_name} task to be completed</source>
-            <translation>等待 {task_name} 任務完成</translation>
-        </message>
-        <message>
-            <source>Instructions</source>
-            <translation>使用說明</translation>
-        </message>
-        <message>
-            <source>Enabled</source>
-            <translation>已啟用</translation>
-        </message>
-        <message>
-            <source>Disabled</source>
-            <translation>未啟用</translation>
-        </message>
-        <message>
-            <source>Stop</source>
-            <translation>停止</translation>
-        </message>
-        <message>
-            <source>Reset Config</source>
-            <translation>重設設定</translation>
-        </message>
-        <message>
-            <source>App Config</source>
-            <translation>軟體設定</translation>
-        </message>
-        <message>
-            <source>Application Theme</source>
-            <translation>應用程式主題</translation>
-        </message>
-        <message>
-            <source>Change the appearance of the application</source>
-            <translation>變更應用程式的外觀</translation>
-        </message>
-        <message>
-            <source>Light</source>
-            <translation>淺色</translation>
-        </message>
-        <message>
-            <source>Dark</source>
-            <translation>深色</translation>
-        </message>
-        <message>
-            <source>Use system setting</source>
-            <translation>使用系統設定</translation>
-        </message>
-        <message>
-            <source>Language</source>
-            <translation>語言</translation>
-        </message>
-        <message>
-            <source>Set your preferred language</source>
-            <translation>選擇您的語言</translation>
-        </message>
-        <message>
-            <source>Actions</source>
-            <translation>操作</translation>
-        </message>
-        <message>
-            <source>Add</source>
-            <translation>新增</translation>
-        </message>
-        <message>
-            <source>Auto Exit After Task</source>
-            <translation>Auto Exit After Task</translation>
-        </message>
-        <message>
-            <source>Available Options</source>
-            <translation>可用選項</translation>
-        </message>
-        <message>
-            <source>Bounding Box</source>
-            <translation>邊界框</translation>
-        </message>
-        <message>
-            <source>Cancel</source>
-            <translation>取消</translation>
-        </message>
-        <message>
-            <source>Category name</source>
-            <translation>分類名稱</translation>
-        </message>
-        <message>
-            <source>Choose Task:</source>
-            <translation>選擇任務:</translation>
-        </message>
-        <message>
-            <source>Class Name (English only)</source>
-            <translation>類別名稱 (僅限英文)</translation>
-        </message>
-        <message>
-            <source>Confirm</source>
-            <translation>確認</translation>
-        </message>
-        <message>
-            <source>Confirm Delete</source>
-            <translation>確認刪除</translation>
-        </message>
-        <message>
-            <source>Copy Task</source>
-            <translation>複製任務</translation>
-        </message>
-        <message>
-            <source>Create</source>
-            <translation>創建</translation>
-        </message>
-        <message>
-            <source>Create New Task</source>
-            <translation>建立新任務</translation>
-        </message>
-        <message>
-            <source>Create Schedule Task</source>
-            <translation>創建計劃任務</translation>
-        </message>
-        <message>
-            <source>Create Task</source>
-            <translation>建立任務</translation>
-        </message>
-        <message>
-            <source>Current App</source>
-            <translation>Current App</translation>
-        </message>
-        <message>
-            <source>Days</source>
-            <translation>天</translation>
-        </message>
-        <message>
-            <source>Delete</source>
-            <translation>刪除</translation>
-        </message>
-        <message>
-            <source>Delete Task</source>
-            <translation>刪除任務</translation>
-        </message>
-        <message>
-            <source>Description (Optional)</source>
-            <translation>描述 (選填)</translation>
-        </message>
-        <message>
-            <source>File</source>
-            <translation>檔案</translation>
-        </message>
-        <message>
-            <source>Generate label enum file</source>
-            <translation>生成標籤列舉檔案</translation>
-        </message>
-        <message>
-            <source>Guide</source>
-            <translation>指南</translation>
-        </message>
-        <message>
-            <source>Hour</source>
-            <translation>小時</translation>
-        </message>
-        <message>
-            <source>Hours</source>
-            <translation>小時</translation>
-        </message>
-        <message>
-            <source>Markup</source>
-            <translation>標注</translation>
-        </message>
-        <message>
-            <source>Minute</source>
-            <translation>分鐘</translation>
-        </message>
-        <message>
-            <source>Modify</source>
-            <translation>修改</translation>
-        </message>
-        <message>
-            <source>Modify Schedule Task</source>
-            <translation>修改計劃任務</translation>
-        </message>
-        <message>
-            <source>Move Down</source>
-            <translation>下移</translation>
-        </message>
-        <message>
-            <source>Move Up</source>
-            <translation>上移</translation>
-        </message>
-        <message>
-            <source>Next Run</source>
-            <translation>下次運行</translation>
-        </message>
-        <message>
-            <source>No templates yet</source>
-            <translation>暫無範本</translation>
-        </message>
-        <message>
-            <source>OK</source>
-            <translation>確定</translation>
-        </message>
-        <message>
-            <source>Other Projects</source>
-            <translation>相關項目</translation>
-        </message>
-        <message>
-            <source>Relative path, e.g. ok_tasks/LabelEnum.py</source>
-            <translation>相對路徑，例如：ok_tasks/LabelEnum.py</translation>
-        </message>
-        <message>
-            <source>Remove</source>
-            <translation>移除</translation>
-        </message>
-        <message>
-            <source>Run</source>
-            <translation>執行</translation>
-        </message>
-        <message>
-            <source>Save</source>
-            <translation>儲存</translation>
-        </message>
-        <message>
-            <source>Save To</source>
-            <translation>儲存到</translation>
-        </message>
-        <message>
-            <source>Saved</source>
-            <translation>Saved</translation>
-        </message>
-        <message>
-            <source>Screenshot</source>
-            <translation>截圖</translation>
-        </message>
-        <message>
-            <source>Search by name or category...</source>
-            <translation>按名稱或分類搜尋...</translation>
-        </message>
-        <message>
-            <source>Search templates...</source>
-            <translation>搜尋範本...</translation>
-        </message>
-        <message>
-            <source>Select Task</source>
-            <translation>選擇任務</translation>
-        </message>
-        <message>
-            <source>Select task to edit</source>
-            <translation>Select task to edit</translation>
-        </message>
-        <message>
-            <source>Selected Options</source>
-            <translation>已選選項</translation>
-        </message>
-        <message>
-            <source>Status</source>
-            <translation>狀態</translation>
-        </message>
-        <message>
-            <source>Take Screenshot</source>
-            <translation>擷取截圖</translation>
-        </message>
-        <message>
-            <source>Task Name</source>
-            <translation>任務名稱</translation>
-        </message>
-        <message>
-            <source>Task rebuilt successfully.</source>
-            <translation>任務重建成功。</translation>
-        </message>
-        <message>
-            <source>Timeout</source>
-            <translation>超時</translation>
-        </message>
-        <message>
-            <source>Trigger Type</source>
-            <translation>觸發類型</translation>
-        </message>
-        <message>
-            <source>assets (standalone app)</source>
-            <translation>assets (獨立應用)</translation>
-        </message>
-        <message>
-            <source>ok_tasks/assets (custom scripts)</source>
-            <translation>ok_tasks/assets (自訂腳本)</translation>
-        </message>
-        <message>
-            <source>GitHub</source>
-            <translation>GitHub</translation>
-        </message>
-        <message>
-            <source>FAQ</source>
-            <translation>FAQ</translation>
-        </message>
-        <message>
-            <source>Website</source>
-            <translation>網站</translation>
-        </message>
-        <message>
-            <source>ok-py Automation Tool</source>
-            <translation>ok-py按鍵精靈</translation>
-        </message>
-        <message>
-            <source>ok-script App Template</source>
-            <translation>ok-script 應用範本</translation>
-        </message>
-        <message>
-            <source>Wuthering Waves</source>
-            <translation>鳴潮</translation>
-        </message>
-        <message>
-            <source>Girls' Frontline 2</source>
-            <translation>少前2</translation>
-        </message>
-        <message>
-            <source>Star Resonance</source>
-            <translation>星痕共鳴</translation>
-        </message>
-        <message>
-            <source>Duet Night Abyss</source>
-            <translation>二重螺旋</translation>
-        </message>
-        <message>
-            <source>Chaos Zero Nightmare</source>
-            <translation>卡厄思夢境</translation>
-        </message>
-        <message>
-            <source>Onmyoji</source>
-            <translation>陰陽師</translation>
-        </message>
-        <message>
-            <source>Arknights: Endfield</source>
-            <translation>明日方舟：終末地</translation>
-        </message>
-        <message>
-            <source>Neverness to Everness</source>
-            <translation>異環</translation>
-        </message>
-        <message>
-            <source>Discord</source>
-            <translation>Discord</translation>
-        </message>
-        <message>
-            <source>Share</source>
-            <translation>分享下載連結</translation>
-        </message>
-        <message>
-            <source>Sponsor</source>
-            <translation>贊助</translation>
-        </message>
-        <message>
-            <source>Share Link copied to clipboard</source>
-            <translation>分享連結已複製到剪貼簿</translation>
-        </message>
-        <message>
-            <source>Starting</source>
-            <translation>正在啟動</translation>
-        </message>
-        <message>
-            <source>App update</source>
-            <translation>應用程式更新</translation>
-        </message>
-        <message>
-            <source>Disclaimer</source>
-            <translation>免責聲明</translation>
-        </message>
-        <message>
-            <source>Check Test Version</source>
-            <translation>檢查測試版本</translation>
-        </message>
-        <message>
-            <source>Check for updates</source>
-            <translation>檢查更新</translation>
-        </message>
-        <message>
-            <source>Click to check for updates</source>
-            <translation>按一下以檢查更新</translation>
-        </message>
-        <message>
-            <source>Version</source>
-            <translation>版本</translation>
-        </message>
-        <message>
-            <source>Update</source>
-            <translation>更新</translation>
-        </message>
-        <message>
-            <source>Downgrade</source>
-            <translation>降級</translation>
-        </message>
-        <message>
-            <source>Current version</source>
-            <translation>目前版本</translation>
-        </message>
-        <message>
-            <source>Checking for updates…</source>
-            <translation>正在檢查更新…</translation>
-        </message>
-        <message>
-            <source>Starting change to {version}…</source>
-            <translation>正在切換至 {version}…</translation>
-        </message>
-        <message>
-            <source>Failed to check for updates: {error}</source>
-            <translation>檢查更新失敗：{error}</translation>
-        </message>
-        <message>
-            <source>No versions are available.</source>
-            <translation>沒有可用版本。</translation>
-        </message>
-        <message>
-            <source>No updates available.</source>
-            <translation>已是最新版本。</translation>
-        </message>
-        <message>
-            <source>No release notes.</source>
-            <translation>暫無更新說明。</translation>
-        </message>
-        <message>
-            <source>Update request accepted. The app will restart to apply it.</source>
-            <translation>更新要求已接受。應用程式將重新啟動以套用更新。</translation>
-        </message>
-        <message>
-            <source>Failed to change version: {error}</source>
-            <translation>切換版本失敗：{error}</translation>
-        </message>
-        <message>
-            <source>Update available.</source>
-            <translation>有可用更新。</translation>
-        </message>
-        <message>
-            <source>Auto HDR is enabled, tasks might not work correctly!</source>
-            <translation>顯示設定中的自動 HDR 已開啟，可能導致任務執行異常！</translation>
-        </message>
-        <message>
-            <source>WGC - Fast, support HDR (not AutoHDR)</source>
-            <translation>WGC - 速度快，支援 HDR（不支援 AutoHDR）</translation>
-        </message>
-        <message>
-            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - 僅在使用 AutoHDR 時使用（不建議）</translation>
-        </message>
-        <message>
-            <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
-            <translation>解析度 {resolution} 檢查失敗，部分任務可能無法正常運作！</translation>
-        </message>
-        <message>
-            <source>, the supported ratio is {supported_ratio}</source>
-            <translation>，支援的視窗比例為 {supported_ratio}</translation>
-        </message>
-        <message>
-            <source>, the supported min resolution is {min_size}</source>
-            <translation>，支援的最低解析度為 {min_size}</translation>
-        </message>
-        <message>
-            <source>{vendor} {feature} is enabled and may cause malfunctions!</source>
-            <translation>{vendor} {feature} 已啟用，可能導致功能異常！</translation>
-        </message>
-        <message>
-            <source>GPU Driver Warning</source>
-            <translation>GPU 驅動警告</translation>
-        </message>
-        <message>
-            <source>Fast, support HDR (not AutoHDR)</source>
-            <translation>速度快，支援 HDR（不支援 AutoHDR）</translation>
-        </message>
-        <message>
-            <source>Only use when using AutoHDR (Not Recommended)</source>
-            <translation>僅在使用 AutoHDR 時使用（不建議）</translation>
-        </message>
-        <message>
-            <source>Try using Alt+F3 to turn it off.</source>
-            <translation>可嘗試按 Alt+F3 將其關閉。</translation>
-        </message>
-        <message>
-            <source>Bark Notification</source>
-            <translation>Bark 通知</translation>
-        </message>
-        <message>
-            <source>Bark Server URL</source>
-            <translation>Bark 服務位址</translation>
-        </message>
-        <message>
-            <source>Bark Device Key</source>
-            <translation>Bark 裝置金鑰</translation>
-        </message>
-        <message>
-            <source>Bark Group</source>
-            <translation>Bark 訊息群組</translation>
-        </message>
-        <message>
-            <source>Bark Sound</source>
-            <translation>Bark 鈴聲</translation>
-        </message>
-        <message>
-            <source>Bark Level</source>
-            <translation>Bark 提醒層級</translation>
-        </message>
-        <message>
-            <source>Bark Archive</source>
-            <translation>Bark 歷史儲存</translation>
-        </message>
-        <message>
-            <source>Send notifications through the Bark iOS app</source>
-            <translation>透過 Bark iOS App 傳送通知</translation>
-        </message>
-        <message>
-            <source>Bark server URL; do not change unless needed</source>
-            <translation>Bark 服務位址 URL，若無特殊需求請勿更改</translation>
-        </message>
-        <message>
-            <source>Device key registered in the Bark app</source>
-            <translation>在 Bark App 中註冊的裝置金鑰</translation>
-        </message>
-        <message>
-            <source>Notification group; leave empty to send without a group</source>
-            <translation>訊息分組; 留空不設定分組</translation>
-        </message>
-        <message>
-            <source>Ringtone name; leave empty to use the app default</source>
-            <translation>鈴聲名稱；留空使用 App 預設鈴聲</translation>
-        </message>
-        <message>
-            <source>Normal: display immediately and wake the screen
-Passive: notification list only
-Time Sensitive: show during Focus
-Critical: sound even in silent mode</source>
-            <translation>一般：立即喚醒螢幕並顯示通知
-靜音：僅將通知加入通知列表
-時效性：專注模式下也能顯示
-重要警告：靜音模式下也會響鈴</translation>
-        </message>
-        <message>
-            <source>Whether to save notifications in Bark history</source>
-            <translation>是否將通知儲存至 Bark 歷史記錄</translation>
-        </message>
-        <message>
-            <source>App Default</source>
-            <translation>依照 App</translation>
-        </message>
-        <message>
-            <source>Do Not Save</source>
-            <translation>不儲存</translation>
-        </message>
-        <message>
-            <source>active</source>
-            <translation>一般</translation>
-        </message>
-        <message>
-            <source>passive</source>
-            <translation>靜音</translation>
-        </message>
-        <message>
-            <source>timeSensitive</source>
-            <translation>時效性</translation>
-        </message>
-        <message>
-            <source>Bark Icon</source>
-            <translation>Bark 圖示</translation>
-        </message>
-        <message>
-            <source>Bark URL</source>
-            <translation>Bark 跳轉連結</translation>
-        </message>
-        <message>
-            <source>Notification icon URL; leave empty to use the app default icon</source>
-            <translation>通知圖示 URL；留空使用 App 預設圖示</translation>
-        </message>
-        <message>
-            <source>Link to open when the notification is tapped</source>
-            <translation>點擊通知時開啟的連結</translation>
-        </message>
-        <message>
-            <source>critical</source>
-            <translation>重要警告</translation>
         </message>
     </context>
     <context>
@@ -4182,6 +3349,57 @@ Critical: sound even in silent mode</source>
         <message>
             <source>Checking for updates…</source>
             <translation>正在檢查更新…</translation>
+        </message>
+        <message>
+            <source>Restart the application to apply plugin changes.</source>
+            <translation>請重新啟動應用程式以套用外掛程式變更。</translation>
+        </message>
+        <message>
+            <source>Plugin change failed: {}</source>
+            <translation>外掛程式變更失敗：{}</translation>
+        </message>
+        <message>
+            <source>Update failed. Restart to restore the previous version.</source>
+            <translation>更新失敗，請重新啟動以還原舊版本。</translation>
+        </message>
+        <message>
+            <source>Deletion staged. Restart to apply.</source>
+            <translation>已暫存刪除操作，重新啟動後生效。</translation>
+        </message>
+        <message>
+            <source>Update staged: {}. Restart to apply.</source>
+            <translation>已暫存更新：{}，重新啟動後生效。</translation>
+        </message>
+        <message>
+            <source>Cancel pending change</source>
+            <translation>取消待處理操作</translation>
+        </message>
+        <message>
+            <source>Backup cleanup pending. Restart to retry.</source>
+            <translation>備份清理未完成，請重新啟動後重試。</translation>
+        </message>
+    </context>
+    <context>
+        <name>LabelAndMcpServer</name>
+        <message>
+            <source>Enable MCP Server?</source>
+            <translation>啟用 MCP 伺服器？</translation>
+        </message>
+        <message>
+            <source>MCP lets local coding agents control this app and execute Python code with your account permissions, including reading and changing files. Only connect trusted agents and keep the connection token private. Enable the server now?</source>
+            <translation>MCP 允許本機程式設計代理控制此應用程式，並以您的帳戶權限執行 Python 程式碼，包括讀取和修改檔案。請僅連接可信任的代理，並妥善保管連線權杖。現在啟用伺服器嗎？</translation>
+        </message>
+        <message>
+            <source>MCP server error</source>
+            <translation>MCP 伺服器錯誤</translation>
+        </message>
+        <message>
+            <source>Yes</source>
+            <translation>是</translation>
+        </message>
+        <message>
+            <source>No</source>
+            <translation>否</translation>
         </message>
     </context>
 </TS>

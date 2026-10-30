@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 DEFAULT_WINDOW_SIZE = {
     "width": 1200,
     "height": 800,
@@ -5,8 +8,12 @@ DEFAULT_WINDOW_SIZE = {
     "min_height": 800,
 }
 
-GUI_TYPES = {"qt", "web"}
-WEB_LAUNCH_MODES = {"pywebview", "browser", "server"}
+GUI_TYPES = {"qt"}
+
+
+def resolve_gui_icon(config):
+    """Keep custom icons, otherwise use the PNG shipped with the package."""
+    return config.get("gui_icon") or str(Path(__file__).resolve().parents[1] / "assets/default-icon.png")
 
 
 def resolve_ui_config(config):
@@ -19,27 +26,18 @@ def resolve_ui_config(config):
             raise ValueError("gui must be a mapping")
         gui_type = raw_gui.get("type")
         if gui_type not in GUI_TYPES:
-            raise ValueError("gui.type must be 'qt' or 'web'")
-        launch_mode = raw_gui.get("launch_mode", "pywebview")
-        if gui_type == "web" and launch_mode not in WEB_LAUNCH_MODES:
-            raise ValueError(
-                "gui.launch_mode must be 'pywebview', 'browser', or 'server'"
-            )
+            raise ValueError("gui.type must be 'qt'")
         window_size = raw_gui.get("window_size") or config.get("window_size")
     elif config.get("use_gui"):
         gui_type = "qt"
-        launch_mode = None
         window_size = config.get("window_size")
     else:
         return None
 
-    resolved = {
+    return {
         "type": gui_type,
         "window_size": dict(window_size or DEFAULT_WINDOW_SIZE),
     }
-    if gui_type == "web":
-        resolved["launch_mode"] = launch_mode
-    return resolved
 
 
 def resolve_window_size(config):

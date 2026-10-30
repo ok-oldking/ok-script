@@ -2,6 +2,7 @@ import time
 
 from ok.device.capture_methods.base import BaseCaptureMethod
 from ok.device.interaction_methods.base import BaseInteraction
+from ok.device.interaction_methods.keys import is_mouse_button, get_mouse_button, XBUTTON1
 from ok.util.logger import Logger
 from ok.util.process import is_admin
 
@@ -53,36 +54,37 @@ class PynputInteraction(BaseInteraction):
         except KeyError:
             return key
 
-    def send_key(self, key, down_time=0.01):
+    def _key_controller(self, key):
+        if is_mouse_button(key):
+            from pynput import mouse
+            return mouse.Controller(), self.get_mouse_button(key)
         from pynput import keyboard
+        return keyboard.Controller(), self._parse_key(str(key))
+
+    def send_key(self, key, down_time=0.01):
         if not self.clickable():
             logger.error(f"can't click on {key}, because capture is not clickable")
             return
 
-        controller = keyboard.Controller()
-        parsed_key = self._parse_key(str(key))
+        controller, parsed_key = self._key_controller(key)
         controller.press(parsed_key)
         time.sleep(down_time)
         controller.release(parsed_key)
 
     def send_key_down(self, key):
-        from pynput import keyboard
         if not self.clickable():
             logger.error(f"can't click on {key}, because capture is not clickable")
             return
 
-        controller = keyboard.Controller()
-        parsed_key = self._parse_key(str(key))
+        controller, parsed_key = self._key_controller(key)
         controller.press(parsed_key)
 
     def send_key_up(self, key):
-        from pynput import keyboard
         if not self.clickable():
             logger.error(f"can't click on {key}, because capture is not clickable")
             return
 
-        controller = keyboard.Controller()
-        parsed_key = self._parse_key(str(key))
+        controller, parsed_key = self._key_controller(key)
         controller.release(parsed_key)
 
     def scroll(self, x, y, scroll_amount):
@@ -184,6 +186,8 @@ class PynputInteraction(BaseInteraction):
 
     def get_mouse_button(self, key):
         from pynput import mouse
+        if is_mouse_button(key):
+            return mouse.Button.x1 if get_mouse_button(key) == XBUTTON1 else mouse.Button.x2
         if key == "right":
             return mouse.Button.right
         if key == "middle":

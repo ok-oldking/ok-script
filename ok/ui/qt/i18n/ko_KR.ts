@@ -93,6 +93,14 @@
             <source>Disclaimer</source>
             <translation>면책 조항</translation>
         </message>
+        <message>
+            <source>BrownDust II</source>
+            <translation>브라운더스트2</translation>
+        </message>
+        <message>
+            <source>Azur Promilia</source>
+            <translation>아주르 프로밀리아</translation>
+        </message>
     </context>
     <context>
         <name>ActWindow</name>
@@ -251,6 +259,18 @@
         <message>
             <source>No Capture Available or Selected</source>
             <translation>캡처 방식을 사용할 수 없거나 선택되지 않음</translation>
+        </message>
+        <message>
+            <source>Reload tasks</source>
+            <translation>작업 다시 불러오기</translation>
+        </message>
+        <message>
+            <source>Waiting to reload tasks...</source>
+            <translation>작업을 다시 불러오기를 기다리는 중…</translation>
+        </message>
+        <message>
+            <source>Reloaded {count} tasks</source>
+            <translation>작업 {count}개를 다시 불러왔습니다</translation>
         </message>
     </context>
     <context>
@@ -1774,6 +1794,14 @@
             <translation>Alt+F3을 눌러 꺼 보세요.</translation>
         </message>
         <message>
+            <source>Enable MCP Server</source>
+            <translation>MCP 서버 활성화</translation>
+        </message>
+        <message>
+            <source>Allow local coding agents to control this app and run Python code</source>
+            <translation>로컬 코딩 에이전트가 이 앱을 제어하고 Python 코드를 실행하도록 허용</translation>
+        </message>
+        <message>
             <source>Bark Notification</source>
             <translation>Bark 알림</translation>
         </message>
@@ -3033,6 +3061,18 @@ Critical: sound even in silent mode</source>
             <source>Invalid relative path. Example: ok_tasks/LabelEnum.py</source>
             <translation>잘못된 상대 경로입니다. 예: ok_tasks/LabelEnum.py</translation>
         </message>
+        <message>
+            <source>Generate function</source>
+            <translation>생성 방식</translation>
+        </message>
+        <message>
+            <source>Split(Recommend)</source>
+            <translation>분할(권장)</translation>
+        </message>
+        <message>
+            <source>Compress (obsolete)</source>
+            <translation>압축(사용 중단)</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>
@@ -3141,879 +3181,6 @@ Critical: sound even in silent mode</source>
         <message>
             <source>Select File or Folder</source>
             <translation>파일 또는 폴더 선택</translation>
-        </message>
-    </context>
-    <context>
-        <name>WebUI</name>
-        <message>
-            <source>Automation control</source>
-            <translation>자동화 제어</translation>
-        </message>
-        <message>
-            <source>A local command center for tasks, triggers, and runtime events.</source>
-            <translation>작업, 트리거 및 런타임 이벤트를 위한 로컬 제어 센터입니다.</translation>
-        </message>
-        <message>
-            <source>Live</source>
-            <translation>실시간</translation>
-        </message>
-        <message>
-            <source>Reconnecting</source>
-            <translation>재연결 중</translation>
-        </message>
-        <message>
-            <source>Runtime error</source>
-            <translation>런타임 오류</translation>
-        </message>
-        <message>
-            <source>Executor</source>
-            <translation>실행기</translation>
-        </message>
-        <message>
-            <source>Idle</source>
-            <translation>대기</translation>
-        </message>
-        <message>
-            <source>Current task</source>
-            <translation>현재 작업</translation>
-        </message>
-        <message>
-            <source>None</source>
-            <translation>없음</translation>
-        </message>
-        <message>
-            <source>Resume</source>
-            <translation>재개</translation>
-        </message>
-        <message>
-            <source>Pause</source>
-            <translation>일시 중지</translation>
-        </message>
-        <message>
-            <source>Stop task</source>
-            <translation>작업 중지</translation>
-        </message>
-        <message>
-            <source>Tasks</source>
-            <translation>작업</translation>
-        </message>
-        <message>
-            <source>{count} available</source>
-            <translation>{count}개 사용 가능</translation>
-        </message>
-        <message>
-            <source>Filter tasks</source>
-            <translation>작업 필터</translation>
-        </message>
-        <message>
-            <source>Refresh tasks</source>
-            <translation>작업 새로 고침</translation>
-        </message>
-        <message>
-            <source>Refresh</source>
-            <translation>새로 고침</translation>
-        </message>
-        <message>
-            <source>Trigger</source>
-            <translation>트리거</translation>
-        </message>
-        <message>
-            <source>One-time</source>
-            <translation>일회성</translation>
-        </message>
-        <message>
-            <source>Running</source>
-            <translation>실행 중</translation>
-        </message>
-        <message>
-            <source>Paused</source>
-            <translation>일시 중지됨</translation>
-        </message>
-        <message>
-            <source>Start</source>
-            <translation>시작</translation>
-        </message>
-        <message>
-            <source>No tasks match “{query}”.</source>
-            <translation>“{query}”와 일치하는 작업이 없습니다.</translation>
-        </message>
-        <message>
-            <source>Live events</source>
-            <translation>실시간 이벤트</translation>
-        </message>
-        <message>
-            <source>Latest 100 messages</source>
-            <translation>최근 메시지 100개</translation>
-        </message>
-        <message>
-            <source>Clear</source>
-            <translation>지우기</translation>
-        </message>
-        <message>
-            <source>Waiting for runtime events…</source>
-            <translation>런타임 이벤트 대기 중…</translation>
-        </message>
-        <message>
-            <source>Could not reach the automation runtime</source>
-            <translation>자동화 런타임에 연결할 수 없습니다</translation>
-        </message>
-        <message>
-            <source>Request failed</source>
-            <translation>요청 실패</translation>
-        </message>
-        <message>
-            <source>Action failed</source>
-            <translation>작업 실패</translation>
-        </message>
-        <message>
-            <source>Back</source>
-            <translation>뒤로</translation>
-        </message>
-        <message>
-            <source>Capture</source>
-            <translation>캡처 방식</translation>
-        </message>
-        <message>
-            <source>Capture Method</source>
-            <translation>캡처 방식</translation>
-        </message>
-        <message>
-            <source>Choose Interaction</source>
-            <translation>상호 작용 선택</translation>
-        </message>
-        <message>
-            <source>Choose Window</source>
-            <translation>창 선택</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <translation>닫기</translation>
-        </message>
-        <message>
-            <source>Debug</source>
-            <translation>개발 도구</translation>
-        </message>
-        <message>
-            <source>Disable Boxes</source>
-            <translation>박스 사용 안 함</translation>
-        </message>
-        <message>
-            <source>Disconnected</source>
-            <translation>연결 끊김</translation>
-        </message>
-        <message>
-            <source>Enable Boxes</source>
-            <translation>박스 사용</translation>
-        </message>
-        <message>
-            <source>Export Logs</source>
-            <translation>로그 내보내기</translation>
-        </message>
-        <message>
-            <source>Install Folder</source>
-            <translation>설치 폴더</translation>
-        </message>
-        <message>
-            <source>Loading</source>
-            <translation>로딩 중</translation>
-        </message>
-        <message>
-            <source>Log Folder</source>
-            <translation>로그 폴더</translation>
-        </message>
-        <message>
-            <source>Maximize</source>
-            <translation>최대화</translation>
-        </message>
-        <message>
-            <source>Minimize</source>
-            <translation>최소화</translation>
-        </message>
-        <message>
-            <source>No options available</source>
-            <translation>사용할 수 있는 옵션이 없습니다</translation>
-        </message>
-        <message>
-            <source>No windows found</source>
-            <translation>창을 찾을 수 없습니다</translation>
-        </message>
-        <message>
-            <source>Refreshing</source>
-            <translation>새로고침 중</translation>
-        </message>
-        <message>
-            <source>Screenshot Folder</source>
-            <translation>스크린샷 폴더</translation>
-        </message>
-        <message>
-            <source>Search title or exe...</source>
-            <translation>제목 또는 실행 파일 검색...</translation>
-        </message>
-        <message>
-            <source>Toggle navigation</source>
-            <translation>탐색 메뉴 전환</translation>
-        </message>
-        <message>
-            <source>View Log</source>
-            <translation>로그 보기</translation>
-        </message>
-        <message>
-            <source>{page} is not available in the web UI yet.</source>
-            <translation>{page} 페이지는 아직 Web UI에서 사용할 수 없습니다.</translation>
-        </message>
-        <message>
-            <source>About</source>
-            <translation>정보</translation>
-        </message>
-        <message>
-            <source>Character Code</source>
-            <translation>캐릭터 코드</translation>
-        </message>
-        <message>
-            <source>Character Settings</source>
-            <translation>캐릭터 설정</translation>
-        </message>
-        <message>
-            <source>Game Hotkeys</source>
-            <translation>게임 단축키</translation>
-        </message>
-        <message>
-            <source>Notifications</source>
-            <translation>알림</translation>
-        </message>
-        <message>
-            <source>Schedule</source>
-            <translation>일정</translation>
-        </message>
-        <message>
-            <source>Script</source>
-            <translation>스크립트</translation>
-        </message>
-        <message>
-            <source>Settings</source>
-            <translation>설정</translation>
-        </message>
-        <message>
-            <source>Templates</source>
-            <translation>템플릿</translation>
-        </message>
-        <message>
-            <source>Triggers</source>
-            <translation>실시간 트리거</translation>
-        </message>
-        <message>
-            <source>All Levels</source>
-            <translation>모든 레벨</translation>
-        </message>
-        <message>
-            <source>Capture Preview</source>
-            <translation>캡처 미리보기</translation>
-        </message>
-        <message>
-            <source>Captured game frame</source>
-            <translation>캡처된 게임 화면</translation>
-        </message>
-        <message>
-            <source>Could not load logs</source>
-            <translation>로그를 불러올 수 없습니다</translation>
-        </message>
-        <message>
-            <source>Filter logs...</source>
-            <translation>로그 필터...</translation>
-        </message>
-        <message>
-            <source>Log level</source>
-            <translation>로그 레벨</translation>
-        </message>
-        <message>
-            <source>Waiting for ok-script.log</source>
-            <translation>ok-script.log 대기 중</translation>
-        </message>
-        <message>
-            <source>lines</source>
-            <translation>줄</translation>
-        </message>
-        <message>
-            <source>Open Screenshot Folder</source>
-            <translation>스크린샷 폴더 열기</translation>
-        </message>
-        <message>
-            <source>Completed</source>
-            <translation>완료됨</translation>
-        </message>
-        <message>
-            <source>Time Elapsed</source>
-            <translation>경과 시간</translation>
-        </message>
-        <message>
-            <source>Waiting for {task_name} task to be completed</source>
-            <translation>{task_name} 작업 완료 대기 중</translation>
-        </message>
-        <message>
-            <source>Instructions</source>
-            <translation>사용 설명</translation>
-        </message>
-        <message>
-            <source>Enabled</source>
-            <translation>활성화됨</translation>
-        </message>
-        <message>
-            <source>Disabled</source>
-            <translation>비활성화됨</translation>
-        </message>
-        <message>
-            <source>Stop</source>
-            <translation>중지</translation>
-        </message>
-        <message>
-            <source>Reset Config</source>
-            <translation>설정 초기화</translation>
-        </message>
-        <message>
-            <source>App Config</source>
-            <translation>앱 설정</translation>
-        </message>
-        <message>
-            <source>Application Theme</source>
-            <translation>애플리케이션 테마</translation>
-        </message>
-        <message>
-            <source>Change the appearance of the application</source>
-            <translation>애플리케이션의 모양 변경</translation>
-        </message>
-        <message>
-            <source>Light</source>
-            <translation>밝게</translation>
-        </message>
-        <message>
-            <source>Dark</source>
-            <translation>어둡게</translation>
-        </message>
-        <message>
-            <source>Use system setting</source>
-            <translation>시스템 설정 사용</translation>
-        </message>
-        <message>
-            <source>Language</source>
-            <translation>언어</translation>
-        </message>
-        <message>
-            <source>Set your preferred language</source>
-            <translation>선호하는 언어 설정</translation>
-        </message>
-        <message>
-            <source>Actions</source>
-            <translation>작업</translation>
-        </message>
-        <message>
-            <source>Add</source>
-            <translation>추가</translation>
-        </message>
-        <message>
-            <source>Auto Exit After Task</source>
-            <translation>Auto Exit After Task</translation>
-        </message>
-        <message>
-            <source>Available Options</source>
-            <translation>사용 가능한 옵션</translation>
-        </message>
-        <message>
-            <source>Bounding Box</source>
-            <translation>바운딩 박스</translation>
-        </message>
-        <message>
-            <source>Cancel</source>
-            <translation>취소</translation>
-        </message>
-        <message>
-            <source>Category name</source>
-            <translation>카테고리 이름</translation>
-        </message>
-        <message>
-            <source>Choose Task:</source>
-            <translation>작업 선택:</translation>
-        </message>
-        <message>
-            <source>Class Name (English only)</source>
-            <translation>클래스 이름 (영어만)</translation>
-        </message>
-        <message>
-            <source>Confirm</source>
-            <translation>확인</translation>
-        </message>
-        <message>
-            <source>Confirm Delete</source>
-            <translation>삭제 확인</translation>
-        </message>
-        <message>
-            <source>Copy Task</source>
-            <translation>작업 복사</translation>
-        </message>
-        <message>
-            <source>Create</source>
-            <translation>생성</translation>
-        </message>
-        <message>
-            <source>Create New Task</source>
-            <translation>새 작업 생성</translation>
-        </message>
-        <message>
-            <source>Create Schedule Task</source>
-            <translation>예약 작업 생성</translation>
-        </message>
-        <message>
-            <source>Create Task</source>
-            <translation>작업 생성</translation>
-        </message>
-        <message>
-            <source>Current App</source>
-            <translation>Current App</translation>
-        </message>
-        <message>
-            <source>Days</source>
-            <translation>일</translation>
-        </message>
-        <message>
-            <source>Delete</source>
-            <translation>삭제</translation>
-        </message>
-        <message>
-            <source>Delete Task</source>
-            <translation>작업 삭제</translation>
-        </message>
-        <message>
-            <source>Description (Optional)</source>
-            <translation>설명 (선택)</translation>
-        </message>
-        <message>
-            <source>File</source>
-            <translation>파일</translation>
-        </message>
-        <message>
-            <source>Generate label enum file</source>
-            <translation>레이블 enum 파일 생성</translation>
-        </message>
-        <message>
-            <source>Guide</source>
-            <translation>가이드</translation>
-        </message>
-        <message>
-            <source>Hour</source>
-            <translation>시간</translation>
-        </message>
-        <message>
-            <source>Hours</source>
-            <translation>시간</translation>
-        </message>
-        <message>
-            <source>Markup</source>
-            <translation>마크업</translation>
-        </message>
-        <message>
-            <source>Minute</source>
-            <translation>분</translation>
-        </message>
-        <message>
-            <source>Modify</source>
-            <translation>수정</translation>
-        </message>
-        <message>
-            <source>Modify Schedule Task</source>
-            <translation>예약 작업 수정</translation>
-        </message>
-        <message>
-            <source>Move Down</source>
-            <translation>아래로 이동</translation>
-        </message>
-        <message>
-            <source>Move Up</source>
-            <translation>위로 이동</translation>
-        </message>
-        <message>
-            <source>Next Run</source>
-            <translation>다음 실행</translation>
-        </message>
-        <message>
-            <source>No templates yet</source>
-            <translation>템플릿이 없습니다</translation>
-        </message>
-        <message>
-            <source>OK</source>
-            <translation>확인</translation>
-        </message>
-        <message>
-            <source>Other Projects</source>
-            <translation>관련 프로젝트</translation>
-        </message>
-        <message>
-            <source>Relative path, e.g. ok_tasks/LabelEnum.py</source>
-            <translation>상대 경로, 예: ok_tasks/LabelEnum.py</translation>
-        </message>
-        <message>
-            <source>Remove</source>
-            <translation>제거</translation>
-        </message>
-        <message>
-            <source>Run</source>
-            <translation>실행</translation>
-        </message>
-        <message>
-            <source>Save</source>
-            <translation>저장</translation>
-        </message>
-        <message>
-            <source>Save To</source>
-            <translation>저장 위치</translation>
-        </message>
-        <message>
-            <source>Saved</source>
-            <translation>Saved</translation>
-        </message>
-        <message>
-            <source>Screenshot</source>
-            <translation>스크린샷</translation>
-        </message>
-        <message>
-            <source>Search by name or category...</source>
-            <translation>이름 또는 카테고리로 검색...</translation>
-        </message>
-        <message>
-            <source>Search templates...</source>
-            <translation>템플릿 검색...</translation>
-        </message>
-        <message>
-            <source>Select Task</source>
-            <translation>작업 선택</translation>
-        </message>
-        <message>
-            <source>Select task to edit</source>
-            <translation>Select task to edit</translation>
-        </message>
-        <message>
-            <source>Selected Options</source>
-            <translation>선택한 옵션</translation>
-        </message>
-        <message>
-            <source>Status</source>
-            <translation>상태</translation>
-        </message>
-        <message>
-            <source>Take Screenshot</source>
-            <translation>스크린샷 촬영</translation>
-        </message>
-        <message>
-            <source>Task Name</source>
-            <translation>작업 이름</translation>
-        </message>
-        <message>
-            <source>Task rebuilt successfully.</source>
-            <translation>작업이 성공적으로 재구성되었습니다.</translation>
-        </message>
-        <message>
-            <source>Timeout</source>
-            <translation>시간 초과</translation>
-        </message>
-        <message>
-            <source>Trigger Type</source>
-            <translation>트리거 유형</translation>
-        </message>
-        <message>
-            <source>assets (standalone app)</source>
-            <translation>assets (독립 실행형 앱)</translation>
-        </message>
-        <message>
-            <source>ok_tasks/assets (custom scripts)</source>
-            <translation>ok_tasks/assets (사용자 스크립트)</translation>
-        </message>
-        <message>
-            <source>GitHub</source>
-            <translation>GitHub</translation>
-        </message>
-        <message>
-            <source>FAQ</source>
-            <translation>FAQ</translation>
-        </message>
-        <message>
-            <source>Website</source>
-            <translation>웹사이트</translation>
-        </message>
-        <message>
-            <source>ok-py Automation Tool</source>
-            <translation>ok-py 자동화 도구</translation>
-        </message>
-        <message>
-            <source>ok-script App Template</source>
-            <translation>ok-script 앱 템플릿</translation>
-        </message>
-        <message>
-            <source>Wuthering Waves</source>
-            <translation>명조: 워더링 웨이브</translation>
-        </message>
-        <message>
-            <source>Girls' Frontline 2</source>
-            <translation>소녀전선 2</translation>
-        </message>
-        <message>
-            <source>Star Resonance</source>
-            <translation>별의 공명</translation>
-        </message>
-        <message>
-            <source>Duet Night Abyss</source>
-            <translation>듀엣 나이트 어비스</translation>
-        </message>
-        <message>
-            <source>Chaos Zero Nightmare</source>
-            <translation>카오스 제로 나이트메어</translation>
-        </message>
-        <message>
-            <source>Onmyoji</source>
-            <translation>음양사</translation>
-        </message>
-        <message>
-            <source>Arknights: Endfield</source>
-            <translation>명일방주: 엔드필드</translation>
-        </message>
-        <message>
-            <source>Neverness to Everness</source>
-            <translation>이환</translation>
-        </message>
-        <message>
-            <source>Discord</source>
-            <translation>Discord</translation>
-        </message>
-        <message>
-            <source>Share</source>
-            <translation>다운로드 링크 공유</translation>
-        </message>
-        <message>
-            <source>Sponsor</source>
-            <translation>후원</translation>
-        </message>
-        <message>
-            <source>Share Link copied to clipboard</source>
-            <translation>공유 링크가 클립보드에 복사되었습니다</translation>
-        </message>
-        <message>
-            <source>Starting</source>
-            <translation>시작 중</translation>
-        </message>
-        <message>
-            <source>App update</source>
-            <translation>앱 업데이트</translation>
-        </message>
-        <message>
-            <source>Disclaimer</source>
-            <translation>면책 조항</translation>
-        </message>
-        <message>
-            <source>Check Test Version</source>
-            <translation>테스트 버전 확인</translation>
-        </message>
-        <message>
-            <source>Check for updates</source>
-            <translation>업데이트 확인</translation>
-        </message>
-        <message>
-            <source>Click to check for updates</source>
-            <translation>클릭하여 업데이트 확인</translation>
-        </message>
-        <message>
-            <source>Version</source>
-            <translation>버전</translation>
-        </message>
-        <message>
-            <source>Update</source>
-            <translation>업데이트</translation>
-        </message>
-        <message>
-            <source>Downgrade</source>
-            <translation>다운그레이드</translation>
-        </message>
-        <message>
-            <source>Current version</source>
-            <translation>현재 버전</translation>
-        </message>
-        <message>
-            <source>Checking for updates…</source>
-            <translation>업데이트 확인 중…</translation>
-        </message>
-        <message>
-            <source>Starting change to {version}…</source>
-            <translation>{version}(으)로 변경 시작 중…</translation>
-        </message>
-        <message>
-            <source>Failed to check for updates: {error}</source>
-            <translation>업데이트 확인 실패: {error}</translation>
-        </message>
-        <message>
-            <source>No versions are available.</source>
-            <translation>사용 가능한 버전이 없습니다.</translation>
-        </message>
-        <message>
-            <source>No updates available.</source>
-            <translation>사용 가능한 업데이트가 없습니다.</translation>
-        </message>
-        <message>
-            <source>No release notes.</source>
-            <translation>릴리스 노트가 없습니다.</translation>
-        </message>
-        <message>
-            <source>Update request accepted. The app will restart to apply it.</source>
-            <translation>업데이트 요청이 수락되었습니다. 적용을 위해 앱이 다시 시작됩니다.</translation>
-        </message>
-        <message>
-            <source>Failed to change version: {error}</source>
-            <translation>버전 변경 실패: {error}</translation>
-        </message>
-        <message>
-            <source>Update available.</source>
-            <translation>업데이트가 있습니다.</translation>
-        </message>
-        <message>
-            <source>Auto HDR is enabled, tasks might not work correctly!</source>
-            <translation>자동 HDR이 켜져 있습니다. 작업이 올바르게 작동하지 않을 수 있습니다!</translation>
-        </message>
-        <message>
-            <source>WGC - Fast, support HDR (not AutoHDR)</source>
-            <translation>WGC - 빠름, HDR 지원 (AutoHDR 미지원)</translation>
-        </message>
-        <message>
-            <source>WGC_HDR - Only use when using AutoHDR (Not Recommended)</source>
-            <translation>WGC_HDR - AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
-        </message>
-        <message>
-            <source>Resolution {resolution} check failed, some tasks might not work correctly!</source>
-            <translation>해상도 {resolution} 확인 실패, 일부 작업이 올바르게 작동하지 않을 수 있습니다!</translation>
-        </message>
-        <message>
-            <source>, the supported ratio is {supported_ratio}</source>
-            <translation>, 지원되는 비율은 {supported_ratio} 입니다</translation>
-        </message>
-        <message>
-            <source>, the supported min resolution is {min_size}</source>
-            <translation>, 지원되는 최소 해상도는 {min_size} 입니다</translation>
-        </message>
-        <message>
-            <source>{vendor} {feature} is enabled and may cause malfunctions!</source>
-            <translation>{vendor} {feature} 기능이 활성화되어 있어 오작동을 일으킬 수 있습니다!</translation>
-        </message>
-        <message>
-            <source>GPU Driver Warning</source>
-            <translation>GPU 드라이버 경고</translation>
-        </message>
-        <message>
-            <source>Fast, support HDR (not AutoHDR)</source>
-            <translation>빠름, HDR 지원 (AutoHDR 미지원)</translation>
-        </message>
-        <message>
-            <source>Only use when using AutoHDR (Not Recommended)</source>
-            <translation>AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
-        </message>
-        <message>
-            <source>Try using Alt+F3 to turn it off.</source>
-            <translation>Alt+F3을 눌러 꺼 보세요.</translation>
-        </message>
-        <message>
-            <source>Bark Notification</source>
-            <translation>Bark 알림</translation>
-        </message>
-        <message>
-            <source>Bark Server URL</source>
-            <translation>Bark 서버 URL</translation>
-        </message>
-        <message>
-            <source>Bark Device Key</source>
-            <translation>Bark 기기 키</translation>
-        </message>
-        <message>
-            <source>Bark Group</source>
-            <translation>Bark 그룹</translation>
-        </message>
-        <message>
-            <source>Bark Sound</source>
-            <translation>Bark 알림음</translation>
-        </message>
-        <message>
-            <source>Bark Level</source>
-            <translation>Bark 알림 수준</translation>
-        </message>
-        <message>
-            <source>Bark Archive</source>
-            <translation>Bark 기록 저장</translation>
-        </message>
-        <message>
-            <source>Send notifications through the Bark iOS app</source>
-            <translation>Bark iOS App을 통해 알림 전송</translation>
-        </message>
-        <message>
-            <source>Bark server URL; do not change unless needed</source>
-            <translation>Bark 서버 URL; 필요한 경우에만 변경하세요</translation>
-        </message>
-        <message>
-            <source>Device key registered in the Bark app</source>
-            <translation>Bark App에 등록된 기기 키</translation>
-        </message>
-        <message>
-            <source>Notification group; leave empty to send without a group</source>
-            <translation>알림 그룹; 비워 두면 그룹을 지정하지 않습니다</translation>
-        </message>
-        <message>
-            <source>Ringtone name; leave empty to use the app default</source>
-            <translation>벨소리 이름; 비워 두면 App 기본 벨소리 사용</translation>
-        </message>
-        <message>
-            <source>Normal: display immediately and wake the screen
-Passive: notification list only
-Time Sensitive: show during Focus
-Critical: sound even in silent mode</source>
-            <translation>일반: 화면을 켜고 즉시 표시
-무음: 알림 목록에만 추가
-시간 민감: 집중 모드에서도 표시
-중요 경고: 무음 모드에서도 소리 재생</translation>
-        </message>
-        <message>
-            <source>Whether to save notifications in Bark history</source>
-            <translation>Bark 기록에 알림을 저장할지 선택합니다</translation>
-        </message>
-        <message>
-            <source>App Default</source>
-            <translation>앱 기본값</translation>
-        </message>
-        <message>
-            <source>Do Not Save</source>
-            <translation>저장 안 함</translation>
-        </message>
-        <message>
-            <source>active</source>
-            <translation>일반</translation>
-        </message>
-        <message>
-            <source>passive</source>
-            <translation>무음</translation>
-        </message>
-        <message>
-            <source>timeSensitive</source>
-            <translation>시간 지정</translation>
-        </message>
-        <message>
-            <source>Bark Icon</source>
-            <translation>Bark 아이콘</translation>
-        </message>
-        <message>
-            <source>Bark URL</source>
-            <translation>Bark 이동 링크</translation>
-        </message>
-        <message>
-            <source>Notification icon URL; leave empty to use the app default icon</source>
-            <translation>알림 아이콘 URL; 비워 두면 App 기본 아이콘 사용</translation>
-        </message>
-        <message>
-            <source>Link to open when the notification is tapped</source>
-            <translation>알림을 눌렀을 때 열 링크</translation>
-        </message>
-        <message>
-            <source>critical</source>
-            <translation>중요 경고</translation>
         </message>
     </context>
     <context>
@@ -4187,6 +3354,57 @@ Critical: sound even in silent mode</source>
         <message>
             <source>Checking for updates…</source>
             <translation>업데이트 확인 중…</translation>
+        </message>
+        <message>
+            <source>Restart the application to apply plugin changes.</source>
+            <translation>플러그인 변경 사항을 적용하려면 앱을 다시 시작하세요.</translation>
+        </message>
+        <message>
+            <source>Plugin change failed: {}</source>
+            <translation>플러그인 변경 실패: {}</translation>
+        </message>
+        <message>
+            <source>Update failed. Restart to restore the previous version.</source>
+            <translation>업데이트에 실패했습니다. 이전 버전을 복원하려면 다시 시작하세요.</translation>
+        </message>
+        <message>
+            <source>Deletion staged. Restart to apply.</source>
+            <translation>삭제가 예약되었습니다. 다시 시작하면 적용됩니다.</translation>
+        </message>
+        <message>
+            <source>Update staged: {}. Restart to apply.</source>
+            <translation>업데이트 준비 완료: {}. 다시 시작하면 적용됩니다.</translation>
+        </message>
+        <message>
+            <source>Cancel pending change</source>
+            <translation>대기 중인 변경 취소</translation>
+        </message>
+        <message>
+            <source>Backup cleanup pending. Restart to retry.</source>
+            <translation>백업 정리가 대기 중입니다. 다시 시작하여 재시도하세요.</translation>
+        </message>
+    </context>
+    <context>
+        <name>LabelAndMcpServer</name>
+        <message>
+            <source>Enable MCP Server?</source>
+            <translation>MCP 서버를 활성화하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>MCP lets local coding agents control this app and execute Python code with your account permissions, including reading and changing files. Only connect trusted agents and keep the connection token private. Enable the server now?</source>
+            <translation>MCP를 사용하면 로컬 코딩 에이전트가 이 앱을 제어하고 파일 읽기 및 변경을 포함한 Python 코드를 사용자 계정 권한으로 실행할 수 있습니다. 신뢰할 수 있는 에이전트만 연결하고 연결 토큰을 비공개로 유지하세요. 지금 서버를 활성화하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>MCP server error</source>
+            <translation>MCP 서버 오류</translation>
+        </message>
+        <message>
+            <source>Yes</source>
+            <translation>예</translation>
+        </message>
+        <message>
+            <source>No</source>
+            <translation>아니요</translation>
         </message>
     </context>
 </TS>

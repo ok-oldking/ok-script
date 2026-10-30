@@ -1,14 +1,19 @@
+import ctypes
 import time
 
 import pydirectinput
 
 from ok.device.capture_methods.base import BaseCaptureMethod
 from ok.device.interaction_methods.base import BaseInteraction
-from ok.device.interaction_methods.keys import normalize_pydirect_key
+from ok.device.interaction_methods.keys import (
+    normalize_pydirect_key, is_mouse_button, get_mouse_button,
+    MOUSEEVENTF_XDOWN, MOUSEEVENTF_XUP
+)
 from ok.util.logger import Logger
 from ok.util.process import is_admin
 
 logger = Logger.get_logger(__name__)
+user32 = ctypes.windll.user32
 
 class PyDirectInteraction(BaseInteraction):
 
@@ -35,6 +40,12 @@ class PyDirectInteraction(BaseInteraction):
         if not self.clickable():
             logger.error(f"can't click on {key}, because capture is not clickable")
             return
+        if is_mouse_button(key):
+            btn = get_mouse_button(key)
+            user32.mouse_event(MOUSEEVENTF_XDOWN, 0, 0, btn, 0)
+            time.sleep(down_time)
+            user32.mouse_event(MOUSEEVENTF_XUP, 0, 0, btn, 0)
+            return
         key = normalize_pydirect_key(key)
         pydirectinput.keyDown(key)
         time.sleep(down_time)
@@ -44,7 +55,21 @@ class PyDirectInteraction(BaseInteraction):
         if not self.clickable():
             logger.error(f"can't click on {key}, because capture is not clickable")
             return
+        if is_mouse_button(key):
+            btn = get_mouse_button(key)
+            user32.mouse_event(MOUSEEVENTF_XDOWN, 0, 0, btn, 0)
+            return
         pydirectinput.keyDown(normalize_pydirect_key(key))
+
+    def send_key_up(self, key):
+        if not self.clickable():
+            logger.error(f"can't click on {key}, because capture is not clickable")
+            return
+        if is_mouse_button(key):
+            btn = get_mouse_button(key)
+            user32.mouse_event(MOUSEEVENTF_XUP, 0, 0, btn, 0)
+            return
+        pydirectinput.keyUp(normalize_pydirect_key(key))
 
     def scroll(self, x, y, scroll_amount):
         import mouse
@@ -61,12 +86,6 @@ class PyDirectInteraction(BaseInteraction):
             mouse.wheel(sign)
             time.sleep(0.001)
         time.sleep(0.02)
-
-    def send_key_up(self, key):
-        if not self.clickable():
-            logger.error(f"can't click on {key}, because capture is not clickable")
-            return
-        pydirectinput.keyUp(normalize_pydirect_key(key))
 
     def move(self, x, y):
         import mouse

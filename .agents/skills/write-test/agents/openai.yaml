@@ -1,0 +1,3 @@
+interface:
+  display_name: "Write Automation Tests"
+  short_description: "Write screenshot and isolated automation regression tests"

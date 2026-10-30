@@ -1,90 +1,43 @@
-# Introduction to computer-vision game automation
+# How reusable automation works
 
-[Documentation](index.md) · [Quick start](quick_start.md) · [API reference](api_reference.md) · [简体中文](../intro_to_automation/README.md)
+[简体中文](../intro_to_automation/README.md) · [Documentation](index.md) · [MCP quick start](quick_start.md)
 
-This guide introduces the basic ideas and tools behind game automation with computer vision. No prior image-processing experience is required.
+A coding agent helps develop and validate the program. The saved Python program then performs the automation itself. This separates model-assisted development from ordinary execution, so repeated local runs do not require model tokens.
 
-## 1. How a computer “plays” a game
+## During development
 
-Most visual automation follows the same loop:
+You describe the target application, starting state, steps, and visible success condition. Through MCP, the coding agent reads workflow skills, observes the target, submits Python task files, and checks their results. It uses local file access to inspect installed APIs, save the implementation, and diagnose logs and screenshots.
 
-1. **Observe:** capture the game window or device screen.
-2. **Decide:** analyze pixels, text, or detected objects to determine the current state.
-3. **Act:** click, press a key, swipe, or wait for the next state.
+The agent repeats this process until the script works under the tested conditions. It keeps the behavior in a reusable project task, with configuration and recognition assets. Use ok-script capture and interaction throughout; do not use Computer Use tools.
 
-The loop repeats until the task succeeds, fails, or is stopped.
+## During ordinary execution
 
-### Capture
+The saved Python task repeats a simple loop:
 
-A screenshot is a matrix of pixels. A 1920×1080 image contains more than two million pixels, usually represented as blue, green, and red channel values. The capture backend determines whether automation can continue while a window is covered or minimized.
+1. **Observe:** capture the target window or device screen.
+2. **Recognize:** use geometry, colors, template matching, or OCR to identify the current state.
+3. **Act:** send input through the configured ok-script backend.
+4. **Verify:** inspect the resulting state and stop when the success condition is met.
 
-### Decision making
+The code controls the loop. A local OCR or image-recognition model does not require a conversational LLM. Scripts only incur LLM inference costs if you explicitly add LLM calls.
 
-A task turns visual observations into state. Examples include:
+## Choose recognition for the task
 
-- a button template is visible, so it can be clicked;
-- OCR reads “Battle Complete,” so the result screen is ready;
-- a health-bar region contains less than a threshold of green pixels, so healing is required;
-- an object detector finds an enemy, so the cursor should move toward its bounding box.
+| Technique | Useful for |
+| --- | --- |
+| Geometry and colors | Regular controls, highlights, progress bars |
+| Template matching | Stable buttons and icons |
+| OCR | Text whose content matters to the decision |
+| Object detection | Objects whose appearance varies beyond fixed templates |
 
-### Input
+Ask the agent to start with the simplest reliable method and validate it against real screenshots. Templates and geometry can depend on resolution, scaling, animation, and UI changes. A successful run demonstrates the tested conditions, not every future version of the application.
 
-After choosing an action, the framework sends mouse, keyboard, touch, or ADB input. Some actions happen immediately; others wait for a visual condition before continuing.
+## Make repetition reliable
 
-## 2. Image-analysis approaches
+A reusable task restores and verifies its starting state, uses bounded waits, records failures, and asserts the actual result. Repeated execution should preserve the desired outcome: an "enable option" task must not toggle it off on the next run.
 
-### Traditional computer vision
+Background input also needs validation. Ask the agent to prioritize PostMessage on Windows and verify real effects while the target is unfocused or covered. Working screenshots do not prove input works, and covered-window support does not prove minimized-window support.
 
-Traditional OpenCV methods are lightweight, deterministic, and often the best first choice for game interfaces.
+## Your first task
 
-**Template matching** searches the screenshot for a small reference image. It works well for stable buttons, icons, and UI elements. ok-script adds position hints and resolution scaling through COCO annotations.
-
-**Color matching** measures or searches for pixels in a color range. Typical uses include health bars, highlighted controls, and status indicators.
-
-**Geometry and contours** identify edges, shapes, and filled regions. They can measure progress bars or locate objects with a distinctive silhouette.
-
-### Neural-network inference
-
-Neural models are useful when appearance varies too much for a fixed template.
-
-- **OCR** extracts text such as player names, counters, or quest descriptions.
-- **Object detection** locates multiple objects and returns bounding boxes. It is more tolerant of scale, rotation, and partial occlusion than template matching.
-- **Segmentation** returns detailed object regions and is useful for navigation or irregular shapes.
-- **Classification** selects one state from a set, such as menu, combat, or map.
-- **Vision-language models** can interpret broader visual scenes, but they are usually slower and less deterministic than purpose-built recognition.
-
-Start with the simplest technique that reliably distinguishes the states your task needs.
-
-## 3. Why Python
-
-Python is a practical choice for visual automation because it combines readable task code with a mature ecosystem:
-
-- [OpenCV](https://opencv.org/) for image processing and template matching
-- [NumPy](https://numpy.org/) for efficient pixel and array operations
-- OCR libraries for reading interface text
-- [PyTorch](https://pytorch.org/) and [ONNX Runtime](https://onnxruntime.ai/) for model inference
-- [PySide6](https://doc.qt.io/qtforpython-6/) for desktop interfaces
-- pytest or unittest for repeatable task tests
-
-ok-script integrates these concerns so application projects can focus on task logic.
-
-## 4. Development tools
-
-- **IDE:** [PyCharm](https://www.jetbrains.com/pycharm/download/) or [Visual Studio Code](https://code.visualstudio.com/download)
-- **Version control:** [Git](https://git-scm.com/) and [GitHub](https://github.com/)
-- **CI/CD:** GitHub Actions for tests, builds, and releases
-- **Annotation:** any tool that exports compatible COCO data; the advanced guide describes the workflow
-
-## 5. A practical first task
-
-A useful first automation should have a small number of distinct states:
-
-1. Capture a screenshot of a stable screen.
-2. Annotate one button as a template.
-3. Use `find_one` or `wait_feature` to locate it.
-4. Click the returned `Box`.
-5. Assert the next screen appears.
-
-This exercise introduces the full observe–decide–act loop without requiring a neural model.
-
-Continue with the [quick-start guide](quick_start.md) to create a runnable project.
+Choose a small workflow such as opening Settings and enabling one option. Follow the [MCP quick start](quick_start.md), then copy a [task-development prompt](agent-prompts.md). Keep the resulting script and run it without the agent. When the UI changes, reconnect the agent and ask it to repair the existing task.

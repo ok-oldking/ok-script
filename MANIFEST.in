@@ -1,4 +1,9 @@
 recursive-include ok *
+recursive-include .agents/skills *
+include docs/mcp.md
+include docs/agent-setup.md
+include docs/feature-crops.md
+include examples/mcp_observe.py
 global-exclude *.pyc
 global-exclude *.log
 global-exclude *.log.*
