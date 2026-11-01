@@ -4,7 +4,7 @@ from time import perf_counter
 from typing import TypedDict
 
 import cv2
-from PySide6.QtCore import Qt, Signal, QTimer, QRunnable, QThreadPool, QObject
+from PySide6.QtCore import Qt, Signal, QTimer, QRunnable, QThreadPool, QObject, QCoreApplication
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                QScrollArea, QLabel, QFrame)
@@ -208,7 +208,8 @@ def save_template_screenshot():
     folder = ensure_template_folder()
     file_path = os.path.join(folder, f"{get_next_image_name(folder)}.png")
     if not cv2.imwrite(file_path, frame):
-        raise RuntimeError(f"Could not write screenshot to {file_path}")
+        raise RuntimeError(QCoreApplication.translate(
+            'TemplateTab', 'Could not write screenshot to {path}').format(path=file_path))
     return file_path
 
 

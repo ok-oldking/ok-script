@@ -88,7 +88,7 @@ class StartController:
                 return True
         except Exception as e:
             logger.error(f'do_start resume exception: {e}', e)
-            communicate.starting_emulator.emit(True, self.tr(f'Start failed: {e}'), 0)
+            communicate.starting_emulator.emit(True, self.tr('Start failed: {error}').format(error=e), 0)
             return False
 
         try:
@@ -130,7 +130,7 @@ class StartController:
             return True
         except Exception as e:
             logger.error(f'do_start exception: {e}', e)
-            communicate.starting_emulator.emit(True, self.tr(f'Start failed: {e}'), 0)
+            communicate.starting_emulator.emit(True, self.tr('Start failed: {error}').format(error=e), 0)
             return False
 
     def _wait_until_device_ready(self, refresh_first=True):
@@ -190,7 +190,7 @@ class StartController:
         if device and not device['connected']:
             if device['device'] == "windows" and not is_admin():
                 communicate.starting_emulator.emit(True,
-                                                   "PC version requires admin privileges, Please restart this app with admin privileges!",
+                                                   self.tr("PC version requires admin privileges, Please restart this app with admin privileges!"),
                                                    0)
                 communicate.restart_admin.emit()
                 return False
@@ -353,7 +353,7 @@ class StartController:
                         hwnd_window.do_update_window_size()
                     if not og.device_manager.capture_method.hwnd_window.pos_valid:
                         return self.tr(
-                            f'Window is minimized or out of screen, and don\'t use full-screen exclusive mode!')
+                            'Window is minimized or out of screen, and don\'t use full-screen exclusive mode!')
             frame = self.try_capture_a_frame()
             if frame is None:
                 logger.error(f'check_device_error: try_capture_a_frame returned None')

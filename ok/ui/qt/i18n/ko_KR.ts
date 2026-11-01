@@ -272,6 +272,10 @@
             <source>Reloaded {count} tasks</source>
             <translation>작업 {count}개를 다시 불러왔습니다</translation>
         </message>
+        <message>
+            <source>The app is controlled by {owner}</source>
+            <translation>{owner}이(가) 앱을 제어하고 있습니다</translation>
+        </message>
     </context>
     <context>
         <name>GlobalConfigCard</name>
@@ -489,6 +493,10 @@
         <message>
             <source>Run Code</source>
             <translation>코드 실행</translation>
+        </message>
+        <message>
+            <source>Import failed: {error}</source>
+            <translation>가져오기 실패: {error}</translation>
         </message>
     </context>
     <context>
@@ -726,6 +734,14 @@
         <message>
             <source>Pause All</source>
             <translation>모두 일시 중지</translation>
+        </message>
+        <message>
+            <source>Error</source>
+            <translation>오류</translation>
+        </message>
+        <message>
+            <source>No Task to Run, Please Enable Task First!</source>
+            <translation>실행할 작업이 없습니다. 먼저 작업을 활성화해 주세요!</translation>
         </message>
     </context>
     <context>
@@ -978,6 +994,10 @@
         <message>
             <source>View Log</source>
             <translation>로그 보기</translation>
+        </message>
+        <message>
+            <source>Please Start First</source>
+            <translation>먼저 시작해 주세요</translation>
         </message>
     </context>
     <context>
@@ -1800,6 +1820,86 @@
         <message>
             <source>Allow local coding agents to control this app and run Python code</source>
             <translation>로컬 코딩 에이전트가 이 앱을 제어하고 Python 코드를 실행하도록 허용</translation>
+        </message>
+        <message>
+            <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
+            <translation>PC 버전은 관리자 권한이 필요합니다. 관리자 권한으로 이 앱을 다시 시작하세요!</translation>
+        </message>
+        <message>
+            <source>No game selected!</source>
+            <translation>게임을 선택하지 않았습니다!</translation>
+        </message>
+        <message>
+            <source>Capture failed, please check game window</source>
+            <translation>캡처 실패, 게임 창을 확인하세요</translation>
+        </message>
+        <message>
+            <source>Game path does not exist, Please open game manually!</source>
+            <translation>게임 경로가 없습니다. 게임을 수동으로 시작하세요!</translation>
+        </message>
+        <message>
+            <source>Start game timeout!</source>
+            <translation>시작 시간 초과!</translation>
+        </message>
+        <message>
+            <source>Window is minimized or out of screen, and don't use full-screen exclusive mode!</source>
+            <translation>창이 최소화되었거나 화면 밖에 있습니다. 전체 화면 전용 모드를 사용하지 마세요!</translation>
+        </message>
+        <message>
+            <source>Start game failed, please start game first</source>
+            <translation>게임 시작 실패, 먼저 게임을 수동으로 시작하세요!</translation>
+        </message>
+        <message>
+            <source>{} is not connected, please select the game window.</source>
+            <translation>{}게임 창이 연결되지 않았습니다. 게임 창과 캡처 방법을 선택하세요.</translation>
+        </message>
+        <message>
+            <source>Selected capture method is not supported by the game or your system!</source>
+            <translation>선택한 캡처 방법이 게임 또는 시스템에서 지원되지 않습니다!</translation>
+        </message>
+        <message>
+            <source>Image resource load failed, please try install again.(Don't put the app in Downloads folder)</source>
+            <translation>이미지 리소스 로드 실패, 다시 설치해 보세요. (앱을 다운로드 폴더에 두지 마세요)</translation>
+        </message>
+        <message>
+            <source>Emulator is not connected, start the emulator first!</source>
+            <translation>에뮬레이터가 연결되지 않았습니다. 먼저 에뮬레이터를 시작하세요!</translation>
+        </message>
+        <message>
+            <source>Can't start game, make sure the game is installed</source>
+            <translation>게임을 시작할 수 없습니다. 게임이 설치되었는지 확인하세요</translation>
+        </message>
+        <message>
+            <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
+            <translation>NPU 추론 오류, Intel NPU 드라이버를 업데이트해야 할 수 있습니다!</translation>
+        </message>
+        <message>
+            <source>Export failed</source>
+            <translation>내보내기 실패</translation>
+        </message>
+        <message>
+            <source>Cannot start: the app is controlled by {owner}</source>
+            <translation>시작할 수 없습니다: {owner}이(가) 앱을 제어하고 있습니다</translation>
+        </message>
+        <message>
+            <source>Cannot start {name}: the app is controlled by {owner}</source>
+            <translation>{name}을(를) 시작할 수 없습니다: {owner}이(가) 앱을 제어하고 있습니다</translation>
+        </message>
+        <message>
+            <source>Start failed: {error}</source>
+            <translation>시작 실패: {error}</translation>
+        </message>
+        <message>
+            <source>Windows Graphics Capture is busy</source>
+            <translation>Windows Graphics Capture가 사용 중입니다</translation>
+        </message>
+        <message>
+            <source>Windows Graphics Capture is not supported on this system.</source>
+            <translation>이 시스템은 Windows Graphics Capture를 지원하지 않습니다.</translation>
+        </message>
+        <message>
+            <source>Paused because browser exited</source>
+            <translation>브라우저가 종료되어 일시 중지되었습니다</translation>
         </message>
     </context>
     <context>
@@ -2806,6 +2906,18 @@
             <source>Guide</source>
             <translation>가이드</translation>
         </message>
+        <message>
+            <source>Error deleting task: {error}</source>
+            <translation>작업 삭제 중 오류 발생: {error}</translation>
+        </message>
+        <message>
+            <source>Error creating task: {error}</source>
+            <translation>작업 생성 중 오류 발생: {error}</translation>
+        </message>
+        <message>
+            <source>Error copying task: {error}</source>
+            <translation>작업 복사 중 오류 발생: {error}</translation>
+        </message>
     </context>
     <context>
         <name>CreateTaskDialog</name>
@@ -2967,6 +3079,22 @@
             <source>Compress (obsolete)</source>
             <translation>압축(사용 중단)</translation>
         </message>
+        <message>
+            <source>Screenshot failed: {e}</source>
+            <translation>스크린샷 촬영 실패: {e}</translation>
+        </message>
+        <message>
+            <source>Save failed: {e}</source>
+            <translation>저장 실패: {e}</translation>
+        </message>
+        <message>
+            <source>Delete failed: {e}</source>
+            <translation>삭제 실패: {e}</translation>
+        </message>
+        <message>
+            <source>Could not write screenshot to {path}</source>
+            <translation>{path}에 스크린샷을 저장할 수 없습니다</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>
@@ -2977,6 +3105,10 @@
         <message>
             <source>Cancel</source>
             <translation>취소</translation>
+        </message>
+        <message>
+            <source>Parameter '{param_name}' is required!</source>
+            <translation>'{param_name}' 매개변수는 필수입니다!</translation>
         </message>
     </context>
     <context>
@@ -3277,6 +3409,14 @@
             <source>Backup cleanup pending. Restart to retry.</source>
             <translation>백업 정리가 대기 중입니다. 다시 시작하여 재시도하세요.</translation>
         </message>
+        <message>
+            <source>The release archive belongs to a different plugin</source>
+            <translation>이 릴리스 압축 파일은 다른 플러그인에 속합니다</translation>
+        </message>
+        <message>
+            <source>The release archive is not a newer plugin version</source>
+            <translation>이 릴리스 압축 파일은 더 최신 플러그인 버전이 아닙니다</translation>
+        </message>
     </context>
     <context>
         <name>LabelAndMcpServer</name>
@@ -3299,6 +3439,17 @@
         <message>
             <source>No</source>
             <translation>아니요</translation>
+        </message>
+    </context>
+    <context>
+        <name>JobControls</name>
+        <message>
+            <source>The app is controlled by {owner}</source>
+            <translation>{owner}이(가) 앱을 제어하고 있습니다</translation>
+        </message>
+        <message>
+            <source>Failed after {seconds}s</source>
+            <translation>{seconds}초 후 실패</translation>
         </message>
     </context>
 </TS>

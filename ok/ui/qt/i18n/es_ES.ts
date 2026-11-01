@@ -272,6 +272,10 @@
             <source>Reloaded {count} tasks</source>
             <translation>Se han recargado {count} tareas</translation>
         </message>
+        <message>
+            <source>The app is controlled by {owner}</source>
+            <translation>{owner} está controlando la aplicación</translation>
+        </message>
     </context>
     <context>
         <name>GlobalConfigCard</name>
@@ -488,6 +492,10 @@
         <message>
             <source>Run Code</source>
             <translation>Ejecutar código</translation>
+        </message>
+        <message>
+            <source>Import failed: {error}</source>
+            <translation>Error al importar: {error}</translation>
         </message>
     </context>
     <context>
@@ -725,6 +733,14 @@
         <message>
             <source>Pause All</source>
             <translation>Pausar todo</translation>
+        </message>
+        <message>
+            <source>Error</source>
+            <translation>Error</translation>
+        </message>
+        <message>
+            <source>No Task to Run, Please Enable Task First!</source>
+            <translation>No hay tareas para ejecutar. ¡Active una tarea primero!</translation>
         </message>
     </context>
     <context>
@@ -977,6 +993,10 @@
         <message>
             <source>View Log</source>
             <translation>Ver registro</translation>
+        </message>
+        <message>
+            <source>Please Start First</source>
+            <translation>Inicie primero</translation>
         </message>
     </context>
     <context>
@@ -1799,6 +1819,86 @@
         <message>
             <source>Allow local coding agents to control this app and run Python code</source>
             <translation>Permitir que los agentes de programación locales controlen esta aplicación y ejecuten código Python</translation>
+        </message>
+        <message>
+            <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
+            <translation>La versión de PC requiere privilegios de administrador, ¡por favor, reinicia esta aplicación con privilegios de administrador!</translation>
+        </message>
+        <message>
+            <source>No game selected!</source>
+            <translation>¡No se ha seleccionado ningún juego!</translation>
+        </message>
+        <message>
+            <source>Capture failed, please check game window</source>
+            <translation>Captura fallida, por favor, comprueba la ventana del juego</translation>
+        </message>
+        <message>
+            <source>Game path does not exist, Please open game manually!</source>
+            <translation>La ruta del juego no existe, ¡por favor, abre el juego manualmente!</translation>
+        </message>
+        <message>
+            <source>Start game timeout!</source>
+            <translation>¡Tiempo de inicio del juego agotado!</translation>
+        </message>
+        <message>
+            <source>Window is minimized or out of screen, and don't use full-screen exclusive mode!</source>
+            <translation>La ventana está minimizada o fuera de la pantalla, ¡y no uses el modo de pantalla completa exclusiva!</translation>
+        </message>
+        <message>
+            <source>Start game failed, please start game first</source>
+            <translation>Error al iniciar el juego, por favor, inicia el juego primero</translation>
+        </message>
+        <message>
+            <source>{} is not connected, please select the game window.</source>
+            <translation>{} no está conectada, por favor, selecciona la ventana del juego y el método de captura.</translation>
+        </message>
+        <message>
+            <source>Selected capture method is not supported by the game or your system!</source>
+            <translation>¡El método de captura seleccionado no es compatible con el juego o tu sistema!</translation>
+        </message>
+        <message>
+            <source>Image resource load failed, please try install again.(Don't put the app in Downloads folder)</source>
+            <translation>Falló la carga del recurso de imagen, por favor, intenta instalar de nuevo. (No pongas la aplicación en la carpeta de Descargas)</translation>
+        </message>
+        <message>
+            <source>Emulator is not connected, start the emulator first!</source>
+            <translation>El emulador no está conectado, ¡inicia el emulador primero!</translation>
+        </message>
+        <message>
+            <source>Can't start game, make sure the game is installed</source>
+            <translation>No se puede iniciar el juego, asegúrate de que el juego está instalado</translation>
+        </message>
+        <message>
+            <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
+            <translation>¡Error de inferencia de la NPU, es posible que necesite actualizar el controlador de la NPU de Intel!</translation>
+        </message>
+        <message>
+            <source>Export failed</source>
+            <translation>Error al exportar</translation>
+        </message>
+        <message>
+            <source>Cannot start: the app is controlled by {owner}</source>
+            <translation>No se puede iniciar: {owner} está controlando la aplicación</translation>
+        </message>
+        <message>
+            <source>Cannot start {name}: the app is controlled by {owner}</source>
+            <translation>No se puede iniciar {name}: {owner} está controlando la aplicación</translation>
+        </message>
+        <message>
+            <source>Start failed: {error}</source>
+            <translation>Error al iniciar: {error}</translation>
+        </message>
+        <message>
+            <source>Windows Graphics Capture is busy</source>
+            <translation>Windows Graphics Capture está ocupado</translation>
+        </message>
+        <message>
+            <source>Windows Graphics Capture is not supported on this system.</source>
+            <translation>Este sistema no admite Windows Graphics Capture.</translation>
+        </message>
+        <message>
+            <source>Paused because browser exited</source>
+            <translation>En pausa porque se cerró el navegador</translation>
         </message>
     </context>
     <context>
@@ -2805,6 +2905,18 @@
             <source>Guide</source>
             <translation>Guía</translation>
         </message>
+        <message>
+            <source>Error deleting task: {error}</source>
+            <translation>Error al eliminar la tarea: {error}</translation>
+        </message>
+        <message>
+            <source>Error creating task: {error}</source>
+            <translation>Error al crear la tarea: {error}</translation>
+        </message>
+        <message>
+            <source>Error copying task: {error}</source>
+            <translation>Error al copiar la tarea: {error}</translation>
+        </message>
     </context>
     <context>
         <name>CreateTaskDialog</name>
@@ -2966,6 +3078,22 @@
             <source>Compress (obsolete)</source>
             <translation>Comprimir (obsoleto)</translation>
         </message>
+        <message>
+            <source>Screenshot failed: {e}</source>
+            <translation>Error al capturar la pantalla: {e}</translation>
+        </message>
+        <message>
+            <source>Save failed: {e}</source>
+            <translation>Error al guardar: {e}</translation>
+        </message>
+        <message>
+            <source>Delete failed: {e}</source>
+            <translation>Error al eliminar: {e}</translation>
+        </message>
+        <message>
+            <source>Could not write screenshot to {path}</source>
+            <translation>No se pudo guardar la captura de pantalla en {path}</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>
@@ -2976,6 +3104,10 @@
         <message>
             <source>Cancel</source>
             <translation>Cancelar</translation>
+        </message>
+        <message>
+            <source>Parameter '{param_name}' is required!</source>
+            <translation>¡El parámetro «{param_name}» es obligatorio!</translation>
         </message>
     </context>
     <context>
@@ -3276,6 +3408,14 @@
             <source>Backup cleanup pending. Restart to retry.</source>
             <translation>Limpieza de copias pendiente. Reinicia para reintentar.</translation>
         </message>
+        <message>
+            <source>The release archive belongs to a different plugin</source>
+            <translation>El archivo de la versión pertenece a otro complemento</translation>
+        </message>
+        <message>
+            <source>The release archive is not a newer plugin version</source>
+            <translation>El archivo de la versión no contiene una versión más reciente del complemento</translation>
+        </message>
     </context>
     <context>
         <name>LabelAndMcpServer</name>
@@ -3298,6 +3438,17 @@
         <message>
             <source>No</source>
             <translation>No</translation>
+        </message>
+    </context>
+    <context>
+        <name>JobControls</name>
+        <message>
+            <source>The app is controlled by {owner}</source>
+            <translation>{owner} está controlando la aplicación</translation>
+        </message>
+        <message>
+            <source>Failed after {seconds}s</source>
+            <translation>Error tras {seconds} s</translation>
         </message>
     </context>
 </TS>

@@ -263,6 +263,10 @@
             <source>Reloaded {count} tasks</source>
             <translation>已重新加载 {count} 个任务</translation>
         </message>
+        <message>
+            <source>The app is controlled by {owner}</source>
+            <translation>应用正由 {owner} 控制</translation>
+        </message>
     </context>
     <context>
         <name>GlobalConfigCard</name>
@@ -478,6 +482,10 @@
         <message>
             <source>Run Code</source>
             <translation>运行代码</translation>
+        </message>
+        <message>
+            <source>Import failed: {error}</source>
+            <translation>导入失败：{error}</translation>
         </message>
     </context>
     <context>
@@ -728,6 +736,14 @@
             <source>Pause All</source>
             <translation>暂停全部</translation>
         </message>
+        <message>
+            <source>Error</source>
+            <translation>错误</translation>
+        </message>
+        <message>
+            <source>No Task to Run, Please Enable Task First!</source>
+            <translation>没有可运行的任务，请先启用任务！</translation>
+        </message>
     </context>
     <context>
         <name>StartCard</name>
@@ -975,6 +991,10 @@
         <message>
             <source>View Log</source>
             <translation>查看日志</translation>
+        </message>
+        <message>
+            <source>Please Start First</source>
+            <translation>请先启动</translation>
         </message>
     </context>
     <context>
@@ -1797,6 +1817,86 @@
         <message>
             <source>Allow local coding agents to control this app and run Python code</source>
             <translation>允许本地编程代理控制此应用并运行 Python 代码</translation>
+        </message>
+        <message>
+            <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
+            <translation>PC版需要管理员权限，请以管理员权限重启此应用！</translation>
+        </message>
+        <message>
+            <source>No game selected!</source>
+            <translation>未选择游戏窗口</translation>
+        </message>
+        <message>
+            <source>Capture failed, please check game window</source>
+            <translation>截图失败,请检查游戏窗口</translation>
+        </message>
+        <message>
+            <source>Game path does not exist, Please open game manually!</source>
+            <translation>无法启动游戏, 请手动打开游戏</translation>
+        </message>
+        <message>
+            <source>Start game timeout!</source>
+            <translation>启动超时!</translation>
+        </message>
+        <message>
+            <source>Window is minimized or out of screen, and don't use full-screen exclusive mode!</source>
+            <translation>窗口被最小化或在屏幕外, 不要使用独占全屏模式!</translation>
+        </message>
+        <message>
+            <source>Start game failed, please start game first</source>
+            <translation>启动游戏失败, 请先手动启动游戏!</translation>
+        </message>
+        <message>
+            <source>{} is not connected, please select the game window.</source>
+            <translation>{}未连接，请选择正确的游戏窗口。</translation>
+        </message>
+        <message>
+            <source>Selected capture method is not supported by the game or your system!</source>
+            <translation>当前游戏或模拟器不支持选择的截图方式!</translation>
+        </message>
+        <message>
+            <source>Image resource load failed, please try install again.(Don't put the app in Downloads folder)</source>
+            <translation>模板图片加载失败,请重新安装.(不要放在下载目录等可能会被自动删除图片的目录.)</translation>
+        </message>
+        <message>
+            <source>Emulator is not connected, start the emulator first!</source>
+            <translation>模拟器未连接, 请先启动!</translation>
+        </message>
+        <message>
+            <source>Can't start game, make sure the game is installed</source>
+            <translation>无法启动游戏, 请确认游戏已安装!</translation>
+        </message>
+        <message>
+            <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
+            <translation>NPU推理错误，您可能需要更新Intel NPU驱动！</translation>
+        </message>
+        <message>
+            <source>Export failed</source>
+            <translation>导出失败</translation>
+        </message>
+        <message>
+            <source>Cannot start: the app is controlled by {owner}</source>
+            <translation>无法启动：应用正由 {owner} 控制</translation>
+        </message>
+        <message>
+            <source>Cannot start {name}: the app is controlled by {owner}</source>
+            <translation>无法启动 {name}：应用正由 {owner} 控制</translation>
+        </message>
+        <message>
+            <source>Start failed: {error}</source>
+            <translation>启动失败：{error}</translation>
+        </message>
+        <message>
+            <source>Windows Graphics Capture is busy</source>
+            <translation>Windows 图形捕获正忙</translation>
+        </message>
+        <message>
+            <source>Windows Graphics Capture is not supported on this system.</source>
+            <translation>此系统不支持 Windows 图形捕获。</translation>
+        </message>
+        <message>
+            <source>Paused because browser exited</source>
+            <translation>浏览器已退出，任务已暂停</translation>
         </message>
     </context>
     <context>
@@ -2803,6 +2903,18 @@
             <source>Guide</source>
             <translation>教程</translation>
         </message>
+        <message>
+            <source>Error deleting task: {error}</source>
+            <translation>删除任务时出错：{error}</translation>
+        </message>
+        <message>
+            <source>Error creating task: {error}</source>
+            <translation>创建任务时出错：{error}</translation>
+        </message>
+        <message>
+            <source>Error copying task: {error}</source>
+            <translation>复制任务时出错：{error}</translation>
+        </message>
     </context>
     <context>
         <name>CreateTaskDialog</name>
@@ -2964,6 +3076,22 @@
             <source>Compress (obsolete)</source>
             <translation>压缩（已废弃）</translation>
         </message>
+        <message>
+            <source>Screenshot failed: {e}</source>
+            <translation>截图失败：{e}</translation>
+        </message>
+        <message>
+            <source>Save failed: {e}</source>
+            <translation>保存失败：{e}</translation>
+        </message>
+        <message>
+            <source>Delete failed: {e}</source>
+            <translation>删除失败：{e}</translation>
+        </message>
+        <message>
+            <source>Could not write screenshot to {path}</source>
+            <translation>无法将截图写入 {path}</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>
@@ -2974,6 +3102,10 @@
         <message>
             <source>Cancel</source>
             <translation>取消</translation>
+        </message>
+        <message>
+            <source>Parameter '{param_name}' is required!</source>
+            <translation>参数“{param_name}”为必填项！</translation>
         </message>
     </context>
     <context>
@@ -3274,6 +3406,14 @@
             <source>Backup cleanup pending. Restart to retry.</source>
             <translation>备份清理未完成，请重启后重试。</translation>
         </message>
+        <message>
+            <source>The release archive belongs to a different plugin</source>
+            <translation>此发布压缩包属于其他插件</translation>
+        </message>
+        <message>
+            <source>The release archive is not a newer plugin version</source>
+            <translation>此发布压缩包中的插件版本不是更新版本</translation>
+        </message>
     </context>
     <context>
         <name>LabelAndMcpServer</name>
@@ -3296,6 +3436,17 @@
         <message>
             <source>No</source>
             <translation>否</translation>
+        </message>
+    </context>
+    <context>
+        <name>JobControls</name>
+        <message>
+            <source>The app is controlled by {owner}</source>
+            <translation>应用正由 {owner} 控制</translation>
+        </message>
+        <message>
+            <source>Failed after {seconds}s</source>
+            <translation>{seconds} 秒后失败</translation>
         </message>
     </context>
 </TS>

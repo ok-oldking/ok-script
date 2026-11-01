@@ -254,13 +254,13 @@ class PluginTab(Tab):
             prepared.source = github_asset_source(asset)
             if namespace is not None:
                 if prepared.manifest['file_name'] != namespace:
-                    raise ValueError('The release archive belongs to a different plugin')
+                    raise ValueError(self.tr('The release archive belongs to a different plugin'))
                 installed = next(entry for entry in scan_import_folders() if entry['file_name'] == namespace)
                 source = read_plugin_source(installed['folder'])
                 current = installed['version'] or (source or {}).get('tag', '')
                 candidate = prepared.manifest.get('version') or prepared.source['tag']
                 if not newer_plugin_version(candidate, current):
-                    raise ValueError('The release archive is not a newer plugin version')
+                    raise ValueError(self.tr('The release archive is not a newer plugin version'))
         except Exception:
             prepared.close()
             raise

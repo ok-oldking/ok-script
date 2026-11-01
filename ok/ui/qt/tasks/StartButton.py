@@ -38,7 +38,7 @@ class StartButton(PushButton):
         if self.isChecked():
             logger.info("Click Start Executor")
             if not og.executor.start():
-                show_alert("Error", "No Task to Run, Please Enable Task First!")
+                show_alert(self.tr("Error"), self.tr("No Task to Run, Please Enable Task First!"))
                 self.setChecked(False)
         else:
             logger.info("Click Pause Executor")

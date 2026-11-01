@@ -272,6 +272,10 @@
             <source>Reloaded {count} tasks</source>
             <translation>{count} 個のタスクを再読み込みしました</translation>
         </message>
+        <message>
+            <source>The app is controlled by {owner}</source>
+            <translation>アプリは {owner} によって制御されています</translation>
+        </message>
     </context>
     <context>
         <name>GlobalConfigCard</name>
@@ -488,6 +492,10 @@
         <message>
             <source>Run Code</source>
             <translation>コード実行</translation>
+        </message>
+        <message>
+            <source>Import failed: {error}</source>
+            <translation>インポートに失敗しました：{error}</translation>
         </message>
     </context>
     <context>
@@ -725,6 +733,14 @@
         <message>
             <source>Pause All</source>
             <translation>すべて一時停止</translation>
+        </message>
+        <message>
+            <source>Error</source>
+            <translation>エラー</translation>
+        </message>
+        <message>
+            <source>No Task to Run, Please Enable Task First!</source>
+            <translation>実行するタスクがありません。先にタスクを有効にしてください！</translation>
         </message>
     </context>
     <context>
@@ -969,6 +985,10 @@
         <message>
             <source>View Log</source>
             <translation>ログを表示</translation>
+        </message>
+        <message>
+            <source>Please Start First</source>
+            <translation>先に開始してください</translation>
         </message>
     </context>
     <context>
@@ -1791,6 +1811,86 @@
         <message>
             <source>Allow local coding agents to control this app and run Python code</source>
             <translation>ローカルのコーディングエージェントにこのアプリの操作と Python コードの実行を許可する</translation>
+        </message>
+        <message>
+            <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
+            <translation>PC版には管理者権限が必要です。このアプリを管理者権限で再起動してください！</translation>
+        </message>
+        <message>
+            <source>No game selected!</source>
+            <translation>ゲームが選択されていません！</translation>
+        </message>
+        <message>
+            <source>Capture failed, please check game window</source>
+            <translation>キャプチャに失敗しました。ゲームウィンドウを確認してください。</translation>
+        </message>
+        <message>
+            <source>Game path does not exist, Please open game manually!</source>
+            <translation>ゲームパスが存在しません。手動でゲームを開いてください！</translation>
+        </message>
+        <message>
+            <source>Start game timeout!</source>
+            <translation>起動がタイムアウトしました！</translation>
+        </message>
+        <message>
+            <source>Window is minimized or out of screen, and don't use full-screen exclusive mode!</source>
+            <translation>ウィンドウが最小化されているか画面外にあります。排他全画面モードは使用しないでください！</translation>
+        </message>
+        <message>
+            <source>Start game failed, please start game first</source>
+            <translation>ゲームの起動に失敗しました。まず手動でゲームを起動してください。</translation>
+        </message>
+        <message>
+            <source>{} is not connected, please select the game window.</source>
+            <translation>{}が接続されていません。ゲームウィンドウとキャプチャ方法を選択してください。</translation>
+        </message>
+        <message>
+            <source>Selected capture method is not supported by the game or your system!</source>
+            <translation>選択されたキャプチャ方法は、ゲームまたはシステムでサポートされていません！</translation>
+        </message>
+        <message>
+            <source>Image resource load failed, please try install again.(Don't put the app in Downloads folder)</source>
+            <translation>画像リソースの読み込みに失敗しました。再インストールしてみてください。（アプリをダウンロードフォルダに入れないでください）</translation>
+        </message>
+        <message>
+            <source>Emulator is not connected, start the emulator first!</source>
+            <translation>エミュレータが接続されていません。まずエミュレータを起動してください！</translation>
+        </message>
+        <message>
+            <source>Can't start game, make sure the game is installed</source>
+            <translation>ゲームを開始できません。ゲームがインストールされていることを確認してください。</translation>
+        </message>
+        <message>
+            <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
+            <translation>NPU推論エラー。Intel NPUドライバーを更新する必要があるかもしれません。</translation>
+        </message>
+        <message>
+            <source>Export failed</source>
+            <translation>エクスポート失敗</translation>
+        </message>
+        <message>
+            <source>Cannot start: the app is controlled by {owner}</source>
+            <translation>開始できません：アプリは {owner} によって制御されています</translation>
+        </message>
+        <message>
+            <source>Cannot start {name}: the app is controlled by {owner}</source>
+            <translation>{name} を開始できません：アプリは {owner} によって制御されています</translation>
+        </message>
+        <message>
+            <source>Start failed: {error}</source>
+            <translation>開始に失敗しました：{error}</translation>
+        </message>
+        <message>
+            <source>Windows Graphics Capture is busy</source>
+            <translation>Windows Graphics Capture は使用中です</translation>
+        </message>
+        <message>
+            <source>Windows Graphics Capture is not supported on this system.</source>
+            <translation>このシステムは Windows Graphics Capture に対応していません。</translation>
+        </message>
+        <message>
+            <source>Paused because browser exited</source>
+            <translation>ブラウザーが終了したため一時停止しました</translation>
         </message>
     </context>
     <context>
@@ -2797,6 +2897,18 @@
             <source>Guide</source>
             <translation>ガイド</translation>
         </message>
+        <message>
+            <source>Error deleting task: {error}</source>
+            <translation>タスクの削除中にエラーが発生しました：{error}</translation>
+        </message>
+        <message>
+            <source>Error creating task: {error}</source>
+            <translation>タスクの作成中にエラーが発生しました：{error}</translation>
+        </message>
+        <message>
+            <source>Error copying task: {error}</source>
+            <translation>タスクのコピー中にエラーが発生しました：{error}</translation>
+        </message>
     </context>
     <context>
         <name>CreateTaskDialog</name>
@@ -2958,6 +3070,22 @@
             <source>Compress (obsolete)</source>
             <translation>圧縮（非推奨）</translation>
         </message>
+        <message>
+            <source>Screenshot failed: {e}</source>
+            <translation>スクリーンショットの撮影に失敗しました：{e}</translation>
+        </message>
+        <message>
+            <source>Save failed: {e}</source>
+            <translation>保存に失敗しました：{e}</translation>
+        </message>
+        <message>
+            <source>Delete failed: {e}</source>
+            <translation>削除に失敗しました：{e}</translation>
+        </message>
+        <message>
+            <source>Could not write screenshot to {path}</source>
+            <translation>スクリーンショットを {path} に書き込めませんでした</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>
@@ -2968,6 +3096,10 @@
         <message>
             <source>Cancel</source>
             <translation>キャンセル</translation>
+        </message>
+        <message>
+            <source>Parameter '{param_name}' is required!</source>
+            <translation>パラメーター「{param_name}」は必須です！</translation>
         </message>
     </context>
     <context>
@@ -3268,6 +3400,14 @@
             <source>Backup cleanup pending. Restart to retry.</source>
             <translation>バックアップの削除が保留中です。再起動して再試行してください。</translation>
         </message>
+        <message>
+            <source>The release archive belongs to a different plugin</source>
+            <translation>このリリースアーカイブは別のプラグインのものです</translation>
+        </message>
+        <message>
+            <source>The release archive is not a newer plugin version</source>
+            <translation>このリリースアーカイブは新しいプラグインバージョンではありません</translation>
+        </message>
     </context>
     <context>
         <name>LabelAndMcpServer</name>
@@ -3290,6 +3430,17 @@
         <message>
             <source>No</source>
             <translation>いいえ</translation>
+        </message>
+    </context>
+    <context>
+        <name>JobControls</name>
+        <message>
+            <source>The app is controlled by {owner}</source>
+            <translation>アプリは {owner} によって制御されています</translation>
+        </message>
+        <message>
+            <source>Failed after {seconds}s</source>
+            <translation>{seconds} 秒後に失敗しました</translation>
         </message>
     </context>
 </TS>

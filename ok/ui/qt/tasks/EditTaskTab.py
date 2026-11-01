@@ -731,7 +731,7 @@ class EditTaskTab(QWidget):
             return
             
         w = MessageBox(self.tr('Confirm Delete'), 
-                       self.tr(f"Are you sure you want to delete {os.path.basename(self.python_file)}?"), 
+                       self.tr("Are you sure you want to delete {}?").format(os.path.basename(self.python_file)),
                        self.window())
                                      
         if w.exec():
@@ -750,7 +750,7 @@ class EditTaskTab(QWidget):
                 self.refresh_dropdown()
             except Exception as e:
                 from ok.ui.qt.util.Alert import alert_error
-                alert_error(f"Error deleting task: {e}")
+                alert_error(self.tr("Error deleting task: {error}").format(error=e))
 
     def on_item_expanded_collapsed(self, item):
         import time
@@ -873,7 +873,7 @@ class {class_name}({base_class}):
                 from ok.ui.qt.util.app import show_info_bar
                 show_info_bar(self.window(), self.tr("Task created successfully."), title=self.tr("Success"))
             except Exception as e:
-                alert_error(f"Error creating task: {e}")
+                alert_error(self.tr("Error creating task: {error}").format(error=e))
 
     def copy_task(self):
         from qfluentwidgets import MessageBoxBase, ComboBox, SubtitleLabel
@@ -923,14 +923,14 @@ class {class_name}({base_class}):
                     python_file = None
                     
             if not python_file or not os.path.exists(python_file):
-                alert_error(self.tr(f"Could not find source file for {selected_task.__class__.__name__}"))
+                alert_error(self.tr("Could not find source file for {}").format(selected_task.__class__.__name__))
                 return
                 
             try:
                 with open(python_file, "r", encoding="utf-8") as f:
                     source_code = f.read()
             except Exception as e:
-                alert_error(self.tr(f"Failed to read source file: {e}"))
+                alert_error(self.tr("Failed to read source file: {}").format(e))
                 return
                 
             import re
@@ -965,7 +965,7 @@ class {class_name}({base_class}):
                 from ok.ui.qt.util.app import show_info_bar
                 show_info_bar(self.window(), self.tr("Task copied successfully."), title=self.tr("Success"))
             except Exception as e:
-                alert_error(f"Error copying task: {e}")
+                alert_error(self.tr("Error copying task: {error}").format(error=e))
 
     def show_export_dialog(self):
         from qfluentwidgets import MessageBoxBase, LineEdit, SubtitleLabel

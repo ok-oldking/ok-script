@@ -263,6 +263,10 @@
             <source>Reloaded {count} tasks</source>
             <translation>Reloaded {count} tasks</translation>
         </message>
+        <message>
+            <source>The app is controlled by {owner}</source>
+            <translation>The app is controlled by {owner}</translation>
+        </message>
     </context>
     <context>
         <name>GlobalConfigCard</name>
@@ -478,6 +482,10 @@
         <message>
             <source>Run Code</source>
             <translation>Run Code</translation>
+        </message>
+        <message>
+            <source>Import failed: {error}</source>
+            <translation>Import failed: {error}</translation>
         </message>
     </context>
     <context>
@@ -727,6 +735,14 @@
         <message>
             <source>Pause All</source>
             <translation>Pause All</translation>
+        </message>
+        <message>
+            <source>Error</source>
+            <translation>Error</translation>
+        </message>
+        <message>
+            <source>No Task to Run, Please Enable Task First!</source>
+            <translation>No Task to Run, Please Enable Task First!</translation>
         </message>
     </context>
     <context>
@@ -979,6 +995,10 @@
         <message>
             <source>View Log</source>
             <translation>View Log</translation>
+        </message>
+        <message>
+            <source>Please Start First</source>
+            <translation>Please Start First</translation>
         </message>
     </context>
     <context>
@@ -1801,6 +1821,86 @@
         <message>
             <source>Allow local coding agents to control this app and run Python code</source>
             <translation>Allow local coding agents to control this app and run Python code</translation>
+        </message>
+        <message>
+            <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
+            <translation>PC version requires admin privileges, Please restart this app with admin privileges!</translation>
+        </message>
+        <message>
+            <source>No game selected!</source>
+            <translation>No game selected!</translation>
+        </message>
+        <message>
+            <source>Capture failed, please check game window</source>
+            <translation>Capture failed, please check game window</translation>
+        </message>
+        <message>
+            <source>Game path does not exist, Please open game manually!</source>
+            <translation>Game path does not exist, Please open game manually!</translation>
+        </message>
+        <message>
+            <source>Start game timeout!</source>
+            <translation>Start game timeout!</translation>
+        </message>
+        <message>
+            <source>Window is minimized or out of screen, and don't use full-screen exclusive mode!</source>
+            <translation>Window is minimized or out of screen, and don't use full-screen exclusive mode!</translation>
+        </message>
+        <message>
+            <source>Start game failed, please start game first</source>
+            <translation>Start game failed, please start game first</translation>
+        </message>
+        <message>
+            <source>{} is not connected, please select the game window.</source>
+            <translation>{} is not connected, please select the game window.</translation>
+        </message>
+        <message>
+            <source>Selected capture method is not supported by the game or your system!</source>
+            <translation>Selected capture method is not supported by the game or your system!</translation>
+        </message>
+        <message>
+            <source>Image resource load failed, please try install again.(Don't put the app in Downloads folder)</source>
+            <translation>Image resource load failed, please try install again.(Don't put the app in Downloads folder)</translation>
+        </message>
+        <message>
+            <source>Emulator is not connected, start the emulator first!</source>
+            <translation>Emulator is not connected, start the emulator first!</translation>
+        </message>
+        <message>
+            <source>Can't start game, make sure the game is installed</source>
+            <translation>Can't start game, make sure the game is installed</translation>
+        </message>
+        <message>
+            <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
+            <translation>NPU inferring Error, you might need to update the Intel NPU driver!</translation>
+        </message>
+        <message>
+            <source>Export failed</source>
+            <translation>Export failed</translation>
+        </message>
+        <message>
+            <source>Cannot start: the app is controlled by {owner}</source>
+            <translation>Cannot start: the app is controlled by {owner}</translation>
+        </message>
+        <message>
+            <source>Cannot start {name}: the app is controlled by {owner}</source>
+            <translation>Cannot start {name}: the app is controlled by {owner}</translation>
+        </message>
+        <message>
+            <source>Start failed: {error}</source>
+            <translation>Start failed: {error}</translation>
+        </message>
+        <message>
+            <source>Windows Graphics Capture is busy</source>
+            <translation>Windows Graphics Capture is busy</translation>
+        </message>
+        <message>
+            <source>Windows Graphics Capture is not supported on this system.</source>
+            <translation>Windows Graphics Capture is not supported on this system.</translation>
+        </message>
+        <message>
+            <source>Paused because browser exited</source>
+            <translation>Paused because browser exited</translation>
         </message>
     </context>
     <context>
@@ -2807,6 +2907,18 @@
             <source>Guide</source>
             <translation>Guide</translation>
         </message>
+        <message>
+            <source>Error deleting task: {error}</source>
+            <translation>Error deleting task: {error}</translation>
+        </message>
+        <message>
+            <source>Error creating task: {error}</source>
+            <translation>Error creating task: {error}</translation>
+        </message>
+        <message>
+            <source>Error copying task: {error}</source>
+            <translation>Error copying task: {error}</translation>
+        </message>
     </context>
     <context>
         <name>CreateTaskDialog</name>
@@ -2968,6 +3080,22 @@
             <source>Compress (obsolete)</source>
             <translation>Compress (obsolete)</translation>
         </message>
+        <message>
+            <source>Screenshot failed: {e}</source>
+            <translation>Screenshot failed: {e}</translation>
+        </message>
+        <message>
+            <source>Save failed: {e}</source>
+            <translation>Save failed: {e}</translation>
+        </message>
+        <message>
+            <source>Delete failed: {e}</source>
+            <translation>Delete failed: {e}</translation>
+        </message>
+        <message>
+            <source>Could not write screenshot to {path}</source>
+            <translation>Could not write screenshot to {path}</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>
@@ -2978,6 +3106,10 @@
         <message>
             <source>Cancel</source>
             <translation>Cancel</translation>
+        </message>
+        <message>
+            <source>Parameter '{param_name}' is required!</source>
+            <translation>Parameter '{param_name}' is required!</translation>
         </message>
     </context>
     <context>
@@ -3278,6 +3410,14 @@
             <source>Backup cleanup pending. Restart to retry.</source>
             <translation>Backup cleanup pending. Restart to retry.</translation>
         </message>
+        <message>
+            <source>The release archive belongs to a different plugin</source>
+            <translation>The release archive belongs to a different plugin</translation>
+        </message>
+        <message>
+            <source>The release archive is not a newer plugin version</source>
+            <translation>The release archive is not a newer plugin version</translation>
+        </message>
     </context>
     <context>
         <name>LabelAndMcpServer</name>
@@ -3300,6 +3440,17 @@
         <message>
             <source>No</source>
             <translation>No</translation>
+        </message>
+    </context>
+    <context>
+        <name>JobControls</name>
+        <message>
+            <source>The app is controlled by {owner}</source>
+            <translation>The app is controlled by {owner}</translation>
+        </message>
+        <message>
+            <source>Failed after {seconds}s</source>
+            <translation>Failed after {seconds}s</translation>
         </message>
     </context>
 </TS>

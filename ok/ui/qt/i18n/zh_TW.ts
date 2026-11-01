@@ -272,6 +272,10 @@
             <source>Reloaded {count} tasks</source>
             <translation>已重新載入 {count} 個任務</translation>
         </message>
+        <message>
+            <source>The app is controlled by {owner}</source>
+            <translation>應用程式正由 {owner} 控制</translation>
+        </message>
     </context>
     <context>
         <name>GlobalConfigCard</name>
@@ -488,6 +492,10 @@
         <message>
             <source>Run Code</source>
             <translation>執行程式碼</translation>
+        </message>
+        <message>
+            <source>Import failed: {error}</source>
+            <translation>匯入失敗：{error}</translation>
         </message>
     </context>
     <context>
@@ -725,6 +733,14 @@
         <message>
             <source>Pause All</source>
             <translation>全部暫停</translation>
+        </message>
+        <message>
+            <source>Error</source>
+            <translation>錯誤</translation>
+        </message>
+        <message>
+            <source>No Task to Run, Please Enable Task First!</source>
+            <translation>沒有可執行的任務，請先啟用任務！</translation>
         </message>
     </context>
     <context>
@@ -973,6 +989,10 @@
         <message>
             <source>View Log</source>
             <translation>查看日誌</translation>
+        </message>
+        <message>
+            <source>Please Start First</source>
+            <translation>請先啟動</translation>
         </message>
     </context>
     <context>
@@ -1795,6 +1815,86 @@
         <message>
             <source>Allow local coding agents to control this app and run Python code</source>
             <translation>允許本機程式設計代理控制此應用程式並執行 Python 程式碼</translation>
+        </message>
+        <message>
+            <source>PC version requires admin privileges, Please restart this app with admin privileges!</source>
+            <translation>PC 版需要管理員權限，請以管理員權限重新啟動此應用程式！</translation>
+        </message>
+        <message>
+            <source>No game selected!</source>
+            <translation>未選取遊戲視窗！</translation>
+        </message>
+        <message>
+            <source>Capture failed, please check game window</source>
+            <translation>截圖失敗，請檢查遊戲視窗</translation>
+        </message>
+        <message>
+            <source>Game path does not exist, Please open game manually!</source>
+            <translation>無法啟動遊戲，請手動開啟遊戲</translation>
+        </message>
+        <message>
+            <source>Start game timeout!</source>
+            <translation>啟動逾時！</translation>
+        </message>
+        <message>
+            <source>Window is minimized or out of screen, and don't use full-screen exclusive mode!</source>
+            <translation>視窗已最小化或超出螢幕範圍，請勿使用獨佔全螢幕模式！</translation>
+        </message>
+        <message>
+            <source>Start game failed, please start game first</source>
+            <translation>啟動遊戲失敗，請先手動啟動遊戲！</translation>
+        </message>
+        <message>
+            <source>{} is not connected, please select the game window.</source>
+            <translation>{} 未連線，請選取遊戲視窗。</translation>
+        </message>
+        <message>
+            <source>Selected capture method is not supported by the game or your system!</source>
+            <translation>目前的遊戲或模擬器不支援所選的截圖方式！</translation>
+        </message>
+        <message>
+            <source>Image resource load failed, please try install again.(Don't put the app in Downloads folder)</source>
+            <translation>範本圖片載入失敗，請重新安裝。(請勿放置於「下載」等可能會自動刪除圖片的資料夾內。)</translation>
+        </message>
+        <message>
+            <source>Emulator is not connected, start the emulator first!</source>
+            <translation>模擬器未連線，請先啟動！</translation>
+        </message>
+        <message>
+            <source>Can't start game, make sure the game is installed</source>
+            <translation>無法啟動遊戲，請確認遊戲已安裝！</translation>
+        </message>
+        <message>
+            <source>NPU inferring Error, you might need to update the Intel NPU driver!</source>
+            <translation>NPU推理錯誤，您可能需要更新Intel NPU驅動程式！</translation>
+        </message>
+        <message>
+            <source>Export failed</source>
+            <translation>匯出失敗</translation>
+        </message>
+        <message>
+            <source>Cannot start: the app is controlled by {owner}</source>
+            <translation>無法啟動：應用程式正由 {owner} 控制</translation>
+        </message>
+        <message>
+            <source>Cannot start {name}: the app is controlled by {owner}</source>
+            <translation>無法啟動 {name}：應用程式正由 {owner} 控制</translation>
+        </message>
+        <message>
+            <source>Start failed: {error}</source>
+            <translation>啟動失敗：{error}</translation>
+        </message>
+        <message>
+            <source>Windows Graphics Capture is busy</source>
+            <translation>Windows 圖形擷取忙碌中</translation>
+        </message>
+        <message>
+            <source>Windows Graphics Capture is not supported on this system.</source>
+            <translation>此系統不支援 Windows 圖形擷取。</translation>
+        </message>
+        <message>
+            <source>Paused because browser exited</source>
+            <translation>瀏覽器已結束，任務已暫停</translation>
         </message>
     </context>
     <context>
@@ -2801,6 +2901,18 @@
             <source>Guide</source>
             <translation>指南</translation>
         </message>
+        <message>
+            <source>Error deleting task: {error}</source>
+            <translation>刪除任務時發生錯誤：{error}</translation>
+        </message>
+        <message>
+            <source>Error creating task: {error}</source>
+            <translation>建立任務時發生錯誤：{error}</translation>
+        </message>
+        <message>
+            <source>Error copying task: {error}</source>
+            <translation>複製任務時發生錯誤：{error}</translation>
+        </message>
     </context>
     <context>
         <name>CreateTaskDialog</name>
@@ -2962,6 +3074,22 @@
             <source>Compress (obsolete)</source>
             <translation>壓縮（已淘汰）</translation>
         </message>
+        <message>
+            <source>Screenshot failed: {e}</source>
+            <translation>擷取畫面失敗：{e}</translation>
+        </message>
+        <message>
+            <source>Save failed: {e}</source>
+            <translation>儲存失敗：{e}</translation>
+        </message>
+        <message>
+            <source>Delete failed: {e}</source>
+            <translation>刪除失敗：{e}</translation>
+        </message>
+        <message>
+            <source>Could not write screenshot to {path}</source>
+            <translation>無法將擷取畫面寫入 {path}</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>
@@ -2972,6 +3100,10 @@
         <message>
             <source>Cancel</source>
             <translation>取消</translation>
+        </message>
+        <message>
+            <source>Parameter '{param_name}' is required!</source>
+            <translation>參數「{param_name}」為必填項！</translation>
         </message>
     </context>
     <context>
@@ -3272,6 +3404,14 @@
             <source>Backup cleanup pending. Restart to retry.</source>
             <translation>備份清理未完成，請重新啟動後重試。</translation>
         </message>
+        <message>
+            <source>The release archive belongs to a different plugin</source>
+            <translation>此發行壓縮檔屬於其他外掛程式</translation>
+        </message>
+        <message>
+            <source>The release archive is not a newer plugin version</source>
+            <translation>此發行壓縮檔中的外掛程式版本不是較新版本</translation>
+        </message>
     </context>
     <context>
         <name>LabelAndMcpServer</name>
@@ -3294,6 +3434,17 @@
         <message>
             <source>No</source>
             <translation>否</translation>
+        </message>
+    </context>
+    <context>
+        <name>JobControls</name>
+        <message>
+            <source>The app is controlled by {owner}</source>
+            <translation>應用程式正由 {owner} 控制</translation>
+        </message>
+        <message>
+            <source>Failed after {seconds}s</source>
+            <translation>{seconds} 秒後失敗</translation>
         </message>
     </context>
 </TS>

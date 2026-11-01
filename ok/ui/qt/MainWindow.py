@@ -768,7 +768,7 @@ class MainWindow(FluentWindow):
                             show_info_bar(self.window(), message, title=self.tr('Success'))
                         else:
                             from ok.ui.qt.util.Alert import alert_error
-                            alert_error(f"Import failed: {message}")
+                            alert_error(self.tr("Import failed: {error}").format(error=message))
                 except Exception as e:
                     logger.error(f'Error importing .okscript file: {e}')
 

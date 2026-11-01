@@ -54,7 +54,7 @@ class TemplateInputDialog(MessageBoxBase):
         for param_name, (line_edit, default_value) in self.inputs.items():
             if not default_value and not line_edit.text().strip():
                 from ok.ui.qt.util.Alert import alert_error
-                alert_error(self.tr(f"Parameter '{param_name}' is required!"))
+                alert_error(self.tr("Parameter '{param_name}' is required!").format(param_name=param_name))
                 line_edit.setFocus()
                 return False
         return True
