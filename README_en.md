@@ -73,20 +73,20 @@ The coding agent discovers Python APIs from the installed package's source and s
 
 ## Projects built with ok-script
 
-- [ok-script App Template](https://github.com/ok-oldking/ok-script-app)
 - [Wuthering Waves](https://github.com/ok-oldking/ok-wuthering-waves)
-- [Genshin Impact](https://github.com/ok-oldking/ok-genshin-impact) (unmaintained; background story automation still works)
-- [Girls' Frontline 2](https://github.com/ok-oldking/ok-gf2)
-- [Honkai: Star Rail](https://github.com/Shasnow/ok-starrailassistant)
-- [Blue Protocol: Star Resonance](https://github.com/Sanheiii/ok-star-resonance)
-- [Duet Night Abyss](https://github.com/BnanZ0/ok-duet-night-abyss)
-- [Chaos Zero Nightmare](https://github.com/baoxin1100/ok-kes)
-- [Onmyoji](https://github.com/YunLiuZ/ok-Onmyoji)
-- [Ash Echoes](https://github.com/ok-oldking/ok-baijing) (unmaintained)
-- [Arknights: Endfield](https://github.com/AliceJump/ok-end-field)
 - [Neverness to Everness](https://github.com/BnanZ0/ok-nte)
+- [Duet Night Abyss](https://github.com/BnanZ0/ok-duet-night-abyss)
+- [Arknights: Endfield](https://github.com/AliceJump/ok-end-field)
+- [Girls' Frontline 2](https://github.com/ok-oldking/ok-gf2)
+- [ok-script App Template](https://github.com/ok-oldking/ok-script-app)
 - [BrownDust II](https://github.com/GodRaymond233/ok-bd2)
+- [Blue Protocol: Star Resonance](https://github.com/Sanheiii/ok-star-resonance)
+- [Chaos Zero Nightmare](https://github.com/baoxin1100/ok-kes)
 - [Azur Promilia](https://github.com/longer-sausage/OK-AzurPromilia)
+- [Onmyoji](https://github.com/YunLiuZ/ok-Onmyoji)
+- [Genshin Impact](https://github.com/ok-oldking/ok-genshin-impact) (unmaintained; background story automation still works)
+- [Ash Echoes](https://github.com/ok-oldking/ok-baijing) (unmaintained)
+- [Honkai: Star Rail](https://github.com/Shasnow/ok-starrailassistant) (unmaintained)
 
 ## Community and releases
 

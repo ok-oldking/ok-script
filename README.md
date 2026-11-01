@@ -73,20 +73,20 @@ python -m venv .venv
 
 ## 使用 ok-script 的项目
 
-- [ok-script 应用模板](https://github.com/ok-oldking/ok-script-app)
 - [鸣潮](https://github.com/ok-oldking/ok-wuthering-waves)
-- [原神](https://github.com/ok-oldking/ok-genshin-impact)（停止维护，后台过剧情仍可用）
-- [少女前线 2](https://github.com/ok-oldking/ok-gf2)
-- [崩坏：星穹铁道](https://github.com/Shasnow/ok-starrailassistant)
-- [星痕共鸣](https://github.com/Sanheiii/ok-star-resonance)
-- [二重螺旋](https://github.com/BnanZ0/ok-duet-night-abyss)
-- [卡厄思梦境](https://github.com/baoxin1100/ok-kes)
-- [阴阳师](https://github.com/YunLiuZ/ok-Onmyoji)
-- [白荆回廊](https://github.com/ok-oldking/ok-baijing)（停止维护）
-- [明日方舟：终末地](https://github.com/AliceJump/ok-end-field)
 - [异环](https://github.com/BnanZ0/ok-nte)
+- [二重螺旋](https://github.com/BnanZ0/ok-duet-night-abyss)
+- [明日方舟：终末地](https://github.com/AliceJump/ok-end-field)
+- [少女前线 2](https://github.com/ok-oldking/ok-gf2)
+- [ok-script 应用模板](https://github.com/ok-oldking/ok-script-app)
 - [棕色尘埃 2](https://github.com/GodRaymond233/ok-bd2)
+- [星痕共鸣](https://github.com/Sanheiii/ok-star-resonance)
+- [卡厄思梦境](https://github.com/baoxin1100/ok-kes)
 - [蓝色星原：旅谣](https://github.com/longer-sausage/OK-AzurPromilia)
+- [阴阳师](https://github.com/YunLiuZ/ok-Onmyoji)
+- [原神](https://github.com/ok-oldking/ok-genshin-impact)（停止维护，后台过剧情仍可用）
+- [白荆回廊](https://github.com/ok-oldking/ok-baijing)（停止维护）
+- [崩坏：星穹铁道](https://github.com/Shasnow/ok-starrailassistant)（停止维护）
 
 ## 社区与发布
 
