@@ -46,7 +46,7 @@ class WindowsGraphicsCaptureHDRMethod(WindowsGraphicsCaptureMethod):
     def read_mapped_frame(self, mapinfo):
         height, width = self.last_size.Height, self.last_size.Width
         # RowPitch includes driver padding. The buffer is only valid until
-        # Unmap, so return an owned BGRA array just like the SDR capture path.
+        # Unmap, so return an owned BGRA array.
         buffer = np.ctypeslib.as_array(ctypes.cast(mapinfo.pData, PBYTE),
                                       (height * mapinfo.RowPitch,))
         rgba_bits = np.ndarray((height, width, 4), dtype=np.uint16,

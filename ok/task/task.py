@@ -33,6 +33,19 @@ VALID_NAMED_KEYS = {
     'mouse4', 'mouse5', 'xbutton1', 'xbutton2'
 }
 
+# Named boxes accepted by get_box_by_name: (x, y, to_x, to_y) relative to the screen.
+SCREEN_REGIONS = {
+    'full_screen': (0, 0, 1, 1),
+    'right': (0.5, 0, 1, 1),
+    'bottom_right': (0.5, 0.5, 1, 1),
+    'top_right': (0.5, 0, 1, 0.5),
+    'left': (0, 0, 0.5, 1),
+    'bottom_left': (0, 0.5, 0.5, 1),
+    'top_left': (0, 0, 0.5, 0.5),
+    'bottom': (0, 0.5, 1, 1),
+    'top': (0, 0, 1, 0.5),
+}
+
 logger = Logger.get_logger(__name__)
 
 
@@ -102,15 +115,8 @@ class ExecutorOperation:
         if box is None:
             return False
 
-        center = self.executor.method.width / 2
-        box_center = box.x + box.width / 2
-
-        offset = abs(box_center - center)
-
-        if offset / self.executor.method.width < off_percent:
-            return True
-        else:
-            return False
+        width = self.executor.method.width
+        return abs(box.x + box.width / 2 - width / 2) / width < off_percent
 
     @property
     def executor(self):
@@ -275,7 +281,7 @@ class ExecutorOperation:
         """
         frame = self.executor.nullable_frame()
         communicate.emit_draw_box("swipe", [
-            Box(min(from_x, to_x), min(from_y, to_y), max(abs(from_x - from_x), 10), max(abs(from_y - to_y), 10),
+            Box(min(from_x, to_x), min(from_y, to_y), max(abs(from_x - to_x), 10), max(abs(from_y - to_y), 10),
                 name="swipe")], "green", frame)
         ms = int(duration * 1000)
         self.executor.reset_scene()
@@ -555,7 +561,8 @@ class ExecutorOperation:
         communicate.clear_box.emit()
 
     def calculate_color_percentage(self, color, box: Box | str):
-        box = self.get_box_by_name(box)
+        # Copy: named boxes are shared FeatureSet entries.
+        box = self.get_box_by_name(box).copy()
         percentage = calculate_color_percentage(self.frame, color, box)
         box.confidence = percentage
         self.draw_boxes(box.name, box)
@@ -612,24 +619,8 @@ class FindFeature(ExecutorOperation):
     def get_box_by_name(self, name):
         if isinstance(name, Box):
             return name
-        if name == 'full_screen':
-            return self.box_of_screen(0, 0, 1, 1, name=name)
-        elif name == 'right':
-            return self.box_of_screen(0.5, 0, 1, 1, name=name)
-        elif name == 'bottom_right':
-            return self.box_of_screen(0.5, 0.5, 1, 1, name=name)
-        elif name == 'top_right':
-            return self.box_of_screen(0.5, 0, 1, 0.5, name=name)
-        elif name == 'left':
-            return self.box_of_screen(0, 0, 0.5, 1, name=name)
-        elif name == 'bottom_left':
-            return self.box_of_screen(0, 0.5, 0.5, 1, name=name)
-        elif name == 'top_left':
-            return self.box_of_screen(0, 0, 0.5, 0.5, name=name)
-        elif name == 'bottom':
-            return self.box_of_screen(0, 0.5, 1, 1, name=name)
-        elif name == 'top':
-            return self.box_of_screen(0, 0, 1, 0.5, name=name)
+        if region := SCREEN_REGIONS.get(name):
+            return self.box_of_screen(*region, name=name)
         if self.executor.feature_set:
             box = self.executor.feature_set.get_box_by_name(self.frame, name)
             if box:
@@ -908,27 +899,8 @@ class OCR(FindFeature):
                 raise Exception(self._app.tr(
                     'NPU inferring Error, you might need to update the Intel NPU driver!'))
             raise e
-        detected_boxes = []
-        # logger.debug(f'rapid_ocr result {result}')
-        # Process the results and create Box objects
-        if result[0] is not None:
-            for i in range(len(result[0])):
-                pos = result[0][i][0]
-                text = result[0][i][1][0]
-                confidence = result[0][i][1][1]
-                width, height = round(pos[2][0] - pos[0][0]), round(pos[2][1] - pos[0][1])
-                if width <= 0 or height <= 0:
-                    logger.debug(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
-                    continue
-                detected_box = self.get_box(box, confidence, height, pos, scale_factor, text, threshold, width)
-                # logger.debug(f'rapid_ocr {text} {box} {confidence} {threshold} detected_box {detected_box}')
-                if detected_box:
-                    detected_boxes.append(detected_box)
-        ocr_boxes = detected_boxes
-        self.fix_texts(detected_boxes)
-        if match is not None:
-            detected_boxes = find_boxes_by_name(detected_boxes, match)
-        return detected_boxes, ocr_boxes
+        rows = [(pos, text, confidence) for pos, (text, confidence) in result[0] or []]
+        return self._ocr_boxes(rows, box, match, scale_factor, threshold)
 
     def rapid_ocr(self, box, image, match, scale_factor, threshold, lib):
         try:
@@ -937,27 +909,8 @@ class OCR(FindFeature):
             logger.error('rapid_ocr_exception', e)
             self.screenshot('rapid_ocr_exception', frame=image)
             raise e
-        detected_boxes = []
-        # logger.debug(f'rapid_ocr result {result}')
-        # Process the results and create Box objects
-        if result.boxes is not None:
-            for i in range(len(result.boxes)):
-                pos = result.boxes[i]
-                text = result.txts[i]
-                confidence = result.scores[i]
-                width, height = round(pos[2][0] - pos[0][0]), round(pos[2][1] - pos[0][1])
-                if width <= 0 or height <= 0:
-                    logger.debug(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
-                    continue
-                detected_box = self.get_box(box, confidence, height, pos, scale_factor, text, threshold, width)
-                # logger.debug(f'rapid_ocr {text} {box} {confidence} {threshold} detected_box {detected_box}')
-                if detected_box:
-                    detected_boxes.append(detected_box)
-        ocr_boxes = detected_boxes
-        self.fix_texts(detected_boxes)
-        if match is not None:
-            detected_boxes = find_boxes_by_name(detected_boxes, match)
-        return detected_boxes, ocr_boxes
+        rows = zip(result.boxes, result.txts, result.scores) if result.boxes is not None else []
+        return self._ocr_boxes(rows, box, match, scale_factor, threshold)
 
     def duguang_ocr(self, box, image, match, scale_factor, threshold, lib):
         try:
@@ -966,55 +919,35 @@ class OCR(FindFeature):
             logger.error('duguang_ocr_exception', e)
             self.screenshot('duguang_ocr_exception', frame=image)
             raise e
-        detected_boxes = []
-        # logger.debug(f'rapid_ocr result {result}')
-        # Process the results and create Box objects
-        # duguang_ocr returns a list of per-image results (第1张图片结果, 第2张图片结果, ...)
-        # each element is itself a list of [pos, (text, confidence)] detections
-        for image_results in results:
-            if not image_results:
-                continue
-            for result in image_results:
-                pos = result[0]
-                text, confidence = result[1]
-                width, height = round(pos[2][0] - pos[0][0]), round(pos[2][1] - pos[0][1])
-                if width <= 0 or height <= 0:
-                    logger.debug(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
-                    continue
-                detected_box = self.get_box(box, confidence, height, pos, scale_factor, text, threshold, width)
-                # logger.debug(f'rapid_ocr {text} {box} {confidence} {threshold} detected_box {detected_box}')
-                if detected_box:
-                    detected_boxes.append(detected_box)
-        ocr_boxes = detected_boxes
-        self.fix_texts(detected_boxes)
-        if match is not None:
-            detected_boxes = find_boxes_by_name(detected_boxes, match)
-        return detected_boxes, ocr_boxes
+        # A list of per-image results, each a list of [pos, (text, confidence)] detections.
+        rows = [(pos, text, confidence) for image_results in results if image_results
+                for pos, (text, confidence) in image_results]
+        return self._ocr_boxes(rows, box, match, scale_factor, threshold)
 
     def paddle_ocr(self, box, image, match, scale_factor, threshold, lib):
-        start = time.time()
         results = self.executor.ocr_lib(lib).predict(image)
-        detected_boxes = []
-        # Process the results and create Box objects
+        rows = []
         if results:
             result = results[0]
+            # rec_boxes are [x1, y1, x2, y2]; convert to the corner points other libraries return.
+            rows = [(((pos[0], pos[1]), None, (pos[2], pos[3])), text, confidence)
+                    for pos, text, confidence in zip(result['rec_boxes'], result['rec_texts'], result['rec_scores'])]
+        return self._ocr_boxes(rows, box, match, scale_factor, threshold)
 
-            for idx in range(len(result['rec_texts'])):
-                pos = result['rec_boxes'][idx]
-                text = result['rec_texts'][idx]
-                confidence = result['rec_scores'][idx]
+    def _ocr_boxes(self, rows, box, match, scale_factor, threshold):
+        """Build boxes from (corner points, text, confidence) rows, then fix texts and apply match.
 
-                width, height = round(pos[2] - pos[0]), round(pos[3] - pos[1])
-                if width <= 0 or height <= 0:
-                    logger.error(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
-                    continue
-                if confidence >= threshold:
-                    detected_box = Box(pos[0], pos[1], width, height, confidence, text)
-                    scale_box(detected_box, scale_factor)
-                    if box is not None:
-                        detected_box.x += box.x
-                        detected_box.y += box.y
-                    detected_boxes.append(detected_box)
+        Returns (matched boxes, all boxes above threshold).
+        """
+        detected_boxes = []
+        for pos, text, confidence in rows:
+            width, height = round(pos[2][0] - pos[0][0]), round(pos[2][1] - pos[0][1])
+            if width <= 0 or height <= 0:
+                logger.debug(f'ocr result negative box {text} {confidence} {width}x{height} pos:{pos}')
+                continue
+            detected_box = self.get_box(box, confidence, height, pos, scale_factor, text, threshold, width)
+            if detected_box:
+                detected_boxes.append(detected_box)
         ocr_boxes = detected_boxes
         self.fix_texts(detected_boxes)
         if match is not None:
@@ -1112,15 +1045,15 @@ class BaseTask(OCR):
 
     def run_task_by_class(self, cls):
         task = self.get_task_by_class(cls)
-        old_ifo = task.info
+        old_info = task.info
         task.info = self.info
         try:
             task.run()
         except Exception as e:
             self.log_error(f'run_task_by_class {cls}', e)
-            task.info = old_ifo
-            raise e
-        task.info = old_ifo
+            raise
+        finally:
+            task.info = old_info
 
     def post_init(self):
         pass
@@ -1313,12 +1246,7 @@ class BaseTask(OCR):
         self.info.clear()
 
     def info_incr(self, key, inc=1):
-        # If the key is in the dictionary, get its value. If not, return 0.p
-        value = self.info.get(key, 0)
-        # Increment the value
-        value += inc
-        # Store the incremented value back in the dictionary
-        self.info[key] = value
+        self.info_add(key, inc)
 
     def info_add_to_list(self, key, item):
         value = self.info.get(key, [])

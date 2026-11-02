@@ -28,8 +28,5 @@ class Feature:
     def height(self):
         return self.mat.shape[0]
 
-    def scaling(self):
-        return self.scaling
-
     def __str__(self) -> str:
         return str(f'self.x: {self.x}, self.y: {self.y}, width: {self.width}, height: {self.height}')

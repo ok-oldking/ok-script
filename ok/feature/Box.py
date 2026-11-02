@@ -268,16 +268,12 @@ class Box:
         :param condition: Optional condition function. 可选条件函数。
         :return: Closest Box or None. 最近的框或 None。
         """
-        orig_x = self.x
-        orig_y = self.y
-        orig_w = self.width
-        orig_h = self.height
-
-        boxes.sort(key=lambda box: self._distance_criteria(box, direction, orig_x, orig_y, orig_w, orig_h, condition))
+        best, best_distance = None, float('inf')
         for box in boxes:
-            if self._distance_criteria(box, direction, orig_x, orig_y, orig_w, orig_h, condition) != float('inf'):
-                return box
-        return None
+            distance = self._distance_criteria(box, direction, self.x, self.y, self.width, self.height, condition)
+            if distance < best_distance:
+                best, best_distance = box, distance
+        return best
 
 
 def box_intersect(box1, box2):
@@ -335,7 +331,7 @@ def find_box_by_name(boxes, names):
     for box in boxes:
         for i, name in enumerate(names):
             if (isinstance(name, str) and name == box.name) or (
-                    isinstance(name, re.Pattern) and re.search(name, box.name)):
+                    isinstance(name, re.Pattern) and isinstance(box.name, str) and re.search(name, box.name)):
                 if i < priority:
                     priority = i
                     result = box
@@ -435,18 +431,7 @@ def find_boxes_by_name(boxes, names):
     if isinstance(names, (str, re.Pattern)):
         names = [names]
 
-    result = []
-
-    for box in boxes:
-        matched = False
-        for name in names:
-            if matched:
-                break
-            if (isinstance(name, str) and name == box.name) or (isinstance(box.name, str) and
-                                                                isinstance(name, re.Pattern) and re.search(name,
-                                                                                                           box.name)):
-                matched = True
-        if matched:
-            result.append(box)
-
-    return result
+    return [box for box in boxes if any(
+        (isinstance(name, str) and name == box.name) or
+        (isinstance(name, re.Pattern) and isinstance(box.name, str) and re.search(name, box.name))
+        for name in names)]

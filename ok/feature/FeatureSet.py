@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import threading
+import time
 import warnings
 
 import cv2
@@ -85,6 +86,8 @@ class FeatureSet:
         self.hcenter_features = hcenter_features if hcenter_features is not None else []
         self.vcenter_features = vcenter_features if vcenter_features is not None else []
         self._processed_images = set()
+        # feature name -> source signature at the lookup that did not find it
+        self._missing = {}
 
         logger.debug(f'Loading features from {self.coco_json}')
 
@@ -105,8 +108,10 @@ class FeatureSet:
         return len(self.feature_dict) == 0 and len(self.box_dict) == 0
 
     def check_size(self, frame) -> bool:
+        height, width = frame.shape[:2]
+        if self.width == width and self.height == height:
+            return self.load_success
         with self.lock:
-            height, width = frame.shape[:2]
             if (self.width != width or self.height != height) and height > 0 and width > 0:
                 logger.info(f"FeatureSet: Width and height changed from {self.width}x{self.height} to {width}x{height}")
                 self.width = width
@@ -114,6 +119,7 @@ class FeatureSet:
                 self.feature_dict = {}
                 self.box_dict = {}
                 self._processed_images = set()
+                self._missing = {}
                 self.load_success = any(feature_source_exists(coco, folder)
                                         for coco, folder, _ in self._feature_sources())
         return self.load_success
@@ -149,6 +155,7 @@ class FeatureSet:
             self.feature_dict = {}
             self.box_dict = {}
             self._processed_images = set()
+            self._missing = {}
         self.load_success = False
         for index, (coco, folder, namespace) in enumerate(self._feature_sources()):
             if not feature_source_exists(coco, folder):
@@ -185,12 +192,23 @@ class FeatureSet:
                 logger.error(f'Failed to merge features from {folder or coco}: {e}')
         return self.load_success
 
+    def _source_signature(self):
+        return tuple((path, _mtime_ns(path)) for coco, folder, _ in self._feature_sources()
+                     for path in (coco, folder) if path)
+
     def ensure_feature(self, feature_name):
         if feature_name is None or feature_name in self.feature_dict:
             return
         with self.lock:
+            if feature_name in self.feature_dict:
+                return
+            # Polling an absent name must not reparse every source each frame.
+            signature = self._source_signature()
+            if self._missing.get(feature_name) == signature:
+                return
+            self.process_data(feature_name)
             if feature_name not in self.feature_dict:
-                self.process_data(feature_name)
+                self._missing[feature_name] = signature
 
     def get_box_by_name(self, mat, category_name):
         if mat is None:
@@ -220,7 +238,6 @@ class FeatureSet:
                          to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0, canny_higher=0,
                          frame_processor=None, template=None, mask_function=None, match_method=cv2.TM_CCOEFF_NORMED,
                          screenshot=False, limit=0, target_height=0):
-        import time
         if mat is None:
             return []
         start_time = time.time()
@@ -318,15 +335,24 @@ class FeatureSet:
         if template.shape[1] > search_area.shape[1] or template.shape[0] > search_area.shape[0]:
             logger.error(
                 f'feature template {category_name} {box.name if box else ""} size greater than search area {template.shape} > {search_area.shape}')
+            return []
 
         scale_factor = 1.0
         if target_height > 0:
             search_area, scale_factor = resize_image(search_area, mat.shape[0], target_height)
             if scale_factor != 1:
-                template = cv2.resize(template, (0, 0), fx=scale_factor, fy=scale_factor,
-                                      interpolation=cv2.INTER_AREA)
-                if mask is not None:
-                    mask = cv2.resize(mask, (template.shape[1], template.shape[0]), interpolation=cv2.INTER_NEAREST)
+                resize_key = ('resize', preprocess_key, scale_factor, mask is not None)
+                cached = feature.template_cache.get(resize_key) if feature is not None else None
+                if cached is None:
+                    template = cv2.resize(template, (0, 0), fx=scale_factor, fy=scale_factor,
+                                          interpolation=cv2.INTER_AREA)
+                    if mask is not None:
+                        mask = cv2.resize(mask, (template.shape[1], template.shape[0]),
+                                          interpolation=cv2.INTER_NEAREST)
+                    if feature is not None:
+                        feature.template_cache[resize_key] = template, mask
+                else:
+                    template, mask = cached
 
         # Ensure type compatibility before matchTemplate
         if search_area.dtype != template.dtype or search_area.ndim != template.ndim:
@@ -402,39 +428,29 @@ class FeatureSet:
                      screenshot=False, limit=0, target_height=0):
         if mat is None:
             return []
-        if type(category_name) is list:
-            results = []
-            for cn in category_name:
-                results += self.find_one_feature(mat=mat, category_name=cn,
-                                                 horizontal_variance=horizontal_variance,
-                                                 vertical_variance=vertical_variance, threshold=threshold,
-                                                 use_gray_scale=use_gray_scale, x=x, y=y,
-                                                 to_x=to_x, to_y=to_y, width=width, height=height, box=box,
-                                                 canny_lower=canny_lower, canny_higher=canny_higher,
-                                                 frame_processor=frame_processor,
-                                                 template=template, mask_function=mask_function,
-                                                 match_method=match_method, screenshot=screenshot, limit=limit,
-                                                 target_height=target_height)
-            return sort_boxes(results)
-        else:
-            return self.find_one_feature(mat=mat, category_name=category_name,
-                                         horizontal_variance=horizontal_variance,
-                                         vertical_variance=vertical_variance, threshold=threshold,
-                                         use_gray_scale=use_gray_scale, x=x, y=y,
-                                         to_x=to_x, to_y=to_y, width=width, height=height, box=box,
-                                         canny_lower=canny_lower, canny_higher=canny_higher,
-                                         frame_processor=frame_processor,
-                                         template=template, mask_function=mask_function, match_method=match_method,
-                                         screenshot=screenshot, limit=limit, target_height=target_height)
+        is_list = type(category_name) is list
+        names = category_name if is_list else [category_name]
+        results = []
+        for name in names:
+            results += self.find_one_feature(mat=mat, category_name=name,
+                                             horizontal_variance=horizontal_variance,
+                                             vertical_variance=vertical_variance, threshold=threshold,
+                                             use_gray_scale=use_gray_scale, x=x, y=y,
+                                             to_x=to_x, to_y=to_y, width=width, height=height, box=box,
+                                             canny_lower=canny_lower, canny_higher=canny_higher,
+                                             frame_processor=frame_processor,
+                                             template=template, mask_function=mask_function,
+                                             match_method=match_method, screenshot=screenshot, limit=limit,
+                                             target_height=target_height)
+        return sort_boxes(results) if is_list else results
 
 def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcenter_features=None, adjust=True,
                    target_category_name=None, processed_images=None, image_key_prefix=None):
     feature_dict = {}
     box_dict = {}
     ok_compressed = None
-    load_success = True
     loaded_image_keys = set()
-    data = load_json(coco_json)
+    data = _cached(coco_json, load_json)
     coco_folder = os.path.dirname(coco_json)
     logger.info(f"read_from_json {coco_folder} {coco_json}")
 
@@ -448,7 +464,7 @@ def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcente
             target_image_ids.add(annotation['image_id'])
 
     if target_category_name and not target_image_ids:
-        return feature_dict, box_dict, ok_compressed, load_success, loaded_image_keys
+        return feature_dict, box_dict, ok_compressed, True, loaded_image_keys
 
     for image_id, file_name in image_map.items():
         if target_category_name and image_id not in target_image_ids:
@@ -465,7 +481,6 @@ def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcente
         if whole_image is None:
             logger.error(f'Could not read image {image_path}')
             raise ValueError(f'Could not read image {image_path}')
-        _, original_width = whole_image.shape[:2]
         image_height, image_width = whole_image.shape[:2]
         loaded_image_keys.add(image_key)
 
@@ -494,8 +509,6 @@ def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcente
             else:
                 scale = 1
 
-            logger.debug(
-                f"loaded {category_name} resized width {width} / original_width:{original_width},scale_x:{width / original_width}")
             if category_name in feature_dict:
                 existing_box = box_dict[category_name]
                 if existing_box.x == x and existing_box.y == y and existing_box.width == image.shape[
@@ -505,7 +518,33 @@ def read_from_json(coco_json, width=-1, height=-1, hcenter_features=None, vcente
             feature_dict[category_name] = Feature(image, x, y, scale)
             box_dict[category_name] = Box(x, y, image.shape[1], image.shape[0], name=category_name)
 
-    return feature_dict, box_dict, ok_compressed, load_success, loaded_image_keys
+    return feature_dict, box_dict, ok_compressed, True, loaded_image_keys
+
+
+def _mtime_ns(path):
+    try:
+        return os.stat(path).st_mtime_ns
+    except OSError:
+        return None
+
+
+_source_cache = {}
+_source_cache_lock = threading.Lock()
+
+
+def _cached(path, loader):
+    """Reuse loader(path) until the file or folder changes. Callers must not mutate the result."""
+    key = (os.path.abspath(path), loader)
+    mtime = _mtime_ns(path)
+    with _source_cache_lock:
+        entry = _source_cache.get(key)
+    if entry is not None and entry[0] == mtime:
+        return entry[1]
+    value = loader(path)
+    with _source_cache_lock:
+        _source_cache[key] = (mtime, value)
+    return value
+
 
 def load_json(coco_json):
     with open(coco_json, 'r', encoding='utf-8') as file:
@@ -543,32 +582,23 @@ def scale_by_anchor(val, image_dim, screen_dim, scale, center=False):
         return screen_dim - round((image_dim - val) * scale)
     return round(val * scale)
 
-def replace_extension(filename):
-    if filename.endswith('.jpg'):
-        return filename[:-4] + '.png', True
-
 def filter_and_sort_matches(result, threshold, w, h):
-    threshold_mask = result >= threshold
-    loc = np.where(threshold_mask)
-    matches = list(zip(*loc[::-1]))
-
-    confidences = result[threshold_mask]
-
-    matches_with_confidence = sorted(zip(matches, confidences), key=lambda x: x[1], reverse=True)
-
+    """Greedy non-maximum suppression: keep the best matches whose w*h boxes do not overlap."""
+    ys, xs = np.nonzero(result >= threshold)
+    if xs.size == 0:
+        return []
+    confidences = result[ys, xs]
+    # Stable descending order keeps row-major order among equal confidences.
+    order = np.argsort(-confidences, kind='stable')
+    # A position is covered when its box would overlap a selected match.
+    covered = np.zeros(result.shape, dtype=bool)
     selected_matches = []
-
-    def is_overlapping(match, selected):
-        x1, y1 = match
-        for (x2, y2), _ in selected:
-            if (x1 < x2 + w and x1 + w > x2 and y1 < y2 + h and y1 + h > y2):
-                return True
-        return False
-
-    for match, confidence in matches_with_confidence:
-        if not is_overlapping(match, selected_matches):
-            selected_matches.append((match, confidence))
-
+    for i in order:
+        x, y = int(xs[i]), int(ys[i])
+        if covered[y, x]:
+            continue
+        selected_matches.append(((x, y), confidences[i]))
+        covered[max(0, y - h + 1):y + h, max(0, x - w + 1):x + w] = True
     return selected_matches
 
 
@@ -694,7 +724,7 @@ def read_feature_crops(folder, width=-1, height=-1, hcenter_features=None, vcent
     features, boxes, keys = {}, {}, set()
     if not os.path.isdir(folder):
         return features, boxes, None, False, keys
-    for filename, (name, iw, ih, x, y) in _template_files(folder):
+    for filename, (name, iw, ih, x, y) in _cached(folder, _template_files):
         if target_category_name and name not in (
                 {target_category_name} if isinstance(target_category_name, str) else target_category_name):
             continue
@@ -802,8 +832,6 @@ def generate_templates(coco_json, target_folder=os.path.join('assets', 'template
 def compress_copy_coco(coco_json, target_folder, image_folder, generate_label_enmu=None) -> str:
     """Obsolete packed export retained for compatibility; use generate_templates."""
     warnings.warn('compress_copy_coco is obsolete; use generate_templates', DeprecationWarning, stacklevel=2)
-    import shutil
-
     target_coco_json = os.path.join(target_folder, os.path.basename(coco_json))
     previous_data = load_json(target_coco_json) if os.path.exists(target_coco_json) else None
 
