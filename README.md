@@ -24,8 +24,24 @@ ok-script 支持 Windows 应用和游戏、安卓模拟器及 ADB 设备，提�
 
 > 连接这个项目的 ok-script MCP 服务，读取开发技能。检查已安装的截图、匹配和输入 API，给出准确签名和源码位置。开发可复用 Python 任务：打开设置、启用“显示详情”、保存并验证结果。每次尝试前恢复并验证起始界面，测试重复运行，代码保存到项目中。使用 ok-script API 和 MCP，不使用 Computer Use 工具。最后给出不依赖代理或大模型调用的准确运行命令。
 
+修复已有任务：
+
+> 连接这个项目的 ok-script MCP 服务，读取 reload-tasks 技能。用 list_tasks 找到出错任务的源码，修改该文件，按任务 ID 重载并等待重载成功。恢复并验证起始界面，重复运行已注册的实现，并给出运行日志和截图中的证据。
+
+## MCP 开发流程
+
+代理用自己的工具编辑文件、读取日志；MCP 让它直接操作正在运行的应用：
+
+1. **学习**：`list_skills` 和 `get_skill` 返回当前安装版本自带的开发、模板、测试和重载流程；代理从已安装包中读取准确的 Python 签名。
+2. **观察**：`screenshot` 保存已配置窗口或设备的当前画面。
+3. **运行**：`run_task` 在真实目标上执行 Python 任务文件。每次尝试先恢复并验证起始状态，再由 `run()` 执行并断言自动化结果。
+4. **检查**：每次尝试写入 `logs/mcp/<run_id>/run.log`、`status.json` 和任务截图。`get_run_status` 报告进度和错误，`stop_task` 用于取消。
+5. **修复**：`list_tasks` 返回已注册任务的源码路径；修改后用 `reload_tasks` 在运行中的进程里替换。无法重置时用 `exit_process` 结束运行时。
+6. **交付**：在项目配置中注册任务，之后通过 GUI 或 `python -m ok run_task` 运行，无需 MCP。
+
 ## 特性
 
+- 面向编程代理的 MCP 服务：内置技能、实时截图、任务执行、热重载和逐次运行日志
 - 纯 Python 实现，免费开源，可直接使用 pip 生态中的第三方库
 - 同一套任务代码可支持 Windows 客户端、安卓模拟器和 ADB 设备
 - 支持 OCR、OpenCV 模板匹配以及 YOLO 等视觉方案
@@ -46,7 +62,9 @@ python -m venv .venv
 
 启动命令要求应用配置已经存在，请使用实际配置入口或项目已有的开发启动器。MCP 自 2.0.17 起随 ok-script 自动安装，无需额外扩展。OpenCV 需单独选择并安装一个兼容变体；Qt、ADB 和 OCR 按需安装。
 
-让代理的 MCP 客户端连接有效 `logs/mcp/connections/<pid>-<port>.json` 记录中的 URL，并使用该记录的 `Authorization: Bearer <token>` 请求头。不要公开凭据。让代理调用 `list_skills`，通过 `get_skill` 读取相关技能，再用 `screenshot` 验证目标。
+让代理的 MCP 客户端通过 Streamable HTTP 连接有效 `logs/mcp/connections/<pid>-<port>.json` 记录中的 URL，并使用该记录的 `Authorization: Bearer <token>` 请求头。不要公开凭据。让代理调用 `list_skills`，通过 `get_skill` 读取相关技能，再用 `screenshot` 验证目标。
+
+已有桌面应用也可以在 **设置 > 基本设置 > 启用 MCP 服务器** 中开启，或使用 `python -m ok gui --config src.config:config --mcp` 启动。服务只监听本机回环地址，但已连接的代理可以用你的账户权限执行 Python。日常使用请保留单独的、关闭 MCP 的启动器。
 
 [MCP 快速开始](docs/quick_start/README.md)介绍安装、连接以及脱离代理运行保存的任务。[MCP 说明（英文）](docs/mcp.md)包含执行和重载细节。
 

@@ -24,8 +24,24 @@ For task development:
 
 > Connect to this project's ok-script MCP server and read its development skill. Inspect the installed capture, matching, and input APIs and show their exact signatures and source locations. Build a reusable Python task that opens Settings, enables "Show details", saves, and verifies the result. Restore and verify the starting screen before every attempt, test repeated runs, and save the task in the project. Use ok-script APIs and MCP, not Computer Use tools. Give me the exact command to run the finished task without an agent or LLM calls.
 
+For repairing an existing task:
+
+> Connect to this project's ok-script MCP server and read its reload-tasks skill. Use list_tasks to find the source of the failing task, fix that file, reload its task ID, and wait for the reload to succeed. Restore and verify the starting screen, run the registered implementation repeatedly, and show me the evidence from the run logs and screenshots.
+
+## How MCP development works
+
+The agent edits files and reads logs with its own tools. MCP gives it the running application:
+
+1. **Learn** — `list_skills` and `get_skill` return the development, template, test, and reload workflows bundled with the installed ok-script version. The agent reads exact Python signatures from the installed package.
+2. **Observe** — `screenshot` saves the current frame of the configured window or device.
+3. **Run** — `run_task` executes a Python task file against the real target. Every attempt restores and verifies the starting state before `run()` performs and asserts the automation.
+4. **Inspect** — each attempt writes `logs/mcp/<run_id>/run.log`, `status.json`, and task screenshots. `get_run_status` reports progress and errors; `stop_task` cancels.
+5. **Repair** — `list_tasks` returns registered task sources; after editing, `reload_tasks` replaces them in the running process. `exit_process` ends a runtime that cannot be reset.
+6. **Ship** — register the task in the project configuration and run it from the GUI or `python -m ok run_task` without MCP.
+
 ## Features
 
+- MCP server for coding agents: bundled skills, live capture, task execution, hot reload, and per-attempt logs
 - Pure Python and open source, with access to the full pip ecosystem
 - One task implementation can support Windows clients, Android emulators, and ADB devices
 - OCR, OpenCV template matching, and integration with vision frameworks such as YOLO
@@ -46,7 +62,9 @@ python -m venv .venv
 
 The command assumes the application's configuration exists; use its actual import target or existing development launcher. MCP is installed automatically with ok-script starting in 2.0.17; no extra is needed. Install exactly one compatible OpenCV variant separately; add Qt, ADB, and OCR dependencies only as needed.
 
-Connect the agent's MCP client to the URL in the live `logs/mcp/connections/<pid>-<port>.json` record, with `Authorization: Bearer <token>` from that record. Keep credentials private. Have the agent call `list_skills`, read the relevant skills with `get_skill`, and verify the target with `screenshot`.
+Connect the agent's MCP client over Streamable HTTP to the URL in the live `logs/mcp/connections/<pid>-<port>.json` record, with `Authorization: Bearer <token>` from that record. Keep credentials private. Have the agent call `list_skills`, read the relevant skills with `get_skill`, and verify the target with `screenshot`.
+
+An existing desktop application can instead enable MCP in **Settings > Basic Options > Enable MCP Server** or start with `python -m ok gui --config src.config:config --mcp`. The server listens only on local loopback, but connected agents can run Python with your account's permissions. Keep a separate MCP-disabled launcher for everyday use.
 
 See the [MCP quick start](docs/en/quick_start.md) for setup, connection, and running the saved task without an agent. The [MCP guide](docs/mcp.md) covers execution and reload behavior.
 
