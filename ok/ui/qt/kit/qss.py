@@ -294,6 +294,30 @@ ConnectionPill {{
 }}
 ConnectionPill:hover {{ background: {control_hover}; }}
 ConnectionPill[open="true"] {{ background: {control_hover}; border-color: {border_strong}; }}
+QPlainTextEdit#codeEditor {{
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 6px 4px;
+    font-family: {mono};
+    font-size: 13px;
+}}
+QLabel#editorFileBar {{
+    padding: 8px 14px;
+    border-bottom: 1px solid {border};
+}}
+QLabel#errorBanner {{
+    color: {danger};
+    background: {danger_soft};
+    border: 1px solid {danger_line};
+    border-radius: 10px;
+    padding: 10px 14px;
+}}
+QTreeWidget#templateTree {{ background: transparent; border: 0; }}
+QTreeWidget#templateTree::item {{ min-height: 28px; border-radius: 6px; padding-left: 2px; }}
+QTreeWidget#templateTree::item:hover {{ background: {control_hover}; }}
+QTreeWidget#templateTree::item:selected {{ background: {accent_soft}; color: {text}; }}
+QTreeWidget#templateTree::branch:selected, QTreeWidget#templateTree::branch:hover {{ background: transparent; }}
 QFrame#templateCard {{
     background: {surface};
     border: 1px solid {border};

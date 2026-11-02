@@ -28,6 +28,8 @@ class Dialog(QWidget):
         super().__init__(window)
         self._result = False
         self._loop = None
+        # Key of the button that closed the dialog: "ok", "cancel" or an add_button key.
+        self.choice = None
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         self.panel = DialogPanel(self)
@@ -48,6 +50,7 @@ class Dialog(QWidget):
         buttons.addStretch(1)
         buttons.addWidget(self.cancel_button)
         buttons.addWidget(self.ok_button)
+        self._buttons = buttons
 
         layout = QVBoxLayout(self.panel)
         layout.setContentsMargins(22, 20, 22, 18)
@@ -65,11 +68,24 @@ class Dialog(QWidget):
     def set_cancel_visible(self, visible: bool) -> None:
         self.cancel_button.setVisible(visible)
 
+    def add_button(self, key: str, text: str, variant: str = "secondary") -> Button:
+        """Add a button left of Cancel; clicking it rejects with ``choice == key``."""
+
+        button = Button(text, variant=variant, parent=self.panel)
+        button.clicked.connect(lambda: self._finish(False, key))
+        self._buttons.insertWidget(1, button)
+        return button
+
+    def validate(self) -> bool:
+        """Override to keep the dialog open when its input is not acceptable."""
+        return True
+
     def result(self) -> bool:
         return self._result
 
     def open(self) -> None:
         self._result = False
+        self.choice = None
         self._fit()
         self.show()
         self.raise_()
@@ -83,15 +99,17 @@ class Dialog(QWidget):
         return self._result
 
     def accept(self) -> None:
-        self._finish(True)
+        if self.validate():
+            self._finish(True, "ok")
 
     def reject(self) -> None:
-        self._finish(False)
+        self._finish(False, "cancel")
 
-    def _finish(self, result: bool) -> None:
+    def _finish(self, result: bool, choice: str = None) -> None:
         if not self.isVisible() and self._loop is None:
             return
         self._result = result
+        self.choice = choice
         self.hide()
         (self.accepted if result else self.rejected).emit()
         if self._loop is not None:

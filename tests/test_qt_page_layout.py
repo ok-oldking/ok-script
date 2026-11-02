@@ -30,12 +30,16 @@ class TestQtPageLayout(unittest.TestCase):
         self.assert_page_layout(tab.vBoxLayout)
         tab.deleteLater()
 
-    def test_script_tab_uses_standard_page_layout(self):
+    def test_script_tab_uses_kit_page_layout(self):
+        from ok.ui.qt.tasks.EditTaskTab import PAGE_MARGINS, PAGE_SPACING
         old_task_manager = getattr(og, "task_manager", None)
         og.task_manager = SimpleNamespace(task_folder="", task_map={}, task_errors={})
         try:
             tab = EditTaskTab()
-            self.assert_page_layout(tab.layout)
+            margins = tab.layout().contentsMargins()
+            self.assertEqual(PAGE_MARGINS, (margins.left(), margins.top(), margins.right(), margins.bottom()))
+            self.assertEqual(PAGE_SPACING, tab.layout().spacing())
+            self.assertFalse(tab.empty_widget.isHidden())
             tab.deleteLater()
         finally:
             og.task_manager = old_task_manager
