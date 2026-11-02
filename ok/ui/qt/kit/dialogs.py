@@ -114,7 +114,9 @@ class Dialog(QWidget):
             else:
                 self.accept()
         elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            self.accept()
+            # A disabled OK means the dialog is not ready to be accepted.
+            if self.ok_button.isEnabled():
+                self.accept()
         else:
             super().keyPressEvent(event)
 

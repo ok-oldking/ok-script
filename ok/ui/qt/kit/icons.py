@@ -67,7 +67,8 @@ _PATHS = {
             'width="7.5" height="7.5" rx="1.5"/>',
     "image": '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
     "text": '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',
-    "pulse": '<path d="M3 12h4l2.5-6 5 12 2.5-6h4"/>',
+    "trash": '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+    "pulse":'<path d="M3 12h4l2.5-6 5 12 2.5-6h4"/>',
     "scan": '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 '
             '1-1-1v-3M8 10h8M8 14h5"/>',
     "link": '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 '

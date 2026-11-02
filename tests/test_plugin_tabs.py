@@ -336,7 +336,7 @@ def test_cancelled_plugin_warning_prevents_install_flow(environment, monkeypatch
     chooser = Mock()
     repository_dialog = Mock()
     monkeypatch.setattr(module.QFileDialog, 'getOpenFileName', chooser)
-    monkeypatch.setattr(module, 'MessageBoxBase', repository_dialog)
+    monkeypatch.setattr(module, 'Dialog', repository_dialog)
     tab = PluginTab()
     try:
         monkeypatch.setattr(tab, '_confirm_import', warning)
@@ -499,7 +499,7 @@ def test_delete_button_stages_and_cancel_keeps_runtime_running(environment, monk
     module = importlib.import_module('ok.ui.qt.plugins.PluginTab')
     folder = github_plugin(environment)
     page, = environment.controller.custom_tabs['demo']
-    monkeypatch.setattr(module, 'MessageBox', lambda *args: SimpleNamespace(exec=lambda: True))
+    monkeypatch.setattr(module, 'confirm', lambda *args, **kwargs: True)
     tab = PluginTab()
     try:
         tab._delete_buttons[0].click()

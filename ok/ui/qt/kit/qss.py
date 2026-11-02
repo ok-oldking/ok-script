@@ -27,6 +27,9 @@ QLabel[role="strong"] {{ font-weight: 600; }}
 QLabel[role="secondary"] {{ color: {text_secondary}; font-size: 12.5px; }}
 QLabel[role="caption"] {{ color: {text_tertiary}; font-size: 12px; }}
 QLabel[role="section"] {{ color: {text_tertiary}; font-size: 11.5px; font-weight: 600; letter-spacing: 0.6px; }}
+QLabel[tone="danger"] {{ color: {danger}; }}
+QLabel[tone="warning"] {{ color: {warning}; }}
+QLabel[tone="success"] {{ color: {success}; }}
 QLabel[role="mono"] {{ font-family: {mono}; font-size: 12px; }}
 QLabel[role="kbd"] {{
     font-family: {mono}; font-size: 11px; font-weight: 500; color: {text_secondary};
@@ -291,6 +294,11 @@ ConnectionPill {{
 }}
 ConnectionPill:hover {{ background: {control_hover}; }}
 ConnectionPill[open="true"] {{ background: {control_hover}; border-color: {border_strong}; }}
+QFrame#noticeBanner {{
+    background: {warning_soft};
+    border: 1px solid {warning_line};
+    border-radius: 10px;
+}}
 QListWidget#shotList {{ padding: 6px; }}
 QListWidget#shotList::item {{
     padding: 4px 10px;
