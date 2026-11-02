@@ -294,6 +294,9 @@ ConnectionPill {{
 }}
 ConnectionPill:hover {{ background: {control_hover}; }}
 ConnectionPill[open="true"] {{ background: {control_hover}; border-color: {border_strong}; }}
+QFrame#scheduleRow {{ background: transparent; }}
+QFrame#scheduleRow[first="false"] {{ border-top: 1px solid {separator}; }}
+QTimeEdit {{ padding-left: 10px; }}
 QPlainTextEdit#codeEditor {{
     background: transparent;
     border: 0;
