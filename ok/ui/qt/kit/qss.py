@@ -294,6 +294,14 @@ ConnectionPill {{
 }}
 ConnectionPill:hover {{ background: {control_hover}; }}
 ConnectionPill[open="true"] {{ background: {control_hover}; border-color: {border_strong}; }}
+QFrame#templateCard {{
+    background: {surface};
+    border: 1px solid {border};
+    border-radius: 12px;
+}}
+QFrame#templateCard:hover {{ border-color: {border_strong}; background: {surface_alt}; }}
+QFrame#templateCard[selected="true"] {{ border: 2px solid {accent}; background: {accent_soft}; }}
+QLabel#templateThumb {{ background: {window}; border-radius: 8px; }}
 QFrame#noticeBanner {{
     background: {warning_soft};
     border: 1px solid {warning_line};
