@@ -1,12 +1,15 @@
 import os
 import threading
 
-from PySide6.QtCore import QEvent, QUrl, Signal, Qt
-from PySide6.QtGui import QDesktopServices, QFontMetrics, QIcon, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CheckBox, ComboBox, FluentIcon, IndeterminateProgressRing, \
-    PrimaryPushButton, PushButton
+from PySide6.QtCore import QUrl, Signal, Qt
+from PySide6.QtGui import QDesktopServices, QFontMetrics
+from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 
+from ok.ui.qt.kit.buttons import Button
+from ok.ui.qt.kit.feedback import ProgressRing
+from ok.ui.qt.kit.inputs import ComboBox
+from ok.ui.qt.kit.labels import Label
+from ok.ui.qt.kit.theme import theme
 from ok.util.logger import Logger
 
 
@@ -20,13 +23,12 @@ def _is_numeric_version(version):
         return False
 
 
-class ChangeLogView(BodyLabel):
+class ChangeLogView(Label):
     """A non-interactive, word-wrapped changelog that follows its text height."""
 
     def __init__(self, text="", parent=None):
-        super().__init__(parent)
+        super().__init__("", "body", parent, word_wrap=True)
         self.setText(text)
-        self.setWordWrap(True)
         self.setTextFormat(Qt.TextFormat.PlainText)
         self.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
         self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
@@ -48,7 +50,7 @@ class UpdateCard(QWidget):
     check_started = Signal()
     _versions_loaded = Signal(object)
     _update_finished = Signal(object)
-    VERSION_COMBO_MIN_WIDTH = 100
+    VERSION_COMBO_MIN_WIDTH = 120
     VERSION_COMBO_MAX_WIDTH = 240
 
     def __init__(self, current_version, pyappify_module, parent=None, exit_event=None, download_url=None):
@@ -69,48 +71,39 @@ class UpdateCard(QWidget):
             f"test_mode={'PYAPPIFY_PYTHON_TEST' in os.environ}"
         )
 
-        self.version_combo = ComboBox(self)
+        self.version_label = Label(self.tr("Version"), "secondary", self)
+        self.version_combo = ComboBox(parent=self)
         self.version_combo.setFixedWidth(self.VERSION_COMBO_MIN_WIDTH)
         self.version_combo.currentIndexChanged.connect(self._selection_changed)
-
-        self.test_version_checkbox = CheckBox(self.tr("Check Test Version"), self)
-        self.test_version_checkbox.setChecked(False)
-        self.check_button = PushButton(FluentIcon.SYNC, self.tr("Check for updates"), self)
-        loading_icon_pixmap = QPixmap(16, 16)
-        loading_icon_pixmap.fill(Qt.GlobalColor.transparent)
-        self._loading_placeholder_icon = QIcon(loading_icon_pixmap)
-        self.check_progress = IndeterminateProgressRing(self.check_button, start=False)
-        self.check_progress.setFixedSize(16, 16)
-        self.check_progress.setStrokeWidth(2)
-        self.check_progress.hide()
-        self.check_button.setMinimumWidth(self.check_button.sizeHint().width())
-        self.check_button.installEventFilter(self)
-        self.check_button.clicked.connect(self.check_for_updates)
-        self.update_button = PrimaryPushButton(FluentIcon.UPDATE, self.tr("Update"), self)
-        self.update_button.clicked.connect(self.update_to_selected_version)
-        self.update_button.setEnabled(False)
-        self.download_button = PrimaryPushButton(self.tr("Download"), self, icon=FluentIcon.DOWNLOAD)
-        self.download_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self.download_url)))
-        self.download_button.hide()
-
-        self.controls_layout = QHBoxLayout()
-        self.controls_layout.setContentsMargins(0, 0, 11, 0)
-        self.controls_layout.setSpacing(6)
-        self.version_label = BodyLabel(self.tr("Version"), self)
-        self.status_label = BodyLabel(self.tr("Click to check for updates"), self)
-        self.status_label.setWordWrap(True)
+        self.status_label = Label(self.tr("Click to check for updates"), "secondary", self, word_wrap=True)
         self.status_label.setTextFormat(Qt.TextFormat.PlainText)
         self.status_label.setMinimumWidth(0)
-        self.status_label.setMaximumWidth(300)
         status_size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         status_size_policy.setHeightForWidth(True)
         self.status_label.setSizePolicy(status_size_policy)
+
+        self.download_button = Button(self.tr("Download"), "download", "primary", parent=self)
+        self.download_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self.download_url)))
+        self.download_button.hide()
+        self.test_version_checkbox = QCheckBox(self.tr("Check Test Version"), self)
+        self.test_version_checkbox.setChecked(False)
+        self.check_progress = ProgressRing(16, parent=self)
+        self.check_progress.hide()
+        self.check_button = Button(self.tr("Check for updates"), "refresh", parent=self)
+        self.check_button.clicked.connect(self.check_for_updates)
+        self.update_button = Button(self.tr("Update"), "download", "primary", parent=self)
+        self.update_button.clicked.connect(self.update_to_selected_version)
+        self.update_button.setEnabled(False)
+
+        self.controls_layout = QHBoxLayout()
+        self.controls_layout.setContentsMargins(0, 0, 0, 0)
+        self.controls_layout.setSpacing(10)
         self.controls_layout.addWidget(self.version_label)
         self.controls_layout.addWidget(self.version_combo)
-        self.controls_layout.addWidget(self.status_label)
-        self.controls_layout.addStretch(1)
+        self.controls_layout.addWidget(self.status_label, 1)
         self.controls_layout.addWidget(self.download_button)
         self.controls_layout.addWidget(self.test_version_checkbox)
+        self.controls_layout.addWidget(self.check_progress)
         self.controls_layout.addWidget(self.check_button)
         self.controls_layout.addWidget(self.update_button)
         self._set_version_controls_visible(False)
@@ -120,7 +113,7 @@ class UpdateCard(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(12)
+        layout.setSpacing(14)
         layout.addLayout(self.controls_layout)
         layout.addWidget(self.notes_edit)
 
@@ -254,7 +247,7 @@ class UpdateCard(QWidget):
             (font_metrics.horizontalAdvance(str(item["version"])) for item in self.versions),
             default=0,
         )
-        content_width = text_width + 48
+        content_width = text_width + 56
         width = max(self.VERSION_COMBO_MIN_WIDTH, min(self.VERSION_COMBO_MAX_WIDTH, content_width))
         self.version_combo.setFixedWidth(width)
 
@@ -267,25 +260,7 @@ class UpdateCard(QWidget):
         self.notes_edit.setVisible(bool(text))
 
     def _set_check_loading(self, loading):
-        if loading:
-            self.check_button.setIcon(self._loading_placeholder_icon)
-            self.check_progress.show()
-            self.check_progress.start()
-        else:
-            self.check_progress.stop()
-            self.check_progress.hide()
-            self.check_button.setIcon(FluentIcon.SYNC)
-        self._position_check_progress()
-
-    def _position_check_progress(self):
-        minimum_width = self.check_button.minimumSizeHint().width()
-        x = 12 + max(0, (self.check_button.width() - minimum_width) // 2)
-        self.check_progress.move(x, (self.check_button.height() - self.check_progress.height()) // 2)
-
-    def eventFilter(self, watched, event):
-        if watched is self.check_button and event.type() == QEvent.Type.Resize:
-            self._position_check_progress()
-        return super().eventFilter(watched, event)
+        self.check_progress.setVisible(loading)
 
     def _apply_update_result(self, result):
         self._set_busy(False)
@@ -314,7 +289,7 @@ class UpdateCard(QWidget):
     def _set_status(self, message, error=False):
         self.status_label.setText(message)
         self.status_label.setToolTip(message if error else "")
-        self.status_label.setStyleSheet("color: #d13438;" if error else "")
+        self.status_label.setStyleSheet(f"color: {theme.color('danger').name()};" if error else "")
         self.download_button.setVisible(error and bool(self.download_url))
 
     def _compare_versions(self, left, right):

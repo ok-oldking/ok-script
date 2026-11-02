@@ -226,8 +226,8 @@ class MainWindow(KitWindow):
             self.notification_tab = notification_tab
             self.add_page(notification_tab, "bell", self.app.tr(NOTIFICATION_OPTION_NAME), SECTION_GAME)
 
-        from ok.ui.qt.settings.SettingTab import SettingTab
-        self.setting_tab = SettingTab()
+        from ok.ui.qt.settings.settings_page import SettingsPage
+        self.setting_tab = SettingsPage()
         self.add_page(self.setting_tab, "gear", self.tr('Settings'), bottom=True)
 
         from ok.ui.qt.about.AboutTab import AboutTab

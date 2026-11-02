@@ -111,6 +111,12 @@ class McpServerEditor(SwitchEditor):
             dialog.exec()
             dialog.deleteLater()
 
+    def update_value(self):
+        super().update_value()
+        # A reset turns the option off; the running server must stop with it.
+        if not self.config.get(self.key) and og.ok is not None and og.ok._mcp_server is not None:
+            og.ok.set_mcp_enabled(False)
+
     def _restore(self, checked):
         with QSignalBlocker(self.switch_button):
             self.switch_button.setChecked(checked)

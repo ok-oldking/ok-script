@@ -291,6 +291,16 @@ ConnectionPill {{
 }}
 ConnectionPill:hover {{ background: {control_hover}; }}
 ConnectionPill[open="true"] {{ background: {control_hover}; border-color: {border_strong}; }}
+AnchorItem {{
+    background: transparent;
+    border: 0;
+    border-radius: 7px;
+    padding: 0 12px;
+    text-align: left;
+    color: {text_secondary};
+}}
+AnchorItem:hover {{ background: {control_hover}; color: {text}; }}
+AnchorItem[current="true"] {{ background: {control_hover}; color: {text}; font-weight: 600; }}
 TaskRow {{
     background: transparent;
     border: 1px solid transparent;

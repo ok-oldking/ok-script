@@ -102,7 +102,7 @@ Each phase leaves the app runnable and is verified by launching `ok-wuthering-wa
 1. **Kit foundation** – theme tokens, QSS generator, icons, labels, buttons, inputs, switch, setting rows, dialogs, toasts; a debug-only *Gallery* page with every widget in light/dark. Offscreen pytest-qt tests.
 2. **Shell** – new window, title bar, navigation, run bar with executor control and connection popover (Capture tab removed); old pages hosted unchanged inside it (qfluentwidgets still installed).
 3. **Tasks** – master–detail Tasks page with row play buttons, sections and app icons; kit config editors (`tasks/config_editors.py`) and `ConfigForm` reuse `ConfigContentMixin`'s sub-config rules. Done; still on the old widgets: the Settings page and global-config tabs (phase 4) and imported-plugin task pages (`ImportedTaskTab`, phase 5). A leading emoji in a task name becomes its tile.
-4. **Settings, About, Update.**
+4. **Settings, About, Update.** Done: `SettingsPage` (section list, appearance, one `ConfigSection` with its own Reset per global config), `GlobalConfigTab` on `ConfigSection`, and a kit `AboutTab`/`UpdateCard`. `SettingTab`, `GlobalConfigCard`, `VersionCard`, `LinksBar`, `ProjectCard` and `HttpTextEdit` are removed; theme and language still go through qfluentwidgets' `qconfig` until phase 6.
 5. **Developer pages** – Debug (gains the old Capture-page tools), Run Code, Edit Task, Templates, MarkUp, Schedule, Plugins, Log window.
 6. **Removal** – delete every `qfluentwidgets` import, drop it from `pyproject`/requirements, update the 11 tests that import it, `docs/en/plugins.md` (new icon and kit API), setup-env skill, regenerate i18n.
 
