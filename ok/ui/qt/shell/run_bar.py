@@ -1,4 +1,4 @@
-"""The bar at the bottom of the main window.
+"""The run bar under the main window's title bar.
 
 Left: the game connection pill, which opens :class:`ConnectionPopover`.
 Right: what the executor is doing and the one executor button, bound to the
@@ -114,7 +114,8 @@ class ConnectionPill(QPushButton):
         self._refresh_chevron()
 
     def _refresh_chevron(self) -> None:
-        name = "chevron-down" if self.property("open") else "chevron-up"
+        # The popover opens downward from the toolbar.
+        name = "chevron-up" if self.property("open") else "chevron-down"
         self.chevron.setPixmap(kit_icon(name, "text_tertiary", 2).pixmap(QSize(14, 14), self.devicePixelRatioF()))
 
     def sizeHint(self) -> QSize:
@@ -145,7 +146,7 @@ class ConnectionPill(QPushButton):
 class RunBar(QFrame):
     """Connection pill, executor status and the executor button."""
 
-    HEIGHT = 56
+    HEIGHT = 52
     toggle_requested = Signal()
 
     def __init__(self, exit_event, parent=None):
@@ -175,7 +176,7 @@ class RunBar(QFrame):
         self.toggle_requested.connect(self.toggle_executor)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(6, 0, 8, 0)
+        layout.setContentsMargins(8, 0, 12, 0)
         layout.setSpacing(12)
         layout.addWidget(self.connection_pill)
         layout.addStretch(1)
@@ -272,7 +273,7 @@ class RunBar(QFrame):
         if not self.popover.isVisible():
             self.popover.refresh()
             self.connection_pill.set_open(True)
-        self.popover.toggle(self.connection_pill)
+        self.popover.toggle(self.connection_pill, above=False)
 
     def open_popover(self) -> None:
         if not self.popover.isVisible():

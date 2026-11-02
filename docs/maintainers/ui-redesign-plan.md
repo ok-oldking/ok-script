@@ -22,7 +22,7 @@ Observed by screenshotting each page of the running app:
 
 Principles taken from current desktop design practice (Windows 11 / Fluent 2, macOS, Linear/Raycast-style tools):
 
-1. **State first, one executor control.** A persistent *Run bar* at the bottom of the window, on every page, owns the executor (the `StartController` / `TaskExecutor` session):
+1. **State first, one executor control.** A persistent *Run bar* directly under the title bar (fused with it into one toolbar, so it is the first thing seen), on every page, owns the executor (the `StartController` / `TaskExecutor` session):
    - Left: connection pill (status dot, game name, resolution, capture and interaction method). Clicking it opens the **Connection popover**, which replaces the old Capture tab: window picker, refresh, screenshot, live preview, capture method, interaction method, export logs, folders, OCR test. It has no launch button.
    - Right: the executor button with the **F11** hotkey. F11 belongs to the executor only, never to a task.
      - Stopped → **Start**: launches the game if it is not running (`start_device`), waits until it can be captured, enables `enable_after_start` tasks, starts triggers and queued tasks. This replaces both "Start game" and "Start".
@@ -39,7 +39,7 @@ Principles taken from current desktop design practice (Windows 11 / Fluent 2, ma
 9. **Neutral surfaces, restrained accent.** Graphite/white surface ramp with 3 elevation levels, 1px hairline borders, 8px radius, accent used for focus, selection and the single primary action. Accent still follows the system accent but is desaturated for surfaces.
 10. **One window size.** The default window is 1440×820 and the minimum equals the default, so the layout always looks the same; it fits a 1600×900 screen with a taskbar. Saved or app-configured sizes are clamped to the screen's available area.
 11. **Density and alignment.** 4px grid, 36px control height, fixed right-aligned control column (240px) in settings rows, descriptions max 60ch.
-12. **Feedback where you look.** Toasts bottom-right above the run bar; empty states with a one-line explanation and an action; inline validation.
+12. **Feedback where you look.** Toasts bottom-right; empty states with a one-line explanation and an action; inline validation.
 13. **Keyboard.** `F11` (configurable) starts, pauses and resumes the executor only.
 
 A visual example is on the design canvas (Tasks, Connection popover, run bar states, Settings light theme).

@@ -4,8 +4,7 @@ import threading
 import pyappify
 from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QMenu, QStackedWidget, QSystemTrayIcon, QVBoxLayout, \
-    QWidget
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QMenu, QStackedWidget, QSystemTrayIcon, QVBoxLayout
 from qfluentwidgets import qconfig, MessageBoxBase, isDarkTheme, Theme
 from qfluentwidgets.common.style_sheet import updateStyleSheet
 
@@ -51,6 +50,7 @@ from ok.ui.qt.Communicate import communicate
 from ok.ui.qt.common.accent_color import qfluent_theme_source_color
 from ok.ui.qt.kit import Dialog, KitWindow, NavigationView, Theme as KitTheme, set_toast_bottom_margin, show_toast, \
     theme as kit_theme
+from ok.ui.qt.kit.theme import set_style_property
 from ok.ui.qt.shell.nav_icons import nav_icon
 from ok.ui.qt.shell.run_bar import RunBar
 from ok.ui.qt.util.Alert import alert_error
@@ -123,19 +123,21 @@ class MainWindow(KitWindow):
         self.navigation.current_changed.connect(lambda key: self.switch_to(self._pages[key]))
         self.navigation.compact_changed.connect(self._save_navigation_state)
         self.stack = QStackedWidget()
+        # The run bar is a toolbar fused to the title bar, so the executor state is always in view.
         self.run_bar = RunBar(exit_event)
+        set_style_property(self.title_bar, "fused", True)
 
-        content = QVBoxLayout()
-        content.setContentsMargins(0, 0, PAGE_MARGIN, PAGE_MARGIN)
-        content.setSpacing(PAGE_MARGIN)
-        content.addWidget(self.stack, 1)
-        content.addWidget(self.run_bar)
-        body = QHBoxLayout(self.body)
+        pages = QHBoxLayout()
+        pages.setContentsMargins(0, 0, 0, 0)
+        pages.setSpacing(0)
+        pages.addWidget(self.navigation)
+        pages.addWidget(self.stack, 1)
+        body = QVBoxLayout(self.body)
         body.setContentsMargins(0, 0, 0, 0)
         body.setSpacing(0)
-        body.addWidget(self.navigation)
-        body.addLayout(content, 1)
-        set_toast_bottom_margin(self, RunBar.HEIGHT + PAGE_MARGIN * 2)
+        body.addWidget(self.run_bar)
+        body.addLayout(pages, 1)
+        set_toast_bottom_margin(self, PAGE_MARGIN)
 
         self.grouped_task_tabs = []
         self.schedule_tab = None
@@ -625,7 +627,7 @@ class MainWindow(KitWindow):
         self.apply_navigation_state()
 
     def apply_navigation_state(self):
-        self.navigation.set_compact(not self.ok_config.get('navigation_expanded', True))
+        self.navigation.set_compact(not self.ok_config.get('navigation_expanded', True), animate=False)
 
     def _save_navigation_state(self, compact):
         self.ok_config['navigation_expanded'] = not compact

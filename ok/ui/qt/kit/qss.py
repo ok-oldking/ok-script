@@ -277,10 +277,11 @@ OptionCard {{
 }}
 OptionCard:hover {{ border-color: {border_strong}; }}
 OptionCard[selected="true"] {{ background: {accent_soft_weak}; border-color: {accent_line}; }}
+QWidget#kitTitleBar[fused="true"] {{ border-bottom: 0; }}
 RunBar {{
-    background: {surface};
-    border: 1px solid {border};
-    border-radius: 12px;
+    background: {sidebar};
+    border: 0;
+    border-bottom: 1px solid {separator};
 }}
 ConnectionPill {{
     background: transparent;

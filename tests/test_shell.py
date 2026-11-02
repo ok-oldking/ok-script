@@ -204,6 +204,41 @@ class TestNavigationView(ShellWidgetTestCase):
         self.assertFalse(nav.has_item("tasks"))
 
 
+class TestNavigationCollapse(ShellWidgetTestCase):
+    def test_collapse_animates_and_hides_text_first(self):
+        from ok.ui.qt.kit.navigation import COLLAPSE_DURATION, COMPACT_WIDTH, EXPANDED_WIDTH
+        nav = NavigationView()
+        nav.add_section("run", "Run")
+        nav.add_item("tasks", "Tasks", "tasks", "run")
+        self.show(nav)
+        item = nav.item("tasks")
+        header = nav._sections["run"][2]
+        header_height = header.height()
+
+        nav.set_compact(True)
+        self.assertFalse(item.text_label.isVisibleTo(item))
+        self.assertEqual("", header.text())
+        QTest.qWait(COLLAPSE_DURATION // 3)
+        self.assertGreater(nav.width(), COMPACT_WIDTH)
+        QTest.qWait(COLLAPSE_DURATION * 2)
+        self.assertEqual(COMPACT_WIDTH, nav.width())
+        self.assertEqual(header_height, header.height())
+
+        nav.set_compact(False)
+        self.assertFalse(item.text_label.isVisibleTo(item))
+        QTest.qWait(COLLAPSE_DURATION * 2)
+        self.assertEqual(EXPANDED_WIDTH, nav.width())
+        self.assertTrue(item.text_label.isVisibleTo(item))
+        self.assertEqual("RUN", header.text())
+
+    def test_without_animation_resizes_at_once(self):
+        from ok.ui.qt.kit.navigation import COMPACT_WIDTH
+        nav = NavigationView()
+        self.show(nav)
+        nav.set_compact(True, animate=False)
+        self.assertEqual(COMPACT_WIDTH, nav.width())
+
+
 class TestPopover(ShellWidgetTestCase):
     def test_opens_above_anchor_and_closes_on_outside_click(self):
         host = self.show(QWidget())

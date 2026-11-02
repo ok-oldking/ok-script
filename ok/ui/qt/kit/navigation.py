@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QEasingCurve, QSize, Qt, QVariantAnimation, Signal
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QButtonGroup, QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSizePolicy,
                                QVBoxLayout, QWidget)
@@ -9,6 +9,8 @@ from ok.ui.qt.kit.theme import set_style_property, theme
 
 EXPANDED_WIDTH = 216
 COMPACT_WIDTH = 60
+ICON_TEXT_SPACING = 8
+COLLAPSE_DURATION = 180
 
 
 class NavItem(QPushButton):
@@ -37,7 +39,7 @@ class NavItem(QPushButton):
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(12, 0, 12, 0)
-        layout.setSpacing(12)
+        layout.setSpacing(ICON_TEXT_SPACING)
         layout.addWidget(self.icon_label)
         layout.addWidget(self.text_label, 1)
         layout.addWidget(self.dot)
@@ -133,6 +135,12 @@ class NavigationView(QWidget):
         layout.addWidget(self.collapse_button)
         self.setFixedWidth(EXPANDED_WIDTH)
 
+        self._animation = QVariantAnimation(self)
+        self._animation.setDuration(COLLAPSE_DURATION)
+        self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._animation.valueChanged.connect(lambda width: self.setFixedWidth(int(width)))
+        self._animation.finished.connect(self._finish_resize)
+
     def add_section(self, key: str, title: str = None) -> None:
         if key in self._sections:
             return
@@ -142,7 +150,11 @@ class NavigationView(QWidget):
         box_layout.setSpacing(2)
         header = Label(title or "", "section")
         header.setContentsMargins(12, 6, 0, 6)
+        header.setProperty("fullText", header.text())
         header.setVisible(bool(title))
+        if title:
+            # Keep the header's height when its text is hidden in the icon rail.
+            header.setFixedHeight(header.sizeHint().height())
         box_layout.addWidget(header)
         box.hide()
         self._sections[key] = (box, box_layout, header)
@@ -201,14 +213,36 @@ class NavigationView(QWidget):
     def is_compact(self) -> bool:
         return self._compact
 
-    def set_compact(self, compact: bool) -> None:
+    def set_compact(self, compact: bool, animate: bool = True) -> None:
+        """Switch between the full sidebar and the icon rail.
+
+        Text is hidden before collapsing and shown after expanding, so it
+        never squeezes while the width animates.
+        """
+
         if compact == self._compact:
             return
         self._compact = compact
-        for item in list(self._items.values()) + [self.collapse_button]:
-            item.set_compact(compact)
-        for _box, _layout, header in self._sections.values():
-            header.setVisible(not compact and bool(header.text()))
         self.collapse_button.setText(self.tr("Expand") if compact else self.tr("Collapse"))
-        self.setFixedWidth(COMPACT_WIDTH if compact else EXPANDED_WIDTH)
+        target = COMPACT_WIDTH if compact else EXPANDED_WIDTH
+        self._animation.stop()
+        if compact:
+            self._show_text(False)
+        if animate and self.isVisible():
+            self._animation.setStartValue(self.width())
+            self._animation.setEndValue(target)
+            self._animation.start()
+        else:
+            self._finish_resize(target)
         self.compact_changed.emit(compact)
+
+    def _finish_resize(self, width=None) -> None:
+        self.setFixedWidth(width if width is not None else (COMPACT_WIDTH if self._compact else EXPANDED_WIDTH))
+        if not self._compact:
+            self._show_text(True)
+
+    def _show_text(self, visible: bool) -> None:
+        for item in list(self._items.values()) + [self.collapse_button]:
+            item.set_compact(not visible)
+        for _box, _layout, header in self._sections.values():
+            header.setText(header.property("fullText") if visible else "")
