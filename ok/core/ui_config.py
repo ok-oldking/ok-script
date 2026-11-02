@@ -4,9 +4,9 @@ from pathlib import Path
 # Fits a 1600x900 screen with a taskbar (about 1600x852 available). The minimum
 # equals the default so the layout always looks the same.
 DEFAULT_WINDOW_SIZE = {
-    "width": 1440,
+    "width": 1560,
     "height": 820,
-    "min_width": 1440,
+    "min_width": 1560,
     "min_height": 820,
 }
 

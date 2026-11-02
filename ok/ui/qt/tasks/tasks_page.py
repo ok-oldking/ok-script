@@ -403,6 +403,7 @@ class TaskDetail(QWidget):
         self.task = None
         self.is_trigger = False
         self.form = None
+        self._was_running = False
 
         self.card = Card()
         outer = QVBoxLayout(self)
@@ -424,7 +425,7 @@ class TaskDetail(QWidget):
         self.instructions_button.clicked.connect(self.show_instructions)
         self.edit_button = Button(_t("TaskCard", "Edit"), "pen")
         self.edit_button.clicked.connect(self.edit_task)
-        self.reset_button = Button(_t("ConfigCard", "Reset Config"), "reset")
+        self.reset_button = Button(_t("ConfigCard", "Reset Config"), "reset", "subtle", "small")
         self.reset_button.clicked.connect(self.reset_config)
         self.more_button = Button(icon="chevron-down")
         self.more_button.setToolTip(_t("TasksPage", "More actions"))
@@ -444,7 +445,7 @@ class TaskDetail(QWidget):
 
         actions = QHBoxLayout()
         actions.setSpacing(8)
-        for widget in (self.instructions_button, self.edit_button, self.reset_button, self.more_button,
+        for widget in (self.instructions_button, self.edit_button, self.more_button,
                        self.pause_button, self.stop_button, self.run_button, self.trigger_label,
                        self.trigger_switch):
             actions.addWidget(widget, 0, Qt.AlignmentFlag.AlignVCenter)
@@ -458,6 +459,8 @@ class TaskDetail(QWidget):
         self.tabs.add_tab("settings", _t("TasksPage", "Settings"), icon="gear")
         self.tabs.add_tab("info", _t("TaskTab", "Info"), icon="file")
         self.tabs.current_changed.connect(self._show_tab)
+        # Reset belongs to the settings it resets, so it sits on the tab row.
+        self.tabs.layout().addWidget(self.reset_button, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self.form_scroll = QScrollArea()
         self.form_scroll.setWidgetResizable(True)
@@ -513,20 +516,38 @@ class TaskDetail(QWidget):
         self.form_scroll.setWidget(self.form)
         self.instructions_button.setVisible(bool(getattr(task, 'instructions', None)))
         self.edit_button.setVisible(bool(getattr(task, 'is_custom', False)))
-        self.reset_button.setVisible(bool(task.default_config) and not self.form.is_empty)
         self.more_button.setVisible(bool(getattr(task, 'show_create_shortcut', False)))
-        self.tabs.set_current("settings")
-        self._show_tab("settings")
+        # A running task opens on its live info; otherwise on its settings.
+        self._was_running = self._is_running(task)
+        self._open_tab("info" if self._was_running else "settings")
         self.refresh()
+
+    def _is_running(self, task) -> bool:
+        return bool(task is not None and not self.is_trigger and task.enabled and task.running)
+
+    def _open_tab(self, key: str) -> None:
+        self.tabs.item("info").setVisible(key == "info" or self._has_info())
+        self.tabs.set_current(key)
+        self._show_tab(key)
+
+    def _has_info(self) -> bool:
+        return self.task is not None and (bool(self.task.info) or self._is_running(self.task))
 
     def refresh(self) -> None:
         task = self.task
         if task is None:
             return
-        has_info = bool(task.info)
+        running = self._is_running(task)
+        if running and not self._was_running:
+            # The selected task just started: follow it on the Info tab.
+            self._open_tab("info")
+        self._was_running = running
+        has_info = self._has_info()
         self.tabs.item("info").setVisible(has_info)
         if not has_info and self.tabs.current_key() == "info":
-            self.tabs.set_current("settings")
+            self._open_tab("settings")
+        self.reset_button.setVisible(self.tabs.current_key() == "settings" and bool(task.default_config)
+                                     and self.form is not None and not self.form.is_empty)
         if self.pages.currentWidget() is self.info_table:
             self._fill_info()
 
@@ -569,6 +590,9 @@ class TaskDetail(QWidget):
             self._fill_info()
         else:
             self.pages.setCurrentWidget(self.form_scroll)
+        if self.task is not None:
+            self.reset_button.setVisible(key == "settings" and bool(self.task.default_config)
+                                         and self.form is not None and not self.form.is_empty)
 
     def _fill_info(self) -> None:
         info = self.task.info if self.task is not None else {}

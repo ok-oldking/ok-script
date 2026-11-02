@@ -6,14 +6,14 @@ from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtCore import QEvent, QSize, Qt, QTimer
+from PySide6.QtCore import QEvent, QObject, QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QIcon, QImage
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QLabel, QWidget
 
 from ok.ui.qt.kit import (Button, ComboBox, Dialog, FlowLayout, ICON_NAMES, Label, NumberBox, Pill, ProgressRing,
-                          SettingGroup, SettingRow, StatusDot, Switch, TabStrip, Theme, icon, load_icon, show_toast,
-                          theme)
+                          SettingGroup, SettingRow, StatusDot, Switch, TabStrip, Theme, Toast, icon, load_icon,
+                          show_toast, theme)
 from ok.ui.qt.kit.theme import contrast_ratio, readable_accent
 
 KIT_DIR = Path(__file__).resolve().parents[1] / "ok" / "ui" / "qt" / "kit"
@@ -308,6 +308,44 @@ class TestWidgets(KitTestCase):
             flow.addWidget(label)
         width = labels[0].sizeHint().width() * 2 + 30
         self.assertGreater(flow.heightForWidth(width), flow.heightForWidth(width * 10))
+
+
+class _WindowShowRecorder(QObject):
+    def __init__(self):
+        super().__init__()
+        self.windows = []
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Type.Show and obj.isWidgetType() and obj.isWindow():
+            self.windows.append(type(obj).__name__)
+        return False
+
+
+class TestNoStrayWindows(KitTestCase):
+    """Building widgets must never show a child as its own top-level window."""
+
+    def test_constructors_do_not_flash_windows(self):
+        from ok.ui.qt.kit import NavigationView, OptionCard, SettingGroup
+        recorder = _WindowShowRecorder()
+        QApplication.instance().installEventFilter(recorder)
+        self.addCleanup(QApplication.instance().removeEventFilter, recorder)
+        widgets = [
+            SettingRow("Title", "A description", Switch()),
+            SettingGroup("Group"),
+            OptionCard("WGC", "Fast", "Recommended"),
+            Toast("Message", "Title", "success"),
+        ]
+        nav = NavigationView()
+        nav.add_section("run", "Run")
+        nav.add_item("tasks", "Tasks", "tasks", "run")
+        widgets.append(nav)
+        host = QWidget()
+        widgets.append(Dialog(host, "Title", "Message"))
+        widgets.append(host)
+        QApplication.processEvents()
+        self.assertEqual([], recorder.windows)
+        for widget in widgets:
+            widget.deleteLater()
 
 
 class TestFeedback(KitTestCase):

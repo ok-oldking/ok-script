@@ -29,8 +29,10 @@ class SettingRow(QWidget):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setProperty("first", True)
-        self.title_label = Label(title, "strong", word_wrap=True)
-        self.description_label = Label(description or "", "secondary", word_wrap=True)
+        # Children get their parent up front: setVisible(True) on a parentless
+        # widget shows it as a top-level window, which flashes on screen.
+        self.title_label = Label(title, "strong", self, word_wrap=True)
+        self.description_label = Label(description or "", "secondary", self, word_wrap=True)
         self.description_label.setVisible(bool(description))
         self.description_label.setMaximumWidth(560)
 
@@ -82,7 +84,7 @@ class SettingGroup(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
-        self.title_label = Label(title or "", "section")
+        self.title_label = Label(title or "", "section", self)
         self.title_label.setVisible(bool(title))
         layout.addWidget(self.title_label)
         self.card = Card(look="inset")

@@ -32,8 +32,8 @@ class Dialog(QWidget):
 
         self.panel = DialogPanel(self)
         self.panel.setFixedWidth(width)
-        self.title_label = Label(title, "subtitle", word_wrap=True)
-        self.message_label = Label(message or "", "secondary", word_wrap=True)
+        self.title_label = Label(title, "subtitle", self.panel, word_wrap=True)
+        self.message_label = Label(message or "", "secondary", self.panel, word_wrap=True)
         self.message_label.setVisible(bool(message))
         self.body = QVBoxLayout()
         self.body.setContentsMargins(0, 4, 0, 0)

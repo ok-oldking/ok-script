@@ -153,7 +153,7 @@ class NavigationView(QWidget):
         box_layout = QVBoxLayout(box)
         box_layout.setContentsMargins(0, 0, 0, 10)
         box_layout.setSpacing(2)
-        header = Label(title or "", "section")
+        header = Label(title or "", "section", box)
         header.setContentsMargins(12, 6, 0, 6)
         header.setProperty("fullText", header.text())
         header.setVisible(bool(title))

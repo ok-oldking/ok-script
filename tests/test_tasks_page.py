@@ -323,6 +323,30 @@ class TestTasksPage(QtTestCase):
         self.assertTrue(task.config["Flag"])
         self.assertTrue(editor.switch_button.isChecked())
 
+    def test_running_task_opens_on_info(self):
+        idle, running = FakeTask("Idle", config={"Flag": True}), FakeTask("Running", config={"Flag": True})
+        running.enabled = running.running = True
+        page = self.make_page([idle, running])
+        self.assertEqual("settings", page.detail.tabs.current_key())
+        page.select_task(running)
+        self.assertEqual("info", page.detail.tabs.current_key())
+        self.assertIs(page.detail.info_table, page.detail.pages.currentWidget())
+        self.assertFalse(page.detail.reset_button.isVisibleTo(page.detail))
+        page.select_task(idle)
+        self.assertEqual("settings", page.detail.tabs.current_key())
+        self.assertTrue(page.detail.reset_button.isVisibleTo(page.detail))
+
+    def test_selected_task_switches_to_info_when_it_starts(self):
+        task = FakeTask("Daily", config={"Flag": True})
+        page = self.make_page([task])
+        self.assertEqual("settings", page.detail.tabs.current_key())
+        task.enabled = task.running = True
+        page.detail.refresh()
+        self.assertEqual("info", page.detail.tabs.current_key())
+        page.detail.tabs.set_current("settings")
+        page.detail.refresh()
+        self.assertEqual("settings", page.detail.tabs.current_key())
+
     def test_info_tab_appears_with_task_info(self):
         task = FakeTask("Daily")
         page = self.make_page([task])

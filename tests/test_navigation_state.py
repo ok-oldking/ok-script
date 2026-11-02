@@ -48,7 +48,8 @@ class TestFitWindowSize(unittest.TestCase):
         from ok.core.ui_config import DEFAULT_WINDOW_SIZE
         size = DEFAULT_WINDOW_SIZE
         self.assertEqual((size["width"], size["height"]), (size["min_width"], size["min_height"]))
-        self.assertEqual((1440, 820, 1440, 820), fit_window_size(
+        self.assertLessEqual(size["width"], 1600)
+        self.assertEqual((size["width"], 820, size["width"], 820), fit_window_size(
             size["width"], size["height"], size["min_width"], size["min_height"], 1600, 852))
 
     def test_oversized_request_is_clamped_to_the_screen(self):
