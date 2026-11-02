@@ -18,7 +18,6 @@ from ok.ui.qt.kit.theme import set_style_property, theme
 from ok.ui.qt.settings.config_section import ConfigSection, _app_tr
 from ok.util.GlobalConfig import APP_LAUNCHER_OPTION_NAME
 
-CONTENT_MAX_WIDTH = 880
 ANCHOR_WIDTH = 200
 
 # Native names, in the order of the Language enum (AUTO last).
@@ -71,7 +70,6 @@ class SettingsPage(QWidget):
         self.column.setContentsMargins(0, 62, 16, 40)
         self.column.setSpacing(32)
         self.scroll.setWidget(contents)
-        contents.setMaximumWidth(CONTENT_MAX_WIDTH)
         self.scroll.verticalScrollBar().valueChanged.connect(self._sync_anchor)
 
         self._add_appearance()

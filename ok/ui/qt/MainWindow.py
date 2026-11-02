@@ -186,9 +186,6 @@ class MainWindow(KitWindow):
             from ok.ui.qt.debug.DebugTab import DebugTab
             debug_tab = DebugTab(config, exit_event)
             self.add_page(debug_tab, "bug", self.tr('Debug'), SECTION_DEVELOP)
-            from ok.ui.qt.debug.RunCodeTab import RunCodeTab
-            run_code_tab = RunCodeTab(config, exit_event)
-            self.add_page(run_code_tab, "terminal", self.tr('Run Code'), SECTION_DEVELOP)
 
         self._add_plugin_tab()
 

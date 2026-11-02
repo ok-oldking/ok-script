@@ -182,19 +182,6 @@ class DebugTabsTestCase(unittest.TestCase):
             time.sleep(0.01)
         return False
 
-    def test_run_code_tab_runs_with_selected_task(self):
-        from ok.ui.qt.debug.RunCodeTab import RunCodeTab
-        tab = RunCodeTab({}, self.exit_event)
-        self.addCleanup(delete, tab)
-        tab.tasks_combo_box.setCurrentIndex(1)
-        tab.code_input.setPlainText('print(task.name)\ntask.answer()')
-
-        tab.run_code()
-
-        self.assertTrue(self.process_until(lambda: '42' in tab.output_area.toPlainText()))
-        self.assertEqual('Task\nthinking\n42\n', tab.output_area.toPlainText())
-        self.assertEqual('Task', tab.config['target_task'])
-
     def test_debug_tab_call_shows_output_and_result(self):
         from ok.ui.qt.debug import DebugTab as debug_tab_module
         with patch.object(debug_tab_module, 'alert_info') as alert:
@@ -234,21 +221,6 @@ class DebugTabsTestCase(unittest.TestCase):
             manager.reload_tasks.assert_called_once_with()
             self.assertTrue(tab.reload_button.isEnabled())
             self.assertIn('1', alert.call_args.args[0])
-
-    def test_run_code_selection_tracks_replaced_instances(self):
-        from ok.core.events import communicate
-        from ok.ui.qt.debug.RunCodeTab import RunCodeTab
-        from shiboken6 import delete
-
-        tab = RunCodeTab({}, self.exit_event)
-        self.addCleanup(delete, tab)
-        tab.tasks_combo_box.setCurrentIndex(1)
-        tab.session.namespace['task'] = self.task
-        replacement = type(self.task)()
-        self.executor.onetime_tasks = [replacement]
-        communicate.task_list_updated.emit()
-        self.assertIs(tab.selected_task(), replacement)
-        self.assertNotIn('task', tab.session.namespace)
 
 
 if __name__ == '__main__':

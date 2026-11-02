@@ -66,6 +66,13 @@ class TestSettingsPage(unittest.TestCase):
         self.assertEqual("Basics", basic.description_label.text())
         self.assertFalse(basic.reset_button.isHidden())
 
+    def test_sections_grow_with_the_window(self):
+        page = self.make_page()
+        narrow = page.sections[1].width()
+        page.resize(1900, 600)
+        QApplication.processEvents()
+        self.assertGreater(page.sections[1].width(), narrow + 500)
+
     def test_goto_config_scrolls_to_its_section(self):
         page = self.make_page()
         page.goto_config("Interval")

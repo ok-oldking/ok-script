@@ -5,8 +5,6 @@ from ok import Config, ConfigOption
 from ok.ui.qt.kit.theme import theme
 from ok.ui.qt.settings.config_section import ConfigSection
 
-CONTENT_MAX_WIDTH = 880
-
 
 class GlobalConfigTab(QWidget):
     """A global config option shown as its own page (``show_at_tab``)."""
@@ -16,7 +14,6 @@ class GlobalConfigTab(QWidget):
         self.config = config
         self.option = option
         self.section = ConfigSection(config, option, title_role="display")
-        self.section.setMaximumWidth(CONTENT_MAX_WIDTH)
 
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)

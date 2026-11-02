@@ -17,8 +17,6 @@ from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
-CONTENT_MAX_WIDTH = 1040
-
 # (config key, label, icon); labels come from the old LinksBar translations.
 LINKS = (
     ("github", "GitHub", "github"),
@@ -112,7 +110,6 @@ class AboutTab(QWidget):
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         contents = QWidget()
         contents.setObjectName("scrollContents")
-        contents.setMaximumWidth(CONTENT_MAX_WIDTH)
         self.vBoxLayout = QVBoxLayout(contents)
         self.vBoxLayout.setContentsMargins(28, 20, 28, 32)
         self.vBoxLayout.setSpacing(28)
