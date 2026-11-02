@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QLabel
 
-ROLES = ("display", "title", "subtitle", "body", "strong", "secondary", "caption", "section", "mono", "kbd")
+ROLES = ("display", "title", "subtitle", "body", "strong", "secondary", "caption", "section", "mono", "kbd", "chip")
 
 
 class Label(QLabel):

@@ -127,11 +127,11 @@ class ProgressRing(QWidget):
 class Toast(QWidget):
     """A message card shown at the bottom right of a window; see :func:`show_toast`."""
 
-    def __init__(self, message: str, title: str = None, tone: str = "neutral", parent=None):
+    def __init__(self, message: str, title: str = None, tone: str = "neutral", action: tuple = None, parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.tone = _check_tone(tone)
-        self.setFixedWidth(340)
+        self.setFixedWidth(360)
 
         icon_label = QLabel(self)
         icon_label.setPixmap(kit_icon(_TONE_ICON[tone], _TONE_COLOR[tone], 2).pixmap(QSize(18, 18), self.devicePixelRatioF()))
@@ -148,6 +148,13 @@ class Toast(QWidget):
         text.setContentsMargins(0, 0, 0, 0)
         text.addWidget(self.title_label)
         text.addWidget(self.message_label)
+        self.action_button = None
+        if action is not None:
+            action_text, callback = action
+            self.action_button = Button(action_text, size="small")
+            self.action_button.clicked.connect(callback)
+            text.addSpacing(6)
+            text.addWidget(self.action_button, 0, Qt.AlignmentFlag.AlignLeft)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(14, 12, 8, 12)
@@ -171,6 +178,7 @@ class _ToastHost(QObject):
 
     def add(self, toast: Toast, duration: int) -> None:
         toast.setParent(self.window)
+        theme.install(toast)
         toast.destroyed.connect(lambda *_: self._forget(toast))
         toast.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         self.toasts.append(toast)
@@ -211,9 +219,21 @@ def toast_host(widget: QWidget) -> _ToastHost:
 
 
 def show_toast(parent: QWidget, message: str, title: str = None, tone: str = "neutral",
-               duration: int = 4000) -> Toast:
-    """Show a toast in ``parent``'s window; ``duration`` 0 keeps it until closed."""
+               duration: int = 4000, action: tuple = None) -> Toast:
+    """Show a toast in ``parent``'s window.
 
-    toast = Toast(message, title, tone)
+    ``duration`` 0 keeps it until closed; ``action`` is ``(text, callback)``
+    for a button inside the toast.
+    """
+
+    toast = Toast(message, title, tone, action)
     toast_host(parent).add(toast, duration)
     return toast
+
+
+def set_toast_bottom_margin(widget: QWidget, margin: int) -> None:
+    """Keep toasts in ``widget``'s window above e.g. a status bar."""
+
+    host = toast_host(widget)
+    host.bottom_margin = margin
+    host.layout()

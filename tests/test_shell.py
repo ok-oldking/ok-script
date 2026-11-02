@@ -1,0 +1,266 @@
+import os
+import threading
+import unittest
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
+
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+from PySide6.QtCore import QEvent, QPoint, Qt
+from PySide6.QtGui import QIcon
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
+
+from ok.core.icons import Icon
+from ok.ui.qt.kit import KitWindow, NavigationView, OptionGroup, Popover, theme
+from ok.ui.qt.shell.connection import capture_options, device_details, device_label, interaction_options, \
+    split_label
+from ok.ui.qt.shell.nav_icons import FALLBACK, nav_icon
+from ok.ui.qt.shell.run_bar import compute_run_state, format_elapsed
+
+
+def make_executor(**overrides):
+    executor = SimpleNamespace(exclusive_owner=None, paused=True, current_task=None, onetime_tasks=[],
+                               onetime_task_queue=[], connected=lambda: True, can_capture=lambda: True,
+                               active_trigger_task_count=lambda: 0)
+    for key, value in overrides.items():
+        setattr(executor, key, value)
+    return executor
+
+
+def make_device_manager(device=None, capture=None, interaction=None, methods=None):
+    return SimpleNamespace(
+        get_preferred_device=lambda: device,
+        get_preferred_capture=lambda: capture,
+        windows_capture_config=methods or {},
+        config={"interaction": interaction, "capture": capture},
+    )
+
+
+class TestRunState(unittest.TestCase):
+    def test_stopped_offers_start(self):
+        state = compute_run_state(make_executor(), make_device_manager({"device": "windows", "connected": True}))
+        self.assertEqual("start", state.button)
+
+    def test_stopped_with_closed_game_says_start_launches_it(self):
+        device = {"device": "windows", "connected": False, "full_path": "C:/game.exe"}
+        state = compute_run_state(make_executor(), make_device_manager(device))
+        self.assertEqual("start", state.button)
+        self.assertEqual("Start will launch the game", state.message)
+
+    def test_starting_offers_cancel(self):
+        state = compute_run_state(make_executor(), make_device_manager(), starting=True)
+        self.assertEqual("cancel", state.button)
+        self.assertTrue(state.starting)
+
+    def test_exclusive_owner_disables_the_button(self):
+        state = compute_run_state(make_executor(exclusive_owner="MCP"), make_device_manager())
+        self.assertEqual("disabled", state.button)
+        self.assertIn("MCP", state.message)
+
+    def test_running_task_shows_the_task_and_queue(self):
+        task = SimpleNamespace(name="Daily", enabled=True)
+        queued = SimpleNamespace(name="Nest", enabled=True)
+        disabled = SimpleNamespace(name="Off", enabled=False)
+        executor = make_executor(paused=False, current_task=task, onetime_tasks=[task, queued, disabled],
+                                 onetime_task_queue=[task, queued, disabled])
+        state = compute_run_state(executor, make_device_manager())
+        self.assertEqual("pause", state.button)
+        self.assertIs(task, state.task)
+        self.assertEqual(1, state.queued)
+
+    def test_running_triggers_without_task(self):
+        executor = make_executor(paused=False, active_trigger_task_count=lambda: 3)
+        state = compute_run_state(executor, make_device_manager())
+        self.assertEqual("pause", state.button)
+        self.assertIsNone(state.task)
+        self.assertIn("3", state.message)
+
+    def test_disconnected_and_blocked_are_danger(self):
+        state = compute_run_state(make_executor(paused=False, connected=lambda: False), make_device_manager())
+        self.assertEqual("danger", state.tone)
+        task = SimpleNamespace(name="Daily", enabled=True)
+        executor = make_executor(paused=False, current_task=task, onetime_tasks=[task], can_capture=lambda: False)
+        self.assertEqual("danger", compute_run_state(executor, make_device_manager()).tone)
+
+    def test_trigger_task_is_not_shown_as_running_task(self):
+        trigger = SimpleNamespace(name="Auto combat", enabled=True)
+        executor = make_executor(paused=False, current_task=trigger, active_trigger_task_count=lambda: 1)
+        self.assertIsNone(compute_run_state(executor, make_device_manager()).task)
+
+    def test_format_elapsed(self):
+        self.assertEqual("00:05", format_elapsed(5.9))
+        self.assertEqual("03:42", format_elapsed(222))
+        self.assertEqual("1:00:01", format_elapsed(3601))
+        self.assertEqual("00:00", format_elapsed(-3))
+
+
+class TestConnectionOptions(unittest.TestCase):
+    def test_split_label(self):
+        self.assertEqual(("WGC", "Fast, support HDR"), split_label("WGC - Fast, support HDR"))
+        self.assertEqual(("PostMessage", ""), split_label("PostMessage"))
+
+    def test_windows_capture_and_interaction_options(self):
+        class WGC:
+            pass
+
+        device = {"device": "windows"}
+        manager = make_device_manager(device, capture="BitBlt", interaction="PostMessage",
+                                      methods={"capture_method": [WGC, "BitBlt"], "interaction": "PostMessage"})
+        options, index, names = capture_options(manager, device)
+        self.assertEqual(["WGC", "BitBlt"], names)
+        self.assertEqual(1, index)
+        self.assertEqual("WGC", options[0][0])
+        self.assertTrue(options[0][1])
+        options, index, names = interaction_options(manager, device)
+        self.assertEqual((["PostMessage"], 0), (names, index))
+
+    def test_device_without_methods_uses_defaults(self):
+        device = {"device": "windows"}
+        manager = make_device_manager(device)
+        self.assertEqual([None], capture_options(manager, device)[2])
+        self.assertEqual([None], interaction_options(manager, device)[2])
+        self.assertEqual(["browser"], capture_options(manager, {"device": "browser"})[2])
+
+    def test_device_details_joins_executable_lists(self):
+        self.assertEqual("1920x1080 · a.exe, b.exe",
+                         device_details({"resolution": "1920x1080", "exe": ["a.exe", "b.exe"]}))
+        self.assertEqual("Client.exe", device_details({"exe": "Client.exe"}))
+
+    def test_device_label(self):
+        label = device_label({"device": "windows", "nick": "Wuthering Waves", "address": "Client.exe"})
+        self.assertEqual("PC · Wuthering Waves · Client.exe", label)
+
+
+class TestNavIcons(unittest.TestCase):
+    def test_resolves_known_sources(self):
+        self.assertEqual("gamepad", nav_icon(Icon.GAME))
+        self.assertEqual("users", nav_icon("people"))
+        self.assertEqual("tasks", nav_icon("tasks"))
+        self.assertEqual(FALLBACK, nav_icon(None))
+        self.assertEqual(FALLBACK, nav_icon("missing.svg"))
+        self.assertEqual("timer", nav_icon(SimpleNamespace(name="STOP_WATCH")))
+        icon = QIcon()
+        self.assertIs(icon, nav_icon(icon))
+
+
+class TestStartControllerCancel(unittest.TestCase):
+    def test_cancel_stops_waiting_for_the_game(self):
+        from ok.core import start_controller as module
+        controller = module.StartController.__new__(module.StartController)
+        controller.exit_event = threading.Event()
+        controller.start_timeout = 60
+        controller.check_device_error = Mock(return_value="not ready")
+        controller.cancel_start()
+        events = []
+        with patch.object(module.og, "device_manager", SimpleNamespace(do_refresh=Mock()), create=True), \
+                module.communicate.starting_emulator.subscribed(lambda *args: events.append(args)):
+            self.assertFalse(controller._wait_until_device_ready())
+        controller.check_device_error.assert_not_called()
+        self.assertEqual([(True, None, 0)], events)
+
+
+class ShellWidgetTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.qt_app = QApplication.instance() or QApplication([])
+
+    def tearDown(self):
+        QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+    def show(self, widget):
+        widget.resize(900, 600)
+        theme.install(widget)
+        widget.show()
+        QApplication.processEvents()
+
+        def dispose():
+            widget.close()
+            widget.deleteLater()
+
+        self.addCleanup(dispose)
+        return widget
+
+
+class TestNavigationView(ShellWidgetTestCase):
+    def test_sections_items_and_selection(self):
+        nav = NavigationView()
+        nav.add_section("run", "Run")
+        nav.add_item("tasks", "Tasks", "tasks", "run")
+        nav.add_item("about", "About", "info", bottom=True)
+        self.show(nav)
+        picked = []
+        nav.current_changed.connect(picked.append)
+        QTest.mouseClick(nav.item("about"), Qt.MouseButton.LeftButton)
+        self.assertEqual(["about"], picked)
+        self.assertEqual("about", nav.current_key())
+        nav.set_current("tasks")
+        self.assertEqual("tasks", nav.current_key())
+        with self.assertRaises(ValueError):
+            nav.add_item("tasks", "Again")
+        nav.set_badge("about", True)
+        self.assertTrue(nav.item("about").dot.isVisibleTo(nav.item("about")))
+        nav.remove_item("tasks")
+        self.assertFalse(nav.has_item("tasks"))
+
+
+class TestPopover(ShellWidgetTestCase):
+    def test_opens_above_anchor_and_closes_on_outside_click(self):
+        host = self.show(QWidget())
+        anchor = QLabel("anchor", host)
+        anchor.setGeometry(20, 540, 120, 30)
+        other = QLabel("other", host)
+        other.setGeometry(400, 100, 120, 30)
+        anchor.show()
+        other.show()
+        detached = QWidget()  # built before it joins the window, like the run bar's popover
+        self.addCleanup(detached.deleteLater)
+        popover = Popover(detached)
+        popover.setFixedWidth(300)
+        content = QVBoxLayout(popover)
+        text = QLabel("A long description that wraps onto several lines inside the popover. " * 4)
+        text.setWordWrap(True)
+        content.addWidget(text)
+        popover.popup(anchor)
+        QApplication.processEvents()
+        self.assertTrue(popover.isVisible())
+        self.assertIs(host, popover.parentWidget())
+        self.assertLess(popover.geometry().bottom(), anchor.y())
+        self.assertGreaterEqual(popover.height(), text.heightForWidth(300 - 18))
+        closed = []
+        popover.closed.connect(lambda: closed.append(True))
+        QTest.mouseClick(popover, Qt.MouseButton.LeftButton, pos=QPoint(10, 10))
+        self.assertTrue(popover.isVisible())
+        QTest.mouseClick(other, Qt.MouseButton.LeftButton)
+        self.assertFalse(popover.isVisible())
+        self.assertEqual([True], closed)
+
+
+class TestOptionGroup(ShellWidgetTestCase):
+    def test_pick_emits_index_once(self):
+        group = OptionGroup()
+        group.set_options([("WGC", "Fast", None), ("BitBlt", "Slow", None)], 0)
+        self.show(group)
+        picked = []
+        group.selected.connect(picked.append)
+        QTest.mouseClick(group.cards[1], Qt.MouseButton.LeftButton)
+        QTest.mouseClick(group.cards[1], Qt.MouseButton.LeftButton)
+        self.assertEqual([1], picked)
+        self.assertEqual(1, group.current())
+        group.set_options([("Only", "", None)])
+        self.assertEqual(1, len(group.cards))
+        self.assertEqual(0, group.current())
+
+
+class TestKitWindow(ShellWidgetTestCase):
+    def test_title_bar_drag_area_excludes_buttons(self):
+        window = self.show(KitWindow())
+        window.setWindowTitle("App")
+        bar = window.title_bar
+        self.assertEqual("App", bar.title_label.text())
+        self.assertTrue(bar.is_drag_area(QPoint(300, 10)))
+        self.assertFalse(bar.is_drag_area(bar.close_button.geometry().center()))
+
+
+if __name__ == "__main__":
+    unittest.main()

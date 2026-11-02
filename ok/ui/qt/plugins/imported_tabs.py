@@ -2,12 +2,11 @@
 
 from PySide6.QtCore import QObject, QTimer
 from PySide6.QtWidgets import QApplication, QWidget
-from qfluentwidgets import FluentIcon, NavigationItemPosition
 from shiboken6 import isValid
 
 from ok import Logger, og
+from ok.core.icons import Icon
 from ok.core.plugins import import_plugin_class
-from ok.ui.qt.common.icons import resolve_icon
 from ok.ui.qt.tasks.OneTimeTaskTab import OneTimeTaskTab
 from ok.ui.qt.widget.Tab import Tab
 
@@ -92,8 +91,7 @@ class ImportedTabs(QObject):
             if not isValid(widget):
                 continue
             _dispose_widget(widget)
-            self.window.navigationInterface.removeWidget(widget.objectName())
-            self.window.stackedWidget.removeWidget(widget)
+            self.window.remove_page(widget)
             widget.hide()
             widget.deleteLater()
         self._entries.pop(namespace, None)
@@ -101,10 +99,7 @@ class ImportedTabs(QObject):
     def _add(self, widget, name, icon):
         if not widget.objectName():
             widget.setObjectName(f'plugin_{id(widget)}')
-        self.window.addSubInterface(
-            widget, resolve_icon(icon), self.window.app.tr(name),
-            position=NavigationItemPosition.SCROLL,
-        )
+        self.window.add_page(widget, icon, self.window.app.tr(name), "run")
 
     def refresh(self):
         if self._closed:
@@ -124,7 +119,6 @@ class ImportedTabs(QObject):
                 if namespace not in self._entries:
                     self._entries[namespace] = self._state(entry)
                     self._create(namespace, entry)
-            self.window.update_navigation_width()
         finally:
             self._refreshing = False
 
@@ -148,7 +142,7 @@ class ImportedTabs(QObject):
                     raise TypeError('Plugin custom_tabs must create QWidgets')
                 widget.executor = self.window.executor
                 self._add(widget, getattr(widget, 'name', entry['script_name']),
-                          getattr(widget, 'icon', FluentIcon.APPLICATION))
+                          getattr(widget, 'icon', Icon.APPLICATION))
                 pages.append(widget)
             except Exception as error:
                 if isinstance(widget, QWidget):
@@ -181,7 +175,7 @@ class ImportedTabs(QObject):
         if tasks and (specifications or not pages):
             group_tab = ImportedTaskTab(namespace, entry['script_name'])
             self.window.imported_tabs[namespace] = group_tab
-            self._add(group_tab, entry['script_name'], getattr(tasks[0], 'group_icon', FluentIcon.APPLICATION))
+            self._add(group_tab, entry['script_name'], getattr(tasks[0], 'group_icon', Icon.APPLICATION))
         finish_plugin_update(namespace, error='\n'.join(errors.values()) or None)
 
     def dispose(self):

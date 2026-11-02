@@ -59,7 +59,11 @@ class Dialog(QWidget):
         layout.addLayout(buttons)
 
         window.installEventFilter(self)
+        theme.install(self)
         self.hide()
+
+    def set_cancel_visible(self, visible: bool) -> None:
+        self.cancel_button.setVisible(visible)
 
     def result(self) -> bool:
         return self._result
@@ -105,14 +109,17 @@ class Dialog(QWidget):
 
     def keyPressEvent(self, event) -> None:
         if event.key() == Qt.Key.Key_Escape:
-            self.reject()
+            if self.cancel_button.isVisible():
+                self.reject()
+            else:
+                self.accept()
         elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self.accept()
         else:
             super().keyPressEvent(event)
 
     def mousePressEvent(self, event) -> None:
-        if not self.panel.geometry().contains(event.position().toPoint()):
+        if not self.panel.geometry().contains(event.position().toPoint()) and self.cancel_button.isVisible():
             self.reject()
         super().mousePressEvent(event)
 

@@ -3,12 +3,10 @@ import threading
 
 import pyappify
 from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer
-from PySide6.QtGui import QColor, QScreen
-from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
-from qfluentwidgets import qconfig, FluentIcon, NavigationItemPosition, MessageBox, InfoBar, \
-    InfoBarPosition, MessageBoxBase, FluentWindow, NavigationDisplayMode, isDarkTheme, Theme, \
-    DotInfoBadge, InfoBadgePosition, PushButton
-from qfluentwidgets.components.widgets.scroll_bar import ScrollBarHandleDisplayMode
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QMenu, QStackedWidget, QSystemTrayIcon, QVBoxLayout, \
+    QWidget
+from qfluentwidgets import qconfig, MessageBoxBase, isDarkTheme, Theme
 from qfluentwidgets.common.style_sheet import updateStyleSheet
 
 _original_MessageBoxBase_keyPressEvent = MessageBoxBase.keyPressEvent
@@ -51,11 +49,12 @@ from ok.util.config import Config
 
 from ok.ui.qt.Communicate import communicate
 from ok.ui.qt.common.accent_color import qfluent_theme_source_color
-from ok.ui.qt.common.icons import resolve_icon
+from ok.ui.qt.kit import Dialog, KitWindow, NavigationView, Theme as KitTheme, set_toast_bottom_margin, show_toast, \
+    theme as kit_theme
+from ok.ui.qt.shell.nav_icons import nav_icon
+from ok.ui.qt.shell.run_bar import RunBar
 from ok.ui.qt.util.Alert import alert_error
-from ok.ui.qt.util.touch_scroll import enable_touch_scrolling
 from ok.ui.qt.util.pyappify_startup import get_startup_version_change
-from ok.ui.qt.widget.StartLoadingDialog import StartLoadingDialog
 from ok.util.GlobalConfig import basic_options, KILL_LAUNCHER_AFTER_START, NOTIFICATION_OPTION_NAME
 from ok.util.clazz import init_class_by_name
 from ok.util.process import restart_as_admin
@@ -64,34 +63,40 @@ from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
-NAVIGATION_EXPAND_MAX_WIDTH = 240
-NAVIGATION_EXPAND_FIT_PADDING = 23
 DEFAULT_THEME_COLOR = qconfig.themeColor.defaultValue
+PAGE_MARGIN = 12
+
+SECTION_RUN = "run"
+SECTION_GAME = "game"
+SECTION_DEVELOP = "develop"
+
+_KIT_THEMES = {Theme.AUTO: KitTheme.AUTO, Theme.LIGHT: KitTheme.LIGHT, Theme.DARK: KitTheme.DARK}
 
 
 def update_check_delay_ms():
     return 10_000 if "PYAPPIFY_PYTHON_TEST" in os.environ else 30_000
 
 
-class MainWindow(FluentWindow):
+def fit_window_size(width, height, min_width, min_height, available_width, available_height):
+    """Clamp a requested window size and minimum into the available screen area."""
+    min_width = min(min_width, available_width)
+    min_height = min(min_height, available_height)
+    width = max(min_width, min(width, available_width))
+    height = max(min_height, min(height, available_height))
+    return width, height, min_width, min_height
+
+
+class MainWindow(KitWindow):
 
     def __init__(self, app, config, ok_config, icon, title, version, debug=False, about=None, exit_event=None,
                  global_config=None, executor=None, handler=None):
         super().__init__()
-        # Page pop transitions move scroll-area contents vertically and can show
-        # a brief top/bottom flash when switching navigation tabs.
-        self.stackedWidget.setAnimationEnabled(False)
         self._theme_cooldowns = set()
         logger.info('main window __init__')
         self._configured_theme_color = DEFAULT_THEME_COLOR
         self._sync_system_accent_color(refresh=True)
+        self._sync_kit_theme()
         qconfig.themeChanged.connect(self._on_theme_changed)
-        navigation_scroll_area = self.navigationInterface.panel.scrollArea
-        navigation_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        enable_touch_scrolling(navigation_scroll_area)
-        navigation_scroll_area.scrollDelagate.vScrollBar.setHandleDisplayMode(
-            ScrollBarHandleDisplayMode.ALWAYS
-        )
         self.app = app
         self.executor = executor
         self.handler = handler
@@ -99,21 +104,38 @@ class MainWindow(FluentWindow):
         self.basic_global_config = global_config.get_config(basic_options)
         self.main_window_config = Config('main_window', {'last_version': 'v0.0.0'})
         self.exit_event = exit_event
-        from ok.ui.qt.start.StartTab import StartTab
-        self.start_tab = StartTab(config, exit_event)
         self.onetime_tab = None
         self.trigger_tab = None
         self.version = version
-        self.emulator_starting_dialog = None
         self.do_not_quit = False
         self.config = config
         self.shown = False
+        self._pages = {}
         communicate.restart_admin.connect(self.restart_admin)
         if config.get('show_update_copyright'):
             communicate.copyright.connect(self.show_update_copyright)
 
-        self.addSubInterface(self.start_tab, FluentIcon.PLAY, self.tr('Capture'),
-                             position=NavigationItemPosition.SCROLL)
+        self.navigation = NavigationView()
+        kit_theme.install(self.navigation)
+        self.navigation.add_section(SECTION_RUN, QCoreApplication.translate("MainWindow", "Run"))
+        self.navigation.add_section(SECTION_GAME, QCoreApplication.translate("MainWindow", "Game"))
+        self.navigation.add_section(SECTION_DEVELOP, QCoreApplication.translate("MainWindow", "Develop"))
+        self.navigation.current_changed.connect(lambda key: self.switch_to(self._pages[key]))
+        self.navigation.compact_changed.connect(self._save_navigation_state)
+        self.stack = QStackedWidget()
+        self.run_bar = RunBar(exit_event)
+
+        content = QVBoxLayout()
+        content.setContentsMargins(0, 0, PAGE_MARGIN, PAGE_MARGIN)
+        content.setSpacing(PAGE_MARGIN)
+        content.addWidget(self.stack, 1)
+        content.addWidget(self.run_bar)
+        body = QHBoxLayout(self.body)
+        body.setContentsMargins(0, 0, 0, 0)
+        body.setSpacing(0)
+        body.addWidget(self.navigation)
+        body.addLayout(content, 1)
+        set_toast_bottom_margin(self, RunBar.HEIGHT + PAGE_MARGIN * 2)
 
         self.grouped_task_tabs = []
         self.schedule_tab = None
@@ -131,21 +153,14 @@ class MainWindow(FluentWindow):
                 else:
                     before_custom_tabs.append(tab_obj)
 
-        # Add custom tabs that should appear before built-in task tabs
         for tab_obj in before_custom_tabs:
-            self.addSubInterface(tab_obj, tab_obj.icon, self.app.tr(tab_obj.name), position=tab_obj.position)
+            self.add_page(tab_obj, tab_obj.icon, self.app.tr(tab_obj.name), SECTION_GAME)
 
         from ok import og
         self.imported_tabs = {}  # {file_name: tab_object}
-        
+
         visible_onetime_tasks = [task for task in self.executor.onetime_tasks if getattr(task, 'visible', True)]
         visible_trigger_tasks = [task for task in self.executor.trigger_tasks if getattr(task, 'visible', True)]
-
-        if len(visible_trigger_tasks) > 0:
-            from ok.ui.qt.tasks.TriggerTaskTab import TriggerTaskTab
-            self.trigger_tab = TriggerTaskTab()
-            self.addSubInterface(self.trigger_tab, FluentIcon.STOP_WATCH, self.tr('Triggers'),
-                                 position=NavigationItemPosition.SCROLL)
 
         if visible_onetime_tasks:
             from ok.ui.qt.tasks.OneTimeTaskTab import OneTimeTaskTab
@@ -163,50 +178,42 @@ class MainWindow(FluentWindow):
             if standalone_tasks:
                 self.onetime_tab = OneTimeTaskTab(is_standalone=True)
                 logger.debug(f"add default onetime_tab len {len(standalone_tasks)}")
-                self.addSubInterface(self.onetime_tab, FluentIcon.BOOK_SHELF, self.tr('Tasks'),
-                                     position=NavigationItemPosition.SCROLL)
+                self.add_page(self.onetime_tab, "tasks", self.tr('Tasks'), SECTION_RUN)
 
             for group_name, tasks_in_group in groups.items():
                 group_tab = OneTimeTaskTab(is_standalone=False, group_name=group_name)
-                group_icon = tasks_in_group[0].group_icon
                 logger.debug(f"add grouped_task_tabs {group_name} len {len(tasks_in_group)}")
-                self.addSubInterface(group_tab, group_icon, self.app.tr(group_name),
-                                     position=NavigationItemPosition.SCROLL)
+                self.add_page(group_tab, tasks_in_group[0].group_icon, self.app.tr(group_name), SECTION_RUN)
                 self.grouped_task_tabs.append(group_tab)
 
-        # Add custom tabs that should appear after built-in task tabs
+        if len(visible_trigger_tasks) > 0:
+            from ok.ui.qt.tasks.TriggerTaskTab import TriggerTaskTab
+            self.trigger_tab = TriggerTaskTab()
+            self.add_page(self.trigger_tab, "timer", self.tr('Triggers'), SECTION_RUN)
+
         for tab_obj in after_custom_tabs:
-            self.addSubInterface(tab_obj, tab_obj.icon, self.app.tr(tab_obj.name), position=tab_obj.position)
-        if debug:
-            from ok.ui.qt.debug.DebugTab import DebugTab
-            debug_tab = DebugTab(config, exit_event)
-            self.addSubInterface(debug_tab, FluentIcon.DEVELOPER_TOOLS, self.tr('Debug'),
-                                 position=NavigationItemPosition.BOTTOM)
-            from ok.ui.qt.debug.RunCodeTab import RunCodeTab
-            run_code_tab = RunCodeTab(config, exit_event)
-            self.addSubInterface(run_code_tab, FluentIcon.COMMAND_PROMPT, self.tr('Run Code'),
-                                 position=NavigationItemPosition.BOTTOM)
+            self.add_page(tab_obj, tab_obj.icon, self.app.tr(tab_obj.name), SECTION_GAME)
 
         if og.task_manager.has_custom:
             from ok.ui.qt.tasks.EditTaskTab import EditTaskTab
             self.edit_task_tab = EditTaskTab()
-            self.addSubInterface(self.edit_task_tab, FluentIcon.EDIT, self.tr('Script'),
-                                 position=NavigationItemPosition.BOTTOM)
+            self.add_page(self.edit_task_tab, "pen", self.tr('Script'), SECTION_DEVELOP)
 
         if og.task_manager.has_custom or debug:
             from ok.ui.qt.tasks.TemplateTab import TemplateTab
             self.template_tab = TemplateTab(config=config)
-            self.addSubInterface(self.template_tab, FluentIcon.PHOTO, self.tr('Templates'),
-                                 position=NavigationItemPosition.SCROLL)
+            self.add_page(self.template_tab, "image", self.tr('Templates'), SECTION_DEVELOP)
+
+        if debug:
+            from ok.ui.qt.debug.DebugTab import DebugTab
+            debug_tab = DebugTab(config, exit_event)
+            self.add_page(debug_tab, "bug", self.tr('Debug'), SECTION_DEVELOP)
+            from ok.ui.qt.debug.RunCodeTab import RunCodeTab
+            run_code_tab = RunCodeTab(config, exit_event)
+            self.add_page(run_code_tab, "terminal", self.tr('Run Code'), SECTION_DEVELOP)
 
         self._add_plugin_tab()
-        bottom_tabs = [getattr(self, name, None) for name in ('edit_task_tab', 'plugin_tab')]
-        bottom_layout = self.navigationInterface.panel.bottomLayout
-        for index, tab in enumerate(tab for tab in bottom_tabs if tab is not None):
-            item = self.navigationInterface.widget(tab.objectName())
-            bottom_layout.removeWidget(item)
-            bottom_layout.insertWidget(index, item, 0, Qt.AlignBottom)
-        
+
         # Initial load of imported tabs
         self.update_imported_tabs()
         communicate.task_list_updated.connect(self.update_imported_tabs)
@@ -224,8 +231,7 @@ class MainWindow(FluentWindow):
         if any_support_schedule:
             from ok.ui.qt.tasks.ScheduleTaskTab import ScheduleTaskTab
             self.schedule_tab = ScheduleTaskTab(config=self.config)
-            self.addSubInterface(self.schedule_tab, FluentIcon.CALENDAR, self.tr('Schedule'),
-                                 position=NavigationItemPosition.SCROLL)
+            self.add_page(self.schedule_tab, "calendar", self.tr('Schedule'), SECTION_RUN)
 
         notification_tab = None
         for name, config_obj, option in global_config.get_all_visible_configs():
@@ -236,24 +242,19 @@ class MainWindow(FluentWindow):
                 if name == NOTIFICATION_OPTION_NAME:
                     notification_tab = config_tab
                 else:
-                    self.addSubInterface(config_tab, resolve_icon(option.icon), self.app.tr(option.name),
-                                         position=NavigationItemPosition.SCROLL)
+                    self.add_page(config_tab, option.icon, self.app.tr(option.name), SECTION_GAME)
 
         if notification_tab is not None:
             self.notification_tab = notification_tab
-            self.addSubInterface(notification_tab, FluentIcon.RINGER, self.app.tr(NOTIFICATION_OPTION_NAME),
-                                 position=NavigationItemPosition.BOTTOM)
+            self.add_page(notification_tab, "bell", self.app.tr(NOTIFICATION_OPTION_NAME), SECTION_GAME)
 
         from ok.ui.qt.settings.SettingTab import SettingTab
         self.setting_tab = SettingTab()
-        self.addSubInterface(self.setting_tab, FluentIcon.SETTING, self.tr('Settings'),
-                             position=NavigationItemPosition.BOTTOM)
+        self.add_page(self.setting_tab, "gear", self.tr('Settings'), bottom=True)
 
         from ok.ui.qt.about.AboutTab import AboutTab
         self.about_tab = AboutTab(config, exit_event=exit_event)
-        self.addSubInterface(self.about_tab, FluentIcon.QUESTION, self.tr('About'),
-                             position=NavigationItemPosition.BOTTOM)
-        self.about_update_badge = None
+        self.add_page(self.about_tab, "info", self.tr('About'), bottom=True)
         self.update_check_timer = None
         if self.about_tab.update_card is not None:
             self.about_tab.update_card.update_available_changed.connect(self._set_about_update_available)
@@ -262,9 +263,14 @@ class MainWindow(FluentWindow):
         dev = self.tr('Debug')
         profile = config.get('profile', "")
         self.setWindowTitle(f'{title} {version} {profile} {dev if debug else ""}')
+        self.title_bar.set_title(title)
+        self.title_bar.set_badge(" ".join(part for part in (version, profile, dev if debug else "") if part))
 
-        communicate.executor_paused.connect(self.executor_paused)
-        self.exclusive_bar = None
+        start_page = self.startup_task_tab() or self.stack.widget(0)
+        if start_page is not None:
+            self.switch_to(start_page)
+
+        self.exclusive_toast = None
         communicate.executor_exclusive.connect(self.executor_exclusive_changed)
         communicate.tab.connect(self.navigate_tab)
         menu = QMenu()
@@ -283,8 +289,6 @@ class MainWindow(FluentWindow):
             system_notifier=TraySystemNotifier(
                 self.tray, QSystemTrayIcon.Information, QSystemTrayIcon.Critical))
 
-        self.navigationInterface.displayModeChanged.connect(self._save_navigation_state)
-
         communicate.capture_error.connect(self.capture_error)
         communicate.notification.connect(self.show_notification)
         communicate.config_validation.connect(self.config_validation)
@@ -293,14 +297,36 @@ class MainWindow(FluentWindow):
 
         logger.info('main window __init__ done')
 
+    # --- pages ----------------------------------------------------------------
+
+    def add_page(self, widget, icon, text, section=None, bottom=False):
+        """Host ``widget`` as a page with a sidebar entry; returns its navigation key."""
+        if not widget.objectName():
+            widget.setObjectName(f'page_{id(widget)}')
+        key = widget.objectName()
+        self._pages[key] = widget
+        self.stack.addWidget(widget)
+        self.navigation.add_item(key, text, nav_icon(icon), section, bottom=bottom)
+        return key
+
+    def remove_page(self, widget):
+        key = widget.objectName()
+        if self._pages.get(key) is widget:
+            del self._pages[key]
+            self.navigation.remove_item(key)
+        self.stack.removeWidget(widget)
+
+    def switch_to(self, widget):
+        if self.stack.indexOf(widget) < 0:
+            return
+        self.stack.setCurrentWidget(widget)
+        self.navigation.set_current(widget.objectName())
+
+    def current_page(self):
+        return self.stack.currentWidget()
+
     def _set_about_update_available(self, available):
-        if available and self.about_update_badge is None:
-            about_navigation_item = self.navigationInterface.widget(self.about_tab.objectName())
-            self.about_update_badge = DotInfoBadge.error(
-                self, target=about_navigation_item, position=InfoBadgePosition.NAVIGATION_ITEM
-            )
-        if self.about_update_badge is not None:
-            self.about_update_badge.setVisible(available)
+        self.navigation.set_badge(self.about_tab.objectName(), bool(available))
 
     def _schedule_update_check(self):
         if self.about_tab.update_card is None:
@@ -317,6 +343,8 @@ class MainWindow(FluentWindow):
         if self.update_check_timer is not None and self.update_check_timer.isActive():
             logger.info('cancel scheduled pyappify update check because a check has started')
             self.update_check_timer.stop()
+
+    # --- theme ----------------------------------------------------------------
 
     @staticmethod
     def _get_dwm_accent_color():
@@ -343,23 +371,22 @@ class MainWindow(FluentWindow):
         """Return the base Windows accent color (legacy helper)."""
         return self._get_dwm_accent_color()
 
+    def _system_accent(self, color_type_name='Accent'):
+        try:
+            from ok.rotypes.Windows.UI.ViewManagement import UIColorType, get_color_value
+            value = get_color_value(getattr(UIColorType, color_type_name))
+            return QColor(value.red, value.green, value.blue)
+        except (ImportError, OSError, TypeError, AttributeError):
+            logger.exception('Failed to read the Windows accent color palette')
+            return self.get_system_accent_color()
+
     def get_system_primary_theme_color(self):
         """Return a qfluent source color matching the Windows primary fill."""
         dark = isDarkTheme()
-        try:
-            from ok.rotypes.Windows.UI.ViewManagement import UIColorType, get_color_value
-
-            color_type = UIColorType.AccentLight2 if dark else UIColorType.AccentDark1
-            system_color = get_color_value(color_type)
-            red, green, blue = system_color.red, system_color.green, system_color.blue
-        except (ImportError, OSError, TypeError):
-            logger.exception('Failed to read the Windows accent color palette')
-            fallback = self.get_system_accent_color()
-            if fallback is None:
-                return None
-            red, green, blue = fallback.red(), fallback.green(), fallback.blue()
-
-        red, green, blue = qfluent_theme_source_color(red, green, blue, dark)
+        color = self._system_accent('AccentLight2' if dark else 'AccentDark1')
+        if color is None:
+            return None
+        red, green, blue = qfluent_theme_source_color(color.red(), color.green(), color.blue(), dark)
         return QColor(red, green, blue)
 
     def _sync_system_accent_color(self, refresh=False):
@@ -384,11 +411,18 @@ class MainWindow(FluentWindow):
             logger.info(f'Prepare primary button color: {color.name()}')
         return True
 
+    def _sync_kit_theme(self):
+        """Keep the kit (shell) theme in step with the theme setting the old pages use."""
+        kit_theme.set_theme(_KIT_THEMES.get(qconfig.themeMode.value, KitTheme.AUTO))
+        if accent := self._system_accent():
+            kit_theme.set_accent(accent)
+
     def _on_theme_changed(self, _theme):
         self._sync_system_accent_color()
+        self._sync_kit_theme()
 
     def _apply_system_theme_change(self):
-        """Synchronize qfluentwidgets after a native Windows theme notification."""
+        """Synchronize qfluentwidgets and the kit after a native Windows theme notification."""
         try:
             theme_changed = False
             if qconfig.themeMode.value == Theme.AUTO:
@@ -403,23 +437,13 @@ class MainWindow(FluentWindow):
                 updateStyleSheet()
 
             qconfig.themeChangedFinished.emit()
-            QTimer.singleShot(750, self._refresh_mica)
+            self._sync_kit_theme()
             logger.info(
                 f'System theme synchronized: mode={qconfig.themeMode.value}, '
                 f'resolved={qconfig.theme}, accent_changed={accent_changed}'
             )
         finally:
             self._theme_cooldowns.discard('system-theme')
-
-    def _refresh_mica(self):
-        """Rebuild Mica after Windows finishes replacing the system backdrop."""
-        if not self.isMicaEffectEnabled():
-            return
-
-        logger.info(f'Rebuild Mica effect: dark={isDarkTheme()}')
-        self.setMicaEffectEnabled(False)
-        self.setMicaEffectEnabled(True)
-        self.update()
 
     def _schedule_system_theme_change(self):
         if not hasattr(self, '_theme_cooldowns'):
@@ -450,8 +474,10 @@ class MainWindow(FluentWindow):
 
         return super().nativeEvent(event_type, message)
 
+    # --- plugins and imported scripts -----------------------------------------
+
     def update_imported_tabs(self):
-        """Update navigation tabs for imported scripts."""
+        """Update navigation pages for imported scripts."""
         from ok.ui.qt.plugins.imported_tabs import ImportedTabs
         if not hasattr(self, '_imported_tab_controller'):
             self._imported_tab_controller = ImportedTabs(self)
@@ -461,15 +487,17 @@ class MainWindow(FluentWindow):
         if self.config.get('plugin', False):
             from ok.ui.qt.plugins.PluginTab import PluginTab
             self.plugin_tab = PluginTab()
-            self.addSubInterface(self.plugin_tab, FluentIcon.APPLICATION, self.plugin_tab.tr('Plugins'),
-                                 position=NavigationItemPosition.BOTTOM)
+            self.add_page(self.plugin_tab, "grid", self.plugin_tab.tr('Plugins'), SECTION_DEVELOP)
+
+    # --- dialogs and notifications --------------------------------------------
 
     def restart_admin(self):
-        w = MessageBox(QCoreApplication.translate("app", "Alert"),
-                       QCoreApplication.translate("StartController",
-                                                  "PC version requires admin privileges, Please restart this app with admin privileges!"),
-                       self.window())
-        if w.exec():
+        dialog = Dialog(self, QCoreApplication.translate("app", "Alert"),
+                        QCoreApplication.translate("StartController",
+                                                   "PC version requires admin privileges, Please restart this app with admin privileges!"))
+        accepted = dialog.exec()
+        dialog.deleteLater()
+        if accepted:
             logger.info('restart_admin Yes button is pressed')
             thread = threading.Thread(target=restart_as_admin, daemon=True)
             thread.start()
@@ -511,9 +539,9 @@ class MainWindow(FluentWindow):
     def goto_global_config(self, key):
         for config_tab in self.global_config_tabs:
             if config_tab.has_key(key):
-                self.switchTo(config_tab)
+                self.switch_to(config_tab)
                 return
-        self.switchTo(self.setting_tab)
+        self.switch_to(self.setting_tab)
         self.setting_tab.goto_config(key)
 
     def tray_quit(self):
@@ -521,15 +549,13 @@ class MainWindow(FluentWindow):
         self.app.quit()
 
     def show_update_copyright(self):
-        title = self.tr('Info')
-        content = self.tr(
-            "This is a free software. If you purchased this anywhere, request a refund from the seller.")
-        from qfluentwidgets import Dialog
-        w = Dialog(title, content, self.window())
-        w.cancelButton.setVisible(False)
-        w.setContentCopyable(True)
-        w.exec()
-        self.switchTo(self.about_tab)
+        dialog = Dialog(self, self.tr('Info'), self.tr(
+            "This is a free software. If you purchased this anywhere, request a refund from the seller."))
+        dialog.set_cancel_visible(False)
+        dialog.message_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        dialog.exec()
+        dialog.deleteLater()
+        self.switch_to(self.about_tab)
 
     def show_startup_version_change_notice(self):
         version_change = get_startup_version_change()
@@ -537,7 +563,7 @@ class MainWindow(FluentWindow):
             return
 
         logger.info(f'show startup version change on about tab {version_change.title}')
-        self.switchTo(self.about_tab)
+        self.switch_to(self.about_tab)
 
     def showEvent(self, event):
         first_show = event.type() == QEvent.Show and not self.shown
@@ -573,66 +599,50 @@ class MainWindow(FluentWindow):
             QTimer.singleShot(250, self.show_startup_version_change_notice)
             self._schedule_update_check()
 
+    # --- geometry -------------------------------------------------------------
+
     def set_window_size(self, width, height, min_width, min_height):
-        screen = QScreen.availableGeometry(self.screen())
+        screen = self.screen().availableGeometry()
+        width, height, min_width, min_height = fit_window_size(
+            width, height, min_width, min_height, screen.width(), screen.height())
+        self.setMinimumSize(QSize(min_width, min_height))
         if (self.ok_config['window_width'] > 0 and self.ok_config['window_height'] > 0 and
                 self.ok_config['window_y'] > 0 and self.ok_config['window_x'] > 0):
-            x, y, width, height = (self.ok_config['window_x'], self.ok_config['window_y'],
-                                   self.ok_config['window_width'], self.ok_config['window_height'])
+            x, y = self.ok_config['window_x'], self.ok_config['window_y']
+            saved_width, saved_height, _, _ = fit_window_size(
+                self.ok_config['window_width'], self.ok_config['window_height'], min_width, min_height,
+                screen.width(), screen.height())
             if self.ok_config['window_maximized']:
                 self.setWindowState(Qt.WindowMaximized)
             else:
-                self.setGeometry(x, y, width, height)
+                x = max(screen.left(), min(x, screen.right() - saved_width))
+                y = max(screen.top(), min(y, screen.bottom() - saved_height))
+                self.setGeometry(x, y, saved_width, saved_height)
         else:
-            x = int((screen.width() - width) / 2)
-            y = int((screen.height() - height) / 2)
+            x = screen.left() + (screen.width() - width) // 2
+            y = screen.top() + (screen.height() - height) // 2
             self.setGeometry(x, y, width, height)
-
-        self.setMinimumSize(QSize(min_width, min_height))
         self.apply_navigation_state()
 
     def apply_navigation_state(self):
-        self.update_navigation_width()
-        if self.ok_config.get('navigation_expanded', True):
-            self._expand_navigation_without_animation()
+        self.navigation.set_compact(not self.ok_config.get('navigation_expanded', True))
 
-    def _expand_navigation_without_animation(self):
-        self.navigationInterface.expand(False)
+    def _save_navigation_state(self, compact):
+        self.ok_config['navigation_expanded'] = not compact
 
-        # NavigationInterface normally mirrors the panel width from its resize
-        # event.  While the window is hidden, Qt defers that event until the
-        # first show, leaving the interface at its compact width for one frame.
-        panel = self.navigationInterface.panel
-        if panel.displayMode == NavigationDisplayMode.EXPAND:
-            self.navigationInterface.setFixedWidth(panel.width())
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._post_geometry_update()
 
-    def update_navigation_width(self):
-        panel = self.navigationInterface.panel
-        item_widths = []
-        for item in panel.items.values():
-            widget = item.widget
-            if hasattr(widget, 'suitableWidth'):
-                item_widths.append(widget.suitableWidth() + NAVIGATION_EXPAND_FIT_PADDING)
+    def moveEvent(self, event):
+        super().moveEvent(event)
+        self._post_geometry_update()
 
-        if not item_widths:
-            return
-
-        width = min(max(item_widths), NAVIGATION_EXPAND_MAX_WIDTH)
-        self.navigationInterface.setExpandWidth(width)
-
-        if panel.displayMode in (NavigationDisplayMode.EXPAND, NavigationDisplayMode.MENU):
-            self._expand_navigation_without_animation()
-
-    def _save_navigation_state(self, display_mode):
-        self.ok_config['navigation_expanded'] = display_mode in (
-            NavigationDisplayMode.EXPAND,
-            NavigationDisplayMode.MENU,
-        )
-
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.Resize or event.type() == QEvent.Move:
-            self.handler.post(self.update_ok_config, remove_existing=True, skip_if_running=True, delay=1)
-        return super().eventFilter(obj, event)
+    def _post_geometry_update(self):
+        # Geometry events also arrive while the native window is created in __init__.
+        handler = getattr(self, 'handler', None)
+        if handler is not None and getattr(self, 'shown', False):
+            handler.post(self.update_ok_config, remove_existing=True, skip_if_running=True, delay=1)
 
     def update_ok_config(self):
         if self.isMaximized():
@@ -646,42 +656,27 @@ class MainWindow(FluentWindow):
             self.ok_config['window_height'] = geometry.height()
         logger.info(f'Window geometry updated in ok_config {self.ok_config}')
 
+    # --- executor events ------------------------------------------------------
+
     def starting_emulator(self, done, error, seconds_left):
+        # The run bar shows launch progress; failures open the connection settings.
         if error:
-            self.switchTo(self.start_tab)
             alert_error(error, True)
-        if done:
-            if self.emulator_starting_dialog:
-                self.emulator_starting_dialog.close()
-        else:
-            if self.emulator_starting_dialog is None:
-                self.emulator_starting_dialog = StartLoadingDialog(seconds_left,
-                                                                   self)
-            else:
-                self.emulator_starting_dialog.restart_countdown(seconds_left)
-            self.emulator_starting_dialog.show()
+            self.run_bar.open_popover()
 
     def config_validation(self, message):
         title = self.tr('Error')
-        InfoBar.error(
-            title=title,
-            content=message,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=5000,
-            parent=self.window()
-        )
+        show_toast(self, message, title, "danger", duration=5000)
         self.tray.showMessage(title, message)
 
     def show_notification(self, message, title=None, error=False, tray=False, show_tab=None, params=None, images=None):
         from ok import og
-        from ok.ui.qt.util.app import show_info_bar
         translated_message = QCoreApplication.translate("app", message)
         if params:
             translated_message = translated_message.format(**params)
         translated_title = og.app.tr(title) if title else ""
-        show_info_bar(self.window(), translated_message, translated_title, error)
+        show_toast(self.window(), translated_message, translated_title or None, "danger" if error else "neutral",
+                   duration=8000)
         notification_manager = getattr(self, 'notification_manager', None)
         if notification_manager is not None:
             notification_manager.notify_system(
@@ -696,15 +691,15 @@ class MainWindow(FluentWindow):
     def navigate_tab(self, index):
         logger.debug(f'navigate_tab {index}')
         if index == "start":
-            self.switchTo(self.start_tab)
+            self.run_bar.open_popover()
         elif index == "onetime" and self.onetime_tab is not None:
-            self.switchTo(self.onetime_tab)
+            self.switch_to(self.onetime_tab)
         elif index == "trigger" and self.trigger_tab is not None:
-            self.switchTo(self.trigger_tab)
+            self.switch_to(self.trigger_tab)
         elif index == "schedule" and self.schedule_tab is not None:
-            self.switchTo(self.schedule_tab)
+            self.switch_to(self.schedule_tab)
         elif index == "about" and self.about_tab is not None:
-            self.switchTo(self.about_tab)
+            self.switch_to(self.about_tab)
 
     def startup_task_tab(self):
         """Return the first one-time task tab, falling back to triggers."""
@@ -719,35 +714,21 @@ class MainWindow(FluentWindow):
             return next(iter(controller.custom_tabs.values()))[0]
         return self.trigger_tab
 
-    def executor_paused(self, paused):
-        task_tab = self.startup_task_tab()
-        if not paused and self.stackedWidget.currentIndex() == 0 and task_tab:
-            self.switchTo(task_tab)
-        self.show_notification(self.tr("Start Success.") if not paused else self.tr("Pause Success."), tray=False)
-
     def executor_exclusive_changed(self, owner):
-        if self.exclusive_bar is not None:
+        if self.exclusive_toast is not None:
             try:
-                self.exclusive_bar.close()
+                self.exclusive_toast.close()
             except RuntimeError:
                 # Already deleted by Qt.
                 pass
-            self.exclusive_bar = None
+            self.exclusive_toast = None
         if owner is None:
             return
-        bar = InfoBar.warning(
-            title=self.tr('Remote Control'),
-            content=self.tr('{owner} is controlling the app. Other tasks are stopped.').format(owner=owner),
-            orient=Qt.Horizontal,
-            isClosable=False,
-            position=InfoBarPosition.TOP,
-            duration=-1,
-            parent=self
-        )
-        disconnect_button = PushButton(self.tr('Disconnect'), bar)
-        disconnect_button.clicked.connect(lambda: self.executor.release_exclusive(owner))
-        bar.addWidget(disconnect_button)
-        self.exclusive_bar = bar
+        self.exclusive_toast = show_toast(
+            self,
+            self.tr('{owner} is controlling the app. Other tasks are stopped.').format(owner=owner),
+            self.tr('Remote Control'), "warning", duration=0,
+            action=(self.tr('Disconnect'), lambda: self.executor.release_exclusive(owner)))
 
     def _check_okscript_args(self):
         """Check sys.argv for .okscript files and import them."""
@@ -764,10 +745,8 @@ class MainWindow(FluentWindow):
                         if success:
                             from ok import og
                             og.task_manager.load_import_folder(import_folder)
-                            from ok.ui.qt.util.app import show_info_bar
-                            show_info_bar(self.window(), message, title=self.tr('Success'))
+                            show_toast(self, message, self.tr('Success'), "success")
                         else:
-                            from ok.ui.qt.util.Alert import alert_error
                             alert_error(self.tr("Import failed: {error}").format(error=message))
                 except Exception as e:
                     logger.error(f'Error importing .okscript file: {e}')

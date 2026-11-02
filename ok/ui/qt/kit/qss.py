@@ -246,6 +246,53 @@ Toast {{
     border: 1px solid {border_strong};
     border-radius: 10px;
 }}
+
+QWidget#kitTitleBar {{
+    background: {sidebar};
+    border-bottom: 1px solid {separator};
+}}
+QLabel#titleBadge {{
+    color: {text_secondary}; border: 1px solid {border_strong}; border-radius: 5px; padding: 0 7px;
+}}
+QFrame#navSeparator {{ background: {separator}; }}
+NavItem {{
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+}}
+NavItem:hover {{ background: {control_hover}; }}
+NavItem:checked {{ background: {accent_soft}; border-color: {accent_line_nav}; }}
+NavItem QLabel#navText {{ color: {text_nav}; font-size: 13.5px; }}
+NavItem QLabel#navText[selected="true"] {{ color: {text}; font-weight: 600; }}
+NavItem QLabel#navDot {{ background: {accent}; border-radius: 3px; }}
+Popover {{
+    background: {surface_alt};
+    border: 1px solid {border_strong};
+    border-radius: 14px;
+}}
+OptionCard {{
+    background: transparent;
+    border: 1px solid {border};
+    border-radius: 9px;
+}}
+OptionCard:hover {{ border-color: {border_strong}; }}
+OptionCard[selected="true"] {{ background: {accent_soft_weak}; border-color: {accent_line}; }}
+RunBar {{
+    background: {surface};
+    border: 1px solid {border};
+    border-radius: 12px;
+}}
+ConnectionPill {{
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 9px;
+}}
+ConnectionPill:hover {{ background: {control_hover}; }}
+ConnectionPill[open="true"] {{ background: {control_hover}; border-color: {border_strong}; }}
+QLabel[role="chip"] {{
+    font-size: 11.5px; color: {text_secondary}; background: {control}; border: 1px solid {border_strong};
+    border-radius: 6px; padding: 1px 8px;
+}}
 DialogPanel {{
     background: {surface_alt};
     border: 1px solid {border_strong};
@@ -275,6 +322,9 @@ def build_stylesheet(manager) -> str:
         accent_soft_strong=rgba(accent, 0.18),
         accent_line=rgba(accent, 0.6),
         accent_line_soft=rgba(accent, 0.55),
+        accent_line_nav=rgba(accent, 0.35),
+        accent_soft_weak=rgba(accent, 0.1),
+        text_nav=tokens["text"] if not dark else "#CFCFDA",
         accent_count=rgba(accent, 0.45 if dark else 0.9),
         success_soft=rgba(success, 0.1),
         success_line=rgba(success, 0.3),

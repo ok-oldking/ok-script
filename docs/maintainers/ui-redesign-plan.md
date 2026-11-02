@@ -37,9 +37,10 @@ Principles taken from current desktop design practice (Windows 11 / Fluent 2, ma
 7. **Grouped, quiet navigation.** Sections: *Run* (Tasks, Schedule), *Game* (app-provided config tabs), *Develop* (debug only), *App* (Settings, About). No Capture/Home page; Tasks is the start page. Collapses to an icon rail. Window title shows the current page.
 8. **App-provided icons.** Tasks, task groups and custom tabs take an optional `icon` that is a path to an SVG or PNG in the app (`icons/daily.svg`). SVGs are rendered crisp at any DPI; PNGs are scaled. Without one, the row shows a neutral monogram tile. The framework's own chrome uses a small bundled SVG set (no Fluent icons).
 9. **Neutral surfaces, restrained accent.** Graphite/white surface ramp with 3 elevation levels, 1px hairline borders, 8px radius, accent used for focus, selection and the single primary action. Accent still follows the system accent but is desaturated for surfaces.
-10. **Density and alignment.** 4px grid, 36px control height, fixed right-aligned control column (240px) in settings rows, descriptions max 60ch.
-11. **Feedback where you look.** Toasts bottom-right above the run bar; empty states with a one-line explanation and an action; inline validation.
-12. **Keyboard.** `F11` (configurable) starts, pauses and resumes the executor only.
+10. **One window size.** The default window is 1440×820 and the minimum equals the default, so the layout always looks the same; it fits a 1600×900 screen with a taskbar. Saved or app-configured sizes are clamped to the screen's available area.
+11. **Density and alignment.** 4px grid, 36px control height, fixed right-aligned control column (240px) in settings rows, descriptions max 60ch.
+12. **Feedback where you look.** Toasts bottom-right above the run bar; empty states with a one-line explanation and an action; inline validation.
+13. **Keyboard.** `F11` (configurable) starts, pauses and resumes the executor only.
 
 A visual example is on the design canvas (Tasks, Connection popover, run bar states, Settings light theme).
 

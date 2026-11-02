@@ -37,15 +37,16 @@ class Window(QWidget):
         super().__init__()
         self.executor = executor
         self.app = SimpleNamespace(tr=lambda text: text)
-        self.navigationInterface = Mock()
         self.stackedWidget = QStackedWidget(self)
         self.imported_tabs = {}
         self.added = []
-        self.update_navigation_width = Mock()
 
-    def addSubInterface(self, widget, icon, name, **kwargs):
+    def add_page(self, widget, icon, name, section=None, bottom=False):
         self.stackedWidget.addWidget(widget)
         self.added.append((widget, name))
+
+    def remove_page(self, widget):
+        self.stackedWidget.removeWidget(widget)
 
 
 @pytest.fixture

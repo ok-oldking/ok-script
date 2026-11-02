@@ -147,7 +147,7 @@ class TaskCard(ConfigCard):
     def edit_clicked(self):
         from ok import og
         og.main_window.edit_task_tab.load_task(self.task)
-        og.main_window.switchTo(og.main_window.edit_task_tab)
+        og.main_window.switch_to(og.main_window.edit_task_tab)
 
     def show_instructions(self):
         if instructions := getattr(self.task, 'instructions', None):
