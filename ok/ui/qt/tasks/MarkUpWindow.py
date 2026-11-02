@@ -4,16 +4,17 @@ from typing import TypedDict
 from PySide6.QtCore import Qt, QRect, QPoint, Signal, QRectF
 from PySide6.QtGui import (QPainter, QPen, QColor, QPixmap, QMouseEvent,
                            QKeyEvent, QBrush, QFont, QWheelEvent)
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                               QLabel, QSizePolicy, QFormLayout, QApplication)
-from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
-                            LineEdit, MessageBox, BodyLabel, SpinBox,
-                            MessageBoxBase, SubtitleLabel, ToolButton,
-                            isDarkTheme, SplitTitleBar, RoundMenu,
-                            Action)
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLineEdit, QListWidget,
+                               QListWidgetItem, QLabel, QMenu, QSizePolicy, QApplication)
 
+from ok.ui.qt.kit.buttons import Button
+from ok.ui.qt.kit.cards import Card
+from ok.ui.qt.kit.dialogs import Dialog, confirm
+from ok.ui.qt.kit.inputs import NumberBox
+from ok.ui.qt.kit.labels import Label
+from ok.ui.qt.kit.theme import set_style_property, theme
+from ok.ui.qt.kit.window import KitWindow
 from ok.ui.qt.tasks.TemplateTab import (load_coco, save_coco, get_image_entry_for_path)
-from ok.ui.qt.widget.BaseWindow import BaseWindow
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -116,64 +117,53 @@ class Annotation(TypedDict):
     h: float
 
 
-class BBoxDialog(MessageBoxBase):
+class BBoxDialog(Dialog):
     """Dialog for entering/editing bbox category and coordinates."""
 
     def __init__(self, parent, category="", x=0, y=0, w=0, h=0, existing_categories=None,
                  current_image_name="", editing_original_name=""):
-        super().__init__(parent)
+        super().__init__(parent, QApplication.translate("BBoxDialog", "Bounding Box"),
+                         QApplication.translate("BBoxDialog", "Name the feature tasks will look for."), width=440)
         self.existing_categories = existing_categories or {}
         self.current_image_name = current_image_name
         self.editing_original_name = editing_original_name
+        self.titleLabel = self.title_label
+        self.yesButton = self.ok_button
+        self.cancelButton = self.cancel_button
+        panel = self.panel
 
-        self.titleLabel = SubtitleLabel(self.tr("Bounding Box"), self)
-        self.viewLayout.addWidget(self.titleLabel)
-
-        form = QFormLayout()
-
-        # Category row with error label
-        cat_layout = QHBoxLayout()
-        self.category_input = LineEdit(self)
-        self.category_input.setText(category)
+        self.category_input = QLineEdit(category, panel)
         self.category_input.setPlaceholderText(self.tr("Category name"))
         self.category_input.textChanged.connect(self._validate_category)
-        cat_layout.addWidget(self.category_input)
-
-        self.cat_error_label = BodyLabel("")
-        self.cat_error_label.setStyleSheet("color: red; font-size: 11px;")
+        self.cat_error_label = Label("", "caption", panel)
+        set_style_property(self.cat_error_label, "tone", "danger")
         self.cat_error_label.setVisible(False)
-        cat_layout.addWidget(self.cat_error_label)
+        self.body.addWidget(Label(self.tr("Category:"), "strong", panel))
+        self.body.addWidget(self.category_input)
+        self.body.addWidget(self.cat_error_label)
 
-        form.addRow(self.tr("Category:"), cat_layout)
-
-        self.x_input = SpinBox(self)
-        self.x_input.setRange(0, 99999)
-        self.x_input.setValue(int(round(x)))
-        form.addRow("X:", self.x_input)
-
-        self.y_input = SpinBox(self)
-        self.y_input.setRange(0, 99999)
-        self.y_input.setValue(int(round(y)))
-        form.addRow("Y:", self.y_input)
-
-        self.w_input = SpinBox(self)
-        self.w_input.setRange(0, 99999)
-        self.w_input.setValue(int(round(w)))
-        form.addRow(self.tr("Width:"), self.w_input)
-
-        self.h_input = SpinBox(self)
-        self.h_input.setRange(0, 99999)
-        self.h_input.setValue(int(round(h)))
-        form.addRow(self.tr("Height:"), self.h_input)
-
-        self.viewLayout.addLayout(form)
-
-        self.yesButton.setText(self.tr("OK"))
-        self.cancelButton.setText(self.tr("Cancel"))
-        self.widget.setMinimumWidth(380)
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(12)
+        grid.setVerticalSpacing(8)
+        self.x_input = NumberBox(int(round(x)), 0, 99999, parent=panel)
+        self.y_input = NumberBox(int(round(y)), 0, 99999, parent=panel)
+        self.w_input = NumberBox(int(round(w)), 0, 99999, parent=panel)
+        self.h_input = NumberBox(int(round(h)), 0, 99999, parent=panel)
+        for index, (label, box) in enumerate((("X", self.x_input), ("Y", self.y_input),
+                                              (self.tr("Width:").rstrip(":："), self.w_input),
+                                              (self.tr("Height:").rstrip(":："), self.h_input))):
+            grid.addWidget(Label(label, "secondary", panel), (index // 2) * 2, index % 2)
+            grid.addWidget(box, (index // 2) * 2 + 1, index % 2)
+        self.body.addSpacing(4)
+        self.body.addLayout(grid)
 
         self.category_input.setFocus()
         self._validate_category(category)
+
+    def open(self):
+        super().open()
+        self.category_input.setFocus()
+        self.category_input.selectAll()
 
     def _validate_category(self, text):
         name = text.strip()
@@ -208,6 +198,7 @@ class AnnotationCanvas(QWidget):
     """
 
     annotations_changed = Signal()
+    selection_changed = Signal(int)
 
     MODE_NONE = 0
     MODE_DRAW = 1
@@ -387,10 +378,9 @@ class AnnotationCanvas(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setRenderHint(QPainter.SmoothPixmapTransform)
 
-        # Fill background
-        dark = isDarkTheme()
-        bg = QColor(30, 30, 30) if dark else QColor(245, 245, 245)
-        painter.fillRect(self.rect(), bg)
+        painter.fillRect(self.rect(), theme.color("sidebar"))
+        selected_color = theme.color("accent")
+        hover_color = theme.color("warning")
 
         if self.pixmap and not self.pixmap.isNull():
             # Draw scaled image centered
@@ -405,11 +395,11 @@ class AnnotationCanvas(QWidget):
             is_hovered = (i == self.hovered_ann_index)
 
             if is_selected:
-                pen_color = QColor(0, 120, 212)
-                fill = QColor(0, 120, 212, 40)
+                pen_color = selected_color
+                fill = QColor(selected_color.red(), selected_color.green(), selected_color.blue(), 50)
             elif is_hovered:
-                pen_color = QColor(255, 165, 0)
-                fill = QColor(255, 165, 0, 30)
+                pen_color = hover_color
+                fill = QColor(hover_color.red(), hover_color.green(), hover_color.blue(), 30)
             else:
                 if ann.get("category"):
                     category_id = self._category_name_to_id.get(ann["category"])
@@ -495,19 +485,16 @@ class AnnotationCanvas(QWidget):
             if idx >= 0:
                 event.accept()
                 self.selected_ann_index = idx
-                copyAction = Action(
-                    "Copy annotation", triggered=lambda: self.copy_selected()
-                )
-                pasteAction = Action(
-                    "Copy color",
-                    triggered=lambda: QApplication.clipboard().setText(
-                        self._current_color_text
-                    ),
-                )
-                menu = RoundMenu(parent=self)
-                menu.addAction(copyAction)
-                menu.addAction(pasteAction)
-                menu.exec_(self.mapToGlobal(pos))
+                self.selection_changed.emit(idx)
+                self.update()
+                color_text = self._current_color_text
+                menu = QMenu(self)
+                menu.addAction(self.tr("Copy annotation"), self.copy_selected)
+                menu.addAction(self.tr("Copy color"), lambda: QApplication.clipboard().setText(color_text))
+                menu.addSeparator()
+                menu.addAction(self.tr("Modify"), self.modify_selected)
+                menu.addAction(self.tr("Delete"), self.delete_selected)
+                menu.exec(self.mapToGlobal(pos))
                 return
             # Copy current color text to clipboard
             if self._current_color_text:
@@ -554,6 +541,7 @@ class AnnotationCanvas(QWidget):
                         self.pan_start_pos = pos
                         self.pan_start_offset = (self.offset_x, self.offset_y)
                         self.setCursor(Qt.ClosedHandCursor)
+                self.selection_changed.emit(self.selected_ann_index)
                 self.update()
 
         super().mousePressEvent(event)
@@ -672,10 +660,8 @@ class AnnotationCanvas(QWidget):
         if idx >= 0:
             ann = self.annotations[idx]
             cat = ann.get('category', '')
-            w = MessageBox(self.tr('Confirm Delete'),
-                           self.tr("Are you sure you want to delete '{}'?").format(cat),
-                           self.window())
-            if w.exec():
+            if confirm(self, self.tr('Confirm Delete'), self.tr("Are you sure you want to delete '{}'?").format(cat),
+                       ok_text=self.tr("Delete"), danger=True):
                 self.annotations.pop(idx)
                 self.selected_ann_index = -1
                 self.hovered_ann_index = -1
@@ -797,12 +783,15 @@ class AnnotationCanvas(QWidget):
             current_image = os.path.basename(self.markup_window.image_list[self.markup_window.current_index])
 
         # Show dialog for category
-        dialog = BBoxDialog(self.window(), "", x, y, w, h,
+        dialog = BBoxDialog(self, "", x, y, w, h,
                             existing_categories=existing_cats,
                             current_image_name=current_image,
                             editing_original_name="")
-        if dialog.exec():
-            cat, bx, by, bw, bh = dialog.get_values()
+        accepted = dialog.exec()
+        values = dialog.get_values()
+        dialog.deleteLater()
+        if accepted:
+            cat, bx, by, bw, bh = values
             if cat:
                 existing_ids = {a.get('id', 0) for a in self.annotations}
                 new_id = 1
@@ -912,14 +901,17 @@ class AnnotationCanvas(QWidget):
 
         original_name = ann.get('category', '')
 
-        dialog = BBoxDialog(self.window(),
+        dialog = BBoxDialog(self,
                             original_name,
                             ann['x'], ann['y'], ann['w'], ann['h'],
                             existing_categories=existing_cats,
                             current_image_name=current_image,
                             editing_original_name=original_name)
-        if dialog.exec():
-            cat, x, y, w, h = dialog.get_values()
+        accepted = dialog.exec()
+        values = dialog.get_values()
+        dialog.deleteLater()
+        if accepted:
+            cat, x, y, w, h = values
             if cat:
                 ann['category'] = cat
                 ann['x'] = x
@@ -934,16 +926,20 @@ class AnnotationCanvas(QWidget):
             self._edit_annotation(self.selected_ann_index)
 
 
-class MarkUpWindow(BaseWindow):
+class MarkUpWindow(KitWindow):
+    """Draw, move and name feature boxes on template screenshots; saves on every change."""
+
     closed = Signal(list, object)
 
     def __init__(self, image_path, image_list, parent=None):
         super().__init__(parent)
-        self.setTitleBar(SplitTitleBar(self))
-        self.titleBar.raise_()
         self.setWindowTitle(self.tr("Markup Editor"))
-        self.titleBar.setIcon(self.windowIcon())
-        self.setMinimumSize(1600, 900)
+        from ok import og
+        app_icon = getattr(getattr(og, 'app', None), 'icon', None)
+        if app_icon is not None:
+            self.setWindowIcon(app_icon)
+        self.resize(1560, 860)
+        self.setMinimumSize(1200, 720)
 
         self.image_list = image_list
         self.current_index = 0
@@ -953,80 +949,91 @@ class MarkUpWindow(BaseWindow):
 
         self.coco_data = load_coco()
 
-        # Layout directly on self (BaseWindow is FramelessWindow, not QMainWindow)
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(8, 40, 8, 8)  # top=40 for title bar
-        main_layout.setSpacing(8)
-
-        # Toolbar
-        toolbar = QHBoxLayout()
-        toolbar.setSpacing(8)
-
-        self.draw_btn = PrimaryPushButton(FluentIcon.EDIT, self.tr("Draw (R)"))
+        # Toolbar: modes and edits on the left, the pixel readout, then image navigation.
+        self.draw_btn = Button(self.tr("Draw (R)"), "plus")
         self.draw_btn.setCheckable(True)
         self.draw_btn.clicked.connect(self.toggle_draw_mode)
-        toolbar.addWidget(self.draw_btn)
-
-        self.delete_box_btn = PushButton(FluentIcon.DELETE, self.tr("Delete (D)"))
+        self.delete_box_btn = Button(self.tr("Delete (D)"), "trash")
         self.delete_box_btn.setCheckable(True)
         self.delete_box_btn.clicked.connect(self.toggle_delete_mode)
-        toolbar.addWidget(self.delete_box_btn)
-
-        self.modify_btn = PushButton(FluentIcon.SETTING, self.tr("Modify (Double Click)"))
+        self.modify_btn = Button(self.tr("Modify (Double Click)"), "pen", "subtle")
         self.modify_btn.clicked.connect(self.modify_selected)
-        toolbar.addWidget(self.modify_btn)
 
-        # Color swatch + RGB text label (right after modify button)
-        color_layout = QHBoxLayout()
-        color_layout.setSpacing(4)
         self.color_swatch = QLabel()
-        self.color_swatch.setFixedSize(16, 16)
-        self.color_swatch.setStyleSheet(
-            "background-color: transparent; border: 1px solid gray; border-radius: 2px;"
-        )
-        color_layout.addWidget(self.color_swatch)
-        self.color_label = BodyLabel("")
-        color_layout.addWidget(self.color_label)
-        toolbar.addLayout(color_layout)
+        self.color_swatch.setObjectName("colorSwatch")
+        self.color_swatch.setFixedSize(18, 18)
+        self.color_label = Label("", "mono")
+        self.color_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
 
-        toolbar.addStretch(1)
-
-        self.image_name_label = BodyLabel("")
-        self.image_name_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        toolbar.addWidget(self.image_name_label)
-
-        main_layout.addLayout(toolbar)
-
-        # Content area with left/right arrows and image canvas
-        content_layout = QHBoxLayout()
-        content_layout.setSpacing(8)
-
-        # Left arrow - icon-only ToolButton, vertically centered
-        left_wrapper = QVBoxLayout()
-        left_wrapper.addStretch(1)
-        self.left_btn = ToolButton(FluentIcon.LEFT_ARROW, self)
-        self.left_btn.setFixedSize(36, 36)
+        self.left_btn = Button(icon="chevron-left", variant="subtle")
+        self.left_btn.setToolTip(self.tr("Previous image (←)"))
         self.left_btn.clicked.connect(self.prev_image)
-        left_wrapper.addWidget(self.left_btn)
-        left_wrapper.addStretch(1)
-        content_layout.addLayout(left_wrapper)
+        self.right_btn = Button(icon="chevron-right", variant="subtle")
+        self.right_btn.setToolTip(self.tr("Next image (→)"))
+        self.right_btn.clicked.connect(self.next_image)
+        self.image_name_label = Label("", "strong")
+        self.image_name_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.position_label = Label("", "caption")
 
-        # Canvas directly in layout (no scroll area — it scales to fit)
+        toolbar = QHBoxLayout()
+        toolbar.setSpacing(8)
+        toolbar.addWidget(self.draw_btn)
+        toolbar.addWidget(self.delete_box_btn)
+        toolbar.addWidget(self.modify_btn)
+        toolbar.addSpacing(16)
+        toolbar.addWidget(self.color_swatch)
+        toolbar.addWidget(self.color_label, 1)
+        toolbar.addSpacing(16)
+        toolbar.addWidget(self.image_name_label)
+        toolbar.addWidget(self.position_label)
+        toolbar.addWidget(self.left_btn)
+        toolbar.addWidget(self.right_btn)
+
+        # Canvas card and the feature list of the current image.
+        canvas_card = Card()
+        canvas_layout = QVBoxLayout(canvas_card)
+        canvas_layout.setContentsMargins(1, 1, 1, 1)
         self.canvas = AnnotationCanvas(self)
         self.canvas.annotations_changed.connect(self.on_annotations_changed)
-        content_layout.addWidget(self.canvas, 1)
+        self.canvas.selection_changed.connect(self._select_feature_row)
+        canvas_layout.addWidget(self.canvas)
 
-        # Right arrow - icon-only ToolButton, vertically centered
-        right_wrapper = QVBoxLayout()
-        right_wrapper.addStretch(1)
-        self.right_btn = ToolButton(FluentIcon.RIGHT_ARROW, self)
-        self.right_btn.setFixedSize(36, 36)
-        self.right_btn.clicked.connect(self.next_image)
-        right_wrapper.addWidget(self.right_btn)
-        right_wrapper.addStretch(1)
-        content_layout.addLayout(right_wrapper)
+        side = Card()
+        side.setFixedWidth(260)
+        side_layout = QVBoxLayout(side)
+        side_layout.setContentsMargins(12, 12, 12, 12)
+        side_layout.setSpacing(8)
+        side_title = QHBoxLayout()
+        side_title.addWidget(Label(self.tr("Features"), "subtitle"))
+        self.feature_count_label = Label("", "caption")
+        side_title.addWidget(self.feature_count_label)
+        side_title.addStretch(1)
+        side_layout.addLayout(side_title)
+        self.feature_list = QListWidget()
+        self.feature_list.setObjectName("featureList")
+        self.feature_list.currentRowChanged.connect(self._on_feature_row_changed)
+        self.feature_list.itemDoubleClicked.connect(lambda _item: self.modify_selected())
+        side_layout.addWidget(self.feature_list, 1)
+        self.empty_features_label = Label(self.tr("No features yet. Press R and click two corners to draw one."),
+                                          "caption", word_wrap=True)
+        side_layout.addWidget(self.empty_features_label)
 
-        main_layout.addLayout(content_layout, 1)
+        content = QHBoxLayout()
+        content.setSpacing(12)
+        content.addWidget(canvas_card, 1)
+        content.addWidget(side)
+
+        hint = Label(self.tr("Scroll to zoom  ·  Drag empty space to pan  ·  Drag a box to move it, its edges to "
+                             "resize  ·  Right click to copy the color  ·  Changes save automatically"), "caption")
+
+        body_layout = QVBoxLayout(self.body)
+        body_layout.setContentsMargins(16, 8, 16, 12)
+        body_layout.setSpacing(10)
+        body_layout.addLayout(toolbar)
+        body_layout.addLayout(content, 1)
+        body_layout.addWidget(hint)
+        theme.install(self)
+        self.update_color_label("")
 
         self.load_current_image()
         self._update_nav_buttons()
@@ -1049,9 +1056,10 @@ class MarkUpWindow(BaseWindow):
 
         resolution_str = ""
         if self.canvas.pixmap and not self.canvas.pixmap.isNull():
-            resolution_str = f"({self.canvas.pixmap.width()}x{self.canvas.pixmap.height()})"
+            resolution_str = f"  {self.canvas.pixmap.width()}×{self.canvas.pixmap.height()}"
         filename = os.path.basename(image_path)
-        self.image_name_label.setText(f"{filename}{resolution_str}")
+        self.image_name_label.setText(filename)
+        self.position_label.setText(f"{resolution_str}  ·  {self.current_index + 1} / {len(self.image_list)}")
 
         # Reuse the annotation data loaded when the editor opened.
         self.canvas.set_category_cache(self.coco_data)
@@ -1071,7 +1079,31 @@ class MarkUpWindow(BaseWindow):
                         'h': int(round(bbox[3]))
                     })
         self.canvas.set_annotations(annotations)
+        self._refresh_feature_list()
         self._update_nav_buttons()
+
+    # --- feature list -------------------------------------------------------------
+
+    def _refresh_feature_list(self):
+        self.feature_list.blockSignals(True)
+        self.feature_list.clear()
+        for ann in self.canvas.annotations:
+            item = QListWidgetItem(f"{ann.get('category', '')}\n{ann['x']}, {ann['y']}  ·  {ann['w']}×{ann['h']}")
+            self.feature_list.addItem(item)
+        self.feature_list.blockSignals(False)
+        count = len(self.canvas.annotations)
+        self.feature_count_label.setText(str(count) if count else "")
+        self.empty_features_label.setVisible(not count)
+        self._select_feature_row(self.canvas.selected_ann_index)
+
+    def _select_feature_row(self, index):
+        self.feature_list.blockSignals(True)
+        self.feature_list.setCurrentRow(index if 0 <= index < self.feature_list.count() else -1)
+        self.feature_list.blockSignals(False)
+
+    def _on_feature_row_changed(self, row):
+        self.canvas.selected_ann_index = row
+        self.canvas.update()
 
     def _get_image_id(self, image_path):
         image_entry = get_image_entry_for_path(self.coco_data, image_path)
@@ -1100,28 +1132,26 @@ class MarkUpWindow(BaseWindow):
         return new_id
 
     def update_color_label(self, text, color=None):
-        """Update the RGB color label and swatch in the toolbar."""
+        """Update the pixel readout and swatch in the toolbar."""
+        self.color_label.setText(text)
         if color and text:
-            display = f"{text} ({self.tr('Right click to copy color')})"
-            self.color_label.setText(display)
             self.color_swatch.setStyleSheet(
-                f"background-color: rgb({color.red()}, {color.green()}, {color.blue()}); "
-                f"border: 1px solid gray; border-radius: 2px;"
-            )
+                f"background: rgb({color.red()}, {color.green()}, {color.blue()}); border-radius: 4px; "
+                f"border: 1px solid {theme.color('border_strong').name()};")
+            self.color_swatch.setToolTip(self.tr('Right click to copy color'))
         else:
-            self.color_label.setText(text)
             self.color_swatch.setStyleSheet(
-                "background-color: transparent; border: 1px solid gray; border-radius: 2px;"
-            )
+                f"background: transparent; border-radius: 4px; border: 1px dashed {theme.color('border_strong').name()};")
 
     def on_annotations_changed(self):
         """Auto-save annotations whenever they change."""
         self.save_annotations()
+        self._refresh_feature_list()
 
     def save_annotations(self):
         if not self.image_list:
             return
-        
+
         logger.info('save annotations')
 
         image_path = self.image_list[self.current_index]
@@ -1150,7 +1180,6 @@ class MarkUpWindow(BaseWindow):
             if ann['image_id'] != image_id
         ]
 
-        # Find max annotation id
         existing_ann_ids = {ann['id'] for ann in self.coco_data.get('annotations', [])}
         next_ann_id = 1
 
@@ -1180,35 +1209,37 @@ class MarkUpWindow(BaseWindow):
         self.canvas.set_category_cache(self.coco_data)
         self._changed_image_paths.add(image_path)
 
+    # --- modes -------------------------------------------------------------------------
+
+    def _reset_canvas_cursor(self):
+        self.canvas.setCursor(Qt.OpenHandCursor if self.canvas._is_zoomed_beyond_window() else Qt.ArrowCursor)
+
+    def _stop_interactions(self):
+        self.canvas.dragging = False
+        self.canvas.resizing = False
+        self.canvas.panning = False
+        self.canvas.drag_start_pos = None
+        self.canvas.resize_start_pos = None
+        self.canvas.pan_start_pos = None
+
     def end_draw_mode(self):
         """Called after finishing drawing a box to exit draw mode."""
         self.draw_btn.setChecked(False)
         self.canvas.mode = AnnotationCanvas.MODE_NONE
         self.canvas.draw_start = None
         self.canvas.draw_preview = None
-        if self.canvas._is_zoomed_beyond_window():
-            self.canvas.setCursor(Qt.OpenHandCursor)
-        else:
-            self.canvas.setCursor(Qt.ArrowCursor)
+        self._reset_canvas_cursor()
         self.canvas.update()
 
     def toggle_draw_mode(self, checked):
         if checked:
             self.delete_box_btn.setChecked(False)
             self.canvas.mode = AnnotationCanvas.MODE_DRAW
-            self.canvas.dragging = False
-            self.canvas.resizing = False
-            self.canvas.panning = False
-            self.canvas.drag_start_pos = None
-            self.canvas.resize_start_pos = None
-            self.canvas.pan_start_pos = None
+            self._stop_interactions()
             self.canvas.setCursor(Qt.CrossCursor)
         else:
             self.canvas.mode = AnnotationCanvas.MODE_NONE
-            if self.canvas._is_zoomed_beyond_window():
-                self.canvas.setCursor(Qt.OpenHandCursor)
-            else:
-                self.canvas.setCursor(Qt.ArrowCursor)
+            self._reset_canvas_cursor()
         self.canvas.draw_start = None
         self.canvas.draw_preview = None
         self.canvas.update()
@@ -1217,19 +1248,11 @@ class MarkUpWindow(BaseWindow):
         if checked:
             self.draw_btn.setChecked(False)
             self.canvas.mode = AnnotationCanvas.MODE_DELETE
-            self.canvas.dragging = False
-            self.canvas.resizing = False
-            self.canvas.panning = False
-            self.canvas.drag_start_pos = None
-            self.canvas.resize_start_pos = None
-            self.canvas.pan_start_pos = None
+            self._stop_interactions()
             self.canvas.setCursor(Qt.ArrowCursor)
         else:
             self.canvas.mode = AnnotationCanvas.MODE_NONE
-            if self.canvas._is_zoomed_beyond_window():
-                self.canvas.setCursor(Qt.OpenHandCursor)
-            else:
-                self.canvas.setCursor(Qt.ArrowCursor)
+            self._reset_canvas_cursor()
         self.canvas.draw_start = None
         self.canvas.draw_preview = None
         self.canvas.update()

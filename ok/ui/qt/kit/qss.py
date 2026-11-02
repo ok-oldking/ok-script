@@ -294,6 +294,12 @@ ConnectionPill {{
 }}
 ConnectionPill:hover {{ background: {control_hover}; }}
 ConnectionPill[open="true"] {{ background: {control_hover}; border-color: {border_strong}; }}
+Button:checked {{ background: {accent_soft_strong}; border-color: {accent_line}; }}
+Button:checked QLabel#buttonText {{ font-weight: 600; }}
+QListWidget#featureList {{ background: transparent; border: 0; }}
+QListWidget#featureList::item {{ padding: 6px 8px; margin-bottom: 2px; border-radius: 8px; color: {text}; }}
+QListWidget#featureList::item:hover {{ background: {control_hover}; }}
+QListWidget#featureList::item:selected {{ background: {accent_soft_strong}; color: {text}; }}
 QFrame#scheduleRow {{ background: transparent; }}
 QFrame#scheduleRow[first="false"] {{ border-top: 1px solid {separator}; }}
 QTimeEdit {{ padding-left: 10px; }}
