@@ -30,7 +30,7 @@ QLabel[role="section"] {{ color: {text_tertiary}; font-size: 11.5px; font-weight
 QLabel[role="mono"] {{ font-family: {mono}; font-size: 12px; }}
 QLabel[role="kbd"] {{
     font-family: {mono}; font-size: 11px; font-weight: 500; color: {text_secondary};
-    background: {control_hover}; border-radius: 4px; padding: 1px 6px;
+    background: {control_hover}; border-radius: 4px; padding: 0 6px;
 }}
 QLabel:disabled {{ color: {text_disabled}; }}
 

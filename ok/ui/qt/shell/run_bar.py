@@ -40,11 +40,18 @@ def format_elapsed(seconds: float) -> str:
     return f"{hours}:{minutes:02d}:{seconds:02d}" if hours else f"{minutes:02d}:{seconds:02d}"
 
 
+def game_display_name(config) -> str:
+    """The game's name from the ``game_name`` config, or a generic "Game"."""
+
+    return (config or {}).get('game_name') or _t("RunBar", "Game")
+
+
 @dataclass
 class RunState:
     """What the right side of the run bar shows."""
 
     button: str  # "start", "pause", "cancel" or "disabled"
+    button_text: str = ""
     message: str = ""
     tone: str = "neutral"  # tone of the message text
     task: object = None  # the one-time task being run, if any
@@ -52,31 +59,43 @@ class RunState:
     starting: bool = False
 
 
-def compute_run_state(executor, device_manager, starting: bool = False) -> RunState:
+def compute_run_state(executor, device_manager, starting: bool = False, game_name: str = "Game",
+                      app_name: str = "") -> RunState:
+    """The run bar state; the button text names what it acts on.
+
+    Stopped with the game closed, Start launches the game, so it reads
+    "Start <game>". Otherwise the button starts or pauses the app.
+    """
+
+    start_app = _t("RunBar", "Start {name}").format(name=app_name).strip()
+    pause_app = _t("RunBar", "Pause {name}").format(name=app_name).strip()
     owner = getattr(executor, 'exclusive_owner', None)
     if owner is not None:
-        return RunState("disabled", _t("MainWindow", "{owner} is controlling the app. Other tasks are stopped.")
+        return RunState("disabled", start_app,
+                        _t("MainWindow", "{owner} is controlling the app. Other tasks are stopped.")
                         .format(owner=owner), "warning")
     if starting:
-        return RunState("cancel", _t("RunBar", "Launching game"), starting=True)
+        return RunState("cancel", _t("RunBar", "Cancel"), _t("RunBar", "Launching {name}").format(name=game_name),
+                        starting=True)
     if executor.paused:
         device = device_manager.get_preferred_device() if device_manager else None
-        if device and not device.get('connected') and device.get('full_path'):
-            return RunState("start", _t("RunBar", "Start will launch the game"))
-        return RunState("start", _t("RunBar", "Stopped"))
+        if device is not None and not device.get('connected'):
+            return RunState("start", _t("RunBar", "Start {name}").format(name=game_name))
+        return RunState("start", start_app)
     if not executor.connected():
-        return RunState("pause", _t("StartCard", "Game Window Disconnected"), "danger")
+        return RunState("pause", pause_app, _t("StartCard", "Game Window Disconnected"), "danger")
     task = executor.current_task
     if task is not None and task in executor.onetime_tasks and task.enabled:
         if not executor.can_capture():
-            return RunState("pause", _t("StartCard", "Paused: PC Game Window Must Be in Front!"), "danger")
+            return RunState("pause", pause_app, _t("StartCard", "Paused: PC Game Window Must Be in Front!"), "danger")
         queued = len([t for t in executor.onetime_task_queue if t is not task and t.enabled])
-        return RunState("pause", task=task, queued=queued)
+        return RunState("pause", pause_app, task=task, queued=queued)
     if count := executor.active_trigger_task_count():
         if not executor.can_capture():
-            return RunState("pause", _t("StartCard", "Paused: PC Game Window Must Be in Front!"), "danger")
-        return RunState("pause", f'{_t("StartCard", "Running")}: {count} {_t("StartCard", "Trigger Tasks")}')
-    return RunState("pause", _t("StartCard", "Waiting for task to be enabled"))
+            return RunState("pause", pause_app, _t("StartCard", "Paused: PC Game Window Must Be in Front!"), "danger")
+        return RunState("pause", pause_app,
+                        f'{_t("StartCard", "Running")}: {count} {_t("StartCard", "Trigger Tasks")}')
+    return RunState("pause", pause_app, _t("StartCard", "Waiting for task to be enabled"))
 
 
 class ConnectionPill(QPushButton):
@@ -210,9 +229,15 @@ class RunBar(QFrame):
         hotkey = self.basic_options.get('Start/Stop')
         return hotkey if hotkey and hotkey != 'None' else ""
 
+    def _compute_state(self) -> RunState:
+        from ok import og
+        config = og.config or {}
+        return compute_run_state(og.executor, og.device_manager, self._starting, game_display_name(config),
+                                 config.get('gui_title') or "")
+
     def refresh(self) -> None:
         from ok import og
-        state = compute_run_state(og.executor, og.device_manager, self._starting)
+        state = self._compute_state()
         self._state = state
         self.connection_pill.update_from(og.device_manager)
 
@@ -237,16 +262,14 @@ class RunBar(QFrame):
 
         button = self.executor_button
         button.setEnabled(state.button != "disabled")
+        button.setText(state.button_text)
         if state.button == "start" or state.button == "disabled":
-            button.setText(_t("StartCard", "Start"))
             button.set_icon("power")
             button.set_variant("tonal")
         elif state.button == "pause":
-            button.setText(_t("StartCard", "Pause"))
             button.set_icon("pause")
             button.set_variant("secondary")
         else:
-            button.setText(_t("RunBar", "Cancel"))
             button.set_icon("x")
             button.set_variant("secondary")
         button.set_hint(self.hotkey() if state.button != "cancel" else "")
@@ -281,7 +304,7 @@ class RunBar(QFrame):
 
     def toggle_executor(self) -> None:
         from ok import og
-        state = self._state or compute_run_state(og.executor, og.device_manager, self._starting)
+        state = self._state or self._compute_state()
         if state.button == "disabled":
             return
         if state.button == "cancel":

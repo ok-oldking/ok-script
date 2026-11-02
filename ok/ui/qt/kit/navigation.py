@@ -11,6 +11,9 @@ EXPANDED_WIDTH = 216
 COMPACT_WIDTH = 60
 ICON_TEXT_SPACING = 8
 COLLAPSE_DURATION = 180
+SIDEBAR_PADDING = 10
+# Centers the 18px icon in a COMPACT_WIDTH rail, so the icon never moves.
+ICON_LEFT = (COMPACT_WIDTH - 2 * SIDEBAR_PADDING - 18) // 2
 
 
 class NavItem(QPushButton):
@@ -37,11 +40,14 @@ class NavItem(QPushButton):
         for label in (self.icon_label, self.text_label, self.dot):
             label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
+        # Fixed margins and a trailing spacer keep the icon in place while the
+        # sidebar width animates and the label is hidden.
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 0, 12, 0)
+        layout.setContentsMargins(ICON_LEFT, 0, 12, 0)
         layout.setSpacing(ICON_TEXT_SPACING)
         layout.addWidget(self.icon_label)
         layout.addWidget(self.text_label, 1)
+        layout.addStretch(0)
         layout.addWidget(self.dot)
 
         self.toggled.connect(self._on_toggled)
@@ -64,7 +70,6 @@ class NavItem(QPushButton):
 
     def set_compact(self, compact: bool) -> None:
         self.text_label.setVisible(not compact)
-        self.layout().setContentsMargins(9 if compact else 12, 0, 9 if compact else 12, 0)
 
     def _on_toggled(self, checked: bool) -> None:
         set_style_property(self.text_label, "selected", checked)
@@ -127,7 +132,7 @@ class NavigationView(QWidget):
         self.collapse_button.clicked.connect(lambda: self.set_compact(not self._compact))
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 12, 10, 10)
+        layout.setContentsMargins(SIDEBAR_PADDING, 12, SIDEBAR_PADDING, 10)
         layout.setSpacing(6)
         layout.addWidget(scroll, 1)
         layout.addWidget(separator)

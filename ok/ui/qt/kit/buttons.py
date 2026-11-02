@@ -39,6 +39,9 @@ class Button(QPushButton):
         self._text_label.setObjectName("buttonText")
         self._hint_label = QLabel(self)
         self._hint_label.setProperty("role", "kbd")
+        # A fixed box with centered text; padding alone sits the monospace glyphs high.
+        self._hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._hint_label.setFixedHeight(20 if size == "normal" else 18)
         for label in (self._icon_label, self._text_label, self._hint_label):
             label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 

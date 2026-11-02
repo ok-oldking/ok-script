@@ -38,20 +38,37 @@ def make_device_manager(device=None, capture=None, interaction=None, methods=Non
 
 
 class TestRunState(unittest.TestCase):
-    def test_stopped_offers_start(self):
-        state = compute_run_state(make_executor(), make_device_manager({"device": "windows", "connected": True}))
+    def test_stopped_with_running_game_starts_the_app(self):
+        state = compute_run_state(make_executor(), make_device_manager({"device": "windows", "connected": True}),
+                                  game_name="Wuthering Waves", app_name="OK-WW")
         self.assertEqual("start", state.button)
+        self.assertEqual("Start OK-WW", state.button_text)
+        self.assertEqual("", state.message)
 
-    def test_stopped_with_closed_game_says_start_launches_it(self):
+    def test_stopped_with_closed_game_starts_the_game(self):
         device = {"device": "windows", "connected": False, "full_path": "C:/game.exe"}
-        state = compute_run_state(make_executor(), make_device_manager(device))
+        state = compute_run_state(make_executor(), make_device_manager(device), game_name="Wuthering Waves",
+                                  app_name="OK-WW")
         self.assertEqual("start", state.button)
-        self.assertEqual("Start will launch the game", state.message)
+        self.assertEqual("Start Wuthering Waves", state.button_text)
+        self.assertEqual("", state.message)
+
+    def test_running_pauses_the_app(self):
+        executor = make_executor(paused=False, active_trigger_task_count=lambda: 1)
+        state = compute_run_state(executor, make_device_manager(), app_name="OK-WW")
+        self.assertEqual("Pause OK-WW", state.button_text)
 
     def test_starting_offers_cancel(self):
-        state = compute_run_state(make_executor(), make_device_manager(), starting=True)
+        state = compute_run_state(make_executor(), make_device_manager(), starting=True, game_name="Wuthering Waves")
         self.assertEqual("cancel", state.button)
+        self.assertEqual("Launching Wuthering Waves", state.message)
         self.assertTrue(state.starting)
+
+    def test_game_name_comes_from_config_with_a_generic_fallback(self):
+        from ok.ui.qt.shell.run_bar import game_display_name
+        self.assertEqual("Wuthering Waves", game_display_name({"game_name": "Wuthering Waves"}))
+        self.assertEqual("Game", game_display_name({}))
+        self.assertEqual("Game", game_display_name(None))
 
     def test_exclusive_owner_disables_the_button(self):
         state = compute_run_state(make_executor(exclusive_owner="MCP"), make_device_manager())
@@ -202,6 +219,21 @@ class TestNavigationView(ShellWidgetTestCase):
         self.assertTrue(nav.item("about").dot.isVisibleTo(nav.item("about")))
         nav.remove_item("tasks")
         self.assertFalse(nav.has_item("tasks"))
+
+
+class TestNavItemIcon(ShellWidgetTestCase):
+    def test_icon_stays_put_when_the_label_hides(self):
+        from ok.ui.qt.kit.navigation import COMPACT_WIDTH, SIDEBAR_PADDING
+        nav = NavigationView()
+        nav.add_item("tasks", "Tasks", "tasks", "run")
+        self.show(nav)
+        item = nav.item("tasks")
+        expanded_x = item.icon_label.x()
+        nav.set_compact(True, animate=False)
+        QApplication.processEvents()
+        self.assertEqual(expanded_x, item.icon_label.x())
+        rail_inner = COMPACT_WIDTH - 2 * SIDEBAR_PADDING
+        self.assertAlmostEqual(rail_inner / 2, item.icon_label.x() + item.icon_label.width() / 2, delta=1)
 
 
 class TestNavigationCollapse(ShellWidgetTestCase):

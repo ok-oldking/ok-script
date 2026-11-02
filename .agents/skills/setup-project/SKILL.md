@@ -66,6 +66,7 @@ ROOT = Path(__file__).resolve().parent
 config = {
     'version': '0.1.0',
     'gui_title': 'Automation Playground',
+    'game_name': 'Target',  # shown as "Start Target" when Start will launch it; defaults to "Game"
     'gui': {'type': 'qt'},
     'debug': False,
     'config_folder': str(ROOT / 'configs'),
