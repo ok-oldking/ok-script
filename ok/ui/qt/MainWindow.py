@@ -208,6 +208,10 @@ class MainWindow(KitWindow):
             self.schedule_tab = ScheduleTaskTab(config=self.config)
             self.add_page(self.schedule_tab, "calendar", self.tr('Schedule'), SECTION_RUN)
 
+        from ok.ui.qt.shell.log_page import LogPage
+        self.log_page = LogPage()
+        self.add_page(self.log_page, "file", self.tr('Log'), SECTION_RUN)
+
         notification_tab = None
         for name, config_obj, option in global_config.get_all_visible_configs():
             if getattr(option, 'show_at_tab', False):
@@ -672,6 +676,8 @@ class MainWindow(KitWindow):
             self.tasks_page.set_filter(index)
         elif index == "schedule" and self.schedule_tab is not None:
             self.switch_to(self.schedule_tab)
+        elif index == "log":
+            self.switch_to(self.log_page)
         elif index == "about" and self.about_tab is not None:
             self.switch_to(self.about_tab)
 

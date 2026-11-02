@@ -161,7 +161,7 @@ class ConnectionPopover(Popover):
         folders_button.clicked.connect(lambda: folders_menu.exec(folders_button.mapToGlobal(
             folders_button.rect().bottomLeft())))
         log_button = Button(_t("StartTab", "View Log"), "file", "subtle", "small")
-        log_button.clicked.connect(diagnostics.open_log_window)
+        log_button.clicked.connect(self._view_log)
         ocr_button = Button("OCR", "text", "subtle", "small")
         ocr_button.clicked.connect(diagnostics.ocr_log)
         tools = QHBoxLayout()
@@ -273,6 +273,11 @@ class ConnectionPopover(Popover):
         if index < len(self._interaction_names) and self._interaction_names[index]:
             og.device_manager.set_interaction(self._interaction_names[index])
         self.changed.emit()
+
+    def _view_log(self) -> None:
+        from ok.ui.qt.Communicate import communicate
+        self.hide()
+        communicate.tab.emit("log")
 
     def _on_boxes_toggled(self, checked: bool) -> None:
         from ok import og

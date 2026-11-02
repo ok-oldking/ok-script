@@ -291,6 +291,14 @@ ConnectionPill {{
 }}
 ConnectionPill:hover {{ background: {control_hover}; }}
 ConnectionPill[open="true"] {{ background: {control_hover}; border-color: {border_strong}; }}
+QPlainTextEdit#logView {{
+    background: {surface};
+    border: 1px solid {border};
+    border-radius: 10px;
+    padding: 8px 4px 8px 10px;
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 13px;
+}}
 AnchorItem {{
     background: transparent;
     border: 0;

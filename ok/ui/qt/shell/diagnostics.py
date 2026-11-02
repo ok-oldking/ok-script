@@ -100,22 +100,3 @@ def capture_screenshot(done=None) -> None:
                 done()
 
     threading.Thread(target=run, name="Screenshot", daemon=True).start()
-
-
-_log_window = None
-
-
-def open_log_window() -> None:
-    global _log_window
-    from ok.ui.qt.start.LogWindow import LogWindow
-    if _log_window is None:
-        _log_window = LogWindow()
-
-        def forget(_obj=None):
-            global _log_window
-            _log_window = None
-
-        _log_window.destroyed.connect(forget)
-    _log_window.show()
-    _log_window.raise_()
-    _log_window.activateWindow()
