@@ -29,7 +29,7 @@ class SettingRow(QWidget):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setProperty("first", True)
-        self.title_label = Label(title, "strong")
+        self.title_label = Label(title, "strong", word_wrap=True)
         self.description_label = Label(description or "", "secondary", word_wrap=True)
         self.description_label.setVisible(bool(description))
         self.description_label.setMaximumWidth(560)
@@ -44,11 +44,11 @@ class SettingRow(QWidget):
         self._control_box.setContentsMargins(0, 0, 0, 0)
         self._control_box.addStretch(1)
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(18 + (SUB_ROW_INDENT if indent else 0), 14, 18, 14)
-        layout.setSpacing(24)
-        layout.addLayout(text, 1)
-        layout.addLayout(self._control_box)
+        self._row_layout = QHBoxLayout(self)
+        self._row_layout.setSpacing(24)
+        self._row_layout.addLayout(text, 1)
+        self._row_layout.addLayout(self._control_box)
+        self.set_indent(indent)
         self._control_width = control_width
         self.control = None
         if control is not None:
@@ -67,6 +67,11 @@ class SettingRow(QWidget):
 
     def set_first(self, first: bool) -> None:
         set_style_property(self, "first", first)
+
+    def set_indent(self, indent: bool) -> None:
+        """Indent a row that depends on the row above it."""
+
+        self._row_layout.setContentsMargins(18 + (SUB_ROW_INDENT if indent else 0), 14, 18, 14)
 
 
 class SettingGroup(QWidget):

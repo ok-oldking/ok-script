@@ -96,20 +96,26 @@ class ConfigContentMixin:
 
         adding_keys.remove(key)
 
+    def _create_config_widget(self, key, value):
+        return config_widget(self.config_type, self.config_description, self.config, key, value, self.task)
+
+    def _mark_sub_config(self, widget):
+        layout = widget.layout
+        margins = layout.contentsMargins()
+        layout.setContentsMargins(
+            margins.left() + DesignToken.SUBCONFIG_INDENT,
+            DesignToken.SUBCONFIG_TOP_PADDING,
+            margins.right(), margins.bottom())
+        widget.setMinimumHeight(DesignToken.SUBCONFIG_MIN_HEIGHT)
+        widget.setProperty('subConfig', True)
+
     def __addConfig(self, key: str, value):
-        widget = config_widget(self.config_type, self.config_description, self.config, key, value, self.task)
+        widget = self._create_config_widget(key, value)
         self.config_widgets.append(widget)
         self.config_widget_by_key[key] = widget
         self.config_keys.append(key)
         if self.__is_sub_config_key(key):
-            layout = widget.layout
-            margins = layout.contentsMargins()
-            layout.setContentsMargins(
-                margins.left() + DesignToken.SUBCONFIG_INDENT,
-                DesignToken.SUBCONFIG_TOP_PADDING,
-                margins.right(), margins.bottom())
-            widget.setMinimumHeight(DesignToken.SUBCONFIG_MIN_HEIGHT)
-            widget.setProperty('subConfig', True)
+            self._mark_sub_config(widget)
         self.viewLayout.addWidget(widget)
 
     def __is_button_config(self, the_type):
@@ -127,6 +133,11 @@ class ConfigContentMixin:
 
         for key in self.sub_configs_rules:
             widget = self.config_widget_by_key.get(key)
+            # Kit editors announce every edit through one signal.
+            value_changed = getattr(widget, 'value_changed', None)
+            if value_changed is not None and hasattr(value_changed, 'connect'):
+                value_changed.connect(self.__apply_sub_config_visibility)
+                continue
             combo_box = getattr(widget, 'combo_box', None)
             if combo_box is not None:
                 combo_box.currentTextChanged.connect(self.__apply_sub_config_visibility)

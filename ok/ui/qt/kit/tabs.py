@@ -121,6 +121,19 @@ class TabStrip(QFrame):
         line.setFixedSize(1, 18)
         self._insert(line, Qt.AlignmentFlag.AlignVCenter)
 
+    def clear(self) -> None:
+        """Remove every tab and separator."""
+
+        for item in self._items.values():
+            self._group.removeButton(item)
+        self._items.clear()
+        layout = self.layout()
+        for index in reversed(range(layout.count())):
+            widget = layout.itemAt(index).widget()
+            if widget is not None:
+                layout.takeAt(index)
+                widget.deleteLater()
+
     def item(self, key: str) -> TabItem:
         return self._items[key]
 

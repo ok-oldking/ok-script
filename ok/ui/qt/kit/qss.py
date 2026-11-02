@@ -195,6 +195,7 @@ QProgressBar {{
 QProgressBar::chunk {{ background: {accent}; border-radius: 3px; }}
 
 QScrollArea, QScrollArea > QWidget > QWidget#scrollContents {{ background: transparent; border: 0; }}
+QScrollArea > QWidget#qt_scrollarea_viewport {{ background: transparent; }}
 QScrollBar:vertical {{ background: transparent; width: 10px; margin: 2px 0; }}
 QScrollBar:horizontal {{ background: transparent; height: 10px; margin: 0 2px; }}
 QScrollBar::handle:vertical {{ background: {border_strong}; border-radius: 3px; min-height: 32px; margin: 0 2px; }}
@@ -290,6 +291,28 @@ ConnectionPill {{
 }}
 ConnectionPill:hover {{ background: {control_hover}; }}
 ConnectionPill[open="true"] {{ background: {control_hover}; border-color: {border_strong}; }}
+TaskRow {{
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+}}
+TaskRow:hover {{ background: {control_hover}; }}
+TaskRow[selected="true"] {{ background: {accent_soft}; border-color: {accent_line_soft}; }}
+QLabel#taskTile {{
+    background: {control_hover};
+    border-radius: 9px;
+    color: {text_secondary};
+    font-size: 12px;
+    font-weight: 600;
+}}
+QPushButton#sectionHeader {{
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid {separator};
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}}
+QPushButton#sectionHeader:hover {{ background: {control_hover}; }}
 QLabel[role="chip"] {{
     font-size: 11.5px; color: {text_secondary}; background: {control}; border: 1px solid {border_strong};
     border-radius: 6px; padding: 1px 8px;

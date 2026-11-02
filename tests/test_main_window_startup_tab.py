@@ -32,51 +32,29 @@ class TestMainWindowStartupTab(unittest.TestCase):
 
         timer.stop.assert_called_once_with()
 
-    def test_prefers_default_onetime_tab(self):
-        onetime_tab = object()
-        window = SimpleNamespace(
-            onetime_tab=onetime_tab,
-            grouped_task_tabs=[object()],
-            imported_tabs={"tasks.okscript": object()},
-            trigger_tab=object(),
-        )
+    def test_prefers_the_tasks_page(self):
+        tasks_page = object()
+        window = SimpleNamespace(tasks_page=tasks_page, imported_tabs={"tasks.okscript": object()})
 
-        self.assertIs(onetime_tab, MainWindow.startup_task_tab(window))
+        self.assertIs(tasks_page, MainWindow.startup_task_tab(window))
 
-    def test_prefers_onetime_tabs_over_trigger_tab(self):
-        trigger_tab = object()
-        grouped_tab = object()
-        window = SimpleNamespace(
-            onetime_tab=None,
-            grouped_task_tabs=[grouped_tab],
-            imported_tabs={},
-            trigger_tab=trigger_tab,
-        )
-
-        self.assertIs(grouped_tab, MainWindow.startup_task_tab(window))
-
-    def test_uses_imported_onetime_tab_before_trigger_tab(self):
-        trigger_tab = object()
+    def test_uses_imported_task_tab_without_tasks_page(self):
         imported_tab = object()
-        window = SimpleNamespace(
-            onetime_tab=None,
-            grouped_task_tabs=[],
-            imported_tabs={"tasks.okscript": imported_tab},
-            trigger_tab=trigger_tab,
-        )
+        window = SimpleNamespace(tasks_page=None, imported_tabs={"tasks.okscript": imported_tab})
 
         self.assertIs(imported_tab, MainWindow.startup_task_tab(window))
 
-    def test_falls_back_to_trigger_tab_without_onetime_tabs(self):
-        trigger_tab = object()
-        window = SimpleNamespace(
-            onetime_tab=None,
-            grouped_task_tabs=[],
-            imported_tabs={},
-            trigger_tab=trigger_tab,
-        )
+    def test_falls_back_to_imported_custom_page(self):
+        page = object()
+        window = SimpleNamespace(tasks_page=None, imported_tabs={},
+                                 _imported_tab_controller=SimpleNamespace(custom_tabs={"demo": [page]}))
 
-        self.assertIs(trigger_tab, MainWindow.startup_task_tab(window))
+        self.assertIs(page, MainWindow.startup_task_tab(window))
+
+    def test_nothing_to_start_on(self):
+        window = SimpleNamespace(tasks_page=None, imported_tabs={})
+
+        self.assertIsNone(MainWindow.startup_task_tab(window))
 
 
 if __name__ == "__main__":

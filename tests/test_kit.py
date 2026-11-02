@@ -219,6 +219,15 @@ class TestWidgets(KitTestCase):
         QTest.qWait(250)
         self.assertAlmostEqual(1.0, switch.position)
 
+    def test_switch_checked_with_signals_blocked_draws_on(self):
+        switch = Switch()
+        self.host(switch)
+        switch.blockSignals(True)
+        switch.setChecked(True)
+        switch.blockSignals(False)
+        switch.repaint()
+        self.assertEqual(1.0, switch.position)
+
     def test_hidden_switch_jumps_without_animation(self):
         switch = Switch()
         switch.setChecked(True)

@@ -52,6 +52,9 @@ class Switch(QAbstractButton):
         track = QRectF(0.5, 0.5, self.WIDTH - 1, self.HEIGHT - 1)
         radius = track.height() / 2
         enabled = self.isEnabled()
+        # setChecked() with signals blocked skips the animation; draw the real state then.
+        if self._animation.state() != QPropertyAnimation.State.Running:
+            self._position = 1.0 if self.isChecked() else 0.0
         p = self._position
 
         if self.isChecked():

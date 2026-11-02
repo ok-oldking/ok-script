@@ -24,8 +24,7 @@ class _NavigateHarness:
     def __init__(self):
         self.run_bar = SimpleNamespace(open_popover=Mock())
         self.switch_to = Mock()
-        self.onetime_tab = object()
-        self.trigger_tab = None
+        self.tasks_page = SimpleNamespace(set_filter=Mock())
         self.schedule_tab = None
         self.about_tab = None
 
@@ -66,10 +65,11 @@ class TestMainWindowNotifications(unittest.TestCase):
         harness = _NavigateHarness()
 
         harness.navigate_tab("start")
-        harness.navigate_tab("onetime")
+        harness.navigate_tab("trigger")
 
         harness.run_bar.open_popover.assert_called_once_with()
-        harness.switch_to.assert_called_once_with(harness.onetime_tab)
+        harness.switch_to.assert_called_once_with(harness.tasks_page)
+        harness.tasks_page.set_filter.assert_called_once_with("trigger")
 
 
 if __name__ == "__main__":

@@ -546,22 +546,8 @@ class EditTaskTab(QWidget):
             return
         try:
             main_window = og.main_window
-            # Check if task is in onetime_tab
-            if main_window.onetime_tab and main_window.onetime_tab.in_current_list(self.task):
-                main_window.switch_to(main_window.onetime_tab)
-                return
-            # Check grouped tabs
-            for group_tab in main_window.grouped_task_tabs:
-                if group_tab.in_current_list(self.task):
-                    main_window.switch_to(group_tab)
-                    return
-            # Check trigger_tab
-            if main_window.trigger_tab and main_window.trigger_tab.in_current_list(self.task):
-                main_window.switch_to(main_window.trigger_tab)
-                return
-            # Fallback: switch to onetime_tab if available
-            if main_window.onetime_tab:
-                main_window.switch_to(main_window.onetime_tab)
+            if not main_window.show_task(self.task) and main_window.tasks_page is not None:
+                main_window.switch_to(main_window.tasks_page)
         except Exception as e:
             logger.error(f"Error switching tab: {e}")
 

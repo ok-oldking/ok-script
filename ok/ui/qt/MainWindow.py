@@ -104,8 +104,7 @@ class MainWindow(KitWindow):
         self.basic_global_config = global_config.get_config(basic_options)
         self.main_window_config = Config('main_window', {'last_version': 'v0.0.0'})
         self.exit_event = exit_event
-        self.onetime_tab = None
-        self.trigger_tab = None
+        self.tasks_page = None
         self.version = version
         self.do_not_quit = False
         self.config = config
@@ -139,7 +138,6 @@ class MainWindow(KitWindow):
         body.addLayout(pages, 1)
         set_toast_bottom_margin(self, PAGE_MARGIN)
 
-        self.grouped_task_tabs = []
         self.schedule_tab = None
         self.global_config_tabs = []
 
@@ -161,37 +159,15 @@ class MainWindow(KitWindow):
         from ok import og
         self.imported_tabs = {}  # {file_name: tab_object}
 
-        visible_onetime_tasks = [task for task in self.executor.onetime_tasks if getattr(task, 'visible', True)]
-        visible_trigger_tasks = [task for task in self.executor.trigger_tasks if getattr(task, 'visible', True)]
-
-        if visible_onetime_tasks:
-            from ok.ui.qt.tasks.OneTimeTaskTab import OneTimeTaskTab
-            from collections import defaultdict
-
-            groups = defaultdict(list)
-            standalone_tasks = []
-            for task in visible_onetime_tasks:
-                if task.group_name:
-                    if task.group_name not in [imp['script_name'] for imp in og.task_manager.imported_scripts.values()]:
-                        groups[task.group_name].append(task)
-                else:
-                    standalone_tasks.append(task)
-
-            if standalone_tasks:
-                self.onetime_tab = OneTimeTaskTab(is_standalone=True)
-                logger.debug(f"add default onetime_tab len {len(standalone_tasks)}")
-                self.add_page(self.onetime_tab, "tasks", self.tr('Tasks'), SECTION_RUN)
-
-            for group_name, tasks_in_group in groups.items():
-                group_tab = OneTimeTaskTab(is_standalone=False, group_name=group_name)
-                logger.debug(f"add grouped_task_tabs {group_name} len {len(tasks_in_group)}")
-                self.add_page(group_tab, tasks_in_group[0].group_icon, self.app.tr(group_name), SECTION_RUN)
-                self.grouped_task_tabs.append(group_tab)
-
-        if len(visible_trigger_tasks) > 0:
-            from ok.ui.qt.tasks.TriggerTaskTab import TriggerTaskTab
-            self.trigger_tab = TriggerTaskTab()
-            self.add_page(self.trigger_tab, "timer", self.tr('Triggers'), SECTION_RUN)
+        # One page for one-time and trigger tasks; task groups are its filter tabs.
+        from ok.ui.qt.tasks.tasks_page import TasksPage
+        self.tasks_page = TasksPage()
+        if self.tasks_page.has_tasks():
+            self.add_page(self.tasks_page, "tasks", self.tr('Tasks'), SECTION_RUN)
+        else:
+            self.tasks_page.dispose()
+            self.tasks_page.deleteLater()
+            self.tasks_page = None
 
         for tab_obj in after_custom_tabs:
             self.add_page(tab_obj, tab_obj.icon, self.app.tr(tab_obj.name), SECTION_GAME)
@@ -694,27 +670,36 @@ class MainWindow(KitWindow):
         logger.debug(f'navigate_tab {index}')
         if index == "start":
             self.run_bar.open_popover()
-        elif index == "onetime" and self.onetime_tab is not None:
-            self.switch_to(self.onetime_tab)
-        elif index == "trigger" and self.trigger_tab is not None:
-            self.switch_to(self.trigger_tab)
+        elif index in ("onetime", "trigger") and self.tasks_page is not None:
+            self.switch_to(self.tasks_page)
+            self.tasks_page.set_filter(index)
         elif index == "schedule" and self.schedule_tab is not None:
             self.switch_to(self.schedule_tab)
         elif index == "about" and self.about_tab is not None:
             self.switch_to(self.about_tab)
 
     def startup_task_tab(self):
-        """Return the first one-time task tab, falling back to triggers."""
-        if self.onetime_tab is not None:
-            return self.onetime_tab
-        if self.grouped_task_tabs:
-            return self.grouped_task_tabs[0]
+        """Return the Tasks page, falling back to imported plugin pages."""
+        if self.tasks_page is not None:
+            return self.tasks_page
         if self.imported_tabs:
             return next(iter(self.imported_tabs.values()))
         controller = getattr(self, '_imported_tab_controller', None)
         if controller is not None and controller.custom_tabs:
             return next(iter(controller.custom_tabs.values()))[0]
-        return self.trigger_tab
+        return None
+
+    def show_task(self, task):
+        """Open the page that lists ``task`` and select it."""
+        if self.tasks_page is not None and self.tasks_page.has_task(task):
+            self.switch_to(self.tasks_page)
+            self.tasks_page.select_task(task)
+            return True
+        for tab in self.imported_tabs.values():
+            if tab.in_current_list(task):
+                self.switch_to(tab)
+                return True
+        return False
 
     def executor_exclusive_changed(self, owner):
         if self.exclusive_toast is not None:
