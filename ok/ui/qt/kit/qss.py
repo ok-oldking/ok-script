@@ -291,6 +291,15 @@ ConnectionPill {{
 }}
 ConnectionPill:hover {{ background: {control_hover}; }}
 ConnectionPill[open="true"] {{ background: {control_hover}; border-color: {border_strong}; }}
+QListWidget#shotList {{ padding: 6px; }}
+QListWidget#shotList::item {{
+    padding: 4px 10px;
+    margin-bottom: 2px;
+    border-radius: 8px;
+    color: {text};
+}}
+QListWidget#shotList::item:hover {{ background: {control_hover}; }}
+QListWidget#shotList::item:selected {{ background: {accent_soft_strong}; color: {text}; }}
 QPlainTextEdit#logView {{
     background: {surface};
     border: 1px solid {border};

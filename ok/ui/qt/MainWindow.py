@@ -182,10 +182,9 @@ class MainWindow(KitWindow):
             self.template_tab = TemplateTab(config=config)
             self.add_page(self.template_tab, "image", self.tr('Templates'), SECTION_DEVELOP)
 
-        if debug:
-            from ok.ui.qt.debug.DebugTab import DebugTab
-            debug_tab = DebugTab(config, exit_event)
-            self.add_page(debug_tab, "bug", self.tr('Debug'), SECTION_DEVELOP)
+        from ok.ui.qt.debug.diagnosis_page import DiagnosisPage
+        self.diagnosis_page = DiagnosisPage(exit_event, debug=debug)
+        self.add_page(self.diagnosis_page, "pulse", self.tr('Diagnosis'), SECTION_DEVELOP)
 
         self._add_plugin_tab()
 
@@ -678,6 +677,8 @@ class MainWindow(KitWindow):
             self.switch_to(self.schedule_tab)
         elif index == "log":
             self.switch_to(self.log_page)
+        elif index == "diagnosis":
+            self.switch_to(self.diagnosis_page)
         elif index == "about" and self.about_tab is not None:
             self.switch_to(self.about_tab)
 

@@ -113,7 +113,7 @@ class ConnectionPopover(Popover):
     """Target window, capture and interaction settings plus diagnostics."""
 
     changed = Signal()
-    capture_finished = Signal()
+    capture_finished = Signal(object)
 
     def __init__(self, parent: QWidget):
         super().__init__(parent)
@@ -144,7 +144,7 @@ class ConnectionPopover(Popover):
         self.details_label = Label("", "caption")
         self.screenshot_button = Button(_t("StartCard", "Capture"), "camera", size="small")
         self.screenshot_button.clicked.connect(self._capture)
-        self.capture_finished.connect(lambda: self.screenshot_button.setEnabled(True))
+        self.capture_finished.connect(self._on_capture_finished)
 
         self.capture_group = OptionGroup()
         self.capture_group.selected.connect(self._on_capture_picked)
@@ -276,7 +276,7 @@ class ConnectionPopover(Popover):
 
     def _view_log(self) -> None:
         from ok.ui.qt.Communicate import communicate
-        self.hide()
+        self.close_popover()
         communicate.tab.emit("log")
 
     def _on_boxes_toggled(self, checked: bool) -> None:
@@ -286,3 +286,14 @@ class ConnectionPopover(Popover):
     def _capture(self) -> None:
         self.screenshot_button.setEnabled(False)
         diagnostics.capture_screenshot(done=self.capture_finished.emit)
+
+    def _on_capture_finished(self, path) -> None:
+        """Show a new screenshot on the Diagnosis page."""
+        self.screenshot_button.setEnabled(True)
+        page = getattr(self.window(), 'diagnosis_page', None)
+        if not path or page is None:
+            return
+        from ok.ui.qt.Communicate import communicate
+        self.close_popover()
+        communicate.tab.emit("diagnosis")
+        page.select_path(path)

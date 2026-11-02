@@ -84,19 +84,55 @@ def ocr_log() -> None:
     threading.Thread(target=_ocr_log, name="OcrLog", daemon=True).start()
 
 
-def capture_screenshot(done=None) -> None:
-    """Save a screenshot off the GUI thread; capturing can wait for a running task."""
+def screenshot_folder():
+    from ok import og
+    screenshot = getattr(og.ok, 'screenshot', None)
+    return getattr(screenshot, 'screenshot_folder', None)
+
+
+def capture(processor=None):
+    """Save the current frame, with task boxes, and return the original's path or ``None``."""
 
     from ok import og
-    from ok.ui.qt.debug.DebugTab import capture
+    from ok.core.screenshot import screenshot_file_stem
+    from ok.device.capture import CAPTURE_BUSY_WAIT
+    from ok.ui.qt.util.Alert import alert_error
+    capture_method = og.device_manager.capture_method
+    if capture_method is None:
+        alert_error(QCoreApplication.translate('DebugTab', 'No Capture Available or Selected'))
+        return None
+    logger.info(f'capture with {capture_method}')
+    try:
+        frame = capture_method.get_frame(busy_wait=CAPTURE_BUSY_WAIT)
+        if frame is None:
+            alert_error(QCoreApplication.translate('DebugTab', 'Capture returned None'))
+            return None
+        screenshot = og.ok.screenshot
+        return screenshot.generate_screen_shot(frame, screenshot.ui_dict, screenshot.screenshot_folder,
+                                               screenshot_file_stem(type(capture_method).__name__), True, None,
+                                               processor=processor)
+    except Exception as e:
+        logger.error('capture failed', e)
+        alert_error(str(e))
+        return None
+
+
+def capture_screenshot(done=None) -> None:
+    """Save a screenshot off the GUI thread; capturing can wait for a running task.
+
+    ``done`` gets the saved file's path, or ``None``.
+    """
+
+    from ok import og
 
     processor = og.config.get('screenshot_processor')
 
     def run():
+        path = None
         try:
-            capture(processor=processor)
+            path = capture(processor=processor)
         finally:
             if done is not None:
-                done()
+                done(path)
 
     threading.Thread(target=run, name="Screenshot", daemon=True).start()
