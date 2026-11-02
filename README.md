@@ -2,11 +2,11 @@
 
 **简体中文** | [English](README_en.md)
 
-**开发时用 Token，写好的 Python 自动化脚本反复用。**
+**Vibe Coding 自动化框架**
 
-把需求告诉编程代理，通过 MCP 连接 ok-script，让代理观察应用、检查已安装 API、编写并测试 Python 任务。保存成果后，从应用 GUI 或命令行重复运行，无需代理或大模型调用。
+在 Codex、Claude Code 或任何支持 MCP 的编程代理里许个愿，得到一个可部署的自动化程序。
 
-开发可能需要多轮验证，应用变化后也可能需要修复。目标是把 Token 用在脚本开发和维护上；日常执行由本地 Python 完成截图、识别和输入。
+说出你想自动化的事。代理通过 MCP 观察 Windows 应用、游戏或安卓设备，编写 Python 任务，在真实目标上运行并修复失败。ok-script 把完成的任务连同桌面 GUI 打包成可分发的 Windows 安装包。打包后的程序在本地独立完成截图、识别和输入，无需代理保持连接。
 
 ok-script 支持 Windows 应用和游戏、安卓模拟器及 ADB 设备，提供模板匹配、OCR、目标支持时的后台输入、桌面界面和任务打包。
 
@@ -37,7 +37,7 @@ ok-script 支持 Windows 应用和游戏、安卓模拟器及 ADB 设备，提�
 3. **运行**：`run_task` 在真实目标上执行 Python 任务文件。每次尝试先恢复并验证起始状态，再由 `run()` 执行并断言自动化结果。
 4. **检查**：每次尝试写入 `logs/mcp/<run_id>/run.log`、`status.json` 和任务截图。`get_run_status` 报告进度和错误，`stop_task` 用于取消。
 5. **修复**：`list_tasks` 返回已注册任务的源码路径；修改后用 `reload_tasks` 在运行中的进程里替换。无法重置时用 `exit_process` 结束运行时。
-6. **交付**：在项目配置中注册任务，之后通过 GUI 或 `python -m ok run_task` 运行，无需 MCP。
+6. **交付**：在项目配置中注册任务，通过 GUI 或 `python -m ok run_task` 运行，并用 [PyAppify](https://github.com/ok-oldking/pyappify) 打包成 Windows 安装包。
 
 ## 特性
 

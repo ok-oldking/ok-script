@@ -2,11 +2,11 @@
 
 [简体中文](README.md) | **English**
 
-**Spend tokens once to build reusable Python automation.**
+**Vibe Coding Automation Framework**
 
-Describe what you want to a coding agent. Connect it to ok-script through MCP, let it inspect the application and installed APIs, then have it write and test a Python task. Save the result and run it repeatedly from your application's GUI or command line without an agent or LLM calls.
+Make a wish in Codex, Claude Code, or any coding agent with MCP, and get a deployable automation app.
 
-Development can take multiple iterations; changed applications may need later repairs. The goal is to spend tokens on creating and maintaining scripts. Ordinary execution uses local Python capture, recognition, and input.
+Describe what you want automated. Through MCP, the agent observes your Windows application, game, or Android device, writes Python tasks, runs them against the real target, and fixes what fails. ok-script packages the finished tasks with a desktop GUI into a Windows installer you can ship. The packaged app runs on its own with local capture, recognition, and input; no agent stays connected.
 
 ok-script supports Windows applications and games, Android emulators, and ADB devices, with template matching, OCR, background input where supported, a desktop UI, and task packaging.
 
@@ -37,7 +37,7 @@ The agent edits files and reads logs with its own tools. MCP gives it the runnin
 3. **Run** — `run_task` executes a Python task file against the real target. Every attempt restores and verifies the starting state before `run()` performs and asserts the automation.
 4. **Inspect** — each attempt writes `logs/mcp/<run_id>/run.log`, `status.json`, and task screenshots. `get_run_status` reports progress and errors; `stop_task` cancels.
 5. **Repair** — `list_tasks` returns registered task sources; after editing, `reload_tasks` replaces them in the running process. `exit_process` ends a runtime that cannot be reset.
-6. **Ship** — register the task in the project configuration and run it from the GUI or `python -m ok run_task` without MCP.
+6. **Ship** — register the task in the project configuration, run it from the GUI or `python -m ok run_task`, and package the app as a Windows installer with [PyAppify](https://github.com/ok-oldking/pyappify).
 
 ## Features
 

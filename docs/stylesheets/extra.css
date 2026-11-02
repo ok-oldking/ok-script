@@ -1,0 +1,42 @@
+/* Landing page hero */
+.ok-hero {
+  margin: 0 0 2rem;
+  padding: 2.4rem 2rem 2rem;
+  border-radius: 0.6rem;
+  background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, var(--md-accent-fg-color) 100%);
+  color: var(--md-primary-bg-color);
+}
+
+.ok-hero h1 {
+  margin: 0 0 0.8rem;
+  color: inherit;
+  font-weight: 700;
+}
+
+.ok-hero p {
+  max-width: 42rem;
+  font-size: 0.95rem;
+}
+
+.ok-hero .md-button {
+  margin: 0.4rem 0.6rem 0 0;
+  color: var(--md-primary-bg-color);
+  border-color: var(--md-primary-bg-color);
+}
+
+.ok-hero .md-button--primary {
+  background-color: var(--md-primary-bg-color);
+  color: var(--md-primary-fg-color);
+}
+
+.ok-hero .md-button:hover {
+  background-color: var(--md-primary-bg-color);
+  border-color: var(--md-primary-bg-color);
+  color: var(--md-accent-fg-color);
+}
+
+@media screen and (max-width: 44.9375em) {
+  .ok-hero {
+    padding: 1.6rem 1rem 1.2rem;
+  }
+}

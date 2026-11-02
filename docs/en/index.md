@@ -1,36 +1,125 @@
-# ok-script: spend tokens once, reuse the automation
+---
+hide:
+  - navigation
+  - toc
+---
 
-[简体中文](../index.md) · [Project home](https://github.com/ok-oldking/ok-script)
+<div class="ok-hero" markdown>
 
-Use a coding agent to turn a task description into a reusable Python automation script. Connect the agent to ok-script through MCP so it can observe your application, run the script, inspect failures, and verify the result. Keep the finished code and run it whenever you need it.
+# Vibe Coding Automation Framework
 
-**Spend tokens on development; run the resulting Python automation without an LLM.** Development may take several iterations, and later application changes may need another coding session. Ordinary runs of scripts that use local recognition and input do not require model calls or tokens.
+**Make a wish in Codex, Claude Code, or any coding agent with MCP, and get a deployable automation app.**
 
-## Start with MCP
+Through MCP, the agent observes your Windows application, game, or Android device, writes Python tasks, runs them against the real target, and fixes what fails. ok-script packages the finished tasks with a desktop GUI into a Windows installer you can ship. The packaged app runs on its own; no agent stays connected.
 
-1. Open your automation project's folder in a local coding agent that supports MCP and local file/process access.
-2. Follow the [quick start](quick_start.md) to install the runtime and connect its local MCP server.
-3. Describe the target, starting state, actions, and observable success condition.
-4. Let the agent discover skills, inspect the installed APIs, write Python, and test through MCP.
-5. Run the saved task from your application's GUI or command line without keeping the agent connected.
+[Start with MCP](quick_start.md){ .md-button .md-button--primary }
+[Copy agent prompts](agent-prompts.md){ .md-button }
+[简体中文](../index.md){ .md-button }
+
+</div>
+
+## How MCP development works
+
+The agent edits files and reads logs with its own tools. MCP gives it the running application.
+
+<div class="grid cards" markdown>
+
+-   :material-book-open-variant:{ .lg .middle } __1. Learn__
+
+    ---
+
+    `list_skills` and `get_skill` return the development, template, test, and reload workflows bundled with the installed ok-script version. The agent reads exact Python signatures from the installed package.
+
+-   :material-monitor-screenshot:{ .lg .middle } __2. Observe__
+
+    ---
+
+    `screenshot` saves the current frame of the configured window or device, so the agent sees what the task will see.
+
+-   :material-play-circle:{ .lg .middle } __3. Run__
+
+    ---
+
+    `run_task` executes a Python task file against the real target. Every attempt restores and verifies the starting state before `run()` performs and asserts the automation.
+
+-   :material-file-search:{ .lg .middle } __4. Inspect__
+
+    ---
+
+    Each attempt writes `run.log`, `status.json`, and task screenshots under `logs/mcp/<run_id>/`. `get_run_status` reports progress and errors; `stop_task` cancels.
+
+-   :material-wrench:{ .lg .middle } __5. Repair__
+
+    ---
+
+    `list_tasks` returns registered task sources. After editing, `reload_tasks` replaces them in the running process. `exit_process` ends a runtime that cannot be reset.
+
+-   :material-rocket-launch:{ .lg .middle } __6. Ship__
+
+    ---
+
+    Register the task, run it from the GUI or `python -m ok run_task`, and package the app as a Windows installer with [PyAppify](https://github.com/ok-oldking/pyappify). See [packaging and releases](advanced.md).
+
+</div>
 
 ## What to ask the agent
 
-> Connect to this project's ok-script MCP server. Read the development skill and inspect the installed package for the capture, template matching, and input APIs needed for my task. Show the verified signatures and source locations before using them. Then implement a reusable Python task that opens Settings, enables my chosen option, saves it, and verifies that the option remains enabled. Restore and verify the starting screen before every attempt. Use ok-script capture and interaction, not Computer Use tools. Save the task in this project and give me the command to run it without an agent.
+=== "Build a task"
 
-See [agent prompts](agent-prompts.md) for separate API discovery, task development, and maintenance examples.
+    > Connect to this project's ok-script MCP server and read its development skill. Inspect the installed capture, matching, and input APIs and show their exact signatures and source locations. Build a reusable Python task that opens Settings, enables "Show details", saves, and verifies the result. Restore and verify the starting screen before every attempt, test repeated runs, and save the task in the project. Use ok-script APIs and MCP, not Computer Use tools. Give me the exact command to run the finished task without an agent or LLM calls.
+
+=== "Repair a task"
+
+    > Connect to this project's ok-script MCP server and read its reload-tasks skill. Use list_tasks to find the source of the failing task, fix that file, reload its task ID, and wait for the reload to succeed. Restore and verify the starting screen, run the registered implementation repeatedly, and show me the evidence from the run logs and screenshots.
+
+=== "Set up the environment"
+
+    > Install ok-script and set up this project's environment. First read https://raw.githubusercontent.com/ok-oldking/ok-script/master/docs/agent-setup.md and follow its setup skills. Preserve this project's existing dependency constraints.
+
+More examples, including API-only discovery, are in [agent prompts](agent-prompts.md).
+
+## Connect in three steps
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install "ok-script[default]"
+.\.venv\Scripts\python.exe -m ok mcp --config src.config:config
+```
+
+1. Start the runtime with the project's configuration, or enable **Settings > Basic Options > Enable MCP Server** in an existing desktop application.
+2. Read the URL and token from the live `logs/mcp/connections/<pid>-<port>.json` record.
+3. Configure the agent's MCP client for Streamable HTTP with the header `Authorization: Bearer <token>`.
+
+!!! warning "Local developer access"
+    The server listens only on local loopback, but connected agents can run Python with your account's permissions. Keep the token private and use a separate MCP-disabled launcher for everyday use.
 
 ## Guides
 
-| Guide | Purpose |
-| --- | --- |
-| [MCP quick start](quick_start.md) | Set up a project, connect the agent, and run the saved task |
-| [Ask a coding agent](agent-prompts.md) | Copyable prompts for API discovery and reusable tasks |
-| [MCP connection and execution](../mcp.md) | Connection details, skill discovery, task runs, reloads, and diagnostics |
-| [How automation works](intro_to_automation.md) | Understand the Python capture–recognize–act loop |
-| [Interface and developer tools](interface.md) | Run saved tasks and inspect their visual evidence |
-| [Maintain and share tasks](advanced.md) | Templates, regression tests, localization, and packaging |
-| [Imported plugins](plugins.md) | Install and distribute reusable task packages |
-| [Build this documentation](building-site.md) | Preview and validate the site |
+<div class="grid cards" markdown>
+
+-   :material-flag-checkered:{ .lg .middle } __Start MCP development__
+
+    ---
+
+    [MCP quick start](quick_start.md) · [Agent environment setup](../agent-setup.md) · [Ask a coding agent](agent-prompts.md)
+
+-   :material-api:{ .lg .middle } __MCP reference__
+
+    ---
+
+    [Connection and execution](../mcp.md): tools, run states, reloads, diagnostics, and the task file contract. [Template export format](../feature-crops.md).
+
+-   :material-package-variant-closed:{ .lg .middle } __Ship and maintain__
+
+    ---
+
+    [Maintain and share tasks](advanced.md): templates, regression tests, localization, and packaging. [Imported plugins](plugins.md).
+
+-   :material-cog-outline:{ .lg .middle } __Concepts and tools__
+
+    ---
+
+    [How automation works](intro_to_automation.md) · [Interface and developer tools](interface.md) · [Runtime architecture](../architecture.md)
+
+</div>
 
 API discovery happens against the version installed in your project. Ask the agent to read its source and signatures rather than copying a static API reference.

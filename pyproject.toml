@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ok-script"
 dynamic = ["version"]
-description = "Automation with Computer Vision for Python"
+description = "Vibe Coding Automation Framework"
 readme = "README.md"
 license = { file = "LICENSE.txt" }
 requires-python = ">=3.11"
