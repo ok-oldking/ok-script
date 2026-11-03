@@ -111,6 +111,14 @@ def task_icon(task):
     return None if resolved == FALLBACK else resolved
 
 
+def task_category_icon(key, fallback=None):
+    """Resolve app-provided category artwork, keeping the default kit icons."""
+
+    config = getattr(og, 'config', None) or {}
+    source = config.get('task_category_icons', {}).get(key, fallback)
+    return nav_icon(source) if source is not None else None
+
+
 def split_leading_symbol(name: str):
     """Split a leading emoji or symbol off a task name: ``("📅", "Daily Task")``.
 
@@ -176,7 +184,7 @@ def matches_filter(task, key: str, is_trigger: bool) -> bool:
 # --- list -------------------------------------------------------------------------
 
 class TaskIconTile(QLabel):
-    """The task's own icon on a rounded tile, or its monogram."""
+    """The task's own icon or monogram, without a background tile."""
 
     def __init__(self, task, size: int = 36, parent=None):
         super().__init__(parent)
@@ -313,7 +321,7 @@ class TaskSection(Card):
 
     toggled = Signal(bool)
 
-    def __init__(self, title: str, icon_name: str, parent=None):
+    def __init__(self, title: str, icon_name, parent=None):
         super().__init__(parent)
         self.rows = []
         self._expanded = True
@@ -388,7 +396,9 @@ class TaskSection(Card):
 
     def _refresh_icons(self) -> None:
         dpr = self.devicePixelRatioF()
-        self.icon_label.setPixmap(kit_icon(self._icon_name, "text", 1.8).pixmap(QSize(16, 16), dpr))
+        source = nav_icon(self._icon_name)
+        icon = kit_icon(source, "text", 1.8) if isinstance(source, str) else source
+        self.icon_label.setPixmap(icon.pixmap(QSize(16, 16), dpr))
         chevron = "chevron-up" if self._expanded else "chevron-down"
         self.chevron.setPixmap(kit_icon(chevron, "text_tertiary", 2).pixmap(QSize(14, 14), dpr))
 
@@ -673,8 +683,8 @@ class TasksPage(QWidget):
         top.addWidget(self.filter_tabs)
         top.addStretch(1)
 
-        self.onetime_section = TaskSection(_t("TasksPage", "On-demand"), "bolt")
-        self.trigger_section = TaskSection(_t("TasksPage", "Triggers"), "timer")
+        self.onetime_section = TaskSection(_t("TasksPage", "On-demand"), task_category_icon(KIND_ONETIME, "bolt"))
+        self.trigger_section = TaskSection(_t("TasksPage", "Triggers"), task_category_icon(KIND_TRIGGER, "timer"))
         self.onetime_section.toggled.connect(lambda _on: self._layout_sections())
         self.trigger_section.toggled.connect(lambda _on: self._layout_sections())
         self.list_column = QVBoxLayout()
@@ -746,10 +756,13 @@ class TasksPage(QWidget):
 
         both_kinds = bool(self.onetime_tasks) and bool(self.trigger_tasks)
         groups = task_groups(self.onetime_tasks + self.trigger_tasks)
-        self.filter_tabs.add_tab(KIND_ALL, _t("TasksPage", "All"), len(self.onetime_tasks) + len(self.trigger_tasks))
+        self.filter_tabs.add_tab(KIND_ALL, _t("TasksPage", "All"), len(self.onetime_tasks) + len(self.trigger_tasks),
+                                 task_category_icon(KIND_ALL))
         if both_kinds:
-            self.filter_tabs.add_tab(KIND_ONETIME, _t("TasksPage", "On-demand"), len(self.onetime_tasks), "bolt")
-            self.filter_tabs.add_tab(KIND_TRIGGER, _t("TasksPage", "Triggers"), len(self.trigger_tasks), "timer")
+            self.filter_tabs.add_tab(KIND_ONETIME, _t("TasksPage", "On-demand"), len(self.onetime_tasks),
+                                     task_category_icon(KIND_ONETIME, "bolt"))
+            self.filter_tabs.add_tab(KIND_TRIGGER, _t("TasksPage", "Triggers"), len(self.trigger_tasks),
+                                     task_category_icon(KIND_TRIGGER, "timer"))
         if groups:
             self.filter_tabs.add_separator()
             for name, group_icon in groups.items():

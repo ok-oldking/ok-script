@@ -388,6 +388,11 @@ QLabel#taskTile {{
     font-size: 12px;
     font-weight: 600;
 }}
+TaskIconTile#taskTile {{
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+}}
 QPushButton#sectionHeader {{
     background: transparent;
     border: 0;
