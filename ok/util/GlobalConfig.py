@@ -32,6 +32,9 @@ QQ_BOT_NOTIFICATION_ENABLED = 'QQ Bot API Notification'
 QQ_BOT_APP_ID = 'QQ Bot API App ID'
 QQ_BOT_TOKEN = 'QQ Bot API Token'
 QQ_BOT_CHANNEL_ID = 'QQ Bot API Channel ID'
+PUSHPLUS_NOTIFICATION_ENABLED = 'PushPlus Notification'
+PUSHPLUS_TOKEN = 'PushPlus Token'
+PUSHPLUS_TOPIC = 'PushPlus Topic'
 SMTP_NOTIFICATION_ENABLED = 'SMTP Notification'
 SMTP_HOST = 'SMTP Host'
 SMTP_PORT = 'SMTP Port'
@@ -118,6 +121,9 @@ def create_notification_options():
         QQ_BOT_APP_ID: '',
         QQ_BOT_TOKEN: '',
         QQ_BOT_CHANNEL_ID: '',
+        PUSHPLUS_NOTIFICATION_ENABLED: False,
+        PUSHPLUS_TOKEN: '',
+        PUSHPLUS_TOPIC: '',
         SMTP_NOTIFICATION_ENABLED: False,
         SMTP_HOST: '',
         SMTP_PORT: 587,
@@ -143,6 +149,10 @@ def create_notification_options():
         WECOM_NOTIFICATION_ENABLED: {'sub_configs': {True: [WECOM_WEBHOOK]}},
         QQ_BOT_NOTIFICATION_ENABLED: {
             'sub_configs': {True: [QQ_BOT_APP_ID, QQ_BOT_TOKEN, QQ_BOT_CHANNEL_ID]}},
+        PUSHPLUS_NOTIFICATION_ENABLED: {
+            'sub_configs': {True: [PUSHPLUS_TOKEN, PUSHPLUS_TOPIC]}},
+        PUSHPLUS_TOKEN: {'type': 'line_edit'},
+        PUSHPLUS_TOPIC: {'type': 'line_edit'},
         TELEGRAM_BOT_TOKEN: {'type': 'line_edit'},
         TELEGRAM_CHAT_ID: {'type': 'line_edit'},
         WECOM_WEBHOOK: {'type': 'line_edit', 'minimum_width': 480, 'maximum_width': 640},
@@ -177,6 +187,9 @@ def create_notification_options():
         QQ_BOT_APP_ID: 'QQ Bot application ID',
         QQ_BOT_TOKEN: 'QQ Bot application token',
         QQ_BOT_CHANNEL_ID: 'QQ channel ID to receive notifications',
+        PUSHPLUS_NOTIFICATION_ENABLED: 'Send notifications through PushPlus (pushplus.plus)',
+        PUSHPLUS_TOKEN: 'User or message token from pushplus.plus',
+        PUSHPLUS_TOPIC: 'Optional group code; leave empty to send only to yourself',
         SMTP_NOTIFICATION_ENABLED: 'Send notifications through an SMTP email server',
         SMTP_HOST: 'SMTP server address (e.g. smtp.qq.com)',
         SMTP_PORT: 'SMTP server port (587 or 465)',

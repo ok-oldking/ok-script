@@ -1678,6 +1678,30 @@
             <translation>알림을 받을 QQ 채널 ID</translation>
         </message>
         <message>
+            <source>PushPlus Notification</source>
+            <translation>PushPlus 알림</translation>
+        </message>
+        <message>
+            <source>PushPlus Token</source>
+            <translation>PushPlus 토큰</translation>
+        </message>
+        <message>
+            <source>PushPlus Topic</source>
+            <translation>PushPlus 그룹 코드</translation>
+        </message>
+        <message>
+            <source>Send notifications through PushPlus (pushplus.plus)</source>
+            <translation>PushPlus(pushplus.plus)로 알림 보내기</translation>
+        </message>
+        <message>
+            <source>User or message token from pushplus.plus</source>
+            <translation>pushplus.plus의 사용자 토큰 또는 메시지 토큰</translation>
+        </message>
+        <message>
+            <source>Optional group code; leave empty to send only to yourself</source>
+            <translation>선택적 그룹 코드이며 비워 두면 본인에게만 전송합니다</translation>
+        </message>
+        <message>
             <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
             <translation>알림을 받을 위치를 선택하세요. 알림은 항상 앱에 표시되며, 추가로 받을 공급자를 활성화할 수 있습니다.</translation>
         </message>

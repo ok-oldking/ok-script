@@ -165,6 +165,41 @@ class QQBotProvider:
             return False
 
 
+class PushPlusProvider:
+    """PushPlus (pushplus.plus) message push provider."""
+
+    URL = 'https://www.pushplus.plus/send'
+
+    def send(self, token, topic, title, message, images=None):
+        token = str(token or '').strip()
+        topic = str(topic or '').strip()
+        if not token:
+            logger.warning('PushPlus notification is enabled but its token is empty')
+            return False
+        text = str(message or '')
+        if images:
+            suffix = f'[{len(images)} image(s) attached]'
+            text = f'{text}\n{suffix}' if text else suffix
+        payload = {
+            'token': token,
+            'title': str(title or ''),
+            'content': text or str(title or ''),
+            'template': 'txt',
+        }
+        if topic:
+            payload['topic'] = topic
+        try:
+            response = requests.post(self.URL, json=payload, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            if data.get('code') != 200:
+                raise RuntimeError(data.get('msg', response.text))
+            return True
+        except Exception as e:
+            logger.error('PushPlus notification failed', e)
+            return False
+
+
 class SmtpProvider:
     """SMTP email notification provider using Python stdlib."""
 
