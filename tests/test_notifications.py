@@ -10,8 +10,8 @@ import pytest
 import win32con
 
 from ok.notification.providers import (
-    DiscordProvider, QQBotProvider, SmtpProvider, TelegramBotProvider,
-    WeComWebhookProvider)
+    DiscordProvider, PushPlusProvider, QQBotProvider, SmtpProvider,
+    TelegramBotProvider, WeComWebhookProvider)
 from ok.notification.manager import NotificationManager
 from ok.notification.pipeline import NotificationPipeline
 from ok.notification.ppocr import NotificationPPOCR
@@ -22,7 +22,8 @@ from ok.ui.qt.debug.Screenshot import remove_old_files
 from ok.task.task import BaseTask
 from ok.util.handler import ExitEvent
 from ok.util.GlobalConfig import (
-    DISCORD_NOTIFICATION_ENABLED, QQ_NICKNAME, QQ_NOTIFICATION_ENABLED,
+    DISCORD_NOTIFICATION_ENABLED, PUSHPLUS_NOTIFICATION_ENABLED, PUSHPLUS_TOKEN,
+    PUSHPLUS_TOPIC, QQ_NICKNAME, QQ_NOTIFICATION_ENABLED,
     SMTP_NOTIFICATION_ENABLED, SMTP_PORT, SMTP_USE_TLS,
     SYSTEM_NOTIFICATION_ENABLED, WECHAT_NOTIFICATION_ENABLED,
     GlobalConfig, create_notification_options, register_notification_options,
@@ -40,8 +41,13 @@ def test_notification_options_have_safe_provider_defaults():
     assert not option.default_config[QQ_NOTIFICATION_ENABLED]
     assert not option.default_config[WECHAT_NOTIFICATION_ENABLED]
     assert not option.default_config[SMTP_NOTIFICATION_ENABLED]
+    assert not option.default_config[PUSHPLUS_NOTIFICATION_ENABLED]
+    assert option.default_config[PUSHPLUS_TOKEN] == ''
+    assert option.default_config[PUSHPLUS_TOPIC] == ''
     assert option.default_config[SMTP_PORT] == 587
     assert option.default_config[SMTP_USE_TLS]
+    assert option.config_type[PUSHPLUS_NOTIFICATION_ENABLED]['sub_configs'][True] == [
+        PUSHPLUS_TOKEN, PUSHPLUS_TOPIC]
     assert option.config_type[SMTP_NOTIFICATION_ENABLED]['sub_configs'][True]
     assert option.config_type['Discord Webhook']['minimum_width'] == 480
     assert 'open and running' in option.config_description[QQ_NOTIFICATION_ENABLED]
@@ -138,6 +144,41 @@ def test_qq_bot_provider_uses_bot_authorization_header():
     assert post.call_args.args[0] == 'https://api.sgroup.qq.com/channels/channel/messages'
     assert kwargs['headers'] == {'Authorization': 'Bot app.secret'}
     assert kwargs['json']['content'] == 'Title\nMessage\n[1 image(s) attached]'
+
+
+def test_pushplus_provider_posts_text_topic_and_image_note():
+    response = Mock()
+    response.json.return_value = {'code': 200, 'msg': '请求成功'}
+    frame = np.zeros((2, 2, 3), dtype=np.uint8)
+    with patch('ok.notification.providers.requests.post', return_value=response) as post:
+        assert PushPlusProvider().send('token', 'topic', 'Title', 'Message', [frame])
+
+    assert post.call_args.args[0] == 'https://www.pushplus.plus/send'
+    assert post.call_args.kwargs['json'] == {
+        'token': 'token',
+        'title': 'Title',
+        'content': 'Message\n[1 image(s) attached]',
+        'template': 'txt',
+        'topic': 'topic',
+    }
+
+
+def test_pushplus_provider_omits_empty_topic_and_requires_token():
+    response = Mock()
+    response.json.return_value = {'code': 200}
+    with patch('ok.notification.providers.requests.post', return_value=response) as post:
+        assert PushPlusProvider().send('token', '', '', 'Message', [])
+
+    assert 'topic' not in post.call_args.kwargs['json']
+    assert post.call_args.kwargs['json']['content'] == 'Message'
+    assert not PushPlusProvider().send('', '', 'Title', 'Message', [])
+
+
+def test_pushplus_provider_reports_api_error():
+    response = Mock()
+    response.json.return_value = {'code': 400, 'msg': 'bad token'}
+    with patch('ok.notification.providers.requests.post', return_value=response):
+        assert not PushPlusProvider().send('token', '', 'Title', 'Message', [])
 
 
 def test_smtp_provider_send_success():
@@ -256,6 +297,24 @@ def test_messenger_message_starts_with_app_name():
     manager.app_name = 'Test App'
 
     assert manager._messenger_message('Title', 'Message') == 'Test App:\nTitle\nMessage'
+
+
+def test_manager_sends_pushplus_when_enabled():
+    manager = object.__new__(NotificationManager)
+    manager.config = {
+        PUSHPLUS_NOTIFICATION_ENABLED: True,
+        PUSHPLUS_TOKEN: 'token',
+        PUSHPLUS_TOPIC: 'topic',
+    }
+    manager.app_name = 'Test App'
+    manager.pipeline = SimpleNamespace(
+        stop_event=SimpleNamespace(is_set=lambda: False))
+
+    with patch('ok.notification.manager.PushPlusProvider') as provider:
+        manager._send('Title', 'Message', None)
+
+    provider.return_value.send.assert_called_once_with(
+        'token', 'topic', 'Title', 'Message', None)
 
 
 def test_manager_uses_context_menu_images_for_qq():

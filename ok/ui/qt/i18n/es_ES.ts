@@ -1677,6 +1677,30 @@
             <translation>ID del canal de QQ que recibirá las notificaciones</translation>
         </message>
         <message>
+            <source>PushPlus Notification</source>
+            <translation>Notificación de PushPlus</translation>
+        </message>
+        <message>
+            <source>PushPlus Token</source>
+            <translation>Token de PushPlus</translation>
+        </message>
+        <message>
+            <source>PushPlus Topic</source>
+            <translation>Código de grupo de PushPlus</translation>
+        </message>
+        <message>
+            <source>Send notifications through PushPlus (pushplus.plus)</source>
+            <translation>Enviar notificaciones mediante PushPlus (pushplus.plus)</translation>
+        </message>
+        <message>
+            <source>User or message token from pushplus.plus</source>
+            <translation>Token de usuario o de mensaje de pushplus.plus</translation>
+        </message>
+        <message>
+            <source>Optional group code; leave empty to send only to yourself</source>
+            <translation>Código de grupo opcional; déjalo vacío para enviarte solo a ti</translation>
+        </message>
+        <message>
             <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
             <translation>Elige dónde se entregan las notificaciones. Siempre aparecen en la aplicación; activa los proveedores adicionales en los que quieras recibirlas.</translation>
         </message>

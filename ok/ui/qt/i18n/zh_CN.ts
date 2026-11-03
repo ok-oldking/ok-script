@@ -1675,6 +1675,30 @@
             <translation>接收通知的 QQ 频道 ID</translation>
         </message>
         <message>
+            <source>PushPlus Notification</source>
+            <translation>PushPlus 通知</translation>
+        </message>
+        <message>
+            <source>PushPlus Token</source>
+            <translation>PushPlus 令牌</translation>
+        </message>
+        <message>
+            <source>PushPlus Topic</source>
+            <translation>PushPlus 群组编码</translation>
+        </message>
+        <message>
+            <source>Send notifications through PushPlus (pushplus.plus)</source>
+            <translation>通过 PushPlus（pushplus.plus）发送通知</translation>
+        </message>
+        <message>
+            <source>User or message token from pushplus.plus</source>
+            <translation>在 pushplus.plus 获取的用户令牌或消息令牌</translation>
+        </message>
+        <message>
+            <source>Optional group code; leave empty to send only to yourself</source>
+            <translation>可选的群组编码，留空则仅发送给自己</translation>
+        </message>
+        <message>
             <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
             <translation>选择通知的发送位置。通知始终会显示在应用内；请启用您希望额外接收通知的服务。</translation>
         </message>

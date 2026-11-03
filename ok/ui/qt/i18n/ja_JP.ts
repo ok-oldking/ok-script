@@ -1669,6 +1669,30 @@
             <translation>通知先の QQ チャンネル ID</translation>
         </message>
         <message>
+            <source>PushPlus Notification</source>
+            <translation>PushPlus 通知</translation>
+        </message>
+        <message>
+            <source>PushPlus Token</source>
+            <translation>PushPlus トークン</translation>
+        </message>
+        <message>
+            <source>PushPlus Topic</source>
+            <translation>PushPlus グループコード</translation>
+        </message>
+        <message>
+            <source>Send notifications through PushPlus (pushplus.plus)</source>
+            <translation>PushPlus（pushplus.plus）で通知を送信</translation>
+        </message>
+        <message>
+            <source>User or message token from pushplus.plus</source>
+            <translation>pushplus.plus のユーザートークンまたはメッセージトークン</translation>
+        </message>
+        <message>
+            <source>Optional group code; leave empty to send only to yourself</source>
+            <translation>任意のグループコード。空の場合は自分のみに送信します</translation>
+        </message>
+        <message>
             <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
             <translation>通知の配信先を選択します。通知は常にアプリ内に表示されます。追加で受け取りたいプロバイダーを有効にしてください。</translation>
         </message>

@@ -1673,6 +1673,30 @@
             <translation>接收通知的 QQ 頻道 ID</translation>
         </message>
         <message>
+            <source>PushPlus Notification</source>
+            <translation>PushPlus 通知</translation>
+        </message>
+        <message>
+            <source>PushPlus Token</source>
+            <translation>PushPlus 權杖</translation>
+        </message>
+        <message>
+            <source>PushPlus Topic</source>
+            <translation>PushPlus 群組編碼</translation>
+        </message>
+        <message>
+            <source>Send notifications through PushPlus (pushplus.plus)</source>
+            <translation>透過 PushPlus（pushplus.plus）傳送通知</translation>
+        </message>
+        <message>
+            <source>User or message token from pushplus.plus</source>
+            <translation>在 pushplus.plus 取得的用戶權杖或訊息權杖</translation>
+        </message>
+        <message>
+            <source>Optional group code; leave empty to send only to yourself</source>
+            <translation>選填群組編碼，留空則僅傳送給自己</translation>
+        </message>
+        <message>
             <source>Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them.</source>
             <translation>選擇通知的傳送位置。通知一律會顯示在應用程式內；請啟用您希望額外接收通知的服務。</translation>
         </message>

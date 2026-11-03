@@ -196,6 +196,23 @@ class TestTranslationFallback(unittest.TestCase):
                     self.assertTrue(translator.load(f':/i18n/{locale}.qm'))
                     self.assertEqual(expected, translator.translate('app', source))
 
+    def test_pushplus_notification_strings_are_translated_in_bundled_qt_catalogs(self):
+        from PySide6.QtCore import QTranslator
+        from ok.ui.qt import resources  # Register the bundled translation resources.
+
+        source = 'PushPlus Notification'
+        for locale in _locales():
+            with self.subTest(locale=locale):
+                tree = ET.parse(I18N_DIR / f'{locale}.ts')
+                context = next(c for c in tree.findall('context') if c.findtext('name') == 'app')
+                expected = next(m.findtext('translation') for m in context.findall('message')
+                                if m.findtext('source') == source)
+                self.assertTrue(expected)
+                if locale != 'en_US':
+                    translator = QTranslator()
+                    self.assertTrue(translator.load(f':/i18n/{locale}.qm'))
+                    self.assertEqual(expected, translator.translate('app', source))
+
     def test_empty_custom_translation_returns_original_text(self):
         source = 'Original task text'
         facade = SimpleNamespace(
