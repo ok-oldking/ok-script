@@ -31,7 +31,7 @@ from ok.util.config import Config
 
 from ok.ui.qt.Communicate import communicate
 from ok.ui.qt.common.config import cfg as ui_config
-from ok.ui.qt.kit import Dialog, KitWindow, NavigationView, Theme as KitTheme, set_toast_bottom_margin, show_toast, \
+from ok.ui.qt.kit import Dialog, KitWindow, NavigationView, Theme as KitTheme, set_toast_anchor, show_toast, \
     theme as kit_theme
 from ok.ui.qt.kit.theme import set_style_property
 from ok.ui.qt.shell.lazy_page import LazyPage
@@ -46,8 +46,6 @@ from ok.util.process import restart_as_admin
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
-
-PAGE_MARGIN = 12
 
 SECTION_RUN = "run"
 SECTION_GAME = "game"
@@ -115,7 +113,8 @@ class MainWindow(KitWindow):
         body.setSpacing(0)
         body.addWidget(self.run_bar)
         body.addLayout(pages, 1)
-        set_toast_bottom_margin(self, PAGE_MARGIN)
+        # Keep tips flush with the bottom edge of the title bar.
+        set_toast_anchor(self, self.title_bar, gap=0)
 
         self.schedule_tab = None
         self.global_config_tabs = []  # [(config, LazyPage)]

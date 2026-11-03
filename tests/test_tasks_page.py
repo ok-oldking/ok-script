@@ -1,4 +1,5 @@
 import os
+import tempfile
 import time
 import unittest
 from types import SimpleNamespace
@@ -18,6 +19,7 @@ from ok.ui.qt.tasks.config_editors import (DropDownEditor, ListEditor, LineEditE
 from ok.ui.qt.tasks.config_form import ConfigForm
 from ok.ui.qt.tasks.tasks_page import (KIND_ALL, KIND_ONETIME, KIND_TRIGGER, TasksPage, matches_filter, monogram,
                                        task_groups, task_status, visible_tasks)
+from ok.util.config import Config
 
 
 class FakeConfig(dict):
@@ -88,6 +90,12 @@ class QtTestCase(unittest.TestCase):
         og.app = SimpleNamespace(tr=lambda text: text, start_controller=Mock())
         og.executor = SimpleNamespace(onetime_tasks=[], trigger_tasks=[], waiting_for_task=lambda task: None)
         og.task_manager = SimpleNamespace(imported_scripts={})
+        # Page state (the remembered filter tab) goes to a throwaway folder.
+        self.config_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.config_dir.cleanup)
+        folder = patch.object(Config, "config_folder", self.config_dir.name)
+        folder.start()
+        self.addCleanup(folder.stop)
 
     def tearDown(self):
         for name, value in self._og.items():
@@ -383,6 +391,59 @@ class TestTasksPage(QtTestCase):
         page.onetime_section.header.click()
         self.assertFalse(page.onetime_section.is_expanded())
         self.assertTrue(page.onetime_section.scroll.isHidden())
+
+    def test_collapsed_sections_stay_at_the_top(self):
+        page = self.make_page([FakeTask("Daily")], [FakeTask("Combat")])
+        page.onetime_section.header.click()
+        page.trigger_section.header.click()
+        QApplication.processEvents()
+        self.assertEqual(0, page.onetime_section.y())
+        self.assertLess(page.trigger_section.geometry().bottom(), 200)
+
+    def test_sections_collapse_only_in_the_all_view(self):
+        daily = FakeTask("Daily", group="Daily")
+        page = self.make_page([daily, FakeTask("Nest")], [FakeTask("Combat")])
+        page.onetime_section.header.click()
+        page.set_filter(KIND_ONETIME)
+        QApplication.processEvents()
+        self.assertTrue(page.onetime_section.is_expanded())
+        self.assertFalse(page.onetime_section.scroll.isHidden())
+        self.assertTrue(page.onetime_section.chevron.isHidden())
+        page.onetime_section.header.click()
+        self.assertTrue(page.onetime_section.is_expanded())
+        page.set_filter(KIND_ALL)
+        self.assertFalse(page.onetime_section.is_expanded())
+
+    def test_switching_to_triggers_does_not_scroll_the_list(self):
+        daily = FakeTask("Daily", group="Daily")
+        triggers = [FakeTask(f"Trigger {index}") for index in range(6)]
+        page = self.make_page([daily], triggers)
+        page.set_filter("group:Daily")
+        QApplication.processEvents()
+        scroll_bar = page.trigger_section.scroll.verticalScrollBar()
+        values = []
+        scroll_bar.valueChanged.connect(values.append)
+        page.set_filter(KIND_TRIGGER)
+        QApplication.processEvents()
+        self.assertIs(triggers[0], page.selected_task)
+        self.assertEqual([], values)
+        self.assertEqual(0, scroll_bar.value())
+
+    def test_single_category_section_shows_the_category(self):
+        daily = FakeTask("Daily", group="Daily Activities")
+        page = self.make_page([daily], [FakeTask("Combat")])
+        page.set_filter("group:Daily Activities")
+        self.assertEqual("Daily Activities", page.onetime_section.title_label.text())
+        page.set_filter(KIND_ALL)
+        self.assertEqual("On-demand", page.onetime_section.title_label.text())
+
+    def test_last_filter_is_restored(self):
+        tasks = [FakeTask("Daily", group="Daily")], [FakeTask("Combat")]
+        page = self.make_page(*tasks)
+        page.set_filter("group:Daily")
+        reopened = self.make_page(*tasks)
+        self.assertEqual("group:Daily", reopened.current_filter())
+        self.assertTrue(reopened.trigger_section.isHidden())
 
     def test_task_list_updates_rebuild_the_page(self):
         daily = FakeTask("Daily")

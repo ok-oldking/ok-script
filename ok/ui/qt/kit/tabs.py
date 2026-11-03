@@ -54,8 +54,9 @@ class TabItem(QPushButton):
             self.icon_label.hide()
             return
         icon = source if isinstance(source, QIcon) else kit_icon(source, "text" if self.isChecked() else "text_secondary")
-        self.icon_label.setPixmap(icon.pixmap(QSize(16, 16), self.devicePixelRatioF()))
-        self.icon_label.setFixedSize(16, 16)
+        size = 20 if isinstance(source, QIcon) else 16
+        self.icon_label.setPixmap(icon.pixmap(QSize(size, size), self.devicePixelRatioF()))
+        self.icon_label.setFixedSize(size, size)
         self.icon_label.show()
 
     def _on_toggled(self, checked: bool) -> None:

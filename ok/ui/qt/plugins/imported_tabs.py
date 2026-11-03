@@ -18,6 +18,7 @@ class ImportedTaskTab(TasksPage):
     def __init__(self, namespace, name):
         self.namespace = namespace
         self.imported_file_name = namespace
+        self.state_name = f"tasks_page_{namespace}"
         super().__init__(title=og.app.tr(name))
 
     def collect_tasks(self):

@@ -125,13 +125,15 @@ class ProgressRing(QWidget):
 
 
 class Toast(QWidget):
-    """A message card shown at the bottom right of a window; see :func:`show_toast`."""
+    """A message card shown at the top center of a window; see :func:`show_toast`."""
+
+    WIDTH = 560
 
     def __init__(self, message: str, title: str = None, tone: str = "neutral", action: tuple = None, parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.tone = _check_tone(tone)
-        self.setFixedWidth(360)
+        self.setFixedWidth(self.WIDTH)
 
         icon_label = QLabel(self)
         icon_label.setPixmap(kit_icon(_TONE_ICON[tone], _TONE_COLOR[tone], 2).pixmap(QSize(18, 18), self.devicePixelRatioF()))
@@ -165,15 +167,19 @@ class Toast(QWidget):
 
 
 class _ToastHost(QObject):
-    """Stacks toasts in a window's bottom-right corner above ``bottom_margin``."""
+    """Stacks toasts down from a window's top center, below ``anchor`` if set."""
 
     SPACING = 8
+    MARGIN = 16
+    ANCHOR_GAP = 4
 
     def __init__(self, window: QWidget):
         super().__init__(window)
         self.window = window
         self.toasts = []
-        self.bottom_margin = 16
+        self.anchor = None
+        self.anchor_gap = self.ANCHOR_GAP
+        self.top_margin = self.MARGIN
         window.installEventFilter(self)
 
     def add(self, toast: Toast, duration: int) -> None:
@@ -182,8 +188,7 @@ class _ToastHost(QObject):
         toast.destroyed.connect(lambda *_: self._forget(toast))
         toast.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         self.toasts.append(toast)
-        # Wrapped labels need height-for-width; adjustSize() would leave gaps.
-        toast.resize(toast.width(), toast.layout().totalHeightForWidth(toast.width()))
+        self._fit(toast)
         toast.show()
         toast.raise_()
         self.layout()
@@ -198,16 +203,30 @@ class _ToastHost(QObject):
             self.toasts.remove(toast)
             self.layout()
 
+    def _fit(self, toast) -> None:
+        # Narrow windows shrink the toast; wrapped labels need height-for-width,
+        # since adjustSize() would leave gaps.
+        width = max(240, min(Toast.WIDTH, self.window.width() - 2 * self.MARGIN))
+        toast.setFixedWidth(width)
+        toast.resize(width, toast.layout().totalHeightForWidth(width))
+
+    def _top(self) -> int:
+        anchor = self.anchor
+        if anchor is not None and shiboken6.isValid(anchor) and anchor.isVisible():
+            return anchor.mapTo(self.window, anchor.rect().bottomLeft()).y() + 1 + self.anchor_gap
+        return self.top_margin
+
     def layout(self) -> None:
         self.toasts = [toast for toast in self.toasts if toast.isVisible()]
-        y = self.window.height() - self.bottom_margin
-        for toast in reversed(self.toasts):
-            y -= toast.height()
-            toast.move(self.window.width() - toast.width() - 16, y)
-            y -= self.SPACING
+        y = self._top()
+        for toast in self.toasts:
+            toast.move((self.window.width() - toast.width()) // 2, y)
+            y += toast.height() + self.SPACING
 
     def eventFilter(self, watched, event) -> bool:
         if watched is self.window and event.type() == QEvent.Type.Resize:
+            for toast in self.toasts:
+                self._fit(toast)
             self.layout()
         return False
 
@@ -231,9 +250,19 @@ def show_toast(parent: QWidget, message: str, title: str = None, tone: str = "ne
     return toast
 
 
-def set_toast_bottom_margin(widget: QWidget, margin: int) -> None:
-    """Keep toasts in ``widget``'s window above e.g. a status bar."""
+def set_toast_anchor(widget: QWidget, anchor: QWidget, *, gap: int = 4) -> None:
+    """Show toasts below ``anchor`` with the requested gap in logical pixels."""
 
     host = toast_host(widget)
-    host.bottom_margin = margin
+    host.anchor = anchor
+    host.anchor_gap = max(0, int(gap))
+    host.layout()
+
+
+def set_toast_top_margin(widget: QWidget, margin: int) -> None:
+    """Position toasts directly below the window's top edge."""
+
+    host = toast_host(widget)
+    host.anchor = None
+    host.top_margin = max(0, int(margin))
     host.layout()

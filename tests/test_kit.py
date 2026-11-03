@@ -13,8 +13,9 @@ from PySide6.QtWidgets import QApplication, QLabel, QWidget
 
 from ok.ui.qt.kit import (Button, ComboBox, Dialog, FlowLayout, ICON_NAMES, Label, NumberBox, Pill, ProgressRing,
                           SettingGroup, SettingRow, StatusDot, Switch, TabStrip, Theme, Toast, icon, load_icon,
-                          show_toast, theme)
+                          set_toast_anchor, show_toast, theme)
 from ok.ui.qt.kit.theme import contrast_ratio, readable_accent
+from ok.ui.qt.kit.icons import tinted_icon
 
 ROOT = Path(__file__).resolve().parents[1]
 KIT_DIR = ROOT / "ok" / "ui" / "qt" / "kit"
@@ -177,6 +178,61 @@ class TestIcons(KitTestCase):
             image.fill(QColor("#00FF00"))
             image.save(str(path))
             self.assertEqual("#00ff00", center_color(load_icon(path), 16).name())
+
+    def test_file_tint_follows_theme_and_preserves_transparency(self):
+        shades = {'light': '#2668AA', 'dark': '#8ABCF0'}
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'symbol.svg'
+            path.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+                            '<rect x="4" y="4" width="16" height="16" fill="#FF0000"/></svg>')
+            source = load_icon(path)
+            tinted = tinted_icon(source, shades)
+            for mode, shade in ((Theme.LIGHT, shades['light']), (Theme.DARK, shades['dark'])):
+                theme.set_theme(mode)
+                for dpr in (1.0, 2.0):
+                    image = tinted.pixmap(QSize(24, 24), dpr).toImage()
+                    self.assertEqual(QSize(round(24 * dpr), round(24 * dpr)), image.size())
+                    self.assertEqual(shade.lower(), image.pixelColor(image.width() // 2,
+                                                                    image.height() // 2).name())
+                    self.assertEqual(0, image.pixelColor(0, 0).alpha())
+            self.assertEqual('#ff0000', center_color(source).name())
+            disabled = tinted.pixmap(QSize(24, 24), QIcon.Mode.Disabled).toImage()
+            self.assertLess(disabled.pixelColor(12, 12).alpha(), 128)
+
+    def test_trimmed_pngs_render_equally_despite_different_padding(self):
+        with tempfile.TemporaryDirectory() as folder:
+            results = []
+            for size, offset in ((32, 6), (128, 80)):
+                path = Path(folder) / f"padded-{size}.png"
+                image = QImage(size, size, QImage.Format.Format_ARGB32)
+                image.fill(Qt.GlobalColor.transparent)
+                for y in range(offset, offset + 16):
+                    for x in range(offset, offset + 8):
+                        image.setPixelColor(x, y, QColor("#00FF00"))
+                image.save(str(path))
+                original = path.read_bytes()
+                qicon = load_icon(path, trim_transparent=True)
+                rendered = qicon.pixmap(QSize(28, 28), 2.0).toImage()
+                self.assertEqual(QSize(56, 56), rendered.size())
+                self.assertEqual(255, rendered.pixelColor(28, 0).alpha())
+                self.assertEqual(0, rendered.pixelColor(0, 28).alpha())
+                self.assertEqual(original, path.read_bytes())
+                results.append(rendered)
+            self.assertEqual(results[0], results[1])
+
+    def test_trimmed_png_scales_up_at_high_dpi_and_supports_disabled_state(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "small.png"
+            image = QImage(8, 8, QImage.Format.Format_ARGB32)
+            image.fill(QColor("#00FF00"))
+            image.save(str(path))
+            qicon = load_icon(path, trim_transparent=True)
+            for dpr in (1.0, 1.5, 2.0, 3.0):
+                pixmap = qicon.pixmap(QSize(28, 28), dpr)
+                self.assertEqual(QSize(round(28 * dpr), round(28 * dpr)), pixmap.size())
+                self.assertEqual(dpr, pixmap.devicePixelRatio())
+            disabled = qicon.pixmap(QSize(28, 28), QIcon.Mode.Disabled).toImage()
+            self.assertLess(disabled.pixelColor(14, 14).alpha(), 128)
 
     def test_load_icon_errors(self):
         self.assertTrue(load_icon(None).isNull())
@@ -366,12 +422,28 @@ class TestFeedback(KitTestCase):
         QApplication.processEvents()
         self.assertTrue(first.isVisible())
         self.assertLess(first.y(), second.y())
-        self.assertLessEqual(second.geometry().bottom(), host.height())
+        self.assertEqual(16, first.y())
+        self.assertLessEqual(abs(first.geometry().center().x() - host.rect().center().x()), 1)
         wait(300)
         self.assertTrue(second.isVisible())
         second.close_button.click()
         QApplication.processEvents()
         self.assertFalse(second.isVisible())
+
+    def test_toasts_sit_below_their_anchor_and_fit_narrow_windows(self):
+        host = self.host()
+        bar = QWidget(host)
+        bar.setGeometry(0, 0, host.width(), 50)
+        bar.show()
+        set_toast_anchor(host, bar)
+        toast = show_toast(host, "Resolution check failed, some tasks might not work correctly", duration=0)
+        QApplication.processEvents()
+        self.assertEqual(50 + 4, toast.y())
+        self.assertEqual(Toast.WIDTH, toast.width())
+        host.resize(400, host.height())
+        QApplication.processEvents()
+        self.assertEqual(400 - 32, toast.width())
+        self.assertGreaterEqual(toast.x(), 16)
 
     def test_dialog_exec_returns_answer(self):
         host = self.host()

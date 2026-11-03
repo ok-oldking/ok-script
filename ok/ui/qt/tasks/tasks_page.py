@@ -1,10 +1,11 @@
 """The Tasks page: a task list beside the selected task's details.
 
 The list groups one-time ("On-demand") tasks and trigger tasks into
-collapsible sections, each scrolling on its own. Every one-time row has its
-own run button and every trigger row its own switch, so nothing needs a
-select-then-start double click; clicking a row opens its settings. Tabs above
-the list filter by kind and by the tasks' ``group_name``.
+sections, each scrolling on its own; they collapse only in the All view.
+Every one-time row has its own run button and every trigger row its own
+switch, so nothing needs a select-then-start double click; clicking a row
+opens its settings. Tabs above the list filter by kind and by the tasks'
+``group_name``; the last selected tab is remembered across starts.
 """
 
 import threading
@@ -22,7 +23,7 @@ from ok.ui.qt.kit.buttons import Button
 from ok.ui.qt.kit.cards import Card
 from ok.ui.qt.kit.dialogs import Dialog
 from ok.ui.qt.kit.feedback import Pill
-from ok.ui.qt.kit.icons import icon as kit_icon
+from ok.ui.qt.kit.icons import icon as kit_icon, tinted_icon
 from ok.ui.qt.kit.labels import Label
 from ok.ui.qt.kit.switch import Switch
 from ok.ui.qt.kit.tabs import TabStrip
@@ -31,6 +32,7 @@ from ok.ui.qt.shell.nav_icons import FALLBACK, nav_icon
 from ok.ui.qt.shell.run_bar import format_elapsed
 from ok.ui.qt.tasks.config_form import ConfigForm
 from ok.ui.qt.widget.UpdateConfigWidgetItem import value_to_string
+from ok.util.config import Config
 
 logger = Logger.get_logger(__name__)
 
@@ -101,22 +103,40 @@ def task_status(task, executor):
     return _t("TasksPage", "Queued"), "accent", tooltip
 
 
-def task_icon(task):
+def _category_tint(source, key, fallback=None):
+    config = getattr(og, 'config', None) or {}
+    colors = config.get('task_category_colors', {})
+    color = colors.get(key, colors.get(fallback))
+    if source is None or color is None:
+        return source
+    qicon = kit_icon(source) if isinstance(source, str) else source
+    return tinted_icon(qicon, color)
+
+
+def task_icon(task, is_trigger=False):
     """A QIcon or bundled icon name for the task, or ``None`` for a monogram."""
 
     source = getattr(task, 'icon', None)
     if source is None:
         return None
-    resolved = nav_icon(source)
-    return None if resolved == FALLBACK else resolved
+    resolved = nav_icon(source, trim_transparent=True)
+    if resolved == FALLBACK:
+        return None
+    kind = KIND_TRIGGER if is_trigger else KIND_ONETIME
+    group = getattr(task, 'group_name', None)
+    return _category_tint(resolved, GROUP_PREFIX + group if group else kind, kind)
 
 
 def task_category_icon(key, fallback=None):
     """Resolve app-provided category artwork, keeping the default kit icons."""
 
     config = getattr(og, 'config', None) or {}
-    source = config.get('task_category_icons', {}).get(key, fallback)
-    return nav_icon(source) if source is not None else None
+    if key.startswith(GROUP_PREFIX):
+        source = fallback
+    else:
+        source = config.get('task_category_icons', {}).get(key, fallback)
+    resolved = nav_icon(source, trim_transparent=True) if source is not None else None
+    return _category_tint(resolved, key)
 
 
 def split_leading_symbol(name: str):
@@ -186,18 +206,19 @@ def matches_filter(task, key: str, is_trigger: bool) -> bool:
 class TaskIconTile(QLabel):
     """The task's own icon or monogram, without a background tile."""
 
-    def __init__(self, task, size: int = 36, parent=None):
+    def __init__(self, task, size: int = 36, parent=None, *, is_trigger=False):
         super().__init__(parent)
         self.setObjectName("taskTile")
         self.setFixedSize(size, size)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._task = task
-        self._glyph = int(size * 0.6)
+        self._is_trigger = is_trigger
+        self._glyph = round(size * 0.78)
         theme.changed.connect(self.refresh)
         self.refresh()
 
     def refresh(self) -> None:
-        source = task_icon(self._task)
+        source = task_icon(self._task, self._is_trigger)
         if source is None:
             symbol, name = split_leading_symbol(_app_tr(self._task.name))
             if symbol:
@@ -223,7 +244,7 @@ class TaskRow(QFrame):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setProperty("selected", False)
 
-        self.tile = TaskIconTile(task)
+        self.tile = TaskIconTile(task, is_trigger=is_trigger)
         self._name = display_name(task)
         self._description = _app_tr(getattr(task, 'description', '') or '')
         self.name_label = Label(self._name, "strong")
@@ -325,14 +346,15 @@ class TaskSection(Card):
         super().__init__(parent)
         self.rows = []
         self._expanded = True
+        self._collapsible = True
         self._icon_name = icon_name
         self.header = QPushButton(self)
         self.header.setObjectName("sectionHeader")
         self.header.setCursor(Qt.CursorShape.PointingHandCursor)
         self.header.setFixedHeight(46)
-        self.header.clicked.connect(lambda: self.set_expanded(not self._expanded))
+        self.header.clicked.connect(self._on_header_clicked)
         self.icon_label = QLabel()
-        self.icon_label.setFixedSize(16, 16)
+        self.icon_label.setFixedSize(20, 20)
         self.title_label = Label(title, "strong")
         self.count_label = Label("", "chip")
         self.chevron = QLabel()
@@ -380,26 +402,45 @@ class TaskSection(Card):
     def set_count_text(self, text: str) -> None:
         self.count_label.setText(text)
 
+    def set_title(self, title: str, icon_name) -> None:
+        self.title_label.setText(title)
+        self._icon_name = icon_name
+        self._refresh_icons()
+
     def is_expanded(self) -> bool:
-        return self._expanded
+        return self._expanded or not self._collapsible
 
     def set_expanded(self, expanded: bool) -> None:
         if expanded == self._expanded:
             return
         self._expanded = expanded
-        self.scroll.setVisible(expanded)
+        self.scroll.setVisible(self.is_expanded())
         self._refresh_icons()
         self.toggled.emit(expanded)
+
+    def set_collapsible(self, collapsible: bool) -> None:
+        """A section that cannot collapse stays open and hides its chevron;
+        its own collapsed state returns when it becomes collapsible again."""
+
+        self._collapsible = collapsible
+        self.header.setCursor(Qt.CursorShape.PointingHandCursor if collapsible else Qt.CursorShape.ArrowCursor)
+        self.chevron.setVisible(collapsible)
+        self.scroll.setVisible(self.is_expanded())
+        self._refresh_icons()
+
+    def _on_header_clicked(self) -> None:
+        if self._collapsible:
+            self.set_expanded(not self._expanded)
 
     def content_height(self) -> int:
         return sum(row.height() for row in self.rows if not row.isHidden()) + 12 + 2 * max(0, len(self.rows) - 1)
 
     def _refresh_icons(self) -> None:
         dpr = self.devicePixelRatioF()
-        source = nav_icon(self._icon_name)
+        source = nav_icon(self._icon_name, trim_transparent=True)
         icon = kit_icon(source, "text", 1.8) if isinstance(source, str) else source
-        self.icon_label.setPixmap(icon.pixmap(QSize(16, 16), dpr))
-        chevron = "chevron-up" if self._expanded else "chevron-down"
+        self.icon_label.setPixmap(icon.pixmap(QSize(20, 20), dpr))
+        chevron = "chevron-up" if self.is_expanded() else "chevron-down"
         self.chevron.setPixmap(kit_icon(chevron, "text_tertiary", 2).pixmap(QSize(14, 14), dpr))
 
 
@@ -666,17 +707,22 @@ class TasksPage(QWidget):
     Subclasses show another task set by overriding :meth:`collect_tasks`.
     """
 
+    state_name = "tasks_page"
+    """Config file remembering the last selected filter tab."""
+
     def __init__(self, parent=None, title: str = None):
         super().__init__(parent)
         self.setObjectName("TasksPage")
         self.onetime_tasks = []
         self.trigger_tasks = []
         self.rows = {}
+        self.groups = {}
         self.selected_task = None
 
+        self.state = Config(self.state_name, {"filter": KIND_ALL})
         self.title_label = Label(title or _t("MainWindow", "Tasks"), "display")
         self.filter_tabs = TabStrip()
-        self.filter_tabs.current_changed.connect(lambda _key: self._apply_filter())
+        self.filter_tabs.current_changed.connect(self._on_filter_changed)
         top = QHBoxLayout()
         top.setSpacing(16)
         top.addWidget(self.title_label)
@@ -691,6 +737,8 @@ class TasksPage(QWidget):
         self.list_column.setSpacing(12)
         self.list_column.addWidget(self.onetime_section, 1)
         self.list_column.addWidget(self.trigger_section, 0)
+        # Takes the free height when no section does, keeping collapsed headers on top.
+        self.list_column.addStretch(0)
         list_holder = QWidget()
         list_holder.setFixedWidth(LIST_WIDTH)
         list_holder.setLayout(self.list_column)
@@ -750,12 +798,13 @@ class TasksPage(QWidget):
         return row
 
     def _build_filters(self) -> None:
-        current = self.filter_tabs.current_key() or KIND_ALL
+        current = self.filter_tabs.current_key() or self.state.get("filter") or KIND_ALL
         self.filter_tabs.blockSignals(True)
         self.filter_tabs.clear()
 
         both_kinds = bool(self.onetime_tasks) and bool(self.trigger_tasks)
         groups = task_groups(self.onetime_tasks + self.trigger_tasks)
+        self.groups = groups
         self.filter_tabs.add_tab(KIND_ALL, _t("TasksPage", "All"), len(self.onetime_tasks) + len(self.trigger_tasks),
                                  task_category_icon(KIND_ALL))
         if both_kinds:
@@ -768,7 +817,7 @@ class TasksPage(QWidget):
             for name, group_icon in groups.items():
                 count = len([t for t in self.onetime_tasks + self.trigger_tasks
                              if getattr(t, 'group_name', None) == name])
-                resolved = nav_icon(group_icon)
+                resolved = task_category_icon(GROUP_PREFIX + name, group_icon)
                 self.filter_tabs.add_tab(GROUP_PREFIX + name, _app_tr(name), count, resolved)
         self.filter_tabs.setVisible(both_kinds or bool(groups))
         keys = self.filter_tabs.keys()
@@ -784,9 +833,14 @@ class TasksPage(QWidget):
         if key in self.filter_tabs.keys():
             self.filter_tabs.set_current(key)
 
+    def _on_filter_changed(self, key: str) -> None:
+        self.state["filter"] = key
+        self._apply_filter()
+
     def _apply_filter(self) -> None:
         key = self.current_filter()
-        for section in (self.onetime_section, self.trigger_section):
+        sections = (self.onetime_section, self.trigger_section)
+        for section in sections:
             shown = 0
             for row in section.rows:
                 visible = matches_filter(row.task, key, row.is_trigger)
@@ -794,11 +848,26 @@ class TasksPage(QWidget):
                 shown += visible
             section.setVisible(shown > 0)
             section.set_count_text(str(shown))
+            # Sections collapse only in the All view; a single category is one list.
+            section.set_collapsible(key == KIND_ALL)
+        self._title_sections(key)
         if self.selected_task in self.rows and self.rows[self.selected_task].isHidden():
             first = next((row.task for section in (self.onetime_section, self.trigger_section)
                           for row in section.rows if not row.isHidden()), None)
             self.select_task(first)
         self._layout_sections()
+
+    def _title_sections(self, key: str) -> None:
+        """A category shown as one section takes the category's name and icon."""
+
+        self.onetime_section.set_title(_t("TasksPage", "On-demand"), task_category_icon(KIND_ONETIME, "bolt"))
+        self.trigger_section.set_title(_t("TasksPage", "Triggers"), task_category_icon(KIND_TRIGGER, "timer"))
+        if not key.startswith(GROUP_PREFIX):
+            return
+        shown = [section for section in (self.onetime_section, self.trigger_section) if not section.isHidden()]
+        if len(shown) == 1:
+            name = key[len(GROUP_PREFIX):]
+            shown[0].set_title(_app_tr(name), task_category_icon(key, self.groups.get(name)))
 
     def _layout_sections(self) -> None:
         # One-time tasks take the free height; triggers keep a short scrolling list
@@ -814,8 +883,11 @@ class TasksPage(QWidget):
                                      + 2)
         if not onetime.is_expanded():
             onetime.setMaximumHeight(onetime.header.height() + 2)
-        self.list_column.setStretchFactor(onetime, 1 if onetime.is_expanded() else 0)
-        self.list_column.setStretchFactor(trigger, 1 if trigger_alone and trigger.is_expanded() else 0)
+        onetime_grows = not onetime.isHidden() and onetime.is_expanded()
+        trigger_grows = not trigger.isHidden() and trigger_alone and trigger.is_expanded()
+        self.list_column.setStretchFactor(onetime, 1 if onetime_grows else 0)
+        self.list_column.setStretchFactor(trigger, 1 if trigger_grows else 0)
+        self.list_column.setStretch(2, 0 if onetime_grows or trigger_grows else 1)
 
     # --- selection and updates ------------------------------------------------
 
@@ -827,7 +899,9 @@ class TasksPage(QWidget):
         if row is not None:
             row.set_selected(True)
             section = self.trigger_section if row.is_trigger else self.onetime_section
-            section.scroll.ensureWidgetVisible(row)
+            # After a filter change the section still has its old height; scroll
+            # once the layout has settled, or the list jumps and springs back.
+            QTimer.singleShot(0, row, lambda: section.scroll.ensureWidgetVisible(row))
         self.detail.show_task(task, row.is_trigger if row is not None else False)
 
     def _on_task_event(self, task=None) -> None:

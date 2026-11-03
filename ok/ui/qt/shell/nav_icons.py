@@ -19,7 +19,7 @@ _SEMANTIC = {
 FALLBACK = "grid"
 
 
-def nav_icon(source, base_dir=None):
+def nav_icon(source, base_dir=None, *, trim_transparent: bool = False):
     """A bundled icon name or a QIcon for ``source``.
 
     Accepts ``None``, a bundled icon name, an ``ok.core.icons.Icon``, a path to
@@ -43,7 +43,7 @@ def nav_icon(source, base_dir=None):
             return _SEMANTIC[semantic]
         if Path(source).suffix.lower() in (".svg", ".png", ".jpg", ".jpeg", ".ico", ".bmp", ".webp"):
             try:
-                return load_icon(source, base_dir)
+                return load_icon(source, base_dir, trim_transparent=trim_transparent)
             except (OSError, ValueError):
                 return FALLBACK
         return FALLBACK

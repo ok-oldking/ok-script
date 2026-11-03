@@ -104,7 +104,7 @@ class TestRunState(unittest.TestCase):
         state = compute_run_state(executor, make_device_manager())
         self.assertEqual("pause", state.button)
         self.assertIsNone(state.task)
-        self.assertIn("3", state.message)
+        self.assertEqual("", state.message)
 
     def test_disconnected_and_blocked_are_danger(self):
         state = compute_run_state(make_executor(paused=False, connected=lambda: False), make_device_manager())

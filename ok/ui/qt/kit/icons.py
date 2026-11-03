@@ -220,6 +220,100 @@ class _SvgFileIconEngine(QIconEngine):
         return _SvgFileIconEngine(self.data)
 
 
+class _RasterFileIconEngine(QIconEngine):
+    """Fit raster artwork by its visible bounds, preserving its aspect ratio."""
+
+    def __init__(self, image: QImage):
+        super().__init__()
+        self.image = image
+
+    def paint(self, painter, rect, mode, state):
+        scale = min(rect.width() / self.image.width(), rect.height() / self.image.height())
+        width, height = self.image.width() * scale, self.image.height() * scale
+        target = QRectF(rect.x() + (rect.width() - width) / 2,
+                        rect.y() + (rect.height() - height) / 2, width, height)
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        if mode == QIcon.Mode.Disabled:
+            painter.setOpacity(painter.opacity() * 0.4)
+        painter.drawImage(target, self.image)
+        painter.restore()
+
+    def pixmap(self, size, mode, state):
+        return self.scaledPixmap(size, mode, state, 1.0)
+
+    def scaledPixmap(self, size, mode, state, scale):
+        image = QImage(round(size.width() * scale), round(size.height() * scale),
+                       QImage.Format.Format_ARGB32_Premultiplied)
+        image.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(image)
+        self.paint(painter, image.rect(), mode, state)
+        painter.end()
+        result = QPixmap.fromImage(image)
+        result.setDevicePixelRatio(scale)
+        return result
+
+    def clone(self):
+        return _RasterFileIconEngine(self.image)
+
+
+class _ColorizedIconEngine(QIconEngine):
+    """Tint an icon's alpha mask using a color resolved for the current theme."""
+
+    def __init__(self, source: QIcon, color):
+        super().__init__()
+        self.source = source
+        self.color = color
+
+    def paint(self, painter, rect, mode, state):
+        size = QSize(max(1, round(rect.width())), max(1, round(rect.height())))
+        pixmap = self.scaledPixmap(size, mode, state, painter.device().devicePixelRatioF())
+        painter.drawPixmap(rect, pixmap)
+
+    def pixmap(self, size, mode, state):
+        return self.scaledPixmap(size, mode, state, 1.0)
+
+    def scaledPixmap(self, size, mode, state, scale):
+        from ok.ui.qt.kit.theme import theme
+
+        value = self.color
+        if isinstance(value, dict):
+            value = value.get("dark" if theme.is_dark() else "light", "text")
+        color = theme.color(value) if isinstance(value, str) and not value.startswith("#") else QColor(value)
+        if mode == QIcon.Mode.Disabled:
+            color.setAlphaF(color.alphaF() * 0.4)
+        image = self.source.pixmap(size, scale, QIcon.Mode.Normal, state).toImage()
+        painter = QPainter(image)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+        painter.fillRect(image.rect(), color)
+        painter.end()
+        result = QPixmap.fromImage(image)
+        result.setDevicePixelRatio(image.devicePixelRatio())
+        return result
+
+    def clone(self):
+        return _ColorizedIconEngine(self.source, self.color)
+
+
+def tinted_icon(source: QIcon, color) -> QIcon:
+    """Recolor artwork at paint time; ``color`` can supply light/dark shades."""
+
+    return QIcon(_ColorizedIconEngine(source, color))
+
+
+def _trim_transparent(image: QImage) -> QImage:
+    rgba = image.convertToFormat(QImage.Format.Format_RGBA8888)
+    # Ignore nearly invisible export fringes when measuring the artwork.
+    occupied = [i for i, alpha in enumerate(bytes(rgba.constBits())[3::4]) if alpha >= 16]
+    if not occupied:
+        return image
+    width = rgba.width()
+    left = min(i % width for i in occupied)
+    right = max(i % width for i in occupied)
+    top, bottom = occupied[0] // width, occupied[-1] // width
+    return image.copy(left, top, right - left + 1, bottom - top + 1)
+
+
 def icon(name: str, color=None, stroke_width: float = 1.75) -> QIcon:
     """A bundled icon.
 
@@ -231,25 +325,32 @@ def icon(name: str, color=None, stroke_width: float = 1.75) -> QIcon:
 
 
 @lru_cache(maxsize=256)
-def _load_file_icon(path: str, mtime: float) -> QIcon:
+def _load_file_icon(path: str, mtime: float, trim_transparent: bool = False) -> QIcon:
     if path.lower().endswith(".svg"):
         data = Path(path).read_bytes()
         engine = _SvgFileIconEngine(data)
         if not engine.renderer.isValid():
             raise ValueError(f"invalid SVG icon: {path}")
         return QIcon(engine)
+    if trim_transparent:
+        image = QImage(path)
+        if image.isNull():
+            raise ValueError(f"unsupported icon file: {path}")
+        return QIcon(_RasterFileIconEngine(_trim_transparent(image)))
     result = QIcon(path)
     if result.isNull():
         raise ValueError(f"unsupported icon file: {path}")
     return result
 
 
-def load_icon(source, base_dir=None) -> QIcon:
+def load_icon(source, base_dir=None, *, trim_transparent: bool = False) -> QIcon:
     """Load an app-provided icon.
 
     ``source`` is a path to an ``.svg`` or raster file (relative paths are
     resolved against ``base_dir`` or the working directory), a ``QIcon``, or
     ``None`` for no icon.
+    ``trim_transparent`` fits raster artwork by its alpha bounds at paint time;
+    the source file stays unchanged.
     """
 
     if source is None:
@@ -262,4 +363,4 @@ def load_icon(source, base_dir=None) -> QIcon:
     path = path.resolve()
     if not path.is_file():
         raise FileNotFoundError(f"icon file not found: {path}")
-    return _load_file_icon(str(path), path.stat().st_mtime)
+    return _load_file_icon(str(path), path.stat().st_mtime, trim_transparent)

@@ -95,11 +95,10 @@ def compute_run_state(executor, device_manager, starting: bool = False, game_nam
             return RunState("pause", pause_app, _t("StartCard", "Paused: PC Game Window Must Be in Front!"), "danger")
         queued = len([t for t in executor.onetime_task_queue if t is not task and t.enabled])
         return RunState("pause", pause_app, task=task, queued=queued)
-    if count := executor.active_trigger_task_count():
+    if executor.active_trigger_task_count():
         if not executor.can_capture():
             return RunState("pause", pause_app, _t("StartCard", "Paused: PC Game Window Must Be in Front!"), "danger")
-        return RunState("pause", pause_app,
-                        f'{_t("StartCard", "Running")}: {count} {_t("StartCard", "Trigger Tasks")}')
+        return RunState("pause", pause_app)
     return RunState("pause", pause_app, _t("StartCard", "Waiting for task to be enabled"))
 
 
@@ -268,7 +267,10 @@ class RunBar(QFrame):
         button = self.executor_button
         button.setEnabled(state.button != "disabled")
         button.setText(state.button_text)
-        if state.button == "start" or state.button == "disabled":
+        if state.button == "start":
+            button.set_icon("power")
+            button.set_variant("primary")
+        elif state.button == "disabled":
             button.set_icon("power")
             button.set_variant("tonal")
         elif state.button == "pause":

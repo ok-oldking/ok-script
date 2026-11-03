@@ -8,7 +8,7 @@ its children; plain Qt inputs inside it are styled too.
 from ok.ui.qt.kit.buttons import Button
 from ok.ui.qt.kit.cards import Card, SettingGroup, SettingRow
 from ok.ui.qt.kit.dialogs import Dialog, confirm
-from ok.ui.qt.kit.feedback import Pill, ProgressRing, StatusDot, Toast, set_toast_bottom_margin, show_toast
+from ok.ui.qt.kit.feedback import Pill, ProgressRing, StatusDot, Toast, set_toast_anchor, set_toast_top_margin, show_toast
 from ok.ui.qt.kit.icons import ICON_NAMES, icon, load_icon
 from ok.ui.qt.kit.inputs import ComboBox, NumberBox
 from ok.ui.qt.kit.labels import Label
@@ -25,5 +25,5 @@ __all__ = [
     "Button", "Card", "ComboBox", "Dialog", "FlowLayout", "ICON_NAMES", "KitWindow", "Label", "NavItem",
     "NavigationView", "NumberBox", "OptionCard", "OptionGroup", "Pill", "Popover", "ProgressRing", "SettingGroup",
     "SettingRow", "StatusDot", "Switch", "TabItem", "TabStrip", "Theme", "TitleBar", "Toast", "confirm", "icon",
-    "load_icon", "set_toast_bottom_margin", "show_toast", "theme",
+    "load_icon", "set_toast_anchor", "set_toast_top_margin", "show_toast", "theme",
 ]
