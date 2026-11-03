@@ -2,7 +2,7 @@ import os
 import threading
 
 import pyappify
-from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer
+from PySide6.QtCore import QCoreApplication, QEvent, QObject, QSize, Qt, QTimer
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QMenu, QStackedWidget, QSystemTrayIcon, QVBoxLayout
 
@@ -668,6 +668,30 @@ class MainWindow(KitWindow):
                             alert_error(self.tr("Import failed: {error}").format(error=message))
                 except Exception as e:
                     logger.error(f'Error importing .okscript file: {e}')
+
+    def dispose(self):
+        """Release app-wide hooks so a replacement window can take over, e.g. after a language change."""
+        if self.update_check_timer is not None:
+            self.update_check_timer.stop()
+        self.tray.hide()
+        self.run_bar.dispose()
+        notification_manager = getattr(self, 'notification_manager', None)
+        if notification_manager is not None:
+            # Stopping waits for the pipeline thread; keep the GUI thread free.
+            threading.Thread(target=notification_manager.stop, name='NotificationStop', daemon=True).start()
+        controller = getattr(self, '_imported_tab_controller', None)
+        if controller is not None:
+            controller.dispose()
+        for page in list(self._pages.values()):
+            cleanup = getattr(page, 'dispose', None) or getattr(page, 'stop_worker', None)
+            if callable(cleanup):
+                try:
+                    cleanup()
+                except Exception as error:
+                    logger.error(f'Failed to dispose page {page.objectName()}', error)
+        # The event bus holds strong references; drop the ones owned by this window's widgets.
+        owners = {id(obj) for obj in (self, *self.findChildren(QObject))}
+        communicate.disconnect_where(lambda callback: id(getattr(callback, '__self__', None)) in owners)
 
     def closeEvent(self, event):
         if self.app.exit_event.is_set():

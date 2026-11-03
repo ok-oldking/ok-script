@@ -326,6 +326,17 @@ class RunBar(QFrame):
 
     # --- global hotkey (runs on the handler thread) ----------------------------
 
+    def dispose(self) -> None:
+        """Release the hotkey and stop polling so a replacement run bar can bind it."""
+        self.timer.stop()
+        self.handler.post(self._release_hotkey)
+        self.handler.join(1)
+
+    def _release_hotkey(self) -> None:
+        # The hotkey belongs to the thread that registered it, so release it there.
+        windll.user32.UnregisterHotKey(None, HOTKEY_ID)
+        self.handler.stop()
+
     def _check_hotkey(self) -> None:
         new_hotkey = self.basic_options.get('Start/Stop')
         if new_hotkey != self.current_hotkey:

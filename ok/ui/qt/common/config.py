@@ -39,13 +39,13 @@ def deserialize_language(value) -> Language:
 
 
 class UiConfig(QObject):
-    """The language (applied on restart) and the theme mode (applied live).
+    """The language and the theme mode, both applied live.
 
     The file also accepts the older qfluentwidgets layout
     (``MainWindow.Language`` and ``QFluentWidgets.ThemeMode``).
     """
 
-    restart_required = Signal()
+    language_changed = Signal()
     theme_changed = Signal()
 
     def __init__(self, path: str):
@@ -83,7 +83,7 @@ class UiConfig(QObject):
             return
         self.language = language
         self.save()
-        self.restart_required.emit()
+        self.language_changed.emit()
 
     def set_theme_mode(self, mode: str) -> None:
         mode = getattr(mode, "value", mode)

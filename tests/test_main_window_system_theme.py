@@ -48,7 +48,7 @@ class TestUiConfig(unittest.TestCase):
             self.assertEqual("dark", config.theme_mode)
 
             restart, themed = Mock(), Mock()
-            config.restart_required.connect(restart)
+            config.language_changed.connect(restart)
             config.theme_changed.connect(themed)
             config.set_language(Language.ENGLISH)
             config.set_theme_mode("light")

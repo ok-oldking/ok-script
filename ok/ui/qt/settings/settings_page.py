@@ -9,7 +9,6 @@ from PySide6.QtWidgets import QButtonGroup, QFrame, QHBoxLayout, QPushButton, QS
 from ok import og
 from ok.ui.qt.common.config import Language, cfg
 from ok.ui.qt.kit.cards import SettingGroup, SettingRow
-from ok.ui.qt.kit.feedback import show_toast
 from ok.ui.qt.kit.inputs import ComboBox
 from ok.ui.qt.kit.labels import Label
 from ok.ui.qt.kit.tabs import TabStrip
@@ -83,7 +82,6 @@ class SettingsPage(QWidget):
         layout.addWidget(anchor_holder)
         layout.addWidget(self.scroll, 1)
         theme.install(self)
-        cfg.restart_required.connect(self._show_restart_notice)
 
     # --- sections -------------------------------------------------------------
 
@@ -163,6 +161,3 @@ class SettingsPage(QWidget):
 
     def _set_theme(self, key: str) -> None:
         cfg.set_theme_mode(key)
-
-    def _show_restart_notice(self) -> None:
-        show_toast(self, _t('Configuration takes effect after restart'), _t('Updated successfully'), "success")

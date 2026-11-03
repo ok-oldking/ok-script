@@ -45,6 +45,10 @@ class EventSignal:
             elif callback in self._subscribers:
                 self._subscribers.remove(callback)
 
+    def disconnect_where(self, predicate: Callable[[Callable[..., Any]], bool]) -> None:
+        with self._lock:
+            self._subscribers = [callback for callback in self._subscribers if not predicate(callback)]
+
     def emit(self, *args: Any, **kwargs: Any) -> None:
         with self._lock:
             subscribers = tuple(self._subscribers)
@@ -93,6 +97,12 @@ class EventBus:
         def forward(*args: Any, **kwargs: Any) -> None:
             self.any.emit(EventMessage(name, args, kwargs))
         return forward
+
+    def disconnect_where(self, predicate: Callable[[Callable[..., Any]], bool]) -> None:
+        """Remove every subscriber of every event for which ``predicate`` is true."""
+        self.any.disconnect_where(predicate)
+        for name in self._event_names:
+            getattr(self, name).disconnect_where(predicate)
 
     def emit_draw_box(self, key=None, boxes=None, color=None, frame=None, debug=True):
         self.draw_box.emit(key, boxes, color, frame, debug)
