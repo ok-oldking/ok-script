@@ -8,7 +8,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import QEvent, QPoint, Qt
 from PySide6.QtGui import QIcon
-from PySide6.QtTest import QTest
+from qt_helpers import mouse_click, wait
 from PySide6.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
 from ok.core.icons import Icon
@@ -209,7 +209,7 @@ class TestNavigationView(ShellWidgetTestCase):
         self.show(nav)
         picked = []
         nav.current_changed.connect(picked.append)
-        QTest.mouseClick(nav.item("about"), Qt.MouseButton.LeftButton)
+        mouse_click(nav.item("about"), Qt.MouseButton.LeftButton)
         self.assertEqual(["about"], picked)
         self.assertEqual("about", nav.current_key())
         nav.set_current("tasks")
@@ -251,15 +251,15 @@ class TestNavigationCollapse(ShellWidgetTestCase):
         nav.set_compact(True)
         self.assertFalse(item.text_label.isVisibleTo(item))
         self.assertEqual("", header.text())
-        QTest.qWait(COLLAPSE_DURATION // 3)
+        wait(COLLAPSE_DURATION // 3)
         self.assertGreater(nav.width(), COMPACT_WIDTH)
-        QTest.qWait(COLLAPSE_DURATION * 2)
+        wait(COLLAPSE_DURATION * 2)
         self.assertEqual(COMPACT_WIDTH, nav.width())
         self.assertEqual(header_height, header.height())
 
         nav.set_compact(False)
         self.assertFalse(item.text_label.isVisibleTo(item))
-        QTest.qWait(COLLAPSE_DURATION * 2)
+        wait(COLLAPSE_DURATION * 2)
         self.assertEqual(EXPANDED_WIDTH, nav.width())
         self.assertTrue(item.text_label.isVisibleTo(item))
         self.assertEqual("RUN", header.text())
@@ -297,9 +297,9 @@ class TestPopover(ShellWidgetTestCase):
         self.assertGreaterEqual(popover.height(), text.heightForWidth(300 - 18))
         closed = []
         popover.closed.connect(lambda: closed.append(True))
-        QTest.mouseClick(popover, Qt.MouseButton.LeftButton, pos=QPoint(10, 10))
+        mouse_click(popover, Qt.MouseButton.LeftButton, pos=QPoint(10, 10))
         self.assertTrue(popover.isVisible())
-        QTest.mouseClick(other, Qt.MouseButton.LeftButton)
+        mouse_click(other, Qt.MouseButton.LeftButton)
         self.assertFalse(popover.isVisible())
         self.assertEqual([True], closed)
 
@@ -311,8 +311,8 @@ class TestOptionGroup(ShellWidgetTestCase):
         self.show(group)
         picked = []
         group.selected.connect(picked.append)
-        QTest.mouseClick(group.cards[1], Qt.MouseButton.LeftButton)
-        QTest.mouseClick(group.cards[1], Qt.MouseButton.LeftButton)
+        mouse_click(group.cards[1], Qt.MouseButton.LeftButton)
+        mouse_click(group.cards[1], Qt.MouseButton.LeftButton)
         self.assertEqual([1], picked)
         self.assertEqual(1, group.current())
         group.set_options([("Only", "", None)])

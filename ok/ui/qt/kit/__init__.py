@@ -1,7 +1,7 @@
 """ok-script's own PySide6 widget kit.
 
-Built only on the PySide6-Essentials modules (QtCore, QtGui, QtWidgets,
-QtSvg). Call ``theme.install(root)`` on a top-level widget to style it and
+Built only on the Qt modules ok-pyside-minimal ships (QtCore, QtGui,
+QtWidgets, QtSvg). Call ``theme.install(root)`` on a top-level widget to style it and
 its children; plain Qt inputs inside it are styled too.
 """
 

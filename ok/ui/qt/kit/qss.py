@@ -95,7 +95,8 @@ TabItem {{
     border-radius: 7px;
 }}
 TabItem:hover {{ background: {control_hover}; }}
-TabItem:checked {{ background: {accent_soft_strong}; border-color: {accent_line_soft}; }}
+/* One outline only: the strip's. The selected tab is marked by its fill. */
+TabItem:checked {{ background: {accent_soft_strong}; }}
 TabItem[look="underline"] {{ border: 0; border-radius: 0; border-bottom: 2px solid transparent; }}
 TabItem[look="underline"]:hover {{ background: transparent; }}
 TabItem[look="underline"]:checked {{ background: transparent; border-bottom: 2px solid {accent}; }}

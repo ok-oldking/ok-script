@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import QTimer
-from PySide6.QtTest import QTest
+from qt_helpers import wait
 from PySide6.QtWidgets import QApplication
 
 from ok.ui.qt.tasks.ScheduleTaskTab import ScheduleTaskTab
@@ -89,7 +89,7 @@ class TestScheduleStartup(unittest.TestCase):
                 tab.show()
                 heartbeat = Mock()
                 QTimer.singleShot(0, heartbeat)
-                QTest.qWait(30)
+                wait(30)
                 heartbeat.assert_called_once()
                 self.assertTrue(tab.isVisible())
                 self.assertTrue(tab.refresh_thread.daemon)
@@ -99,7 +99,7 @@ class TestScheduleStartup(unittest.TestCase):
                 self.assertIs(original_thread, tab.refresh_thread)
                 release.set()
                 tab.refresh_thread.join(2)
-                QTest.qWait(30)
+                wait(30)
                 self.assertFalse(tab.refreshing)
                 migrate.assert_called_once_with(rewrite_argv=False)
                 cache.return_value.load_cache.assert_called_once()
@@ -134,7 +134,7 @@ class TestSchedulePage(unittest.TestCase):
         mocks[0].return_value.get_all.return_value = []
         tab = ScheduleTaskTab({"gui_title": "OK-Test"})
         tab.refresh_thread.join(2)
-        QTest.qWait(10)
+        wait(10)
         self.addCleanup(tab.deleteLater)
         own = tab._own_app_name()
         tasks = [

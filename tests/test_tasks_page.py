@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import QEvent, Qt, QTimer
-from PySide6.QtTest import QTest
+from qt_helpers import mouse_click
 from PySide6.QtWidgets import QApplication, QCheckBox
 
 from ok import og
@@ -254,7 +254,7 @@ class TestTasksPage(QtTestCase):
     def test_clicking_a_row_opens_it(self):
         daily, nest = FakeTask("Daily"), FakeTask("Nest")
         page = self.make_page([daily, nest])
-        QTest.mouseClick(page.rows[nest], Qt.MouseButton.LeftButton)
+        mouse_click(page.rows[nest], Qt.MouseButton.LeftButton)
         self.assertIs(nest, page.selected_task)
         self.assertFalse(page.rows[daily].property("selected"))
         self.assertEqual("Nest", page.detail.title_label.text())

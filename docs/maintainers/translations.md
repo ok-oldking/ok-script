@@ -19,11 +19,20 @@ When you are instructed to add or update internationalization (i18n) translation
    ```
    **IMPORTANT WARNING: DO NOT use `pyside6-lupdate` as it corrupts and deletes existing translations. Always modify the XML nodes natively or use the python script!**
 4. Check that the added translations are complete. You must replace `<translation type="unfinished" />` with `<translation>Your Translation</translation>`.
-5. Compile the `.qm` files and the Qt resource module from `ok/ui/qt`:
+5. Compile the `.qm` files and the Qt resource module from `ok/ui/qt`. The project venv uses `ok-pyside-minimal`, which ships no Qt tools, so `lrelease` and `rcc` come from a separate tools venv with official PySide6-Essentials of the same version. Create it once from the repository root:
+
+```powershell
+python -m venv .venv-qt-tools
+.\.venv-qt-tools\Scripts\python.exe -m pip install "PySide6-Essentials==$(.\.venv\Scripts\python.exe -c 'import PySide6; print(PySide6.__version__)')"
+```
+
+Then, from `ok/ui/qt`:
 
 // turbo
 ```powershell
-$bin = (Resolve-Path ..\..\..\.venv\Scripts).Path
+$bin = (Resolve-Path ..\..\..\.venv-qt-tools\Scripts).Path
 Get-ChildItem i18n\*.ts | ForEach-Object { & "$bin\pyside6-lrelease.exe" $_.FullName -qm ($_.FullName -replace '\.ts$', '.qm') }
 & "$bin\pyside6-rcc.exe" qt.qrc -o resources.py
 ```
+
+Never install PySide6-Essentials into `.venv`: both packages own the `PySide6` folder.

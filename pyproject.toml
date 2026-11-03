@@ -47,7 +47,7 @@ default = [
     "OpenCC==1.2.0",
 ]
 qt = [
-    "PySide6-Essentials>=6.7.0",
+    "ok-pyside-minimal>=6.12.0.post2",
 ]
 adb = [
     "adbutils>=2.2.1",
@@ -82,7 +82,7 @@ default = [
     "OpenCC==1.2.0",
 ]
 qt = [
-    "PySide6-Essentials>=6.7.0",
+    "ok-pyside-minimal>=6.12.0.post2",
 ]
 adb = [
     "adbutils>=2.2.1",

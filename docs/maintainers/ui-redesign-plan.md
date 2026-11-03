@@ -48,7 +48,7 @@ A visual example is on the design canvas (Tasks, Connection popover, run bar sta
 
 ### 3.1 New internal widget kit: `ok/ui/qt/kit/`
 
-Pure PySide6, no third-party UI dependency, and limited to the **PySide6-Essentials** wheel (QtCore, QtGui, QtWidgets, QtSvg); nothing from PySide6-Addons or the full `PySide6` meta-package. `tests/test_kit.py` enforces this. The full package is only installed today because PySide6-Fluent-Widgets depends on it, and leaves with that dependency in phase 6.
+Pure PySide6, no third-party UI dependency, and limited to QtCore, QtGui, QtWidgets and QtSvg. The `qt` extra installs **ok-pyside-minimal**, a repackaged PySide6-Essentials wheel that ships only those modules (no Qt tools, QtTest, QtNetwork, ...). `tests/test_kit.py` checks that neither `ok/` nor `tests/` imports anything else; tests use `tests/qt_helpers.py` instead of QtTest.
 
 Run `python -m ok.ui.qt.kit.gallery [light|dark]` to see every widget.
 

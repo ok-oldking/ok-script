@@ -8,7 +8,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import QEvent, QObject, QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QIcon, QImage
-from PySide6.QtTest import QTest
+from qt_helpers import key_click, mouse_click, wait
 from PySide6.QtWidgets import QApplication, QLabel, QWidget
 
 from ok.ui.qt.kit import (Button, ComboBox, Dialog, FlowLayout, ICON_NAMES, Label, NumberBox, Pill, ProgressRing,
@@ -16,8 +16,10 @@ from ok.ui.qt.kit import (Button, ComboBox, Dialog, FlowLayout, ICON_NAMES, Labe
                           show_toast, theme)
 from ok.ui.qt.kit.theme import contrast_ratio, readable_accent
 
-KIT_DIR = Path(__file__).resolve().parents[1] / "ok" / "ui" / "qt" / "kit"
-ESSENTIALS_MODULES = {"QtCore", "QtGui", "QtWidgets", "QtSvg", "QtTest"}
+ROOT = Path(__file__).resolve().parents[1]
+KIT_DIR = ROOT / "ok" / "ui" / "qt" / "kit"
+# The Qt modules ok-pyside-minimal ships; everything else is absent at runtime.
+MINIMAL_MODULES = {"QtCore", "QtGui", "QtWidgets", "QtSvg"}
 
 SAMPLE_SVG = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
               '<rect width="10" height="10" fill="#FF0000"/></svg>')
@@ -60,18 +62,26 @@ class KitTestCase(unittest.TestCase):
         return host
 
 
-class TestEssentialsOnly(unittest.TestCase):
-    def test_kit_imports_only_pyside6_essentials_modules(self):
-        used = set()
-        for path in KIT_DIR.glob("*.py"):
-            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-                if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("PySide6"):
-                    used.add(node.module.split(".")[1])
-                elif isinstance(node, ast.Import):
-                    used.update(alias.name.split(".")[1] for alias in node.names
-                                if alias.name.startswith("PySide6."))
+class TestMinimalQtOnly(unittest.TestCase):
+    def test_code_and_tests_import_only_ok_pyside_minimal_modules(self):
+        used = {}
+        for folder in (ROOT / "ok", ROOT / "tests"):
+            for path in folder.rglob("*.py"):
+                if path.name == "resources.py":
+                    continue
+                for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+                    names = []
+                    if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("PySide6."):
+                        names = [node.module]
+                    elif isinstance(node, ast.ImportFrom) and node.module == "PySide6":
+                        names = ["PySide6." + alias.name for alias in node.names]
+                    elif isinstance(node, ast.Import):
+                        names = [alias.name for alias in node.names if alias.name.startswith("PySide6.")]
+                    for name in names:
+                        used.setdefault(name.split(".")[1], set()).add(path.relative_to(ROOT).as_posix())
         self.assertTrue(used)
-        self.assertLessEqual(used, ESSENTIALS_MODULES)
+        extra = {module: files for module, files in used.items() if module not in MINIMAL_MODULES}
+        self.assertEqual({}, extra)
 
     def test_kit_does_not_import_qfluentwidgets(self):
         for path in KIT_DIR.glob("*.py"):
@@ -192,7 +202,7 @@ class TestWidgets(KitTestCase):
         self.assertGreater(button.sizeHint().width(), 90)
         clicks = []
         button.clicked.connect(lambda: clicks.append(True))
-        QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+        mouse_click(button, Qt.MouseButton.LeftButton)
         self.assertEqual([True], clicks)
 
     def test_icon_only_button_is_square(self):
@@ -214,9 +224,9 @@ class TestWidgets(KitTestCase):
     def test_switch_toggles_on_click_and_animates_to_end(self):
         switch = Switch()
         self.host(switch)
-        QTest.mouseClick(switch, Qt.MouseButton.LeftButton)
+        mouse_click(switch, Qt.MouseButton.LeftButton)
         self.assertTrue(switch.isChecked())
-        QTest.qWait(250)
+        wait(250)
         self.assertAlmostEqual(1.0, switch.position)
 
     def test_switch_checked_with_signals_blocked_draws_on(self):
@@ -275,7 +285,7 @@ class TestWidgets(KitTestCase):
         self.assertEqual("all", strip.current_key())
         changes = []
         strip.current_changed.connect(changes.append)
-        QTest.mouseClick(strip.item("daily"), Qt.MouseButton.LeftButton)
+        mouse_click(strip.item("daily"), Qt.MouseButton.LeftButton)
         self.assertEqual(["daily"], changes)
         self.assertTrue(strip.item("daily").text_label.property("selected"))
         self.assertFalse(strip.item("all").text_label.property("selected"))
@@ -357,7 +367,7 @@ class TestFeedback(KitTestCase):
         self.assertTrue(first.isVisible())
         self.assertLess(first.y(), second.y())
         self.assertLessEqual(second.geometry().bottom(), host.height())
-        QTest.qWait(300)
+        wait(300)
         self.assertTrue(second.isVisible())
         second.close_button.click()
         QApplication.processEvents()
@@ -377,7 +387,7 @@ class TestFeedback(KitTestCase):
         dialog.open()
         QApplication.processEvents()
         self.assertEqual(host.rect(), dialog.geometry())
-        QTest.keyClick(dialog, Qt.Key.Key_Escape)
+        key_click(dialog, Qt.Key.Key_Escape)
         self.assertFalse(dialog.result())
         self.assertFalse(dialog.isVisible())
 
