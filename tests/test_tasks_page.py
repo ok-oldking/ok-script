@@ -396,3 +396,20 @@ class TestTasksPage(QtTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestImportedTaskTab(QtTestCase):
+    def test_lists_only_its_plugins_tasks_under_the_plugin_name(self):
+        from ok.ui.qt.plugins.imported_tabs import ImportedTaskTab
+        built_in = FakeTask("Built In")
+        mine, hidden = FakeTask("Farm"), FakeTask("Hidden", visible=False)
+        og.executor.onetime_tasks = [built_in]
+        og.task_manager.imported_scripts = {"demo": {"tasks": [mine, hidden], "script_name": "Demo"}}
+        tab = self.show(ImportedTaskTab("demo", "Demo"))
+        self.assertEqual("Demo", tab.title_label.text())
+        self.assertEqual(([mine], []), (tab.onetime_tasks, tab.trigger_tasks))
+        self.assertTrue(tab.has_task(mine))
+        self.assertFalse(tab.has_task(built_in))
+        self.assertIs(mine, tab.detail.task)
+        self.assertTrue(tab.in_current_list(mine))
+        self.assertFalse(tab.in_current_list(built_in))

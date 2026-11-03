@@ -648,9 +648,12 @@ class TaskDetail(QWidget):
 # --- page -------------------------------------------------------------------------
 
 class TasksPage(QWidget):
-    """All visible tasks with filter tabs, a sectioned list and a detail pane."""
+    """All visible tasks with filter tabs, a sectioned list and a detail pane.
 
-    def __init__(self, parent=None):
+    Subclasses show another task set by overriding :meth:`collect_tasks`.
+    """
+
+    def __init__(self, parent=None, title: str = None):
         super().__init__(parent)
         self.setObjectName("TasksPage")
         self.onetime_tasks = []
@@ -658,7 +661,7 @@ class TasksPage(QWidget):
         self.rows = {}
         self.selected_task = None
 
-        self.title_label = Label(_t("MainWindow", "Tasks"), "display")
+        self.title_label = Label(title or _t("MainWindow", "Tasks"), "display")
         self.filter_tabs = TabStrip()
         self.filter_tabs.current_changed.connect(lambda _key: self._apply_filter())
         top = QHBoxLayout()
@@ -709,8 +712,12 @@ class TasksPage(QWidget):
     def has_task(self, task) -> bool:
         return task in self.rows
 
+    def collect_tasks(self):
+        """``(onetime, triggers)`` this page lists."""
+        return visible_tasks(og.executor, getattr(og, 'task_manager', None))
+
     def refresh_tasks(self) -> None:
-        self.onetime_tasks, self.trigger_tasks = visible_tasks(og.executor, getattr(og, 'task_manager', None))
+        self.onetime_tasks, self.trigger_tasks = self.collect_tasks()
         self.rows = {}
         onetime_rows = [self._make_row(task, False) for task in self.onetime_tasks]
         trigger_rows = [self._make_row(task, True) for task in self.trigger_tasks]

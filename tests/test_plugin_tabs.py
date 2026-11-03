@@ -126,13 +126,10 @@ def test_tab_only_plugin_stays_live_until_staged_deletion_is_applied(environment
 def test_explicit_custom_tabs_can_coexist_with_one_time_and_trigger_tasks(environment, monkeypatch):
     from ok.task.task import TriggerTask
 
-    class FakeCard(QWidget):
-        def __init__(self, task, onetime):
-            super().__init__()
-            self.task, self.onetime = task, onetime
-            self.dispose = Mock()
-
-    monkeypatch.setattr('ok.ui.qt.tasks.TaskCard.TaskCard', FakeCard)
+    # The fake tasks cannot fill task rows; check the split, not the widgets.
+    built = []
+    monkeypatch.setattr('ok.ui.qt.tasks.tasks_page.TasksPage.refresh_tasks',
+                        lambda self: built.append(self.collect_tasks()))
     folder = install_files(environment, {'file_name': 'demo', 'tasks': [],
                                         'custom_tabs': [['page', 'Page']]}, {'page.py': PAGE_SOURCE})
     ordinary = SimpleNamespace(visible=True, group_icon=FluentIcon.APPLICATION)
@@ -141,7 +138,8 @@ def test_explicit_custom_tabs_can_coexist_with_one_time_and_trigger_tasks(enviro
     environment.manager.imported_scripts['demo']['tasks'] = [ordinary, trigger]
     environment.controller.refresh()
     task_tab = environment.window.imported_tabs['demo']
-    assert [card.onetime for card in task_tab.card_widgets] == [True, False]
+    assert task_tab.collect_tasks() == ([ordinary], [trigger])
+    assert built[-1] == ([ordinary], [trigger])
     assert len(environment.controller.custom_tabs['demo']) == 1
     assert environment.window.stackedWidget.count() == 2
     environment.manager.imported_scripts['demo']['tasks'] = []

@@ -1,39 +1,38 @@
 """Host-owned task/custom pages for imported plugins."""
 
 from PySide6.QtCore import QObject, QTimer
-from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget
 from shiboken6 import isValid
 
 from ok import Logger, og
 from ok.core.icons import Icon
 from ok.core.plugins import import_plugin_class
-from ok.ui.qt.tasks.OneTimeTaskTab import OneTimeTaskTab
-from ok.ui.qt.widget.Tab import Tab
+from ok.ui.qt.tasks.tasks_page import TasksPage
 
 logger = Logger.get_logger(__name__)
 
 
-class ImportedTaskTab(OneTimeTaskTab):
+class ImportedTaskTab(TasksPage):
+    """The Tasks page layout for one imported plugin's tasks."""
+
     def __init__(self, namespace, name):
         self.namespace = namespace
-        super().__init__(is_standalone=False, group_name=name)
         self.imported_file_name = namespace
+        super().__init__(title=og.app.tr(name))
 
-    def refresh_ui(self):
+    def collect_tasks(self):
         from ok.task.task import TriggerTask
-        from ok.ui.qt.tasks.TaskCard import TaskCard
-
-        for card in self.card_widgets:
-            self.remove_task_card(card)
-            card.dispose()
-            card.deleteLater()
-        self.card_widgets.clear()
         entry = og.task_manager.imported_scripts.get(self.namespace, {})
-        self.tasks = [task for task in entry.get('tasks', ()) if getattr(task, 'visible', True)]
-        for task in self.tasks:
-            card = TaskCard(task, not isinstance(task, TriggerTask))
-            self.card_widgets.append(card)
-            self.add_task_card(card)
+        tasks = [task for task in entry.get('tasks', ()) if getattr(task, 'visible', True)]
+        return ([task for task in tasks if not isinstance(task, TriggerTask)],
+                [task for task in tasks if isinstance(task, TriggerTask)])
+
+    def in_current_list(self, task):
+        """Select ``task`` when this page lists it."""
+        if not self.has_task(task):
+            return False
+        self.select_task(task)
+        return True
 
 
 def _dispose_widget(widget):
@@ -47,12 +46,19 @@ def _dispose_widget(widget):
         logger.error('Failed to dispose plugin page', error)
 
 
-class ImportedPluginPage(Tab):
+class ImportedPluginPage(QWidget):
     """Adapt an imported task's page factory without exposing MainWindow internals."""
 
     def __init__(self, task):
         super().__init__()
         self.page = None
+        self.view = QWidget(self)
+        self.vBoxLayout = QVBoxLayout(self.view)
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 18, 20, 16)
+        # No kit stylesheet here: the plugin's page keeps its own styling.
+        layout.addWidget(self.view)
         try:
             page = task.create_import_page(self.view)
             if not isinstance(page, QWidget) or page.isWindow():
