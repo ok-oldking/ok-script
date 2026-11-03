@@ -47,6 +47,28 @@ class TestHeadlessImports(unittest.TestCase):
         )
         self.assertEqual(0, result.returncode, result.stderr)
 
+    def test_qt_ui_imports_without_fluent_widgets(self):
+        # Every UI module must load with only PySide6 present.
+        source = (
+            "import sys, pkgutil, importlib; "
+            "sys.modules['qfluentwidgets'] = None; "
+            "sys.modules['qframelesswindow'] = None; "
+            "import ok.ui.qt as qt; "
+            "names = [m.name for m in pkgutil.walk_packages(qt.__path__, 'ok.ui.qt.')]; "
+            "[importlib.import_module(name) for name in names]; "
+            "print(len(names))"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", source],
+            cwd=os.path.dirname(os.path.dirname(__file__)),
+            capture_output=True,
+            text=True,
+            timeout=120,
+            env={**os.environ, "QT_QPA_PLATFORM": "offscreen"},
+        )
+        self.assertEqual(0, result.returncode, result.stderr[-3000:])
+        self.assertGreater(int(result.stdout.strip().splitlines()[-1]), 40)
+
 
 if __name__ == "__main__":
     unittest.main()

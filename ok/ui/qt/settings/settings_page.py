@@ -5,7 +5,6 @@ A section list on the left jumps to, and follows, the sections on the right.
 
 from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import QButtonGroup, QFrame, QHBoxLayout, QPushButton, QScrollArea, QVBoxLayout, QWidget
-from qfluentwidgets import Theme, qconfig, setTheme
 
 from ok import og
 from ok.ui.qt.common.config import Language, cfg
@@ -84,7 +83,7 @@ class SettingsPage(QWidget):
         layout.addWidget(anchor_holder)
         layout.addWidget(self.scroll, 1)
         theme.install(self)
-        cfg.appRestartSig.connect(self._show_restart_notice)
+        cfg.restart_required.connect(self._show_restart_notice)
 
     # --- sections -------------------------------------------------------------
 
@@ -102,7 +101,7 @@ class SettingsPage(QWidget):
         self.theme_tabs = TabStrip()
         for key, text in (("auto", _t('Use system setting')), ("light", _t('Light')), ("dark", _t('Dark'))):
             self.theme_tabs.add_tab(key, text)
-        self.theme_tabs.set_current({Theme.LIGHT: "light", Theme.DARK: "dark"}.get(cfg.get(cfg.themeMode), "auto"))
+        self.theme_tabs.set_current(cfg.theme_mode)
         self.theme_tabs.current_changed.connect(self._set_theme)
         group.add_row(SettingRow(_t('Application Theme'), _t("Change the appearance of the application"),
                                  self.theme_tabs, control_width=360))
@@ -113,9 +112,9 @@ class SettingsPage(QWidget):
         names = [LANGUAGE_NAMES[i] if i < len(LANGUAGE_NAMES) and language.name != 'AUTO'
                  else _t('Use system setting') for i, language in enumerate(languages)]
         self.language_combo = ComboBox(names)
-        current = cfg.get(cfg.language)
+        current = cfg.language
         self.language_combo.setCurrentIndex(languages.index(current) if current in languages else len(languages) - 1)
-        self.language_combo.activated.connect(lambda index: cfg.set(cfg.language, languages[index]))
+        self.language_combo.activated.connect(lambda index: cfg.set_language(languages[index]))
         group.add_row(SettingRow(_t('Language'), _t('Set your preferred language'), self.language_combo))
 
         section = QWidget()
@@ -163,9 +162,7 @@ class SettingsPage(QWidget):
     # --- appearance -----------------------------------------------------------
 
     def _set_theme(self, key: str) -> None:
-        mode = {"light": Theme.LIGHT, "dark": Theme.DARK}.get(key, Theme.AUTO)
-        qconfig.set(cfg.themeMode, mode)
-        setTheme(mode)
+        cfg.set_theme_mode(key)
 
     def _show_restart_notice(self) -> None:
         show_toast(self, _t('Configuration takes effect after restart'), _t('Updated successfully'), "success")

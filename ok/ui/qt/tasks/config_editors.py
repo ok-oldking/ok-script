@@ -195,7 +195,7 @@ class MultiSelectionEditor(ConfigEditor):
 
 class LineEditEditor(ConfigEditor):
     def __init__(self, config_desc, config, key, options=None):
-        from ok.ui.qt.tasks.LabelAndLineEdit import ensure_global_filter
+        from ok.ui.qt.tasks.mouse_buttons import ensure_global_filter
         self.line_edit = QLineEdit()
         # Hotkey fields accept mouse4/mouse5 through the app-wide filter.
         self.line_edit._is_hotkey_input = True

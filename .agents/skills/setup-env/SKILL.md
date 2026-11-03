@@ -33,7 +33,7 @@ Use the normal package index first. If downloads stall, a reachable alternate in
 
 ## Verify the environment
 
-Run `& $projectPy -m pip check`. Smoke-test `import ok, cv2, mcp` and the selected optional stacks, and verify `ok.__file__` resolves to the intended checkout or installed package. For Qt, check `from PySide6 import QtCore` and `import qfluentwidgets`.
+Run `& $projectPy -m pip check`. Smoke-test `import ok, cv2, mcp` and the selected optional stacks, and verify `ok.__file__` resolves to the intended checkout or installed package. For Qt, check `from PySide6 import QtCore, QtSvg` and `import ok.ui.qt.kit`.
 
 If the application already has a launcher, run it with its environment to catch runtime imports that dependency metadata alone cannot verify. Compile changed application scripts and run its existing tests when relevant.
 

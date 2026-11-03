@@ -16,16 +16,6 @@ _SEMANTIC = {
     Icon.UPDATE: "refresh",
 }
 
-# Old pages still pass Fluent icons until they are ported to the kit.
-_FLUENT = {
-    "PLAY": "play", "STOP_WATCH": "timer", "BOOK_SHELF": "tasks", "DEVELOPER_TOOLS": "bug",
-    "COMMAND_PROMPT": "terminal", "EDIT": "pen", "PHOTO": "image", "CALENDAR": "calendar", "RINGER": "bell",
-    "SETTING": "gear", "QUESTION": "info", "APPLICATION": "grid", "GAME": "gamepad", "PEOPLE": "users",
-    "SYNC": "refresh", "UPDATE": "refresh", "CODE": "code", "FOLDER": "folder", "INFO": "info",
-    "HISTORY": "history", "LINK": "link", "HEART": "heart", "ROBOT": "gamepad", "TAG": "layers",
-    "LIBRARY": "layers", "DOCUMENT": "file", "CAMERA": "camera", "MESSAGE": "bell",
-}
-
 FALLBACK = "grid"
 
 
@@ -33,7 +23,7 @@ def nav_icon(source, base_dir=None):
     """A bundled icon name or a QIcon for ``source``.
 
     Accepts ``None``, a bundled icon name, an ``ok.core.icons.Icon``, a path to
-    an SVG/PNG, a QIcon, or a Fluent icon from a page not yet ported.
+    an SVG/PNG, a QIcon, or an object whose ``icon()`` returns a QIcon.
     """
 
     if source is None:
@@ -57,9 +47,6 @@ def nav_icon(source, base_dir=None):
             except (OSError, ValueError):
                 return FALLBACK
         return FALLBACK
-    name = getattr(source, "name", None)
-    if isinstance(name, str) and name in _FLUENT:
-        return _FLUENT[name]
     if callable(getattr(source, "icon", None)):
         try:
             result = source.icon()

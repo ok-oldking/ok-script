@@ -156,7 +156,8 @@ class TestNavIcons(unittest.TestCase):
         self.assertEqual("tasks", nav_icon("tasks"))
         self.assertEqual(FALLBACK, nav_icon(None))
         self.assertEqual(FALLBACK, nav_icon("missing.svg"))
-        self.assertEqual("timer", nav_icon(SimpleNamespace(name="STOP_WATCH")))
+        # Fluent icon enums are no longer mapped; anything unknown falls back.
+        self.assertEqual(FALLBACK, nav_icon(SimpleNamespace(name="STOP_WATCH")))
         icon = QIcon()
         self.assertIs(icon, nav_icon(icon))
 

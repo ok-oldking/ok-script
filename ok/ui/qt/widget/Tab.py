@@ -1,36 +1,35 @@
-# Tab.py
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QVBoxLayout, QWidget, QSizePolicy
-from qfluentwidgets import ScrollArea
+from PySide6.QtWidgets import QFrame, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
 
-from ok.ui.qt.common.design_system import configure_page_layout
-from ok.ui.qt.common.style_sheet import StyleSheet
+from ok.ui.qt.kit.theme import theme
 from ok.ui.qt.util.touch_scroll import enable_touch_scrolling
 from ok.ui.qt.widget.Card import Card
 from ok.ui.qt.widget.StartLoadingDialog import StartLoadingDialog
 
+PAGE_MARGINS = (28, 20, 28, 28)
+PAGE_SPACING = 24
 
-class Tab(ScrollArea):
+
+class Tab(QScrollArea):
+    """A scrolling page for app and plugin tabs: add titled cards or widgets to :attr:`vBoxLayout`."""
+
     def __init__(self):
         super().__init__()
         self.loading_dialog = None
-        self.view = QWidget(self)
+        self.setFrameShape(QFrame.NoFrame)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.vBoxLayout = QVBoxLayout(self.view)
-
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setViewportMargins(0, 0, 0, 0)
-        self.setWidget(self.view)
         self.setWidgetResizable(True)
-        enable_touch_scrolling(self)
-
-        configure_page_layout(self.vBoxLayout)
+        self.view = QWidget(self)
+        self.view.setObjectName('scrollContents')
+        self.vBoxLayout = QVBoxLayout(self.view)
+        self.vBoxLayout.setContentsMargins(*PAGE_MARGINS)
+        self.vBoxLayout.setSpacing(PAGE_SPACING)
         self.vBoxLayout.setAlignment(Qt.AlignTop)
-
-        self.view.setObjectName('view')
-
+        self.setWidget(self.view)
+        enable_touch_scrolling(self)
         self.setObjectName(f"{self.__class__.__name__}_{id(self)}")
-        StyleSheet.TAB.apply(self)
+        theme.install(self)
 
     @property
     def exit_event(self):
@@ -43,8 +42,7 @@ class Tab(ScrollArea):
 
     def show_loading_dialog(self):
         if not self.loading_dialog:
-            self.loading_dialog = StartLoadingDialog(-1,
-                                                     self.window())
+            self.loading_dialog = StartLoadingDialog(-1, self)
         if not self.loading_dialog.isVisible():
             self.loading_dialog.show()
 

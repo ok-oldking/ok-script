@@ -18,8 +18,8 @@ class TaskTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cfg.language.value = cls.lang
-        print(f'set language to {cls.lang} {cfg.language.value}')
+        cfg.language = cls.lang
+        print(f'set language to {cls.lang} {cfg.language.value.name()}')
         cls.config['trigger_tasks'] = []
         init_ok(cls.config)
         logger = Logger.get_logger(__name__)

@@ -1,11 +1,19 @@
-from qfluentwidgets import NavigationItemPosition
-
 from ok import Logger
 from ok import TaskExecutor
+from ok.core.icons import Icon
 from ok.ui.qt.widget.Tab import Tab
 
 
 class CustomTab(Tab):
+    """Base class for pages an app or plugin adds to the Game section.
+
+    Set :attr:`icon` to an :class:`ok.core.icons.Icon` or an SVG/PNG path, and
+    override :attr:`name`. Build the page with :meth:`add_card` and
+    :meth:`add_widget`.
+    """
+
+    icon = Icon.APPLICATION
+
     def __init__(self):
         super().__init__()
         self.logger = Logger.get_logger(self.__class__.__name__)
@@ -23,10 +31,6 @@ class CustomTab(Tab):
     @property
     def name(self):
         return "CustomTab"
-
-    @property
-    def position(self):
-        return NavigationItemPosition.SCROLL
 
     @property
     def add_after_default_tabs(self):

@@ -6,7 +6,7 @@
 ok/core/          events, task discovery, startup, screenshots, downloads, translations
 ok/task/          automation task and executor logic
 ok/device/        capture and interaction logic
-ok/ui/qt/         PySide6 and PySide6-Fluent-Widgets desktop UI
+ok/ui/qt/         PySide6 desktop UI on the built-in widget kit (ok/ui/qt/kit)
 ok/gui/           compatibility namespace for existing imports
 ```
 

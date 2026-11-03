@@ -91,16 +91,12 @@ class TestSettingsPage(unittest.TestCase):
         self.assertTrue(editor.switch_button.isChecked())
 
     def test_theme_tabs_change_the_theme_setting(self):
-        from qfluentwidgets import Theme
         from ok.ui.qt.common.config import cfg
         page = self.make_page()
-        original = cfg.get(cfg.themeMode)
-        with patch("ok.ui.qt.settings.settings_page.setTheme") as set_theme, \
-                patch("ok.ui.qt.settings.settings_page.qconfig.set") as set_config:
-            page.theme_tabs.set_current("dark")
-            set_config.assert_called_once_with(cfg.themeMode, Theme.DARK)
-            set_theme.assert_called_once_with(Theme.DARK)
-        self.assertEqual(original, cfg.get(cfg.themeMode))
+        target = "dark" if cfg.theme_mode != "dark" else "light"
+        with patch.object(cfg, "set_theme_mode") as set_theme_mode:
+            page.theme_tabs.set_current(target)
+            set_theme_mode.assert_called_once_with(target)
 
     def test_language_list_matches_the_enum(self):
         from ok.ui.qt.common.config import Language

@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QApplication
 from ok.core.icons import Icon
 
 from ok import og
-from ok.ui.qt.tasks.ConfigItemFactory import config_widget
+from ok.ui.qt.tasks.config_editors import config_editor
 from ok.util.GlobalConfig import (
     APP_LAUNCHER_ACTION,
     APP_LAUNCHER_AUTO_START,
@@ -141,10 +141,10 @@ class TestBasicOptions(unittest.TestCase):
                 og.app = SimpleNamespace(tr=lambda text: text)
 
                 config['Blur Interval'] = 1
-                widget = config_widget(
+                widget = config_editor(
                     options.config_type, options.config_description, config, 'Blur Interval', 1, None)
 
-                self.assertEqual(0, widget.spin_box.minimum())
+                self.assertEqual(0, widget.spin_box.spin_box.minimum())
                 widget.spin_box.setValue(0)
                 self.assertEqual(0, config['Blur Interval'])
                 widget.deleteLater()

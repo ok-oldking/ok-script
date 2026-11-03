@@ -5,10 +5,7 @@ import pyappify
 from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QMenu, QStackedWidget, QSystemTrayIcon, QVBoxLayout
-from qfluentwidgets import qconfig, MessageBoxBase, isDarkTheme, Theme
-from qfluentwidgets.common.style_sheet import updateStyleSheet
 
-_original_MessageBoxBase_keyPressEvent = MessageBoxBase.keyPressEvent
 _pyappify_stop_lock = threading.Lock()
 
 
@@ -30,24 +27,10 @@ def request_pyappify_shutdown():
     return thread
 
 
-def _patched_message_box_base_keyPressEvent(self, e):
-    if e.key() == Qt.Key_Escape:
-        if hasattr(self, 'cancelButton') and self.cancelButton.isEnabled() and self.cancelButton.isVisible():
-            self.cancelButton.click()
-            return
-    elif e.key() == Qt.Key_Enter or e.key() == Qt.Key_Return:
-        if hasattr(self, 'yesButton') and self.yesButton.isEnabled() and self.yesButton.isVisible():
-            self.yesButton.click()
-            return
-    _original_MessageBoxBase_keyPressEvent(self, e)
-
-MessageBoxBase.keyPressEvent = _patched_message_box_base_keyPressEvent
-
-
 from ok.util.config import Config
 
 from ok.ui.qt.Communicate import communicate
-from ok.ui.qt.common.accent_color import qfluent_theme_source_color
+from ok.ui.qt.common.config import cfg as ui_config
 from ok.ui.qt.kit import Dialog, KitWindow, NavigationView, Theme as KitTheme, set_toast_bottom_margin, show_toast, \
     theme as kit_theme
 from ok.ui.qt.kit.theme import set_style_property
@@ -63,14 +46,11 @@ from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
-DEFAULT_THEME_COLOR = qconfig.themeColor.defaultValue
 PAGE_MARGIN = 12
 
 SECTION_RUN = "run"
 SECTION_GAME = "game"
 SECTION_DEVELOP = "develop"
-
-_KIT_THEMES = {Theme.AUTO: KitTheme.AUTO, Theme.LIGHT: KitTheme.LIGHT, Theme.DARK: KitTheme.DARK}
 
 
 def update_check_delay_ms():
@@ -93,10 +73,8 @@ class MainWindow(KitWindow):
         super().__init__()
         self._theme_cooldowns = set()
         logger.info('main window __init__')
-        self._configured_theme_color = DEFAULT_THEME_COLOR
-        self._sync_system_accent_color(refresh=True)
         self._sync_kit_theme()
-        qconfig.themeChanged.connect(self._on_theme_changed)
+        ui_config.theme_changed.connect(self._sync_kit_theme)
         self.app = app
         self.executor = executor
         self.handler = handler
@@ -358,68 +336,17 @@ class MainWindow(KitWindow):
             logger.exception('Failed to read the Windows accent color palette')
             return self.get_system_accent_color()
 
-    def get_system_primary_theme_color(self):
-        """Return a qfluent source color matching the Windows primary fill."""
-        dark = isDarkTheme()
-        color = self._system_accent('AccentLight2' if dark else 'AccentDark1')
-        if color is None:
-            return None
-        red, green, blue = qfluent_theme_source_color(color.red(), color.green(), color.blue(), dark)
-        return QColor(red, green, blue)
-
-    def _sync_system_accent_color(self, refresh=False):
-        if qconfig.themeMode.value != Theme.AUTO:
-            configured_color = getattr(self, '_configured_theme_color', None)
-            if configured_color is None or qconfig.get(qconfig.themeColor) == configured_color:
-                return False
-            qconfig.set(qconfig.themeColor, configured_color, save=False)
-            if refresh:
-                updateStyleSheet()
-            return True
-
-        color = self.get_system_primary_theme_color()
-        if color is None or color == qconfig.get(qconfig.themeColor):
-            return False
-
-        qconfig.set(qconfig.themeColor, color, save=False)
-        if refresh:
-            updateStyleSheet()
-            logger.info(f'Refresh primary button color: {color.name()}')
-        else:
-            logger.info(f'Prepare primary button color: {color.name()}')
-        return True
-
     def _sync_kit_theme(self):
-        """Keep the kit (shell) theme in step with the theme setting the old pages use."""
-        kit_theme.set_theme(_KIT_THEMES.get(qconfig.themeMode.value, KitTheme.AUTO))
+        """Apply the saved theme mode and the Windows accent color."""
+        kit_theme.set_theme(KitTheme(ui_config.theme_mode))
         if accent := self._system_accent():
             kit_theme.set_accent(accent)
 
-    def _on_theme_changed(self, _theme):
-        self._sync_system_accent_color()
-        self._sync_kit_theme()
-
     def _apply_system_theme_change(self):
-        """Synchronize qfluentwidgets and the kit after a native Windows theme notification."""
+        """Pick up a new Windows accent; the kit follows light/dark itself in system mode."""
         try:
-            theme_changed = False
-            if qconfig.themeMode.value == Theme.AUTO:
-                previous_theme = qconfig.theme
-                qconfig.theme = Theme.AUTO
-                theme_changed = qconfig.theme != previous_theme
-
-            accent_changed = self._sync_system_accent_color()
-            if theme_changed:
-                qconfig.themeChanged.emit(Theme.AUTO)
-            if theme_changed or accent_changed:
-                updateStyleSheet()
-
-            qconfig.themeChangedFinished.emit()
             self._sync_kit_theme()
-            logger.info(
-                f'System theme synchronized: mode={qconfig.themeMode.value}, '
-                f'resolved={qconfig.theme}, accent_changed={accent_changed}'
-            )
+            logger.info(f'System theme synchronized: mode={ui_config.theme_mode}, dark={kit_theme.is_dark()}')
         finally:
             self._theme_cooldowns.discard('system-theme')
 

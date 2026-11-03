@@ -11,7 +11,7 @@ os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, QThread
 from PySide6.QtWidgets import QApplication, QStackedWidget, QWidget
-from qfluentwidgets import FluentIcon
+from ok.core.icons import Icon
 from shiboken6 import delete, isValid
 
 from ok import og
@@ -77,9 +77,9 @@ def environment(qt_app, tmp_path, monkeypatch):
 
 
 PAGE_SOURCE = '''from ok.ui.qt.widget.CustomTab import CustomTab
-from qfluentwidgets import FluentIcon
+from ok.core.icons import Icon
 class Page(CustomTab):
-    icon = FluentIcon.APPLICATION
+    icon = Icon.APPLICATION
     @property
     def name(self): return 'Plugin page'
     def dispose(self): self.disposed = True
@@ -132,9 +132,9 @@ def test_explicit_custom_tabs_can_coexist_with_one_time_and_trigger_tasks(enviro
                         lambda self: built.append(self.collect_tasks()))
     folder = install_files(environment, {'file_name': 'demo', 'tasks': [],
                                         'custom_tabs': [['page', 'Page']]}, {'page.py': PAGE_SOURCE})
-    ordinary = SimpleNamespace(visible=True, group_icon=FluentIcon.APPLICATION)
+    ordinary = SimpleNamespace(visible=True, group_icon=Icon.APPLICATION)
     trigger = object.__new__(TriggerTask)
-    trigger.visible, trigger.group_icon = True, FluentIcon.APPLICATION
+    trigger.visible, trigger.group_icon = True, Icon.APPLICATION
     environment.manager.imported_scripts['demo']['tasks'] = [ordinary, trigger]
     environment.controller.refresh()
     task_tab = environment.window.imported_tabs['demo']
@@ -147,11 +147,11 @@ def test_explicit_custom_tabs_can_coexist_with_one_time_and_trigger_tasks(enviro
 
 FACTORY_TASK_SOURCE = '''from ok import BaseTask
 from PySide6.QtWidgets import QWidget
-from qfluentwidgets import FluentIcon
+from ok.core.icons import Icon
 class FactoryTask(BaseTask):
     def __init__(self, executor=None, app=None):
         self.name = 'Workshop'
-        self.group_icon = FluentIcon.APPLICATION
+        self.group_icon = Icon.APPLICATION
         self.destroyed = False
         self.stopped = False
     def after_init(self, **kwargs): pass

@@ -294,6 +294,11 @@ ConnectionPill {{
 }}
 ConnectionPill:hover {{ background: {control_hover}; }}
 ConnectionPill[open="true"] {{ background: {control_hover}; border-color: {border_strong}; }}
+QFrame#loadingPanel {{
+    background: {surface_alt};
+    border: 1px solid {border_strong};
+    border-radius: 14px;
+}}
 Button:checked {{ background: {accent_soft_strong}; border-color: {accent_line}; }}
 Button:checked QLabel#buttonText {{ font-weight: 600; }}
 QListWidget#featureList {{ background: transparent; border: 0; }}

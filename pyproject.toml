@@ -48,9 +48,6 @@ default = [
 ]
 qt = [
     "PySide6-Essentials>=6.7.0",
-    "PySideSix-Frameless-Window>=0.3.12",
-    "darkdetect>=0.8.0",
-    "PySide6-Fluent-Widgets>=1.8.3",
 ]
 adb = [
     "adbutils>=2.2.1",
@@ -86,9 +83,6 @@ default = [
 ]
 qt = [
     "PySide6-Essentials>=6.7.0",
-    "PySideSix-Frameless-Window>=0.3.12",
-    "darkdetect>=0.8.0",
-    "PySide6-Fluent-Widgets>=1.8.3",
 ]
 adb = [
     "adbutils>=2.2.1",
