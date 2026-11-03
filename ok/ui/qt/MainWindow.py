@@ -34,6 +34,7 @@ from ok.ui.qt.common.config import cfg as ui_config
 from ok.ui.qt.kit import Dialog, KitWindow, NavigationView, Theme as KitTheme, set_toast_bottom_margin, show_toast, \
     theme as kit_theme
 from ok.ui.qt.kit.theme import set_style_property
+from ok.ui.qt.shell.lazy_page import LazyPage
 from ok.ui.qt.shell.nav_icons import nav_icon
 from ok.ui.qt.shell.run_bar import RunBar
 from ok.ui.qt.util.Alert import alert_error
@@ -117,7 +118,7 @@ class MainWindow(KitWindow):
         set_toast_bottom_margin(self, PAGE_MARGIN)
 
         self.schedule_tab = None
-        self.global_config_tabs = []
+        self.global_config_tabs = []  # [(config, LazyPage)]
 
         # Prepare custom tabs and separate them by add_after_default_tabs
         before_custom_tabs = []
@@ -155,9 +156,13 @@ class MainWindow(KitWindow):
             self.edit_task_tab = EditTaskTab()
             self.add_page(self.edit_task_tab, "pen", self.tr('Script'), SECTION_DEVELOP)
 
+        # Settings, Templates and global config pages are rarely opened, so they are
+        # built on first use (LazyPage) to keep window construction fast.
         if og.task_manager.has_custom or debug:
-            from ok.ui.qt.tasks.TemplateTab import TemplateTab
-            self.template_tab = TemplateTab(config=config)
+            def template_tab():
+                from ok.ui.qt.tasks.TemplateTab import TemplateTab
+                return TemplateTab(config=config)
+            self.template_tab = LazyPage(template_tab)
             self.add_page(self.template_tab, "image", self.tr('Templates'), SECTION_DEVELOP)
 
         from ok.ui.qt.debug.diagnosis_page import DiagnosisPage
@@ -192,9 +197,11 @@ class MainWindow(KitWindow):
         notification_tab = None
         for name, config_obj, option in global_config.get_all_visible_configs():
             if getattr(option, 'show_at_tab', False):
-                from ok.ui.qt.settings.GlobalConfigTab import GlobalConfigTab
-                config_tab = GlobalConfigTab(config_obj, option)
-                self.global_config_tabs.append(config_tab)
+                def global_config_tab(config_obj=config_obj, option=option):
+                    from ok.ui.qt.settings.GlobalConfigTab import GlobalConfigTab
+                    return GlobalConfigTab(config_obj, option)
+                config_tab = LazyPage(global_config_tab)
+                self.global_config_tabs.append((config_obj, config_tab))
                 if name == NOTIFICATION_OPTION_NAME:
                     notification_tab = config_tab
                 else:
@@ -204,8 +211,10 @@ class MainWindow(KitWindow):
             self.notification_tab = notification_tab
             self.add_page(notification_tab, "bell", self.app.tr(NOTIFICATION_OPTION_NAME), SECTION_GAME)
 
-        from ok.ui.qt.settings.settings_page import SettingsPage
-        self.setting_tab = SettingsPage()
+        def settings_page():
+            from ok.ui.qt.settings.settings_page import SettingsPage
+            return SettingsPage()
+        self.setting_tab = LazyPage(settings_page)
         self.add_page(self.setting_tab, "gear", self.tr('Settings'), bottom=True)
 
         from ok.ui.qt.about.AboutTab import AboutTab
@@ -275,6 +284,8 @@ class MainWindow(KitWindow):
     def switch_to(self, widget):
         if self.stack.indexOf(widget) < 0:
             return
+        if isinstance(widget, LazyPage):
+            widget.page()
         self.stack.setCurrentWidget(widget)
         self.navigation.set_current(widget.objectName())
 
@@ -442,12 +453,12 @@ class MainWindow(KitWindow):
                 logger.debug(f'bring_to_front native activation failed: {e}')
 
     def goto_global_config(self, key):
-        for config_tab in self.global_config_tabs:
-            if config_tab.has_key(key):
+        for config_obj, config_tab in self.global_config_tabs:
+            if key in config_obj:
                 self.switch_to(config_tab)
                 return
         self.switch_to(self.setting_tab)
-        self.setting_tab.goto_config(key)
+        self.setting_tab.page().goto_config(key)
 
     def tray_quit(self):
         logger.info('main window tray_quit')
