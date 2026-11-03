@@ -65,10 +65,23 @@ class TestRunState(unittest.TestCase):
         self.assertTrue(state.starting)
 
     def test_game_name_comes_from_config_with_a_generic_fallback(self):
+        from ok import og
         from ok.ui.qt.shell.run_bar import game_display_name
-        self.assertEqual("Wuthering Waves", game_display_name({"game_name": "Wuthering Waves"}))
-        self.assertEqual("Game", game_display_name({}))
-        self.assertEqual("Game", game_display_name(None))
+        with patch.object(og, "app", None):
+            self.assertEqual("Wuthering Waves", game_display_name({"game_name": "Wuthering Waves"}))
+            self.assertEqual("Game", game_display_name({}))
+            self.assertEqual("Game", game_display_name(None))
+        app = SimpleNamespace(tr=Mock(return_value="鸣潮"))
+        with patch.object(og, "app", app):
+            name = game_display_name({"game_name": "Wuthering Waves"})
+            app.tr.assert_called_once_with("Wuthering Waves")
+            self.assertEqual("鸣潮", name)
+            state = compute_run_state(make_executor(), make_device_manager({"connected": False}), game_name=name)
+            self.assertEqual("Start 鸣潮", state.button_text)
+            state = compute_run_state(make_executor(), make_device_manager(), starting=True, game_name=name)
+            self.assertEqual("Launching 鸣潮", state.message)
+            self.assertEqual("Game", game_display_name({"game_name": ""}))
+            app.tr.assert_called_once()
 
     def test_exclusive_owner_disables_the_button(self):
         state = compute_run_state(make_executor(exclusive_owner="MCP"), make_device_manager())

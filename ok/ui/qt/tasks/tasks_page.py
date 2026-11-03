@@ -471,6 +471,9 @@ class TaskDetail(QWidget):
         self.info_table.verticalHeader().hide()
         self.info_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.info_table.horizontalHeader().setStretchLastSection(True)
+        # Left-aligned headers line up with the padded cell text below them.
+        self.info_table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.info_table.verticalHeader().setDefaultSectionSize(40)
         self.info_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.info_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         self.pages = QStackedWidget()

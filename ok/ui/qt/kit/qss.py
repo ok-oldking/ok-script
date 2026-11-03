@@ -218,12 +218,13 @@ QAbstractItemView {{
     selection-color: {text};
     outline: 0;
 }}
+QTableView::item {{ padding: 0 12px; }}
 QHeaderView::section {{
     background: {surface_alt};
     color: {text_secondary};
     border: 0;
     border-bottom: 1px solid {border};
-    padding: 6px 10px;
+    padding: 6px 12px;
     font-weight: 600;
 }}
 

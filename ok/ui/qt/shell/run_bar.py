@@ -41,9 +41,14 @@ def format_elapsed(seconds: float) -> str:
 
 
 def game_display_name(config) -> str:
-    """The game's name from the ``game_name`` config, or a generic "Game"."""
+    """The translated ``game_name`` config, or a generic "Game"."""
 
-    return (config or {}).get('game_name') or _t("RunBar", "Game")
+    from ok import og
+
+    name = (config or {}).get('game_name')
+    if name:
+        return og.app.tr(name) if og.app is not None else name
+    return _t("RunBar", "Game")
 
 
 @dataclass

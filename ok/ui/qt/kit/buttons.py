@@ -6,7 +6,7 @@ from ok.ui.qt.kit.icons import icon as kit_icon
 from ok.ui.qt.kit.theme import set_style_property, theme
 
 VARIANTS = ("secondary", "primary", "tonal", "subtle", "danger")
-SIZES = {"normal": (36, 14, 16), "small": (30, 10, 14)}
+SIZES = {"normal": (36, 14, 18), "small": (30, 10, 16)}
 
 _ICON_COLOR = {"primary": "on_accent", "danger": "danger"}
 
@@ -48,7 +48,8 @@ class Button(QPushButton):
         height, padding, _ = SIZES[size]
         layout = QHBoxLayout(self)
         layout.setContentsMargins(padding, 0, padding, 0)
-        layout.setSpacing(8)
+        # Glyphs leave a few pixels of air inside their box, so this reads wider than it is.
+        layout.setSpacing(5)
         layout.addStretch(1)
         layout.addWidget(self._icon_label)
         layout.addWidget(self._text_label)

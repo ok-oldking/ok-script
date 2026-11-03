@@ -17,9 +17,10 @@ from PySide6.QtGui import QColor, QIcon, QIconEngine, QImage, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 
 _PATHS = {
-    "play": '<path d="M7 4.5v15l12-7.5z" fill="currentColor" stroke="none"/>',
-    "pause": '<path d="M8 5v14M16 5v14"/>',
-    "stop": '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/>',
+    "play": '<path d="M7 3.5v17L20.5 12z" fill="currentColor" stroke="currentColor" stroke-width="1.5"/>',
+    "pause": '<rect x="5.5" y="4" width="4.5" height="16" rx="1.25" fill="currentColor" stroke="none"/>'
+             '<rect x="14" y="4" width="4.5" height="16" rx="1.25" fill="currentColor" stroke="none"/>',
+    "stop": '<rect x="4.5" y="4.5" width="15" height="15" rx="2.5" fill="currentColor" stroke="none"/>',
     "power": '<path d="M12 3v9M6.3 6.8a8 8 0 1 0 11.4 0"/>',
     "check": '<path d="M5 12.5l4.5 4.5L19 7"/>',
     "x": '<path d="M6 6l12 12M18 6 6 18"/>',
