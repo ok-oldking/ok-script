@@ -487,6 +487,42 @@
             <source>Import failed: {error}</source>
             <translation>Import failed: {error}</translation>
         </message>
+        <message>
+            <source>Develop</source>
+            <translation>Develop</translation>
+        </message>
+        <message>
+            <source>Diagnosis</source>
+            <translation>Diagnosis</translation>
+        </message>
+        <message>
+            <source>Disconnect</source>
+            <translation>Disconnect</translation>
+        </message>
+        <message>
+            <source>Game</source>
+            <translation>Game</translation>
+        </message>
+        <message>
+            <source>Log</source>
+            <translation>Log</translation>
+        </message>
+        <message>
+            <source>Remote Control</source>
+            <translation>Remote Control</translation>
+        </message>
+        <message>
+            <source>Run</source>
+            <translation>Run</translation>
+        </message>
+        <message>
+            <source>Success</source>
+            <translation>Success</translation>
+        </message>
+        <message>
+            <source>{owner} is controlling the app. Other tasks are stopped.</source>
+            <translation>{owner} is controlling the app. Other tasks are stopped.</translation>
+        </message>
     </context>
     <context>
         <name>MessageWindow</name>
@@ -540,6 +576,10 @@
         <message>
             <source>Search options...</source>
             <translation>Search options...</translation>
+        </message>
+        <message>
+            <source>Edit List</source>
+            <translation>Edit List</translation>
         </message>
     </context>
     <context>
@@ -999,6 +1039,10 @@
         <message>
             <source>Please Start First</source>
             <translation>Please Start First</translation>
+        </message>
+        <message>
+            <source>Browser</source>
+            <translation>Browser</translation>
         </message>
     </context>
     <context>
@@ -2068,6 +2112,26 @@
             <source>Cancel</source>
             <translation>Cancel</translation>
         </message>
+        <message>
+            <source>Modify</source>
+            <translation>Modify</translation>
+        </message>
+        <message>
+            <source>Modify Schedule Task</source>
+            <translation>Modify Schedule Task</translation>
+        </message>
+        <message>
+            <source>Task Index (-t)</source>
+            <translation>Task Index (-t)</translation>
+        </message>
+        <message>
+            <source>Task Name</source>
+            <translation>Task Name</translation>
+        </message>
+        <message>
+            <source>Windows runs the app with this task at the chosen time, even when it is closed.</source>
+            <translation>Windows runs the app with this task at the chosen time, even when it is closed.</translation>
+        </message>
     </context>
     <context>
         <name>ModifyScheduleTaskDialog</name>
@@ -2262,6 +2326,26 @@
             <source>Failed to create task</source>
             <translation>Failed to create task</translation>
         </message>
+        <message>
+            <source>Current App</source>
+            <translation>Current App</translation>
+        </message>
+        <message>
+            <source>No scheduled tasks</source>
+            <translation>No scheduled tasks</translation>
+        </message>
+        <message>
+            <source>Run a task every day, week or month without opening the app.</source>
+            <translation>Run a task every day, week or month without opening the app.</translation>
+        </message>
+        <message>
+            <source>Task Schedule</source>
+            <translation>Task Schedule</translation>
+        </message>
+        <message>
+            <source>Windows Task Scheduler starts the app and runs these tasks, even when the app is closed.</source>
+            <translation>Windows Task Scheduler starts the app and runs these tasks, even when the app is closed.</translation>
+        </message>
     </context>
     <context>
         <name>MarkUpWindow</name>
@@ -2284,6 +2368,26 @@
         <message>
             <source>Right click to copy color</source>
             <translation>Right click to copy color</translation>
+        </message>
+        <message>
+            <source>Features</source>
+            <translation>Features</translation>
+        </message>
+        <message>
+            <source>Next image (→)</source>
+            <translation>Next image (→)</translation>
+        </message>
+        <message>
+            <source>No features yet. Press R and click two corners to draw one.</source>
+            <translation>No features yet. Press R and click two corners to draw one.</translation>
+        </message>
+        <message>
+            <source>Previous image (←)</source>
+            <translation>Previous image (←)</translation>
+        </message>
+        <message>
+            <source>Scroll to zoom  ·  Drag empty space to pan  ·  Drag a box to move it, its edges to resize  ·  Right click to copy the color  ·  Changes save automatically</source>
+            <translation>Scroll to zoom  ·  Drag empty space to pan  ·  Drag a box to move it, its edges to resize  ·  Right click to copy the color  ·  Changes save automatically</translation>
         </message>
     </context>
     <context>
@@ -2323,6 +2427,10 @@
         <message>
             <source>Already exists in '{}'</source>
             <translation>Already exists in '{}'</translation>
+        </message>
+        <message>
+            <source>Name the feature tasks will look for.</source>
+            <translation>Name the feature tasks will look for.</translation>
         </message>
     </context>
     <context>
@@ -2919,6 +3027,46 @@
             <source>Error copying task: {error}</source>
             <translation>Error copying task: {error}</translation>
         </message>
+        <message>
+            <source>Class Name (English only)</source>
+            <translation>Class Name (English only)</translation>
+        </message>
+        <message>
+            <source>Click a call to insert it at the cursor.</source>
+            <translation>Click a call to insert it at the cursor.</translation>
+        </message>
+        <message>
+            <source>Confirm</source>
+            <translation>Confirm</translation>
+        </message>
+        <message>
+            <source>Create a task from scratch or copy an existing one to start.</source>
+            <translation>Create a task from scratch or copy an existing one to start.</translation>
+        </message>
+        <message>
+            <source>Description (Optional)</source>
+            <translation>Description (Optional)</translation>
+        </message>
+        <message>
+            <source>Don't Save</source>
+            <translation>Don't Save</translation>
+        </message>
+        <message>
+            <source>No scripts yet</source>
+            <translation>No scripts yet</translation>
+        </message>
+        <message>
+            <source>Select task to copy...</source>
+            <translation>Select task to copy...</translation>
+        </message>
+        <message>
+            <source>Task Name</source>
+            <translation>Task Name</translation>
+        </message>
+        <message>
+            <source>Templates</source>
+            <translation>Templates</translation>
+        </message>
     </context>
     <context>
         <name>CreateTaskDialog</name>
@@ -3096,6 +3244,10 @@
             <source>Could not write screenshot to {path}</source>
             <translation>Could not write screenshot to {path}</translation>
         </message>
+        <message>
+            <source>Take a screenshot of the game, then mark up the features tasks should find.</source>
+            <translation>Take a screenshot of the game, then mark up the features tasks should find.</translation>
+        </message>
     </context>
     <context>
         <name>TemplateInputDialog</name>
@@ -3138,6 +3290,14 @@
             <source>BrowserInteraction</source>
             <translation>BrowserInteraction - Background</translation>
         </message>
+        <message>
+            <source>Default Interaction</source>
+            <translation>Default Interaction</translation>
+        </message>
+        <message>
+            <source>WindowsInteraction</source>
+            <translation>WindowsInteraction</translation>
+        </message>
     </context>
     <context>
         <name>ImportWarningDialog</name>
@@ -3171,6 +3331,22 @@
         <message>
             <source>Confirm Delete</source>
             <translation>Confirm Delete</translation>
+        </message>
+        <message>
+            <source>Copy annotation</source>
+            <translation>Copy annotation</translation>
+        </message>
+        <message>
+            <source>Copy color</source>
+            <translation>Copy color</translation>
+        </message>
+        <message>
+            <source>Delete</source>
+            <translation>Delete</translation>
+        </message>
+        <message>
+            <source>Modify</source>
+            <translation>Modify</translation>
         </message>
     </context>
     <context>
@@ -3418,6 +3594,14 @@
             <source>The release archive is not a newer plugin version</source>
             <translation>The release archive is not a newer plugin version</translation>
         </message>
+        <message>
+            <source>Add a plugin from a ZIP file or a GitHub release.</source>
+            <translation>Add a plugin from a ZIP file or a GitHub release.</translation>
+        </message>
+        <message>
+            <source>From GitHub: {}</source>
+            <translation>From GitHub: {}</translation>
+        </message>
     </context>
     <context>
         <name>LabelAndMcpServer</name>
@@ -3451,6 +3635,209 @@
         <message>
             <source>Failed after {seconds}s</source>
             <translation>Failed after {seconds}s</translation>
+        </message>
+    </context>
+    <context>
+        <name>ConnectionPopover</name>
+        <message>
+            <source>Game window</source>
+            <translation>Game window</translation>
+        </message>
+        <message>
+            <source>Open folder</source>
+            <translation>Open folder</translation>
+        </message>
+    </context>
+    <context>
+        <name>DiagnosisPage</name>
+        <message>
+            <source>Boxes</source>
+            <translation>Boxes</translation>
+        </message>
+        <message>
+            <source>Captures, OCR results and task screenshots appear here.</source>
+            <translation>Captures, OCR results and task screenshots appear here.</translation>
+        </message>
+        <message>
+            <source>Developer</source>
+            <translation>Developer</translation>
+        </message>
+        <message>
+            <source>Dump Threads</source>
+            <translation>Dump Threads</translation>
+        </message>
+        <message>
+            <source>No screenshot yet. Capture one to see it here.</source>
+            <translation>No screenshot yet. Capture one to see it here.</translation>
+        </message>
+        <message>
+            <source>No text found</source>
+            <translation>No text found</translation>
+        </message>
+        <message>
+            <source>Open</source>
+            <translation>Open</translation>
+        </message>
+        <message>
+            <source>Open image</source>
+            <translation>Open image</translation>
+        </message>
+        <message>
+            <source>Open screenshot folder</source>
+            <translation>Open screenshot folder</translation>
+        </message>
+        <message>
+            <source>Original</source>
+            <translation>Original</translation>
+        </message>
+        <message>
+            <source>Recent</source>
+            <translation>Recent</translation>
+        </message>
+        <message>
+            <source>Run OCR on the current frame and save a screenshot with the text boxes</source>
+            <translation>Run OCR on the current frame and save a screenshot with the text boxes</translation>
+        </message>
+        <message>
+            <source>Saved to {path}</source>
+            <translation>Saved to {path}</translation>
+        </message>
+        <message>
+            <source>Screenshots</source>
+            <translation>Screenshots</translation>
+        </message>
+        <message>
+            <source>Show in folder</source>
+            <translation>Show in folder</translation>
+        </message>
+        <message>
+            <source>Write every thread's stack to logs/thread_dumps.txt</source>
+            <translation>Write every thread's stack to logs/thread_dumps.txt</translation>
+        </message>
+    </context>
+    <context>
+        <name>Dialog</name>
+        <message>
+            <source>Cancel</source>
+            <translation>Cancel</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>OK</translation>
+        </message>
+    </context>
+    <context>
+        <name>LogPage</name>
+        <message>
+            <source>Jump to latest</source>
+            <translation>Jump to latest</translation>
+        </message>
+        <message>
+            <source>lines</source>
+            <translation>lines</translation>
+        </message>
+    </context>
+    <context>
+        <name>NavigationView</name>
+        <message>
+            <source>Collapse</source>
+            <translation>Collapse</translation>
+        </message>
+        <message>
+            <source>Expand</source>
+            <translation>Expand</translation>
+        </message>
+    </context>
+    <context>
+        <name>RunBar</name>
+        <message>
+            <source>+{count} queued</source>
+            <translation>+{count} queued</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>Cancel</translation>
+        </message>
+        <message>
+            <source>Cancel this task</source>
+            <translation>Cancel this task</translation>
+        </message>
+        <message>
+            <source>Game</source>
+            <translation>Game</translation>
+        </message>
+        <message>
+            <source>Launches the game if needed, then runs triggers and queued tasks</source>
+            <translation>Launches the game if needed, then runs triggers and queued tasks</translation>
+        </message>
+        <message>
+            <source>Launching {name}</source>
+            <translation>Launching {name}</translation>
+        </message>
+        <message>
+            <source>No game selected</source>
+            <translation>No game selected</translation>
+        </message>
+        <message>
+            <source>Pause {name}</source>
+            <translation>Pause {name}</translation>
+        </message>
+        <message>
+            <source>Start {name}</source>
+            <translation>Start {name}</translation>
+        </message>
+    </context>
+    <context>
+        <name>TaskDetail</name>
+        <message>
+            <source>This task has no settings.</source>
+            <translation>This task has no settings.</translation>
+        </message>
+    </context>
+    <context>
+        <name>TasksPage</name>
+        <message>
+            <source>All</source>
+            <translation>All</translation>
+        </message>
+        <message>
+            <source>More actions</source>
+            <translation>More actions</translation>
+        </message>
+        <message>
+            <source>On-demand</source>
+            <translation>On-demand</translation>
+        </message>
+        <message>
+            <source>Paused</source>
+            <translation>Paused</translation>
+        </message>
+        <message>
+            <source>Queued</source>
+            <translation>Queued</translation>
+        </message>
+        <message>
+            <source>Run task</source>
+            <translation>Run task</translation>
+        </message>
+        <message>
+            <source>Select a task to see its settings.</source>
+            <translation>Select a task to see its settings.</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>Settings</translation>
+        </message>
+        <message>
+            <source>Triggers</source>
+            <translation>Triggers</translation>
+        </message>
+    </context>
+    <context>
+        <name>Toast</name>
+        <message>
+            <source>Close</source>
+            <translation>Close</translation>
         </message>
     </context>
 </TS>
