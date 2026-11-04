@@ -27,9 +27,33 @@ class Pill(QLabel):
         super().__init__(text, parent)
         self.setProperty("tone", _check_tone(tone))
         self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
+        theme.changed.connect(self.update)
 
     def set_tone(self, tone: str) -> None:
         set_style_property(self, "tone", _check_tone(tone))
+
+    def paintEvent(self, event) -> None:
+        tone = self.property("tone")
+        if tone == "neutral":
+            fill, outline = theme.color("control"), theme.color("border_strong")
+        else:
+            color = theme.color(_TONE_COLOR[tone])
+            fill, outline = QColor(color), QColor(color)
+            fill_alpha, line_alpha = {
+                "accent": (0.14, 0.6), "success": (0.1, 0.3),
+                "warning": (0.12, 0.35), "danger": (0.12, 0.45),
+            }[tone]
+            fill.setAlphaF(fill_alpha)
+            outline.setAlphaF(line_alpha)
+        # QSS draws translucent borders in segments, leaving seams at the
+        # rounded corners. A single antialiased stroke avoids those overlaps.
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setBrush(fill)
+        painter.setPen(QPen(outline, 1))
+        painter.drawRoundedRect(QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5), 5.5, 5.5)
+        painter.end()
+        super().paintEvent(event)
 
 
 class StatusDot(QWidget):

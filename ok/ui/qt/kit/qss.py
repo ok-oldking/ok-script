@@ -109,12 +109,12 @@ TabItem QLabel#tabCount[selected="true"] {{ color: #FFFFFF; background: {accent_
 
 Pill {{
     font-size: 11.5px; font-weight: 500; border-radius: 6px; padding: 1px 8px;
-    color: {text_secondary}; background: {control}; border: 1px solid {border_strong};
+    color: {text_secondary}; background: transparent; border: 1px solid transparent;
 }}
-Pill[tone="accent"] {{ color: {text}; background: {accent_soft}; border-color: {accent_line}; }}
-Pill[tone="success"] {{ color: {success}; background: {success_soft}; border-color: {success_line}; }}
-Pill[tone="warning"] {{ color: {warning}; background: {warning_soft}; border-color: {warning_line}; }}
-Pill[tone="danger"] {{ color: {danger}; background: {danger_soft}; border-color: {danger_line}; }}
+Pill[tone="accent"] {{ color: {text}; }}
+Pill[tone="success"] {{ color: {success}; }}
+Pill[tone="warning"] {{ color: {warning}; }}
+Pill[tone="danger"] {{ color: {danger}; }}
 
 QLineEdit, QAbstractSpinBox, QTextEdit, QPlainTextEdit {{
     background: {control};
