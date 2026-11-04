@@ -3,6 +3,7 @@ from ctypes import windll, wintypes
 from PySide6.QtCore import Qt, Signal
 from _ctypes import byref
 from qfluentwidgets import FluentIcon, PrimaryPushButton, SettingCard, PushButton
+from ok.ui.qt.common.OKIcon import OKIcon
 
 from ok import Handler
 from ok import Logger
@@ -32,8 +33,12 @@ class StartCard(SettingCard):
         self.hBoxLayout.addWidget(self.capture_button, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(6)
 
-        self.refresh_button = PushButton(FluentIcon.SYNC, self.tr("Refresh"), self)
+        self.refresh_button = PushButton(FluentIcon.SYNC, self.tr("Rescan Window"), self)
         self.hBoxLayout.addWidget(self.refresh_button, 0, Qt.AlignRight)
+        self.hBoxLayout.addSpacing(6)
+
+        self.stop_button = PushButton(OKIcon.STOP, self.tr("Stop"), self)
+        self.hBoxLayout.addWidget(self.stop_button, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(6)
 
         self.start_button = PrimaryPushButton(FluentIcon.PLAY, self.tr("Start"), self)
@@ -43,6 +48,7 @@ class StartCard(SettingCard):
         self.hotkey_changed.connect(self.update_status)
         self.update_status()
         self.start_button.clicked.connect(self.clicked)
+        self.stop_button.clicked.connect(self.stop_clicked)
         communicate.executor_paused.connect(self.update_status)
         communicate.window.connect(self.update_status)
         communicate.task.connect(self.update_task)
@@ -51,6 +57,7 @@ class StartCard(SettingCard):
 
         self.handler = Handler(exit_event, "StartCard")
         self.current_hotkey = "UNINIT"
+        self.current_stop_hotkey = "UNINIT"
         self.handler.post(self.check_hotkey, 0.1)
         logger.debug('basic_options.start/stop: {}'.format(self.basic_options.get('Start/Stop')))
 
@@ -71,6 +78,30 @@ class StartCard(SettingCard):
         else:
             og.app.start_controller.start()
 
+    def stop_clicked(self):
+        logger.info("StartCard Stop button clicked")
+        from ok.task.task import TriggerTask
+        cur_task = getattr(og.executor, 'current_task', None)
+        if cur_task is not None:
+            if not isinstance(cur_task, TriggerTask):
+                cur_task.disable()
+                cur_task.running = False
+                cur_task._paused = False
+                communicate.task.emit(cur_task)
+            og.executor.current_task = None
+        with og.executor.lock:
+            og.executor.onetime_task_queue.clear()
+        for ot in getattr(og.executor, 'onetime_tasks', []):
+            if getattr(ot, 'enabled', False):
+                ot.disable()
+                ot.running = False
+                ot._paused = False
+        if not og.executor.paused:
+            og.executor.pause()
+        else:
+            communicate.executor_paused.emit(True)
+        self.update_status()
+
     def update_task(self, task):
         self.update_status()
 
@@ -78,9 +109,15 @@ class StartCard(SettingCard):
         # Starting is refused while another owner holds the executor.
         self.start_button.setEnabled(owner is None)
 
-    def update_status(self):
+    def update_status(self, *args):
         hotkey = self.basic_options.get('Start/Stop')
         suffix = f'({hotkey})' if hotkey and hotkey != 'None' else ''
+        stop_hotkey = self.basic_options.get('Stop Task')
+        suffix_stop = f'({stop_hotkey})' if stop_hotkey and stop_hotkey != 'None' else ''
+        self.stop_button.setText(self.tr("Stop") + suffix_stop)
+
+        has_running_task = bool(og.executor.current_task and getattr(og.executor.current_task, 'running', False))
+        self.stop_button.setEnabled(has_running_task or not og.executor.paused)
 
         if og.executor.paused:
             device = og.device_manager.get_preferred_device()
@@ -118,12 +155,23 @@ class StartCard(SettingCard):
                 self.status_bar.setTitle(self.tr("Waiting for task to be enabled"))
                 self.status_bar.setState(False)
             self.status_bar.show()
+        if has_running_task:
+            self.refresh_button.setEnabled(False)
+            self.refresh_button.setToolTip(self.tr("Cannot rescan window while a task is running"))
+        else:
+            self.refresh_button.setEnabled(True)
+            self.refresh_button.setToolTip(self.tr("Rescan Window"))
 
     def check_hotkey(self):
         new_hotkey = self.basic_options.get('Start/Stop')
         if new_hotkey != self.current_hotkey:
             self.rebind_hotkey(new_hotkey)
             self.current_hotkey = new_hotkey
+            self.hotkey_changed.emit()
+        new_stop_hotkey = self.basic_options.get('Stop Task')
+        if new_stop_hotkey != self.current_stop_hotkey:
+            self.rebind_stop_hotkey(new_stop_hotkey)
+            self.current_stop_hotkey = new_stop_hotkey
             self.hotkey_changed.emit()
 
         msg = wintypes.MSG()
@@ -132,6 +180,8 @@ class StartCard(SettingCard):
                 logger.debug(f'hotkey pressed {msg}')
                 if msg.wParam == 999:
                     self.clicked()
+                elif msg.wParam == 998:
+                    self.stop_clicked()
 
         self.handler.post(self.check_hotkey, 0.1)
 
@@ -144,3 +194,13 @@ class StartCard(SettingCard):
                 logger.error(f"Failed to register hotkey {hotkey}")
         else:
             logger.debug(f"Hotkey disabled or invalid: {hotkey}")
+
+    def rebind_stop_hotkey(self, hotkey):
+        windll.user32.UnregisterHotKey(None, 998)
+        vk_map = {'F9': 0x78, 'F10': 0x79, 'F11': 0x7A, 'F12': 0x7B}
+
+        if hotkey and hotkey != 'None' and hotkey in vk_map:
+            if not windll.user32.RegisterHotKey(None, 998, 0, vk_map[hotkey]):
+                logger.error(f"Failed to register stop hotkey {hotkey}")
+        else:
+            logger.debug(f"Stop Hotkey disabled or invalid: {hotkey}")
