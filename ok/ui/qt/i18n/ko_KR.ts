@@ -534,6 +534,18 @@
             <source>{owner} is controlling the app. Other tasks are stopped.</source>
             <translation>{owner}이(가) 앱을 제어하고 있습니다. 다른 작업은 중지되었습니다.</translation>
         </message>
+        <message>
+            <source>Cancel</source>
+            <translation>취소</translation>
+        </message>
+        <message>
+            <source>New version available</source>
+            <translation>새 버전을 사용할 수 있습니다</translation>
+        </message>
+        <message>
+            <source>Version {version} is available.</source>
+            <translation>버전 {version}을(를) 사용할 수 있습니다.</translation>
+        </message>
     </context>
     <context>
         <name>MessageWindow</name>

@@ -153,7 +153,8 @@ class Toast(QWidget):
 
     WIDTH = 560
 
-    def __init__(self, message: str, title: str = None, tone: str = "neutral", action: tuple = None, parent=None):
+    def __init__(self, message: str, title: str = None, tone: str = "neutral", action: tuple = None, parent=None,
+                 actions: list = None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.tone = _check_tone(tone)
@@ -181,6 +182,20 @@ class Toast(QWidget):
             self.action_button.clicked.connect(callback)
             text.addSpacing(6)
             text.addWidget(self.action_button, 0, Qt.AlignmentFlag.AlignLeft)
+        self.action_buttons = []
+        if actions:
+            row = QHBoxLayout()
+            row.setContentsMargins(0, 0, 0, 0)
+            row.setSpacing(8)
+            for item in actions:
+                action_text, callback, variant = (tuple(item) + ("secondary",))[:3]
+                button = Button(action_text, variant=variant, size="small")
+                button.clicked.connect(lambda _checked=False, callback=callback: self._run_action(callback))
+                self.action_buttons.append(button)
+                row.addWidget(button)
+            row.addStretch(1)
+            text.addSpacing(6)
+            text.addLayout(row)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(14, 12, 8, 12)
@@ -188,6 +203,14 @@ class Toast(QWidget):
         layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignTop)
         layout.addLayout(text, 1)
         layout.addWidget(self.close_button, 0, Qt.AlignmentFlag.AlignTop)
+
+    def _run_action(self, callback) -> None:
+        """Run a row action, then dismiss the toast; ``None`` only dismisses."""
+        try:
+            if callback is not None:
+                callback()
+        finally:
+            self.close()
 
 
 class _ToastHost(QObject):
@@ -262,14 +285,16 @@ def toast_host(widget: QWidget) -> _ToastHost:
 
 
 def show_toast(parent: QWidget, message: str, title: str = None, tone: str = "neutral",
-               duration: int = 4000, action: tuple = None) -> Toast:
+               duration: int = 4000, action: tuple = None, actions: list = None) -> Toast:
     """Show a toast in ``parent``'s window.
 
     ``duration`` 0 keeps it until closed; ``action`` is ``(text, callback)``
-    for a button inside the toast.
+    for a button inside the toast. ``actions`` is a list of
+    ``(text, callback[, variant])`` buttons shown in a row; each closes the
+    toast after running its callback (``None`` just closes it).
     """
 
-    toast = Toast(message, title, tone, action)
+    toast = Toast(message, title, tone, action, actions=actions)
     toast_host(parent).add(toast, duration)
     return toast
 

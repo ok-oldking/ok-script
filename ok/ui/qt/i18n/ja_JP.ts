@@ -533,6 +533,18 @@
             <source>{owner} is controlling the app. Other tasks are stopped.</source>
             <translation>{owner} がアプリを操作中です。他のタスクは停止しています。</translation>
         </message>
+        <message>
+            <source>Cancel</source>
+            <translation>キャンセル</translation>
+        </message>
+        <message>
+            <source>New version available</source>
+            <translation>新しいバージョンがあります</translation>
+        </message>
+        <message>
+            <source>Version {version} is available.</source>
+            <translation>バージョン {version} が利用可能です。</translation>
+        </message>
     </context>
     <context>
         <name>MessageWindow</name>

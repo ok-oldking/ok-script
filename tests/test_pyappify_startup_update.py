@@ -296,6 +296,55 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         card.deleteLater()
         app.processEvents()
 
+    def test_only_automatic_check_announces_new_version(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.about.UpdateCard import UpdateCard
+
+        app = QApplication.instance() or QApplication([])
+        module = SimpleNamespace(
+            is_greater_version=lambda left, right: self._version_tuple(left) > self._version_tuple(right),
+            calculate_update_notes=self._calculate_update_notes,
+        )
+        card = UpdateCard("v1.0.0", module)
+        announced = []
+        card.new_version_available.connect(announced.append)
+        versions = [{"version": "v1.2.0", "update_note": ["two"]}, {"version": "v1.0.0", "update_note": []}]
+
+        card._apply_versions((True, versions))
+        self.assertEqual([], announced)
+
+        card._automatic_check = True
+        card._apply_versions((True, versions))
+        self.assertEqual(["v1.2.0"], announced)
+        self.assertFalse(card._automatic_check)
+
+        card._automatic_check = True
+        card._apply_versions((True, [{"version": "v1.0.0", "update_note": []}]))
+        self.assertEqual(["v1.2.0"], announced)
+        card.deleteLater()
+        app.processEvents()
+
+    def test_update_to_version_selects_and_starts_update(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.about.UpdateCard import UpdateCard
+
+        app = QApplication.instance() or QApplication([])
+        module = SimpleNamespace(
+            is_greater_version=lambda left, right: self._version_tuple(left) > self._version_tuple(right),
+            calculate_update_notes=self._calculate_update_notes,
+        )
+        card = UpdateCard("v1.0.0", module)
+        card._apply_versions((True, [{"version": "v1.2.0", "update_note": []},
+                                     {"version": "v1.1.0", "update_note": []}]))
+        with patch.object(card, "update_to_selected_version") as update:
+            card.update_to_version("v1.1.0")
+        self.assertEqual("v1.1.0", card.version_combo.currentText())
+        update.assert_called_once_with()
+        card.deleteLater()
+        app.processEvents()
+
     def test_missing_current_version_excludes_logs_above_selected_version(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         from PySide6.QtWidgets import QApplication

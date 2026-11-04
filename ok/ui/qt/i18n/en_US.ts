@@ -523,6 +523,18 @@
             <source>{owner} is controlling the app. Other tasks are stopped.</source>
             <translation>{owner} is controlling the app. Other tasks are stopped.</translation>
         </message>
+        <message>
+            <source>Cancel</source>
+            <translation>Cancel</translation>
+        </message>
+        <message>
+            <source>New version available</source>
+            <translation>New version available</translation>
+        </message>
+        <message>
+            <source>Version {version} is available.</source>
+            <translation>Version {version} is available.</translation>
+        </message>
     </context>
     <context>
         <name>MessageWindow</name>

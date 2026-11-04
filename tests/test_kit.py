@@ -430,6 +430,25 @@ class TestFeedback(KitTestCase):
         QApplication.processEvents()
         self.assertFalse(second.isVisible())
 
+    def test_toast_actions_run_their_callback_and_close(self):
+        host = self.host()
+        clicked = []
+        toast = show_toast(host, "Version v2 is available.", "New version", "accent", duration=0,
+                           actions=[("Update", lambda: clicked.append("update"), "primary"), ("Cancel", None)])
+        QApplication.processEvents()
+        self.assertEqual(["Update", "Cancel"], [button.text() for button in toast.action_buttons])
+        self.assertEqual("primary", toast.action_buttons[0].variant)
+        toast.action_buttons[0].click()
+        QApplication.processEvents()
+        self.assertEqual(["update"], clicked)
+        self.assertFalse(toast.isVisible())
+
+        cancelled = show_toast(host, "Message", duration=0, actions=[("Cancel", None)])
+        QApplication.processEvents()
+        cancelled.action_buttons[0].click()
+        QApplication.processEvents()
+        self.assertFalse(cancelled.isVisible())
+
     def test_toasts_sit_below_their_anchor_and_fit_narrow_windows(self):
         host = self.host()
         bar = QWidget(host)

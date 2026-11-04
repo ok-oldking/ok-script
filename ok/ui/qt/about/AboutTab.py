@@ -258,9 +258,9 @@ class AboutTab(QWidget):
 
     # --- updates --------------------------------------------------------------
 
-    def check_for_updates(self):
+    def check_for_updates(self, automatic=False):
         if self.update_card is not None:
-            self.update_card.check_for_updates()
+            self.update_card.check_for_updates(automatic=automatic)
 
     def _startup_version_change_title(self, version_change):
         if version_change.action == "update":

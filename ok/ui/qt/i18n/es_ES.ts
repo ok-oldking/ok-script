@@ -533,6 +533,18 @@
             <source>{owner} is controlling the app. Other tasks are stopped.</source>
             <translation>{owner} está controlando la aplicación. Las demás tareas están detenidas.</translation>
         </message>
+        <message>
+            <source>Cancel</source>
+            <translation>Cancelar</translation>
+        </message>
+        <message>
+            <source>New version available</source>
+            <translation>Nueva versión disponible</translation>
+        </message>
+        <message>
+            <source>Version {version} is available.</source>
+            <translation>La versión {version} está disponible.</translation>
+        </message>
     </context>
     <context>
         <name>MessageWindow</name>

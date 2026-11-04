@@ -533,6 +533,18 @@
             <source>{owner} is controlling the app. Other tasks are stopped.</source>
             <translation>{owner} 正在控制本應用程式，其他任務已停止。</translation>
         </message>
+        <message>
+            <source>Cancel</source>
+            <translation>取消</translation>
+        </message>
+        <message>
+            <source>New version available</source>
+            <translation>有新版本可用</translation>
+        </message>
+        <message>
+            <source>Version {version} is available.</source>
+            <translation>版本 {version} 已發布。</translation>
+        </message>
     </context>
     <context>
         <name>MessageWindow</name>

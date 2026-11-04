@@ -47,6 +47,7 @@ class UpdateCard(QWidget):
     """Version picker and release-note viewer backed by the PyAppify launcher API."""
 
     update_available_changed = Signal(bool)
+    new_version_available = Signal(str)
     check_started = Signal()
     _versions_loaded = Signal(object)
     _update_finished = Signal(object)
@@ -64,6 +65,7 @@ class UpdateCard(QWidget):
         self.download_url = download_url
         self.versions = []
         self._busy = False
+        self._automatic_check = False
         logger.info(
             f"initialized current_version={self.current_version!r}, "
             f"pyappify_module={getattr(pyappify_module, '__file__', type(pyappify_module).__name__)!r}, "
@@ -90,7 +92,7 @@ class UpdateCard(QWidget):
         self.check_progress = ProgressRing(16, parent=self)
         self.check_progress.hide()
         self.check_button = Button(self.tr("Check for updates"), "refresh", parent=self)
-        self.check_button.clicked.connect(self.check_for_updates)
+        self.check_button.clicked.connect(lambda _checked=False: self.check_for_updates())
         self.update_button = Button(self.tr("Update"), "download", "primary", parent=self)
         self.update_button.clicked.connect(self.update_to_selected_version)
         self.update_button.setEnabled(False)
@@ -120,13 +122,15 @@ class UpdateCard(QWidget):
         self._versions_loaded.connect(self._apply_versions)
         self._update_finished.connect(self._apply_update_result)
 
-    def check_for_updates(self):
+    def check_for_updates(self, automatic=False):
+        """Load the version list; ``automatic`` checks announce a newer version."""
         if self._busy:
             return
         get_versions = getattr(self.pyappify_module, "get_version_list", None)
         if not callable(get_versions):
             self._show_error(self.tr("Update checking is not supported by this PyAppify version."))
             return
+        self._automatic_check = automatic
         self._set_busy(True, checking=True)
         self.check_started.emit()
         self._set_status(self.tr("Checking for updates…"))
@@ -136,6 +140,15 @@ class UpdateCard(QWidget):
             self._versions_loaded,
             f"pyappify.get_version_list(release_only={release_only})",
         )
+
+    def update_to_version(self, version):
+        """Select ``version`` in the picker and start changing to it."""
+        index = self.version_combo.findText(str(version))
+        if index < 0:
+            logger.error(f"update_to_version: {version!r} is not in the loaded version list")
+            return
+        self.version_combo.setCurrentIndex(index)
+        self.update_to_selected_version()
 
     def update_to_selected_version(self):
         if self._busy or self.version_combo.currentIndex() < 0:
@@ -168,6 +181,7 @@ class UpdateCard(QWidget):
 
     def _apply_versions(self, result):
         self._set_busy(False, refresh_selection=False)
+        automatic, self._automatic_check = self._automatic_check, False
         successful, value = result
         if not successful:
             self.versions = []
@@ -194,6 +208,8 @@ class UpdateCard(QWidget):
             None,
         )
         self.update_available_changed.emit(newest_update is not None)
+        if automatic and newest_update is not None:
+            self.new_version_available.emit(str(self.versions[newest_update]["version"]))
         logger.info(
             f"update_available={newest_update is not None}, current_version={self.current_version!r}, "
             f"newest_update_index={newest_update!r}"
