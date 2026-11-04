@@ -95,11 +95,12 @@ TabItem {{
     border-radius: 7px;
 }}
 TabItem:hover {{ background: {control_hover}; }}
-/* One outline only: the strip's. The selected tab is marked by its fill. */
-TabItem:checked {{ background: {accent_soft_strong}; }}
+/* One outline only: the strip's. TabStrip paints the selected tab's fill (or
+   underline) so it can travel between tabs. */
+TabItem:checked {{ background: transparent; }}
 TabItem[look="underline"] {{ border: 0; border-radius: 0; border-bottom: 2px solid transparent; }}
 TabItem[look="underline"]:hover {{ background: transparent; }}
-TabItem[look="underline"]:checked {{ background: transparent; border-bottom: 2px solid {accent}; }}
+TabItem[look="underline"]:checked {{ background: transparent; }}
 TabItem QLabel#tabText {{ color: {text_secondary}; }}
 TabItem QLabel#tabText[selected="true"] {{ color: {text}; font-weight: 600; }}
 TabItem QLabel#tabCount {{
@@ -267,7 +268,8 @@ NavItem {{
     border-radius: 8px;
 }}
 NavItem:hover {{ background: {control_hover}; }}
-NavItem:checked {{ background: {accent_soft}; border-color: {accent_line_nav}; }}
+/* NavigationView paints the selection highlight so it can travel between items. */
+NavItem:checked {{ background: transparent; border-color: transparent; }}
 NavItem QLabel#navText {{ color: {text_nav}; font-size: 13.5px; }}
 NavItem QLabel#navText[selected="true"] {{ color: {text}; font-weight: 600; }}
 NavItem QLabel#navDot {{ background: {accent}; border-radius: 3px; }}
@@ -439,7 +441,6 @@ def build_stylesheet(manager) -> str:
         accent_soft_strong=rgba(accent, 0.18),
         accent_line=rgba(accent, 0.6),
         accent_line_soft=rgba(accent, 0.55),
-        accent_line_nav=rgba(accent, 0.35),
         accent_soft_weak=rgba(accent, 0.1),
         text_nav=tokens["text"] if not dark else "#CFCFDA",
         accent_count=rgba(accent, 0.45 if dark else 0.9),

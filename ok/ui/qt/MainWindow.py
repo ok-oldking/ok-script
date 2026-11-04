@@ -4,7 +4,7 @@ import threading
 import pyappify
 from PySide6.QtCore import QCoreApplication, QEvent, QObject, QSize, Qt, QTimer
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QMenu, QStackedWidget, QSystemTrayIcon, QVBoxLayout
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QMenu, QSystemTrayIcon, QVBoxLayout
 
 _pyappify_stop_lock = threading.Lock()
 
@@ -31,8 +31,9 @@ from ok.util.config import Config
 
 from ok.ui.qt.Communicate import communicate
 from ok.ui.qt.common.config import cfg as ui_config
-from ok.ui.qt.kit import ContentLayer, Dialog, KitWindow, NavigationView, Theme as KitTheme, set_toast_anchor, show_toast, \
+from ok.ui.qt.kit import AnimatedStackedWidget, ContentLayer, Dialog,KitWindow, NavigationView, Theme as KitTheme, set_toast_anchor, show_toast, \
     theme as kit_theme
+from ok.ui.qt.kit.navigation import NAV_INDICATOR_DURATION
 from ok.ui.qt.kit.theme import set_style_property
 from ok.ui.qt.shell.lazy_page import LazyPage
 from ok.ui.qt.shell.nav_icons import nav_icon
@@ -124,7 +125,7 @@ class MainWindow(KitWindow):
         self.navigation.add_section(SECTION_DEVELOP, QCoreApplication.translate("MainWindow", "Develop"))
         self.navigation.current_changed.connect(lambda key: self.switch_to(self._pages[key]))
         self.navigation.compact_changed.connect(self._save_navigation_state)
-        self.stack = QStackedWidget()
+        self.stack = AnimatedStackedWidget(Qt.Orientation.Vertical)
         # The run bar is a toolbar fused to the title bar, so the executor state is always in view.
         self.run_bar = RunBar(exit_event)
         set_style_property(self.title_bar, "fused", True)
@@ -317,10 +318,20 @@ class MainWindow(KitWindow):
     def switch_to(self, widget):
         if self.stack.indexOf(widget) < 0:
             return
-        if isinstance(widget, LazyPage):
+        defer_build = isinstance(widget, LazyPage) and not widget.is_built() and self.isVisible()
+        if isinstance(widget, LazyPage) and not defer_build:
             widget.page()
         self.stack.setCurrentWidget(widget)
         self.navigation.set_current(widget.objectName())
+        if defer_build:
+            # Building blocks the event loop, so let the selection highlight land first.
+            QTimer.singleShot(NAV_INDICATOR_DURATION + 20, lambda: self._build_lazy_page(widget))
+
+    def _build_lazy_page(self, widget):
+        if widget.is_built() or self.stack.currentWidget() is not widget:
+            return  # already built, or the user moved on; it builds on the next visit
+        widget.page()
+        self.stack.animate_current()
 
     def current_page(self):
         return self.stack.currentWidget()

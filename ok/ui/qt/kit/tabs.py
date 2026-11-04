@@ -1,11 +1,35 @@
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QIcon
+import math
+
+from PySide6.QtCore import QEvent, QRect, QRectF, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QFontMetricsF, QIcon
 from PySide6.QtWidgets import QButtonGroup, QFrame, QHBoxLayout, QLabel, QPushButton, QSizePolicy
 
 from ok.ui.qt.kit.icons import icon as kit_icon
+from ok.ui.qt.kit.motion import SlidingIndicator, paint_rounded
 from ok.ui.qt.kit.theme import set_style_property, theme
 
 LOOKS = ("pill", "underline")
+UNDERLINE_HEIGHT = 2
+
+
+class _TabText(QLabel):
+    """A label sized for its selected (semibold) text, so selecting a tab never
+    changes its width and shifts its neighbors."""
+
+    def sizeHint(self) -> QSize:
+        hint = super().sizeHint()
+        font = QFont(self.font())
+        font.setWeight(QFont.Weight.DemiBold)
+        margins = self.contentsMargins()
+        # Measured like QLabel measures its own text, plus the fractional advance.
+        metrics = QFontMetrics(font)
+        text_width = max(metrics.boundingRect(QRect(0, 0, 4000, 4000), int(self.alignment()), self.text()).width(),
+                         math.ceil(QFontMetricsF(font).horizontalAdvance(self.text())))
+        width = text_width + margins.left() + margins.right()
+        return QSize(max(hint.width(), width), hint.height())
+
+    def minimumSizeHint(self) -> QSize:
+        return self.sizeHint()
 
 
 class TabItem(QPushButton):
@@ -22,8 +46,9 @@ class TabItem(QPushButton):
         self.setFixedHeight(30 if look == "pill" else 40)
 
         self.icon_label = QLabel(self)
-        self.text_label = QLabel(text, self)
+        self.text_label = _TabText(text, self)
         self.text_label.setObjectName("tabText")
+        self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.count_label = QLabel(self)
         self.count_label.setObjectName("tabCount")
         for label in (self.icon_label, self.text_label, self.count_label):
@@ -99,6 +124,31 @@ class TabStrip(QFrame):
         if look == "underline":
             layout.addStretch(1)
         self._group.buttonToggled.connect(self._on_toggled)
+        self._indicator = SlidingIndicator(self, self._indicator_rect)
+        theme.changed.connect(self.update)
+
+    def _indicator_rect(self, item) -> QRectF:
+        rect = QRectF(item.geometry())
+        if self._look == "underline":
+            return QRectF(rect.left(), rect.bottom() + 1 - UNDERLINE_HEIGHT, rect.width(), UNDERLINE_HEIGHT)
+        return rect
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        rect = self._indicator.rect()
+        if rect is None:
+            return
+        fill = QColor(theme.color("accent"))
+        if self._look == "underline":
+            paint_rounded(self, rect, 1, fill)
+        else:
+            fill.setAlphaF(0.18)
+            paint_rounded(self, rect, 7, fill)
+
+    def eventFilter(self, watched, event) -> bool:
+        if event.type() in (QEvent.Type.Move, QEvent.Type.Resize, QEvent.Type.Show, QEvent.Type.Hide):
+            self.update()
+        return super().eventFilter(watched, event)
 
     def _insert(self, widget, alignment=Qt.AlignmentFlag(0)) -> None:
         layout = self.layout()
@@ -111,6 +161,7 @@ class TabStrip(QFrame):
         item = TabItem(key, text, count, icon, self._look, self)
         self._items[key] = item
         self._group.addButton(item)
+        item.installEventFilter(self)
         self._insert(item)
         if len(self._items) == 1:
             item.setChecked(True)
@@ -128,6 +179,8 @@ class TabStrip(QFrame):
         for item in self._items.values():
             self._group.removeButton(item)
         self._items.clear()
+        # Rebuilt tabs start at their selection rather than flying in.
+        self._indicator.set_item(None, animate=False)
         layout = self.layout()
         for index in reversed(range(layout.count())):
             widget = layout.itemAt(index).widget()
@@ -153,4 +206,5 @@ class TabStrip(QFrame):
 
     def _on_toggled(self, button, checked: bool) -> None:
         if checked:
+            self._indicator.set_item(button)
             self.current_changed.emit(button.key)

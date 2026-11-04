@@ -14,7 +14,7 @@ import time
 from PySide6.QtCore import QCoreApplication, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHBoxLayout, QHeaderView, QLabel, QMenu, QPushButton,
-                               QScrollArea, QSizePolicy, QStackedWidget, QTableWidget, QTableWidgetItem, QVBoxLayout,
+                               QScrollArea, QSizePolicy, QTableWidget, QTableWidgetItem, QVBoxLayout,
                                QWidget)
 
 from ok import Logger, og
@@ -25,6 +25,7 @@ from ok.ui.qt.kit.dialogs import Dialog
 from ok.ui.qt.kit.feedback import Pill
 from ok.ui.qt.kit.icons import icon as kit_icon, tinted_icon
 from ok.ui.qt.kit.labels import Label
+from ok.ui.qt.kit.motion import AnimatedStackedWidget
 from ok.ui.qt.kit.switch import Switch
 from ok.ui.qt.kit.tabs import TabStrip
 from ok.ui.qt.kit.theme import set_style_property, theme
@@ -531,7 +532,7 @@ class TaskDetail(QWidget):
         self.info_table.verticalHeader().setDefaultSectionSize(40)
         self.info_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.info_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
-        self.pages = QStackedWidget()
+        self.pages = AnimatedStackedWidget(Qt.Orientation.Horizontal)
         self.pages.addWidget(self.form_scroll)
         self.pages.addWidget(self.info_table)
 

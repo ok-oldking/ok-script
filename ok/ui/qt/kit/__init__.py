@@ -13,6 +13,7 @@ from ok.ui.qt.kit.icons import ICON_NAMES, icon, load_icon
 from ok.ui.qt.kit.inputs import ComboBox, NumberBox
 from ok.ui.qt.kit.labels import Label
 from ok.ui.qt.kit.layout import FlowLayout
+from ok.ui.qt.kit.motion import AnimatedStackedWidget
 from ok.ui.qt.kit.navigation import NavigationView, NavItem
 from ok.ui.qt.kit.options import OptionCard, OptionGroup
 from ok.ui.qt.kit.popover import Popover
@@ -22,7 +23,7 @@ from ok.ui.qt.kit.theme import Theme, theme
 from ok.ui.qt.kit.window import ContentLayer, KitWindow, TitleBar
 
 __all__ = [
-    "Button", "Card", "ComboBox", "ContentLayer", "Dialog", "FlowLayout", "ICON_NAMES", "KitWindow", "Label",
+    "AnimatedStackedWidget", "Button", "Card", "ComboBox", "ContentLayer", "Dialog", "FlowLayout", "ICON_NAMES", "KitWindow", "Label",
     "NavItem",
     "NavigationView", "NumberBox", "OptionCard", "OptionGroup", "Pill", "Popover", "ProgressRing", "SettingGroup",
     "SettingRow", "StatusDot", "Switch", "TabItem", "TabStrip", "Theme", "TitleBar", "Toast", "confirm", "icon",
