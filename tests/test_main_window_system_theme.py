@@ -14,6 +14,8 @@ from ok.ui.qt.kit import theme as kit_theme
 class TestMainWindowSystemTheme(unittest.TestCase):
     def setUp(self):
         original_mode, original_accent = kit_theme.mode, kit_theme._accent
+        original_backdrop = kit_theme.backdrop()
+        self.addCleanup(kit_theme.set_backdrop, original_backdrop)
         self.addCleanup(lambda: (kit_theme.set_theme(original_mode), kit_theme.set_accent(original_accent)))
 
     def test_system_change_resyncs_and_clears_the_cooldown(self):
@@ -28,7 +30,7 @@ class TestMainWindowSystemTheme(unittest.TestCase):
         harness = type("Harness", (), {"_sync_kit_theme": MainWindow._sync_kit_theme,
                                        "_system_accent": lambda self: QColor("#123456")})()
         for mode, expected in (("dark", KitTheme.DARK), ("light", KitTheme.LIGHT), ("auto", KitTheme.AUTO)):
-            with patch("ok.ui.qt.MainWindow.ui_config", Mock(theme_mode=mode)):
+            with patch("ok.ui.qt.MainWindow.ui_config", Mock(theme_mode=mode, backdrop="acrylic")):
                 harness._sync_kit_theme()
             self.assertEqual(expected, kit_theme.mode)
         self.assertEqual(QColor("#123456"), kit_theme._accent)
@@ -56,7 +58,7 @@ class TestUiConfig(unittest.TestCase):
             restart.assert_called_once_with()
             themed.assert_called_once_with()
             with open(path, encoding="utf-8") as file:
-                self.assertEqual({"language": "en_US", "theme": "light"}, json.load(file))
+                self.assertEqual({"language": "en_US", "theme": "light", "backdrop": "acrylic"}, json.load(file))
             self.assertEqual("light", UiConfig(path).theme_mode)
 
 
