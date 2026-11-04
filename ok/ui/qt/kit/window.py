@@ -11,11 +11,12 @@ the kit window buttons.
 import ctypes
 import sys
 
-from PySide6.QtCore import QPoint, QRectF, QSize, Qt
-from PySide6.QtGui import QPainter, QPen
+from PySide6.QtCore import QPoint, QRect, QRectF, QSize, Qt
+from PySide6.QtGui import QPainter, QPen, QRegion
 from PySide6.QtWidgets import QAbstractButton, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from ok.ui.qt.kit.labels import Label
+from ok.ui.qt.kit.mica import paint_mica
 from ok.ui.qt.kit.theme import SYSTEMBACKDROP_MIN_BUILD, Backdrop, theme
 
 IS_WINDOWS = sys.platform == "win32"
@@ -279,6 +280,14 @@ class KitWindow(QWidget):
         # Replace rather than blend, so a translucent fill lets the backdrop through.
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
         painter.fillRect(self.rect(), theme.background("window"))
+        if self._draws_mica():
+            # DWM gives a window one backdrop: with Acrylic only the title bar keeps
+            # it, and everything below (run bar, sidebar, the content layer's corner)
+            # shows Mica drawn from the wallpaper, under the Mica frame tint.
+            body = self.body.geometry()
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
+            paint_mica(painter, self, body, theme.is_dark())
+            painter.fillRect(body, theme.frame_tint(Backdrop.MICA))
 
     def showEvent(self, event) -> None:
         if IS_WINDOWS and not self._native_ready:
@@ -290,6 +299,28 @@ class KitWindow(QWidget):
         super().changeEvent(event)
         if event.type() == event.Type.WindowStateChange:
             self.title_bar.sync_state()
+        elif event.type() == event.Type.ActivationChange and self._draws_mica():
+            self.update(self._mica_region())  # Mica turns flat while the window is inactive
+
+    def moveEvent(self, event) -> None:
+        super().moveEvent(event)
+        if self._draws_mica():
+            self.update(self._mica_region())  # the wallpaper under the window changed
+
+    # --- Mica drawn by the app (Acrylic mode) ---------------------------------
+
+    def _draws_mica(self) -> bool:
+        return theme.backdrop() == Backdrop.ACRYLIC
+
+    def _mica_region(self) -> QRegion:
+        """Where the drawn Mica shows: the body, minus content layers except their rounded corner band."""
+
+        region = QRegion(self.body.geometry())
+        for layer in self.findChildren(ContentLayer):
+            if layer.isVisible():
+                inner = QRect(layer.mapTo(self, QPoint(0, 0)), layer.size())
+                region -= QRegion(inner.adjusted(ContentLayer.RADIUS, ContentLayer.RADIUS, 0, 0))
+        return region
 
     def _on_kit_theme_changed(self) -> None:
         self.update()

@@ -110,8 +110,8 @@ class SettingsPage(QWidget):
             self.backdrop_tabs = TabStrip()
             for backdrop in sorted(backdrops, key=list(names).index):
                 self.backdrop_tabs.add_tab(backdrop.value, names[backdrop])
-            current = Backdrop(cfg.backdrop)
-            self.backdrop_tabs.set_current((current if current in backdrops else Backdrop.NONE).value)
+            # The material in use, which falls back when the saved one is unsupported.
+            self.backdrop_tabs.set_current(theme.backdrop().value)
             self.backdrop_tabs.current_changed.connect(cfg.set_backdrop)
             group.add_row(SettingRow(_t('Window Material'),
                                      _t('Mica tints the window with your wallpaper, Acrylic blurs what is behind it'),

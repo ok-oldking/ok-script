@@ -13,6 +13,7 @@ from ok.util.logger import Logger
 logger = Logger.get_logger(__name__)
 
 BACKDROPS = ("mica", "acrylic", "none")
+DEFAULT_BACKDROP = "acrylic"
 
 
 class Language(Enum):
@@ -60,11 +61,12 @@ class UiConfig(QObject):
         self.theme_mode = str(data.get("theme", legacy_theme or "auto")).lower()
         if self.theme_mode not in ("light", "dark", "auto"):
             self.theme_mode = "auto"
-        # Older files store only whether Mica is on ("mica", or qfluentwidgets' MicaEnabled).
-        legacy_mica = data.get("mica", (data.get("MainWindow") or {}).get("MicaEnabled", True))
-        self.backdrop = str(data.get("backdrop", "mica" if legacy_mica else "none")).lower()
+        # Older files store only whether the effect is on ("mica", or qfluentwidgets'
+        # MicaEnabled, which was on by default); on maps to the current default.
+        legacy_on = data.get("mica", (data.get("MainWindow") or {}).get("MicaEnabled", True))
+        self.backdrop = str(data.get("backdrop", DEFAULT_BACKDROP if legacy_on else "none")).lower()
         if self.backdrop not in BACKDROPS:
-            self.backdrop = "mica"
+            self.backdrop = DEFAULT_BACKDROP
 
     def _read(self) -> dict:
         try:

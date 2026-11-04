@@ -173,6 +173,9 @@ class ThemeManager(QObject):
 
     def set_backdrop(self, backdrop) -> None:
         backdrop = Backdrop(backdrop)
+        # Windows 11 before 22H2 has Mica but no Acrylic; older systems have neither.
+        if backdrop == Backdrop.ACRYLIC and not backdrop_supported(backdrop):
+            backdrop = Backdrop.MICA
         if not backdrop_supported(backdrop):
             backdrop = Backdrop.NONE
         if backdrop == self._backdrop:
@@ -195,8 +198,13 @@ class ThemeManager(QObject):
             return self.color("window")
         if name == "sidebar":
             return QColor(0, 0, 0, 0)
+        return self.frame_tint(self._backdrop)
+
+    def frame_tint(self, backdrop) -> QColor:
+        """The tint laid over ``backdrop`` in the window frame."""
+
         color = self.color("sidebar")
-        color.setAlphaF(BACKDROP_TINT[(self._backdrop, self.is_dark())])
+        color.setAlphaF(BACKDROP_TINT[(Backdrop(backdrop), self.is_dark())])
         return color
 
     def set_theme(self, mode: Theme) -> None:
