@@ -249,6 +249,7 @@ class TaskRow(QFrame):
         self._description = _app_tr(getattr(task, 'description', '') or '')
         self.name_label = Label(self._name, "strong")
         self.description_label = Label("", "caption")
+        self.description_label.setVisible(bool(self._description))
         # Elided labels must not ask for their full text width, or the row's
         # button or switch is pushed out of view.
         for label in (self.name_label, self.description_label):

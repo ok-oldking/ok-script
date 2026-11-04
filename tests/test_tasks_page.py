@@ -242,6 +242,23 @@ class TestConfigForm(QtTestCase):
         self.assertTrue(form.card.isHidden())
 
 
+class TestTaskRow(QtTestCase):
+    def test_title_without_description_is_centered_with_icon_and_switch(self):
+        task = FakeTask("Skip Dialog")
+        task.description = ""
+        row = self.show(page_module.TaskRow(task, is_trigger=True), 372, 58)
+        self.assertTrue(row.description_label.isHidden())
+        title_center = row.name_label.mapTo(row, row.name_label.rect().center()).y()
+        for widget in (row.tile, row.switch):
+            center = widget.mapTo(row, widget.rect().center()).y()
+            self.assertLessEqual(abs(title_center - center), 1)
+
+    def test_description_remains_visible_below_title(self):
+        row = self.show(page_module.TaskRow(FakeTask("Auto Login"), is_trigger=True), 372, 58)
+        self.assertTrue(row.description_label.isVisible())
+        self.assertLess(row.name_label.geometry().bottom(), row.description_label.geometry().top())
+
+
 class TestTasksPage(QtTestCase):
     def make_page(self, onetime, triggers=()):
         og.executor.onetime_tasks = list(onetime)
