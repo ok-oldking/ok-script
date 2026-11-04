@@ -765,6 +765,26 @@
             <source>Configuration takes effect after restart</source>
             <translation>配置在重启后生效</translation>
         </message>
+        <message>
+            <source>Window Material</source>
+            <translation>窗口材质</translation>
+        </message>
+        <message>
+            <source>Mica tints the window with your wallpaper, Acrylic blurs what is behind it</source>
+            <translation>云母以桌面壁纸为窗口着色，亚克力会模糊窗口后方的内容</translation>
+        </message>
+        <message>
+            <source>Mica</source>
+            <translation>云母</translation>
+        </message>
+        <message>
+            <source>Acrylic</source>
+            <translation>亚克力</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>无</translation>
+        </message>
     </context>
     <context>
         <name>StartButton</name>

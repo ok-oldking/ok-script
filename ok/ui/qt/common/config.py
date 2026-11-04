@@ -1,5 +1,5 @@
 # coding:utf-8
-"""UI preferences stored in ``configs/ui_config.json``: language and theme."""
+"""UI preferences stored in ``configs/ui_config.json``: language, theme and window backdrop."""
 
 import json
 import os
@@ -11,6 +11,8 @@ from ok.util.file import get_relative_path
 from ok.util.logger import Logger
 
 logger = Logger.get_logger(__name__)
+
+BACKDROPS = ("mica", "acrylic", "none")
 
 
 class Language(Enum):
@@ -39,7 +41,7 @@ def deserialize_language(value) -> Language:
 
 
 class UiConfig(QObject):
-    """The language and the theme mode, both applied live.
+    """The language, the theme mode and the window backdrop, all applied live.
 
     The file also accepts the older qfluentwidgets layout
     (``MainWindow.Language`` and ``QFluentWidgets.ThemeMode``).
@@ -58,6 +60,11 @@ class UiConfig(QObject):
         self.theme_mode = str(data.get("theme", legacy_theme or "auto")).lower()
         if self.theme_mode not in ("light", "dark", "auto"):
             self.theme_mode = "auto"
+        # Older files store only whether Mica is on ("mica", or qfluentwidgets' MicaEnabled).
+        legacy_mica = data.get("mica", (data.get("MainWindow") or {}).get("MicaEnabled", True))
+        self.backdrop = str(data.get("backdrop", "mica" if legacy_mica else "none")).lower()
+        if self.backdrop not in BACKDROPS:
+            self.backdrop = "mica"
 
     def _read(self) -> dict:
         try:
@@ -74,7 +81,8 @@ class UiConfig(QObject):
         try:
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
             with open(self.path, "w", encoding="utf-8") as file:
-                json.dump({"language": serialize_language(self.language), "theme": self.theme_mode}, file, indent=4)
+                json.dump({"language": serialize_language(self.language), "theme": self.theme_mode,
+                           "backdrop": self.backdrop}, file, indent=4)
         except OSError as error:
             logger.error(f"Failed to save {self.path}", error)
 
@@ -90,6 +98,14 @@ class UiConfig(QObject):
         if mode == self.theme_mode:
             return
         self.theme_mode = mode
+        self.save()
+        self.theme_changed.emit()
+
+    def set_backdrop(self, backdrop: str) -> None:
+        backdrop = getattr(backdrop, "value", backdrop)
+        if backdrop == self.backdrop or backdrop not in BACKDROPS:
+            return
+        self.backdrop = backdrop
         self.save()
         self.theme_changed.emit()
 

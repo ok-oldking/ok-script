@@ -45,6 +45,7 @@ def init_app_config():
 
     from ok.ui.qt.kit import Theme, theme
     theme.set_theme(Theme(cfg.theme_mode))
+    theme.set_backdrop(cfg.backdrop)
     return app, locale
 
 

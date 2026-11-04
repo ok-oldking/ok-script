@@ -763,6 +763,26 @@
             <source>Configuration takes effect after restart</source>
             <translation>設定將在重啟後生效</translation>
         </message>
+        <message>
+            <source>Window Material</source>
+            <translation>視窗材質</translation>
+        </message>
+        <message>
+            <source>Mica tints the window with your wallpaper, Acrylic blurs what is behind it</source>
+            <translation>雲母以桌布為視窗著色，壓克力會模糊視窗後方的內容</translation>
+        </message>
+        <message>
+            <source>Mica</source>
+            <translation>雲母</translation>
+        </message>
+        <message>
+            <source>Acrylic</source>
+            <translation>壓克力</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>無</translation>
+        </message>
     </context>
     <context>
         <name>StartButton</name>

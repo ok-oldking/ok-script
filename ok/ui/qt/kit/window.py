@@ -11,17 +11,18 @@ the kit window buttons.
 import ctypes
 import sys
 
-from PySide6.QtCore import QPoint, QSize, Qt
-from PySide6.QtGui import QPainter
+from PySide6.QtCore import QPoint, QRectF, QSize, Qt
+from PySide6.QtGui import QPainter, QPen
 from PySide6.QtWidgets import QAbstractButton, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from ok.ui.qt.kit.labels import Label
-from ok.ui.qt.kit.theme import theme
+from ok.ui.qt.kit.theme import SYSTEMBACKDROP_MIN_BUILD, Backdrop, theme
 
 IS_WINDOWS = sys.platform == "win32"
 
 WM_NCCALCSIZE = 0x0083
 WM_NCHITTEST = 0x0084
+WM_NCACTIVATE = 0x0086
 WM_NCMOUSEMOVE = 0x00A0
 WM_NCLBUTTONDOWN = 0x00A1
 WM_NCLBUTTONUP = 0x00A2
@@ -42,6 +43,11 @@ WS_SYSMENU = 0x00080000
 DWMWA_USE_IMMERSIVE_DARK_MODE = 20
 DWMWA_WINDOW_CORNER_PREFERENCE = 33
 DWMWCP_ROUND = 2
+DWMWA_SYSTEMBACKDROP_TYPE = 38  # Windows 11 22H2 (build 22621) and later
+DWMSBT_NONE, DWMSBT_MAINWINDOW, DWMSBT_TRANSIENTWINDOW = 1, 2, 3  # none, Mica, Acrylic
+DWMWA_MICA_EFFECT = 1029  # undocumented, Windows 11 21H2
+SYSTEMBACKDROP_TYPES = {Backdrop.NONE: DWMSBT_NONE, Backdrop.MICA: DWMSBT_MAINWINDOW,
+                        Backdrop.ACRYLIC: DWMSBT_TRANSIENTWINDOW}
 
 RESIZE_BORDER = 6
 TITLE_BAR_HEIGHT = 44
@@ -67,6 +73,13 @@ class _Msg(ctypes.Structure):
     _fields_ = [("hwnd", ctypes.c_void_p), ("message", ctypes.c_uint), ("wParam", ctypes.c_size_t),
                 ("lParam", ctypes.c_ssize_t), ("time", ctypes.c_ulong), ("pt_x", ctypes.c_long),
                 ("pt_y", ctypes.c_long)]
+
+
+def _def_window_proc(hwnd, message, wparam, lparam) -> int:
+    proc = ctypes.windll.user32.DefWindowProcW
+    proc.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_size_t, ctypes.c_ssize_t]
+    proc.restype = ctypes.c_ssize_t
+    return proc(hwnd, message, wparam, lparam)
 
 
 def _signed_word(value: int) -> int:
@@ -200,6 +213,35 @@ class TitleBar(QWidget):
         super().mousePressEvent(event)
 
 
+class ContentLayer(QWidget):
+    """The panel page content sits on, inside a window's frame.
+
+    With a backdrop (Mica, Acrylic) it is an opaque sheet with a rounded
+    top-left corner and a hairline edge, so the material shows only around
+    it. Without one it paints nothing and the window color shows through.
+    """
+
+    RADIUS = 8
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("kitContentLayer")
+        theme.changed.connect(self.update)
+
+    def paintEvent(self, _event) -> None:
+        fill = theme.background("layer")
+        if fill.alpha() == 0:
+            return
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        edge = theme.color("border")
+        # Extend past the right and bottom edges so only the top-left corner is rounded.
+        rect = QRectF(self.rect()).adjusted(0.5, 0.5, self.RADIUS * 2, self.RADIUS * 2)
+        painter.setPen(QPen(edge, 1))
+        painter.setBrush(fill)
+        painter.drawRoundedRect(rect, self.RADIUS, self.RADIUS)
+
+
 class KitWindow(QWidget):
     """A top-level window: kit title bar on top, :attr:`body` below."""
 
@@ -217,6 +259,8 @@ class KitWindow(QWidget):
         layout.addWidget(self.title_bar)
         layout.addWidget(self.body, 1)
         self._native_ready = False
+        self._backdrop = None  # unknown until the native frame is set up
+        self._backdrop_on = False
         theme.install(self.title_bar)
         theme.changed.connect(self._on_kit_theme_changed)
         # Create the native window now; callers read windowHandle() before the first show.
@@ -232,7 +276,9 @@ class KitWindow(QWidget):
 
     def paintEvent(self, _event) -> None:
         painter = QPainter(self)
-        painter.fillRect(self.rect(), theme.color("window"))
+        # Replace rather than blend, so a translucent fill lets the backdrop through.
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+        painter.fillRect(self.rect(), theme.background("window"))
 
     def showEvent(self, event) -> None:
         if IS_WINDOWS and not self._native_ready:
@@ -249,6 +295,7 @@ class KitWindow(QWidget):
         self.update()
         if IS_WINDOWS and self._native_ready:
             self._apply_dark_frame()
+            self._apply_backdrop()
 
     # --- Windows native frame -------------------------------------------------
 
@@ -262,8 +309,8 @@ class KitWindow(QWidget):
         style = user32.GetWindowLongW(hwnd, GWL_STYLE)
         user32.SetWindowLongW(hwnd, GWL_STYLE,
                               style | WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU)
-        self._extend_frame()
         self._apply_dark_frame()
+        self._apply_backdrop()
         preference = ctypes.c_int(DWMWCP_ROUND)
         ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ctypes.byref(preference),
                                                    ctypes.sizeof(preference))
@@ -271,8 +318,31 @@ class KitWindow(QWidget):
         user32.SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x0002 | 0x0001 | 0x0004 | 0x0020)
 
     def _extend_frame(self) -> None:
-        margins = _Margins(0, 0, 1, 0)
+        # With a backdrop the frame covers the whole client area so it shows
+        # behind it. Extending from the bottom edge (not with -1 margins) keeps DWM
+        # from drawing its own caption buttons behind the translucent title bar.
+        margins = _Margins(0, 0, 0, 32767) if self._backdrop_on else _Margins(0, 0, 1, 0)
         ctypes.windll.dwmapi.DwmExtendFrameIntoClientArea(self._hwnd(), ctypes.byref(margins))
+
+    def _apply_backdrop(self) -> None:
+        backdrop = theme.backdrop()
+        if backdrop == self._backdrop:
+            return
+        self._backdrop = backdrop
+        enabled = self._backdrop_on = backdrop != Backdrop.NONE
+        hwnd = self._hwnd()
+        if sys.getwindowsversion().build >= SYSTEMBACKDROP_MIN_BUILD:
+            attribute, value = DWMWA_SYSTEMBACKDROP_TYPE, ctypes.c_int(SYSTEMBACKDROP_TYPES[backdrop])
+        else:  # only Mica is supported here
+            attribute, value = DWMWA_MICA_EFFECT, ctypes.c_int(1 if enabled else 0)
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, attribute, ctypes.byref(value), ctypes.sizeof(value))
+        self._extend_frame()
+        if enabled:
+            # Tell DWM the current activation state; until the next WM_NCACTIVATE it
+            # would otherwise draw the inactive fill.
+            active = ctypes.windll.user32.GetForegroundWindow() == hwnd
+            _def_window_proc(hwnd, WM_NCACTIVATE, int(active), 0)
+        self.update()
 
     def _apply_dark_frame(self) -> None:
         value = ctypes.c_int(1 if theme.is_dark() else 0)
@@ -337,6 +407,10 @@ class KitWindow(QWidget):
                 rect.right -= frame_x
                 rect.bottom -= frame_y
             return True, 0
+        if msg.message == WM_NCACTIVATE and self._backdrop_on:
+            # Qt passes lParam=-1 to DefWindowProc for frameless windows, which keeps
+            # DWM from tracking activation, so the backdrop stays on its flat inactive fill.
+            return True, _def_window_proc(msg.hwnd, msg.message, msg.wParam, msg.lParam)
         if msg.message == WM_NCHITTEST:
             result = self._hit_test(_signed_word(msg.lParam), _signed_word(msg.lParam >> 16))
             self.title_bar.maximize_button.set_native_hover(result == HTMAXBUTTON)

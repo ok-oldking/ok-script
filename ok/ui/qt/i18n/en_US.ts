@@ -765,6 +765,26 @@
             <source>Configuration takes effect after restart</source>
             <translation>Configuration takes effect after restart</translation>
         </message>
+        <message>
+            <source>Window Material</source>
+            <translation>Window Material</translation>
+        </message>
+        <message>
+            <source>Mica tints the window with your wallpaper, Acrylic blurs what is behind it</source>
+            <translation>Mica tints the window with your wallpaper, Acrylic blurs what is behind it</translation>
+        </message>
+        <message>
+            <source>Mica</source>
+            <translation>Mica</translation>
+        </message>
+        <message>
+            <source>Acrylic</source>
+            <translation>Acrylic</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>None</translation>
+        </message>
     </context>
     <context>
         <name>StartButton</name>

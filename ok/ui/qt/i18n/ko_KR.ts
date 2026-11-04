@@ -764,6 +764,26 @@
             <source>Configuration takes effect after restart</source>
             <translation>다시 시작하면 구성이 적용됩니다</translation>
         </message>
+        <message>
+            <source>Window Material</source>
+            <translation>창 재질</translation>
+        </message>
+        <message>
+            <source>Mica tints the window with your wallpaper, Acrylic blurs what is behind it</source>
+            <translation>Mica는 바탕 화면 배경으로 창에 색을 입히고, 아크릴은 창 뒤를 흐리게 보여 줍니다</translation>
+        </message>
+        <message>
+            <source>Mica</source>
+            <translation>Mica</translation>
+        </message>
+        <message>
+            <source>Acrylic</source>
+            <translation>아크릴</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>없음</translation>
+        </message>
     </context>
     <context>
         <name>StartButton</name>

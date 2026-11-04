@@ -8,6 +8,7 @@ theme changes. Installing on a root widget instead of the application keeps
 the kit from restyling widgets that are not part of it.
 """
 
+import sys
 import weakref
 from enum import Enum
 
@@ -74,6 +75,47 @@ LIGHT_TOKENS = {
 }
 
 
+class Backdrop(Enum):
+    """The DWM material drawn behind kit windows."""
+
+    NONE = "none"
+    MICA = "mica"
+    ACRYLIC = "acrylic"
+
+
+# With a backdrop only the window frame (title bar, run bar, sidebar) shows the
+# material, under one tint of the sidebar color at this opacity. Page content
+# sits on an opaque layer (see ContentLayer), so cards, inputs and text keep
+# their normal colors. Acrylic shows whatever is behind the window, so it gets
+# a stronger tint than Mica to keep the frame readable.
+BACKDROP_TINT = {
+    (Backdrop.MICA, False): 0.35, (Backdrop.MICA, True): 0.45,
+    (Backdrop.ACRYLIC, False): 0.8, (Backdrop.ACRYLIC, True): 0.65,
+}
+
+MICA_MIN_BUILD = 22000  # Windows 11 21H2, through an undocumented attribute
+SYSTEMBACKDROP_MIN_BUILD = 22523  # DWMWA_SYSTEMBACKDROP_TYPE (Mica and Acrylic)
+
+
+def _windows_build() -> int:
+    return sys.getwindowsversion().build if sys.platform == "win32" else 0
+
+
+def backdrop_supported(backdrop) -> bool:
+    """Whether DWM on this system can draw ``backdrop``."""
+
+    backdrop = Backdrop(backdrop)
+    if backdrop == Backdrop.NONE:
+        return True
+    if backdrop == Backdrop.MICA:
+        return _windows_build() >= MICA_MIN_BUILD
+    return _windows_build() >= SYSTEMBACKDROP_MIN_BUILD
+
+
+def supported_backdrops() -> list:
+    return [backdrop for backdrop in Backdrop if backdrop_supported(backdrop)]
+
+
 def _channel(value: float) -> float:
     value /= 255
     return value / 12.92 if value <= 0.03928 else ((value + 0.055) / 1.055) ** 2.4
@@ -118,10 +160,44 @@ class ThemeManager(QObject):
         self._accent = QColor(DEFAULT_ACCENT)
         self._roots = []
         self._watching_system = False
+        self._backdrop = Backdrop.NONE
 
     @property
     def mode(self) -> Theme:
         return self._mode
+
+    def backdrop(self) -> Backdrop:
+        """The material kit windows draw on; NONE when unsupported."""
+
+        return self._backdrop
+
+    def set_backdrop(self, backdrop) -> None:
+        backdrop = Backdrop(backdrop)
+        if not backdrop_supported(backdrop):
+            backdrop = Backdrop.NONE
+        if backdrop == self._backdrop:
+            return
+        self._backdrop = backdrop
+        self._refresh()
+
+    def background(self, name: str) -> QColor:
+        """The fill for a window-level background, adjusted for the backdrop.
+
+        ``window``: the whole window (under the frame); ``sidebar``: the frame
+        parts (sidebar, title bar, run bar); ``layer``: the panel page content
+        sits on. Without a backdrop these are the plain tokens, and the layer is
+        transparent so the window color shows.
+        """
+
+        if self._backdrop == Backdrop.NONE:
+            return QColor(0, 0, 0, 0) if name == "layer" else self.color(name)
+        if name == "layer":
+            return self.color("window")
+        if name == "sidebar":
+            return QColor(0, 0, 0, 0)
+        color = self.color("sidebar")
+        color.setAlphaF(BACKDROP_TINT[(self._backdrop, self.is_dark())])
+        return color
 
     def set_theme(self, mode: Theme) -> None:
         mode = Theme(mode)

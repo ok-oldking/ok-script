@@ -12,7 +12,7 @@ from ok.ui.qt.kit.cards import SettingGroup, SettingRow
 from ok.ui.qt.kit.inputs import ComboBox
 from ok.ui.qt.kit.labels import Label
 from ok.ui.qt.kit.tabs import TabStrip
-from ok.ui.qt.kit.theme import set_style_property, theme
+from ok.ui.qt.kit.theme import Backdrop, set_style_property, supported_backdrops, theme
 from ok.ui.qt.settings.config_section import ConfigSection, _app_tr
 from ok.util.GlobalConfig import APP_LAUNCHER_OPTION_NAME
 
@@ -103,6 +103,19 @@ class SettingsPage(QWidget):
         self.theme_tabs.current_changed.connect(self._set_theme)
         group.add_row(SettingRow(_t('Application Theme'), _t("Change the appearance of the application"),
                                  self.theme_tabs, control_width=360))
+
+        backdrops = supported_backdrops()
+        if len(backdrops) > 1:  # Windows 11
+            names = {Backdrop.MICA: _t('Mica'), Backdrop.ACRYLIC: _t('Acrylic'), Backdrop.NONE: _t('None')}
+            self.backdrop_tabs = TabStrip()
+            for backdrop in sorted(backdrops, key=list(names).index):
+                self.backdrop_tabs.add_tab(backdrop.value, names[backdrop])
+            current = Backdrop(cfg.backdrop)
+            self.backdrop_tabs.set_current((current if current in backdrops else Backdrop.NONE).value)
+            self.backdrop_tabs.current_changed.connect(cfg.set_backdrop)
+            group.add_row(SettingRow(_t('Window Material'),
+                                     _t('Mica tints the window with your wallpaper, Acrylic blurs what is behind it'),
+                                     self.backdrop_tabs, control_width=360))
 
         # Language.AUTO wraps QLocale() and can alias another member, so build the
         # list from the members that actually exist.

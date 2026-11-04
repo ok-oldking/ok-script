@@ -31,7 +31,7 @@ from ok.util.config import Config
 
 from ok.ui.qt.Communicate import communicate
 from ok.ui.qt.common.config import cfg as ui_config
-from ok.ui.qt.kit import Dialog, KitWindow, NavigationView, Theme as KitTheme, set_toast_anchor, show_toast, \
+from ok.ui.qt.kit import ContentLayer, Dialog, KitWindow, NavigationView, Theme as KitTheme, set_toast_anchor, show_toast, \
     theme as kit_theme
 from ok.ui.qt.kit.theme import set_style_property
 from ok.ui.qt.shell.lazy_page import LazyPage
@@ -103,11 +103,17 @@ class MainWindow(KitWindow):
         self.run_bar = RunBar(exit_event)
         set_style_property(self.title_bar, "fused", True)
 
+        # Pages sit on a content layer; with Mica or Acrylic the material shows only
+        # in the frame around it (title bar, run bar, sidebar).
+        self.content_layer = ContentLayer()
+        layer_layout = QVBoxLayout(self.content_layer)
+        layer_layout.setContentsMargins(0, 0, 0, 0)
+        layer_layout.addWidget(self.stack)
         pages = QHBoxLayout()
         pages.setContentsMargins(0, 0, 0, 0)
         pages.setSpacing(0)
         pages.addWidget(self.navigation)
-        pages.addWidget(self.stack, 1)
+        pages.addWidget(self.content_layer, 1)
         body = QVBoxLayout(self.body)
         body.setContentsMargins(0, 0, 0, 0)
         body.setSpacing(0)
@@ -347,8 +353,9 @@ class MainWindow(KitWindow):
             return self.get_system_accent_color()
 
     def _sync_kit_theme(self):
-        """Apply the saved theme mode and the Windows accent color."""
+        """Apply the saved theme mode, window backdrop and the Windows accent color."""
         kit_theme.set_theme(KitTheme(ui_config.theme_mode))
+        kit_theme.set_backdrop(ui_config.backdrop)
         if accent := self._system_accent():
             kit_theme.set_accent(accent)
 

@@ -763,6 +763,26 @@
             <source>Configuration takes effect after restart</source>
             <translation>La configuración se aplicará después de reiniciar</translation>
         </message>
+        <message>
+            <source>Window Material</source>
+            <translation>Material de la ventana</translation>
+        </message>
+        <message>
+            <source>Mica tints the window with your wallpaper, Acrylic blurs what is behind it</source>
+            <translation>Mica tiñe la ventana con tu fondo de pantalla; Acrílico desenfoca lo que hay detrás</translation>
+        </message>
+        <message>
+            <source>Mica</source>
+            <translation>Mica</translation>
+        </message>
+        <message>
+            <source>Acrylic</source>
+            <translation>Acrílico</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>Ninguno</translation>
+        </message>
     </context>
     <context>
         <name>StartButton</name>

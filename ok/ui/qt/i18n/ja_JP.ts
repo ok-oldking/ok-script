@@ -763,6 +763,26 @@
             <source>Configuration takes effect after restart</source>
             <translation>設定は再起動後に有効になります</translation>
         </message>
+        <message>
+            <source>Window Material</source>
+            <translation>ウィンドウの素材</translation>
+        </message>
+        <message>
+            <source>Mica tints the window with your wallpaper, Acrylic blurs what is behind it</source>
+            <translation>マイカは壁紙の色でウィンドウを色付けし、アクリルは背後を透かしてぼかします</translation>
+        </message>
+        <message>
+            <source>Mica</source>
+            <translation>マイカ</translation>
+        </message>
+        <message>
+            <source>Acrylic</source>
+            <translation>アクリル</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>なし</translation>
+        </message>
     </context>
     <context>
         <name>StartButton</name>
