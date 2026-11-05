@@ -138,6 +138,8 @@ def test_explicit_custom_tabs_can_coexist_with_one_time_and_trigger_tasks(enviro
     environment.manager.imported_scripts['demo']['tasks'] = [ordinary, trigger]
     environment.controller.refresh()
     task_tab = environment.window.imported_tabs['demo']
+    # Must not reuse the main Tasks page's navigation key (issue ok-ww#1828).
+    assert task_tab.objectName() == 'tasks_page_demo'
     assert task_tab.collect_tasks() == ([ordinary], [trigger])
     assert built[-1] == ([ordinary], [trigger])
     assert len(environment.controller.custom_tabs['demo']) == 1

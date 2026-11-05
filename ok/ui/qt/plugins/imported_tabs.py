@@ -20,6 +20,9 @@ class ImportedTaskTab(TasksPage):
         self.imported_file_name = namespace
         self.state_name = f"tasks_page_{namespace}"
         super().__init__(title=og.app.tr(name))
+        # TasksPage names itself "TasksPage", which is also the main Tasks
+        # page's navigation key; each imported tab needs its own key.
+        self.setObjectName(self.state_name)
 
     def collect_tasks(self):
         from ok.task.task import TriggerTask
