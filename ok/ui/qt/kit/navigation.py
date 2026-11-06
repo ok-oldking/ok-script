@@ -60,7 +60,10 @@ ICON_LEFT = (COMPACT_WIDTH - 2 * SIDEBAR_PADDING - 18) // 2
 
 
 class NavItem(QPushButton):
-    """One navigation entry: icon, text and an optional attention dot."""
+    """One navigation entry: icon, text and an optional attention dot.
+
+    A pair of QIcons supplies the normal and selected artwork for the color sweep.
+    """
 
     def __init__(self, key: str, text: str, icon=None, parent=None):
         super().__init__(parent)
@@ -127,9 +130,8 @@ class NavItem(QPushButton):
 
     def _on_toggled(self, checked: bool) -> None:
         set_style_property(self.text_label, "selected", checked)
-        source = self._icon_source
-        if checked and isinstance(source, str) and self.isVisible() and self._fill.duration() > 0:
-            # Bundled icons are single-color, so they can be recolored; app icons keep theirs.
+        has_selected_icon = isinstance(self._icon_source, (str, tuple))
+        if checked and has_selected_icon and self.isVisible() and self._fill.duration() > 0:
             self._fill.stop()
             self._fill_from = self._icon_pixmap(False)
             self._fill_to = self._icon_pixmap(True)
@@ -140,7 +142,12 @@ class NavItem(QPushButton):
 
     def _icon_pixmap(self, selected: bool):
         source = self._icon_source
-        qicon = source if isinstance(source, QIcon) else kit_icon(source, "accent" if selected else "text_secondary", 1.7)
+        if isinstance(source, tuple):
+            qicon = source[1 if selected else 0]
+        elif isinstance(source, QIcon):
+            qicon = source
+        else:
+            qicon = kit_icon(source, "accent" if selected else "text_secondary", 1.7)
         return qicon.pixmap(QSize(18, 18), self.devicePixelRatioF())
 
     def _refresh_icon(self) -> None:
