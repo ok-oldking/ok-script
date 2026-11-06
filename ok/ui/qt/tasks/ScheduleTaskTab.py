@@ -2,42 +2,32 @@
 Schedule Task Tab - 计划任务管理界面
 
 提供以下功能：
-1. 显示所有计划任务列表
+1. 显示所有计划任务列表（按应用分组）
 2. 创建新的计划任务
 3. 启用/禁用任务
 4. 删除任务
-5. 查看任务详情
+5. 修改任务配置
 6. 实时更新（基于缓存和信号通知）
 """
 
 import re
+import threading
 from typing import Optional, List, Callable
 
-from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QGridLayout,
-    QLabel,
-    QTableWidgetItem,
-    QHeaderView,
-)
-from qfluentwidgets import (
-    PushButton,
-    SwitchButton,
-    FluentIcon,
-    InfoBar,
-    InfoBarPosition,
-    TableWidget,
-    MessageBoxBase,
-    SubtitleLabel,
-    ComboBox,
-    SpinBox,
-    CheckBox,
-)
+from PySide6.QtCore import QCoreApplication, QSize, Qt, QTime, QTimer, Signal
+from PySide6.QtWidgets import (QCheckBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QScrollArea, QSizePolicy,
+                               QTimeEdit, QVBoxLayout, QWidget)
 
 from ok import Logger, og
-from ok.ui.qt.widget.Tab import Tab
+from ok.ui.qt.kit.buttons import Button
+from ok.ui.qt.kit.cards import Card
+from ok.ui.qt.kit.dialogs import Dialog, confirm
+from ok.ui.qt.kit.feedback import Pill, show_toast
+from ok.ui.qt.kit.icons import icon
+from ok.ui.qt.kit.inputs import ComboBox, NumberBox
+from ok.ui.qt.kit.labels import Label
+from ok.ui.qt.kit.switch import Switch
+from ok.ui.qt.kit.theme import theme
 from ok.util.windows_schedule import (
     WindowsScheduleManager, ScheduleTaskInfo, TriggerType,
     resolve_schedule_task_index,
@@ -47,6 +37,10 @@ from ok.util.windows_schedule import (
 )
 
 logger = Logger.get_logger(__name__)
+
+PAGE_MARGINS = (28, 18, 28, 20)
+TRIGGER_TYPES = [TriggerType.DAILY, TriggerType.WEEKLY, TriggerType.MONTHLY, TriggerType.ONCE, TriggerType.CUSTOM]
+CUSTOM_INDEX = TRIGGER_TYPES.index(TriggerType.CUSTOM)
 
 
 def normalize_trigger_type(raw_type: str) -> TriggerType:
@@ -63,14 +57,7 @@ def display_trigger_type(raw_type: str, tr_func: Optional[Callable[[str], str]] 
 def trigger_type_to_index(raw_type: str) -> int:
     """将触发类型映射为下拉框索引"""
     trigger = normalize_trigger_type(raw_type)
-    mapping = {
-        TriggerType.DAILY: 0,
-        TriggerType.WEEKLY: 1,
-        TriggerType.MONTHLY: 2,
-        TriggerType.ONCE: 3,
-        TriggerType.CUSTOM: 4,
-    }
-    return mapping.get(trigger, 0)
+    return TRIGGER_TYPES.index(trigger) if trigger in TRIGGER_TYPES else 0
 
 
 def infer_trigger_type(raw_type: str, xml_config: str = "", interval_days: int = 0,
@@ -99,162 +86,256 @@ def trigger_type_to_index_for_task(task_info: ScheduleTaskInfo) -> int:
         task_info.interval_days,
         task_info.interval_hours,
     )
-    mapping = {
-        TriggerType.DAILY: 0,
-        TriggerType.WEEKLY: 1,
-        TriggerType.MONTHLY: 2,
-        TriggerType.ONCE: 3,
-        TriggerType.CUSTOM: 4,
-    }
-    return mapping.get(trigger, 0)
+    return TRIGGER_TYPES.index(trigger) if trigger in TRIGGER_TYPES else 0
 
 
 def format_next_run_time(next_run_time: str) -> str:
     return core_format_next_run_time(next_run_time)
 
 
-class ScheduleTaskTable(TableWidget):
-    """计划任务表格"""
+def _tr(text: str) -> str:
+    # Row and dialog strings keep the old table's translation context.
+    return QCoreApplication.translate("ScheduleTaskTable", text)
 
-    MAX_TABLE_HEIGHT = 360
 
-    def __init__(self, parent=None):
+def _dialog_tr(text: str) -> str:
+    return QCoreApplication.translate("CreateScheduleTaskDialog", text)
+
+
+def task_key(task_info: ScheduleTaskInfo) -> str:
+    return task_info.path or task_info.name
+
+
+def status_tone(status: str) -> str:
+    status = (status or "").lower()
+    if "running" in status:
+        return "accent"
+    if "disabled" in status:
+        return "neutral"
+    if "ready" in status:
+        return "success"
+    return "warning"
+
+
+# --- list --------------------------------------------------------------------------
+
+class ScheduleRow(QFrame):
+    """One scheduled task: name, status, trigger and next run, enable switch and actions."""
+
+    def __init__(self, task_info: ScheduleTaskInfo, on_delete=None, on_view=None, on_toggle=None, parent=None):
         super().__init__(parent)
-        self.setColumnCount(6)
-        self.setHorizontalHeaderLabels(
-            [
-                self.tr("Task Name"),
-                self.tr("Status"),
-                self.tr("Trigger Type"),
-                self.tr("Next Run"),
-                self.tr("Enabled"),
-                self.tr("Actions"),
-            ]
-        )
-        # 列宽策略：全动态（不固定任何列）
-        header = self.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.Stretch)  # 任务名称占用剩余空间
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # 状态按内容
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # 触发类型按内容
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # 下次运行按内容
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # 启用状态按内容
-        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)  # 操作按内容
-        header.setStretchLastSection(False)
+        self.setObjectName("scheduleRow")
+        self.task_key = task_key(task_info)
+        self._on_toggle = on_toggle
 
-        # 自动调整行高
-        self.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.setMinimumHeight(0)
-        self.setMaximumHeight(self.MAX_TABLE_HEIGHT)
-        self.refresh_height()
+        self.tile = QLabel(self)
+        self.tile.setObjectName("taskTile")
+        self.tile.setFixedSize(36, 36)
+        self.tile.setAlignment(Qt.AlignCenter)
+        self.tile.setPixmap(icon("calendar").pixmap(QSize(18, 18), self.devicePixelRatioF()))
+        self.name_label = Label("", "strong", self)
+        self.status_pill = Pill("", "neutral", self)
+        self.detail_label = Label("", "secondary", self)
 
-        # 回调字典
-        self.delete_callbacks = {}
-        self.view_callbacks = {}
-        self.toggle_callbacks = {}
+        title = QHBoxLayout()
+        title.setSpacing(8)
+        title.addWidget(self.name_label)
+        title.addWidget(self.status_pill)
+        title.addStretch(1)
+        text = QVBoxLayout()
+        text.setSpacing(2)
+        text.addLayout(title)
+        text.addWidget(self.detail_label)
 
-    def add_task_row(self, task_info: ScheduleTaskInfo, on_delete=None, on_view=None, on_toggle=None) -> int:
-        """添加任务行"""
-        row = self.rowCount()
-        self.insertRow(row)
-        task_key = task_info.path or task_info.name
+        self.enabled_switch = Switch(parent=self)
+        self.enabled_switch.toggled.connect(self._toggled)
+        self.view_button = Button(icon="pen", variant="subtle", parent=self)
+        self.view_button.setToolTip(_tr("Modify"))
+        self.view_button.clicked.connect(lambda: on_view(self.task_key) if on_view else None)
+        self.delete_button = Button(icon="trash", variant="subtle", parent=self)
+        self.delete_button.setToolTip(_tr("Delete"))
+        self.delete_button.clicked.connect(lambda: on_delete(self.task_key) if on_delete else None)
 
-        # 任务名称
-        name_item = QTableWidgetItem(og.app.tr(task_info.name))
-        name_item.setData(Qt.UserRole, task_key)
-        name_item.setToolTip(task_info.path or f"{og.app.tr(task_info.name)} ({task_info.name})")
-        self.setItem(row, 0, name_item)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(16, 12, 12, 12)
+        layout.setSpacing(12)
+        layout.addWidget(self.tile)
+        layout.addLayout(text, 1)
+        layout.addWidget(self.enabled_switch)
+        layout.addSpacing(6)
+        layout.addWidget(self.view_button)
+        layout.addWidget(self.delete_button)
+        self.update_task(task_info)
 
-        # 状态
-        status_item = QTableWidgetItem(self.tr(task_info.status))
-        self.setItem(row, 1, status_item)
+    def _toggled(self, checked):
+        if self._on_toggle is not None:
+            self._on_toggle(self.task_key, checked)
 
-        # 触发类型
-        trigger_item = QTableWidgetItem(display_trigger_type_for_task(task_info, self.tr))
-        self.setItem(row, 2, trigger_item)
+    @staticmethod
+    def detail_text(task_info: ScheduleTaskInfo) -> str:
+        trigger = display_trigger_type_for_task(task_info, _tr)
+        next_run = format_next_run_time(task_info.next_run_time)
+        return f"{trigger}  ·  {_tr('Next Run')} {next_run}" if next_run else trigger
 
-        # 下次运行时间
-        next_run_item = QTableWidgetItem(format_next_run_time(task_info.next_run_time))
-        self.setItem(row, 3, next_run_item)
+    def signature(self, task_info: ScheduleTaskInfo):
+        return (og.app.tr(task_info.name), _tr(task_info.status), self.detail_text(task_info),
+                task_info.enabled, task_info.read_only)
 
-        # 启用状态（开关按钮）
-        enabled_widget = QWidget()
-        enabled_layout = QHBoxLayout()
-        enabled_layout.setContentsMargins(0, 0, 0, 0)
-        enabled_switch = SwitchButton()
-        enabled_switch.setChecked(task_info.enabled)
-        enabled_switch.setEnabled(not task_info.read_only)
-        # 隐藏 on/off 文本（如果组件支持）
-        if hasattr(enabled_switch, "setOnText"):
-            enabled_switch.setOnText("")
-        if hasattr(enabled_switch, "setOffText"):
-            enabled_switch.setOffText("")
-        enabled_switch.checkedChanged.connect(lambda checked: on_toggle(task_key, checked) if on_toggle else None)
-        enabled_layout.addWidget(enabled_switch, alignment=Qt.AlignCenter)
-        enabled_widget.setLayout(enabled_layout)
-        self.setCellWidget(row, 4, enabled_widget)
+    def update_task(self, task_info: ScheduleTaskInfo):
+        self.task_info = task_info
+        # What the row shows now, to skip updates that would change nothing.
+        self.shown = self.signature(task_info)
+        self.name_label.setText(og.app.tr(task_info.name))
+        self.name_label.setToolTip(task_info.path or f"{og.app.tr(task_info.name)} ({task_info.name})")
+        self.status_pill.setText(_tr(task_info.status))
+        self.status_pill.set_tone(status_tone(task_info.status))
+        self.status_pill.setVisible(bool(task_info.status))
+        self.detail_label.setText(self.detail_text(task_info))
+        self.enabled_switch.blockSignals(True)
+        self.enabled_switch.setChecked(task_info.enabled)
+        self.enabled_switch.blockSignals(False)
+        self.enabled_switch.update()
+        for control in (self.enabled_switch, self.view_button, self.delete_button):
+            control.setEnabled(not task_info.read_only)
 
-        # 操作按钮
-        actions_widget = QWidget()
-        actions_layout = QHBoxLayout()
-        actions_layout.setContentsMargins(0, 0, 0, 0)
-        actions_layout.setSpacing(5)
 
-        view_btn = PushButton(self.tr("Modify"))
-        view_btn.setEnabled(not task_info.read_only)
-        view_btn.clicked.connect(lambda: on_view(task_key) if on_view else None)
-        delete_btn = PushButton(self.tr("Delete"))
-        delete_btn.setEnabled(not task_info.read_only)
-        delete_btn.clicked.connect(lambda: on_delete(task_key) if on_delete else None)
+class ScheduleGroup(QWidget):
+    """Scheduled tasks of one app: a heading and a card of rows."""
 
-        actions_layout.addWidget(view_btn)
-        actions_layout.addWidget(delete_btn)
-        actions_widget.setLayout(actions_layout)
-        self.setCellWidget(row, 5, actions_widget)
-        self.refresh_height()
+    def __init__(self, app_name: str, parent=None):
+        super().__init__(parent)
+        self.app_name = app_name
+        self.rows: dict[str, ScheduleRow] = {}
+        self.count_label = Label("", "caption", self)
+        heading = QHBoxLayout()
+        heading.setSpacing(8)
+        heading.addWidget(Label(app_name, "section", self))
+        heading.addWidget(self.count_label)
+        heading.addStretch(1)
+        self.card = Card(self)
+        self.rows_layout = QVBoxLayout(self.card)
+        self.rows_layout.setContentsMargins(0, 4, 0, 4)
+        self.rows_layout.setSpacing(0)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+        layout.addLayout(heading)
+        layout.addWidget(self.card)
 
+    def has_task(self, key: str) -> bool:
+        return key in self.rows
+
+    def add_task_row(self, task_info: ScheduleTaskInfo, on_delete=None, on_view=None, on_toggle=None) -> ScheduleRow:
+        row = ScheduleRow(task_info, on_delete, on_view, on_toggle, self.card)
+        self.rows[row.task_key] = row
+        self.rows_layout.addWidget(row)
+        self._sync()
         return row
 
     def update_task_row(self, task_info: ScheduleTaskInfo):
-        """更新任务行"""
-        task_key = task_info.path or task_info.name
-        for row in range(self.rowCount()):
-            name_item = self.item(row, 0)
-            if name_item and name_item.data(Qt.UserRole) == task_key:
-                name_item.setText(og.app.tr(task_info.name))
-                name_item.setToolTip(task_info.path or f"{og.app.tr(task_info.name)} ({task_info.name})")
-                self.item(row, 1).setText(self.tr(task_info.status))
-                self.item(row, 2).setText(display_trigger_type_for_task(task_info, self.tr))
-                self.item(row, 3).setText(format_next_run_time(task_info.next_run_time))
+        row = self.rows.get(task_key(task_info))
+        if row is not None:
+            row.update_task(task_info)
 
-                # 更新开关状态
-                enabled_widget = self.cellWidget(row, 4)
-                if enabled_widget:
-                    switch = enabled_widget.findChild(SwitchButton)
-                    if switch:
-                        switch.setChecked(task_info.enabled)
-                self.refresh_height()
-                break
+    def remove_task_row(self, key: str):
+        row = self.rows.pop(key, None)
+        if row is not None:
+            row.hide()
+            row.deleteLater()
+            self._sync()
 
-    def remove_task_row(self, task_name: str):
-        """删除任务行"""
-        for row in range(self.rowCount()):
-            name_item = self.item(row, 0)
-            if name_item and name_item.data(Qt.UserRole) == task_name:
-                self.removeRow(row)
-                self.refresh_height()
-                break
-
-    def refresh_height(self):
-        header_height = self.horizontalHeader().height() if self.horizontalHeader() else 0
-        frame_height = self.frameWidth() * 2
-        rows_height = sum(self.rowHeight(row) for row in range(self.rowCount()))
-        scrollbar_height = self.horizontalScrollBar().sizeHint().height() if self.horizontalScrollBar().isVisible() else 0
-        target_height = header_height + rows_height + frame_height + scrollbar_height + 4
-        target_height = min(max(target_height, header_height + frame_height + 4), self.MAX_TABLE_HEIGHT)
-        self.setFixedHeight(target_height)
+    def _sync(self):
+        self.count_label.setText(str(len(self.rows)))
+        # Rows after the first draw a divider above them.
+        for index, row in enumerate(self.rows.values()):
+            row.setProperty("first", index == 0)
+            row.style().unpolish(row)
+            row.style().polish(row)
 
 
-class CreateScheduleTaskDialog(MessageBoxBase):
+# --- dialogs -------------------------------------------------------------------------
+
+class ScheduleForm:
+    """The shared create/modify form: trigger, start time, interval, timeout and options."""
+
+    def __init__(self, dialog: Dialog, trigger_index=0, start=(9, 0), interval=(0, 0), timeout=0, auto_exit=True,
+                 leading_rows=()):
+        panel = dialog.panel
+        self.dialog = dialog
+        self.grid = QGridLayout()
+        self.grid.setHorizontalSpacing(16)
+        self.grid.setVerticalSpacing(12)
+        self.grid.setColumnStretch(1, 1)
+        self._row = 0
+
+        self.trigger_combo = ComboBox([_dialog_tr(trigger.value) for trigger in TRIGGER_TYPES], panel)
+        self.trigger_combo.setCurrentIndex(max(0, min(len(TRIGGER_TYPES) - 1, trigger_index)))
+
+        self.start_time_edit = QTimeEdit(QTime(max(0, min(23, start[0])), max(0, min(59, start[1]))), panel)
+        self.start_time_edit.setDisplayFormat("HH:mm")
+        self.start_time_edit.setFixedWidth(120)
+
+        self.interval_days_spin = NumberBox(max(0, min(365, interval[0])), 0, 365, parent=panel)
+        self.interval_hours_spin = NumberBox(max(0, min(23, interval[1])), 0, 23, parent=panel)
+        self.interval_widget = QWidget(panel)
+        interval_layout = QHBoxLayout(self.interval_widget)
+        interval_layout.setContentsMargins(0, 0, 0, 0)
+        interval_layout.setSpacing(8)
+        for spin, unit in ((self.interval_days_spin, _dialog_tr("Days")),
+                           (self.interval_hours_spin, _dialog_tr("Hours"))):
+            spin.setFixedWidth(130)
+            interval_layout.addWidget(spin)
+            interval_layout.addWidget(Label(unit, "secondary", self.interval_widget))
+            interval_layout.addSpacing(6)
+        interval_layout.addStretch(1)
+
+        self.timeout_spin = NumberBox(max(0, min(12, timeout)), 0, 12, parent=panel)
+        self.timeout_spin.setFixedWidth(130)
+        timeout_row = QWidget(panel)
+        timeout_layout = QHBoxLayout(timeout_row)
+        timeout_layout.setContentsMargins(0, 0, 0, 0)
+        timeout_layout.setSpacing(8)
+        timeout_layout.addWidget(self.timeout_spin)
+        timeout_layout.addWidget(Label(_dialog_tr("hours (0 = unlimited)"), "secondary", timeout_row))
+        timeout_layout.addStretch(1)
+
+        self.auto_exit_check = QCheckBox(_dialog_tr("Auto exit after task done (-e)"), panel)
+        self.auto_exit_check.setChecked(auto_exit)
+
+        for label, widget in leading_rows:
+            self.add_row(label, widget)
+        self.add_row(_dialog_tr("Trigger Type"), self.trigger_combo)
+        self.add_row(_dialog_tr("Start Time"), self.start_time_edit)
+        self.interval_label = self.add_row(_dialog_tr("Custom Interval"), self.interval_widget)
+        self.add_row(_dialog_tr("Timeout"), timeout_row)
+        self.add_row(_dialog_tr("Startup Options"), self.auto_exit_check)
+        dialog.body.addLayout(self.grid)
+
+        self.trigger_combo.currentIndexChanged.connect(self._on_trigger_type_changed)
+        self._on_trigger_type_changed()
+
+    def add_row(self, label: str, widget: QWidget):
+        caption = Label(label, "strong", self.dialog.panel)
+        self.grid.addWidget(caption, self._row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        self.grid.addWidget(widget, self._row, 1)
+        self._row += 1
+        return caption
+
+    def _on_trigger_type_changed(self, *_args):
+        is_custom = self.trigger_combo.currentIndex() == CUSTOM_INDEX
+        self.interval_widget.setVisible(is_custom)
+        self.interval_label.setVisible(is_custom)
+        if self.dialog.isVisible():
+            self.dialog._fit()
+
+    def values(self):
+        time = self.start_time_edit.time()
+        return (TRIGGER_TYPES[self.trigger_combo.currentIndex()], self.timeout_spin.value(), time.hour(),
+                time.minute(), self.auto_exit_check.isChecked(), self.interval_days_spin.value(),
+                self.interval_hours_spin.value())
+
+
+class CreateScheduleTaskDialog(Dialog):
     """创建计划任务对话框"""
 
     task_created = Signal(
@@ -262,8 +343,10 @@ class CreateScheduleTaskDialog(MessageBoxBase):
     )  # name, task_index, trigger_type, timeout_hours, start_hour, start_minute, auto_exit, interval_days, interval_hours
 
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self.titleLabel = SubtitleLabel(self.tr("Create Schedule Task"), self)
+        super().__init__(parent, _dialog_tr("Create Schedule Task"),
+                         _dialog_tr("Windows runs the app with this task at the chosen time, even when it is closed."),
+                         ok_text=_dialog_tr("Create"), cancel_text=_dialog_tr("Cancel"), width=600)
+        self.titleLabel = self.title_label
 
         # 获取所有 onetime_tasks（不筛 visible，未显示在 GUI 的任务也可计划调度）
         self.tasks = [
@@ -271,173 +354,21 @@ class CreateScheduleTaskDialog(MessageBoxBase):
             if task.support_schedule_task
         ]
         self.task_names = [og.app.tr(task.name) for task in self.tasks]
-
-        self.viewLayout.setSpacing(12)
-        self.viewLayout.setContentsMargins(16, 12, 16, 12)
-
-        # 任务选择
-        task_label = QLabel(self.tr("Select Task"))
-        task_label.setMinimumWidth(120)
-        self.task_combo = ComboBox()
-        self.task_combo.setFixedHeight(34)
+        self.task_combo = ComboBox(parent=self.panel)
         if self.task_names:
             self.task_combo.addItems(self.task_names)
-            self.task_combo.setCurrentIndex(0)
         else:
-            self.task_combo.addItem(self.tr("No tasks available"))
+            self.task_combo.addItem(_dialog_tr("No tasks available"))
             self.task_combo.setEnabled(False)
 
-        # 触发类型
-        trigger_label = QLabel(self.tr("Trigger Type"))
-        trigger_label.setMinimumWidth(120)
-        self.trigger_combo = ComboBox()
-        # 使用翻译后的触发类型文本
-        self.trigger_combo.addItems(
-            [
-                self.tr(TriggerType.DAILY.value),
-                self.tr(TriggerType.WEEKLY.value),
-                self.tr(TriggerType.MONTHLY.value),
-                self.tr(TriggerType.ONCE.value),
-                self.tr(TriggerType.CUSTOM.value),
-            ]
-        )
-        self.trigger_combo.setFixedHeight(34)
-        # 不在这里连接信号，先不触发初始化
-        self.trigger_combo.setCurrentIndex(0)
-
-        # 开始时间（24小时制）
-        start_time_label = QLabel(self.tr("Start Time"))
-        start_time_label.setMinimumWidth(120)
-        self.start_hour_spin = SpinBox()
-        self.start_hour_spin.setRange(0, 23)
-        self.start_hour_spin.setValue(9)
-        self.start_hour_spin.setFixedWidth(120)
-        self.start_hour_spin.setFixedHeight(34)
-
-        self.start_minute_spin = SpinBox()
-        self.start_minute_spin.setRange(0, 59)
-        self.start_minute_spin.setValue(0)
-        self.start_minute_spin.setFixedWidth(120)
-        self.start_minute_spin.setFixedHeight(34)
-
-        start_time_input_layout = QHBoxLayout()
-        start_time_input_layout.setContentsMargins(0, 0, 0, 0)
-        start_time_input_layout.setSpacing(8)
-        start_time_input_layout.addWidget(QLabel(self.tr("Hour")), 0)
-        start_time_input_layout.addWidget(self.start_hour_spin, 0)
-        start_time_input_layout.addWidget(QLabel(":"), 0)
-        start_time_input_layout.addWidget(QLabel(self.tr("Minute")), 0)
-        start_time_input_layout.addWidget(self.start_minute_spin, 0)
-        start_time_input_layout.addWidget(QLabel(self.tr("24h")), 0)
-        start_time_input_layout.addStretch(1)
-
-        start_time_input_widget = QWidget()
-        start_time_input_widget.setLayout(start_time_input_layout)
-
-        # 自定义间隔
-        self.interval_label = QLabel(self.tr("Custom Interval"))
-        self.interval_label.setMinimumWidth(120)
-
-        self.interval_days_spin = SpinBox()
-        self.interval_days_spin.setRange(0, 365)
-        self.interval_days_spin.setValue(0)
-        self.interval_days_spin.setFixedWidth(140)
-        self.interval_days_spin.setFixedHeight(34)
-
-        self.interval_hours_spin = SpinBox()
-        self.interval_hours_spin.setRange(0, 23)
-        self.interval_hours_spin.setValue(0)
-        self.interval_hours_spin.setFixedWidth(140)
-        self.interval_hours_spin.setFixedHeight(34)
-
-        interval_input_layout = QHBoxLayout()
-        interval_input_layout.setContentsMargins(0, 0, 0, 0)
-        interval_input_layout.setSpacing(8)
-        interval_input_layout.addWidget(QLabel(self.tr("Days")), 0)
-        interval_input_layout.addWidget(self.interval_days_spin, 0)
-        interval_input_layout.addWidget(QLabel(self.tr("Hours")), 0)
-        interval_input_layout.addWidget(self.interval_hours_spin, 0)
-        interval_input_layout.addWidget(QLabel(self.tr("(0 = disabled)")), 0)
-        interval_input_layout.addStretch(1)
-
-        self.interval_widget = QWidget()
-        self.interval_widget.setLayout(interval_input_layout)
-
-        # 现在连接信号和初始化显示状态
-        self.trigger_combo.currentIndexChanged.connect(self._on_trigger_type_changed)
-        self._on_trigger_type_changed()
-
-        # 超时限制
-        timeout_label = QLabel(self.tr("Timeout"))
-        timeout_label.setMinimumWidth(120)
-        self.timeout_spin = SpinBox()
-        self.timeout_spin.setMinimum(0)
-        self.timeout_spin.setMaximum(12)
-        self.timeout_spin.setValue(0)
-        self.timeout_spin.setFixedWidth(160)
-        self.timeout_spin.setFixedHeight(34)
-
-        timeout_input_layout = QHBoxLayout()
-        timeout_input_layout.setContentsMargins(0, 0, 0, 0)
-        timeout_input_layout.setSpacing(8)
-        timeout_input_layout.addWidget(self.timeout_spin, 0)
-        timeout_input_layout.addWidget(QLabel(self.tr("hours (0 = unlimited)")), 0)
-        timeout_input_layout.addStretch(1)
-
-        timeout_input_widget = QWidget()
-        timeout_input_widget.setLayout(timeout_input_layout)
-
-        # 启动参数选项
-        self.auto_exit_check = CheckBox(self.tr("Auto exit after task done (-e)"))
-        self.auto_exit_check.setChecked(True)
-
-        form_widget = QWidget()
-        form_layout = QGridLayout(form_widget)
-        form_layout.setContentsMargins(0, 0, 0, 0)
-        form_layout.setHorizontalSpacing(16)
-        form_layout.setVerticalSpacing(10)
-        form_layout.addWidget(task_label, 0, 0)
-        form_layout.addWidget(self.task_combo, 0, 1)
-        form_layout.addWidget(trigger_label, 1, 0)
-        form_layout.addWidget(self.trigger_combo, 1, 1)
-        form_layout.addWidget(start_time_label, 2, 0)
-        form_layout.addWidget(start_time_input_widget, 2, 1)
-        form_layout.addWidget(self.interval_label, 3, 0)
-        form_layout.addWidget(self.interval_widget, 3, 1)
-        form_layout.addWidget(timeout_label, 4, 0)
-        form_layout.addWidget(timeout_input_widget, 4, 1)
-        form_layout.addWidget(QLabel(self.tr("Startup Options")), 5, 0)
-        form_layout.addWidget(self.auto_exit_check, 5, 1)
-        form_layout.setColumnStretch(1, 1)
-
-        # 默认隐藏 interval_label
-        self.interval_label.hide()
-
-        # 添加到布局
-        self.viewLayout.addWidget(self.titleLabel)
-        self.viewLayout.addWidget(form_widget)
-
-        # 设置按钮文本
-        self.yesButton.setText(self.tr("Create"))
-        self.cancelButton.setText(self.tr("Cancel"))
-
-        # 设置最小宽度
-        self.widget.setMinimumWidth(620)
-
-        # 连接信号
-        self.yesButton.clicked.connect(self.on_create)
+        self.form = ScheduleForm(self, leading_rows=[(_dialog_tr("Select Task"), self.task_combo)])
+        self.trigger_combo = self.form.trigger_combo
+        self.auto_exit_check = self.form.auto_exit_check
+        self.accepted.connect(self.on_create)
 
         # 如果没有可用任务，禁用创建按钮
         if not self.tasks:
-            self.yesButton.setEnabled(False)
-
-    def _on_trigger_type_changed(self):
-        """触发类型改变时，控制自定义间隔输入的显示"""
-        trigger_index = self.trigger_combo.currentIndex()
-        # 第 5 个（索引 4）是 CUSTOM
-        is_custom = trigger_index == 4
-        self.interval_widget.setVisible(is_custom)
-        self.interval_label.setVisible(is_custom)
+            self.ok_button.setEnabled(False)
 
     def on_create(self):
         """创建任务"""
@@ -449,39 +380,15 @@ class CreateScheduleTaskDialog(MessageBoxBase):
             return
 
         selected_task = self.tasks[selected_index]
-        task_name = selected_task.name
         # -t N: N 为 onetime_tasks 的第 N 个（从 1 开始）
         task_index = og.executor.onetime_tasks.index(selected_task) + 1
-        # 根据下拉框索引获取触发类型
-        trigger_types = [
-            TriggerType.DAILY,
-            TriggerType.WEEKLY,
-            TriggerType.MONTHLY,
-            TriggerType.ONCE,
-            TriggerType.CUSTOM,
-        ]
-        trigger_type = trigger_types[self.trigger_combo.currentIndex()]
-        timeout_hours = self.timeout_spin.value()
-        start_hour = self.start_hour_spin.value()
-        start_minute = self.start_minute_spin.value()
-        auto_exit = self.auto_exit_check.isChecked()
-        interval_days = self.interval_days_spin.value()
-        interval_hours = self.interval_hours_spin.value()
-
-        self.task_created.emit(
-            task_name,
-            task_index,
-            trigger_type,
-            timeout_hours,
-            start_hour,
-            start_minute,
-            auto_exit,
-            interval_days,
-            interval_hours,
-        )
+        trigger_type, timeout_hours, start_hour, start_minute, auto_exit, interval_days, interval_hours = \
+            self.form.values()
+        self.task_created.emit(selected_task.name, task_index, trigger_type, timeout_hours, start_hour, start_minute,
+                               auto_exit, interval_days, interval_hours)
 
 
-class ModifyScheduleTaskDialog(MessageBoxBase):
+class ModifyScheduleTaskDialog(Dialog):
     """修改计划任务对话框"""
 
     task_modified = Signal(str, int, TriggerType, int, int, int, bool, int, int)
@@ -489,234 +396,35 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
     # task_name, task_index, trigger_type, timeout_hours, start_hour, start_minute, auto_exit, interval_days, interval_hours
 
     def __init__(self, task_info: ScheduleTaskInfo, parent=None):
-        super().__init__(parent)
+        super().__init__(parent, _dialog_tr("Modify Schedule Task"), ok_text=_dialog_tr("Modify"),
+                         cancel_text=_dialog_tr("Cancel"), width=600)
+        self.titleLabel = self.title_label
         self.task_info = task_info
 
         try:
-            self.titleLabel = SubtitleLabel(self.tr("Modify Schedule Task"), self)
-            self.viewLayout.setSpacing(12)
-            self.viewLayout.setContentsMargins(16, 12, 16, 12)
-
             self.task_index, auto_exit_default = self._parse_args(task_info.actions)
             if task_info.task_identifier:
                 self.task_index = resolve_schedule_task_index(
                     task_info.task_identifier, og.executor.onetime_tasks)
             timeout_default = self._parse_timeout(task_info.xml_config)
-            start_hour_default, start_minute_default = self._parse_start_time(task_info.next_run_time)
-            interval_days_default, interval_hours_default = self._parse_custom_interval(task_info)
-
-            logger.debug(
-                f"ModifyScheduleTaskDialog init - task: {task_info.name}, "
-                f"trigger_type: {task_info.trigger_type}, "
-                f"interval_days: {interval_days_default}, "
-                f"interval_hours: {interval_hours_default}"
-            )
+            start_default = self._parse_start_time(task_info.next_run_time)
+            interval_default = self._parse_custom_interval(task_info)
+            trigger_index = trigger_type_to_index_for_task(task_info)
         except Exception as e:
             logger.exception(f"Error parsing task info: {e}")
             self.task_index, auto_exit_default = 1, False
-            timeout_default = 0
-            start_hour_default, start_minute_default = 0, 0
-            interval_days_default, interval_hours_default = 0, 0
+            timeout_default, start_default, interval_default, trigger_index = 0, (0, 0), (0, 0), 0
 
-        # 任务名称（显示，不可修改）
-        task_name_label = QLabel(self.tr("Task Name"))
-        task_name_label.setMinimumWidth(140)
-        task_name_display = QLabel(og.app.tr(task_info.name))
-        task_name_display.setToolTip(f"{og.app.tr(task_info.name)} ({task_info.name})")
-        task_name_display.setMinimumWidth(260)
+        name_value = Label(og.app.tr(task_info.name), "body", self.panel)
+        name_value.setToolTip(f"{og.app.tr(task_info.name)} ({task_info.name})")
+        index_value = Label(str(self.task_index), "mono", self.panel)
 
-        # 任务索引（显示，不可修改）
-        task_index_label = QLabel(self.tr("Task Index (-t)"))
-        task_index_label.setMinimumWidth(140)
-        task_index_display = QLabel(str(self.task_index))
-        task_index_display.setMinimumWidth(260)
-
-        # 触发类型
-        trigger_label = QLabel(self.tr("Trigger Type"))
-        trigger_label.setMinimumWidth(140)
-        self.trigger_combo = ComboBox()
-        # 使用翻译后的触发类型文本
-        self.trigger_combo.addItems(
-            [
-                self.tr(TriggerType.DAILY.value),
-                self.tr(TriggerType.WEEKLY.value),
-                self.tr(TriggerType.MONTHLY.value),
-                self.tr(TriggerType.ONCE.value),
-                self.tr(TriggerType.CUSTOM.value),
-            ]
-        )
-        try:
-            trigger_index = trigger_type_to_index_for_task(task_info)
-            logger.debug(f"Setting trigger combo index: {trigger_index}")
-            if trigger_index < 0 or trigger_index > 4:
-                logger.warning(f"Invalid trigger index {trigger_index}, defaulting to 0")
-                trigger_index = 0
-            self.trigger_combo.setCurrentIndex(trigger_index)
-        except Exception as e:
-            logger.exception(f"Error setting trigger combo index: {e}")
-            self.trigger_combo.setCurrentIndex(0)
-        self.trigger_combo.setFixedHeight(34)
-        self.trigger_combo.currentIndexChanged.connect(self._on_trigger_type_changed)
-
-        # 开始时间（24小时制）
-        start_time_label = QLabel(self.tr("Start Time"))
-        start_time_label.setMinimumWidth(140)
-        self.start_hour_spin = SpinBox()
-        self.start_hour_spin.setRange(0, 23)
-        try:
-            start_hour_default = max(0, min(23, start_hour_default))
-            self.start_hour_spin.setValue(start_hour_default)
-        except Exception as e:
-            logger.debug(f"Error setting start hour: {e}, defaulting to 0")
-            self.start_hour_spin.setValue(0)
-        self.start_hour_spin.setFixedWidth(120)
-        self.start_hour_spin.setFixedHeight(34)
-
-        self.start_minute_spin = SpinBox()
-        self.start_minute_spin.setRange(0, 59)
-        try:
-            start_minute_default = max(0, min(59, start_minute_default))
-            self.start_minute_spin.setValue(start_minute_default)
-        except Exception as e:
-            logger.debug(f"Error setting start minute: {e}, defaulting to 0")
-            self.start_minute_spin.setValue(0)
-        self.start_minute_spin.setFixedWidth(120)
-        self.start_minute_spin.setFixedHeight(34)
-
-        start_time_input_layout = QHBoxLayout()
-        start_time_input_layout.setContentsMargins(0, 0, 0, 0)
-        start_time_input_layout.setSpacing(8)
-        start_time_input_layout.addWidget(QLabel(self.tr("Hour")), 0)
-        start_time_input_layout.addWidget(self.start_hour_spin, 0)
-        start_time_input_layout.addWidget(QLabel(":"), 0)
-        start_time_input_layout.addWidget(QLabel(self.tr("Minute")), 0)
-        start_time_input_layout.addWidget(self.start_minute_spin, 0)
-        start_time_input_layout.addWidget(QLabel(self.tr("24h")), 0)
-        start_time_input_layout.addStretch(1)
-
-        start_time_input_widget = QWidget()
-        start_time_input_widget.setLayout(start_time_input_layout)
-
-        # 超时限制
-        timeout_label = QLabel(self.tr("Timeout"))
-        timeout_label.setMinimumWidth(140)
-        self.timeout_spin = SpinBox()
-        self.timeout_spin.setMinimum(0)
-        self.timeout_spin.setMaximum(12)
-        try:
-            timeout_default = max(0, min(12, timeout_default))
-            self.timeout_spin.setValue(timeout_default)
-        except Exception as e:
-            logger.debug(f"Error setting timeout: {e}, defaulting to 0")
-            self.timeout_spin.setValue(0)
-        self.timeout_spin.setFixedWidth(160)
-        self.timeout_spin.setFixedHeight(34)
-
-        timeout_input_layout = QHBoxLayout()
-        timeout_input_layout.setContentsMargins(0, 0, 0, 0)
-        timeout_input_layout.setSpacing(8)
-        timeout_input_layout.addWidget(self.timeout_spin, 0)
-        timeout_input_layout.addWidget(QLabel(self.tr("hours (0 = unlimited)")), 0)
-        timeout_input_layout.addStretch(1)
-
-        timeout_input_widget = QWidget()
-        timeout_input_widget.setLayout(timeout_input_layout)
-
-        # 自定义间隔（仅当触发类型为 CUSTOM 时显示）
-        self.interval_label = QLabel(self.tr("Custom Interval"))
-        self.interval_label.setMinimumWidth(140)
-
-        self.interval_days_spin = SpinBox()
-        self.interval_days_spin.setMinimum(0)
-        self.interval_days_spin.setMaximum(365)
-        try:
-            interval_days_default = max(0, min(365, interval_days_default))
-            self.interval_days_spin.setValue(interval_days_default)
-        except Exception as e:
-            logger.debug(f"Error setting interval days: {e}, defaulting to 0")
-            self.interval_days_spin.setValue(0)
-        self.interval_days_spin.setFixedWidth(140)
-        self.interval_days_spin.setFixedHeight(34)
-
-        self.interval_hours_spin = SpinBox()
-        self.interval_hours_spin.setMinimum(0)
-        self.interval_hours_spin.setMaximum(23)
-        try:
-            interval_hours_default = max(0, min(23, interval_hours_default))
-            self.interval_hours_spin.setValue(interval_hours_default)
-        except Exception as e:
-            logger.debug(f"Error setting interval hours: {e}, defaulting to 0")
-            self.interval_hours_spin.setValue(0)
-        self.interval_hours_spin.setFixedWidth(140)
-        self.interval_hours_spin.setFixedHeight(34)
-
-        self.interval_widget = QWidget()
-        interval_layout = QHBoxLayout()
-        interval_layout.setContentsMargins(0, 0, 0, 0)
-        interval_layout.setSpacing(8)
-        interval_layout.addWidget(QLabel(self.tr("Days")), 0)
-        interval_layout.addWidget(self.interval_days_spin, 0)
-        interval_layout.addWidget(QLabel(self.tr("Hours")), 0)
-        interval_layout.addWidget(self.interval_hours_spin, 0)
-        interval_layout.addWidget(QLabel(self.tr("(0 = disabled)")), 0)
-        interval_layout.addStretch(1)
-        self.interval_widget.setLayout(interval_layout)
-
-        # 启动参数选项
-        self.auto_exit_check = CheckBox(self.tr("Auto exit after task done (-e)"))
-        try:
-            self.auto_exit_check.setChecked(auto_exit_default)
-        except Exception as e:
-            logger.debug(f"Error setting auto_exit check: {e}")
-            self.auto_exit_check.setChecked(False)
-
-        try:
-            form_widget = QWidget()
-            form_layout = QGridLayout(form_widget)
-            form_layout.setContentsMargins(0, 0, 0, 0)
-            form_layout.setHorizontalSpacing(16)
-            form_layout.setVerticalSpacing(10)
-            form_layout.addWidget(task_name_label, 0, 0)
-            form_layout.addWidget(task_name_display, 0, 1)
-            form_layout.addWidget(task_index_label, 1, 0)
-            form_layout.addWidget(task_index_display, 1, 1)
-            form_layout.addWidget(trigger_label, 2, 0)
-            form_layout.addWidget(self.trigger_combo, 2, 1)
-            form_layout.addWidget(start_time_label, 3, 0)
-            form_layout.addWidget(start_time_input_widget, 3, 1)
-            form_layout.addWidget(timeout_label, 4, 0)
-            form_layout.addWidget(timeout_input_widget, 4, 1)
-            form_layout.addWidget(self.interval_label, 5, 0)
-            form_layout.addWidget(self.interval_widget, 5, 1)
-            form_layout.addWidget(QLabel(self.tr("Startup Options")), 6, 0)
-            form_layout.addWidget(self.auto_exit_check, 6, 1)
-            form_layout.setColumnStretch(1, 1)
-
-            self.viewLayout.addWidget(self.titleLabel)
-            self.viewLayout.addWidget(form_widget)
-
-            # 表单加入布局后再切换可见性，避免 CUSTOM 初始状态下弹窗尺寸计算异常。
-            self._on_trigger_type_changed()
-
-            self.yesButton.setText(self.tr("Modify"))
-            self.cancelButton.setText(self.tr("Cancel"))
-            self.widget.setMinimumWidth(640)
-
-            self.yesButton.clicked.connect(self.on_modify)
-        except Exception as e:
-            logger.exception(f"Error setting up form layout: {e}")
-            # 显示一个简单的错误消息而不是崩溃
-            error_label = QLabel(f"Error initializing dialog: {str(e)[:100]}")
-            self.viewLayout.addWidget(error_label)
-            self.yesButton.clicked.connect(self.close)
-
-    def _on_trigger_type_changed(self):
-        """触发类型改变时，控制自定义间隔输入的显示"""
-        trigger_index = self.trigger_combo.currentIndex()
-        # 第 5 个（索引 4）是 CUSTOM
-        is_custom = trigger_index == 4
-        self.interval_widget.setVisible(is_custom)
-        self.interval_label.setVisible(is_custom)
+        self.form = ScheduleForm(self, trigger_index, start_default, interval_default, timeout_default,
+                                 auto_exit_default, leading_rows=[(_dialog_tr("Task Name"), name_value),
+                                                                  (_dialog_tr("Task Index (-t)"), index_value)])
+        self.trigger_combo = self.form.trigger_combo
+        self.auto_exit_check = self.form.auto_exit_check
+        self.accepted.connect(self.on_modify)
 
     def _parse_args(self, actions: str) -> tuple[int, bool]:
         """从 Action 参数解析 -t 与 -e"""
@@ -740,22 +448,10 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
         返回: 超时小时数，0 表示无限制
         """
         if not xml_config:
-            logger.debug("XML config is empty")
             return 0
-
-        # 匹配 <ExecutionTimeLimit>PT5H</ExecutionTimeLimit> 或 PT0S
         m = re.search(r"<ExecutionTimeLimit>PT(\d+)H</ExecutionTimeLimit>", xml_config)
         if m:
-            timeout = int(m.group(1))
-            logger.debug(f"Parsed timeout from XML: {timeout} hours")
-            return timeout
-
-        # PT0S 表示无限制
-        if "<ExecutionTimeLimit>PT0S</ExecutionTimeLimit>" in xml_config:
-            logger.debug("Timeout is unlimited (PT0S)")
-            return 0
-
-        logger.debug(f"Could not parse timeout from XML, length: {len(xml_config)}")
+            return int(m.group(1))
         return 0
 
     def _parse_start_time(self, next_run_time: str) -> tuple[int, int]:
@@ -792,50 +488,25 @@ class ModifyScheduleTaskDialog(MessageBoxBase):
 
     def on_modify(self):
         """提交修改"""
-        # 根据下拉框索引获取触发类型
-        trigger_types = [
-            TriggerType.DAILY,
-            TriggerType.WEEKLY,
-            TriggerType.MONTHLY,
-            TriggerType.ONCE,
-            TriggerType.CUSTOM,
-        ]
-        trigger_type = trigger_types[self.trigger_combo.currentIndex()]
-        timeout_hours = self.timeout_spin.value()
-        start_hour = self.start_hour_spin.value()
-        start_minute = self.start_minute_spin.value()
-        auto_exit = self.auto_exit_check.isChecked()
-        # 从 spin 控件获取间隔（支持修改）
-        interval_days = self.interval_days_spin.value()
-        interval_hours = self.interval_hours_spin.value()
-
-        self.task_modified.emit(
-            self.task_info.path or self.task_info.name,
-            self.task_index,
-            trigger_type,
-            timeout_hours,
-            start_hour,
-            start_minute,
-            auto_exit,
-            interval_days,
-            interval_hours,
-        )
+        trigger_type, timeout_hours, start_hour, start_minute, auto_exit, interval_days, interval_hours = \
+            self.form.values()
+        self.task_modified.emit(task_key(self.task_info), self.task_index, trigger_type, timeout_hours, start_hour,
+                                start_minute, auto_exit, interval_days, interval_hours)
 
 
-class ScheduleTaskTab(Tab):
+# --- page ------------------------------------------------------------------------------
+
+class ScheduleTaskTab(QWidget):
     """
-    计划任务管理标签页
+    计划任务管理页
 
     功能:
-    - 显示所有计划任务列表（支持多语言）
+    - 按应用分组显示所有计划任务（支持多语言）
     - 创建新任务（触发类型、时间、超时等配置）
     - 修改现有任务配置
     - 启用/禁用任务
     - 删除任务
-    - 实时刷新任务状态
-
-    任务名称从源代码类的 name 属性获取
-    触发类型、状态等文本支持框架自动翻译
+    - 手动刷新任务状态
     """
 
     tasks_loaded = Signal(list)
@@ -844,16 +515,12 @@ class ScheduleTaskTab(Tab):
 
     def __init__(self, config=None):
         super().__init__()
+        self.setObjectName("ScheduleTaskTab")
         self.config = config
         self.schedule_manager: Optional[WindowsScheduleManager] = None
-        self.task_table: Optional[ScheduleTaskTable] = None
-        self.task_tables: dict[str, ScheduleTaskTable] = {}
-        self.task_table_cards: dict[str, QWidget] = {}
+        self.groups: dict[str, ScheduleGroup] = {}
         self.refreshing = False
-        # 仅通过软件内操作与手动刷新管理任务，不启用自动轮询/后台同步
-        self.enable_ui_polling = False
-        self.enable_background_sync = False
-        self.icon = FluentIcon.CALENDAR  # 设置侧边栏图标
+        self._notify_refresh = False
         self.tasks_loaded.connect(self.on_tasks_loaded)
         self.refresh_failed.connect(self.on_refresh_failed)
         self.task_updated_signal.connect(self.on_task_updated_ui)
@@ -868,71 +535,113 @@ class ScheduleTaskTab(Tab):
         return self.tr("Task Schedule")
 
     def init_ui(self):
-        """初始化 UI"""
-        # 顶部工具栏
-        toolbar_layout = QHBoxLayout()
-
-        self.refresh_btn = PushButton(FluentIcon.SYNC, self.tr("Refresh"))
+        self.refresh_btn = Button(self.tr("Refresh"), "refresh", "subtle")
         self.refresh_btn.clicked.connect(self.on_refresh)
-        toolbar_layout.addWidget(self.refresh_btn)
+        self.create_btn = Button(self.tr("Create Task"), "plus", "primary")
+        self.create_btn.clicked.connect(self.on_create_task)
 
-        create_btn = PushButton(FluentIcon.ADD, self.tr("Create Task"))
-        create_btn.clicked.connect(self.on_create_task)
-        toolbar_layout.addWidget(create_btn)
+        title = QVBoxLayout()
+        title.setSpacing(4)
+        title.addWidget(Label(QCoreApplication.translate("MainWindow", "Schedule"), "display", self))
+        title.addWidget(Label(self.tr("Windows Task Scheduler starts the app and runs these tasks, "
+                                      "even when the app is closed."), "secondary", self))
+        header = QHBoxLayout()
+        header.setSpacing(8)
+        header.addLayout(title, 1)
+        header.addWidget(self.refresh_btn, 0, Qt.AlignTop)
+        header.addWidget(self.create_btn, 0, Qt.AlignTop)
 
-        toolbar_layout.addStretch()
-        toolbar_widget = QWidget()
-        toolbar_widget.setLayout(toolbar_layout)
-        self.add_widget(toolbar_widget)
+        self.groups_widget = QWidget()
+        self.groups_widget.setObjectName("scrollContents")
+        self.groups_layout = QVBoxLayout(self.groups_widget)
+        self.groups_layout.setContentsMargins(0, 0, 0, 0)
+        self.groups_layout.setSpacing(20)
+        self.groups_layout.setAlignment(Qt.AlignTop)
+        self.scroll = QScrollArea(self)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setFrameShape(QFrame.NoFrame)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.setWidget(self.groups_widget)
 
-        self.task_tables = {}
-        self.task_table_cards = {}
+        self.empty_widget = self._build_empty_state()
 
-        # 可选：定时刷新表格（默认关闭，采用手动刷新 + 操作后更新）
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_table)
-        if self.enable_ui_polling:
-            self.timer.start(5000)  # 每 5 秒刷新一次
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(*PAGE_MARGINS)
+        layout.setSpacing(18)
+        layout.addLayout(header)
+        layout.addWidget(self.scroll, 1)
+        layout.addWidget(self.empty_widget, 1)
+        theme.install(self)
+
+    def _build_empty_state(self):
+        widget = QWidget(self)
+        layout = QVBoxLayout(widget)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setSpacing(8)
+        glyph = QLabel(widget)
+        glyph.setAlignment(Qt.AlignCenter)
+        glyph.setPixmap(icon("calendar").pixmap(QSize(40, 40), self.devicePixelRatioF()))
+        layout.addWidget(glyph)
+        title = Label(self.tr("No scheduled tasks"), "subtitle", widget)
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+        hint = Label(self.tr("Run a task every day, week or month without opening the app."), "secondary", widget)
+        hint.setAlignment(Qt.AlignCenter)
+        layout.addWidget(hint)
+        layout.addSpacing(8)
+        create = Button(self.tr("Create Task"), "plus", "primary", parent=widget)
+        create.clicked.connect(self.on_create_task)
+        layout.addWidget(create, 0, Qt.AlignCenter)
+        widget.hide()
+        return widget
 
     def setup_manager(self):
-        """设置管理器"""
         self.schedule_manager = WindowsScheduleManager(config=self.config)
         self.schedule_manager.register_update_callback(self.on_task_updated)
-
-        # 可选：后台同步（默认关闭）
-        if self.enable_background_sync:
-            self.schedule_manager.start_background_sync(interval=30)
 
     def load_tasks(self):
         """Load without blocking construction or the Qt event loop."""
         self.on_refresh(notify=False)
 
+    # --- rendering -----------------------------------------------------------------
+
     def render_tasks(self, tasks: List[ScheduleTaskInfo]):
-        """渲染任务列表（智能更新，只在数据变化时重新渲染）"""
-        grouped_tasks = self._group_tasks_by_app(tasks)
-        ordered_app_names = self._ordered_app_names(grouped_tasks)
-
-        for app_name in list(self.task_tables.keys()):
-            if app_name not in grouped_tasks:
-                self._remove_task_table(app_name)
-
-        for app_name in ordered_app_names:
-            table = self._ensure_task_table(app_name)
-            self._render_table_tasks(table, grouped_tasks[app_name])
-
-        self._reorder_task_cards(ordered_app_names)
-
-    def _group_tasks_by_app(self, tasks: List[ScheduleTaskInfo]) -> dict[str, List[ScheduleTaskInfo]]:
+        """按应用分组渲染任务；只更新变化的行"""
         grouped_tasks: dict[str, List[ScheduleTaskInfo]] = {}
         for task_info in tasks:
-            app_name = self._app_name_from_task(task_info)
-            grouped_tasks.setdefault(app_name, []).append(task_info)
-        return grouped_tasks
-
-    def _ordered_app_names(self, grouped_tasks: dict[str, List[ScheduleTaskInfo]]) -> List[str]:
+            grouped_tasks.setdefault(self._app_name_from_task(task_info), []).append(task_info)
         own_app_name = self._own_app_name()
-        names = list(grouped_tasks.keys())
-        return sorted(names, key=lambda name: (name != own_app_name, name.lower()))
+        ordered = sorted(grouped_tasks, key=lambda name: (name != own_app_name, name.lower()))
+
+        for app_name in list(self.groups):
+            if app_name not in grouped_tasks:
+                group = self.groups.pop(app_name)
+                group.hide()
+                group.deleteLater()
+
+        for index, app_name in enumerate(ordered):
+            group = self.groups.get(app_name)
+            if group is None:
+                group = ScheduleGroup(app_name, self.groups_widget)
+                self.groups[app_name] = group
+            self.groups_layout.insertWidget(index, group)
+            self._render_group(group, grouped_tasks[app_name])
+
+        has_tasks = bool(tasks)
+        self.scroll.setVisible(has_tasks)
+        self.empty_widget.setVisible(not has_tasks)
+
+    def _render_group(self, group: ScheduleGroup, tasks: List[ScheduleTaskInfo]):
+        keys = {task_key(task) for task in tasks}
+        for key in [key for key in group.rows if key not in keys]:
+            group.remove_task_row(key)
+        for task_info in tasks:
+            row = group.rows.get(task_key(task_info))
+            if row is None:
+                group.add_task_row(task_info, on_delete=self.on_task_deleted, on_view=self.on_task_view,
+                                   on_toggle=self.on_task_toggled)
+            elif row.shown != row.signature(task_info):
+                row.update_task(task_info)
 
     def _own_app_name(self) -> str:
         if self.schedule_manager:
@@ -940,103 +649,15 @@ class ScheduleTaskTab(Tab):
         return self.tr("Current App")
 
     def _app_name_from_task(self, task_info: ScheduleTaskInfo) -> str:
-        task_path = task_info.path or ""
-        normalized_path = task_path.lstrip("\\")
+        normalized_path = (task_info.path or "").lstrip("\\")
         if normalized_path:
             return normalized_path.split("\\", 1)[0] or self._own_app_name()
         return self._own_app_name()
 
-    def _ensure_task_table(self, app_name: str) -> ScheduleTaskTable:
-        table = self.task_tables.get(app_name)
-        if table:
-            return table
+    def _find_group(self, key: str) -> Optional[ScheduleGroup]:
+        return next((group for group in self.groups.values() if group.has_task(key)), None)
 
-        table = ScheduleTaskTable()
-        table.itemClicked.connect(self.on_table_item_clicked)
-        self.task_tables[app_name] = table
-        self.task_table_cards[app_name] = self.add_card(app_name, table)
-        if app_name == self._own_app_name():
-            self.task_table = table
-        return table
-
-    def _remove_task_table(self, app_name: str):
-        card = self.task_table_cards.pop(app_name, None)
-        table = self.task_tables.pop(app_name, None)
-        if card:
-            self.removeWidget(card)
-            card.deleteLater()
-        if table == self.task_table:
-            self.task_table = None
-
-    def _find_task_table(self, task_key: str) -> Optional[ScheduleTaskTable]:
-        for table in self.task_tables.values():
-            for row in range(table.rowCount()):
-                name_item = table.item(row, 0)
-                if name_item and name_item.data(Qt.UserRole) == task_key:
-                    return table
-        return None
-
-    def _reorder_task_cards(self, ordered_app_names: List[str]):
-        for app_name in ordered_app_names:
-            card = self.task_table_cards.get(app_name)
-            if card:
-                self.removeWidget(card)
-                self.add_widget(card)
-
-    def _render_table_tasks(self, table: ScheduleTaskTable, tasks: List[ScheduleTaskInfo]):
-        new_tasks_dict = {task.path or task.name: task for task in tasks}
-        existing_tasks = set()
-        rows_to_remove = []
-
-        for row in range(table.rowCount()):
-            name_item = table.item(row, 0)
-            if name_item:
-                task_name = name_item.data(Qt.UserRole) or name_item.text()
-                existing_tasks.add(task_name)
-
-                if task_name not in new_tasks_dict:
-                    rows_to_remove.append(row)
-                else:
-                    new_task = new_tasks_dict[task_name]
-                    if self._task_changed(table, row, new_task):
-                        table.update_task_row(new_task)
-
-        for row in reversed(rows_to_remove):
-            table.removeRow(row)
-
-        for task_info in tasks:
-            task_key = task_info.path or task_info.name
-            if task_key not in existing_tasks:
-                table.add_task_row(
-                    task_info, on_delete=self.on_task_deleted, on_view=self.on_task_view, on_toggle=self.on_task_toggled
-                )
-        table.refresh_height()
-
-    def _task_changed(self, table: ScheduleTaskTable, row: int, new_task: ScheduleTaskInfo) -> bool:
-        """检查任务是否有变化"""
-        # 检查状态
-        status_item = table.item(row, 1)
-        if status_item and status_item.text() != self.tr(new_task.status):
-            return True
-
-        # 检查触发类型
-        trigger_item = table.item(row, 2)
-        if trigger_item and trigger_item.text() != display_trigger_type_for_task(new_task, self.tr):
-            return True
-
-        # 检查下次运行时间
-        next_run_item = table.item(row, 3)
-        if next_run_item and next_run_item.text() != format_next_run_time(new_task.next_run_time):
-            return True
-
-        # 检查启用状态
-        enabled_widget = table.cellWidget(row, 4)
-        if enabled_widget:
-            switch = enabled_widget.findChild(SwitchButton)
-            if switch and switch.isChecked() != new_task.enabled:
-                return True
-
-        return False
+    # --- refresh -----------------------------------------------------------------------
 
     def on_tasks_loaded(self, tasks: List[ScheduleTaskInfo]):
         """后台刷新完成后在主线程更新 UI"""
@@ -1048,27 +669,55 @@ class ScheduleTaskTab(Tab):
             self.show_success(self.tr("Tasks refreshed"))
 
     def on_refresh_failed(self, error_message: str):
-        """后台刷新失败处理"""
         self.refreshing = False
         self.setEnabled(True)
         self.show_error(self.tr("Refresh failed") + f": {error_message}")
 
-    def update_table(self):
-        """更新表格（主要用于刷新状态）"""
-        try:
-            tasks = self.schedule_manager.cache.get_all()
-            for task_info in tasks:
-                app_name = self._app_name_from_task(task_info)
-                table = self.task_tables.get(app_name)
-                if table:
-                    table.update_task_row(task_info)
-        except Exception as e:
-            logger.error(f"Failed to update table: {e}")
+    def on_refresh(self, checked=False, *, notify=True):
+        """刷新任务列表"""
+        if self.refreshing:
+            return
 
-    def on_table_item_clicked(self, item):
-        """表格项点击处理"""
-        # 此方法保留以防需要，但按钮已直接连接回调
-        pass
+        self.refreshing = True
+        self._notify_refresh = notify
+        # Prevent scheduler mutations from waiting on the worker's lock in Qt.
+        self.setEnabled(False)
+
+        def refresh():
+            try:
+                from ok.ui.qt.tasks.schedule_index_sync import sync_schedule_task_indexes
+                sync_schedule_task_indexes(rewrite_argv=False)
+                self.schedule_manager.cache.load_cache()
+                tasks = self.schedule_manager.query_all_tasks(force_sync=True)
+                self.tasks_loaded.emit(tasks)
+            except Exception as e:
+                self.refresh_failed.emit(str(e))
+
+        self.refresh_thread = threading.Thread(target=refresh, daemon=True, name="ScheduleRefresh")
+        self.refresh_thread.start()
+
+    def on_task_updated(self, task_info: ScheduleTaskInfo):
+        # 可能来自后台线程，转发到主线程更新 UI
+        self.task_updated_signal.emit(task_info)
+
+    def on_task_updated_ui(self, task_info: ScheduleTaskInfo):
+        group = self.groups.get(self._app_name_from_task(task_info))
+        if group:
+            group.update_task_row(task_info)
+
+    # --- actions -----------------------------------------------------------------------
+
+    @staticmethod
+    def _task_identifier(task_index):
+        """模块路径.类名 is stable across task reordering, unlike the index."""
+        try:
+            tasks = og.executor.onetime_tasks if og.executor.onetime_tasks else []
+            if isinstance(task_index, int) and 1 <= task_index <= len(tasks):
+                task = tasks[task_index - 1]
+                return f"{task.__class__.__module__}.{task.__class__.__name__}"
+        except Exception:
+            logger.exception("Failed to resolve task_identifier")
+        return None
 
     def on_task_view(self, task_name: str):
         """打开修改任务弹窗"""
@@ -1077,46 +726,27 @@ class ScheduleTaskTab(Tab):
             if not task_info:
                 self.show_error(self.tr("Task not found in cache"))
                 return
-
-            self._modify_dialog = ModifyScheduleTaskDialog(task_info, self)
-            self._modify_dialog.task_modified.connect(self.on_task_modified)
-            self._modify_dialog.exec()
+            dialog = ModifyScheduleTaskDialog(task_info, self)
+            dialog.task_modified.connect(self.on_task_modified)
+            try:
+                dialog.exec()
+            finally:
+                dialog.deleteLater()
         except Exception as e:
             logger.error(f"Failed to open modify dialog: {e}")
             self.show_error(self.tr("Failed to open modify dialog") + f": {e}")
 
-    def on_task_modified(
-            self,
-            task_name: str,
-            task_index: int,
-            trigger_type: TriggerType,
-            timeout_hours: int,
-            start_hour: int,
-            start_minute: int,
-            auto_exit: bool,
-            interval_days: int = 0,
-            interval_hours: int = 0,
-    ):
-        """处理任务修改"""
+    def on_task_modified(self, task_name: str, task_index: int, trigger_type: TriggerType, timeout_hours: int,
+                         start_hour: int, start_minute: int, auto_exit: bool, interval_days: int = 0,
+                         interval_hours: int = 0):
         try:
             current = self.schedule_manager.cache.get(task_name)
             enabled = current.enabled if current else True
+            # 优先沿用缓存的稳定标识；旧任务没有则按索引反查任务实例
+            task_identifier = getattr(current, "task_identifier", None) if current else None
+            task_identifier = task_identifier or self._task_identifier(task_index)
 
-            # 优先沿用缓存的稳定标识（模块路径.类名）；旧任务没有则按索引反查任务实例
-            task_identifier = None
-            if current and getattr(current, "task_identifier", None):
-                task_identifier = current.task_identifier
-            else:
-                try:
-                    tasks = og.executor.onetime_tasks if og.executor.onetime_tasks else []
-                    if isinstance(task_index, int) and 1 <= task_index <= len(tasks):
-                        task = tasks[task_index - 1]
-                        task_identifier = f"{task.__class__.__module__}.{task.__class__.__name__}"
-                except Exception:
-                    logger.exception("Failed to resolve task_identifier for modified task")
-
-            deleted = self.schedule_manager.delete_task(task_name)
-            if not deleted:
+            if not self.schedule_manager.delete_task(task_name):
                 self.show_error(self.tr("Failed to modify task: cannot delete old task"))
                 return
 
@@ -1142,74 +772,18 @@ class ScheduleTaskTab(Tab):
             logger.error(f"Failed to modify task: {e}")
             self.show_error(self.tr("Failed to modify task") + f": {e}")
 
-    def on_task_updated(self, task_info: ScheduleTaskInfo):
-        """任务更新回调"""
-        # 可能来自后台线程，转发到主线程更新 UI
-        self.task_updated_signal.emit(task_info)
-
-    def on_task_updated_ui(self, task_info: ScheduleTaskInfo):
-        """在主线程中更新单行任务信息"""
-        table = self.task_tables.get(self._app_name_from_task(task_info))
-        if table:
-            table.update_task_row(task_info)
-
-    def on_refresh(self, checked=False, *, notify=True):
-        """刷新任务列表"""
-        if self.refreshing:
-            return
-
-        self.refreshing = True
-        self._notify_refresh = notify
-        # Prevent scheduler mutations from waiting on the worker's lock in Qt.
-        self.setEnabled(False)
-
-        def refresh():
-            try:
-                from ok.ui.qt.tasks.schedule_index_sync import sync_schedule_task_indexes
-                sync_schedule_task_indexes(rewrite_argv=False)
-                self.schedule_manager.cache.load_cache()
-                tasks = self.schedule_manager.query_all_tasks(force_sync=True)
-                self.tasks_loaded.emit(tasks)
-            except Exception as e:
-                self.refresh_failed.emit(str(e))
-
-        # 后台线程刷新
-        import threading
-
-        self.refresh_thread = threading.Thread(
-            target=refresh, daemon=True, name="ScheduleRefresh")
-        self.refresh_thread.start()
-
     def on_create_task(self):
-        """创建任务"""
         dialog = CreateScheduleTaskDialog(self)
         dialog.task_created.connect(self.on_task_created)
-        dialog.exec()
-
-    def on_task_created(
-            self,
-            name: str,
-            task_index: int,
-            trigger_type: TriggerType,
-            timeout_hours: int,
-            start_hour: int,
-            start_minute: int,
-            auto_exit: bool,
-            interval_days: int = 0,
-            interval_hours: int = 0,
-    ):
-        """处理任务创建"""
         try:
-            # 根据索引反查任务实例，取模块路径.类名作为稳定标识（对排序免疫）
-            task_identifier = None
-            try:
-                tasks = og.executor.onetime_tasks if og.executor.onetime_tasks else []
-                if isinstance(task_index, int) and 1 <= task_index <= len(tasks):
-                    task = tasks[task_index - 1]
-                    task_identifier = f"{task.__class__.__module__}.{task.__class__.__name__}"
-            except Exception:
-                logger.exception("Failed to resolve task_identifier for new schedule task")
+            dialog.exec()
+        finally:
+            dialog.deleteLater()
 
+    def on_task_created(self, name: str, task_index: int, trigger_type: TriggerType, timeout_hours: int,
+                        start_hour: int, start_minute: int, auto_exit: bool, interval_days: int = 0,
+                        interval_hours: int = 0):
+        try:
             success = self.schedule_manager.create_task(
                 task_name=name or f"AutoTask_{task_index}",
                 task_index=task_index,
@@ -1221,7 +795,7 @@ class ScheduleTaskTab(Tab):
                 enabled=True,
                 interval_days=interval_days,
                 interval_hours=interval_hours,
-                task_identifier=task_identifier,
+                task_identifier=self._task_identifier(task_index),
             )
             if success:
                 self.load_tasks()
@@ -1233,41 +807,27 @@ class ScheduleTaskTab(Tab):
             self.show_error(self.tr("Failed to create task") + f": {e}")
 
     def on_task_deleted(self, task_name: str):
-        """删除任务"""
-        from qfluentwidgets import BodyLabel
-
-        dialog = MessageBoxBase(self)
-
-        # 手动创建并添加标题
-        title_label = SubtitleLabel(self.tr("Delete Task"), self)
-        dialog.viewLayout.addWidget(title_label)
-
-        display_name = og.app.tr(task_name)
-        content = BodyLabel(
-            self.tr("Are you sure you want to delete task") + f"\n{display_name}?"
-        )
-        content.setWordWrap(True)
-        dialog.viewLayout.addWidget(content)
-
-        dialog.yesButton.setText(self.tr("Delete"))
-        dialog.cancelButton.setText(self.tr("Cancel"))
-
-        if dialog.exec():
-            try:
-                success = self.schedule_manager.delete_task(task_name)
-                if success:
-                    table = self._find_task_table(task_name)
-                    if table:
-                        table.remove_task_row(task_name)
-                    self.show_success(self.tr("Task deleted successfully"))
-                else:
-                    self.show_error(self.tr("Failed to delete task"))
-            except Exception as e:
-                logger.error(f"Failed to delete task: {e}")
-                self.show_error(self.tr("Failed to delete task") + f": {e}")
+        task_info = self.schedule_manager.cache.get(task_name)
+        display_name = og.app.tr(task_info.name if task_info else task_name)
+        if not confirm(self, self.tr("Delete Task"),
+                       self.tr("Are you sure you want to delete task") + f"\n{display_name}?",
+                       ok_text=self.tr("Delete"), danger=True):
+            return
+        try:
+            if self.schedule_manager.delete_task(task_name):
+                group = self._find_group(task_name)
+                if group:
+                    group.remove_task_row(task_name)
+                self.show_success(self.tr("Task deleted successfully"))
+                if not any(group.rows for group in self.groups.values()):
+                    self.render_tasks([])
+            else:
+                self.show_error(self.tr("Failed to delete task"))
+        except Exception as e:
+            logger.error(f"Failed to delete task: {e}")
+            self.show_error(self.tr("Failed to delete task") + f": {e}")
 
     def on_task_toggled(self, task_name: str, enabled: bool):
-        """切换任务启用状态"""
         try:
             if enabled:
                 self.schedule_manager.enable_task(task_name)
@@ -1280,31 +840,12 @@ class ScheduleTaskTab(Tab):
             self.show_error(self.tr("Failed to toggle task") + f": {e}")
 
     def show_success(self, message: str):
-        """显示成功消息"""
-        InfoBar.success(
-            title=self.tr("Success"),
-            content=message,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            parent=self,
-        )
+        show_toast(self, message, tone="success")
 
     def show_error(self, message: str):
-        """显示错误消息"""
-        InfoBar.error(
-            title=self.tr("Error"),
-            content=message,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            parent=self,
-        )
+        show_toast(self, message, self.tr("Error"), tone="danger", duration=6000)
 
     def closeEvent(self, event):
-        """关闭事件 - 停止后台同步"""
-        if hasattr(self, "timer") and self.timer.isActive():
-            self.timer.stop()
         if self.schedule_manager:
             self.schedule_manager.stop_background_sync()
         super().closeEvent(event)

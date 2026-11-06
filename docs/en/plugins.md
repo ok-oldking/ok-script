@@ -100,12 +100,13 @@ Declared tab modules are imported only by the Qt adapter.
 
 ```python
 # plugin_page.py
-from qfluentwidgets import BodyLabel, FluentIcon
+from ok.core.icons import Icon
+from ok.ui.qt.kit import Button, Label
 from ok.ui.qt.widget.CustomTab import CustomTab
 
 
 class MyTab(CustomTab):
-    icon = FluentIcon.APPLICATION
+    icon = Icon.APPLICATION  # or a path to an SVG/PNG in the plugin folder
 
     @property
     def name(self):
@@ -113,12 +114,20 @@ class MyTab(CustomTab):
 
     def __init__(self):
         super().__init__()
-        self.add_widget(BodyLabel("Plugin content", self.view))
+        self.add_card("Status", Label("Plugin content", "body"))
+        self.add_widget(Button("Run", "play", "primary"))
 
     def dispose(self):
         # Disconnect plugin subscriptions and stop page-owned workers here.
         pass
 ```
+
+`CustomTab` is a scrolling page styled by the built-in widget kit
+(`ok.ui.qt.kit`): `add_card(title, widget)` adds a titled card and
+`add_widget(widget)` adds a plain row. Use kit widgets such as `Button`,
+`Label`, `Switch`, `ComboBox` and `Dialog`, or plain Qt widgets, which the kit
+stylesheet also styles. PySide6-Fluent-Widgets is no longer installed, so
+plugins that import `qfluentwidgets` must be ported.
 
 The host assigns `tab.executor` after construction, as with configured host
 custom tabs. It owns navigation and widget destruction. Pages may expose

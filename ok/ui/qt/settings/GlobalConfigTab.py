@@ -1,47 +1,42 @@
-from PySide6.QtWidgets import QFrame, QVBoxLayout
-from qfluentwidgets import BodyLabel, TitleLabel
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QFrame, QScrollArea, QVBoxLayout, QWidget
 
-from ok import Config, ConfigOption, og
-from ok.ui.qt.tasks.ConfigCard import ConfigContentMixin
-from ok.ui.qt.widget.Tab import Tab
+from ok import Config, ConfigOption
+from ok.ui.qt.kit.theme import theme
+from ok.ui.qt.settings.config_section import ConfigSection
 
 
-class GlobalConfigTab(ConfigContentMixin, Tab):
-    def __init__(self, config: Config, option: ConfigOption):
-        super().__init__()
+class GlobalConfigTab(QWidget):
+    """A global config option shown as its own page (``show_at_tab``)."""
+
+    def __init__(self, config: Config, option: ConfigOption, parent=None):
+        super().__init__(parent)
+        self.config = config
         self.option = option
-        self.titleLabel = TitleLabel(self._translate(option.name), self)
-        self.titleLabel.setObjectName('viewTitleLabel')
-        self.vBoxLayout.addWidget(self.titleLabel)
+        self.section = ConfigSection(config, option, title_role="display")
 
-        self.descriptionLabel = None
-        if option.description:
-            self.descriptionLabel = BodyLabel(self._translate(option.description), self)
-            self.descriptionLabel.setObjectName('contentLabel')
-            self.descriptionLabel.setWordWrap(True)
-            self.vBoxLayout.addWidget(self.descriptionLabel)
+        scroll = QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        contents = QWidget()
+        contents.setObjectName("scrollContents")
+        column = QVBoxLayout(contents)
+        column.setContentsMargins(28, 20, 28, 28)
+        column.addWidget(self.section)
+        column.addStretch(1)
+        scroll.setWidget(contents)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(scroll)
+        theme.install(self)
 
-        self.contentFrame = QFrame(self)
-        self.contentFrame.setObjectName('configContentFrame')
-        self.viewLayout = QVBoxLayout(self.contentFrame)
-        self.vBoxLayout.addWidget(self.contentFrame)
-        self._init_config_content(
-            None,
-            config,
-            option.default_config,
-            option.config_description,
-            option.config_type
-        )
-        self.viewLayout.setContentsMargins(6, 4, 6, 8)
+    @property
+    def config_widget_by_key(self):
+        return self.section.config_widget_by_key
 
-    def _translate(self, text):
-        if og.app and hasattr(og.app, 'tr'):
-            return og.app.tr(text)
-        return self.tr(text)
+    def has_key(self, key) -> bool:
+        return self.section.has_key(key)
 
-    def reset_clicked(self):
-        self.config.reset_to_default()
-        self.update_config()
-
-    def has_key(self, key):
-        return key in self.config
+    def reset_clicked(self) -> None:
+        self.section.reset_clicked()

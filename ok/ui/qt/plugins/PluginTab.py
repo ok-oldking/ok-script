@@ -1,12 +1,9 @@
 import time
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QRunnable, QThreadPool, QTimer, Signal, Slot
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import (
-    BodyLabel, ComboBox, FluentIcon, LineEdit, MessageBox, MessageBoxBase,
-    PrimaryPushButton, PushButton, SimpleCardWidget, SubtitleLabel,
-)
+from PySide6.QtCore import QObject, QRunnable, QSize, Qt, QThreadPool, QTimer, Signal, Slot
+from PySide6.QtWidgets import (QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QScrollArea, QSizePolicy,
+                               QVBoxLayout, QWidget)
 
 from ok import og
 from ok.core.events import communicate
@@ -18,7 +15,15 @@ from ok.core.plugin_staging import (
     cancel_pending_plugin_change, install_or_stage_plugin, pending_plugin_changes,
 )
 from ok.core.script_packager import get_ok_import_folder, scan_import_folders
-from ok.ui.qt.widget.Tab import Tab
+from ok.ui.qt.kit.buttons import Button
+from ok.ui.qt.kit.cards import Card
+from ok.ui.qt.kit.dialogs import Dialog, confirm
+from ok.ui.qt.kit.feedback import Pill
+from ok.ui.qt.kit.icons import icon
+from ok.ui.qt.kit.inputs import ComboBox
+from ok.ui.qt.kit.labels import Label
+from ok.ui.qt.kit.theme import set_style_property, theme
+from ok.ui.qt.tasks.tasks_page import monogram
 from ok.ui.qt.widget.ImportWarningDialog import ImportWarningDialog
 
 
@@ -41,11 +46,55 @@ class _Job(QRunnable):
             self.signals.finished.emit(self, result, None)
 
 
-class PluginTab(Tab):
+class PluginCard(Card):
+    """One installed (or staged) plugin: tile, name, version, notes and actions."""
+
+    def __init__(self, name, version='', parent=None):
+        super().__init__(parent)
+        tile = QLabel(monogram(name), self)
+        tile.setObjectName("taskTile")
+        tile.setFixedSize(40, 40)
+        tile.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_row = QHBoxLayout()
+        title_row.setSpacing(8)
+        title_row.addWidget(Label(name, "strong", self))
+        if version:
+            title_row.addWidget(Pill(version, "neutral", self))
+        title_row.addStretch(1)
+        self.notes = QVBoxLayout()
+        self.notes.setSpacing(2)
+        text = QVBoxLayout()
+        text.setSpacing(4)
+        text.addLayout(title_row)
+        text.addLayout(self.notes)
+        self.actions = QHBoxLayout()
+        self.actions.setSpacing(6)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(16, 14, 16, 14)
+        layout.setSpacing(14)
+        layout.addWidget(tile, 0, Qt.AlignmentFlag.AlignTop)
+        layout.addLayout(text, 1)
+        layout.addLayout(self.actions)
+
+    def add_note(self, text, tone=None):
+        label = Label(text, "secondary", self, word_wrap=True)
+        if tone:
+            set_style_property(label, "tone", tone)
+        self.notes.addWidget(label)
+        return label
+
+    def add_action(self, button):
+        button.setParent(self)
+        self.actions.addWidget(button, 0, Qt.AlignmentFlag.AlignVCenter)
+        return button
+
+
+class PluginTab(QWidget):
     """Manage installed plugins; downloads and archive work run off the GUI thread."""
 
     def __init__(self):
         super().__init__()
+        self.setObjectName("PluginTab")
         self._jobs = {}
         self._busy = False
         self._delete_buttons = []
@@ -54,27 +103,57 @@ class PluginTab(Tab):
         self._plugin_tokens = {}
         self._updates = {}
         self._check_errors = {}
-        self.vBoxLayout.addWidget(SubtitleLabel(self.tr('Plugins'), self))
-        toolbar = QHBoxLayout()
-        self.local_button = PrimaryPushButton(FluentIcon.ADD, self.tr('Add from ZIP'), self)
-        self.github_button = PushButton(FluentIcon.GITHUB, self.tr('Add from GitHub'), self)
+        self._pending = {}
+
+        self.local_button = Button(self.tr('Add from ZIP'), "plus", "primary")
+        self.github_button = Button(self.tr('Add from GitHub'), "github")
         self.local_button.clicked.connect(self.add_local)
         self.github_button.clicked.connect(self.add_github)
-        toolbar.addWidget(self.local_button)
-        toolbar.addWidget(self.github_button)
-        toolbar.addStretch()
-        self.vBoxLayout.addLayout(toolbar)
-        self.status_label = BodyLabel('', self)
-        self.status_label.setWordWrap(True)
-        self.vBoxLayout.addWidget(self.status_label)
-        self.restart_label = BodyLabel(self.tr('Restart the application to apply plugin changes.'), self)
-        self.restart_label.setWordWrap(True)
+        header = QHBoxLayout()
+        header.setSpacing(8)
+        title = QVBoxLayout()
+        title.setSpacing(4)
+        title.addWidget(Label(self.tr('Plugins'), "display", self))
+        self.status_label = Label('', "secondary", self, word_wrap=True)
+        title.addWidget(self.status_label)
+        header.addLayout(title, 1)
+        header.addWidget(self.github_button, 0, Qt.AlignmentFlag.AlignTop)
+        header.addWidget(self.local_button, 0, Qt.AlignmentFlag.AlignTop)
+
+        # Shown while staged changes wait for a restart.
+        self.restart_label = QFrame(self)
+        self.restart_label.setObjectName("noticeBanner")
+        banner_icon = QLabel(self.restart_label)
+        banner_icon.setPixmap(icon("alert").pixmap(QSize(18, 18), self.devicePixelRatioF()))
+        banner_text = Label(self.tr('Restart the application to apply plugin changes.'), "body", self.restart_label,
+                            word_wrap=True)
+        banner = QHBoxLayout(self.restart_label)
+        banner.setContentsMargins(14, 10, 14, 10)
+        banner.setSpacing(10)
+        banner.addWidget(banner_icon)
+        banner.addWidget(banner_text, 1)
         self.restart_label.hide()
-        self.vBoxLayout.addWidget(self.restart_label)
-        self.plugins = QWidget(self)
+
+        self.plugins = QWidget()
+        self.plugins.setObjectName("scrollContents")
         self.plugins_layout = QVBoxLayout(self.plugins)
         self.plugins_layout.setContentsMargins(0, 0, 0, 0)
-        self.vBoxLayout.addWidget(self.plugins)
+        self.plugins_layout.setSpacing(10)
+        self.plugins_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        scroll = QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidget(self.plugins)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(28, 18, 28, 20)
+        layout.setSpacing(16)
+        layout.addLayout(header)
+        layout.addWidget(self.restart_label)
+        layout.addWidget(scroll, 1)
+        theme.install(self)
+
         communicate.task_list_updated.connect(self.refresh)
         communicate.plugin_changes_updated.connect(self.refresh)
         callback = self.refresh
@@ -87,6 +166,35 @@ class PluginTab(Tab):
     def showEvent(self, event):
         self.refresh()
         super().showEvent(event)
+
+    def _empty_state(self):
+        card = Card(self.plugins, look="inset")
+        card.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        glyph = QLabel(card)
+        glyph.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        glyph.setPixmap(icon("grid").pixmap(QSize(32, 32), self.devicePixelRatioF()))
+        title = Label(self.tr('No plugins installed.'), "strong", card)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        hint = Label(self.tr('Add a plugin from a ZIP file or a GitHub release.'), "secondary", card)
+        hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(24, 36, 24, 36)
+        layout.setSpacing(8)
+        layout.addWidget(glyph)
+        layout.addWidget(title)
+        layout.addWidget(hint)
+        return card
+
+    def _change_message(self, change):
+        if change['phase'] in ('failed', 'recovery'):
+            return self.tr('Plugin change failed: {}').format(change.get('error', '')), "danger"
+        if change['phase'] == 'rollback':
+            return self.tr('Update failed. Restart to restore the previous version.'), "danger"
+        if change['phase'] == 'committed':
+            return self.tr('Backup cleanup pending. Restart to retry.'), "warning"
+        if change['action'] == 'delete':
+            return self.tr('Deletion staged. Restart to apply.'), "warning"
+        return self.tr('Update staged: {}. Restart to apply.').format(change.get('version', '')), "warning"
 
     @Slot()
     def refresh(self):
@@ -108,68 +216,42 @@ class PluginTab(Tab):
             change['phase'] != 'failed' for change in self._pending.values()))
         self._schedule_update_checks(entries)
         if not entries:
-            self.plugins_layout.addWidget(BodyLabel(self.tr('No plugins installed.'), self.plugins))
+            self.plugins_layout.addWidget(self._empty_state())
         manager = og.task_manager
         for entry in entries:
-            card = SimpleCardWidget(self.plugins)
-            layout = QHBoxLayout(card)
-            text = QVBoxLayout()
-            text.addWidget(BodyLabel(entry['script_name'], card))
-            if entry['version']:
-                text.addWidget(BodyLabel(self.tr('Version: {}').format(entry['version']), card))
-            loaded = manager.imported_scripts.get(entry['file_name'], {})
+            namespace = entry['file_name']
+            card = PluginCard(entry['script_name'], entry['version'], self.plugins)
+            loaded = manager.imported_scripts.get(namespace, {})
             errors = loaded.get('errors', []) + list(loaded.get('tab_errors', {}).values())
             if errors:
-                label = BodyLabel('\n'.join(errors), card)
-                label.setWordWrap(True)
-                text.addWidget(label)
-            namespace = entry['file_name']
+                card.add_note('\n'.join(errors), "danger")
             change = self._pending.get(namespace)
             if change is not None:
-                if change['phase'] == 'failed':
-                    message = self.tr('Plugin change failed: {}').format(change.get('error', ''))
-                elif change['phase'] == 'rollback':
-                    message = self.tr('Update failed. Restart to restore the previous version.')
-                elif change['phase'] == 'committed':
-                    message = self.tr('Backup cleanup pending. Restart to retry.')
-                elif change['phase'] == 'recovery':
-                    message = self.tr('Plugin change failed: {}').format(change.get('error', ''))
-                elif change['action'] == 'delete':
-                    message = self.tr('Deletion staged. Restart to apply.')
-                else:
-                    message = self.tr('Update staged: {}. Restart to apply.').format(change.get('version', ''))
-                label = BodyLabel(message, card)
-                label.setWordWrap(True)
-                text.addWidget(label)
+                card.add_note(*self._change_message(change))
             if namespace in self._check_errors:
-                label = BodyLabel(self.tr('Update check failed: {}').format(self._check_errors[namespace]), card)
-                label.setWordWrap(True)
-                text.addWidget(label)
-            layout.addLayout(text, 1)
+                card.add_note(self.tr('Update check failed: {}').format(self._check_errors[namespace]), "warning")
             if change is None and read_plugin_source(entry['folder']) is not None:
-                check = PushButton(FluentIcon.SYNC, self.tr('Check for updates'), card)
-                check.setEnabled(not self._busy)
-                check.clicked.connect(lambda _checked=False, entry=entry: self.check_updates(entry))
-                self._update_buttons.append(check)
-                layout.addWidget(check)
+                card.add_note(self.tr('From GitHub: {}').format(read_plugin_source(entry['folder'])['repository']))
                 if namespace in self._updates:
                     version = self._updates[namespace][0]['tag']
-                    update = PrimaryPushButton(self.tr('Update to {}').format(version), card)
+                    update = card.add_action(Button(self.tr('Update to {}').format(version), "download", "primary"))
                     update.setEnabled(not self._busy)
                     update.clicked.connect(lambda _checked=False, entry=entry: self.update_plugin(entry))
                     self._update_buttons.append(update)
-                    layout.addWidget(update)
+                check = card.add_action(Button(self.tr('Check for updates'), "refresh", "subtle"))
+                check.setEnabled(not self._busy)
+                check.clicked.connect(lambda _checked=False, entry=entry: self.check_updates(entry))
+                self._update_buttons.append(check)
             if change is not None:
-                button = PushButton(self.tr('Cancel pending change'), card)
+                button = card.add_action(Button(self.tr('Cancel pending change'), "x"))
                 button.setProperty('pendingChangeLocked', change['phase'] not in {'pending', 'failed'})
                 button.setEnabled(not self._busy and change['phase'] in {'pending', 'failed'})
                 button.clicked.connect(lambda _checked=False, namespace=namespace: self.cancel_change(namespace))
             else:
-                button = PushButton(FluentIcon.DELETE, self.tr('Delete plugin'), card)
+                button = card.add_action(Button(self.tr('Delete plugin'), "trash", "subtle"))
                 button.setEnabled(not self._busy)
                 button.clicked.connect(lambda _checked=False, entry=entry: self.delete_plugin(entry))
             self._delete_buttons.append(button)
-            layout.addWidget(button)
             self.plugins_layout.addWidget(card)
 
     def _set_busy(self, busy, quiet=False):
@@ -211,21 +293,22 @@ class PluginTab(Tab):
     def add_github(self):
         if self._busy or not self._confirm_import():
             return
-        dialog = MessageBoxBase(self.window())
-        dialog.viewLayout.addWidget(SubtitleLabel(self.tr('GitHub repository'), dialog))
-        repository = LineEdit(dialog)
-        repository.setPlaceholderText('https://github.com/owner/repository')
-        repository.setMinimumWidth(360)
-        dialog.viewLayout.addWidget(repository)
-        dialog.yesButton.setText(self.tr('Add from GitHub'))
-        dialog.yesButton.setEnabled(False)
-        repository.textChanged.connect(lambda text: dialog.yesButton.setEnabled(bool(text.strip())))
-        if dialog.exec():
-            value = repository.text()
-            self._start_job(lambda: github_release_assets(value), self._select_release)
+        dialog = Dialog(self, self.tr('GitHub repository'), ok_text=self.tr('Add from GitHub'), width=480)
+        try:
+            repository = QLineEdit(dialog.panel)
+            repository.setPlaceholderText('https://github.com/owner/repository')
+            dialog.body.addWidget(repository)
+            dialog.ok_button.setEnabled(False)
+            repository.textChanged.connect(lambda text: dialog.ok_button.setEnabled(bool(text.strip())))
+            QTimer.singleShot(0, repository.setFocus)
+            if dialog.exec():
+                value = repository.text()
+                self._start_job(lambda: github_release_assets(value), self._select_release)
+        finally:
+            dialog.deleteLater()
 
     def _confirm_import(self):
-        dialog = ImportWarningDialog(self.window())
+        dialog = ImportWarningDialog(self)
         try:
             return bool(dialog.exec())
         finally:
@@ -235,17 +318,16 @@ class PluginTab(Tab):
         if len(assets) == 1:
             selected = assets[0]
         else:
-            dialog = MessageBoxBase(self.window())
-            dialog.viewLayout.addWidget(SubtitleLabel(self.tr('Release asset'), dialog))
-            choices = ComboBox(dialog)
-            for asset in assets:
-                choices.addItem(asset['name'])
-            dialog.viewLayout.addWidget(choices)
-            dialog.yesButton.setText(self.tr('Install plugin'))
-            if not dialog.exec():
-                self.status_label.clear()
-                return
-            selected = assets[choices.currentIndex()]
+            dialog = Dialog(self, self.tr('Release asset'), ok_text=self.tr('Install plugin'))
+            try:
+                choices = ComboBox([asset['name'] for asset in assets], dialog.panel)
+                dialog.body.addWidget(choices)
+                if not dialog.exec():
+                    self.status_label.clear()
+                    return
+                selected = assets[choices.currentIndex()]
+            finally:
+                dialog.deleteLater()
         self._start_job(lambda: download_plugin(selected),
                         lambda prepared: self._install_release(prepared, selected, namespace))
 
@@ -374,9 +456,8 @@ class PluginTab(Tab):
     def delete_plugin(self, entry):
         if self._busy:
             return
-        dialog = MessageBox(self.tr('Delete plugin'),
-                            self.tr('Delete plugin "{}"?').format(entry['script_name']), self.window())
-        if not dialog.exec():
+        if not confirm(self, self.tr('Delete plugin'), self.tr('Delete plugin "{}"?').format(entry['script_name']),
+                       ok_text=self.tr('Delete plugin'), danger=True):
             return
         try:
             og.task_manager.delete_imported_script(entry['file_name'])

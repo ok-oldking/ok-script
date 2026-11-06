@@ -11,7 +11,7 @@ os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, QThread
 from PySide6.QtWidgets import QApplication, QStackedWidget, QWidget
-from qfluentwidgets import FluentIcon
+from ok.core.icons import Icon
 from shiboken6 import delete, isValid
 
 from ok import og
@@ -37,15 +37,16 @@ class Window(QWidget):
         super().__init__()
         self.executor = executor
         self.app = SimpleNamespace(tr=lambda text: text)
-        self.navigationInterface = Mock()
         self.stackedWidget = QStackedWidget(self)
         self.imported_tabs = {}
         self.added = []
-        self.update_navigation_width = Mock()
 
-    def addSubInterface(self, widget, icon, name, **kwargs):
+    def add_page(self, widget, icon, name, section=None, bottom=False):
         self.stackedWidget.addWidget(widget)
         self.added.append((widget, name))
+
+    def remove_page(self, widget):
+        self.stackedWidget.removeWidget(widget)
 
 
 @pytest.fixture
@@ -76,9 +77,9 @@ def environment(qt_app, tmp_path, monkeypatch):
 
 
 PAGE_SOURCE = '''from ok.ui.qt.widget.CustomTab import CustomTab
-from qfluentwidgets import FluentIcon
+from ok.core.icons import Icon
 class Page(CustomTab):
-    icon = FluentIcon.APPLICATION
+    icon = Icon.APPLICATION
     @property
     def name(self): return 'Plugin page'
     def dispose(self): self.disposed = True
@@ -125,22 +126,22 @@ def test_tab_only_plugin_stays_live_until_staged_deletion_is_applied(environment
 def test_explicit_custom_tabs_can_coexist_with_one_time_and_trigger_tasks(environment, monkeypatch):
     from ok.task.task import TriggerTask
 
-    class FakeCard(QWidget):
-        def __init__(self, task, onetime):
-            super().__init__()
-            self.task, self.onetime = task, onetime
-            self.dispose = Mock()
-
-    monkeypatch.setattr('ok.ui.qt.tasks.TaskCard.TaskCard', FakeCard)
+    # The fake tasks cannot fill task rows; check the split, not the widgets.
+    built = []
+    monkeypatch.setattr('ok.ui.qt.tasks.tasks_page.TasksPage.refresh_tasks',
+                        lambda self: built.append(self.collect_tasks()))
     folder = install_files(environment, {'file_name': 'demo', 'tasks': [],
                                         'custom_tabs': [['page', 'Page']]}, {'page.py': PAGE_SOURCE})
-    ordinary = SimpleNamespace(visible=True, group_icon=FluentIcon.APPLICATION)
+    ordinary = SimpleNamespace(visible=True, group_icon=Icon.APPLICATION)
     trigger = object.__new__(TriggerTask)
-    trigger.visible, trigger.group_icon = True, FluentIcon.APPLICATION
+    trigger.visible, trigger.group_icon = True, Icon.APPLICATION
     environment.manager.imported_scripts['demo']['tasks'] = [ordinary, trigger]
     environment.controller.refresh()
     task_tab = environment.window.imported_tabs['demo']
-    assert [card.onetime for card in task_tab.card_widgets] == [True, False]
+    # Must not reuse the main Tasks page's navigation key (issue ok-ww#1828).
+    assert task_tab.objectName() == 'tasks_page_demo'
+    assert task_tab.collect_tasks() == ([ordinary], [trigger])
+    assert built[-1] == ([ordinary], [trigger])
     assert len(environment.controller.custom_tabs['demo']) == 1
     assert environment.window.stackedWidget.count() == 2
     environment.manager.imported_scripts['demo']['tasks'] = []
@@ -148,11 +149,11 @@ def test_explicit_custom_tabs_can_coexist_with_one_time_and_trigger_tasks(enviro
 
 FACTORY_TASK_SOURCE = '''from ok import BaseTask
 from PySide6.QtWidgets import QWidget
-from qfluentwidgets import FluentIcon
+from ok.core.icons import Icon
 class FactoryTask(BaseTask):
     def __init__(self, executor=None, app=None):
         self.name = 'Workshop'
-        self.group_icon = FluentIcon.APPLICATION
+        self.group_icon = Icon.APPLICATION
         self.destroyed = False
         self.stopped = False
     def after_init(self, **kwargs): pass
@@ -335,7 +336,7 @@ def test_cancelled_plugin_warning_prevents_install_flow(environment, monkeypatch
     chooser = Mock()
     repository_dialog = Mock()
     monkeypatch.setattr(module.QFileDialog, 'getOpenFileName', chooser)
-    monkeypatch.setattr(module, 'MessageBoxBase', repository_dialog)
+    monkeypatch.setattr(module, 'Dialog', repository_dialog)
     tab = PluginTab()
     try:
         monkeypatch.setattr(tab, '_confirm_import', warning)
@@ -498,7 +499,7 @@ def test_delete_button_stages_and_cancel_keeps_runtime_running(environment, monk
     module = importlib.import_module('ok.ui.qt.plugins.PluginTab')
     folder = github_plugin(environment)
     page, = environment.controller.custom_tabs['demo']
-    monkeypatch.setattr(module, 'MessageBox', lambda *args: SimpleNamespace(exec=lambda: True))
+    monkeypatch.setattr(module, 'confirm', lambda *args, **kwargs: True)
     tab = PluginTab()
     try:
         tab._delete_buttons[0].click()

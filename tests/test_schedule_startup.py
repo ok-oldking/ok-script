@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import QTimer
-from PySide6.QtTest import QTest
+from qt_helpers import wait
 from PySide6.QtWidgets import QApplication
 
 from ok.ui.qt.tasks.ScheduleTaskTab import ScheduleTaskTab
@@ -89,7 +89,7 @@ class TestScheduleStartup(unittest.TestCase):
                 tab.show()
                 heartbeat = Mock()
                 QTimer.singleShot(0, heartbeat)
-                QTest.qWait(30)
+                wait(30)
                 heartbeat.assert_called_once()
                 self.assertTrue(tab.isVisible())
                 self.assertTrue(tab.refresh_thread.daemon)
@@ -99,7 +99,7 @@ class TestScheduleStartup(unittest.TestCase):
                 self.assertIs(original_thread, tab.refresh_thread)
                 release.set()
                 tab.refresh_thread.join(2)
-                QTest.qWait(30)
+                wait(30)
                 self.assertFalse(tab.refreshing)
                 migrate.assert_called_once_with(rewrite_argv=False)
                 cache.return_value.load_cache.assert_called_once()
@@ -111,6 +111,65 @@ class TestScheduleStartup(unittest.TestCase):
                 tab.refresh_thread.join(2)
                 tab.close()
                 tab.deleteLater()
+
+
+class TestSchedulePage(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = QApplication.instance() or QApplication([])
+
+    def make_tab(self):
+        from ok import og
+        from ok.util.windows_schedule import ScheduleTaskInfo
+        self._og_app = getattr(og, "app", None)
+        og.app = SimpleNamespace(tr=lambda text: text)
+        self.addCleanup(setattr, og, "app", self._og_app)
+        patches = [patch("ok.util.windows_schedule.WindowsScheduleCache"),
+                   patch("ok.ui.qt.tasks.schedule_index_sync.sync_schedule_task_indexes"),
+                   patch.object(WindowsScheduleManager, "_init_com_service"),
+                   patch.object(WindowsScheduleManager, "query_all_tasks", return_value=[])]
+        mocks = [p.start() for p in patches]
+        for p in patches:
+            self.addCleanup(p.stop)
+        mocks[0].return_value.get_all.return_value = []
+        tab = ScheduleTaskTab({"gui_title": "OK-Test"})
+        tab.refresh_thread.join(2)
+        wait(10)
+        self.addCleanup(tab.deleteLater)
+        own = tab._own_app_name()
+        tasks = [
+            ScheduleTaskInfo("Daily", path=f"\\{own}\\Daily", enabled=True, status="Ready", trigger_type="Daily",
+                             next_run_time="2026-11-04 09:00:00"),
+            ScheduleTaskInfo("Other", path="\\ok-other\\Other", enabled=False, status="Disabled",
+                             trigger_type="Weekly", read_only=True),
+        ]
+        return tab, tasks, own
+
+    def test_groups_rows_by_app_and_reuses_rows(self):
+        tab, tasks, own = self.make_tab()
+        self.assertFalse(tab.empty_widget.isHidden())
+        tab.render_tasks(tasks)
+        self.assertEqual([own, "ok-other"], list(tab.groups))
+        self.assertTrue(tab.empty_widget.isHidden())
+        row = tab.groups[own].rows[tasks[0].path]
+        self.assertTrue(row.enabled_switch.isChecked())
+        self.assertIn("Daily", row.detail_label.text())
+        other = tab.groups["ok-other"].rows[tasks[1].path]
+        self.assertFalse(other.view_button.isEnabled())
+        self.assertFalse(other.enabled_switch.isEnabled())
+
+        tasks[0].enabled = False
+        tab.render_tasks(tasks[:1])
+        self.assertIs(row, tab.groups[own].rows[tasks[0].path])
+        self.assertFalse(row.enabled_switch.isChecked())
+        self.assertNotIn("ok-other", tab.groups)
+
+    def test_switch_toggles_the_scheduled_task(self):
+        tab, tasks, own = self.make_tab()
+        tab.render_tasks(tasks)
+        tab.schedule_manager = Mock()
+        tab.groups[own].rows[tasks[0].path].enabled_switch.click()
+        tab.schedule_manager.disable_task.assert_called_once_with(tasks[0].path)
 
 
 if __name__ == "__main__":

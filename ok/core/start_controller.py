@@ -1,3 +1,4 @@
+import threading
 import time
 
 from ok import Handler, og
@@ -27,6 +28,25 @@ class StartController:
         self.start_method = windows_config.get('start_method', WINDOWS_START_METHOD_START)
         self.starting = False
 
+    @property
+    def _cancel_requested(self):
+        event = self.__dict__.get('_cancel_event')
+        if event is None:
+            event = self.__dict__['_cancel_event'] = threading.Event()
+        return event
+
+    def cancel_start(self):
+        """Stop waiting for the game to launch; the game process is left running."""
+        logger.info('cancel_start requested')
+        self._cancel_requested.set()
+
+    def _cancelled(self):
+        if self._cancel_requested.is_set():
+            logger.info('start cancelled while waiting for the game')
+            communicate.starting_emulator.emit(True, None, 0)
+            return True
+        return False
+
     def tr(self, message):
         app = getattr(og, "app", None)
         return app.tr(message) if app is not None else message
@@ -50,6 +70,7 @@ class StartController:
 
     def do_start(self, task=None, exit_after=False):
         self.starting = True
+        self._cancel_requested.clear()
         try:
             return self._do_start(task, exit_after)
         finally:
@@ -137,6 +158,8 @@ class StartController:
         wait_until = time.time() + self.start_timeout
         first_check = True
         while not self.exit_event.is_set():
+            if self._cancelled():
+                return False
             if refresh_first or not first_check:
                 og.device_manager.do_refresh(True)
             first_check = False
@@ -159,6 +182,8 @@ class StartController:
         min_width, min_height = self.STARTED_WINDOW_MIN_SIZE
 
         while not self.exit_event.is_set():
+            if self._cancelled():
+                return False
             hwnd_window = getattr(og.device_manager, 'hwnd_window', None)
             if hwnd_window is not None:
                 hwnd_window.do_update_window_size()

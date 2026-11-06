@@ -14,9 +14,8 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from ok import Config, og
-from ok.ui.qt.common.design_system import DesignToken
 from ok.ui.qt.tasks.MarkUpWindow import MarkUpWindow
-from ok.ui.qt.tasks.TemplateTab import (ImageCard, TemplateTab,
+from ok.ui.qt.tasks.TemplateTab import (PAGE_MARGINS, PAGE_SPACING, ImageCard, TemplateTab,
                                       get_categories_by_filename,
                                       get_next_image_name)
 
@@ -56,12 +55,13 @@ class TestTemplateTabCardCollection(unittest.TestCase):
         margins = layout.contentsMargins()
         self.assertEqual(
             (margins.left(), margins.top(), margins.right(), margins.bottom()),
-            (DesignToken.PAGE_MARGIN,) * 4,
+            PAGE_MARGINS,
         )
-        self.assertEqual(layout.spacing(), DesignToken.PAGE_SPACING)
+        self.assertEqual(layout.spacing(), PAGE_SPACING)
 
     def test_export_dialog_defaults_to_split_and_switches_to_compress(self):
-        from qfluentwidgets import MessageBoxBase, RadioButton
+        from PySide6.QtWidgets import QRadioButton as RadioButton
+        from ok.ui.qt.kit.dialogs import Dialog as MessageBoxBase
 
         for debug in (False, True):
             for split in (True, False):

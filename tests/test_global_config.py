@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QApplication
 from ok.core.icons import Icon
 
 from ok import og
-from ok.ui.qt.tasks.ConfigItemFactory import config_widget
+from ok.ui.qt.tasks.config_editors import config_editor
 from ok.util.GlobalConfig import (
     APP_LAUNCHER_ACTION,
     APP_LAUNCHER_AUTO_START,
@@ -96,13 +96,16 @@ class TestBasicOptions(unittest.TestCase):
                 tab = GlobalConfigTab(config, option)
 
                 self.assertTrue(tab.has_key('Enabled'))
-                self.assertEqual('Tab Options', tab.titleLabel.text())
-                self.assertEqual('viewTitleLabel', tab.titleLabel.objectName())
-                self.assertEqual('Configure tab options', tab.descriptionLabel.text())
-                self.assertEqual('contentLabel', tab.descriptionLabel.objectName())
-                self.assertEqual('configContentFrame', tab.contentFrame.objectName())
-                self.assertIsNot(tab.viewLayout, tab.vBoxLayout)
-                self.assertFalse(hasattr(tab, 'card'))
+                self.assertEqual('Tab Options', tab.section.title_label.text())
+                self.assertEqual('display', tab.section.title_label.role)
+                self.assertEqual('Configure tab options', tab.section.description_label.text())
+                self.assertIn('Enabled', tab.config_widget_by_key)
+                editor = tab.config_widget_by_key['Enabled']
+                editor.switch_button.click()
+                self.assertFalse(config['Enabled'])
+                tab.reset_clicked()
+                self.assertTrue(config['Enabled'])
+                self.assertTrue(editor.switch_button.isChecked())
                 tab.deleteLater()
         finally:
             og.app = original_app
@@ -138,10 +141,10 @@ class TestBasicOptions(unittest.TestCase):
                 og.app = SimpleNamespace(tr=lambda text: text)
 
                 config['Blur Interval'] = 1
-                widget = config_widget(
+                widget = config_editor(
                     options.config_type, options.config_description, config, 'Blur Interval', 1, None)
 
-                self.assertEqual(0, widget.spin_box.minimum())
+                self.assertEqual(0, widget.spin_box.spin_box.minimum())
                 widget.spin_box.setValue(0)
                 self.assertEqual(0, config['Blur Interval'])
                 widget.deleteLater()
@@ -237,19 +240,19 @@ class TestBasicOptions(unittest.TestCase):
             original_app = getattr(og, 'app', None)
             original_config = getattr(og, 'config', None)
             try:
-                from ok.ui.qt.settings.GlobalConfigCard import GlobalConfigCard
+                from ok.ui.qt.settings.config_section import ConfigSection
 
                 og.app = SimpleNamespace(tr=lambda text: text)
                 og.config = {'gui_title': 'Demo App'}
-                launcher_card = GlobalConfigCard(config, option)
-                basic_card = GlobalConfigCard(basic_config, basic_option)
+                launcher_card = ConfigSection(config, option)
+                basic_card = ConfigSection(basic_config, basic_option)
 
-                self.assertIsNone(launcher_card.reset_config)
+                self.assertTrue(launcher_card.reset_button.isHidden())
                 self.assertIn(KILL_LAUNCHER_AFTER_START, launcher_card.config_widget_by_key)
                 self.assertNotIn(KILL_LAUNCHER_AFTER_START, basic_card.config_widget_by_key)
                 self.assertEqual(
                     'Auto Start Demo App',
-                    launcher_card.config_widget_by_key[APP_LAUNCHER_AUTO_START].title.text(),
+                    launcher_card.config_widget_by_key[APP_LAUNCHER_AUTO_START].title_label.text(),
                 )
                 launcher_card.deleteLater()
                 basic_card.deleteLater()

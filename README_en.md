@@ -106,6 +106,20 @@ The coding agent discovers Python APIs from the installed package's source and s
 - [Ash Echoes](https://github.com/ok-oldking/ok-baijing) (unmaintained)
 - [Honkai: Star Rail](https://github.com/Shasnow/ok-starrailassistant) (unmaintained)
 
+## Developing ok-script
+
+To try UI changes in this repository, start the GUI from the checkout with the
+demo config in [main.py](main.py):
+
+```powershell
+.\.venv\Scripts\python.exe main.py
+```
+
+It targets Notepad, so no game is needed, and registers a demo one-time task and
+trigger task so the Tasks, Schedule, and Templates pages have content. Settings
+and logs go to the git-ignored `configs/` and `logs/` folders. Edit the `config`
+dictionary or the demo tasks in `main.py` to test other options.
+
 ## Community and releases
 
 - Developer QQ group: 938132715

@@ -4,18 +4,20 @@ from time import perf_counter
 from typing import TypedDict
 
 import cv2
-from PySide6.QtCore import Qt, Signal, QTimer, QRunnable, QThreadPool, QObject, QCoreApplication
+from PySide6.QtCore import Qt, Signal, QSize, QTimer, QRunnable, QThreadPool, QObject, QCoreApplication
 from PySide6.QtGui import QPixmap, QImage
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                               QScrollArea, QLabel, QFrame)
-from qfluentwidgets import (PushButton, PrimaryPushButton, FluentIcon,
-                            SearchLineEdit, MessageBox, BodyLabel, isDarkTheme,
-                            qconfig, IndeterminateProgressRing)
+from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit,
+                               QRadioButton, QScrollArea, QLabel, QFrame)
 from ok.ui.qt.util.touch_scroll import enable_touch_scrolling
 
 from ok import Config, og
 from ok.core.template_store import CocoTemplateStore, filename_key
-from ok.ui.qt.common.design_system import configure_page_layout
+from ok.ui.qt.kit.buttons import Button
+from ok.ui.qt.kit.dialogs import Dialog, confirm
+from ok.ui.qt.kit.feedback import ProgressRing, show_toast
+from ok.ui.qt.kit.icons import icon
+from ok.ui.qt.kit.labels import Label
+from ok.ui.qt.kit.theme import set_style_property, theme
 from ok.ui.qt.util.windows_thumbnail import WindowsThumbnailReader
 from ok.util.logger import Logger
 
@@ -24,9 +26,13 @@ logger = Logger.get_logger(__name__)
 TEMPLATE_FOLDER = 'ok_templates'
 COCO_JSON = 'coco_annotations.json'
 THUMB_SIZE = 160
-CARD_WIDTH = THUMB_SIZE + 16
+CARD_PADDING = 8
+CARD_WIDTH = THUMB_SIZE + 2 * CARD_PADDING
 CARD_HEIGHT = THUMB_SIZE + 40
-GRID_SPACING = 8
+GRID_SPACING = 12
+MIN_CARD_WIDTH = 220
+PAGE_MARGINS = (28, 18, 28, 20)
+PAGE_SPACING = 16
 # Temporary benchmark switch.  Set to False after measuring cold Shell
 # extraction performance so normal cache-first behavior resumes.
 FORCE_WINDOWS_THUMBNAIL_EXTRACTION = False
@@ -152,41 +158,6 @@ def get_categories_by_filename(coco_data):
             if category_name not in names:
                 names.append(category_name)
     return categories_by_filename
-
-
-def _card_style(selected, dark):
-    """Return card stylesheet based on selection state and theme."""
-    if selected:
-        return """
-            ImageCard {
-                border: 2px solid #0078d4;
-                border-radius: 8px;
-                background-color: rgba(0, 120, 212, 0.15);
-            }
-        """
-    if dark:
-        return """
-            ImageCard {
-                border: 1px solid rgba(200, 200, 200, 0.15);
-                border-radius: 8px;
-                background-color: rgba(255, 255, 255, 0.04);
-            }
-            ImageCard:hover {
-                border: 1px solid rgba(0, 120, 212, 0.6);
-                background-color: rgba(255, 255, 255, 0.08);
-            }
-        """
-    return """
-        ImageCard {
-            border: 1px solid rgba(0, 0, 0, 0.12);
-            border-radius: 8px;
-            background-color: transparent;
-        }
-        ImageCard:hover {
-            border: 1px solid rgba(0, 120, 212, 0.5);
-            background-color: rgba(0, 120, 212, 0.05);
-        }
-    """
 
 
 def save_template_screenshot():
@@ -353,74 +324,75 @@ class ImageLoaderRunnable(QRunnable):
 
 
 class ImageCard(QFrame):
+    """A template image: thumbnail, file name and its annotated feature names."""
+
     clicked = Signal(str)
     double_clicked = Signal(str)
 
     def __init__(self, image_path, parent=None, preloaded_image=None, features_text=""):
         super().__init__(parent)
+        self.setObjectName("templateCard")
         self.image_path = image_path
         self.selected = False
         self.original_thumb = preloaded_image
         self._features_text_full = features_text
         self.setCursor(Qt.PointingHandCursor)
-        self.setFrameShape(QFrame.StyledPanel)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(2)
-        layout.setAlignment(Qt.AlignCenter)
+        layout.setContentsMargins(CARD_PADDING, CARD_PADDING, CARD_PADDING, CARD_PADDING)
+        layout.setSpacing(4)
+        layout.setAlignment(Qt.AlignTop)
 
-        self.features_label = BodyLabel()
-        self.features_label.setAlignment(Qt.AlignCenter)
-        self.features_label.setWordWrap(True)
-
-        self.thumb_label = QLabel()
+        self.thumb_label = QLabel(self)
+        self.thumb_label.setObjectName("templateThumb")
         self.thumb_label.setAlignment(Qt.AlignCenter)
 
-        self.name_label = BodyLabel(os.path.splitext(os.path.basename(image_path))[0])
-        self.name_label.setAlignment(Qt.AlignCenter)
-        self.name_label.setWordWrap(True)
+        self.name_label = Label(os.path.splitext(os.path.basename(image_path))[0], "strong", self, word_wrap=True)
+        self.features_label = Label("", "caption", self, word_wrap=True)
+        # Wrapped labels can be taller than their text; keep the slack below it.
+        self.name_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        self.features_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
 
-        layout.addWidget(self.features_label)
         layout.addWidget(self.thumb_label)
+        layout.addSpacing(4)
         layout.addWidget(self.name_label)
+        layout.addWidget(self.features_label)
 
         self._apply_style()
         self.set_card_width(CARD_WIDTH)
 
     def set_card_width(self, w):
-        thumb_size = w - 16
-        metrics = self.fontMetrics()
-        lh = metrics.lineSpacing()
+        inner = w - 2 * CARD_PADDING
+        # 16:9 previews suit game screenshots better than square ones.
+        thumb_h = round(inner * 9 / 16)
 
-        # Keep the existing minimum heights, but expand both text labels when
-        # their content wraps. Fixed heights here clip feature names, and a
-        # long filename makes the missing text especially noticeable.
-        self.features_label.setFixedWidth(thumb_size)
+        # Labels grow with wrapped text so long names are never clipped.
+        self.features_label.setFixedWidth(inner)
         self.features_label.setText(self._features_text_full)
-        f_h = 0
-        if self._features_text_full:
-            f_h = max(lh * 3, self.features_label.sizeHint().height())
+        self.features_label.setVisible(bool(self._features_text_full))
+        f_h = self.features_label.heightForWidth(inner) if self._features_text_full else 0
+        f_h = max(f_h, self.features_label.sizeHint().height()) if self._features_text_full else 0
 
-        self.name_label.setFixedWidth(thumb_size)
-        name_h = max(lh * 2, self.name_label.sizeHint().height())
+        self.name_label.setFixedWidth(inner)
+        name_h = max(self.name_label.heightForWidth(inner), self.name_label.sizeHint().height())
 
         self.features_label.setFixedHeight(f_h)
         self.name_label.setFixedHeight(name_h)
 
-        total_h = thumb_size + f_h + name_h + 12
+        total_h = 2 * CARD_PADDING + thumb_h + 8 + name_h + (4 + f_h if f_h else 0)
+        self.natural_height = total_h
         self.setFixedSize(w, total_h)
 
-        self.thumb_label.setFixedSize(thumb_size, thumb_size)
-        if self.original_thumb is not None and not self.original_thumb.isNull():
-            scaled = self.original_thumb.scaled(thumb_size, thumb_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.thumb_label.setPixmap(QPixmap.fromImage(scaled))
-        else:
-            pixmap = QPixmap(self.image_path)
-            if not pixmap.isNull():
-                scaled = pixmap.scaled(thumb_size, thumb_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                self.thumb_label.setPixmap(scaled)
-
+        self.thumb_label.setFixedSize(inner, thumb_h)
+        ratio = self.devicePixelRatioF()
+        target = QSize(round(inner * ratio), round(thumb_h * ratio))
+        image = self.original_thumb
+        if image is None or image.isNull():
+            image = QImage(self.image_path)
+        if not image.isNull():
+            pixmap = QPixmap.fromImage(image.scaled(target, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            pixmap.setDevicePixelRatio(ratio)
+            self.thumb_label.setPixmap(pixmap)
 
     def set_selected(self, selected):
         self.selected = selected
@@ -436,7 +408,7 @@ class ImageCard(QFrame):
         self.set_card_width(self.width())
 
     def _apply_style(self):
-        self.setStyleSheet(_card_style(self.selected, isDarkTheme()))
+        set_style_property(self, "selected", self.selected)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -492,37 +464,46 @@ class FlowWidget(QWidget):
             return
 
         layout_started_at = perf_counter()
-        columns = 5
         available_width = max(self.width(), CARD_WIDTH)
-        
-        # Calculate ideal card width so 5 cards fit perfectly in the available space
+        # As many columns as fit at MIN_CARD_WIDTH, then stretch cards to fill the row.
+        columns = max(1, (available_width + self._spacing) // (MIN_CARD_WIDTH + self._spacing))
         target_card_width = max((available_width - (columns - 1) * self._spacing) // columns, 50)
         
         x = 0
         y = 0
         row_height = 0
+        row = []
+
+        def finish_row():
+            # Cards in a row share the tallest card's height.
+            for card in row:
+                card.setFixedHeight(row_height)
 
         for widget in self._items:
             if hasattr(widget, 'set_card_width'):
                 # Only resize if the target is noticeably different to avoid excessive reloading
                 if abs(widget.width() - target_card_width) > 1:
                     widget.set_card_width(target_card_width)
-            
+
             w = widget.width()
-            h = widget.height()
+            h = getattr(widget, 'natural_height', widget.height())
 
             # Slight tolerance (+2) for floating/integer precision issues
             if x > 0 and x + w > available_width + 2:
+                finish_row()
                 x = 0
                 y += row_height + self._spacing
                 row_height = 0
+                row = []
 
             widget.move(x, y)
             widget.show()
+            row.append(widget)
 
             row_height = max(row_height, h)
             x += w + self._spacing
 
+        finish_row()
         total_height = y + row_height
         self.setMinimumHeight(total_height)
         layout_elapsed_ms = (perf_counter() - layout_started_at) * 1000
@@ -563,93 +544,97 @@ class TemplateTab(QWidget):
         self.search_timer.setSingleShot(True)
         self.search_timer.timeout.connect(self.apply_filter)
 
-        # Listen for theme changes
-        qconfig.themeChangedFinished.connect(self._on_theme_changed)
-
     def showEvent(self, event):
         super().showEvent(event)
         if not self._loaded:
             self._loaded = True
             self.load_initial_grid()
 
-    def _on_theme_changed(self):
-        """Re-apply styles when the theme changes."""
-        for card in self.image_cards:
-            card._apply_style()
-
     def init_ui(self):
         main_layout = QVBoxLayout(self)
-        configure_page_layout(main_layout)
+        main_layout.setContentsMargins(*PAGE_MARGINS)
+        main_layout.setSpacing(PAGE_SPACING)
 
-        # Top toolbar
-        toolbar = QHBoxLayout()
-        toolbar.setSpacing(8)
+        # Header: title and count, then search and actions.
+        self.count_label = Label("", "caption", self)
+        title = QHBoxLayout()
+        title.setSpacing(10)
+        title.addWidget(Label(QCoreApplication.translate("MainWindow", "Templates"), "display", self))
+        title.addWidget(self.count_label, 0, Qt.AlignBottom)
 
-        self.screenshot_btn = PrimaryPushButton(FluentIcon.CAMERA, self.tr("Screenshot"))
-        self.screenshot_btn.clicked.connect(self.take_screenshot)
-        toolbar.addWidget(self.screenshot_btn)
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText(self.tr("Search by name or category..."))
+        self.search_box.setClearButtonEnabled(True)
+        self.search_box.addAction(icon("search"), QLineEdit.LeadingPosition)
+        self.search_box.setFixedWidth(300)
+        self.search_box.textChanged.connect(self.on_search_changed)
 
-        self.markup_btn = PushButton(FluentIcon.EDIT, self.tr("Markup"))
+        self.markup_btn = Button(self.tr("Markup"), "pen")
         self.markup_btn.clicked.connect(self.open_markup)
         self.markup_btn.setVisible(False)
-        toolbar.addWidget(self.markup_btn)
-
-        self.delete_btn = PushButton(FluentIcon.DELETE, self.tr("Delete"))
+        self.delete_btn = Button(self.tr("Delete"), "trash", "subtle")
         self.delete_btn.clicked.connect(self.delete_image)
         self.delete_btn.setVisible(False)
-        toolbar.addWidget(self.delete_btn)
-
-        self.save_btn = PushButton(FluentIcon.SAVE, self.tr("Save"))
+        self.save_btn = Button(self.tr("Save"), "export")
+        self.save_btn.setToolTip(self.tr('Generate function'))
         self.save_btn.clicked.connect(self.save_compressed)
-        toolbar.addWidget(self.save_btn)
+        self.screenshot_btn = Button(self.tr("Screenshot"), "camera", "primary")
+        self.screenshot_btn.clicked.connect(self.take_screenshot)
 
+        toolbar = QHBoxLayout()
+        toolbar.setSpacing(8)
+        toolbar.addLayout(title)
         toolbar.addStretch(1)
+        toolbar.addWidget(self.search_box)
+        toolbar.addSpacing(8)
+        toolbar.addWidget(self.delete_btn)
+        toolbar.addWidget(self.markup_btn)
+        toolbar.addWidget(self.save_btn)
+        toolbar.addWidget(self.screenshot_btn)
         main_layout.addLayout(toolbar)
 
-        # Search box
-        self.search_box = SearchLineEdit()
-        self.search_box.setPlaceholderText(self.tr("Search by name or category..."))
-        self.search_box.textChanged.connect(self.on_search_changed)
-        main_layout.addWidget(self.search_box)
-
-        # Scroll area for flow grid
+        # Scroll area for the flow grid
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll_area.setFrameShape(QFrame.NoFrame)
-        self.scroll_area.setStyleSheet("QScrollArea { background: transparent; border: none; }")
-        self.scroll_area.viewport().setStyleSheet("background: transparent;")
         self.flow_widget = FlowWidget()
-        self.flow_widget.setStyleSheet("background: transparent;")
+        self.flow_widget.setObjectName("scrollContents")
         self.scroll_area.setWidget(self.flow_widget)
         enable_touch_scrolling(self.scroll_area)
         main_layout.addWidget(self.scroll_area, 1)
 
-        # Empty state widget (centered screenshot button)
+        # Empty state: what templates are and how to make the first one.
         self.empty_widget = QWidget()
         empty_layout = QVBoxLayout(self.empty_widget)
         empty_layout.setAlignment(Qt.AlignCenter)
-
-        self.empty_label = BodyLabel(self.tr("No templates yet"))
+        empty_layout.setSpacing(8)
+        empty_icon = QLabel(self.empty_widget)
+        empty_icon.setAlignment(Qt.AlignCenter)
+        empty_icon.setPixmap(icon("image").pixmap(QSize(40, 40), self.devicePixelRatioF()))
+        empty_layout.addWidget(empty_icon)
+        self.empty_label = Label(self.tr("No templates yet"), "subtitle", self.empty_widget)
         self.empty_label.setAlignment(Qt.AlignCenter)
         empty_layout.addWidget(self.empty_label)
-
-        self.center_screenshot_btn = PrimaryPushButton(FluentIcon.CAMERA, self.tr("Take Screenshot"))
-        self.center_screenshot_btn.setFixedWidth(200)
+        empty_hint = Label(self.tr("Take a screenshot of the game, then mark up the features tasks should find."),
+                           "secondary", self.empty_widget)
+        empty_hint.setAlignment(Qt.AlignCenter)
+        empty_layout.addWidget(empty_hint)
+        empty_layout.addSpacing(8)
+        self.center_screenshot_btn = Button(self.tr("Take Screenshot"), "camera", "primary")
         self.center_screenshot_btn.clicked.connect(self.take_screenshot)
         empty_layout.addWidget(self.center_screenshot_btn, alignment=Qt.AlignCenter)
-
         main_layout.addWidget(self.empty_widget, 1)
         self.empty_widget.setVisible(False)
 
-        self.progress_ring = IndeterminateProgressRing()
-        self.progress_ring.setFixedSize(50, 50)
+        self.progress_ring = ProgressRing(36)
         self.progress_container = QWidget()
         progress_layout = QVBoxLayout(self.progress_container)
         progress_layout.setAlignment(Qt.AlignCenter)
         progress_layout.addWidget(self.progress_ring, alignment=Qt.AlignCenter)
         main_layout.addWidget(self.progress_container, 1)
         self.progress_container.setVisible(False)
+        theme.install(self)
 
     def load_initial_grid(self):
         """Load image data and thumbnails once for this tab session."""
@@ -669,7 +654,6 @@ class TemplateTab(QWidget):
         self.scroll_area.setVisible(False)
         self.empty_widget.setVisible(False)
         self.progress_container.setVisible(True)
-        self.progress_ring.start()
         self._grid_loading = True
         self.search_box.setEnabled(False)
         self.screenshot_btn.setEnabled(False)
@@ -686,7 +670,6 @@ class TemplateTab(QWidget):
         if seq != getattr(self, '_load_sequence', 0):
             return
 
-        self.progress_ring.stop()
         self.progress_container.setVisible(False)
         self._grid_loading = False
         self.search_box.setEnabled(True)
@@ -794,6 +777,8 @@ class TemplateTab(QWidget):
             self._cards_by_path[self.selected_image].set_selected(True)
 
         has_items = bool(visible_cards)
+        total = len(self._image_items)
+        self.count_label.setText(str(total) if len(visible_cards) == total else f"{len(visible_cards)} / {total}")
         self.scroll_area.setVisible(has_items)
         self.empty_widget.setVisible(not has_items)
         self._update_selection_buttons()
@@ -902,11 +887,9 @@ class TemplateTab(QWidget):
         if not self.selected_image:
             return
 
-        w = MessageBox(self.tr('Confirm Delete'),
-                       self.tr("Are you sure you want to delete '{}'?").format(
-                           os.path.basename(self.selected_image)),
-                       self.window())
-        if w.exec():
+        if confirm(self, self.tr('Confirm Delete'),
+                   self.tr("Are you sure you want to delete '{}'?").format(os.path.basename(self.selected_image)),
+                   ok_text=self.tr("Delete"), danger=True):
             try:
                 image_path = self.selected_image
                 filename = os.path.basename(image_path)
@@ -944,8 +927,7 @@ class TemplateTab(QWidget):
                 self._remove_image_item(image_path)
                 self.apply_filter()
 
-                from ok.ui.qt.util.app import show_info_bar
-                show_info_bar(self.window(), self.tr("Image deleted."), title=self.tr("Success"))
+                show_toast(self, self.tr("Image deleted."), tone="success")
             except Exception as e:
                 logger.error(f"Delete error: {e}")
                 from ok.ui.qt.util.Alert import alert_error
@@ -976,8 +958,6 @@ class TemplateTab(QWidget):
     def save_compressed(self):
         """Choose the template export format and destination."""
         from ok.feature.FeatureSet import compress_copy_coco, generate_templates
-        from PySide6.QtWidgets import QButtonGroup
-        from qfluentwidgets import MessageBoxBase, SubtitleLabel, RadioButton, CheckBox, LineEdit
         coco_json_path = get_coco_path()
         image_folder = ensure_template_folder()
 
@@ -986,23 +966,24 @@ class TemplateTab(QWidget):
             alert_error(self.tr("No annotations to save."))
             return
 
-        dlg = MessageBoxBase(self.window())
-        dlg.viewLayout.addWidget(SubtitleLabel(self.tr('Generate function'), dlg))
-        radio_split = RadioButton(self.tr('Split(Recommend)'), dlg)
-        radio_compress = RadioButton(self.tr('Compress (obsolete)'), dlg)
+        dlg = Dialog(self, self.tr('Generate function'), ok_text=self.tr('OK'), cancel_text=self.tr('Cancel'))
+        panel = dlg.panel
+        radio_split = QRadioButton(self.tr('Split(Recommend)'), panel)
+        radio_compress = QRadioButton(self.tr('Compress (obsolete)'), panel)
         format_group = QButtonGroup(dlg)
         format_group.addButton(radio_split)
         format_group.addButton(radio_compress)
         radio_split.setChecked(True)
-        dlg.viewLayout.addWidget(radio_split)
-        dlg.viewLayout.addWidget(radio_compress)
+        dlg.body.addWidget(radio_split)
+        dlg.body.addWidget(radio_compress)
 
-        dlg.viewLayout.addWidget(SubtitleLabel(self.tr('Save To'), dlg))
+        dlg.body.addSpacing(6)
+        dlg.body.addWidget(Label(self.tr('Save To'), "strong", panel))
         debug = og.app.debug
-        radio_tasks = RadioButton(self.tr('ok_tasks/assets (custom scripts)'), dlg)
+        radio_tasks = QRadioButton(self.tr('ok_tasks/assets (custom scripts)'), panel)
         radio_dev = None
         if debug:
-            radio_dev = RadioButton(self.tr('assets (standalone app)'), dlg)
+            radio_dev = QRadioButton(self.tr('assets (standalone app)'), panel)
 
         group = QButtonGroup(dlg)
         group.addButton(radio_tasks)
@@ -1015,53 +996,54 @@ class TemplateTab(QWidget):
         else:
             radio_tasks.setChecked(True)
 
-        dlg.viewLayout.addWidget(radio_tasks)
+        dlg.body.addWidget(radio_tasks)
         if radio_dev:
-            dlg.viewLayout.addWidget(radio_dev)
+            dlg.body.addWidget(radio_dev)
 
         saved_generate_label_enum = bool(self.template_tab_config.get('generate_label_enum', False))
         saved_enum_relative_path = str(self.template_tab_config.get('label_enum_relative_path', '') or '').strip()
 
-        generate_label_enum_checkbox = CheckBox(self.tr('Generate label enum file'), dlg)
+        dlg.body.addSpacing(6)
+        generate_label_enum_checkbox = QCheckBox(self.tr('Generate label enum file'), panel)
         generate_label_enum_checkbox.setChecked(saved_generate_label_enum)
-        dlg.viewLayout.addWidget(generate_label_enum_checkbox)
+        dlg.body.addWidget(generate_label_enum_checkbox)
 
-        enum_relative_path_input = LineEdit(dlg)
+        enum_relative_path_input = QLineEdit(panel)
         enum_relative_path_input.setPlaceholderText(self.tr('Relative path, e.g. ok_tasks/LabelEnum.py'))
         enum_relative_path_input.setText(saved_enum_relative_path)
         enum_relative_path_input.setEnabled(saved_generate_label_enum)
-        dlg.viewLayout.addWidget(enum_relative_path_input)
+        dlg.body.addWidget(enum_relative_path_input)
 
-        enum_path_hint = BodyLabel(self.tr('Path is relative to the workspace root.'))
-        enum_path_hint.setStyleSheet("color: gray;")
+        enum_path_hint = Label(self.tr('Path is relative to the workspace root.'), "caption", panel)
         enum_path_hint.setVisible(saved_generate_label_enum)
-        dlg.viewLayout.addWidget(enum_path_hint)
+        dlg.body.addWidget(enum_path_hint)
 
         def on_generate_label_toggled(checked):
             enum_relative_path_input.setEnabled(checked)
             enum_path_hint.setVisible(checked)
+            dlg._fit()
             if checked:
                 enum_relative_path_input.setFocus()
 
         generate_label_enum_checkbox.toggled.connect(on_generate_label_toggled)
 
-        dlg.yesButton.setText(self.tr('OK'))
-        dlg.cancelButton.setText(self.tr('Cancel'))
-        dlg.widget.setMinimumWidth(360)
-
-        if not dlg.exec():
+        accepted = dlg.exec()
+        split = radio_split.isChecked()
+        to_tasks = radio_tasks.isChecked()
+        generate_label_enum = generate_label_enum_checkbox.isChecked()
+        enum_relative_path_text = enum_relative_path_input.text().strip().replace('\\', '/')
+        dlg.deleteLater()
+        if not accepted:
             return
 
-        target_folder = os.path.abspath(os.path.join('ok_tasks', 'assets')
-                                        if radio_tasks.isChecked() else 'assets')
-        if radio_split.isChecked():
+        target_folder = os.path.abspath(os.path.join('ok_tasks', 'assets') if to_tasks else 'assets')
+        if split:
             target_folder = os.path.join(target_folder, 'templates')
-        enum_relative_path_text = enum_relative_path_input.text().strip().replace('\\', '/')
-        self.template_tab_config['generate_label_enum'] = generate_label_enum_checkbox.isChecked()
+        self.template_tab_config['generate_label_enum'] = generate_label_enum
         self.template_tab_config['label_enum_relative_path'] = enum_relative_path_text
 
         generate_label_enmu = None
-        if generate_label_enum_checkbox.isChecked():
+        if generate_label_enum:
             generate_label_enmu = self._normalize_label_enum_relative_path(enum_relative_path_text)
             if not generate_label_enmu:
                 from ok.ui.qt.util.Alert import alert_error
@@ -1069,7 +1051,7 @@ class TemplateTab(QWidget):
                 return
 
         try:
-            generate = generate_templates if radio_split.isChecked() else compress_copy_coco
+            generate = generate_templates if split else compress_copy_coco
             generate(coco_json_path, target_folder, image_folder,
                      generate_label_enmu=generate_label_enmu)
 

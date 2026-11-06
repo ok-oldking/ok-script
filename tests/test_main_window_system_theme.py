@@ -1,123 +1,65 @@
 import os
 import unittest
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from qfluentwidgets import Theme
+from PySide6.QtGui import QColor
 
 from ok.ui.qt.MainWindow import MainWindow
-
-
-class _Signal:
-    def __init__(self):
-        self.emit = Mock()
-
-
-class _FakeQConfig:
-    def __init__(self, mode, theme, resolved_theme):
-        self.themeMode = type("ThemeMode", (), {"value": mode})()
-        self._theme = theme
-        self.resolved_theme = resolved_theme
-        self.themeChanged = _Signal()
-        self.themeChangedFinished = _Signal()
-
-    @property
-    def theme(self):
-        return self._theme
-
-    @theme.setter
-    def theme(self, value):
-        self._theme = self.resolved_theme if value == Theme.AUTO else value
-
-
-class _ThemeChangeHarness:
-    _apply_system_theme_change = MainWindow._apply_system_theme_change
-
-    def __init__(self, accent_changed):
-        self._theme_cooldowns = {'system-theme'}
-        self._sync_system_accent_color = Mock(return_value=accent_changed)
-        self._refresh_mica = Mock()
-
-
-class _MicaHarness:
-    _refresh_mica = MainWindow._refresh_mica
-
-    def __init__(self, enabled):
-        self.isMicaEffectEnabled = Mock(return_value=enabled)
-        self.setMicaEffectEnabled = Mock()
-        self.update = Mock()
+from ok.ui.qt.kit import Theme as KitTheme
+from ok.ui.qt.kit import theme as kit_theme
 
 
 class TestMainWindowSystemTheme(unittest.TestCase):
-    def test_auto_mode_updates_resolved_theme_and_stylesheet(self):
-        config = _FakeQConfig(Theme.AUTO, Theme.LIGHT, Theme.DARK)
-        harness = _ThemeChangeHarness(accent_changed=True)
+    def setUp(self):
+        original_mode, original_accent = kit_theme.mode, kit_theme._accent
+        original_backdrop = kit_theme.backdrop()
+        self.addCleanup(kit_theme.set_backdrop, original_backdrop)
+        self.addCleanup(lambda: (kit_theme.set_theme(original_mode), kit_theme.set_accent(original_accent)))
 
-        with (
-            patch("ok.ui.qt.MainWindow.qconfig", config),
-            patch("ok.ui.qt.MainWindow.updateStyleSheet") as update_style_sheet,
-            patch("ok.ui.qt.MainWindow.QTimer.singleShot") as single_shot,
-        ):
-            harness._apply_system_theme_change()
-
-        self.assertEqual(config.theme, Theme.DARK)
-        config.themeChanged.emit.assert_called_once_with(Theme.AUTO)
-        config.themeChangedFinished.emit.assert_called_once_with()
-        update_style_sheet.assert_called_once_with()
-        single_shot.assert_called_once_with(750, harness._refresh_mica)
+    def test_system_change_resyncs_and_clears_the_cooldown(self):
+        harness = type("Harness", (), {"_apply_system_theme_change": MainWindow._apply_system_theme_change})()
+        harness._theme_cooldowns = {'system-theme'}
+        harness._sync_kit_theme = Mock()
+        harness._apply_system_theme_change()
+        harness._sync_kit_theme.assert_called_once_with()
         self.assertNotIn('system-theme', harness._theme_cooldowns)
 
-    def test_fixed_mode_keeps_theme_but_applies_accent_change(self):
-        config = _FakeQConfig(Theme.LIGHT, Theme.LIGHT, Theme.DARK)
-        harness = _ThemeChangeHarness(accent_changed=True)
+    def test_kit_theme_follows_the_saved_mode_and_windows_accent(self):
+        harness = type("Harness", (), {"_sync_kit_theme": MainWindow._sync_kit_theme,
+                                       "_system_accent": lambda self: QColor("#123456")})()
+        for mode, expected in (("dark", KitTheme.DARK), ("light", KitTheme.LIGHT), ("auto", KitTheme.AUTO)):
+            with patch("ok.ui.qt.MainWindow.ui_config", Mock(theme_mode=mode, backdrop="acrylic")):
+                harness._sync_kit_theme()
+            self.assertEqual(expected, kit_theme.mode)
+        self.assertEqual(QColor("#123456"), kit_theme._accent)
 
-        with (
-            patch("ok.ui.qt.MainWindow.qconfig", config),
-            patch("ok.ui.qt.MainWindow.updateStyleSheet") as update_style_sheet,
-            patch("ok.ui.qt.MainWindow.QTimer.singleShot"),
-        ):
-            harness._apply_system_theme_change()
 
-        self.assertEqual(config.theme, Theme.LIGHT)
-        config.themeChanged.emit.assert_not_called()
-        config.themeChangedFinished.emit.assert_called_once_with()
-        update_style_sheet.assert_called_once_with()
+class TestUiConfig(unittest.TestCase):
+    def test_reads_legacy_keys_and_saves_the_new_layout(self):
+        import json
+        import tempfile
+        from ok.ui.qt.common.config import Language, UiConfig
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder, "ui_config.json")
+            with open(path, "w", encoding="utf-8") as file:
+                json.dump({"MainWindow": {"Language": "ja_JP"}, "QFluentWidgets": {"ThemeMode": "Dark"}}, file)
+            config = UiConfig(path)
+            self.assertEqual(Language.JAPANESE, config.language)
+            self.assertEqual("dark", config.theme_mode)
 
-    def test_unchanged_theme_and_accent_skip_stylesheet_refresh(self):
-        config = _FakeQConfig(Theme.AUTO, Theme.DARK, Theme.DARK)
-        harness = _ThemeChangeHarness(accent_changed=False)
-
-        with (
-            patch("ok.ui.qt.MainWindow.qconfig", config),
-            patch("ok.ui.qt.MainWindow.updateStyleSheet") as update_style_sheet,
-            patch("ok.ui.qt.MainWindow.QTimer.singleShot"),
-        ):
-            harness._apply_system_theme_change()
-
-        config.themeChanged.emit.assert_not_called()
-        config.themeChangedFinished.emit.assert_called_once_with()
-        update_style_sheet.assert_not_called()
-
-    def test_refresh_mica_rebuilds_enabled_backdrop(self):
-        harness = _MicaHarness(enabled=True)
-
-        with patch("ok.ui.qt.MainWindow.isDarkTheme", return_value=True):
-            harness._refresh_mica()
-
-        self.assertEqual(
-            harness.setMicaEffectEnabled.call_args_list,
-            [call(False), call(True)],
-        )
-        harness.update.assert_called_once_with()
-
-    def test_refresh_mica_leaves_disabled_backdrop_unchanged(self):
-        harness = _MicaHarness(enabled=False)
-
-        harness._refresh_mica()
-
-        harness.setMicaEffectEnabled.assert_not_called()
-        harness.update.assert_not_called()
+            restart, themed = Mock(), Mock()
+            config.language_changed.connect(restart)
+            config.theme_changed.connect(themed)
+            config.set_language(Language.ENGLISH)
+            config.set_theme_mode("light")
+            config.set_theme_mode("light")
+            restart.assert_called_once_with()
+            themed.assert_called_once_with()
+            with open(path, encoding="utf-8") as file:
+                self.assertEqual({"language": "en_US", "theme": "light", "backdrop": "acrylic"}, json.load(file))
+            self.assertEqual("light", UiConfig(path).theme_mode)
 
 
 if __name__ == '__main__':

@@ -106,6 +106,16 @@ python -m venv .venv
 - [白荆回廊](https://github.com/ok-oldking/ok-baijing)（停止维护）
 - [崩坏：星穹铁道](https://github.com/Shasnow/ok-starrailassistant)（停止维护）
 
+## 开发 ok-script
+
+在本仓库中测试界面改动时，可以用 [main.py](main.py) 中的演示配置直接从源码启动 GUI：
+
+```powershell
+.\.venv\Scripts\python.exe main.py
+```
+
+它以记事本为目标窗口，无需游戏，并注册了一个演示一次性任务和一个触发任务，让任务、计划任务和模板页面都有内容。设置和日志保存在已被 git 忽略的 `configs/` 和 `logs/` 目录中。需要测试其他选项时，修改 `main.py` 中的 `config` 字典或演示任务即可。
+
 ## 社区与发布
 
 - 开发者 QQ 群：938132715

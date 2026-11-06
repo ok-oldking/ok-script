@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QApplication
 from ok import OK, og
 from ok.util.config import Config, ConfigOption
 from ok.util.GlobalConfig import ENABLE_MCP_SERVER, GlobalConfig, register_basic_options
-from ok.ui.qt.settings.GlobalConfigCard import GlobalConfigCard
+from ok.ui.qt.settings.config_section import ConfigSection
 
 
 @pytest.fixture
@@ -30,9 +30,9 @@ def setting(tmp_path, monkeypatch):
     monkeypatch.setattr('ok.core.mcp_server.LocalMcpServer', server_class)
     dialog = Mock()
     dialog.return_value.exec.return_value = True
-    module = importlib.import_module('ok.ui.qt.tasks.LabelAndMcpServer')
-    monkeypatch.setattr(module, 'MessageBox', dialog)
-    card = GlobalConfigCard(config, runtime.global_config.config_options['Basic Options'])
+    module = importlib.import_module('ok.ui.qt.tasks.config_editors')
+    monkeypatch.setattr(module, 'Dialog', dialog)
+    card = ConfigSection(config, runtime.global_config.config_options['Basic Options'])
     widget = card.config_widget_by_key[ENABLE_MCP_SERVER]
     yield SimpleNamespace(runtime=runtime, config=config, server=server_class,
                           dialog=dialog, widget=widget, card=card, qt_app=qt_app)
@@ -78,7 +78,7 @@ def test_failed_start_rolls_back_setting_and_shows_error(setting):
     assert s.runtime._mcp_server is None
     assert s.runtime.config['mcp'] == {'port': 0}
     assert s.dialog.call_count == 2
-    assert s.dialog.call_args.args[1] == 'The required MCP dependency is missing'
+    assert s.dialog.call_args.args[2] == 'The required MCP dependency is missing'
 
 
 @pytest.mark.parametrize('reset', [False, True])

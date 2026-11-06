@@ -21,6 +21,7 @@ showcase_genshin/config/
 logs/
 **/logs/
 .venv/
+.venv-qt-tools/
 build/
 develop-eggs/
 dist/

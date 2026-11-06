@@ -265,11 +265,10 @@ if mode in ('qt', 'broken_tab'):
     window = QWidget()
     window.executor = manager.task_executor
     window.app = SimpleNamespace(tr=lambda text: text)
-    window.navigationInterface = Mock()
     window.stackedWidget = QStackedWidget(window)
     window.imported_tabs = {}
-    window.addSubInterface = lambda widget, *args, **kwargs: window.stackedWidget.addWidget(widget)
-    window.update_navigation_width = Mock()
+    window.add_page = lambda widget, *args, **kwargs: window.stackedWidget.addWidget(widget)
+    window.remove_page = window.stackedWidget.removeWidget
     controller = ImportedTabs(window)
     controller.refresh()
     controller.dispose()

@@ -10,7 +10,6 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import LineEdit
 
 from ok.device.interaction_methods.keys import (
     is_mouse_button, get_mouse_button, XBUTTON1, XBUTTON2,
@@ -19,7 +18,8 @@ from ok.device.interaction_methods.keys import (
 from ok.device.interaction_methods.post_message import PostMessageInteraction
 from ok.device.interaction_methods.pydirect import PyDirectInteraction
 from ok.device.interaction_methods.pynput import PynputInteraction
-from ok.ui.qt.tasks.LabelAndLineEdit import LabelAndLineEdit, GlobalMouseButtonFilter
+from ok.ui.qt.tasks.config_editors import LineEditEditor
+from ok.ui.qt.tasks.mouse_buttons import GlobalMouseButtonFilter
 from ok.task.task import VALID_NAMED_KEYS, ExecutorOperation
 
 
@@ -90,7 +90,7 @@ class TestMouseButtons(unittest.TestCase):
 
         config_desc = {'key': 'Test Key'}
         config = {'key': 't'}
-        widget = LabelAndLineEdit(config_desc, config, 'key')
+        widget = LineEditEditor(config_desc, config, 'key')
         widget.show()
         self.addCleanup(widget.close)
 

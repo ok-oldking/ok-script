@@ -1,0 +1,11 @@
+version = 1
+name = "ok-script"
+
+[setup]
+script = ""
+
+[[actions]]
+name = "Run main.py"
+icon = "run"
+command = '& .\.venv\Scripts\python.exe -u .\main.py'
+platform = "win32"

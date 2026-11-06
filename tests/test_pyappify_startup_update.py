@@ -152,40 +152,25 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         self.assertEqual("\n".join(notes), titled_widgets[update_index].widget.text())
         app.processEvents()
 
-    def test_version_card_does_not_show_legacy_update_button(self):
+    def test_about_header_shows_only_configured_links(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         from PySide6.QtWidgets import QApplication
-        from ok.ui.qt.about.VersionCard import VersionCard
+        from ok.ui.qt.about.AboutTab import AboutTab
 
         app = QApplication.instance() or QApplication([])
-        card = VersionCard(
-            {},
-            ":/icon/icon.ico",
-            "demo",
-            "1.0.4",
-            False,
-        )
+        module = SimpleNamespace(app_version="v1.0.0")
+        tab = AboutTab({
+            "gui_icon": ":/icon/icon.ico",
+            "gui_title": "demo",
+            "version": "1.0.4",
+            "debug": False,
+            "links": {"default": {"github": "https://github.com/demo/demo", "faq": "https://example.com/faq"}},
+        }, pyappify_module=module)
 
-        self.assertFalse(hasattr(card, "check_update_button"))
-        card.deleteLater()
-        app.processEvents()
-
-    def test_version_card_hides_update_button_without_pyappify_app_version(self):
-        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-        from PySide6.QtWidgets import QApplication
-        from ok.ui.qt.about.VersionCard import VersionCard
-
-        app = QApplication.instance() or QApplication([])
-        card = VersionCard(
-            {},
-            ":/icon/icon.ico",
-            "demo",
-            "1.0.4",
-            False,
-        )
-
-        self.assertFalse(hasattr(card, "check_update_button"))
-        card.deleteLater()
+        self.assertEqual(["github", "faq"], list(tab.link_buttons))
+        self.assertIsNone(tab.update_card)
+        self.assertFalse(hasattr(tab, "check_update_button"))
+        tab.deleteLater()
         app.processEvents()
 
     def test_about_tab_places_update_card_directly_below_version_card(self):
@@ -228,27 +213,28 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         tab.deleteLater()
         app.processEvents()
 
-    def test_project_cards_constrain_long_urls_and_match_link_button_spacing(self):
+    def test_project_cards_constrain_long_urls(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         from PySide6.QtWidgets import QApplication
-        from ok.ui.qt.about.ProjectCard import ProjectCard
+        from ok.ui.qt.about.AboutTab import ProjectCard
 
         app = QApplication.instance() or QApplication([])
         url = "https://github.com/example/a-very-long-project-name-that-must-not-expand-the-about-window"
         card = ProjectCard("Example", url, "https://example.com")
+        card.resize(400, 72)
+        card.show()
         app.processEvents()
 
-        self.assertEqual(6, card.hBoxLayout.spacing())
-        self.assertEqual(11, card.hBoxLayout.itemAt(card.hBoxLayout.count() - 1).spacerItem().sizeHint().width())
         self.assertLessEqual(card.sizeHint().width(), 520)
-        self.assertEqual(url, card.contentLabel.toolTip())
+        self.assertEqual(url, card.url_label.toolTip())
+        self.assertIn("…", card.url_label.text())
+        self.assertIsNotNone(card.download_button)
         card.deleteLater()
         app.processEvents()
 
     def test_update_download_button_is_primary_and_precedes_test_version_control(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         from PySide6.QtWidgets import QApplication
-        from qfluentwidgets import PrimaryPushButton
         from ok.ui.qt.about.UpdateCard import UpdateCard
 
         app = QApplication.instance() or QApplication([])
@@ -259,7 +245,7 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
             if card.controls_layout.itemAt(index).widget() is not None
         ]
 
-        self.assertIsInstance(card.download_button, PrimaryPushButton)
+        self.assertEqual("primary", card.download_button.variant)
         self.assertLess(widgets.index(card.download_button), widgets.index(card.test_version_checkbox))
         card.deleteLater()
         app.processEvents()
@@ -306,7 +292,56 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         self.assertEqual("Check Test Version", card.test_version_checkbox.text())
         self.assertFalse(card.test_version_checkbox.isChecked())
         self.assertIs(card.status_label, card.controls_layout.itemAt(2).widget())
-        self.assertIsNone(card.controls_layout.itemAt(3).widget())
+        self.assertEqual(1, card.controls_layout.stretch(2))
+        card.deleteLater()
+        app.processEvents()
+
+    def test_only_automatic_check_announces_new_version(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.about.UpdateCard import UpdateCard
+
+        app = QApplication.instance() or QApplication([])
+        module = SimpleNamespace(
+            is_greater_version=lambda left, right: self._version_tuple(left) > self._version_tuple(right),
+            calculate_update_notes=self._calculate_update_notes,
+        )
+        card = UpdateCard("v1.0.0", module)
+        announced = []
+        card.new_version_available.connect(announced.append)
+        versions = [{"version": "v1.2.0", "update_note": ["two"]}, {"version": "v1.0.0", "update_note": []}]
+
+        card._apply_versions((True, versions))
+        self.assertEqual([], announced)
+
+        card._automatic_check = True
+        card._apply_versions((True, versions))
+        self.assertEqual(["v1.2.0"], announced)
+        self.assertFalse(card._automatic_check)
+
+        card._automatic_check = True
+        card._apply_versions((True, [{"version": "v1.0.0", "update_note": []}]))
+        self.assertEqual(["v1.2.0"], announced)
+        card.deleteLater()
+        app.processEvents()
+
+    def test_update_to_version_selects_and_starts_update(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.about.UpdateCard import UpdateCard
+
+        app = QApplication.instance() or QApplication([])
+        module = SimpleNamespace(
+            is_greater_version=lambda left, right: self._version_tuple(left) > self._version_tuple(right),
+            calculate_update_notes=self._calculate_update_notes,
+        )
+        card = UpdateCard("v1.0.0", module)
+        card._apply_versions((True, [{"version": "v1.2.0", "update_note": []},
+                                     {"version": "v1.1.0", "update_note": []}]))
+        with patch.object(card, "update_to_selected_version") as update:
+            card.update_to_version("v1.1.0")
+        self.assertEqual("v1.1.0", card.version_combo.currentText())
+        update.assert_called_once_with()
         card.deleteLater()
         app.processEvents()
 
@@ -385,12 +420,11 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         )
         card = UpdateCard("v1.0.0", module)
 
+        card.show()
         card.check_for_updates()
         self.assertFalse(card.check_button.isEnabled())
-        self.assertFalse(card.check_button.icon().isNull())
-        self.assertTrue(card.check_button.property("hasIcon"))
         self.assertFalse(card.check_progress.isHidden())
-        self.assertEqual(QAbstractAnimation.State.Running, card.check_progress.aniGroup.state())
+        self.assertTrue(card.check_progress.is_spinning())
         self.assertTrue(request_started.wait(1))
         card.check_for_updates()
         self.assertEqual(1, get_versions.call_count)
@@ -403,7 +437,7 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
             time.sleep(0.01)
         self.assertTrue(card.check_button.isEnabled())
         self.assertTrue(card.check_progress.isHidden())
-        self.assertEqual(QAbstractAnimation.State.Stopped, card.check_progress.aniGroup.state())
+        self.assertFalse(card.check_progress.is_spinning())
         self.assertEqual(1, get_versions.call_count)
         card.deleteLater()
         app.processEvents()
@@ -460,7 +494,8 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         self.assertEqual("", card.notes_edit.text())
         self.assertTrue(card.notes_edit.isHidden())
         self.assertIn("Failed to check for updates: launcher unavailable", card.status_label.text())
-        self.assertIn("#d13438", card.status_label.styleSheet())
+        from ok.ui.qt.kit import theme
+        self.assertIn(theme.color("danger").name(), card.status_label.styleSheet())
         self.assertTrue(card.version_label.isHidden())
         self.assertTrue(card.version_combo.isHidden())
         card.deleteLater()

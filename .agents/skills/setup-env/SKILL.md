@@ -25,6 +25,8 @@ $projectPy = (Resolve-Path .\.venv\Scripts\python.exe).Path
 
 Run this from the application's root. Install the chosen OpenCV variant separately if it is absent.
 
+The `qt` extra installs `ok-pyside-minimal`, which provides the `PySide6` package with only QtCore, QtGui, QtWidgets and QtSvg. Do not also install `PySide6`, `PySide6-Essentials` or `PySide6-Addons` in the same environment: they write the same `PySide6` folder. If an older environment has them (for example from PySide6-Fluent-Widgets), uninstall them or recreate the environment before installing the `qt` extra.
+
 Record the selected ok-script version or constraint, extras, and OpenCV variant in the application's existing dependency manifest or lockfile using its package manager. Keep setup reproducible without replacing unrelated dependencies.
 
 If the application intentionally uses an existing editable library installation or `ok` source link, preserve that arrangement and install its required dependencies in the application's environment. A source link alone does not install dependencies. Modify the application's tasks and configuration; library source changes are outside this skill's scope.
@@ -33,7 +35,7 @@ Use the normal package index first. If downloads stall, a reachable alternate in
 
 ## Verify the environment
 
-Run `& $projectPy -m pip check`. Smoke-test `import ok, cv2, mcp` and the selected optional stacks, and verify `ok.__file__` resolves to the intended checkout or installed package. For Qt, check `from PySide6 import QtCore` and `import qfluentwidgets`.
+Run `& $projectPy -m pip check`. Smoke-test `import ok, cv2, mcp` and the selected optional stacks, and verify `ok.__file__` resolves to the intended checkout or installed package. For Qt, check `from PySide6 import QtCore, QtSvg` and `import ok.ui.qt.kit`.
 
 If the application already has a launcher, run it with its environment to catch runtime imports that dependency metadata alone cannot verify. Compile changed application scripts and run its existing tests when relevant.
 
