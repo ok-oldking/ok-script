@@ -301,6 +301,30 @@ def tinted_icon(source: QIcon, color) -> QIcon:
     return QIcon(_ColorizedIconEngine(source, color))
 
 
+def is_single_color(source: QIcon, tolerance: int = 32) -> bool:
+    """Whether the artwork draws in one color, so tinting it keeps its look.
+
+    Monochrome glyphs qualify; logos with several colors, or a glyph on an
+    opaque background, do not.
+    """
+
+    image = source.pixmap(QSize(32, 32)).toImage().convertToFormat(QImage.Format.Format_RGBA8888)
+    if image.isNull():
+        return False
+    data = bytes(image.constBits())
+    first = None
+    # Faint pixels are anti-aliased edges; their color is not reliable.
+    for offset in range(0, len(data), 4):
+        if data[offset + 3] < 128:
+            continue
+        rgb = data[offset:offset + 3]
+        if first is None:
+            first = rgb
+        elif max(abs(a - b) for a, b in zip(rgb, first)) > tolerance:
+            return False
+    return first is not None
+
+
 def _trim_transparent(image: QImage) -> QImage:
     rgba = image.convertToFormat(QImage.Format.Format_RGBA8888)
     # Ignore nearly invisible export fringes when measuring the artwork.

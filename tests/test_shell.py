@@ -1,13 +1,16 @@
 import os
+import shutil
+import tempfile
 import threading
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import QEvent, QPoint, Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QColor, QIcon
 from qt_helpers import mouse_click, wait
 from PySide6.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
@@ -173,6 +176,7 @@ class TestNavIcons(unittest.TestCase):
         self.assertEqual(FALLBACK, nav_icon(SimpleNamespace(name="STOP_WATCH")))
         icon = QIcon()
         self.assertIs(icon, nav_icon(icon))
+        self.assertEqual(FALLBACK, nav_icon(Path("missing.svg")))
 
 
 class TestStartControllerCancel(unittest.TestCase):
@@ -248,6 +252,50 @@ class TestNavItemIcon(ShellWidgetTestCase):
         self.assertEqual(expanded_x, item.icon_label.x())
         rail_inner = COMPACT_WIDTH - 2 * SIDEBAR_PADDING
         self.assertAlmostEqual(rail_inner / 2, item.icon_label.x() + item.icon_label.width() / 2, delta=1)
+
+    def _png(self, *colors):
+        """A PNG of vertical stripes in ``colors`` on a transparent background."""
+        from PySide6.QtGui import QImage, QPainter
+        image = QImage(32, 32, QImage.Format.Format_ARGB32)
+        image.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(image)
+        width = 24 // len(colors)
+        for index, color in enumerate(colors):
+            painter.fillRect(4 + index * width, 4, width, 24, QColor(color))
+        painter.end()
+        folder = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, folder, True)
+        path = Path(folder) / "icon.png"
+        self.assertTrue(image.save(str(path)))
+        return path
+
+    def _center_color(self, item):
+        image = item.icon_label.pixmap().toImage()
+        return image.pixelColor(image.width() // 2, image.height() // 2)
+
+    def test_single_color_artwork_takes_theme_colors(self):
+        nav = NavigationView()
+        nav.add_item("a", "A", nav_icon(self._png("#000000")))
+        nav.add_item("b", "B", "tasks")
+        self.show(nav)
+        item = nav.item("a")
+        self.assertEqual(theme.color("text_secondary").rgb(), self._center_color(item).rgb())
+        nav.set_current("a")
+        QApplication.processEvents()
+        wait(400)
+        self.assertEqual(theme.color("accent").rgb(), self._center_color(item).rgb())
+
+    def test_multicolor_artwork_keeps_its_colors(self):
+        nav = NavigationView()
+        nav.add_item("logo", "Logo", nav_icon(self._png("#ff0000", "#00ff00", "#0000ff")))
+        self.show(nav)
+        item = nav.item("logo")
+        unselected = item.icon_label.pixmap().toImage()
+        nav.set_current("logo")
+        QApplication.processEvents()
+        wait(400)
+        self.assertEqual(unselected, item.icon_label.pixmap().toImage())
+        self.assertEqual(QColor("#00ff00").rgb(), self._center_color(item).rgb())
 
 
 class TestNavigationCollapse(ShellWidgetTestCase):

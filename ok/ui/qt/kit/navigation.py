@@ -3,7 +3,7 @@ from PySide6.QtGui import QColor, QIcon, QImage, QLinearGradient, QPainter, QPix
 from PySide6.QtWidgets import (QButtonGroup, QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSizePolicy,
                                QVBoxLayout, QWidget)
 
-from ok.ui.qt.kit.icons import icon as kit_icon
+from ok.ui.qt.kit.icons import icon as kit_icon, is_single_color, tinted_icon
 from ok.ui.qt.kit.labels import Label
 from ok.ui.qt.kit.motion import SlidingIndicator, paint_rounded
 from ok.ui.qt.kit.theme import set_style_property, theme
@@ -62,13 +62,14 @@ ICON_LEFT = (COMPACT_WIDTH - 2 * SIDEBAR_PADDING - 18) // 2
 class NavItem(QPushButton):
     """One navigation entry: icon, text and an optional attention dot.
 
-    A pair of QIcons supplies the normal and selected artwork for the color sweep.
+    Bundled icons and single-color app artwork take theme colors and the
+    selection sweep; multicolor app icons keep their own colors.
     """
 
     def __init__(self, key: str, text: str, icon=None, parent=None):
         super().__init__(parent)
         self.key = key
-        self._icon_source = icon
+        self._set_source(icon)
         self.setCheckable(True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFixedHeight(36)
@@ -119,8 +120,13 @@ class NavItem(QPushButton):
         self.setToolTip(text)
 
     def set_icon(self, icon) -> None:
-        self._icon_source = icon
+        self._set_source(icon)
         self._refresh_icon()
+
+    def _set_source(self, icon) -> None:
+        self._icon_source = icon
+        # Recoloring multicolor artwork would flatten it into a silhouette.
+        self._tinted = isinstance(icon, str) or (isinstance(icon, QIcon) and is_single_color(icon))
 
     def set_badge(self, visible: bool) -> None:
         self.dot.setVisible(visible)
@@ -130,8 +136,7 @@ class NavItem(QPushButton):
 
     def _on_toggled(self, checked: bool) -> None:
         set_style_property(self.text_label, "selected", checked)
-        has_selected_icon = isinstance(self._icon_source, (str, tuple))
-        if checked and has_selected_icon and self.isVisible() and self._fill.duration() > 0:
+        if checked and self._tinted and self.isVisible() and self._fill.duration() > 0:
             self._fill.stop()
             self._fill_from = self._icon_pixmap(False)
             self._fill_to = self._icon_pixmap(True)
@@ -142,12 +147,13 @@ class NavItem(QPushButton):
 
     def _icon_pixmap(self, selected: bool):
         source = self._icon_source
-        if isinstance(source, tuple):
-            qicon = source[1 if selected else 0]
-        elif isinstance(source, QIcon):
-            qicon = source
+        color = "accent" if selected else "text_secondary"
+        if isinstance(source, str):
+            qicon = kit_icon(source, color, 1.7)
+        elif self._tinted:
+            qicon = tinted_icon(source, color)
         else:
-            qicon = kit_icon(source, "accent" if selected else "text_secondary", 1.7)
+            qicon = source
         return qicon.pixmap(QSize(18, 18), self.devicePixelRatioF())
 
     def _refresh_icon(self) -> None:

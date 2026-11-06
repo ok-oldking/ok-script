@@ -305,7 +305,7 @@ class MainWindow(KitWindow):
         key = widget.objectName()
         self._pages[key] = widget
         self.stack.addWidget(widget)
-        self.navigation.add_item(key, text, nav_icon(icon, for_sidebar=True), section, bottom=bottom)
+        self.navigation.add_item(key, text, nav_icon(icon), section, bottom=bottom)
         return key
 
     def remove_page(self, widget):
