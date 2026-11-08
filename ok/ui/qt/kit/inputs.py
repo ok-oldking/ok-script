@@ -5,10 +5,36 @@ styled by the kit stylesheet and are used directly. This module adds the
 inputs that need structure beyond a stylesheet.
 """
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QListView, QSpinBox
+from PySide6.QtCore import QEvent, QObject, Qt, Signal
+from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QListView, QSpinBox, QWidget
 
 from ok.ui.qt.kit.buttons import Button
+
+
+class _FocusedWheelFilter(QObject):
+    """Ignores wheel events on widgets that do not have keyboard focus.
+
+    The ignored event propagates to the parent, so hovering an input inside
+    a scroll area scrolls the page instead of changing the value.
+    """
+
+    def eventFilter(self, obj, event) -> bool:
+        if event.type() == QEvent.Type.Wheel and isinstance(obj, QWidget) and not obj.hasFocus():
+            event.ignore()
+            return True
+        return super().eventFilter(obj, event)
+
+
+_focused_wheel_filter = None
+
+
+def require_focus_for_wheel(widget: QWidget) -> None:
+    """Make ``widget`` respond to the mouse wheel only while it has focus."""
+    global _focused_wheel_filter
+    if _focused_wheel_filter is None:
+        _focused_wheel_filter = _FocusedWheelFilter()
+    widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+    widget.installEventFilter(_focused_wheel_filter)
 
 
 class ComboBox(QComboBox):
@@ -16,6 +42,7 @@ class ComboBox(QComboBox):
 
     def __init__(self, items=None, parent=None):
         super().__init__(parent)
+        require_focus_for_wheel(self)
         self.setView(QListView(self))
         self.view().window().setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -43,6 +70,7 @@ class NumberBox(QFrame):
         self._spin.setSingleStep(step)
         self._spin.setValue(value)
         self._spin.setKeyboardTracking(False)
+        require_focus_for_wheel(self._spin)
 
         self.minus_button = Button(icon="minus", variant="subtle")
         self.minus_button.setObjectName("numberMinus")
