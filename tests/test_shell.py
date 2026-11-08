@@ -194,6 +194,33 @@ class TestStartControllerCancel(unittest.TestCase):
         controller.check_device_error.assert_not_called()
         self.assertEqual([(True, None, 0)], events)
 
+    def test_task_is_pending_until_the_game_is_ready_and_can_be_cancelled(self):
+        from ok.core import start_controller as module
+        controller = module.StartController.__new__(module.StartController)
+        controller.handler = SimpleNamespace(post=Mock())
+        task, other = object(), object()
+        controller.start(task)
+        controller.start(other)
+        self.assertTrue(controller.is_task_pending(task))
+        self.assertTrue(controller.is_task_pending(other))
+
+        # Cancelling the task whose launch is in progress stops waiting for the game.
+        controller.__dict__['_active_task'] = task
+        self.assertTrue(controller.cancel_task(task))
+        self.assertFalse(controller.is_task_pending(task))
+        self.assertTrue(controller._cancel_requested.is_set())
+        self.assertFalse(controller.cancel_task(task))
+
+        # A cancelled request is skipped when its queued start runs.
+        controller.__dict__['_active_task'] = None
+        controller._do_start = Mock()
+        self.assertFalse(controller.do_start(task, from_queue=True))
+        controller._do_start.assert_not_called()
+
+        # The run bar's Cancel drops every waiting task.
+        controller.cancel_start()
+        self.assertFalse(controller.is_task_pending(other))
+
 
 class ShellWidgetTestCase(unittest.TestCase):
     @classmethod

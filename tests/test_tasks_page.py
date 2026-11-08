@@ -166,6 +166,21 @@ class TestHelpers(unittest.TestCase):
         waiting = SimpleNamespace(waiting_for_task=lambda t: other)
         self.assertIn("Other", task_status(task, waiting)[2])
 
+    def test_task_waiting_for_game_launch_is_queued_and_stoppable(self):
+        task = FakeTask("A")
+        controller = Mock()
+        controller.is_task_pending = lambda t: t is task
+        executor = SimpleNamespace(waiting_for_task=lambda t: None)
+        with patch.object(og, "app", SimpleNamespace(tr=lambda text: text, start_controller=controller)), \
+                patch.object(og, "config", {"game_name": "Game X"}, create=True):
+            status = task_status(task, executor)
+            self.assertEqual(("Queued", "accent"), status[:2])
+            self.assertIn("Game X", status[2])
+            self.assertTrue(page_module.task_active(task))
+            self.assertIsNone(task_status(FakeTask("B"), executor))
+            page_module.stop_task(task)
+        controller.cancel_task.assert_called_once_with(task)
+
 
 class TestConfigForm(QtTestCase):
     def test_editor_types(self):

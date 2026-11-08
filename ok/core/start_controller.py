@@ -35,10 +35,66 @@ class StartController:
             event = self.__dict__['_cancel_event'] = threading.Event()
         return event
 
+    @property
+    def _pending(self):
+        """Tasks requested by :meth:`start` that are not enabled yet, in request order."""
+        state = self.__dict__.get('_pending_state')
+        if state is None:
+            state = self.__dict__['_pending_state'] = (threading.Lock(), [])
+        return state
+
+    def is_task_pending(self, task):
+        """Whether ``task`` waits for the game to launch before it is queued."""
+        lock, tasks = self._pending
+        with lock:
+            return task in tasks
+
+    def _add_pending(self, task):
+        if task is None or isinstance(task, int):
+            return
+        lock, tasks = self._pending
+        with lock:
+            if task not in tasks:
+                tasks.append(task)
+        communicate.task.emit(task)
+
+    def _discard_pending(self, task):
+        if task is None or isinstance(task, int):
+            return False
+        lock, tasks = self._pending
+        with lock:
+            if task not in tasks:
+                return False
+            tasks.remove(task)
+        communicate.task.emit(task)
+        return True
+
+    def cancel_task(self, task):
+        """Drop a task that waits for the game to launch.
+
+        If the launch in progress was started for that task, stop waiting for
+        the game too. Returns whether the task was pending.
+        """
+        if not self._discard_pending(task):
+            return False
+        logger.info(f'cancel pending start of {task}')
+        if self.__dict__.get('_active_task') is task:
+            self._cancel_requested.set()
+        return True
+
     def cancel_start(self):
-        """Stop waiting for the game to launch; the game process is left running."""
+        """Stop waiting for the game to launch and drop every task waiting for it.
+
+        The game process is left running.
+        """
         logger.info('cancel_start requested')
         self._cancel_requested.set()
+        lock, tasks = self._pending
+        with lock:
+            dropped = list(tasks)
+            tasks.clear()
+        for task in dropped:
+            communicate.task.emit(task)
 
     def _cancelled(self):
         if self._cancel_requested.is_set():
@@ -61,19 +117,32 @@ class StartController:
         communicate.task.emit(task)
 
     def start(self, task=None, exit_after=False):
+        """Launch the game if needed, then run ``task``.
+
+        Until the game is ready the task is pending: :meth:`is_task_pending`
+        reports it and :meth:`cancel_task` drops it.
+        """
         self.starting = True
+        self._add_pending(task)
         try:
-            self.handler.post(lambda: self.do_start(task, exit_after))
+            self.handler.post(lambda: self.do_start(task, exit_after, from_queue=True))
         except Exception:
             self.starting = False
+            self._discard_pending(task)
             raise
 
-    def do_start(self, task=None, exit_after=False):
+    def do_start(self, task=None, exit_after=False, from_queue=False):
+        if from_queue and task is not None and not isinstance(task, int) and not self.is_task_pending(task):
+            logger.info(f'do_start skipped, {task} was cancelled or already started')
+            return False
         self.starting = True
         self._cancel_requested.clear()
+        self.__dict__['_active_task'] = task
         try:
             return self._do_start(task, exit_after)
         finally:
+            self.__dict__['_active_task'] = None
+            self._discard_pending(task)
             self.starting = False
 
     def _do_start(self, task=None, exit_after=False):
@@ -138,10 +207,21 @@ class StartController:
                     logger.info(f"enable_after_start task {start_task}")
                     add_task_to_enable(start_task)
 
+            lock, pending = self._pending
+            with lock:
+                if task is not None and not isinstance(task, int) and task not in pending:
+                    logger.info(f'{task} was cancelled while the game was starting')
+                    task = None
+                waiting = list(pending)
+                pending.clear()
+
             if task:
                 add_task_to_enable(task)
                 if exit_after:
                     task.exit_after_task = True
+            # Tasks requested during this launch run once the game is ready.
+            for waiting_task in waiting:
+                add_task_to_enable(waiting_task)
 
             for task in tasks_to_enable:
                 self._mark_task_enabled(task)

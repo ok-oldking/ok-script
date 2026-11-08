@@ -30,7 +30,7 @@ from ok.ui.qt.kit.switch import Switch
 from ok.ui.qt.kit.tabs import TabStrip
 from ok.ui.qt.kit.theme import set_style_property, theme
 from ok.ui.qt.shell.nav_icons import FALLBACK, nav_icon
-from ok.ui.qt.shell.run_bar import format_elapsed
+from ok.ui.qt.shell.run_bar import format_elapsed, game_display_name
 from ok.ui.qt.tasks.config_form import ConfigForm
 from ok.ui.qt.widget.UpdateConfigWidgetItem import value_to_string
 from ok.util.config import Config
@@ -76,7 +76,28 @@ def start_task(task, parent: QWidget) -> None:
     og.app.start_controller.start(task)
 
 
+def _start_controller():
+    app = getattr(og, 'app', None)
+    return getattr(app, 'start_controller', None)
+
+
+def start_pending(task) -> bool:
+    """Whether ``task`` was started and waits for the game to launch."""
+
+    is_pending = getattr(_start_controller(), 'is_task_pending', None)
+    return callable(is_pending) and is_pending(task) is True
+
+
+def task_active(task) -> bool:
+    """Whether the task's button should stop it: enabled and not paused, or waiting for the game."""
+
+    return bool(task.enabled and not task.paused) or start_pending(task)
+
+
 def stop_task(task) -> None:
+    controller = _start_controller()
+    if start_pending(task):
+        controller.cancel_task(task)
     task.disable()
     task.unpause()
 
@@ -92,6 +113,9 @@ def task_status(task, executor):
     """``(text, tone, tooltip)`` for a one-time task's status pill, or ``None`` when idle."""
 
     if not task.enabled:
+        if start_pending(task):
+            tooltip = _t("RunBar", "Launching {name}").format(name=game_display_name(getattr(og, 'config', None)))
+            return _t("TasksPage", "Queued"), "accent", tooltip
         return None
     if task.paused:
         return _t("TasksPage", "Paused"), "warning", ""
@@ -318,7 +342,7 @@ class TaskRow(QFrame):
             self.status_pill.setText(text)
             self.status_pill.set_tone(tone)
             self.status_pill.setToolTip(tooltip)
-        running = task.enabled and not task.paused
+        running = task_active(task)
         self.action_button.set_icon("stop" if running else "play")
         self.action_button.set_variant("secondary")
         if running:
@@ -330,7 +354,7 @@ class TaskRow(QFrame):
 
     def _on_action(self) -> None:
         task = self.task
-        if task.enabled and not task.paused:
+        if task_active(task):
             stop_task(task)
         else:
             start_task(task, self)
@@ -625,9 +649,10 @@ class TaskDetail(QWidget):
         self.trigger_label.hide()
         self.trigger_switch.hide()
         running = task.enabled and task.running and not task.paused
+        pending = start_pending(task)
         self.pause_button.setVisible(running)
-        self.stop_button.setVisible(bool(task.enabled))
-        self.run_button.setVisible(not task.enabled or task.paused)
+        self.stop_button.setVisible(bool(task.enabled) or pending)
+        self.run_button.setVisible((not task.enabled or task.paused) and not pending)
         self.run_button.setText(_t("TaskCard", "Resume") if task.enabled and task.paused
                                 else _t("TasksPage", "Run task"))
         status = task_status(task, og.executor)
