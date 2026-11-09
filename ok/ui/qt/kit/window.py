@@ -333,6 +333,11 @@ class KitWindow(QWidget):
     def _hwnd(self) -> int:
         return int(self.winId())
 
+    def _is_zoomed(self) -> bool:
+        # Native messages arrive before Qt syncs its window state, so isMaximized()
+        # is stale mid-transition (e.g. restoring by double-clicking the title bar).
+        return bool(ctypes.windll.user32.IsZoomed(self._hwnd()))
+
     def _init_native_frame(self) -> None:
         user32 = ctypes.windll.user32
         hwnd = self._hwnd()
@@ -392,12 +397,15 @@ class KitWindow(QWidget):
         return frame_x, frame_y
 
     def _hit_test(self, screen_x: int, screen_y: int) -> int:
+        hwnd = self._hwnd()
         point = _Point(screen_x, screen_y)
-        ctypes.windll.user32.ScreenToClient(self._hwnd(), ctypes.byref(point))
+        ctypes.windll.user32.ScreenToClient(hwnd, ctypes.byref(point))
+        client = _Rect()
+        ctypes.windll.user32.GetClientRect(hwnd, ctypes.byref(client))
         ratio = self.devicePixelRatioF()
         x, y = point.x / ratio, point.y / ratio
-        w, h = self.width(), self.height()
-        if not self.isMaximized() and not self.isFullScreen():
+        w, h = client.right / ratio, client.bottom / ratio
+        if not self._is_zoomed() and not self.isFullScreen():
             border = RESIZE_BORDER
             left, right, top, bottom = x < border, x >= w - border, y < border, y >= h - border
             if top and left:
@@ -429,7 +437,7 @@ class KitWindow(QWidget):
             return super().nativeEvent(event_type, message)
         msg = _Msg.from_address(int(message))
         if msg.message == WM_NCCALCSIZE and msg.wParam:
-            if self.isMaximized():
+            if ctypes.windll.user32.IsZoomed(msg.hwnd):
                 params = _NcCalcSizeParams.from_address(msg.lParam)
                 frame_x, frame_y = self._frame_thickness()
                 rect = params.rgrc[0]
