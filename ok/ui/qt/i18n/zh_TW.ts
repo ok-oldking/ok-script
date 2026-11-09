@@ -1988,6 +1988,30 @@
             <source>Create or update the Desktop shortcut when the app starts</source>
             <translation>應用程式啟動時建立或更新桌面捷徑</translation>
         </message>
+        <message>
+            <source>Game</source>
+            <translation>遊戲</translation>
+        </message>
+        <message>
+            <source>Tasks</source>
+            <translation>任務</translation>
+        </message>
+        <message>
+            <source>Application</source>
+            <translation>應用程式</translation>
+        </message>
+        <message>
+            <source>Shortcuts</source>
+            <translation>捷徑</translation>
+        </message>
+        <message>
+            <source>Developer</source>
+            <translation>開發者</translation>
+        </message>
+        <message>
+            <source>Other</source>
+            <translation>其他</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

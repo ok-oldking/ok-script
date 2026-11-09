@@ -13,7 +13,7 @@ from ok.ui.qt.kit.inputs import ComboBox
 from ok.ui.qt.kit.labels import Label
 from ok.ui.qt.kit.tabs import TabStrip
 from ok.ui.qt.kit.theme import Backdrop, set_style_property, supported_backdrops, theme
-from ok.ui.qt.settings.config_section import ConfigSection, _app_tr
+from ok.ui.qt.settings.config_section import ConfigSection, _app_tr, group_config_keys
 from ok.util.GlobalConfig import APP_LAUNCHER_OPTION_NAME
 
 ANCHOR_WIDTH = 200
@@ -143,9 +143,20 @@ class SettingsPage(QWidget):
         for name, config, option in configs:
             if getattr(option, 'show_at_tab', False):
                 continue
-            section = ConfigSection(config, option)
-            self.sections.append(section)
-            self._add_section(_app_tr(option.name), section)
+            groups = group_config_keys(config, option.config_type)
+            if groups is None:
+                section = ConfigSection(config, option)
+                self.sections.append(section)
+                self._add_section(_app_tr(option.name), section)
+                continue
+            # A grouped option shows each group as its own section with its own nav entry.
+            for index, (group, keys) in enumerate(groups):
+                section = ConfigSection(config, option, group=group, keys=keys, show_description=index == 0)
+                if section.is_empty:
+                    section.deleteLater()
+                    continue
+                self.sections.append(section)
+                self._add_section(_app_tr(group), section)
 
     # --- navigation -----------------------------------------------------------
 

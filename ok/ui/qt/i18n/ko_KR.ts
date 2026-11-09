@@ -1993,6 +1993,30 @@
             <source>Create or update the Desktop shortcut when the app starts</source>
             <translation>앱 시작 시 바탕 화면 바로 가기를 만들거나 업데이트합니다</translation>
         </message>
+        <message>
+            <source>Game</source>
+            <translation>게임</translation>
+        </message>
+        <message>
+            <source>Tasks</source>
+            <translation>작업</translation>
+        </message>
+        <message>
+            <source>Application</source>
+            <translation>앱</translation>
+        </message>
+        <message>
+            <source>Shortcuts</source>
+            <translation>바로 가기</translation>
+        </message>
+        <message>
+            <source>Developer</source>
+            <translation>개발자</translation>
+        </message>
+        <message>
+            <source>Other</source>
+            <translation>기타</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

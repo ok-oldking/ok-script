@@ -58,20 +58,44 @@ UPDATE_METHOD_LABELS = {
 }
 UPDATE_METHOD_VALUES = {value: label for label, value in UPDATE_METHOD_LABELS.items()}
 
+# Settings show Basic Options in these groups, ordered by each group's first key.
+BASIC_GROUP_GAME = 'Game'
+BASIC_GROUP_TASKS = 'Tasks'
+BASIC_GROUP_APPLICATION = 'Application'
+BASIC_GROUP_SHORTCUTS = 'Shortcuts'
+BASIC_GROUP_DEVELOPER = 'Developer'
+BASIC_GROUP_BLUR = 'Blur'
+
 _basic_options_default = {
-    ENABLE_MCP_SERVER: False,
     'Auto Start Game When App Starts': False,
-    'Minimize Window to System Tray when Closing': False,
-    'Mute Game while in Background': False,
-    'Auto Resize Game Window': True,
     'Exit App when Game Exits': False,
-    'Use DirectML': 'Yes',
-    'Trigger Interval': 1,
-    'Start/Stop': 'F9',
-    KILL_LAUNCHER_AFTER_START: True,
+    'Auto Resize Game Window': True,
+    'Mute Game while in Background': False,
     'Launch with DX11': False,
+    'Start/Stop': 'F9',
+    'Trigger Interval': 1,
+    'Minimize Window to System Tray when Closing': False,
+    KILL_LAUNCHER_AFTER_START: True,
     CREATE_START_MENU_SHORTCUT: True,
     CREATE_DESKTOP_SHORTCUT: True,
+    ENABLE_MCP_SERVER: False,
+}
+_basic_options_group = {
+    'Auto Start Game When App Starts': BASIC_GROUP_GAME,
+    'Exit App when Game Exits': BASIC_GROUP_GAME,
+    'Auto Resize Game Window': BASIC_GROUP_GAME,
+    'Mute Game while in Background': BASIC_GROUP_GAME,
+    'Launch with DX11': BASIC_GROUP_GAME,
+    'Start/Stop': BASIC_GROUP_TASKS,
+    'Trigger Interval': BASIC_GROUP_TASKS,
+    'Minimize Window to System Tray when Closing': BASIC_GROUP_APPLICATION,
+    KILL_LAUNCHER_AFTER_START: BASIC_GROUP_APPLICATION,
+    CREATE_START_MENU_SHORTCUT: BASIC_GROUP_SHORTCUTS,
+    CREATE_DESKTOP_SHORTCUT: BASIC_GROUP_SHORTCUTS,
+    ENABLE_MCP_SERVER: BASIC_GROUP_DEVELOPER,
+    'Enable Blur': BASIC_GROUP_BLUR,
+    'Blur Algorithm': BASIC_GROUP_BLUR,
+    'Blur Interval': BASIC_GROUP_BLUR,
 }
 _shortcut_options_default = {
     CREATE_START_MENU_SHORTCUT: True,
@@ -81,11 +105,9 @@ _shortcut_options_description = {
     CREATE_START_MENU_SHORTCUT: 'Create or update the Start Menu shortcut when the app starts',
     CREATE_DESKTOP_SHORTCUT: 'Create or update the Desktop shortcut when the app starts',
 }
-_basic_options_type = {'Use DirectML': {'type': "drop_down", 'options': ['Auto', 'Yes', 'No']},
-                       ENABLE_MCP_SERVER: {'type': 'mcp_server'},
+_basic_options_type = {ENABLE_MCP_SERVER: {'type': 'mcp_server'},
                        'Start/Stop': {'type': "drop_down", 'options': ['None', 'F9', 'F10', 'F11', 'F12']}}
-_basic_options_description = {'Use DirectML': 'Use GPU to Improve Performance',
-                              ENABLE_MCP_SERVER: 'Allow local coding agents to control this app and run Python code',
+_basic_options_description = {ENABLE_MCP_SERVER: 'Allow local coding agents to control this app and run Python code',
                               'Start/Stop': 'HotKey',
                               'Trigger Interval': 'Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)',
                               **_shortcut_options_description}
@@ -100,6 +122,20 @@ def shortcut_supported():
     except ImportError:
         return False
     return callable(getattr(pyappify, 'create_shortcut', None))
+
+
+def _apply_basic_option_groups(config_type, keys):
+    """Tag known Basic Options keys with their settings group, copying each type dict."""
+    for key in keys:
+        group = _basic_options_group.get(key)
+        if group is None:
+            continue
+        the_type = config_type.get(key)
+        if isinstance(the_type, dict) and the_type.get('hidden'):
+            continue
+        config_type[key] = {**(the_type if isinstance(the_type, dict) else {}), 'group': group}
+
+
 _blur_options_default = {'Enable Blur': False, 'Blur Algorithm': 'Inpaint', 'Blur Interval': 1}
 _blur_options_type = {
     'Enable Blur': {'sub_configs': {True: ['Blur Algorithm', 'Blur Interval']}},
@@ -121,6 +157,7 @@ def create_basic_options(enable_blur=False):
         default.update(_blur_options_default)
         config_type.update(_blur_options_type)
         description.update(_blur_options_description)
+    _apply_basic_option_groups(config_type, default)
     return ConfigOption('Basic Options', default, config_type=config_type,
                         config_description=description, icon=Icon.GAME)
 
@@ -306,7 +343,7 @@ def register_basic_options(global_config, enable_blur=False):
         registered.config_type = {}
     registered.config_type[ENABLE_MCP_SERVER] = options.config_type[ENABLE_MCP_SERVER]
     registered.config_description.setdefault(ENABLE_MCP_SERVER, options.config_description[ENABLE_MCP_SERVER])
-    # Shortcut options always come last, and are hidden when pyappify cannot create shortcuts.
+    # Shortcut options are hidden when pyappify cannot create shortcuts.
     supported = shortcut_supported()
     for key, value in _shortcut_options_default.items():
         config.default[key] = value
@@ -332,6 +369,8 @@ def register_basic_options(global_config, enable_blur=False):
             if registered.config_type is None:
                 registered.config_type = {}
             registered.config_type.update(_blur_options_type)
+    # Group the known keys last, after the updates above replaced their type dicts.
+    _apply_basic_option_groups(global_config.config_options[options.name].config_type, list(config.keys()))
     return config
 
 
