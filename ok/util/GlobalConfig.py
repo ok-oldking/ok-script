@@ -15,6 +15,8 @@ APP_LAUNCHER_ACTION = 'Launcher'
 APP_LAUNCHER_OPEN = 'Open Launcher'
 KILL_LAUNCHER_AFTER_START = 'Kill Launcher After Start'
 ENABLE_MCP_SERVER = 'Enable MCP Server'
+CREATE_START_MENU_SHORTCUT = 'Create Start Menu Shortcut'
+CREATE_DESKTOP_SHORTCUT = 'Create Desktop Shortcut'
 NOTIFICATION_OPTION_NAME = 'Notification'
 SYSTEM_NOTIFICATION_ENABLED = 'System Notification'
 DISCORD_NOTIFICATION_ENABLED = 'Discord Notification'
@@ -67,7 +69,17 @@ _basic_options_default = {
     'Trigger Interval': 1,
     'Start/Stop': 'F9',
     KILL_LAUNCHER_AFTER_START: True,
-    'Launch with DX11': False
+    'Launch with DX11': False,
+    CREATE_START_MENU_SHORTCUT: True,
+    CREATE_DESKTOP_SHORTCUT: True,
+}
+_shortcut_options_default = {
+    CREATE_START_MENU_SHORTCUT: True,
+    CREATE_DESKTOP_SHORTCUT: True,
+}
+_shortcut_options_description = {
+    CREATE_START_MENU_SHORTCUT: 'Create or update the Start Menu shortcut when the app starts',
+    CREATE_DESKTOP_SHORTCUT: 'Create or update the Desktop shortcut when the app starts',
 }
 _basic_options_type = {'Use DirectML': {'type': "drop_down", 'options': ['Auto', 'Yes', 'No']},
                        ENABLE_MCP_SERVER: {'type': 'mcp_server'},
@@ -75,7 +87,19 @@ _basic_options_type = {'Use DirectML': {'type': "drop_down", 'options': ['Auto',
 _basic_options_description = {'Use DirectML': 'Use GPU to Improve Performance',
                               ENABLE_MCP_SERVER: 'Allow local coding agents to control this app and run Python code',
                               'Start/Stop': 'HotKey',
-                              'Trigger Interval': 'Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)'}
+                              'Trigger Interval': 'Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)',
+                              **_shortcut_options_description}
+
+
+def shortcut_supported():
+    """Whether the installed pyappify can create shortcuts on this system."""
+    if os.name != 'nt':
+        return False
+    try:
+        import pyappify
+    except ImportError:
+        return False
+    return callable(getattr(pyappify, 'create_shortcut', None))
 _blur_options_default = {'Enable Blur': False, 'Blur Algorithm': 'Inpaint', 'Blur Interval': 1}
 _blur_options_type = {
     'Enable Blur': {'sub_configs': {True: ['Blur Algorithm', 'Blur Interval']}},
@@ -282,6 +306,16 @@ def register_basic_options(global_config, enable_blur=False):
         registered.config_type = {}
     registered.config_type[ENABLE_MCP_SERVER] = options.config_type[ENABLE_MCP_SERVER]
     registered.config_description.setdefault(ENABLE_MCP_SERVER, options.config_description[ENABLE_MCP_SERVER])
+    # Shortcut options always come last, and are hidden when pyappify cannot create shortcuts.
+    supported = shortcut_supported()
+    for key, value in _shortcut_options_default.items():
+        config.default[key] = value
+        if key not in config:
+            config[key] = value
+        registered.default_config[key] = value
+        registered.config_description.setdefault(key, _shortcut_options_description[key])
+        if not supported:
+            registered.config_type[key] = {'hidden': True}
     if enable_blur:
         for key, value in _blur_options_default.items():
             if key not in config:

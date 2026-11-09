@@ -1974,6 +1974,22 @@
             <source>Paused because browser exited</source>
             <translation>浏览器已退出，任务已暂停</translation>
         </message>
+        <message>
+            <source>Create Start Menu Shortcut</source>
+            <translation>创建开始菜单快捷方式</translation>
+        </message>
+        <message>
+            <source>Create Desktop Shortcut</source>
+            <translation>创建桌面快捷方式</translation>
+        </message>
+        <message>
+            <source>Create or update the Start Menu shortcut when the app starts</source>
+            <translation>应用启动时创建或更新开始菜单快捷方式</translation>
+        </message>
+        <message>
+            <source>Create or update the Desktop shortcut when the app starts</source>
+            <translation>应用启动时创建或更新桌面快捷方式</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

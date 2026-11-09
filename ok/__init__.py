@@ -724,7 +724,9 @@ class OK:
         logger.info(f"ok-script init {config.get('version')}, {sys.argv}, pid={os.getpid()} config: {config}")
         if self.debug:
             logger.debug(f"environment contains {len(os.environ)} entries")
-        pyappify.logger = logger
+        # pyappify logs printf-style (log.info("%s", value)), which ok's Logger does not accept.
+        from ok.util.logger import get_std_logger
+        pyappify.logger = get_std_logger('pyappify')
         logger.info(
             f"pyappify  app_version:{pyappify.app_version}, app_profile:{pyappify.app_profile}, pyappify_version:{pyappify.pyappify_version} pyappify_upgradeable:{pyappify.pyappify_upgradeable}, pyappify_executable:{pyappify.pyappify_executable}")
         self._runtime_start_lock = threading.Lock()
@@ -797,6 +799,11 @@ class OK:
                        and not self.args.get('headless', False))
             task_arg = self.args.get('task', 0)
             has_task = bool(task_arg) if isinstance(task_arg, str) else task_arg > 0
+            if not use_gui:
+                # The GUI creates shortcuts once its main window is shown.
+                from ok.util.GlobalConfig import basic_options
+                from ok.util.shortcut import create_app_shortcut
+                create_app_shortcut(self.global_config.get_config(basic_options))
             if not use_gui and has_task:
                 self.run_task(task_arg, exit_after=self.args.get('exit', False))
                 return

@@ -43,6 +43,7 @@ from ok.ui.qt.util.pyappify_startup import get_startup_version_change
 from ok.util.GlobalConfig import basic_options, KILL_LAUNCHER_AFTER_START, NOTIFICATION_OPTION_NAME
 from ok.util.clazz import init_class_by_name
 from ok.util.process import restart_as_admin
+from ok.util.shortcut import create_app_shortcut
 
 from ok.util.logger import Logger
 
@@ -619,6 +620,7 @@ class MainWindow(KitWindow):
             QTimer.singleShot(0, self.bring_to_front)
             QTimer.singleShot(250, self.show_startup_version_change_notice)
             self._startup_update_check()
+            create_app_shortcut(self.basic_global_config)
 
     # --- geometry -------------------------------------------------------------
 
