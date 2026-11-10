@@ -2012,6 +2012,10 @@
             <source>Other</source>
             <translation>その他</translation>
         </message>
+        <message>
+            <source>Created or updated shortcuts: {paths}</source>
+            <translation>ショートカットを作成または更新しました: {paths}</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

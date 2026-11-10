@@ -2017,6 +2017,10 @@
             <source>Other</source>
             <translation>기타</translation>
         </message>
+        <message>
+            <source>Created or updated shortcuts: {paths}</source>
+            <translation>바로 가기를 만들거나 업데이트했습니다: {paths}</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

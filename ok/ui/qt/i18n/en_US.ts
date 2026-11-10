@@ -2018,6 +2018,10 @@
             <source>Other</source>
             <translation>Other</translation>
         </message>
+        <message>
+            <source>Created or updated shortcuts: {paths}</source>
+            <translation>Created or updated shortcuts: {paths}</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

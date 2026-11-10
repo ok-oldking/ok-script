@@ -2014,6 +2014,10 @@
             <source>Other</source>
             <translation>其他</translation>
         </message>
+        <message>
+            <source>Created or updated shortcuts: {paths}</source>
+            <translation>已创建或更新快捷方式：{paths}</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>

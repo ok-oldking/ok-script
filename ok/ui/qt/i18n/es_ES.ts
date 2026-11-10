@@ -2016,6 +2016,10 @@
             <source>Other</source>
             <translation>Otros</translation>
         </message>
+        <message>
+            <source>Created or updated shortcuts: {paths}</source>
+            <translation>Accesos directos creados o actualizados: {paths}</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
