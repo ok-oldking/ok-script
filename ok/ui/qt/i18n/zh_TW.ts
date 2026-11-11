@@ -3538,6 +3538,10 @@
             <source>Download</source>
             <translation>下載</translation>
         </message>
+        <message>
+            <source>Switch</source>
+            <translation>切換</translation>
+        </message>
     </context>
     <context>
         <name>ProjectCard</name>

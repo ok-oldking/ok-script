@@ -3543,6 +3543,10 @@
             <source>Download</source>
             <translation>다운로드</translation>
         </message>
+        <message>
+            <source>Switch</source>
+            <translation>전환</translation>
+        </message>
     </context>
     <context>
         <name>ProjectCard</name>

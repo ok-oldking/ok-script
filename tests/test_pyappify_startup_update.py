@@ -152,6 +152,27 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         self.assertEqual("\n".join(notes), titled_widgets[update_index].widget.text())
         app.processEvents()
 
+    def test_about_header_checkout_ref(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.about.AboutTab import AboutTab
+
+        app = QApplication.instance() or QApplication([])
+        for attrs, version, expected in [
+            ({"app_ref": "master"}, "v3.7.20", "master · v3.7.20 · Release"),
+            ({"app_ref": "pr#7"}, "", "pr#7 · Release"),
+            ({"app_ref": "master"}, "master", "master · Release"),
+            ({}, "v3.7.20", "v3.7.20 · Release"),
+            ({"app_ref": None}, "", " · Release"),
+        ]:
+            with self.subTest(attrs=attrs, version=version):
+                config = {"gui_title": "demo", "version": version, "debug": False}
+                tab = AboutTab(config, pyappify_module=SimpleNamespace(**attrs))
+                self.assertEqual(expected, tab.version_label.text())
+                self.assertEqual(version, config["version"])
+                tab.deleteLater()
+                app.processEvents()
+
     def test_about_header_shows_only_configured_links(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         from PySide6.QtWidgets import QApplication
@@ -365,6 +386,116 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         card.version_combo.setCurrentIndex(1)
         self.assertEqual("v2.0.0", card.version_combo.currentText())
         self.assertEqual("• two\n• one point five", card.notes_edit.toPlainText())
+        card.deleteLater()
+        app.processEvents()
+
+    CHECKOUT_VERSIONS = [
+        {"version": "master", "kind": "branch", "title": "master", "relation": "newer",
+         "update_note": ["new on master"]},
+        {"version": "local/feature", "kind": "local", "title": "feature (local)", "relation": "other",
+         "update_note": ["feature work"]},
+        {"version": "pr/12", "kind": "pr", "title": "#12 Fix start", "relation": "newer",
+         "update_note": ["proposed fix"]},
+        {"version": "v1.1.0", "kind": "tag", "title": "v1.1.0", "relation": "current",
+         "update_note": ["one"]},
+        {"version": "v1.0.0", "kind": "tag", "title": "v1.0.0", "relation": "older",
+         "update_note": ["zero"]},
+    ]
+
+    def _checkout_card(self, **module_attrs):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from ok.ui.qt.about.UpdateCard import UpdateCard
+
+        module = SimpleNamespace(**{
+            "is_local_checkout": lambda: True,
+            "is_greater_version": lambda left, right: False,
+            "calculate_update_notes": Mock(side_effect=self._calculate_update_notes),
+            **module_attrs,
+        })
+        # The version of code run from a branch is not a version tag.
+        return UpdateCard("dev", module), module
+
+    def test_local_checkout_checks_test_versions_by_default(self):
+        from PySide6.QtWidgets import QApplication
+
+        app = QApplication.instance() or QApplication([])
+        card, _module = self._checkout_card()
+        self.assertTrue(card.test_version_checkbox.isChecked())
+        card.deleteLater()
+
+        card, _module = self._checkout_card(is_local_checkout=Mock(side_effect=RuntimeError("no git")))
+        self.assertFalse(card.test_version_checkbox.isChecked())
+        card.deleteLater()
+        app.processEvents()
+
+    def test_local_checkout_lists_branches_and_pull_requests_by_title(self):
+        from PySide6.QtWidgets import QApplication
+
+        app = QApplication.instance() or QApplication([])
+        card, module = self._checkout_card()
+        announced = []
+        card.new_version_available.connect(announced.append)
+        card._automatic_check = True
+        card._apply_versions((True, self.CHECKOUT_VERSIONS))
+
+        self.assertEqual(
+            ["master", "feature (local)", "#12 Fix start", "v1.1.0", "v1.0.0"],
+            [card.version_combo.itemText(index) for index in range(card.version_combo.count())],
+        )
+        self.assertEqual(["master"], announced)
+        expected = [
+            ("Update", True, "• new on master"),
+            ("Switch", True, "• feature work"),
+            ("Update", True, "• proposed fix"),
+            ("Current version", False, "• one\n• zero"),
+            ("Downgrade", True, "• zero"),
+        ]
+        for index, (text, enabled, notes) in enumerate(expected):
+            card.version_combo.setCurrentIndex(index)
+            self.assertEqual(text, card.update_button.text())
+            self.assertEqual(enabled, card.update_button.isEnabled())
+            self.assertEqual(notes, card.notes_edit.toPlainText())
+        # Notes between versions are calculated over the tags only.
+        module.calculate_update_notes.assert_called_with(self.CHECKOUT_VERSIONS[3:], "dev", "v1.0.0")
+        card.deleteLater()
+        app.processEvents()
+
+    def test_local_checkout_does_not_announce_local_branches_or_pull_requests(self):
+        from PySide6.QtWidgets import QApplication
+
+        app = QApplication.instance() or QApplication([])
+        card, _module = self._checkout_card()
+        announced, availability = [], []
+        card.new_version_available.connect(announced.append)
+        card.update_available_changed.connect(availability.append)
+        card._automatic_check = True
+        versions = [dict(item) for item in self.CHECKOUT_VERSIONS]
+        versions[0]["relation"] = "current"
+        card._apply_versions((True, versions))
+
+        self.assertEqual([], announced)
+        self.assertEqual([False], availability)
+        card.deleteLater()
+        app.processEvents()
+
+    def test_local_checkout_updates_to_the_version_behind_a_title(self):
+        import time
+        from PySide6.QtWidgets import QApplication
+
+        app = QApplication.instance() or QApplication([])
+        update_to_version = Mock(return_value={"updated": True})
+        card, _module = self._checkout_card(update_to_version=update_to_version)
+        card._apply_versions((True, self.CHECKOUT_VERSIONS))
+
+        card.update_to_version("pr/12")
+        self.assertEqual("#12 Fix start", card.version_combo.currentText())
+        for _ in range(100):
+            app.processEvents()
+            if not card._busy:
+                break
+            time.sleep(0.01)
+
+        update_to_version.assert_called_once_with("pr/12", exit_event=None)
         card.deleteLater()
         app.processEvents()
 

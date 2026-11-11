@@ -118,7 +118,7 @@ class AboutTab(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(scroll)
 
-        self.version_card = self._build_header(config)
+        self.version_card = self._build_header(config, pyappify_module)
         self.vBoxLayout.addWidget(self.version_card)
 
         self.update_card = None
@@ -170,7 +170,7 @@ class AboutTab(QWidget):
         self.vBoxLayout.addWidget(section)
         return section
 
-    def _build_header(self, config):
+    def _build_header(self, config, pyappify_module):
         header = Card()
         icon_label = QLabel(header)
         icon_label.setFixedSize(56, 56)
@@ -180,11 +180,19 @@ class AboutTab(QWidget):
         title = Label(config.get('gui_title') or "", "title", header)
         from PySide6.QtCore import QCoreApplication
         build = QCoreApplication.translate("VersionCard", 'Debug' if config.get('debug') else 'Release')
-        version = Label(f"{config.get('version') or ''} · {build}", "secondary", header)
+        version = config.get('version') or ''
+        ref = getattr(pyappify_module, 'app_ref', None)
+        label = f"{version} · {build}"
+        if ref:
+            parts = [ref]
+            if version and version != ref:
+                parts.append(version)
+            label = " · ".join([*parts, build])
+        self.version_label = Label(label, "secondary", header)
         text = QVBoxLayout()
         text.setSpacing(4)
         text.addWidget(title)
-        text.addWidget(version)
+        text.addWidget(self.version_label)
 
         links = QWidget(header)
         flow = FlowLayout(links, spacing=8)

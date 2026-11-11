@@ -3542,6 +3542,10 @@
             <source>Download</source>
             <translation>Descargar</translation>
         </message>
+        <message>
+            <source>Switch</source>
+            <translation>Cambiar</translation>
+        </message>
     </context>
     <context>
         <name>ProjectCard</name>

@@ -3538,6 +3538,10 @@
             <source>Download</source>
             <translation>ダウンロード</translation>
         </message>
+        <message>
+            <source>Switch</source>
+            <translation>切り替え</translation>
+        </message>
     </context>
     <context>
         <name>ProjectCard</name>

@@ -23,6 +23,28 @@ def _is_numeric_version(version):
         return False
 
 
+def _is_local_checkout(pyappify_module):
+    """Whether the app runs from a plain git clone instead of the PyAppify launcher."""
+    is_local_checkout = getattr(pyappify_module, "is_local_checkout", None)
+    if not callable(is_local_checkout):
+        return False
+    try:
+        return bool(is_local_checkout())
+    except Exception as error:
+        logger.warning(f"pyappify.is_local_checkout failed: {error}")
+        return False
+
+
+# A checkout's versions say how they relate to the checked-out commit, since a
+# branch or pull request has no version number to compare. None is a switch to
+# a commit that is neither newer nor older.
+_RELATION_DIRECTIONS = {"current": 0, "newer": 1, "older": -1, "other": None}
+_TAG_KINDS = (None, "tag")
+# Kinds whose newer version is announced as an update: not a local branch or a
+# pull request, which are only ever switched to on purpose.
+_UPDATE_KINDS = (None, "tag", "branch")
+
+
 class ChangeLogView(Label):
     """A non-interactive, word-wrapped changelog that follows its text height."""
 
@@ -61,6 +83,7 @@ class UpdateCard(QWidget):
             logger.info(f"using v0.0.0 for nonnumeric test version {self.current_version!r}")
             self.current_version = "v0.0.0"
         self.pyappify_module = pyappify_module
+        self.local_checkout = _is_local_checkout(pyappify_module)
         self.exit_event = exit_event
         self.download_url = download_url
         self.versions = []
@@ -70,7 +93,7 @@ class UpdateCard(QWidget):
             f"initialized current_version={self.current_version!r}, "
             f"pyappify_module={getattr(pyappify_module, '__file__', type(pyappify_module).__name__)!r}, "
             f"pyappify_app_version={getattr(pyappify_module, 'app_version', None)!r}, "
-            f"test_mode={'PYAPPIFY_PYTHON_TEST' in os.environ}"
+            f"test_mode={'PYAPPIFY_PYTHON_TEST' in os.environ}, local_checkout={self.local_checkout}"
         )
 
         self.version_label = Label(self.tr("Version"), "secondary", self)
@@ -88,7 +111,9 @@ class UpdateCard(QWidget):
         self.download_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self.download_url)))
         self.download_button.hide()
         self.test_version_checkbox = QCheckBox(self.tr("Check Test Version"), self)
-        self.test_version_checkbox.setChecked(False)
+        # A checkout's test versions include its branches and pull requests,
+        # which is what someone running the code from git wants to see.
+        self.test_version_checkbox.setChecked(self.local_checkout)
         self.check_progress = ProgressRing(16, parent=self)
         self.check_progress.hide()
         self.check_button = Button(self.tr("Check for updates"), "refresh", parent=self)
@@ -143,7 +168,10 @@ class UpdateCard(QWidget):
 
     def update_to_version(self, version):
         """Select ``version`` in the picker and start changing to it."""
-        index = self.version_combo.findText(str(version))
+        index = next(
+            (index for index, item in enumerate(self.versions) if str(item["version"]) == str(version)),
+            -1,
+        )
         if index < 0:
             logger.error(f"update_to_version: {version!r} is not in the loaded version list")
             return
@@ -151,15 +179,18 @@ class UpdateCard(QWidget):
         self.update_to_selected_version()
 
     def update_to_selected_version(self):
-        if self._busy or self.version_combo.currentIndex() < 0:
+        index = self.version_combo.currentIndex()
+        if self._busy or index < 0 or index >= len(self.versions):
             return
         update_to_version = getattr(self.pyappify_module, "update_to_version", None)
         if not callable(update_to_version):
             self._show_error(self.tr("Updating is not supported by this PyAppify version."))
             return
-        version = self.version_combo.currentText()
+        version = str(self.versions[index]["version"])
         self._set_busy(True)
-        self._set_status(self.tr("Starting change to {version}…").format(version=version))
+        self._set_status(
+            self.tr("Starting change to {version}…").format(version=self._title(self.versions[index]))
+        )
         self._run_in_background(
             lambda: update_to_version(version, exit_event=self.exit_event),
             self._update_finished,
@@ -194,7 +225,7 @@ class UpdateCard(QWidget):
         self.versions = [item for item in value if isinstance(item, dict) and item.get("version")]
         self.version_combo.blockSignals(True)
         self.version_combo.clear()
-        self.version_combo.addItems([str(item["version"]) for item in self.versions])
+        self.version_combo.addItems([self._title(item) for item in self.versions])
         self.version_combo.blockSignals(False)
         self._resize_version_combo()
         logger.info(
@@ -204,7 +235,7 @@ class UpdateCard(QWidget):
 
         newest_update = next(
             (index for index, item in enumerate(self.versions)
-             if self._compare_versions(str(item["version"]), self.current_version) > 0),
+             if item.get("kind") in _UPDATE_KINDS and (self._direction(item) or 0) > 0),
             None,
         )
         self.update_available_changed.emit(newest_update is not None)
@@ -232,15 +263,25 @@ class UpdateCard(QWidget):
             return
         selected = self.versions[index]
         target = str(selected["version"])
-        direction = self._compare_versions(target, self.current_version)
+        direction = self._direction(selected)
         logger.debug(
             f"selected version={target!r}, current_version={self.current_version!r}, direction={direction}"
         )
         self.update_button.setEnabled(direction != 0 and not self._busy)
-        self.update_button.setText(self.tr("Update") if direction > 0 else self.tr("Downgrade"))
-
-        if direction == 0:
+        if direction is None:
+            self.update_button.setText(self.tr("Switch"))
+        elif direction == 0:
             self.update_button.setText(self.tr("Current version"))
+        else:
+            self.update_button.setText(self.tr("Update") if direction > 0 else self.tr("Downgrade"))
+
+        if selected.get("kind") not in _TAG_KINDS:
+            # A branch or pull request carries its own notes: what it adds to
+            # the checked-out commit. Notes between versions are for tags.
+            notes = selected.get("update_note") or []
+            notes = notes if isinstance(notes, list) else [notes]
+            self._set_notes("\n".join(f"• {note}" for note in notes) or self.tr("No release notes."))
+            return
 
         calculate_notes = getattr(self.pyappify_module, "calculate_update_notes", None)
         if not callable(calculate_notes):
@@ -248,7 +289,8 @@ class UpdateCard(QWidget):
             self._set_status(self.tr("Update-note calculation is not supported."), error=True)
             return
         try:
-            notes = calculate_notes(self.versions, self.current_version, target)
+            tagged = [item for item in self.versions if item.get("kind") in _TAG_KINDS]
+            notes = calculate_notes(tagged, self.current_version, target)
             self._set_notes(
                 "\n".join(f"• {note}" for note in notes) or self.tr("No release notes.")
             )
@@ -260,7 +302,7 @@ class UpdateCard(QWidget):
     def _resize_version_combo(self):
         font_metrics = QFontMetrics(self.version_combo.font())
         text_width = max(
-            (font_metrics.horizontalAdvance(str(item["version"])) for item in self.versions),
+            (font_metrics.horizontalAdvance(self._title(item)) for item in self.versions),
             default=0,
         )
         content_width = text_width + 56
@@ -307,6 +349,18 @@ class UpdateCard(QWidget):
         self.status_label.setToolTip(message if error else "")
         self.status_label.setStyleSheet(f"color: {theme.color('danger').name()};" if error else "")
         self.download_button.setVisible(error and bool(self.download_url))
+
+    @staticmethod
+    def _title(item):
+        """What the picker shows: a checkout names its branches and pull requests."""
+        return str(item.get("title") or item["version"])
+
+    def _direction(self, item):
+        """1 for an update, -1 for a downgrade, 0 for the running version, None for a switch."""
+        relation = item.get("relation")
+        if relation in _RELATION_DIRECTIONS:
+            return _RELATION_DIRECTIONS[relation]
+        return self._compare_versions(str(item["version"]), self.current_version)
 
     def _compare_versions(self, left, right):
         if left == right:
