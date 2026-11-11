@@ -111,6 +111,22 @@ def test_saved_opt_in_starts_on_next_launch(setting):
     assert s.runtime._mcp_server is s.server.return_value
 
 
+def test_deferred_gui_start_is_handed_to_the_window_once(setting):
+    s = setting
+    s.runtime._mcp_start_deferred = True
+    assert not s.runtime.take_deferred_mcp_start()  # not enabled: nothing to start
+
+    s.runtime.config['mcp']['enabled'] = True
+    s.runtime._mcp_start_deferred = True
+    assert s.runtime.take_deferred_mcp_start()
+    assert not s.runtime.take_deferred_mcp_start()
+    s.server.assert_not_called()
+
+    s.runtime.start_mcp_server()
+    s.runtime._mcp_start_deferred = True
+    assert not s.runtime.take_deferred_mcp_start()  # already running
+
+
 def test_mcp_option_is_added_to_application_defined_basic_options(tmp_path, monkeypatch):
     monkeypatch.setattr(Config, 'config_folder', str(tmp_path))
     custom = ConfigOption('Basic Options', {'Custom Setting': True})

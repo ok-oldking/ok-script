@@ -12,8 +12,8 @@ import os
 import sys
 import time
 
-from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QColor, QImage, QPainter
+from PySide6.QtCore import QRectF, QSize, Qt
+from PySide6.QtGui import QColor, QImage, QImageReader, QPainter
 
 # The wallpaper is reduced to this many pixels across a screen; smooth scaling
 # back up gives Mica's very wide blur.
@@ -98,6 +98,23 @@ def _wallpaper_settings() -> tuple:
     return path, mtime, style, tile, background
 
 
+def _read_wallpaper(path: str) -> QImage:
+    """The wallpaper, decoded near CACHE_WIDTH when the format can scale while decoding.
+
+    A full-size decode of a 4K wallpaper is most of the first paint; JPEG, the
+    usual format, decodes at a fraction of its size several times faster.
+    """
+
+    reader = QImageReader(path)
+    reader.setDecideFormatFromContent(True)  # TranscodedWallpaper has no extension
+    size = reader.size()
+    if size.isValid() and size.width() > CACHE_WIDTH * 2:
+        # Twice the cached width leaves the smooth downscale something to average.
+        reader.setScaledSize(QSize(CACHE_WIDTH * 2, max(1, round(size.height() * CACHE_WIDTH * 2 / size.width()))))
+    image = reader.read()
+    return image if not image.isNull() else QImage(path)
+
+
 class _MicaSampler:
     def __init__(self):
         self._settings = None
@@ -115,7 +132,7 @@ class _MicaSampler:
             return
         self._settings = settings
         self._samples.clear()
-        image = QImage(settings[0]) if settings[0] else QImage()
+        image = _read_wallpaper(settings[0]) if settings[0] else QImage()
         if image.isNull():
             self._wallpaper = None
         else:

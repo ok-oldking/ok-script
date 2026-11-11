@@ -732,6 +732,7 @@ class OK:
         self._runtime_start_lock = threading.Lock()
         self._runtime_started = False
         self._mcp_server = None
+        self._mcp_start_deferred = False
         self.task_executor = None
         self._app = None
         self._headless_app = None
@@ -793,10 +794,15 @@ class OK:
     def start(self):
         logger.info(f'OK start id:{id(self)} pid:{os.getpid()}')
         try:
-            self.start_mcp_server()
             ui_config = resolve_ui_config(self.config)
             use_gui = (ui_config is not None and ui_config["type"] == "qt"
                        and not self.args.get('headless', False))
+            if use_gui and not self.init_error:
+                # Loading the MCP SDK takes about half a second; the main window
+                # starts the server once it has been painted.
+                self._mcp_start_deferred = True
+            else:
+                self.start_mcp_server()
             task_arg = self.args.get('task', 0)
             has_task = bool(task_arg) if isinstance(task_arg, str) else task_arg > 0
             if not use_gui:
@@ -833,13 +839,22 @@ class OK:
             if self._app or self._headless_app:
                 self.quit()
 
-    def start_mcp_server(self):
-        """Start the optional localhost bridge after runtime initialization."""
+    def _mcp_enabled(self):
         from ok.util.GlobalConfig import ENABLE_MCP_SERVER, basic_options
         config = self.config.get('mcp') or {}
-        enabled = (config.get('enabled', False)
-                   or self.global_config.get_config(basic_options).get(ENABLE_MCP_SERVER, False))
-        if not enabled or self._mcp_server is not None:
+        return bool(config.get('enabled', False)
+                    or self.global_config.get_config(basic_options).get(ENABLE_MCP_SERVER, False))
+
+    def take_deferred_mcp_start(self):
+        """Whether the GUI still owes the MCP server start that ``start`` postponed."""
+        deferred = getattr(self, '_mcp_start_deferred', False)
+        self._mcp_start_deferred = False
+        return deferred and self._mcp_server is None and self._mcp_enabled()
+
+    def start_mcp_server(self):
+        """Start the optional localhost bridge after runtime initialization."""
+        config = self.config.get('mcp') or {}
+        if not self._mcp_enabled() or self._mcp_server is not None:
             return
         from ok.core.mcp_server import LocalMcpServer
         server = LocalMcpServer(self, config)

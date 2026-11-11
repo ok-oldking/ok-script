@@ -163,12 +163,18 @@ def _form_row(dialog, label, widget):
 class EditTaskTab(QWidget):
     reload_done = Signal(object, str, bool, object)
 
+    @property
+    def all_templates(self):
+        if self._all_templates is None:
+            self._all_templates = get_templates()
+        return self._all_templates
+
     def __init__(self):
         super().__init__()
         self.setObjectName("EditTaskTab")
         self.task = None
         self.python_file = None
-        self.all_templates = get_templates()
+        self._all_templates = None  # parsed on first use; it costs ~50ms at startup
         self.file_watcher = QFileSystemWatcher(self)
         self.file_watcher.fileChanged.connect(self.on_file_changed)
         self.reload_done.connect(self._on_reload_done)

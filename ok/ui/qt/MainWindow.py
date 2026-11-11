@@ -2,7 +2,7 @@ import os
 import threading
 
 import pyappify
-from PySide6.QtCore import QCoreApplication, QEvent, QObject, QSize, Qt, QTimer
+from PySide6.QtCore import QCoreApplication, QEvent, QObject, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QMenu, QSystemTrayIcon, QVBoxLayout
 
@@ -67,6 +67,8 @@ def game_starting_or_started(auto_start_enabled=False, start_task_requested=Fals
 UPDATE_CHECK_GAME_PROCESS_CONFIG = 'update_only_game_exit'
 GAME_PROCESS_UPDATE_DELAY_MS = 10_000
 GAME_PROCESS_POLL_INTERVAL_MS = 2_000
+# Background startup work waits this long after the window is first shown.
+POST_SHOW_STARTUP_DELAY_MS = 500
 
 
 def game_process_exists(device_manager):
@@ -94,10 +96,12 @@ def fit_window_size(width, height, min_width, min_height, available_width, avail
 
 
 class MainWindow(KitWindow):
+    mcp_sdk_loaded = Signal()
 
     def __init__(self, app, config, ok_config, icon, title, version, debug=False, about=None, exit_event=None,
                  global_config=None, executor=None, handler=None):
         super().__init__()
+        self.mcp_sdk_loaded.connect(self._on_mcp_sdk_loaded)
         self._theme_cooldowns = set()
         logger.info('main window __init__')
         self._sync_kit_theme()
@@ -619,8 +623,54 @@ class MainWindow(KitWindow):
         if first_show:
             QTimer.singleShot(0, self.bring_to_front)
             QTimer.singleShot(250, self.show_startup_version_change_notice)
-            self._startup_update_check()
-            create_app_shortcut(self.basic_global_config)
+            # These start worker threads that hold the GIL; started here they delay the
+            # first paint by several hundred milliseconds, so they wait until it is done.
+            QTimer.singleShot(POST_SHOW_STARTUP_DELAY_MS, self._post_show_startup)
+
+    def _post_show_startup(self):
+        if self.exit_event is not None and self.exit_event.is_set():
+            return
+        # The MCP server goes first: an agent may be waiting to connect, and the
+        # update check would compete with it for the GIL.
+        if not self._start_deferred_mcp_server():
+            self._start_background_checks()
+
+    def _start_background_checks(self):
+        self._startup_update_check()
+        create_app_shortcut(self.basic_global_config)
+
+    def _start_deferred_mcp_server(self):
+        """Begin the MCP start ``OK.start`` postponed; False when there is none to do."""
+        from ok import og
+        runtime = getattr(og, 'ok', None)
+        if runtime is None or not runtime.take_deferred_mcp_start():
+            return False
+
+        def preload():
+            # Importing the SDK is the slow part; do it off the GUI thread.
+            try:
+                import mcp.server  # noqa: F401
+                import uvicorn  # noqa: F401
+            except Exception:
+                pass  # start_mcp_server reports the import error
+            self.mcp_sdk_loaded.emit()
+
+        threading.Thread(target=preload, name='McpPreload', daemon=True).start()
+        return True
+
+    def _on_mcp_sdk_loaded(self):
+        from ok import og
+        if self.exit_event is not None and self.exit_event.is_set():
+            return
+        try:
+            og.ok.start_mcp_server()
+        except Exception as error:
+            # As when the server was started before the window: without it this
+            # launch is not what was asked for.
+            logger.error('start mcp server error', error)
+            og.ok.quit()
+            return
+        self._start_background_checks()
 
     # --- geometry -------------------------------------------------------------
 
