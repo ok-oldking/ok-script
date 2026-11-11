@@ -159,9 +159,11 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
 
         app = QApplication.instance() or QApplication([])
         for attrs, version, expected in [
-            ({"app_ref": "master"}, "v3.7.20", "master · v3.7.20 · Release"),
+            # A version tag at the checked-out commit follows the branch.
+            ({"app_ref": "master", "app_version": "v3.7.20"}, "v3.7.20", "master · v3.7.20 · Release"),
+            # The app's own placeholder version does not.
+            ({"app_ref": "master", "app_version": None}, "dev", "master · Release"),
             ({"app_ref": "pr#7"}, "", "pr#7 · Release"),
-            ({"app_ref": "master"}, "master", "master · Release"),
             ({}, "v3.7.20", "v3.7.20 · Release"),
             ({"app_ref": None}, "", " · Release"),
         ]:

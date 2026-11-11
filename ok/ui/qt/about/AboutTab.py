@@ -11,7 +11,7 @@ from ok.ui.qt.kit.labels import Label
 from ok.ui.qt.kit.layout import FlowLayout
 from ok.ui.qt.kit.theme import theme
 from ok.ui.qt.util.app import get_localized_app_config
-from ok.ui.qt.util.pyappify_startup import get_startup_version_change
+from ok.ui.qt.util.pyappify_startup import display_version, get_startup_version_change
 from ok.util.file import get_path_relative_to_exe
 from ok.util.logger import Logger
 
@@ -180,15 +180,8 @@ class AboutTab(QWidget):
         title = Label(config.get('gui_title') or "", "title", header)
         from PySide6.QtCore import QCoreApplication
         build = QCoreApplication.translate("VersionCard", 'Debug' if config.get('debug') else 'Release')
-        version = config.get('version') or ''
-        ref = getattr(pyappify_module, 'app_ref', None)
-        label = f"{version} · {build}"
-        if ref:
-            parts = [ref]
-            if version and version != ref:
-                parts.append(version)
-            label = " · ".join([*parts, build])
-        self.version_label = Label(label, "secondary", header)
+        version = display_version(config.get('version'), pyappify_module)
+        self.version_label = Label(f"{version} · {build}", "secondary", header)
         text = QVBoxLayout()
         text.setSpacing(4)
         text.addWidget(title)

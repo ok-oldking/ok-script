@@ -39,7 +39,7 @@ from ok.ui.qt.shell.lazy_page import LazyPage
 from ok.ui.qt.shell.nav_icons import nav_icon
 from ok.ui.qt.shell.run_bar import RunBar
 from ok.ui.qt.util.Alert import alert_error
-from ok.ui.qt.util.pyappify_startup import get_startup_version_change
+from ok.ui.qt.util.pyappify_startup import display_version, get_startup_version_change
 from ok.util.GlobalConfig import basic_options, KILL_LAUNCHER_AFTER_START, NOTIFICATION_OPTION_NAME
 from ok.util.clazz import init_class_by_name
 from ok.util.process import restart_as_admin
@@ -266,6 +266,8 @@ class MainWindow(KitWindow):
 
         dev = self.tr('Debug')
         profile = config.get('profile', "")
+        # Shown only: self.version stays the plain version for last_version.
+        version = display_version(version, pyappify)
         self.setWindowTitle(f'{title} {version} {profile} {dev if debug else ""}')
         self.title_bar.set_title(title)
         self.title_bar.set_badge(" ".join(part for part in (version, profile, dev if debug else "") if part))

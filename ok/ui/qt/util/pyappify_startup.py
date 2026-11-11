@@ -26,6 +26,20 @@ class StartupVersionChange(NamedTuple):
     to_version: str
 
 
+def display_version(version, pyappify_module=pyappify):
+    """The version to show; a git checkout shows its branch or pr# instead.
+
+    A checkout's own version is only a placeholder such as "dev", so it is
+    dropped. A version tag at the checked-out commit is real and follows the
+    branch.
+    """
+    ref = getattr(pyappify_module, "app_ref", None)
+    if not ref:
+        return version or ""
+    tag = getattr(pyappify_module, "app_version", None)
+    return f"{ref} · {tag}" if tag and tag != ref else ref
+
+
 def _get_pyappify_value(pyappify_module, attr_name, env_name):
     return getattr(pyappify_module, attr_name, None) or os.environ.get(env_name) or ""
 
