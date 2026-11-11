@@ -6,6 +6,7 @@ from PySide6.QtCore import QUrl, Signal, Qt
 from PySide6.QtGui import QDesktopServices, QFontMetrics
 from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 
+from ok.core.events import communicate
 from ok.ui.qt.kit.buttons import Button
 from ok.ui.qt.kit.feedback import ProgressRing
 from ok.ui.qt.kit.inputs import ComboBox
@@ -413,6 +414,12 @@ class UpdateCard(QWidget):
         successful, value = result
         if successful:
             self._set_status(self.tr("Update request accepted. The app will restart to apply it."))
+            if (isinstance(value, dict) and value.get("updated")
+                    and value.get("restart_required") and not value.get("mocked")):
+                # The standalone updater waits for us to exit before applying
+                # the update. Use normal cleanup from this GUI-thread slot.
+                logger.info("Update prepared; requesting app shutdown to apply it")
+                communicate.quit.emit()
         else:
             self._show_error(self.tr("Failed to change version: {error}").format(error=value))
 

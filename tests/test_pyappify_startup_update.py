@@ -605,6 +605,69 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         card.deleteLater()
         app.processEvents()
 
+    def test_prepared_update_requests_shutdown_on_gui_thread(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        import threading
+        import time
+        from PySide6.QtCore import QThread
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.about.UpdateCard import UpdateCard
+
+        app = QApplication.instance() or QApplication([])
+        exit_event = threading.Event()
+        worker_threads = []
+        shutdown_threads = []
+
+        def prepare_update(version, exit_event):
+            worker_threads.append(QThread.currentThread())
+            self.assertFalse(exit_event.is_set())
+            return {"updated": True, "version": version, "restart_required": True}
+
+        def shutdown():
+            shutdown_threads.append(QThread.currentThread())
+            exit_event.set()
+
+        card = UpdateCard("v1.0.0", SimpleNamespace(update_to_version=prepare_update),
+                          exit_event=exit_event)
+        card._apply_versions((True, [{"version": "v1.1.0", "relation": "upgrade"}]))
+        with patch("ok.ui.qt.about.UpdateCard.communicate.quit.emit", side_effect=shutdown) as quit_app:
+            card.update_to_selected_version()
+            for _ in range(100):
+                app.processEvents()
+                if shutdown_threads:
+                    break
+                time.sleep(0.01)
+
+            quit_app.assert_called_once_with()
+        self.assertTrue(exit_event.is_set())
+        self.assertEqual([app.thread()], shutdown_threads)
+        self.assertEqual(1, len(worker_threads))
+        self.assertNotEqual(app.thread(), worker_threads[0])
+        card.deleteLater()
+        app.processEvents()
+
+    def test_update_results_without_a_prepared_restart_keep_app_running(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.about.UpdateCard import UpdateCard
+
+        app = QApplication.instance() or QApplication([])
+        card = UpdateCard("v1.0.0", SimpleNamespace())
+        results = [
+            (False, "launcher unavailable"),
+            (True, {"updated": True}),
+            (True, {"updated": False, "restart_required": True}),
+            (True, {"updated": True, "restart_required": True, "mocked": True}),
+            (True, None),
+        ]
+        with patch("ok.ui.qt.about.UpdateCard.communicate.quit.emit") as quit_app:
+            for result in results:
+                with self.subTest(result=result):
+                    card._apply_update_result(result)
+                    quit_app.assert_not_called()
+        card.deleteLater()
+        app.processEvents()
+
     def test_failed_request_shows_visible_error(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         import time
