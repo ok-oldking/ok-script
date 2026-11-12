@@ -64,26 +64,8 @@ def game_starting_or_started(auto_start_enabled=False, start_task_requested=Fals
     return executor is not None and not getattr(executor, 'paused', True)
 
 
-UPDATE_CHECK_GAME_PROCESS_CONFIG = 'update_only_game_exit'
-GAME_PROCESS_UPDATE_DELAY_MS = 10_000
-GAME_PROCESS_POLL_INTERVAL_MS = 2_000
 # Background startup work waits this long after the window is first shown.
 POST_SHOW_STARTUP_DELAY_MS = 500
-
-
-def game_process_exists(device_manager):
-    """Whether the selected game's window/process (or emulator device) is present."""
-    if device_manager is None:
-        return False
-    hwnd_window = getattr(device_manager, 'hwnd_window', None)
-    if hwnd_window is not None and getattr(hwnd_window, 'exists', False):
-        return True
-    try:
-        device = device_manager.get_preferred_device()
-    except Exception as error:
-        logger.debug(f'game_process_exists failed to read preferred device: {error}')
-        return False
-    return bool(device and device.get('connected'))
 
 
 def fit_window_size(width, height, min_width, min_height, available_width, available_height):
@@ -257,8 +239,6 @@ class MainWindow(KitWindow):
         from ok.ui.qt.about.AboutTab import AboutTab
         self.about_tab = AboutTab(config, exit_event=exit_event)
         self.add_page(self.about_tab, "info", self.tr('About'), bottom=True)
-        self.game_process_poll_timer = None
-        self.update_check_timer = None
         self.update_toast = None
         if self.about_tab.update_card is not None:
             self.about_tab.update_card.update_available_changed.connect(self._set_about_update_available)
@@ -360,42 +340,10 @@ class MainWindow(KitWindow):
     def _startup_update_check(self):
         if self.about_tab.update_card is None:
             return
-        if not self._game_starting_or_started():
-            logger.info('startup pyappify update check')
-            self.about_tab.check_for_updates(automatic=True)
-            return
-        if not self.config.get(UPDATE_CHECK_GAME_PROCESS_CONFIG, False):
+        if self._game_starting_or_started():
             logger.info('skip startup pyappify update check because the game is starting or started')
             return
-        logger.info('defer startup pyappify update check until the game exits')
-        self.game_process_poll_timer = QTimer(self)
-        self.game_process_poll_timer.timeout.connect(self._poll_game_process_for_update_check)
-        self.game_process_poll_timer.start(GAME_PROCESS_POLL_INTERVAL_MS)
-
-    @staticmethod
-    def _game_running_or_launching():
-        from ok import og
-        start_controller = getattr(getattr(og, 'app', None), 'start_controller', None)
-        if start_controller is not None and getattr(start_controller, 'starting', False):
-            return True
-        return game_process_exists(getattr(og, 'device_manager', None))
-
-    def _poll_game_process_for_update_check(self):
-        if self._game_running_or_launching():
-            return
-        self.game_process_poll_timer.stop()
-        logger.info(f'game exited, check pyappify update in {GAME_PROCESS_UPDATE_DELAY_MS}ms')
-        if self.update_check_timer is None:
-            self.update_check_timer = QTimer(self)
-            self.update_check_timer.setSingleShot(True)
-            self.update_check_timer.timeout.connect(self._deferred_update_check)
-        self.update_check_timer.start(GAME_PROCESS_UPDATE_DELAY_MS)
-
-    def _deferred_update_check(self):
-        if self._game_running_or_launching():
-            logger.info('game started again before the deferred pyappify update check, keep waiting for exit')
-            self.game_process_poll_timer.start(GAME_PROCESS_POLL_INTERVAL_MS)
-            return
+        logger.info('startup pyappify update check')
         self.about_tab.check_for_updates(automatic=True)
 
     def _show_new_version_toast(self, version):
@@ -841,9 +789,6 @@ class MainWindow(KitWindow):
 
     def dispose(self):
         """Release app-wide hooks so a replacement window can take over, e.g. after a language change."""
-        for timer in (self.game_process_poll_timer, self.update_check_timer):
-            if timer is not None:
-                timer.stop()
         self.tray.hide()
         self.run_bar.dispose()
         notification_manager = getattr(self, 'notification_manager', None)
