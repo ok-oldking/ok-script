@@ -3544,42 +3544,6 @@
             <source>Switch</source>
             <translation>切换</translation>
         </message>
-        <message>
-            <source>Pip source</source>
-            <translation>Pip 源</translation>
-        </message>
-        <message>
-            <source>System default</source>
-            <translation>系统默认</translation>
-        </message>
-        <message>
-            <source>PyPI</source>
-            <translation>PyPI</translation>
-        </message>
-        <message>
-            <source>Tsinghua</source>
-            <translation>清华</translation>
-        </message>
-        <message>
-            <source>Aliyun</source>
-            <translation>阿里云</translation>
-        </message>
-        <message>
-            <source>USTC</source>
-            <translation>中国科学技术大学</translation>
-        </message>
-        <message>
-            <source>Huawei Cloud</source>
-            <translation>华为云</translation>
-        </message>
-        <message>
-            <source>Tencent Cloud</source>
-            <translation>腾讯云</translation>
-        </message>
-        <message>
-            <source>Failed to change pip source: {error}</source>
-            <translation>更改 pip 源失败：{error}</translation>
-        </message>
     </context>
     <context>
         <name>ProjectCard</name>

@@ -3548,42 +3548,6 @@
             <source>Switch</source>
             <translation>Switch</translation>
         </message>
-        <message>
-            <source>Pip source</source>
-            <translation>Pip source</translation>
-        </message>
-        <message>
-            <source>System default</source>
-            <translation>System default</translation>
-        </message>
-        <message>
-            <source>PyPI</source>
-            <translation>PyPI</translation>
-        </message>
-        <message>
-            <source>Tsinghua</source>
-            <translation>Tsinghua</translation>
-        </message>
-        <message>
-            <source>Aliyun</source>
-            <translation>Aliyun</translation>
-        </message>
-        <message>
-            <source>USTC</source>
-            <translation>USTC</translation>
-        </message>
-        <message>
-            <source>Huawei Cloud</source>
-            <translation>Huawei Cloud</translation>
-        </message>
-        <message>
-            <source>Tencent Cloud</source>
-            <translation>Tencent Cloud</translation>
-        </message>
-        <message>
-            <source>Failed to change pip source: {error}</source>
-            <translation>Failed to change pip source: {error}</translation>
-        </message>
     </context>
     <context>
         <name>ProjectCard</name>

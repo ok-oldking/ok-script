@@ -3547,42 +3547,6 @@
             <source>Switch</source>
             <translation>전환</translation>
         </message>
-        <message>
-            <source>Pip source</source>
-            <translation>Pip 소스</translation>
-        </message>
-        <message>
-            <source>System default</source>
-            <translation>시스템 기본값</translation>
-        </message>
-        <message>
-            <source>PyPI</source>
-            <translation>PyPI</translation>
-        </message>
-        <message>
-            <source>Tsinghua</source>
-            <translation>칭화대학교</translation>
-        </message>
-        <message>
-            <source>Aliyun</source>
-            <translation>알리윈</translation>
-        </message>
-        <message>
-            <source>USTC</source>
-            <translation>중국과학기술대학교</translation>
-        </message>
-        <message>
-            <source>Huawei Cloud</source>
-            <translation>Huawei Cloud</translation>
-        </message>
-        <message>
-            <source>Tencent Cloud</source>
-            <translation>Tencent Cloud</translation>
-        </message>
-        <message>
-            <source>Failed to change pip source: {error}</source>
-            <translation>pip 소스 변경 실패: {error}</translation>
-        </message>
     </context>
     <context>
         <name>ProjectCard</name>
