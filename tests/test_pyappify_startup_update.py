@@ -319,6 +319,36 @@ class TestPyappifyStartupUpdate(unittest.TestCase):
         card.deleteLater()
         app.processEvents()
 
+    def test_update_card_shows_changelog_notes_in_the_ui_language(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.about import UpdateCard as update_card_module
+        from ok.ui.qt.about.UpdateCard import UpdateCard
+
+        app = QApplication.instance() or QApplication([])
+        calls = []
+
+        def calculate_update_notes(versions, current_version, target_version, language=None):
+            calls.append(language)
+            return (versions[0].get("localized_notes") or {}).get("zh-CN", versions[0]["update_note"])
+
+        module = SimpleNamespace(
+            is_greater_version=lambda left, right: self._version_tuple(left) > self._version_tuple(right),
+            calculate_update_notes=calculate_update_notes,
+        )
+        with patch.object(update_card_module, "_ui_locale", return_value="zh_CN"):
+            card = UpdateCard("v1.0.0", module)
+            card._apply_versions((True, [
+                {"version": "v1.1.0", "update_note": ["Dark theme"],
+                 "localized_notes": {"en": ["Dark theme"], "zh-CN": ["深色主题"]}},
+                {"version": "v1.0.0", "update_note": ["initial"]},
+            ]))
+
+        self.assertEqual("• 深色主题", card.notes_edit.toPlainText())
+        self.assertEqual("zh_CN", calls[-1])
+        card.deleteLater()
+        app.processEvents()
+
     def test_only_automatic_check_announces_new_version(self):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         from PySide6.QtWidgets import QApplication

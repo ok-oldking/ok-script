@@ -1,3 +1,4 @@
+import inspect
 import os
 import threading
 from urllib.parse import urlparse
@@ -23,6 +24,25 @@ def _is_numeric_version(version):
         return bool(version) and all(part.isdigit() for part in version.lstrip("v").split("."))
     except AttributeError:
         return False
+
+
+def _accepts_language(function):
+    """Whether ``function`` takes a ``language`` argument (newer pyappify versions)."""
+    try:
+        return "language" in inspect.signature(function).parameters
+    except (TypeError, ValueError):
+        return False
+
+
+def _ui_locale():
+    """The app's UI locale, such as ``zh_CN``, for update notes from the app's changelogs."""
+    try:
+        from ok.ui.qt.common.config import cfg
+
+        return cfg.language.value.name()
+    except Exception as error:
+        logger.warning(f"could not read the UI language for update notes: {error}")
+        return None
 
 
 def _is_local_checkout(pyappify_module):
@@ -224,8 +244,11 @@ class UpdateCard(QWidget):
         self._set_status(
             self.tr("Starting change to {version}…").format(version=self._title(self.versions[index]))
         )
+        kwargs = {"exit_event": self.exit_event}
+        if _accepts_language(update_to_version):
+            kwargs["language"] = _ui_locale()
         self._run_in_background(
-            lambda: update_to_version(version, exit_event=self.exit_event),
+            lambda: update_to_version(version, **kwargs),
             self._update_finished,
             f"pyappify.update_to_version({version!r})",
         )
@@ -367,8 +390,7 @@ class UpdateCard(QWidget):
         if selected.get("kind") not in _TAG_KINDS:
             # A branch or pull request carries its own notes: what it adds to
             # the checked-out commit. Notes between versions are for tags.
-            notes = selected.get("update_note") or []
-            notes = notes if isinstance(notes, list) else [notes]
+            notes = self._entry_notes(selected)
             self._set_notes("\n".join(f"• {note}" for note in notes) or self.tr("No release notes."))
             return
 
@@ -379,7 +401,10 @@ class UpdateCard(QWidget):
             return
         try:
             tagged = [item for item in self.versions if item.get("kind") in _TAG_KINDS]
-            notes = calculate_notes(tagged, self.current_version, target)
+            if _accepts_language(calculate_notes):
+                notes = calculate_notes(tagged, self.current_version, target, language=_ui_locale())
+            else:
+                notes = calculate_notes(tagged, self.current_version, target)
             self._set_notes(
                 "\n".join(f"• {note}" for note in notes) or self.tr("No release notes.")
             )
@@ -387,6 +412,17 @@ class UpdateCard(QWidget):
             logger.error(f"pyappify.calculate_update_notes failed: {error}", error)
             self._set_notes("")
             self._set_status(self.tr("Failed to calculate update notes: {error}").format(error=error), error=True)
+
+    def _entry_notes(self, entry):
+        """``entry``'s notes in the UI language when the app's changelogs have them."""
+        entry_notes = getattr(self.pyappify_module, "entry_notes", None)
+        if callable(entry_notes):
+            try:
+                return entry_notes(entry, _ui_locale())
+            except Exception as error:
+                logger.error(f"pyappify.entry_notes failed: {error}", error)
+        notes = entry.get("update_note") or []
+        return notes if isinstance(notes, list) else [notes]
 
     def _resize_version_combo(self):
         font_metrics = QFontMetrics(self.version_combo.font())
