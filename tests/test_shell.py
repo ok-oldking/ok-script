@@ -221,6 +221,34 @@ class TestStartControllerCancel(unittest.TestCase):
         controller.cancel_start()
         self.assertFalse(controller.is_task_pending(other))
 
+    def test_task_index_is_tracked_while_the_game_starts(self):
+        from ok.core import start_controller as module
+        controller = module.StartController.__new__(module.StartController)
+        controller.handler = SimpleNamespace(post=Mock())
+        task = SimpleNamespace(name="demo")
+        with patch.object(module.og, "executor", SimpleNamespace(onetime_tasks=[task]), create=True):
+            controller.start(0)
+
+        # The index is resolved to the task object, so the launch it requested can
+        # still find the task in pending instead of dropping it as "cancelled".
+        self.assertTrue(controller.is_task_pending(task))
+
+        posted = controller.handler.post.call_args[0][0]
+        with patch.object(controller, "_do_start", return_value=True) as do_start:
+            self.assertTrue(posted())
+            do_start.assert_called_once_with(task, False)
+
+    def test_invalid_task_index_is_reported_by_do_start(self):
+        from ok.core import start_controller as module
+        controller = module.StartController.__new__(module.StartController)
+        controller.handler = SimpleNamespace(post=Mock())
+        with patch.object(module.og, "executor", SimpleNamespace(onetime_tasks=[]), create=True):
+            controller.start(3)
+
+        # Unknown indexes keep the old behaviour: nothing is tracked as pending and
+        # the invalid index still reaches _do_start, which reports the failure.
+        self.assertEqual([], controller._pending[1])
+
 
 class ShellWidgetTestCase(unittest.TestCase):
     @classmethod
