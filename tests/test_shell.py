@@ -221,6 +221,23 @@ class TestStartControllerCancel(unittest.TestCase):
         controller.cancel_start()
         self.assertFalse(controller.is_task_pending(other))
 
+    def test_direct_do_start_keeps_the_task_pending_until_launch_finishes(self):
+        from ok.core import start_controller as module
+        controller = module.StartController.__new__(module.StartController)
+        task = SimpleNamespace(name="demo")
+        seen = []
+
+        def fake_do_start(started_task, exit_after):
+            seen.append((started_task, controller.is_task_pending(started_task)))
+            return True
+
+        # Headless run_task calls do_start directly; the task must be pending while
+        # the game launches, or _do_start drops it as "cancelled".
+        with patch.object(controller, "_do_start", side_effect=fake_do_start):
+            self.assertTrue(controller.do_start(task))
+        self.assertEqual([(task, True)], seen)
+        self.assertFalse(controller.is_task_pending(task))
+
     def test_task_index_is_tracked_while_the_game_starts(self):
         from ok.core import start_controller as module
         controller = module.StartController.__new__(module.StartController)

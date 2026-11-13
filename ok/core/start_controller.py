@@ -153,6 +153,11 @@ class StartController:
         if from_queue and task is not None and not isinstance(task, int) and not self.is_task_pending(task):
             logger.info(f'do_start skipped, {task} was cancelled or already started')
             return False
+        if not from_queue:
+            # Direct callers (headless run_task) skip start(), so track the task here;
+            # otherwise _do_start would treat it as cancelled once the game is up.
+            task = self._resolve_task(task)
+            self._add_pending(task)
         self.starting = True
         self._cancel_requested.clear()
         self.__dict__['_active_task'] = task
