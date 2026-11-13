@@ -2,14 +2,15 @@ import ast
 import os
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtCore import QEvent, QObject, QSize, Qt, QTimer
+from PySide6.QtCore import QAbstractAnimation, QEvent, QObject, QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QIcon, QImage
 from qt_helpers import key_click, mouse_click, wait
-from PySide6.QtWidgets import QApplication, QLabel, QWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QLabel, QWidget
 
 from ok.ui.qt.kit import (Button, ComboBox, Dialog, FlowLayout, ICON_NAMES, Label, NumberBox, Pill, ProgressRing,
                           SettingGroup, SettingRow, StatusDot, Switch, TabStrip, Theme, Toast, icon, load_icon,
@@ -319,6 +320,105 @@ class TestWidgets(KitTestCase):
     def test_combo_box_items(self):
         combo = ComboBox(["A", "B"])
         self.assertEqual(2, combo.count())
+
+    def test_combo_box_popup_slides_in_single_window(self):
+        combo = ComboBox(["A", "B", "C"])
+        self.host(combo)
+        self.set_combo_animation_enabled(True)
+        popup = combo.view().window()
+        self.assertTrue(popup.windowFlags() & Qt.WindowType.FramelessWindowHint)
+        self.assertTrue(popup.windowFlags() & Qt.WindowType.NoDropShadowWindowHint)
+        self.assertTrue(popup.testAttribute(Qt.WidgetAttribute.WA_TranslucentBackground))
+
+        QApplication.setEffectEnabled(Qt.UIEffect.UI_AnimateCombo, False)
+        combo.showPopup()
+        rest_position = combo.view().pos()
+        combo.hidePopup()
+        QApplication.setEffectEnabled(Qt.UIEffect.UI_AnimateCombo, True)
+
+        was_animated = QApplication.isEffectEnabled(Qt.UIEffect.UI_AnimateCombo)
+        combo.showPopup()
+        self.assertEqual(was_animated, QApplication.isEffectEnabled(Qt.UIEffect.UI_AnimateCombo))
+        self.assertTrue(popup.isVisible())
+        self.assertEqual(QAbstractAnimation.State.Running, combo._popup_animation.state())
+        self.assertNotIn("QRollEffect", [w.metaObject().className() for w in QApplication.topLevelWidgets()])
+
+        wait(220)
+        self.assertEqual(QAbstractAnimation.State.Stopped, combo._popup_animation.state())
+        self.assertEqual(rest_position, combo.view().pos())
+        self.assertEqual(1.0, popup.windowOpacity())
+        self.assertTrue(popup.layout().isEnabled())
+
+        combo.hidePopup()
+        combo.showPopup()
+        self.assertEqual(QAbstractAnimation.State.Running, combo._popup_animation.state())
+        combo.showPopup()
+        self.assertEqual(QAbstractAnimation.State.Running, combo._popup_animation.state())
+        combo.hidePopup()
+        self.assertEqual(QAbstractAnimation.State.Stopped, combo._popup_animation.state())
+        self.assertEqual(rest_position, combo.view().pos())
+        self.assertEqual(1.0, popup.windowOpacity())
+        self.assertTrue(popup.layout().isEnabled())
+
+    def test_combo_box_respects_disabled_animation(self):
+        self.set_combo_animation_enabled(False)
+        combo = ComboBox(["A", "B"])
+        self.host(combo)
+        combo.showPopup()
+        popup = combo.view().window()
+        self.assertTrue(popup.isVisible())
+        self.assertEqual(QAbstractAnimation.State.Stopped, combo._popup_animation.state())
+        self.assertEqual(1.0, popup.windowOpacity())
+        self.assertTrue(popup.layout().isEnabled())
+        combo.hidePopup()
+
+    def test_failed_popup_show_restores_opacity_and_effect(self):
+        self.set_combo_animation_enabled(True)
+        combo = ComboBox(["A", "B"])
+        self.host(combo)
+        popup = combo.view().window()
+        with mock.patch.object(QComboBox, "showPopup", side_effect=RuntimeError("boom")):
+            with self.assertRaises(RuntimeError):
+                combo.showPopup()
+        self.assertTrue(QApplication.isEffectEnabled(Qt.UIEffect.UI_AnimateCombo))
+        self.assertEqual(1.0, popup.windowOpacity())
+        self.assertIsNone(combo._popup_rest_position)
+
+    def test_popup_over_the_combo_is_not_slid(self):
+        self.set_combo_animation_enabled(True)
+        combo = ComboBox(["A", "B", "C"])
+        self.host(combo)
+        popup = combo.view().window()
+        center = combo.mapToGlobal(combo.rect().center()).y()
+
+        def show_centered_over_combo(_combo):
+            popup.show()
+            popup.setGeometry(combo.mapToGlobal(combo.rect().topLeft()).x(), center - 20, 120, 40)
+
+        with mock.patch.object(QComboBox, "showPopup", show_centered_over_combo):
+            combo.showPopup()
+        self.assertEqual(center - 20, popup.y())
+        self.assertEqual(QAbstractAnimation.State.Stopped, combo._popup_animation.state())
+        self.assertEqual(1.0, popup.windowOpacity())
+        combo.hidePopup()
+
+    def test_empty_combo_does_not_start_popup_animation(self):
+        self.set_combo_animation_enabled(True)
+        combo = ComboBox()
+        self.host(combo)
+        combo.showPopup()
+        popup = combo.view().window()
+        self.assertFalse(popup.isVisible())
+        self.assertEqual(QAbstractAnimation.State.Stopped, combo._popup_animation.state())
+        self.assertEqual(1.0, popup.windowOpacity())
+
+    def set_combo_animation_enabled(self, enabled):
+        general = Qt.UIEffect.UI_General
+        animate_combo = Qt.UIEffect.UI_AnimateCombo
+        self.addCleanup(QApplication.setEffectEnabled, general, QApplication.isEffectEnabled(general))
+        QApplication.setEffectEnabled(general, True)
+        self.addCleanup(QApplication.setEffectEnabled, animate_combo, QApplication.isEffectEnabled(animate_combo))
+        QApplication.setEffectEnabled(animate_combo, enabled)
 
     def test_setting_group_marks_first_row(self):
         group = SettingGroup("Farming")

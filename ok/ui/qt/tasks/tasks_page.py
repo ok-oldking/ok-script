@@ -11,7 +11,7 @@ opens its settings. Tabs above the list filter by kind and by the tasks'
 import threading
 import time
 
-from PySide6.QtCore import QCoreApplication, QSize, Qt, QTimer, Signal
+from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHBoxLayout, QHeaderView, QLabel, QMenu, QPushButton,
                                QScrollArea, QSizePolicy, QTableWidget, QTableWidgetItem, QVBoxLayout,
@@ -374,6 +374,7 @@ class TaskSection(Card):
     def __init__(self, title: str, icon_name, parent=None):
         super().__init__(parent)
         self.rows = []
+        self.shown = 0
         self._expanded = True
         self._collapsible = True
         self._icon_name = icon_name
@@ -426,12 +427,16 @@ class TaskSection(Card):
         self.rows = list(rows)
         for row in self.rows:
             self.rows_layout.insertWidget(self.rows_layout.count() - 1, row)
+        self.shown = len(self.rows)
         self.count_label.setText(str(len(self.rows)))
 
     def set_count_text(self, text: str) -> None:
-        self.count_label.setText(text)
+        if self.count_label.text() != text:
+            self.count_label.setText(text)
 
     def set_title(self, title: str, icon_name) -> None:
+        if self.title_label.text() == title and self._icon_name == icon_name:
+            return
         self.title_label.setText(title)
         self._icon_name = icon_name
         self._refresh_icons()
@@ -443,18 +448,24 @@ class TaskSection(Card):
         if expanded == self._expanded:
             return
         self._expanded = expanded
-        self.scroll.setVisible(self.is_expanded())
-        self._refresh_icons()
+        self._update_expansion()
         self.toggled.emit(expanded)
 
     def set_collapsible(self, collapsible: bool) -> None:
         """A section that cannot collapse stays open and hides its chevron;
         its own collapsed state returns when it becomes collapsible again."""
 
+        if self._collapsible == collapsible:
+            return
         self._collapsible = collapsible
         self.header.setCursor(Qt.CursorShape.PointingHandCursor if collapsible else Qt.CursorShape.ArrowCursor)
         self.chevron.setVisible(collapsible)
-        self.scroll.setVisible(self.is_expanded())
+        self._update_expansion()
+
+    def _update_expansion(self) -> None:
+        expanded = self.is_expanded()
+        self.scroll.setVisible(expanded)
+        set_style_property(self.header, "collapsed", not expanded)
         self._refresh_icons()
 
     def _on_header_clicked(self) -> None:
@@ -462,7 +473,9 @@ class TaskSection(Card):
             self.set_expanded(not self._expanded)
 
     def content_height(self) -> int:
-        return sum(row.height() for row in self.rows if not row.isHidden()) + 12 + 2 * max(0, len(self.rows) - 1)
+        count = self.shown
+        margins = self.rows_layout.contentsMargins()
+        return count * ROW_HEIGHT + margins.top() + margins.bottom() + self.rows_layout.spacing() * max(0, count - 1)
 
     def _refresh_icons(self) -> None:
         dpr = self.devicePixelRatioF()
@@ -769,7 +782,7 @@ class TasksPage(QWidget):
         self.list_column.addWidget(self.trigger_section, 0)
         # Takes the free height when no section does, keeping collapsed headers on top.
         self.list_column.addStretch(0)
-        list_holder = QWidget()
+        self.list_holder = list_holder = QWidget()
         list_holder.setFixedWidth(LIST_WIDTH)
         list_holder.setLayout(self.list_column)
         self.list_column.setContentsMargins(0, 0, 0, 0)
@@ -868,70 +881,116 @@ class TasksPage(QWidget):
         self._apply_filter()
 
     def _apply_filter(self) -> None:
-        key = self.current_filter()
+        # Only the list column changes here; freeze its painting until the new layout settles.
+        holder = self.list_holder
+        updates_enabled = holder.updatesEnabled()
+        holder.setUpdatesEnabled(False)
         sections = (self.onetime_section, self.trigger_section)
-        for section in sections:
-            shown = 0
-            for row in section.rows:
-                visible = matches_filter(row.task, key, row.is_trigger)
-                row.setVisible(visible)
-                shown += visible
-            section.setVisible(shown > 0)
-            section.set_count_text(str(shown))
-            # Sections collapse only in the All view; a single category is one list.
-            section.set_collapsible(key == KIND_ALL)
-        self._title_sections(key)
-        if self.selected_task in self.rows and self.rows[self.selected_task].isHidden():
-            first = next((row.task for section in (self.onetime_section, self.trigger_section)
-                          for row in section.rows if not row.isHidden()), None)
-            self.select_task(first)
-        self._layout_sections()
+        try:
+            key = self.current_filter()
+            for section in sections:
+                shown = 0
+                for row in section.rows:
+                    visible = matches_filter(row.task, key, row.is_trigger)
+                    row.setVisible(visible)
+                    shown += visible
+                section.shown = shown
+                section.set_count_text(str(shown))
+                # Sections collapse only in the All view; a single category is one list.
+                section.set_collapsible(key == KIND_ALL)
+
+            for section in sections:
+                if not section.shown:
+                    section.hide()
+            self._layout_sections()
+            self._title_sections(key)
+            for section in sections:
+                if section.shown:
+                    section.show()
+
+            if self.selected_task in self.rows and self.rows[self.selected_task].isHidden():
+                first = next((row for section in sections for row in section.rows if not row.isHidden()), None)
+                if first is not None:
+                    section = self.trigger_section if first.is_trigger else self.onetime_section
+                    section.scroll.verticalScrollBar().setValue(0)
+                self.select_task(first.task if first is not None else None, scroll_to=False)
+
+            self.list_column.activate()
+            for section in sections:
+                if section.shown:
+                    self._settle_scrollbars(section.scroll)
+        finally:
+            holder.setUpdatesEnabled(updates_enabled)
+
+    @staticmethod
+    def _settle_scrollbars(scroll) -> None:
+        """Update the scroll range and lay out the scrollbars now, not on Qt's
+        queued pass, so a reused list never paints with the previous filter's bar."""
+
+        QCoreApplication.sendEvent(scroll, QEvent(QEvent.Type.LayoutRequest))
+        # Re-applying the policy lays out the scrollbars synchronously from the new range.
+        scroll.setVerticalScrollBarPolicy(scroll.verticalScrollBarPolicy())
 
     def _title_sections(self, key: str) -> None:
         """A category shown as one section takes the category's name and icon."""
 
-        self.onetime_section.set_title(_t("TasksPage", "On-demand"), task_category_icon(KIND_ONETIME, "bolt"))
-        self.trigger_section.set_title(_t("TasksPage", "Triggers"), task_category_icon(KIND_TRIGGER, "timer"))
-        if not key.startswith(GROUP_PREFIX):
-            return
-        shown = [section for section in (self.onetime_section, self.trigger_section) if not section.isHidden()]
-        if len(shown) == 1:
-            name = key[len(GROUP_PREFIX):]
-            shown[0].set_title(_app_tr(name), task_category_icon(key, self.groups.get(name)))
+        onetime, trigger = self.onetime_section, self.trigger_section
+        single_group = key.startswith(GROUP_PREFIX) and bool(onetime.shown) != bool(trigger.shown)
+        for section, kind, title, icon in (
+            (onetime, KIND_ONETIME, "On-demand", "bolt"),
+            (trigger, KIND_TRIGGER, "Triggers", "timer"),
+        ):
+            if single_group and section.shown:
+                name = key[len(GROUP_PREFIX):]
+                section.set_title(_app_tr(name), task_category_icon(key, self.groups.get(name)))
+            else:
+                section.set_title(_t("TasksPage", title), task_category_icon(kind, icon))
 
     def _layout_sections(self) -> None:
         # One-time tasks take the free height; triggers keep a short scrolling list
         # unless they are the only section or the one-time section is collapsed.
         onetime, trigger = self.onetime_section, self.trigger_section
-        trigger_alone = onetime.isHidden() or not onetime.is_expanded()
-        for section in (onetime, trigger):
-            section.setMaximumHeight(16777215)
+        trigger_alone = not onetime.shown or not onetime.is_expanded()
+
+        target_trigger_max = 16777215
         if not trigger.is_expanded():
-            trigger.setMaximumHeight(trigger.header.height() + 2)
+            target_trigger_max = trigger.header.height() + 2
         elif not trigger_alone:
-            trigger.setMaximumHeight(min(TRIGGER_LIST_MAX_HEIGHT, trigger.content_height()) + trigger.header.height()
-                                     + 2)
+            target_trigger_max = min(TRIGGER_LIST_MAX_HEIGHT, trigger.content_height()) + trigger.header.height() + 2
+
+        target_onetime_max = 16777215
         if not onetime.is_expanded():
-            onetime.setMaximumHeight(onetime.header.height() + 2)
-        onetime_grows = not onetime.isHidden() and onetime.is_expanded()
-        trigger_grows = not trigger.isHidden() and trigger_alone and trigger.is_expanded()
+            target_onetime_max = onetime.header.height() + 2
+
+        if trigger.maximumHeight() != target_trigger_max:
+            trigger.setMaximumHeight(target_trigger_max)
+        if onetime.maximumHeight() != target_onetime_max:
+            onetime.setMaximumHeight(target_onetime_max)
+
+        onetime_grows = bool(onetime.shown) and onetime.is_expanded()
+        trigger_grows = bool(trigger.shown) and trigger_alone and trigger.is_expanded()
         self.list_column.setStretchFactor(onetime, 1 if onetime_grows else 0)
         self.list_column.setStretchFactor(trigger, 1 if trigger_grows else 0)
         self.list_column.setStretch(2, 0 if onetime_grows or trigger_grows else 1)
 
     # --- selection and updates ------------------------------------------------
 
-    def select_task(self, task) -> None:
-        if self.selected_task in self.rows:
+    def select_task(self, task, scroll_to: bool = True) -> None:
+        if self.selected_task != task and self.selected_task in self.rows:
             self.rows[self.selected_task].set_selected(False)
         self.selected_task = task
         row = self.rows.get(task)
         if row is not None:
             row.set_selected(True)
             section = self.trigger_section if row.is_trigger else self.onetime_section
-            # After a filter change the section still has its old height; scroll
-            # once the layout has settled, or the list jumps and springs back.
-            QTimer.singleShot(0, row, lambda: section.scroll.ensureWidgetVisible(row))
+            if scroll_to:
+                # After a filter change the section still has its old height; scroll
+                # once the layout has settled, or the list jumps and springs back.
+                def ensure_selected_visible():
+                    if self.selected_task == task and self.rows.get(task) is row and not row.isHidden():
+                        section.scroll.ensureWidgetVisible(row)
+
+                QTimer.singleShot(0, row, ensure_selected_visible)
         self.detail.show_task(task, row.is_trigger if row is not None else False)
 
     def _on_task_event(self, task=None) -> None:
