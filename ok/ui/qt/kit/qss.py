@@ -402,6 +402,10 @@ QPushButton#sectionHeader {{
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
 }}
+QPushButton#sectionHeader[collapsed="true"] {{
+    border-bottom-color: transparent;
+    border-radius: 11px;
+}}
 QPushButton#sectionHeader:hover {{ background: {control_hover}; }}
 QLabel[role="chip"] {{
     font-size: 11.5px; color: {text_secondary}; background: {control}; border: 1px solid {border_strong};

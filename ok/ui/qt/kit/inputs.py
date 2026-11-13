@@ -5,10 +5,12 @@ styled by the kit stylesheet and are used directly. This module adds the
 inputs that need structure beyond a stylesheet.
 """
 
-from PySide6.QtCore import QEvent, QObject, Qt, Signal
-from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QListView, QSpinBox, QWidget
+from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPoint, Qt, QTimer, QVariantAnimation, Signal
+from PySide6.QtWidgets import QApplication, QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QListView, QSpinBox, QWidget
 
 from ok.ui.qt.kit.buttons import Button
+
+POPUP_ANIMATION_DURATION = 160
 
 
 class _FocusedWheelFilter(QObject):
@@ -43,11 +45,116 @@ class ComboBox(QComboBox):
     def __init__(self, items=None, parent=None):
         super().__init__(parent)
         require_focus_for_wheel(self)
+        self._reveal_pending = False
+        self._popup_rest_position = None
+        self._popup_animation = QVariantAnimation(self)
+        self._popup_animation.setDuration(POPUP_ANIMATION_DURATION)
+        self._popup_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._popup_animation.valueChanged.connect(self._step_popup)
+        self._popup_animation.finished.connect(self._finish_popup_animation)
         self.setView(QListView(self))
-        self.view().window().setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         if items:
             self.addItems(list(items))
+
+    def setView(self, item_view) -> None:
+        self._finish_popup_animation()
+        super().setView(item_view)
+        self._configure_popup()
+
+    def _configure_popup(self) -> None:
+        view = self.view()
+        if view is None:
+            return
+        popup = view.window()
+        flags = popup.windowFlags() | Qt.WindowType.FramelessWindowHint | Qt.WindowType.NoDropShadowWindowHint
+        if popup.windowFlags() != flags:
+            popup.setWindowFlags(flags)
+        popup.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        popup.installEventFilter(self)
+
+    def showPopup(self) -> None:
+        self._configure_popup()
+        view = self.view()
+        popup = view.window()
+        if popup.isVisible():
+            return
+
+        effect = Qt.UIEffect.UI_AnimateCombo
+        if not QApplication.isEffectEnabled(effect):
+            super().showPopup()
+            return
+
+        animate = self.count() > 0 and self.isVisible() and self._popup_animation.duration() > 0
+        if animate:
+            # Keep the window invisible during ShowWindow so stale backing-store
+            # pixels at y=0 cannot flash before the slide animation starts.
+            popup.setWindowOpacity(0.0)
+        # Bypass Qt's QRollEffect: it uses a temporary window and flashes on handoff.
+        QApplication.setEffectEnabled(effect, False)
+        try:
+            super().showPopup()
+        finally:
+            QApplication.setEffectEnabled(effect, True)
+
+        if animate:
+            if popup.isVisible() and view.height() > 0:
+                self._animate_popup(view, popup)
+            else:
+                popup.setWindowOpacity(1.0)
+
+    def _animate_popup(self, view, popup) -> None:
+        popup_center_y = popup.y() + popup.height() / 2
+        combo_center_y = self.mapToGlobal(QPoint(0, self.height() // 2)).y()
+        rest = view.pos()
+        offset = -view.height() if popup_center_y >= combo_center_y else view.height()
+        start = rest + QPoint(0, offset)
+        self._popup_rest_position = rest
+        popup.layout().setEnabled(False)
+        view.move(start)
+        self._reveal_pending = True
+        popup.setWindowOpacity(0.004)
+        self._popup_animation.setStartValue(start)
+        self._popup_animation.setEndValue(rest)
+        self._popup_animation.start()
+
+    def _step_popup(self, value) -> None:
+        view = self.view()
+        if view is None or not view.window().isVisible():
+            self._finish_popup_animation()
+            return
+        view.move(value)
+        if not self._reveal_pending and view.window().windowOpacity() < 1.0:
+            view.window().setWindowOpacity(1.0)
+
+    def _reveal_popup(self) -> None:
+        view = self.view()
+        if self._popup_rest_position is not None and not self._reveal_pending:
+            view.window().setWindowOpacity(1.0)
+
+    def _finish_popup_animation(self) -> None:
+        rest = self._popup_rest_position
+        if rest is None:
+            return
+        self._popup_rest_position = None
+        self._reveal_pending = False
+        self._popup_animation.stop()
+        view = self.view()
+        popup = view.window()
+        view.move(rest)
+        popup.layout().setEnabled(True)
+        popup.setWindowOpacity(1.0)
+
+    def eventFilter(self, obj, event) -> bool:
+        view = self.view()
+        if view is not None and obj is view.window():
+            event_type = event.type()
+            if event_type == QEvent.Type.Paint and self._reveal_pending:
+                self._reveal_pending = False
+                QTimer.singleShot(0, self, self._reveal_popup)
+            elif event_type == QEvent.Type.Hide:
+                self._finish_popup_animation()
+        return super().eventFilter(obj, event)
 
 
 class NumberBox(QFrame):

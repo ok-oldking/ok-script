@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import QEvent, Qt, QTimer
-from qt_helpers import mouse_click
+from qt_helpers import mouse_click, wait
 from PySide6.QtWidgets import QApplication, QCheckBox
 
 from ok import og
@@ -461,6 +461,46 @@ class TestTasksPage(QtTestCase):
         self.assertEqual([], values)
         self.assertEqual(0, scroll_bar.value())
 
+    def test_switching_filter_keeps_selected_row_in_view(self):
+        tasks = [FakeTask(f"Task {index}") for index in range(25)]
+        page = self.make_page(tasks, [FakeTask("Trigger")])
+        selected = tasks[-1]
+        scroll = page.onetime_section.scroll
+        bar = scroll.verticalScrollBar()
+        page.select_task(selected)
+        wait(30)
+        self.assertGreater(bar.value(), 0)
+
+        page.set_filter(KIND_ONETIME)
+        wait(30)
+        self.assertIs(selected, page.selected_task)
+        row = page.rows[selected]
+        self.assertTrue(scroll.viewport().rect().contains(row.mapTo(scroll.viewport(), row.rect().center())))
+
+        bar.setValue(0)
+        page.select_task(selected)
+        wait(30)
+        self.assertGreater(bar.value(), 0)
+
+    def test_switching_back_to_short_group_clears_scrollbar_before_repaint(self):
+        tasks = [FakeTask(f"City {index}", group="City") for index in range(5)]
+        tasks += [FakeTask(f"Other {index}") for index in range(25)]
+        page = self.make_page(tasks, [FakeTask(f"Trigger {index}") for index in range(6)])
+        scroll = page.onetime_section.scroll
+        bar = scroll.verticalScrollBar()
+
+        page.set_filter(KIND_ONETIME)
+        QApplication.processEvents()
+        self.assertTrue(bar.isVisible())
+        page.set_filter(KIND_TRIGGER)
+        QApplication.processEvents()
+        self.assertFalse(page.trigger_section.scroll.verticalScrollBar().isVisible())
+
+        page.set_filter("group:City")
+        self.assertEqual(0, bar.maximum())
+        self.assertFalse(bar.isVisible())
+        self.assertEqual(scroll.width(), scroll.viewport().width())
+
     def test_single_category_section_shows_the_category(self):
         daily = FakeTask("Daily", group="Daily Activities")
         page = self.make_page([daily], [FakeTask("Combat")])
@@ -478,13 +518,16 @@ class TestTasksPage(QtTestCase):
         self.assertTrue(reopened.trigger_section.isHidden())
 
     def test_task_list_updates_rebuild_the_page(self):
-        daily = FakeTask("Daily")
+        daily = FakeTask("Daily", config={"Flag": True})
         page = self.make_page([daily])
         added = FakeTask("Added")
         og.executor.onetime_tasks.append(added)
+        daily.config_type = {"Flag": {"hidden": True}}
         page.refresh_tasks()
         self.assertIn(added, page.rows)
         self.assertIs(daily, page.selected_task)
+        self.assertTrue(page.rows[daily].property("selected"))
+        self.assertTrue(page.detail.form.is_empty)
 
 
 if __name__ == "__main__":
