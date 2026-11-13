@@ -94,20 +94,25 @@ class ComboBox(QComboBox):
         QApplication.setEffectEnabled(effect, False)
         try:
             super().showPopup()
+            if animate and popup.isVisible() and view.height() > 0:
+                self._animate_popup(view, popup)
         finally:
             QApplication.setEffectEnabled(effect, True)
-
-        if animate:
-            if popup.isVisible() and view.height() > 0:
-                self._animate_popup(view, popup)
-            else:
+            if self._popup_rest_position is None:
+                # No slide running (not shown, overlapping, or an exception): never leave it transparent.
                 popup.setWindowOpacity(1.0)
 
     def _animate_popup(self, view, popup) -> None:
+        combo_top = self.mapToGlobal(QPoint(0, 0)).y()
         popup_center_y = popup.y() + popup.height() / 2
-        combo_center_y = self.mapToGlobal(QPoint(0, self.height() // 2)).y()
+        if popup_center_y >= combo_top + self.height():
+            offset = -view.height()
+        elif popup_center_y <= combo_top:
+            offset = view.height()
+        else:
+            # The style centered the popup over the combo; there is no side to slide in from.
+            return
         rest = view.pos()
-        offset = -view.height() if popup_center_y >= combo_center_y else view.height()
         start = rest + QPoint(0, offset)
         self._popup_rest_position = rest
         popup.layout().setEnabled(False)
@@ -124,13 +129,11 @@ class ComboBox(QComboBox):
             self._finish_popup_animation()
             return
         view.move(value)
-        if not self._reveal_pending and view.window().windowOpacity() < 1.0:
-            view.window().setWindowOpacity(1.0)
 
     def _reveal_popup(self) -> None:
-        view = self.view()
-        if self._popup_rest_position is not None and not self._reveal_pending:
-            view.window().setWindowOpacity(1.0)
+        # Runs once after the first paint; _finish_popup_animation is the fallback.
+        if self._popup_rest_position is not None:
+            self.view().window().setWindowOpacity(1.0)
 
     def _finish_popup_animation(self) -> None:
         rest = self._popup_rest_position
