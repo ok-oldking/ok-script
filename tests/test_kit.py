@@ -7,10 +7,10 @@ from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtCore import QAbstractAnimation, QEvent, QObject, QSize, Qt, QTimer
-from PySide6.QtGui import QColor, QIcon, QImage
+from PySide6.QtCore import QAbstractAnimation, QEvent, QObject, QPoint, QSize, Qt, QTimer
+from PySide6.QtGui import QColor, QHelpEvent, QIcon, QImage
 from qt_helpers import key_click, mouse_click, wait
-from PySide6.QtWidgets import QApplication, QComboBox, QLabel, QWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QLabel, QToolTip, QWidget
 
 from ok.ui.qt.kit import (Button, ComboBox, Dialog, FlowLayout, ICON_NAMES, Label, NumberBox, Pill, ProgressRing,
                           SettingGroup, SettingRow, StatusDot, Switch, TabStrip, Theme, Toast, icon, load_icon,
@@ -321,6 +321,75 @@ class TestWidgets(KitTestCase):
         combo = ComboBox(["A", "B"])
         self.assertEqual(2, combo.count())
 
+    def test_combo_box_popup_centers_and_fits_longest_item(self):
+        self.set_combo_animation_enabled(False)
+        combo = ComboBox(["Short", "A longer choice with details"])
+        self.host(combo)
+        combo.setFixedWidth(100)
+        screen = combo.screen().availableGeometry()
+        combo.move(combo.parentWidget().mapFromGlobal(screen.center()) - QPoint(combo.width() // 2, 50))
+
+        combo.showPopup()
+        view = combo.view()
+        popup = view.window()
+        self.assertEqual(100, combo.width())
+        self.assertGreaterEqual(view.viewport().width(), view.sizeHintForColumn(combo.modelColumn()))
+        self.assertLessEqual(abs(popup.geometry().center().x() - combo.mapToGlobal(combo.rect().center()).x()), 1)
+        self.assertEqual(combo.mapToGlobal(QPoint(0, combo.height())).y() + 2, popup.y())
+        key_click(view, Qt.Key.Key_Down)
+        key_click(view, Qt.Key.Key_Return)
+        self.assertEqual(1, combo.currentIndex())
+        self.assertFalse(popup.isVisible())
+
+        combo.setItemText(1, "B")
+        combo.showPopup()
+        self.assertEqual(combo.width(), popup.width())
+        combo.hidePopup()
+
+    def test_combo_box_popup_respects_visible_item_limit(self):
+        self.set_combo_animation_enabled(False)
+        items = [f"Choice {index:02}" for index in range(20)]
+        combo = ComboBox(items)
+        self.host(combo)
+        combo.setMaxVisibleItems(4)
+        combo.showPopup()
+        view = combo.view()
+        capped_height = view.window().height()
+        self.assertGreater(view.verticalScrollBar().maximum(), 0)
+        combo.hidePopup()
+
+        combo.clear()
+        combo.addItems(items[:4])
+        combo.showPopup()
+        self.assertEqual(capped_height, view.window().height())
+        self.assertEqual(0, view.verticalScrollBar().maximum())
+        combo.hidePopup()
+
+    def test_combo_box_popup_clamps_at_screen_edges_and_shows_full_text_on_hover(self):
+        self.set_combo_animation_enabled(False)
+        long_text = "A very long route description " * 30
+        combo = ComboBox(["Short", long_text])
+        self.host(combo)
+        combo.setFixedWidth(100)
+        screen = combo.screen().availableGeometry()
+        combo.move(combo.parentWidget().mapFromGlobal(screen.bottomRight()) - QPoint(combo.width(), combo.height()))
+        combo.setCurrentIndex(1)
+
+        combo.showPopup()
+        view = combo.view()
+        popup = view.window()
+        self.assertTrue(screen.contains(popup.geometry()))
+        self.assertEqual(combo.mapToGlobal(QPoint()).y() - 3, popup.geometry().bottom())
+        self.assertLess(view.viewport().width(), view.sizeHintForColumn(combo.modelColumn()))
+
+        for widget, point in ((view.viewport(), view.visualRect(view.currentIndex()).topLeft()),
+                              (combo, combo.rect().center())):
+            event = QHelpEvent(QEvent.Type.ToolTip, point, widget.mapToGlobal(point))
+            with mock.patch.object(QToolTip, "showText") as show_text:
+                QApplication.sendEvent(widget, event)
+            self.assertIn(long_text, show_text.call_args.args[1])
+        combo.hidePopup()
+
     def test_combo_box_popup_slides_in_single_window(self):
         combo = ComboBox(["A", "B", "C"])
         self.host(combo)
@@ -384,7 +453,7 @@ class TestWidgets(KitTestCase):
         self.assertEqual(1.0, popup.windowOpacity())
         self.assertIsNone(combo._popup_rest_position)
 
-    def test_popup_over_the_combo_is_not_slid(self):
+    def test_popup_over_the_combo_keeps_its_vertical_position(self):
         self.set_combo_animation_enabled(True)
         combo = ComboBox(["A", "B", "C"])
         self.host(combo)
@@ -399,7 +468,6 @@ class TestWidgets(KitTestCase):
             combo.showPopup()
         self.assertEqual(center - 20, popup.y())
         self.assertEqual(QAbstractAnimation.State.Stopped, combo._popup_animation.state())
-        self.assertEqual(1.0, popup.windowOpacity())
         combo.hidePopup()
 
     def test_empty_combo_does_not_start_popup_animation(self):

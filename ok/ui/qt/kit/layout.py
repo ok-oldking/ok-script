@@ -3,12 +3,13 @@ from PySide6.QtWidgets import QLayout
 
 
 class FlowLayout(QLayout):
-    """Lays widgets out left to right and wraps them onto new lines."""
+    """Wraps widgets left to right, with an optional cap on the preferred width."""
 
-    def __init__(self, parent=None, spacing: int = 8):
+    def __init__(self, parent=None, spacing: int = 8, preferred_width: int = None):
         super().__init__(parent)
         self._items = []
         self._spacing = spacing
+        self._preferred_width = preferred_width
         self.setContentsMargins(0, 0, 0, 0)
 
     def addItem(self, item) -> None:
@@ -44,7 +45,16 @@ class FlowLayout(QLayout):
         self._arrange(rect, apply=True)
 
     def sizeHint(self) -> QSize:
-        return self.minimumSize()
+        minimum = self.minimumSize()
+        if self._preferred_width is None:
+            return minimum
+
+        widths = [item.sizeHint().width() for item in self._items if not item.isEmpty()]
+        margins = self.contentsMargins()
+        single_row_width = sum(widths) + max(0, len(widths) - 1) * self._spacing
+        single_row_width += margins.left() + margins.right()
+        width = max(minimum.width(), min(single_row_width, self._preferred_width))
+        return QSize(width, self.heightForWidth(width))
 
     def minimumSize(self) -> QSize:
         size = QSize()

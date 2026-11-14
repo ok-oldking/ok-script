@@ -5,12 +5,18 @@ styled by the kit stylesheet and are used directly. This module adds the
 inputs that need structure beyond a stylesheet.
 """
 
+from html import escape
+
 from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPoint, Qt, QTimer, QVariantAnimation, Signal
-from PySide6.QtWidgets import QApplication, QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QListView, QSpinBox, QWidget
+from PySide6.QtGui import QPalette
+from PySide6.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QListView, QSpinBox,
+                               QStyle, QStyledItemDelegate, QStyleOptionComboBox, QStyleOptionViewItem, QStylePainter,
+                               QToolTip, QWidget)
 
 from ok.ui.qt.kit.buttons import Button
 
 POPUP_ANIMATION_DURATION = 160
+POPUP_GAP = 2
 
 
 class _FocusedWheelFilter(QObject):
@@ -39,6 +45,28 @@ def require_focus_for_wheel(widget: QWidget) -> None:
     widget.installEventFilter(_focused_wheel_filter)
 
 
+class _ComboItemDelegate(QStyledItemDelegate):
+    def paint(self, painter, option, index) -> None:
+        option = QStyleOptionViewItem(option)
+        # Some styles give rows their natural width even when the viewport is narrower.
+        rect = option.rect
+        viewport = self.parent().viewport().rect()
+        rect.setLeft(max(rect.left(), viewport.left()))
+        rect.setRight(min(rect.right(), viewport.right()))
+        option.rect = rect
+        super().paint(painter, option, index)
+
+    def helpEvent(self, event, view, option, index) -> bool:
+        if super().helpEvent(event, view, option, index):
+            return True
+        if event.type() == QEvent.Type.ToolTip and index.isValid() and (
+                self.sizeHint(option, index).width() > view.viewport().width()):
+            text = self.displayText(index.data(), option.locale)
+            QToolTip.showText(event.globalPos(), f"<p>{escape(text)}</p>", view)
+            return True
+        return False
+
+
 class ComboBox(QComboBox):
     """A combo box whose popup items can be styled (rounded, padded rows)."""
 
@@ -52,7 +80,10 @@ class ComboBox(QComboBox):
         self._popup_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._popup_animation.valueChanged.connect(self._step_popup)
         self._popup_animation.finished.connect(self._finish_popup_animation)
-        self.setView(QListView(self))
+        view = QListView(self)
+        self.setView(view)
+        view.setItemDelegate(_ComboItemDelegate(view))
+        view.setTextElideMode(Qt.TextElideMode.ElideRight)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         if items:
             self.addItems(list(items))
@@ -81,26 +112,81 @@ class ComboBox(QComboBox):
             return
 
         effect = Qt.UIEffect.UI_AnimateCombo
-        if not QApplication.isEffectEnabled(effect):
-            super().showPopup()
-            return
-
-        animate = self.count() > 0 and self.isVisible() and self._popup_animation.duration() > 0
+        effect_enabled = QApplication.isEffectEnabled(effect)
+        animate = effect_enabled and self.count() > 0 and self.isVisible() and self._popup_animation.duration() > 0
         if animate:
             # Keep the window invisible during ShowWindow so stale backing-store
             # pixels at y=0 cannot flash before the slide animation starts.
             popup.setWindowOpacity(0.0)
         # Bypass Qt's QRollEffect: it uses a temporary window and flashes on handoff.
-        QApplication.setEffectEnabled(effect, False)
+        if effect_enabled:
+            QApplication.setEffectEnabled(effect, False)
         try:
             super().showPopup()
-            if animate and popup.isVisible() and view.height() > 0:
-                self._animate_popup(view, popup)
+            if popup.isVisible():
+                self._adjust_popup_geometry(view, popup)
+                if animate and view.height() > 0:
+                    self._animate_popup(view, popup)
         finally:
-            QApplication.setEffectEnabled(effect, True)
-            if self._popup_rest_position is None:
+            if effect_enabled:
+                QApplication.setEffectEnabled(effect, True)
+            if animate and self._popup_rest_position is None:
                 # No slide running (not shown, overlapping, or an exception): never leave it transparent.
                 popup.setWindowOpacity(1.0)
+
+    def _adjust_popup_geometry(self, view, popup) -> None:
+        screen = self.screen().availableGeometry()
+        margins = popup.width() - view.viewport().width()
+        content_width = view.sizeHintForColumn(self.modelColumn())
+        width = min(screen.width(), max(self.width(), content_width + margins))
+        anchor = self.rect().translated(self.mapToGlobal(QPoint()))
+        x = anchor.left() + (anchor.width() - width) // 2
+        x = max(screen.left(), min(x, screen.right() - width + 1))
+        # Keep Qt's chosen side and height. Use the gap that fits on that side.
+        y = popup.y()
+        if popup.geometry().top() >= anchor.bottom():
+            y = min(anchor.bottom() + 1 + POPUP_GAP, screen.bottom() - popup.height() + 1)
+        elif popup.geometry().bottom() <= anchor.top():
+            y = max(anchor.top() - popup.height() - POPUP_GAP, screen.top())
+        popup.setGeometry(x, y, width, popup.height())
+
+    def _label_option(self) -> QStyleOptionComboBox:
+        option = QStyleOptionComboBox()
+        self.initStyleOption(option)
+        if self.currentIndex() < 0 and self.placeholderText():
+            option.currentText = self.placeholderText()
+            option.palette.setBrush(QPalette.ColorRole.ButtonText, option.palette.placeholderText())
+        return option
+
+    def _elided_text(self, option: QStyleOptionComboBox) -> str:
+        field = self.style().subControlRect(QStyle.ComplexControl.CC_ComboBox, option,
+                                            QStyle.SubControl.SC_ComboBoxEditField, self)
+        width = field.width() - 4
+        if not option.currentIcon.isNull():
+            width -= option.iconSize.width() + 4
+        return option.fontMetrics.elidedText(option.currentText, Qt.TextElideMode.ElideRight, max(0, width))
+
+    def paintEvent(self, event) -> None:
+        if self.isEditable() or self.labelDrawingMode() == QComboBox.LabelDrawingMode.UseDelegate:
+            super().paintEvent(event)
+            return
+        option = self._label_option()
+        elided = self._elided_text(option)
+        if elided == option.currentText:
+            super().paintEvent(event)
+            return
+        painter = QStylePainter(self)
+        painter.drawComplexControl(QStyle.ComplexControl.CC_ComboBox, option)
+        option.currentText = elided
+        painter.drawControl(QStyle.ControlElement.CE_ComboBoxLabel, option)
+
+    def event(self, event) -> bool:
+        if event.type() == QEvent.Type.ToolTip and not self.isEditable() and not self.toolTip():
+            option = self._label_option()
+            if option.currentText != self._elided_text(option):
+                QToolTip.showText(event.globalPos(), f"<p>{escape(option.currentText)}</p>", self)
+                return True
+        return super().event(event)
 
     def _animate_popup(self, view, popup) -> None:
         combo_top = self.mapToGlobal(QPoint(0, 0)).y()

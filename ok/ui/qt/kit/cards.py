@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QEvent, Qt
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
 
 from ok.ui.qt.kit.labels import Label
@@ -74,6 +74,16 @@ class SettingRow(QWidget):
         """Indent a row that depends on the row above it."""
 
         self._row_layout.setContentsMargins(18 + (SUB_ROW_INDENT if indent else 0), 14, 18, 14)
+
+    def event(self, event: QEvent) -> bool:
+        handled = super().event(event)
+        # Scroll areas need the wrapped height in the row's minimum. A layout
+        # request also updates it when content changes at the same width.
+        if event.type() in (QEvent.Type.Resize, QEvent.Type.LayoutRequest) and self.hasHeightForWidth():
+            height = self.heightForWidth(self.width())
+            if self.minimumHeight() != height:
+                self.setMinimumHeight(height)
+        return handled
 
 
 class SettingGroup(QWidget):
