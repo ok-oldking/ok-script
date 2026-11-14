@@ -14,7 +14,7 @@ import time
 from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHBoxLayout, QHeaderView, QLabel, QMenu, QPushButton,
-                               QScrollArea, QSizePolicy, QTableWidget, QTableWidgetItem, QVBoxLayout,
+                               QScrollArea, QSizePolicy, QStyledItemDelegate, QTableWidget, QTableWidgetItem, QVBoxLayout,
                                QWidget)
 
 from ok import Logger, og
@@ -36,6 +36,20 @@ from ok.ui.qt.widget.UpdateConfigWidgetItem import value_to_string
 from ok.util.config import Config
 
 logger = Logger.get_logger(__name__)
+
+
+class _InnerGridDelegate(QStyledItemDelegate):
+    """Draws row lines and column separators, but no line right of the last column."""
+
+    def paint(self, painter, option, index):
+        super().paint(painter, option, index)
+        rect = option.rect
+        painter.save()
+        painter.setPen(theme.color('border'))
+        painter.drawLine(rect.bottomLeft(), rect.bottomRight())
+        if index.column() < index.model().columnCount() - 1:
+            painter.drawLine(rect.topRight(), rect.bottomRight())
+        painter.restore()
 
 LIST_WIDTH = 372
 ROW_HEIGHT = 58
@@ -569,6 +583,10 @@ class TaskDetail(QWidget):
         self.info_table.verticalHeader().setDefaultSectionSize(40)
         self.info_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.info_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        # Qt's grid draws a line right of the last column too, doubling the
+        # frame's own right border; draw only the inner lines instead.
+        self.info_table.setShowGrid(False)
+        self.info_table.setItemDelegate(_InnerGridDelegate(self.info_table))
         self.pages = AnimatedStackedWidget(Qt.Orientation.Horizontal)
         self.pages.addWidget(self.form_scroll)
         self.pages.addWidget(self.info_table)
