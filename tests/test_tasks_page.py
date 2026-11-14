@@ -9,7 +9,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import QEvent, Qt, QTimer
 from qt_helpers import mouse_click, wait
-from PySide6.QtWidgets import QApplication, QCheckBox
+from PySide6.QtWidgets import QApplication, QCheckBox, QScrollArea
 
 from ok import og
 from ok.ui.qt.kit import Dialog
@@ -212,6 +212,24 @@ class TestConfigForm(QtTestCase):
         for editor in (flag, count, pick):
             editor.deleteLater()
 
+    def test_reset_shrinks_wrapped_list_at_same_width(self):
+        task = FakeTask("List", config={"Items": []})
+        task.config["Items"] = [f"List item {index}" for index in range(24)]
+        form = ConfigForm(task, task.config, task.default_config, {}, {})
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(form)
+        self.show(scroll, 530, 500)
+        row = form.config_widget_by_key["Items"]
+        width, expanded_height = row.width(), row.height()
+
+        form.reset_clicked()
+        wait(20)
+
+        self.assertEqual([], task.config["Items"])
+        self.assertEqual(width, row.width())
+        self.assertLess(row.height(), expanded_height)
+
     def test_sub_configs_follow_the_controlling_value(self):
         default = {"Target": "Tacet", "Tacet Index": 7, "Nest": False}
         config_type = {"Target": {"type": "drop_down", "options": ["Tacet", "Forgery"],
@@ -242,6 +260,33 @@ class TestConfigForm(QtTestCase):
         self.assertEqual(["A", "B"], task.config["Features"])
         self.assertFalse(form.config_widget_by_key["B Setting"].isHidden())
         self.assertIsInstance(boxes[0], QCheckBox)
+
+    def test_multi_selection_wraps_when_available_width_shrinks(self):
+        task = FakeTask("Choices", config={"Options": []}, config_type={
+            "Options": {"type": "multi_selection", "options": ["A", "B"]},
+        })
+        form = ConfigForm(task, task.config, task.default_config, {}, task.config_type)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidget(form)
+        self.show(scroll, 500, 300)
+        row = form.config_widget_by_key["Options"]
+        first, second = row.check_boxes
+        self.assertEqual(first.y(), second.y())
+        self.assertLess(row.control.width(), 300)
+
+        scroll.resize(form.minimumSizeHint().width() + 2 * scroll.frameWidth(), scroll.height())
+        wait(20)
+
+        self.assertLess(first.y(), second.y())
+        self.assertLessEqual(row.width(), scroll.viewport().width())
+        self.assertTrue(row.control.rect().contains(second.geometry()))
+
+        scroll.resize(500, scroll.height())
+        wait(20)
+
+        self.assertEqual(first.y(), second.y())
 
     def test_empty_config_shows_a_note(self):
         task = FakeTask("Empty", config={})

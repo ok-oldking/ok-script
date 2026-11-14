@@ -11,7 +11,7 @@ import os
 
 from PySide6.QtCore import QCoreApplication, QSignalBlocker, Qt, Signal
 from PySide6.QtGui import QFontMetrics
-from PySide6.QtWidgets import QCheckBox, QFileDialog, QHBoxLayout, QLineEdit, QPlainTextEdit, QWidget
+from PySide6.QtWidgets import QCheckBox, QFileDialog, QHBoxLayout, QLineEdit, QPlainTextEdit, QSizePolicy, QWidget
 
 from ok import og
 from ok.core.config_schema import resolve_config_type
@@ -173,14 +173,15 @@ class MultiSelectionEditor(ConfigEditor):
     def __init__(self, config_desc, options, config, key):
         self.options = list(options)
         holder = QWidget()
-        flow = FlowLayout(holder, spacing=10)
+        holder.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
+        flow = FlowLayout(holder, spacing=10, preferred_width=300)
         self.check_boxes = []
         for option in self.options:
             box = QCheckBox(_app_tr(option))
             box.toggled.connect(self._on_toggled)
             self.check_boxes.append(box)
             flow.addWidget(box)
-        super().__init__(config_desc, config, key, holder, control_width=300)
+        super().__init__(config_desc, config, key, holder)
         self.update_value()
 
     def _on_toggled(self, _checked):
@@ -283,6 +284,8 @@ class ButtonsEditor(ConfigEditor):
         if isinstance(buttons_config, dict):
             buttons_config = [buttons_config]
         holder = QWidget()
+        holder.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
+        holder.setMaximumWidth(360)
         row = QHBoxLayout(holder)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(8)
@@ -293,7 +296,7 @@ class ButtonsEditor(ConfigEditor):
             if callback := info.get('callback'):
                 button.clicked.connect(callback)
             row.addWidget(button)
-        super().__init__(config_desc, None, key, holder, control_width=360)
+        super().__init__(config_desc, None, key, holder)
 
 
 class GlobalConfigEditor(ConfigEditor):
