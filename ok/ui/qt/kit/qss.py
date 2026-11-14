@@ -154,7 +154,7 @@ QComboBox {{
     background: {control};
     border: 1px solid {border_strong};
     border-radius: 8px;
-    padding: 0 6px 0 12px;
+    padding: 0 0 0 12px;
     min-height: 34px;
 }}
 QComboBox:hover {{ background: {control_hover}; }}
