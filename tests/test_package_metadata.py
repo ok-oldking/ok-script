@@ -14,7 +14,7 @@ def test_pyproject_profiles_are_consistent_and_headless_by_default():
     assert set(extras) == {"default", "qt", "adb", "ocr", "dev"}
     assert extras == groups
     assert extras["adb"] == ["adbutils>=2.2.1"]
-    assert extras["ocr"] == ["onnxocr-ppocrv5"]
+    assert extras["ocr"] == ["onnxocr-ppocrv6"]
     assert not any(
         requirement.startswith(("fastapi", "PySide6"))
         for requirement in extras["default"]

@@ -128,7 +128,7 @@ ok-script 的开发离不开以下开源项目：
 
 - [PyAppify](https://github.com/ok-oldking/pyappify)：用于应用更新和打包。
 - [OnnxOCR](https://github.com/ok-oldking/OnnxOCR)：提供支持 Intel NPU 的 OCR，
-  支持通过 OpenVINO 或 ONNX Runtime 推理，并使用 PaddleOCR v5 模型。
+  支持通过 OpenVINO 或 ONNX Runtime 推理，并使用 PaddleOCR v6 模型。
 - [PySide6](https://wiki.qt.io/Qt_for_Python)：提供基于 Qt 的桌面界面绑定。
 - [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets)：Qt
   界面使用的 Fluent UI 组件。

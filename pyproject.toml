@@ -54,7 +54,7 @@ adb = [
     "adbutils>=2.2.1",
 ]
 ocr = [
-    "onnxocr-ppocrv5",
+    "onnxocr-ppocrv6",
 ]
 dev = [
     "pytest>=8.0",
@@ -89,7 +89,7 @@ adb = [
     "adbutils>=2.2.1",
 ]
 ocr = [
-    "onnxocr-ppocrv5",
+    "onnxocr-ppocrv6",
 ]
 dev = [
     "pytest>=8.0",

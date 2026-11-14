@@ -134,7 +134,7 @@ ok-script is made possible by these open-source projects:
 - [PyAppify](https://github.com/ok-oldking/pyappify) — application updating
   and packaging.
 - [OnnxOCR](https://github.com/ok-oldking/OnnxOCR) — OCR with Intel NPU
-  support through OpenVINO or ONNX Runtime, using a PaddleOCR v5 model.
+  support through OpenVINO or ONNX Runtime, using a PaddleOCR v6 model.
 - [PySide6](https://wiki.qt.io/Qt_for_Python) — Qt-based desktop UI bindings.
 - [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) —
   Fluent UI components used by the Qt interface.
