@@ -5,18 +5,18 @@ styled by the kit stylesheet and are used directly. This module adds the
 inputs that need structure beyond a stylesheet.
 """
 
-from html import escape
-
-from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPoint, Qt, QTimer, QVariantAnimation, Signal
-from PySide6.QtGui import QPalette
+from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPoint, QRectF, Qt, QTimer, QVariantAnimation, Signal
+from PySide6.QtGui import QPainter, QPalette
 from PySide6.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QListView, QSpinBox,
-                               QStyle, QStyledItemDelegate, QStyleOptionComboBox, QStyleOptionViewItem, QStylePainter,
-                               QToolTip, QWidget)
+                               QStyle, QStyledItemDelegate, QStyleOptionComboBox,
+                               QStyleOptionViewItem, QStylePainter, QWidget)
 
 from ok.ui.qt.kit.buttons import Button
+from ok.ui.qt.kit.theme import theme
 
 POPUP_ANIMATION_DURATION = 160
 POPUP_GAP = 2
+POPUP_SCREEN_WIDTH_INSET = 100
 
 
 class _FocusedWheelFilter(QObject):
@@ -54,17 +54,22 @@ class _ComboItemDelegate(QStyledItemDelegate):
         rect.setLeft(max(rect.left(), viewport.left()))
         rect.setRight(min(rect.right(), viewport.right()))
         option.rect = rect
+        selected = option.state & QStyle.StateFlag.State_Selected
+        if selected:
+            # The Windows 11 style uses Accent for its native selection marker.
+            option.palette.setColor(QPalette.ColorRole.Accent, Qt.GlobalColor.transparent)
         super().paint(painter, option, index)
-
-    def helpEvent(self, event, view, option, index) -> bool:
-        if super().helpEvent(event, view, option, index):
-            return True
-        if event.type() == QEvent.Type.ToolTip and index.isValid() and (
-                self.sizeHint(option, index).width() > view.viewport().width()):
-            text = self.displayText(index.data(), option.locale)
-            QToolTip.showText(event.globalPos(), f"<p>{escape(text)}</p>", view)
-            return True
-        return False
+        if selected:
+            # Align the marker with the leading edge of the selected background.
+            marker = QRectF(rect.left() + 6, rect.y() + (rect.height() - 15) / 2, 3, 15)
+            if option.direction == Qt.LayoutDirection.RightToLeft:
+                marker.moveRight(rect.right() + 1 - 6)
+            painter.save()
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(theme.accent())
+            painter.drawRoundedRect(marker, 1.5, 1.5)
+            painter.restore()
 
 
 class ComboBox(QComboBox):
@@ -81,7 +86,11 @@ class ComboBox(QComboBox):
         self._popup_animation.valueChanged.connect(self._step_popup)
         self._popup_animation.finished.connect(self._finish_popup_animation)
         view = QListView(self)
+        view.setObjectName("comboPopupList")
+        view.setViewportMargins(0, 4, 0, 4)
         self.setView(view)
+        # The view lives in Qt's popup window, where nested theme roots can lose inherited QSS.
+        theme.install(view)
         view.setItemDelegate(_ComboItemDelegate(view))
         view.setTextElideMode(Qt.TextElideMode.ElideRight)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -122,6 +131,7 @@ class ComboBox(QComboBox):
         if effect_enabled:
             QApplication.setEffectEnabled(effect, False)
         try:
+            view.doItemsLayout()
             super().showPopup()
             if popup.isVisible():
                 self._adjust_popup_geometry(view, popup)
@@ -138,7 +148,8 @@ class ComboBox(QComboBox):
         screen = self.screen().availableGeometry()
         margins = popup.width() - view.viewport().width()
         content_width = view.sizeHintForColumn(self.modelColumn())
-        width = min(screen.width(), max(self.width(), content_width + margins))
+        width_limit = max(1, screen.width() - POPUP_SCREEN_WIDTH_INSET)
+        width = min(width_limit, max(self.width(), content_width + margins))
         anchor = self.rect().translated(self.mapToGlobal(QPoint()))
         x = anchor.left() + (anchor.width() - width) // 2
         x = max(screen.left(), min(x, screen.right() - width + 1))
@@ -161,7 +172,7 @@ class ComboBox(QComboBox):
     def _elided_text(self, option: QStyleOptionComboBox) -> str:
         field = self.style().subControlRect(QStyle.ComplexControl.CC_ComboBox, option,
                                             QStyle.SubControl.SC_ComboBoxEditField, self)
-        width = field.width() - 4
+        width = field.width()
         if not option.currentIcon.isNull():
             width -= option.iconSize.width() + 4
         return option.fontMetrics.elidedText(option.currentText, Qt.TextElideMode.ElideRight, max(0, width))
@@ -179,14 +190,6 @@ class ComboBox(QComboBox):
         painter.drawComplexControl(QStyle.ComplexControl.CC_ComboBox, option)
         option.currentText = elided
         painter.drawControl(QStyle.ControlElement.CE_ComboBoxLabel, option)
-
-    def event(self, event) -> bool:
-        if event.type() == QEvent.Type.ToolTip and not self.isEditable() and not self.toolTip():
-            option = self._label_option()
-            if option.currentText != self._elided_text(option):
-                QToolTip.showText(event.globalPos(), f"<p>{escape(option.currentText)}</p>", self)
-                return True
-        return super().event(event)
 
     def _animate_popup(self, view, popup) -> None:
         combo_top = self.mapToGlobal(QPoint(0, 0)).y()

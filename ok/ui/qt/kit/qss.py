@@ -154,7 +154,7 @@ QComboBox {{
     background: {control};
     border: 1px solid {border_strong};
     border-radius: 8px;
-    padding: 0 6px 0 12px;
+    padding: 0 0 0 12px;
     min-height: 34px;
 }}
 QComboBox:hover {{ background: {control_hover}; }}
@@ -163,7 +163,7 @@ QComboBox:disabled {{ color: {text_disabled}; background: transparent; border-co
 QComboBox::drop-down {{ border: 0; width: 28px; subcontrol-origin: padding; subcontrol-position: center right; }}
 QComboBox::down-arrow {{ image: url("{chevron_down}"); width: 14px; height: 14px; }}
 QComboBox::down-arrow:disabled {{ image: url("{chevron_down_disabled}"); }}
-QComboBox QAbstractItemView {{
+QComboBox QAbstractItemView, QListView#comboPopupList {{
     background: {surface_alt};
     border: 1px solid {border_strong};
     border-radius: 8px;
@@ -173,7 +173,17 @@ QComboBox QAbstractItemView {{
     selection-color: {text};
 }}
 QComboBox QAbstractItemView::item {{ min-height: 30px; padding: 0 8px; border-radius: 6px; }}
-QComboBox QAbstractItemView::item:hover {{ background: {control_hover}; }}
+QComboBox QAbstractItemView::item:hover, QListView#comboPopupList::item:hover {{ background: {control_hover}; }}
+QListView#comboPopupList {{
+    padding: 0;
+    selection-background-color: {combo_selection};
+}}
+QListView#comboPopupList::item {{
+    min-height: 29px; margin: 2px 6px; padding: 0 10px; border-radius: 5px;
+}}
+QListView#comboPopupList::item:selected {{
+    background: {combo_selection}; color: {text};
+}}
 
 QCheckBox, QRadioButton {{ spacing: 8px; background: transparent; }}
 QCheckBox {{ padding: 1px 0; }}
@@ -433,6 +443,7 @@ def build_stylesheet(manager) -> str:
     success, warning, danger = (QColor(tokens[name]) for name in ("success", "warning", "danger"))
     window_bg, sidebar_bg = (manager.background(name) for name in ("window", "sidebar"))
     return _TEMPLATE.format(
+        combo_selection="rgba(255, 255, 255, 0.08)" if manager.is_dark() else "rgba(0, 0, 0, 0.04)",
         window_bg=rgba(window_bg, window_bg.alphaF()),
         sidebar_bg=rgba(sidebar_bg, sidebar_bg.alphaF()),
         # With a backdrop the content layer's own edge separates it from the frame.

@@ -83,6 +83,9 @@ class SettingRow(QWidget):
             height = self.heightForWidth(self.width())
             if self.minimumHeight() != height:
                 self.setMinimumHeight(height)
+                # The row can grow during its resize event without another
+                # resize event to lay out its children at the new height.
+                self._row_layout.setGeometry(self.contentsRect())
         return handled
 
 
