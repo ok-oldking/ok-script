@@ -335,7 +335,7 @@ class TestWidgets(KitTestCase):
         self.assertEqual(100, combo.width())
         self.assertGreaterEqual(view.viewport().width(), view.sizeHintForColumn(combo.modelColumn()))
         self.assertLessEqual(abs(popup.geometry().center().x() - combo.mapToGlobal(combo.rect().center()).x()), 1)
-        self.assertEqual(combo.mapToGlobal(combo.rect().bottomLeft()).y(), popup.y())
+        self.assertEqual(combo.mapToGlobal(QPoint(0, combo.height())).y() + 2, popup.y())
         key_click(view, Qt.Key.Key_Down)
         key_click(view, Qt.Key.Key_Return)
         self.assertEqual(1, combo.currentIndex())
@@ -379,7 +379,7 @@ class TestWidgets(KitTestCase):
         view = combo.view()
         popup = view.window()
         self.assertTrue(screen.contains(popup.geometry()))
-        self.assertEqual(combo.mapToGlobal(QPoint()).y(), popup.geometry().bottom())
+        self.assertEqual(combo.mapToGlobal(QPoint()).y() - 3, popup.geometry().bottom())
         self.assertLess(view.viewport().width(), view.sizeHintForColumn(combo.modelColumn()))
 
         for widget, point in ((view.viewport(), view.visualRect(view.currentIndex()).topLeft()),

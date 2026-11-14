@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox, QFrame, 
 from ok.ui.qt.kit.buttons import Button
 
 POPUP_ANIMATION_DURATION = 160
+POPUP_GAP = 2
 
 
 class _FocusedWheelFilter(QObject):
@@ -123,7 +124,7 @@ class ComboBox(QComboBox):
         try:
             super().showPopup()
             if popup.isVisible():
-                self._fit_popup_width(view, popup)
+                self._adjust_popup_geometry(view, popup)
                 if animate and view.height() > 0:
                     self._animate_popup(view, popup)
         finally:
@@ -133,14 +134,21 @@ class ComboBox(QComboBox):
                 # No slide running (not shown, overlapping, or an exception): never leave it transparent.
                 popup.setWindowOpacity(1.0)
 
-    def _fit_popup_width(self, view, popup) -> None:
+    def _adjust_popup_geometry(self, view, popup) -> None:
         screen = self.screen().availableGeometry()
         margins = popup.width() - view.viewport().width()
         content_width = view.sizeHintForColumn(self.modelColumn())
         width = min(screen.width(), max(self.width(), content_width + margins))
-        x = self.mapToGlobal(QPoint()).x() + (self.width() - width) // 2
+        anchor = self.rect().translated(self.mapToGlobal(QPoint()))
+        x = anchor.left() + (anchor.width() - width) // 2
         x = max(screen.left(), min(x, screen.right() - width + 1))
-        popup.setGeometry(x, popup.y(), width, popup.height())
+        # Keep Qt's chosen side and height. Use the gap that fits on that side.
+        y = popup.y()
+        if popup.geometry().top() >= anchor.bottom():
+            y = min(anchor.bottom() + 1 + POPUP_GAP, screen.bottom() - popup.height() + 1)
+        elif popup.geometry().bottom() <= anchor.top():
+            y = max(anchor.top() - popup.height() - POPUP_GAP, screen.top())
+        popup.setGeometry(x, y, width, popup.height())
 
     def _label_option(self) -> QStyleOptionComboBox:
         option = QStyleOptionComboBox()
