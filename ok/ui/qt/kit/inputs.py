@@ -5,13 +5,14 @@ styled by the kit stylesheet and are used directly. This module adds the
 inputs that need structure beyond a stylesheet.
 """
 
-from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPoint, Qt, QTimer, QVariantAnimation, Signal
-from PySide6.QtGui import QPalette
+from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPoint, QRectF, Qt, QTimer, QVariantAnimation, Signal
+from PySide6.QtGui import QPainter, QPalette
 from PySide6.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QListView, QSpinBox,
-                               QStyle, QStyledItemDelegate, QStyleOptionComboBox, QStyleOptionViewItem, QStylePainter,
-                               QWidget)
+                               QStyle, QStyledItemDelegate, QStyleOptionComboBox,
+                               QStyleOptionViewItem, QStylePainter, QWidget)
 
 from ok.ui.qt.kit.buttons import Button
+from ok.ui.qt.kit.theme import theme
 
 POPUP_ANIMATION_DURATION = 160
 POPUP_GAP = 2
@@ -53,7 +54,22 @@ class _ComboItemDelegate(QStyledItemDelegate):
         rect.setLeft(max(rect.left(), viewport.left()))
         rect.setRight(min(rect.right(), viewport.right()))
         option.rect = rect
+        selected = option.state & QStyle.StateFlag.State_Selected
+        if selected:
+            # The Windows 11 style uses Accent for its native selection marker.
+            option.palette.setColor(QPalette.ColorRole.Accent, Qt.GlobalColor.transparent)
         super().paint(painter, option, index)
+        if selected:
+            # Align the marker with the leading edge of the selected background.
+            marker = QRectF(rect.left() + 6, rect.y() + (rect.height() - 15) / 2, 3, 15)
+            if option.direction == Qt.LayoutDirection.RightToLeft:
+                marker.moveRight(rect.right() + 1 - 6)
+            painter.save()
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(theme.accent())
+            painter.drawRoundedRect(marker, 1.5, 1.5)
+            painter.restore()
 
 
 class ComboBox(QComboBox):
@@ -70,7 +86,11 @@ class ComboBox(QComboBox):
         self._popup_animation.valueChanged.connect(self._step_popup)
         self._popup_animation.finished.connect(self._finish_popup_animation)
         view = QListView(self)
+        view.setObjectName("comboPopupList")
+        view.setViewportMargins(0, 4, 0, 4)
         self.setView(view)
+        # The view lives in Qt's popup window, where nested theme roots can lose inherited QSS.
+        theme.install(view)
         view.setItemDelegate(_ComboItemDelegate(view))
         view.setTextElideMode(Qt.TextElideMode.ElideRight)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -111,6 +131,7 @@ class ComboBox(QComboBox):
         if effect_enabled:
             QApplication.setEffectEnabled(effect, False)
         try:
+            view.doItemsLayout()
             super().showPopup()
             if popup.isVisible():
                 self._adjust_popup_geometry(view, popup)
