@@ -8,9 +8,9 @@ from pathlib import Path
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import QAbstractAnimation, QEvent, QObject, QPoint, QSize, Qt, QTimer
-from PySide6.QtGui import QColor, QHelpEvent, QIcon, QImage
+from PySide6.QtGui import QColor, QIcon, QImage
 from qt_helpers import key_click, mouse_click, wait
-from PySide6.QtWidgets import QApplication, QComboBox, QLabel, QToolTip, QWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QLabel, QWidget
 
 from ok.ui.qt.kit import (Button, ComboBox, Dialog, FlowLayout, ICON_NAMES, Label, NumberBox, Pill, ProgressRing,
                           SettingGroup, SettingRow, StatusDot, Switch, TabStrip, Theme, Toast, icon, load_icon,
@@ -321,6 +321,14 @@ class TestWidgets(KitTestCase):
         combo = ComboBox(["A", "B"])
         self.assertEqual(2, combo.count())
 
+    def test_combo_box_at_preferred_width_displays_every_label(self):
+        combo = ComboBox(["Short", "WWWWWW"])
+        self.host(combo)
+        combo.resize(combo.sizeHint())
+        for index in range(combo.count()):
+            combo.setCurrentIndex(index)
+            self.assertEqual(combo.currentText(), combo._elided_text(combo._label_option()))
+
     def test_combo_box_popup_centers_and_fits_longest_item(self):
         self.set_combo_animation_enabled(False)
         combo = ComboBox(["Short", "A longer choice with details"])
@@ -365,7 +373,7 @@ class TestWidgets(KitTestCase):
         self.assertEqual(0, view.verticalScrollBar().maximum())
         combo.hidePopup()
 
-    def test_combo_box_popup_clamps_at_screen_edges_and_shows_full_text_on_hover(self):
+    def test_combo_box_popup_clamps_at_screen_edges(self):
         self.set_combo_animation_enabled(False)
         long_text = "A very long route description " * 30
         combo = ComboBox(["Short", long_text])
@@ -379,15 +387,10 @@ class TestWidgets(KitTestCase):
         view = combo.view()
         popup = view.window()
         self.assertTrue(screen.contains(popup.geometry()))
+        self.assertEqual(screen.width() - 100, popup.width())
         self.assertEqual(combo.mapToGlobal(QPoint()).y() - 3, popup.geometry().bottom())
         self.assertLess(view.viewport().width(), view.sizeHintForColumn(combo.modelColumn()))
 
-        for widget, point in ((view.viewport(), view.visualRect(view.currentIndex()).topLeft()),
-                              (combo, combo.rect().center())):
-            event = QHelpEvent(QEvent.Type.ToolTip, point, widget.mapToGlobal(point))
-            with mock.patch.object(QToolTip, "showText") as show_text:
-                QApplication.sendEvent(widget, event)
-            self.assertIn(long_text, show_text.call_args.args[1])
         combo.hidePopup()
 
     def test_combo_box_popup_slides_in_single_window(self):
