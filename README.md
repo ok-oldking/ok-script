@@ -6,11 +6,31 @@
 
 在 Codex、Claude Code 或任何支持 MCP 的编程代理里许个愿，得到一个可部署的自动化程序。
 
-说出你想自动化的事。代理通过 MCP 观察 Windows 应用、游戏或安卓设备，编写 Python 任务，在真实目标上运行并修复失败。ok-script 把完成的任务连同桌面 GUI 打包成可分发的 Windows 安装包。打包后的程序在本地独立完成截图、识别和输入，无需代理保持连接。
+说出你想自动化的事。代理通过 MCP 观察 Windows 应用、游戏或安卓设备，编写 Python 任务，在真实目标上运行并修复失败。ok-script 把完成的任务连同桌面 GUI 打包成可分发的 Windows 安装包。打包后的程序在本地独立完成截图、识别和输入，无需代理保持连接，运行时不再消耗 token。
 
-ok-script 支持 Windows 应用和游戏、安卓模拟器及 ADB 设备，提供模板匹配、OCR、目标支持时的后台输入、桌面界面和任务打包。
+ok-script 支持 Windows 应用和游戏、安卓模拟器及 ADB 设备，提供模板匹配、OCR、目标支持时的后台输入、桌面界面和任务打包。鸣潮的 okww、异环的 oknte、二重螺旋的 okdna、明日方舟：终末地的 okef 等热门自动化项目都基于 ok-script 开发。
 
-[MCP 快速开始](docs/quick_start/README.md) · [编程代理提示词](docs/agent-prompts.md) · [MCP 连接说明（英文）](docs/mcp.md)
+[MCP 快速开始](docs/quick_start/README.md) · [编程代理提示词](docs/agent-prompts.md) · [MCP 连接说明（英文）](docs/mcp.md) · [▶ 视频教程（B 站）](https://www.bilibili.com/video/BV1FEss6eEa1/)
+
+## 两句提示词，做出一个扫雷程序
+
+![ok-script 生成的程序运行“高级扫雷直到胜利”任务，几秒内通关高级扫雷](docs/ok_py/minesweeper_demo.gif)
+
+[▶ 视频教程：ok-script MCP 开发 Python 脚本教程（B 站，3 分半）](https://www.bilibili.com/video/BV1FEss6eEa1/)
+
+在 Codex（GPT 6.1 Sol，推理强度中等）里只说了两句话：
+
+1. 在当前目录安装并配置 ok-script，用它来自动化当前打开的扫雷。
+2. 用 ok-script 的 MCP 写一个任务，自动玩扫雷高级难度，直到胜利。
+
+代理通过 MCP 截图识别棋盘，写出约束推理和概率选格的任务，在真实的扫雷窗口上反复运行、查看日志、修复问题，并把任务注册进 ok-script 桌面程序。上图就是这个生成的程序：选中任务，点击“运行任务”，不需要代理。
+
+| 指标 | 结果 |
+| --- | --- |
+| Codex 工作时间 | 约 13 分钟（两次对话） |
+| 模型花费 | ChatGPT Plus 每周额度约 2%（约 ¥0.71） |
+| 连续运行 10 次 | 10/10 通关高级扫雷，平均 15.7 秒，最快 6 秒 |
+| 之后每次运行 | 0 token，不调用模型 |
 
 ## 可以这样告诉编程代理
 
@@ -91,10 +111,10 @@ python -m venv .venv
 
 ## 使用 ok-script 的项目
 
-- [鸣潮](https://github.com/ok-oldking/ok-wuthering-waves)
-- [异环](https://github.com/BnanZ0/ok-nte)
-- [二重螺旋](https://github.com/BnanZ0/ok-duet-night-abyss)
-- [明日方舟：终末地](https://github.com/AliceJump/ok-end-field)
+- [鸣潮 · okww](https://github.com/ok-oldking/ok-wuthering-waves)
+- [异环 · oknte](https://github.com/BnanZ0/ok-nte)
+- [二重螺旋 · okdna](https://github.com/BnanZ0/ok-duet-night-abyss)
+- [明日方舟：终末地 · okef](https://github.com/AliceJump/ok-end-field)
 - [少女前线 2](https://github.com/ok-oldking/ok-gf2)
 - [ok-script 应用模板](https://github.com/ok-oldking/ok-script-app)
 - [棕色尘埃 2](https://github.com/GodRaymond233/ok-bd2)
@@ -119,6 +139,8 @@ python -m venv .venv
 ## 社区与发布
 
 - 开发者 QQ 群：938132715
+- [Discord](https://discord.gg/vVyCatEBgA)
+- [B 站视频教程](https://www.bilibili.com/video/BV1FEss6eEa1/)
 - [PyPI](https://pypi.org/project/ok-script/)
 - [GitHub](https://github.com/ok-oldking/ok-script)
 
