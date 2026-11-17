@@ -3,6 +3,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+import numpy as np
+
 import ok.ui.qt.StartController as start_controller_module
 from ok.ui.qt.StartController import StartController
 from ok.util.gpu_driver_settings import GpuDriverPostProcessing
@@ -347,6 +349,22 @@ class TestStartController(unittest.TestCase):
         alert_info.assert_called_once()
         self.assertFalse(alert_info.call_args.kwargs.get('tray', False))
         alert_error.assert_not_called()
+
+    def test_device_readiness_reuses_successful_capture_for_resolution(self):
+        controller = self.make_controller()
+        controller.tr = str
+        controller.check_resolution = Mock(return_value=None)
+        frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
+        controller.try_capture_a_frame = Mock(return_value=frame)
+        capture = SimpleNamespace(connected=lambda: True)
+        manager = SimpleNamespace(get_preferred_device=lambda: {'device': 'browser', 'nick': 'Cloud'},
+                                  device_connected=lambda: True, capture_method=capture)
+        fake_og = SimpleNamespace(device_manager=manager, executor=SimpleNamespace(feature_set=None))
+
+        with patch.object(start_controller_module, 'og', fake_og):
+            self.assertIsNone(controller.check_device_error())
+
+        controller.check_resolution.assert_called_once_with(frame=frame)
 
 
 if __name__ == '__main__':

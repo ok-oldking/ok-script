@@ -411,7 +411,7 @@ class StartController:
                 None,
             )
 
-    def check_resolution(self):
+    def check_resolution(self, frame=None):
         error = None
         supported_resolution = self.config.get(
             'supported_resolution', {})
@@ -425,7 +425,7 @@ class StartController:
             not is_windows_capture
             or og.global_config.get_config('Basic Options').get('Auto Resize Game Window', True)
         )
-        supported, resolution = og.executor.check_frame_and_resolution(supported_ratio, min_size)
+        supported, resolution = og.executor.check_frame_and_resolution(supported_ratio, min_size, frame=frame)
         if not supported:
             resize_success = False
             if resize_to and is_windows_capture and auto_resize_enabled:
@@ -497,7 +497,9 @@ class StartController:
                 logger.info(f'check_device_error: feature_set is None')
 
             logger.info(f'check_device_error: checking resolution')
-            resolution_error = self.check_resolution()
+            # A static WGC target may not produce another frame. Validate the
+            # successful capture above instead of timing out and reporting 0x0.
+            resolution_error = self.check_resolution(frame=frame)
             if resolution_error:
                 logger.error(f'check_device_error: resolution_error: {resolution_error}')
                 return resolution_error

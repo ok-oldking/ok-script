@@ -79,5 +79,39 @@ class TestNextFrameCaptureBusy(unittest.TestCase):
         self.assertLessEqual(max(waits), .03)
 
 
+class TestResolutionFromFrame(unittest.TestCase):
+    def make_executor(self):
+        executor = TaskExecutor.__new__(TaskExecutor)
+        executor.current_job = None
+        executor.device_manager = SimpleNamespace(
+            update_resolution_for_hwnd=Mock(),
+            capture_method=Mock(width=0, height=0),
+        )
+        executor.device_manager.capture_method.get_frame.side_effect = AssertionError('Unexpected recapture')
+        return executor
+
+    def test_static_target_uses_valid_frame_without_recapture(self):
+        executor = self.make_executor()
+        frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
+
+        self.assertEqual((True, '1920x1080'), executor.check_frame_and_resolution(
+            '16:9', (1280, 720), frame=frame))
+        executor.device_manager.capture_method.get_frame.assert_not_called()
+
+    def test_frame_below_minimum_is_still_rejected(self):
+        executor = self.make_executor()
+        frame = np.zeros((360, 640, 3), dtype=np.uint8)
+
+        self.assertEqual((False, '640x360'), executor.check_frame_and_resolution(
+            '16:9', (1280, 720), frame=frame))
+
+    def test_capture_dimensions_override_stale_backend_dimensions(self):
+        executor = self.make_executor()
+        executor.device_manager.capture_method.get_frame.side_effect = None
+        executor.device_manager.capture_method.get_frame.return_value = np.zeros((720, 1280, 3), dtype=np.uint8)
+
+        self.assertEqual((True, '1280x720'), executor.check_frame_and_resolution('16:9', (1280, 720)))
+
+
 if __name__ == '__main__':
     unittest.main()
