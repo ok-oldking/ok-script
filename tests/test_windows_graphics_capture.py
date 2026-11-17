@@ -539,6 +539,7 @@ class TestBrowserCaptureBusyWait(unittest.TestCase):
         method.page.is_closed.return_value = False
         method.wgc_capture = Mock()
         method.wgc_capture.do_get_frame_wait.return_value = 'frame'
+        method.update_window_geometry = Mock(return_value=True)
 
         self.assertEqual('frame', method.do_get_frame_wait(2))
         self.assertEqual('frame', method.do_get_frame())
