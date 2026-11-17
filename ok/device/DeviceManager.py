@@ -677,7 +677,8 @@ class DeviceManager:
             if not isinstance(self.capture_method, BrowserCaptureMethod):
                 if self.capture_method is not None:
                     self.capture_method.close()
-                self.capture_method = BrowserCaptureMethod(self.browser_config, self.exit_event)
+                self.capture_method = BrowserCaptureMethod(
+                    self.browser_config, self.exit_event, global_config=self.global_config)
             if not isinstance(self.interaction, BrowserInteraction):
                 self.interaction = BrowserInteraction(self.capture_method)
 

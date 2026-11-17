@@ -22,10 +22,12 @@ class BrowserCaptureMethod(BaseCaptureMethod):
     name = "Browser Capture"
     description = "Capture from Browser using Playwright and Windows Graphics Capture"
 
-    def __init__(self, config, exit_event):
+    def __init__(self, config, exit_event, global_config=None):
         super().__init__()
         self.config = config
         self.exit_event = exit_event
+        self.global_config = global_config
+        self._audio_mute = None
         res = config.get('resolution', (1280, 720))
         self._size = (res[0], res[1])
         logger.info(f'BrowserCaptureMethod init {self._size}')
@@ -164,6 +166,14 @@ class BrowserCaptureMethod(BaseCaptureMethod):
                     logger.info(
                         f"Browser window '{target_title}' found: {self.hwnd} offsets: {self.x_offset},{self.y_offset} size: {self._size}")
                     self.wgc_capture = BrowserWGC(self)
+                    if getattr(self, 'global_config', None) is not None:
+                        from ok.device.browser_audio import BrowserAudioMute
+                        self._audio_mute = BrowserAudioMute(
+                            self.page,
+                            lambda: win32gui.GetForegroundWindow() == self.hwnd,
+                            lambda: self.global_config.get_config('Basic Options').get(
+                                'Mute Game while in Background'), self.exit_event)
+                        self._audio_mute.start()
                     break
             await asyncio.sleep(0.5)
 
@@ -206,6 +216,9 @@ class BrowserCaptureMethod(BaseCaptureMethod):
 
     async def _close_async(self):
         logger.info(f'BrowserCaptureMethod _close_async')
+        if getattr(self, '_audio_mute', None) is not None:
+            await self._audio_mute.close()
+            self._audio_mute = None
         if self.page:
             try:
                 await self.page.close()

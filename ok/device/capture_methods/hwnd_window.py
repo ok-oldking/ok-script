@@ -72,6 +72,10 @@ class HwndWindow:
         self.thread.start()
 
     def validate_mute_config(self, key, value):
+        from ok.device.capture_methods.browser import BrowserCaptureMethod
+        if self.device_manager and isinstance(self.device_manager.capture_method, BrowserCaptureMethod):
+            # BrowserAudioMute polls this setting and restores page volume.
+            return True, None
         if key == 'Mute Game while in Background' and self.hwnd:
             logger.info(f'validate_mute_config {value}')
             if value:
