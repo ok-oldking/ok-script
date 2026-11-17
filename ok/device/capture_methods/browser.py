@@ -18,6 +18,40 @@ from ok.device.capture_methods.windows_graphics import WindowsGraphicsCaptureMet
 
 logger = Logger.get_logger(__name__)
 
+# Pages ask for pointer lock on mouse down (e.g. cloud game SDKs). The automated browser window is
+# usually not the OS foreground window, so Chromium rejects the lock (pointerlockerror) and such pages
+# fall back to cursor mode, drop the click or send Esc. Fake a granted lock; pages still release it
+# through exitPointerLock exactly as with a real lock. Disable with browser config 'fake_pointer_lock': False.
+FAKE_POINTER_LOCK_JS = '''() => {
+  if (window.__okFakePointerLock === undefined) {
+    window.__okFakePointerLock = null;
+    Object.defineProperty(Document.prototype, 'pointerLockElement', {configurable: true,
+      get() { return window.__okFakePointerLock; }});
+    window.__okRequestPointerLock = function () {
+      if (window.__okFakePointerLock !== this) {
+        window.__okFakePointerLock = this;
+        document.dispatchEvent(new Event('pointerlockchange'));
+      }
+      return Promise.resolve();
+    };
+    Element.prototype.requestPointerLock = window.__okRequestPointerLock;
+    Document.prototype.exitPointerLock = function () {
+      if (window.__okFakePointerLock) {
+        window.__okFakePointerLock = null;
+        document.dispatchEvent(new Event('pointerlockchange'));
+      }
+    };
+  }
+  // Already loaded pages may have cached the native function on the element itself.
+  for (const el of document.querySelectorAll('video, canvas')) {
+    if (Object.prototype.hasOwnProperty.call(el, 'requestPointerLock')) {
+      el.requestPointerLock = window.__okRequestPointerLock;
+    }
+  }
+  return true;
+}'''
+
+
 class BrowserCaptureMethod(BaseCaptureMethod):
     name = "Browser Capture"
     description = "Capture from Browser using Playwright and Windows Graphics Capture"
@@ -106,6 +140,10 @@ class BrowserCaptureMethod(BaseCaptureMethod):
         if self.browser is None:
             raise Exception("Failed to launch system browser.")
 
+        fake_pointer_lock = self.config.get('fake_pointer_lock', True)
+        if fake_pointer_lock:
+            await self.browser.add_init_script(script=f'({FAKE_POINTER_LOCK_JS})()')
+
         await asyncio.sleep(0.1)
 
         self.page = None
@@ -135,6 +173,10 @@ class BrowserCaptureMethod(BaseCaptureMethod):
 
             if url:
                 await self.page.goto(url)
+
+        if fake_pointer_lock:
+            # A reused page loaded before the init script was registered.
+            await self.page.evaluate(FAKE_POINTER_LOCK_JS)
 
         await self.page.bring_to_front()
         await self.page.set_viewport_size({'width': width, 'height': height})

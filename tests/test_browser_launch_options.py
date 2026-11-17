@@ -14,7 +14,9 @@ class TestBrowserLaunchOptions(unittest.IsolatedAsyncioTestCase):
         page.bring_to_front = AsyncMock()
         page.set_viewport_size = AsyncMock()
         page.title = AsyncMock(return_value='Cloud Game')
+        page.evaluate = AsyncMock(return_value=True)
         context = Mock(pages=[page])
+        context.add_init_script = AsyncMock()
         launch_context = AsyncMock(return_value=context)
         if fail_first:
             launch_context.side_effect = [RuntimeError('Browser not installed'), context]
@@ -37,6 +39,7 @@ class TestBrowserLaunchOptions(unittest.IsolatedAsyncioTestCase):
             await capture._start_browser_async()
         self.assertIs(capture.browser, context)
         self.assertIs(capture.page, page)
+        self.context, self.page = context, page
         return launch_context
 
     async def test_default_channel_and_background_arguments_are_preserved(self):
@@ -60,6 +63,17 @@ class TestBrowserLaunchOptions(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(['chrome', 'msedge'], [call.kwargs['channel'] for call in launch.await_args_list])
         for call in launch.await_args_list:
             self.assertIn(args[0], call.kwargs['args'])
+
+    async def test_fake_pointer_lock_is_installed_by_default(self):
+        await self.launch({})
+        self.context.add_init_script.assert_awaited_once()
+        self.assertIn('requestPointerLock', self.context.add_init_script.call_args.kwargs['script'])
+        self.page.evaluate.assert_awaited_once()
+
+    async def test_fake_pointer_lock_can_be_disabled(self):
+        await self.launch({'fake_pointer_lock': False})
+        self.context.add_init_script.assert_not_awaited()
+        self.page.evaluate.assert_not_awaited()
 
 
 if __name__ == '__main__':
