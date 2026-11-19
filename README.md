@@ -122,9 +122,7 @@ python -m venv .venv
 - [卡厄思梦境](https://github.com/baoxin1100/ok-kes)
 - [蓝色星原：旅谣](https://github.com/longer-sausage/OK-AzurPromilia)
 - [阴阳师](https://github.com/YunLiuZ/ok-Onmyoji)
-- [原神](https://github.com/ok-oldking/ok-genshin-impact)（停止维护，后台过剧情仍可用）
 - [白荆回廊](https://github.com/ok-oldking/ok-baijing)（停止维护）
-- [崩坏：星穹铁道](https://github.com/Shasnow/ok-starrailassistant)（停止维护）
 
 ## 开发 ok-script
 

@@ -122,9 +122,7 @@ The coding agent discovers Python APIs from the installed package's source and s
 - [Chaos Zero Nightmare](https://github.com/baoxin1100/ok-kes)
 - [Azur Promilia](https://github.com/longer-sausage/OK-AzurPromilia)
 - [Onmyoji](https://github.com/YunLiuZ/ok-Onmyoji)
-- [Genshin Impact](https://github.com/ok-oldking/ok-genshin-impact) (unmaintained; background story automation still works)
 - [Ash Echoes](https://github.com/ok-oldking/ok-baijing) (unmaintained)
-- [Honkai: Star Rail](https://github.com/Shasnow/ok-starrailassistant) (unmaintained)
 
 ## Developing ok-script
 
