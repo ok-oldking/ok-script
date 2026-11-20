@@ -302,6 +302,30 @@ class TestExecutorExclusive(ExecutorJobTestCase):
             self.executor.release_exclusive('agent')
         self.assertTrue(ran.wait(WAIT))
 
+    def test_onetime_task_raising_disabled_is_disabled(self):
+        raised = threading.Event()
+        finish = threading.Event()
+
+        def run():
+            raised.set()
+            finish.wait(WAIT)
+            raise TaskDisabledException()
+
+        task = FakeOnetimeTask('Task', run)
+        task._enabled = True
+        self.executor.onetime_tasks = [task]
+        with patch.object(task_executor_module.communicate.task, 'emit'), \
+                patch.object(task_executor_module.communicate.task_done, 'emit'), \
+                patch.object(task_executor_module.communicate.notification, 'emit'):
+            self.start_unpaused()
+            self.assertTrue(raised.wait(WAIT))
+            finish.set()
+            deadline = time.time() + WAIT
+            while (task.running or self.executor.current_task is not None) and time.time() < deadline:
+                time.sleep(0.01)
+            self.assertFalse(task.running)
+        self.assertFalse(task.enabled)
+
     def test_running_trigger_task_stops_when_acquired(self):
         self.executor.thread = threading.current_thread()
         self.executor.current_task = FakeTriggerTask('Trigger', lambda: None)

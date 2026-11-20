@@ -830,6 +830,10 @@ class TaskExecutor:
                         communicate.quit.emit()
             except TaskDisabledException:
                 logger.info(f"TaskDisabledException, continue {task}")
+                if not is_trigger_task:
+                    # A one-time task that raised TaskDisabledException itself
+                    # is finished; trigger tasks keep their enabled setting.
+                    task.disable()
                 self._finish_task(task, is_trigger_task)
                 communicate.notification.emit('Stopped', task.name, False,
                                               False, None, None, None)
