@@ -14,7 +14,7 @@ import time
 from PySide6.QtCore import QCoreApplication, QEvent, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHBoxLayout, QHeaderView, QLabel, QMenu, QPushButton,
-                               QScrollArea, QSizePolicy, QStyledItemDelegate, QTableWidget, QTableWidgetItem, QVBoxLayout,
+                               QScrollArea, QSizePolicy, QTableWidgetItem, QVBoxLayout,
                                QWidget)
 
 from ok import Logger, og
@@ -27,6 +27,7 @@ from ok.ui.qt.kit.icons import icon as kit_icon, tinted_icon
 from ok.ui.qt.kit.labels import Label
 from ok.ui.qt.kit.motion import AnimatedStackedWidget
 from ok.ui.qt.kit.switch import Switch
+from ok.ui.qt.kit.table import Table
 from ok.ui.qt.kit.tabs import TabStrip
 from ok.ui.qt.kit.theme import set_style_property, theme
 from ok.ui.qt.shell.nav_icons import FALLBACK, nav_icon
@@ -37,19 +38,6 @@ from ok.util.config import Config
 
 logger = Logger.get_logger(__name__)
 
-
-class _InnerGridDelegate(QStyledItemDelegate):
-    """Draws row lines and column separators, but no line right of the last column."""
-
-    def paint(self, painter, option, index):
-        super().paint(painter, option, index)
-        rect = option.rect
-        painter.save()
-        painter.setPen(theme.color('border'))
-        painter.drawLine(rect.bottomLeft(), rect.bottomRight())
-        if index.column() < index.model().columnCount() - 1:
-            painter.drawLine(rect.topRight(), rect.bottomRight())
-        painter.restore()
 
 LIST_WIDTH = 372
 ROW_HEIGHT = 58
@@ -573,7 +561,7 @@ class TaskDetail(QWidget):
         self.form_scroll.setWidgetResizable(True)
         self.form_scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.form_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.info_table = QTableWidget(0, 2)
+        self.info_table = Table(0, 2)
         self.info_table.setHorizontalHeaderLabels([_t("TaskTab", "Info"), _t("TaskTab", "Value")])
         self.info_table.verticalHeader().hide()
         self.info_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -583,10 +571,6 @@ class TaskDetail(QWidget):
         self.info_table.verticalHeader().setDefaultSectionSize(40)
         self.info_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.info_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
-        # Qt's grid draws a line right of the last column too, doubling the
-        # frame's own right border; draw only the inner lines instead.
-        self.info_table.setShowGrid(False)
-        self.info_table.setItemDelegate(_InnerGridDelegate(self.info_table))
         self.pages = AnimatedStackedWidget(Qt.Orientation.Horizontal)
         self.pages.addWidget(self.form_scroll)
         self.pages.addWidget(self.info_table)

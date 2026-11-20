@@ -12,7 +12,7 @@ from qt_helpers import mouse_click, wait
 from PySide6.QtWidgets import QApplication, QCheckBox, QScrollArea
 
 from ok import og
-from ok.ui.qt.kit import Dialog
+from ok.ui.qt.kit import Dialog, Table
 from ok.ui.qt.tasks import tasks_page as page_module
 from ok.ui.qt.tasks.config_editors import (DropDownEditor, ListEditor, LineEditEditor, MultiSelectionEditor,
                                            NumberEditor, SwitchEditor, TextEditEditor, config_editor)
@@ -440,6 +440,7 @@ class TestTasksPage(QtTestCase):
         page.detail.refresh()
         self.assertTrue(page.detail.tabs.item("info").isVisibleTo(page.detail))
         page.detail.tabs.set_current("info")
+        self.assertIsInstance(page.detail.info_table, Table)
         self.assertEqual("3", page.detail.info_table.item(0, 1).text())
 
     def test_filter_tabs_follow_kinds_and_groups(self):

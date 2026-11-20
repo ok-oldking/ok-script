@@ -13,7 +13,7 @@ from qt_helpers import key_click, mouse_click, wait
 from PySide6.QtWidgets import QApplication, QComboBox, QLabel, QListView, QScrollArea, QWidget
 
 from ok.ui.qt.kit import (Button, ComboBox, Dialog, FlowLayout, ICON_NAMES, Label, NumberBox, Pill, ProgressRing,
-                          SettingGroup, SettingRow, StatusDot, Switch, TabStrip, Theme, Toast, icon, load_icon,
+                          SettingGroup, SettingRow, StatusDot, Switch, TabStrip, Table, Theme, Toast, icon, load_icon,
                           set_toast_anchor, show_toast, theme)
 from ok.ui.qt.kit.theme import contrast_ratio, readable_accent
 from ok.ui.qt.kit.icons import tinted_icon
@@ -247,6 +247,30 @@ class TestIcons(KitTestCase):
 
 
 class TestWidgets(KitTestCase):
+    def test_table_clips_selection_at_the_bottom_corners(self):
+        table = Table(20, 2)
+        table.resize(450, 200)
+        table.verticalHeader().hide()
+        table.horizontalHeader().setStretchLastSection(True)
+        self.host(table)
+        table.scrollToBottom()
+        viewport = table.viewport()
+        QApplication.sendEvent(viewport, QEvent(QEvent.Type.Leave))
+        bounds = viewport.geometry()
+
+        def sample_colors():
+            image = table.grab().toImage()
+            scale = image.devicePixelRatio()
+            points = (bounds.bottomLeft(), bounds.bottomRight(), bounds.bottomRight() - QPoint(40, 3))
+            return [image.pixelColor(round(point.x() * scale), round(point.y() * scale)) for point in points]
+
+        idle = sample_colors()
+        table.selectRow(table.rowCount() - 1)
+        selected = sample_colors()
+
+        self.assertEqual(idle[:2], selected[:2])
+        self.assertNotEqual(idle[2], selected[2])
+
     def test_kit_class_names_are_visible_to_stylesheets(self):
         self.assertEqual("Button", Button("x").metaObject().className())
         self.assertEqual("SettingRow", SettingRow("x").metaObject().className())
