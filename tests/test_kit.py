@@ -7,8 +7,8 @@ from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtCore import QAbstractAnimation, QEvent, QObject, QPoint, QSize, Qt, QTimer
-from PySide6.QtGui import QColor, QIcon, QImage, QPalette
+from PySide6.QtCore import QAbstractAnimation, QEvent, QObject, QPoint, QPointF, QSize, Qt, QTimer
+from PySide6.QtGui import QColor, QIcon, QImage, QMouseEvent, QPalette
 from qt_helpers import key_click, mouse_click, wait
 from PySide6.QtWidgets import QApplication, QComboBox, QLabel, QListView, QScrollArea, QWidget
 
@@ -270,6 +270,65 @@ class TestWidgets(KitTestCase):
 
         self.assertEqual(idle[:2], selected[:2])
         self.assertNotEqual(idle[2], selected[2])
+
+    def test_table_draws_only_inner_dividers(self):
+        table = Table(3, 2)
+        table.resize(450, 200)
+        table.verticalHeader().hide()
+        self.host(table)
+        QApplication.sendEvent(table.viewport(), QEvent(QEvent.Type.Leave))
+        image = table.grab().toImage()
+        scale = image.devicePixelRatio()
+
+        def pixel(x, y):
+            return image.pixelColor(round(x * scale), round(y * scale))
+
+        body = table.viewport().geometry()
+        row_y = body.top() + table.rowViewportPosition(1) + table.rowHeight(1) // 2
+        first_edge = body.left() + table.columnViewportPosition(0) + table.columnWidth(0) - 1
+        last_edge = body.left() + table.columnViewportPosition(1) + table.columnWidth(1) - 1
+        self.assertNotEqual(pixel(first_edge + 4, row_y), pixel(first_edge, row_y))
+        self.assertEqual(pixel(last_edge + 4, row_y), pixel(last_edge, row_y))
+
+        header = table.horizontalHeader().geometry()
+        header_y = header.top() + header.height() // 2
+        header_edge = header.left() + table.columnWidth(0) - 1
+        self.assertEqual(pixel(header_edge + 4, header_y), pixel(header_edge, header_y))
+
+    def test_table_overlay_scrollbar_follows_the_view(self):
+        table = Table(50, 2)
+        table.resize(450, 200)
+        table.horizontalHeader().setStretchLastSection(True)
+        self.host(table)
+        scroll = table.verticalScrollBar()
+        overlay = table._scrollbar_overlay
+
+        self.assertTrue(overlay.isVisible())
+        self.assertEqual((scroll.minimum(), scroll.maximum()), (overlay.minimum(), overlay.maximum()))
+        overlay.setValue(overlay.maximum() // 2)
+        self.assertEqual(overlay.value(), scroll.value())
+        scroll.setValue(0)
+        self.assertEqual(0, overlay.value())
+        last = table.visualRect(table.model().index(0, 1))
+        self.assertEqual(overlay.width(), table._overlay_inset(last))
+
+        table.setRowCount(1)
+        QApplication.processEvents()
+        self.assertFalse(overlay.isVisible())
+        self.assertEqual(0, table._overlay_inset(last))
+
+    def test_table_tracks_the_hovered_row(self):
+        table = Table(5, 2)
+        table.resize(450, 300)
+        self.host(table)
+        viewport = table.viewport()
+        y = table.rowViewportPosition(2) + table.rowHeight(2) // 2
+        QApplication.sendEvent(viewport, QMouseEvent(
+            QEvent.Type.MouseMove, QPointF(20, y), viewport.mapToGlobal(QPointF(20, y)),
+            Qt.MouseButton.NoButton, Qt.MouseButton.NoButton, Qt.KeyboardModifier.NoModifier))
+        self.assertEqual(2, table._hovered_row)
+        QApplication.sendEvent(viewport, QEvent(QEvent.Type.Leave))
+        self.assertEqual(-1, table._hovered_row)
 
     def test_kit_class_names_are_visible_to_stylesheets(self):
         self.assertEqual("Button", Button("x").metaObject().className())

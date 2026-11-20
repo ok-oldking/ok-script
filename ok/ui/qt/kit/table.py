@@ -1,6 +1,6 @@
 """Table widget with the kit theme, rounded headers and overlay scrolling."""
 
-from PySide6.QtCore import QEvent, QPointF, QRectF, QSignalBlocker, Qt
+from PySide6.QtCore import QEvent, QPointF, QRect, QRectF, QSignalBlocker, Qt
 from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPolygonF
 from PySide6.QtWidgets import (
     QHeaderView,
@@ -17,14 +17,48 @@ from ok.ui.qt.kit.theme import theme
 FRAME_WIDTH = 1
 FRAME_RADIUS = 10
 INNER_RADIUS = FRAME_RADIUS - FRAME_WIDTH
+SELECTION_ALPHA = 0.18  # Matches the stylesheet's accent_soft_strong selection.
+
+
+def _rounded_path(rect: QRectF, top_left: bool, top_right: bool, bottom_left: bool, bottom_right: bool,
+                  radius: float = INNER_RADIUS) -> QPainterPath:
+    """Return ``rect`` with only the requested corners rounded."""
+    path = QPainterPath()
+    path.addRect(rect)
+    diameter = radius * 2
+    corners = (
+        (top_left, QRectF(rect.left(), rect.top(), radius, radius),
+         QRectF(rect.left(), rect.top(), diameter, diameter)),
+        (top_right, QRectF(rect.right() - radius, rect.top(), radius, radius),
+         QRectF(rect.right() - diameter, rect.top(), diameter, diameter)),
+        (bottom_left, QRectF(rect.left(), rect.bottom() - radius, radius, radius),
+         QRectF(rect.left(), rect.bottom() - diameter, diameter, diameter)),
+        (bottom_right, QRectF(rect.right() - radius, rect.bottom() - radius, radius, radius),
+         QRectF(rect.right() - diameter, rect.bottom() - diameter, diameter, diameter)),
+    )
+    for rounded, square, circle in corners:
+        if rounded:
+            outside = QPainterPath()
+            outside.addRect(square)
+            arc = QPainterPath()
+            arc.addEllipse(circle)
+            path = path.subtracted(outside.subtracted(arc))
+    return path
 
 
 class Table(QTableWidget):
-    """A styled table that keeps the native QTableWidget model and interaction."""
+    """A styled table that keeps the native QTableWidget model and interaction.
+
+    Colors, frame and padding come from the kit stylesheet; this class only
+    adds the rounded clipping, row hover and the overlay vertical scrollbar.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._hovered_row = -1
+        self._round_top = False
+        self._round_bottom = False
+        self._viewport_clip = None
         self._scrollbar_overlay = _TableScrollBar(self)
         self._scrollbar_overlay.hide()
         self.setMouseTracking(True)
@@ -32,26 +66,13 @@ class Table(QTableWidget):
         self.setVerticalScrollMode(self.ScrollMode.ScrollPerPixel)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll = self.verticalScrollBar()
+        scroll.rangeChanged.connect(self._sync_scrollbar)
         scroll.valueChanged.connect(self._scrollbar_overlay.setValue)
         self._scrollbar_overlay.valueChanged.connect(scroll.setValue)
         self.setHorizontalHeader(_TableHeader(self))
-        theme.changed.connect(self._apply_theme)
-        self._apply_theme()
         self.setItemDelegate(_TableItemDelegate(self))
-
-    def _apply_theme(self):
-        surface = theme.color("surface").name()
-        border = theme.color("border").name()
-        text = theme.color("text").name()
-        # The delegate draws the selection inside the rounded frame.
-        self.setStyleSheet(f"""
-            QTableWidget {{
-                background: {surface}; color: {text}; border: {FRAME_WIDTH}px solid {border};
-                border-radius: {FRAME_RADIUS}px; outline: 0;
-                selection-background-color: transparent;
-            }}
-            QTableWidget::item {{ padding: 0 12px; }}
-        """)
+        # The stylesheet would paint selections unclipped; the delegate draws them inside the frame.
+        self.setStyleSheet("QTableWidget { selection-background-color: transparent; }")
 
     def viewportEvent(self, event):
         if event.type() in (QEvent.Type.Enter, QEvent.Type.MouseMove):
@@ -62,6 +83,15 @@ class Table(QTableWidget):
 
     def updateGeometries(self):
         super().updateGeometries()
+        self._sync_scrollbar()
+        overlay = self._scrollbar_overlay
+        bounds = self.viewport().geometry()
+        width = overlay.sizeHint().width()
+        overlay.setGeometry(bounds.right() + 1 - width, bounds.top(), width, bounds.height())
+        overlay.raise_()
+        self._update_viewport_clip()
+
+    def _sync_scrollbar(self, *_):
         # Mirror the table's vertical controller in a scrollbar over its right edge.
         scroll = self.verticalScrollBar()
         overlay = self._scrollbar_overlay
@@ -70,17 +100,65 @@ class Table(QTableWidget):
             overlay.setSingleStep(scroll.singleStep())
             overlay.setRange(scroll.minimum(), scroll.maximum())
             overlay.setValue(scroll.value())
-        bounds = self.viewport().geometry()
-        width = overlay.sizeHint().width()
-        overlay.setGeometry(bounds.right() + 1 - width, bounds.top(), width, bounds.height())
-        overlay.setVisible(scroll.maximum() > scroll.minimum())
-        overlay.raise_()
+        visible = scroll.maximum() > scroll.minimum()
+        if visible == overlay.isHidden():
+            overlay.setVisible(visible)
+            # Cells under the scrollbar inset their content while it is shown.
+            self.viewport().update()
+
+    def _update_viewport_clip(self):
+        # Round only the viewport corners that meet the frame's rounded corners.
+        no_left = not self.verticalHeader().isVisibleTo(self)
+        self._round_top = not self.horizontalHeader().isVisibleTo(self)
+        self._round_bottom = not self.horizontalScrollBar().isVisibleTo(self)
+        if not (self._round_top or self._round_bottom):
+            self._viewport_clip = None
+            return
+        self._viewport_clip = _rounded_path(
+            QRectF(self.viewport().rect()),
+            self._round_top and no_left, self._round_top,
+            self._round_bottom and no_left, self._round_bottom,
+        )
+
+    def _cell_clip(self, cell: QRect):
+        """The rounded clip for a cell touching a rounded corner, else None."""
+        if self._viewport_clip is None:
+            return None
+        height = self.viewport().height()
+        if (self._round_top and cell.top() < INNER_RADIUS) or (
+                self._round_bottom and cell.bottom() >= height - INNER_RADIUS):
+            return self._viewport_clip
+        return None
+
+    def _overlay_inset(self, cell: QRect) -> int:
+        """Pixels of ``cell`` covered by the overlay scrollbar."""
+        overlay = self._scrollbar_overlay
+        if overlay.isHidden():
+            return 0
+        return max(0, cell.right() + 1 - (self.viewport().width() - overlay.width()))
+
+    def _is_last_column(self, column: int) -> bool:
+        header = self.horizontalHeader()
+        for visual in range(header.count() - 1, -1, -1):
+            logical = header.logicalIndex(visual)
+            if not header.isSectionHidden(logical):
+                return logical == column
+        return False
 
     def scrollContentsBy(self, dx, dy):
         super().scrollContentsBy(dx, dy)
         viewport = self.viewport()
-        # Qt can copy scrolled pixels from the rounded edge into the middle of the view.
-        viewport.update()
+        if self._viewport_clip is not None:
+            # Qt blits scrolled pixels, carrying clipped corners into the view; repaint those bands.
+            if dx:
+                viewport.update()
+            elif dy:
+                band = INNER_RADIUS + abs(dy)
+                width, height = viewport.width(), viewport.height()
+                if self._round_top:
+                    viewport.update(0, 0, width, band)
+                if self._round_bottom:
+                    viewport.update(0, height - band, width, band)
         if viewport.underMouse():
             self._set_hovered_row(self.rowAt(viewport.mapFromGlobal(QCursor.pos()).y()))
 
@@ -158,42 +236,48 @@ class _TableScrollBar(QScrollBar):
 
 class _TableItemDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
+        table = self.parent()
         option = QStyleOptionViewItem(option)
         self.initStyleOption(option, index)
-        cell = option.rect
-        viewport = self.parent().viewport().rect()
+        cell = QRect(option.rect)
+        viewport = table.viewport().rect()
         painter.save()
-        if cell.bottom() > viewport.bottom() - INNER_RADIUS:
-            bounds = QRectF(viewport)
-            clip = QPainterPath()
-            clip.setFillRule(Qt.FillRule.WindingFill)
-            clip.addRoundedRect(bounds, INNER_RADIUS, INNER_RADIUS)
-            clip.addRect(bounds.adjusted(0, 0, 0, -INNER_RADIUS))
+        clip = table._cell_clip(cell)
+        if clip is not None:
             antialiasing = QPainter.RenderHint.Antialiasing
             was_antialiased = painter.testRenderHint(antialiasing)
             painter.setRenderHint(antialiasing)
             painter.setClipPath(clip, Qt.ClipOperation.IntersectClip)
             painter.setRenderHint(antialiasing, was_antialiased)
-        option.state &= ~QStyle.StateFlag.State_MouseOver
-        if option.state & QStyle.StateFlag.State_Selected:
-            surface = theme.color("surface")
-            accent = theme.accent()
-            selected = QColor.fromRgbF(
-                surface.redF() * 0.86 + accent.redF() * 0.14,
-                surface.greenF() * 0.86 + accent.greenF() * 0.14,
-                surface.blueF() * 0.86 + accent.blueF() * 0.14,
-            )
-            option.state &= ~(QStyle.StateFlag.State_Selected | QStyle.StateFlag.State_HasFocus)
-            option.backgroundBrush = QBrush(selected)
-        elif index.row() == self.parent()._hovered_row:
-            hover = theme.color("control" if theme.is_dark() else "control_hover")
-            option.backgroundBrush = QBrush(hover)
+
+        # Paint the background across the whole cell, then the content beside the scrollbar.
+        state = QStyle.StateFlag
+        features = QStyleOptionViewItem.ViewItemFeature
+        if option.state & state.State_Selected:
+            background = QColor(theme.accent())
+            background.setAlphaF(SELECTION_ALPHA)
+            background = QBrush(background)
+        elif index.row() == table._hovered_row:
+            background = QBrush(theme.color("control" if theme.is_dark() else "control_hover"))
+        elif option.backgroundBrush.style() != Qt.BrushStyle.NoBrush:
+            background = option.backgroundBrush
+        elif option.features & features.Alternate:
+            background = option.palette.alternateBase()
+        else:
+            background = None
+        if background is not None:
+            painter.fillRect(cell, background)
+        option.state &= ~(state.State_Selected | state.State_HasFocus | state.State_MouseOver)
+        option.features &= ~features.Alternate
+        option.backgroundBrush = QBrush()
+        option.rect = cell.adjusted(0, 0, -table._overlay_inset(cell), 0)
         option.widget.style().drawControl(
             QStyle.ControlElement.CE_ItemViewItem, option, painter, option.widget
         )
-        # Cell dividers stop at the frame even when the final column is clipped.
+
+        # Inner dividers only: none right of the last column or along the frame.
         painter.setPen(theme.color("border"))
-        if cell.right() < viewport.right():
+        if not table._is_last_column(index.column()) and cell.right() < viewport.right():
             painter.drawLine(cell.topRight(), cell.bottomRight())
         if cell.bottom() < viewport.bottom():
             painter.drawLine(cell.bottomLeft(), cell.bottomRight())
@@ -201,43 +285,28 @@ class _TableItemDelegate(QStyledItemDelegate):
 
 
 class _TableHeader(QHeaderView):
-    """Paint joined header cells with rounded outer top corners."""
+    """Header with a rounded top surface and no dividers between sections."""
 
     def __init__(self, parent=None):
         super().__init__(Qt.Orientation.Horizontal, parent)
-        # Remove the inherited item-view frame without changing viewport geometry.
-        self.setStyleSheet("QHeaderView { background: transparent; border: 0; border-radius: 0; }")
+        # Sections keep Qt's painting (text, icons, sort indicator) over a surface drawn below.
+        self.setStyleSheet(
+            "QHeaderView { background: transparent; border: 0; border-radius: 0; }"
+            "QHeaderView::section { background: transparent; border: 0; }"
+        )
         self.viewport().setAutoFillBackground(False)
 
     def paintEvent(self, event):
         rect = self.viewport().rect()
-        bounds = QRectF(rect)
-        path = QPainterPath()
-        path.setFillRule(Qt.FillRule.WindingFill)
-        path.addRoundedRect(bounds, INNER_RADIUS, INNER_RADIUS)
-        path.addRect(bounds.adjusted(0, INNER_RADIUS, 0, 0))
+        table = self.parentWidget()
+        round_left = table is None or not table.verticalHeader().isVisibleTo(table)
+        path = _rounded_path(QRectF(rect), round_left, True, False, False)
         # Paint the rounded surface in viewport coordinates, independently of section widths.
         with QPainter(self.viewport()) as painter:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             painter.fillPath(path, theme.color("surface_alt"))
+            # A 1px line on integer coordinates must not be antialiased, or it blurs over two rows.
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
             painter.setPen(theme.color("border"))
             painter.drawLine(rect.bottomLeft(), rect.bottomRight())
         super().paintEvent(event)
-
-    def paintSection(self, painter, rect, logical_index):
-        if not rect.isValid():
-            return
-        painter.save()
-        if rect.right() < self.viewport().rect().right():
-            painter.setPen(theme.color("border"))
-            painter.drawLine(rect.topRight(), rect.bottomRight())
-        font = self.font()
-        font.setWeight(font.Weight.DemiBold)
-        painter.setFont(font)
-        painter.setPen(theme.color("text_secondary"))
-        text = str(self.model().headerData(logical_index, self.orientation()) or "")
-        text = painter.fontMetrics().elidedText(
-            text, Qt.TextElideMode.ElideRight, max(0, rect.width() - 24)
-        )
-        painter.drawText(rect.adjusted(12, 0, -12, 0), self.defaultAlignment(), text)
-        painter.restore()
