@@ -21,6 +21,7 @@ from ok.ui.qt.kit.buttons import Button
 from ok.ui.qt.kit.inputs import ComboBox
 from ok.ui.qt.kit.labels import Label
 from ok.ui.qt.kit.theme import theme
+from ok.ui.qt.shell import diagnostics
 from ok.util.config import Config
 
 LOG_LINE_PATTERN = re.compile(
@@ -149,6 +150,8 @@ class LogPage(QWidget):
         self.pause_button.clicked.connect(self.toggle_pause)
         self.clear_button = Button(_t("Clear"), "x", "subtle")
         self.clear_button.clicked.connect(self.clear)
+        self.export_button = Button(QCoreApplication.translate("StartTab", "Export Logs"), "export", "subtle")
+        self.export_button.clicked.connect(diagnostics.export_logs)
         self.tail_button = Button(QCoreApplication.translate("LogPage", "Jump to latest"), "chevron-down", "subtle")
         self.tail_button.clicked.connect(self.scroll_to_tail)
         self.tail_button.hide()
@@ -162,6 +165,7 @@ class LogPage(QWidget):
         toolbar.addWidget(self.tail_button)
         toolbar.addWidget(self.pause_button)
         toolbar.addWidget(self.clear_button)
+        toolbar.addWidget(self.export_button)
 
         self.view = QPlainTextEdit()
         self.view.setObjectName("logView")
