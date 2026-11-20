@@ -29,7 +29,7 @@ Use the project's venv and existing development launcher. Without a custom launc
 
 Read the configured artifact directory's `connection.json` (normally `logs/mcp/connection.json`) for URL, bearer token, and PID. Check that PID and listener are live; the file can outlast its server. Connect with the supplied URL and `Authorization: Bearer <token>` header. Keep tokens out of normal output. Use a native MCP connection when available, or the installed official SDK and a local client script when it is not.
 
-The tools are `list_tasks()`, `reload_tasks(task_ids=None)`, `run_task(file_path)`, `get_run_status(run_id)`, `stop_task(run_id)`, and `screenshot()`. Reloads return run IDs tracked by the same status and stop tools. Pass an absolute path to `run_task`; keep task logic in files. Read logs and edit files locally rather than adding inline-code, file-editing, or log-reading tools.
+The tools are `list_tasks()`, `reload_tasks(task_ids=None)`, `run_task(file_path)`, `run_code(source)`, `get_run_status(run_id)`, `stop_task(run_id)`, and `screenshot()`. Reloads and code runs return run IDs tracked by the same status and stop tools. Pass an absolute path to `run_task`; keep task logic in files. `run_code` runs a probing snippet with `self` bound to a fresh task (for example `self.click(123, 456)` or `self.send_key('esc')`); it skips reset and verification, a trailing expression's repr becomes the result, and `get_task(task_id)` returns a registered task. Use it only to probe input, coordinates, or detection, never as evidence that a task works. Read logs and edit files locally rather than adding file-editing or log-reading tools.
 
 ## Define recovery and success before iterating
 

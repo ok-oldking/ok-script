@@ -145,6 +145,7 @@ Clients supporting MCP resources can also discover these skills through
 | `list_tasks` | None | Registered task IDs, names, absolute source paths, types and plugin ownership. |
 | `reload_tasks` | Optional `task_ids` list | Immediately returns a run ID for reloading selected registered tasks, or all tasks/plugins when omitted. |
 | `run_task` | `file_path` | Immediately returns a run ID, source hash and absolute artifact paths. |
+| `run_code` | `source` | Runs a probing snippet with `self` bound to a fresh task; returns a run ID like `run_task`. |
 | `get_run_status` | `run_id` | Execution state, phase, brief error and artifact paths. |
 | `stop_task` | `run_id` | Requests cancellation and returns the current state. |
 | `exit_process` | Nonempty `reason` | Returns `state: exiting`, this runtime's `pid`, and the reason; schedules process shutdown with a forced-exit fallback. |
@@ -186,7 +187,26 @@ the actual GUI task card or a thin `run_task` harness that calls the registered
 implementation with `self.get_task_by_class(ExistingTask)`. Keep behavior changes
 in the existing task source instead of copying it into a temporary task.
 
-File runs and reloads share the same active-run slot and exclusive executor
+## Probe with code snippets
+
+`run_code(source)` runs a short Python snippet on the executor with `self`
+bound to a fresh `BaseTask`, for one-off probes such as checking an input
+method or a coordinate:
+
+```python
+run_code("self.click(123, 456)\nself.sleep(0.5)\nself.send_key('esc')")
+run_code("self.find_one('start_button')")  # result: the Box repr, or None
+```
+
+The snippet skips `reset_to_start()` and `verify_start_state()`, so it proves
+nothing about a task's baseline or success. If the last statement is an
+expression, its `repr` becomes the run's `result`. `get_task(task_id)` returns
+a registered task by an ID from `list_tasks`. The source is saved as
+`source.py` in the run's artifact directory, and tracebacks refer to its lines.
+Put finished behavior into task files and validate it with `run_task` or the
+GUI.
+
+File runs, code runs and reloads share the same active-run slot and exclusive executor
 ownership. Wait for the previous run and cleanup to finish before reloading.
 Reload requests stop scheduled one-time tasks and suspend triggers until
 completion; they do not restart stopped one-time tasks. `stop_task` can cancel a

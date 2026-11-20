@@ -407,3 +407,70 @@ def test_cancel_queued_reload_does_not_replace_tasks(development):
     assert not dev.app.events
     dev.app.release.set()
     first.future.result(2)
+
+
+def test_run_code_binds_self_and_returns_trailing_expression(development):
+    dev = development
+    source = "self._app.events.append(type(self).__name__)\nself.executor.current_task is self"
+    record = dev.runner.run_code(source)
+    assert record['operation'] == 'run_code'
+    status = wait_run(dev.runner, record['run_id'])
+    assert status['state'] == 'succeeded', status
+    assert status['result'] == 'True'
+    assert dev.app.events == ['CodeTask']
+    assert (Path(status['artifact_directory']) / 'source.py').read_text(encoding='utf-8') == source
+    assert dev.executor.current_task is None
+    assert dev.executor.exclusive_owner is None
+
+
+def test_run_code_falsy_result_succeeds_and_statements_return_none(development):
+    dev = development
+    falsy = wait_run(dev.runner, dev.runner.run_code('False')['run_id'])
+    assert falsy['state'] == 'succeeded', falsy
+    assert falsy['result'] == 'False'
+    statement = wait_run(dev.runner, dev.runner.run_code("value = 1")['run_id'])
+    assert statement['state'] == 'succeeded', statement
+    assert statement['result'] is None
+
+
+def test_run_code_error_points_at_saved_source_line(development):
+    dev = development
+    status = wait_run(dev.runner, dev.runner.run_code("x = 1\nraise ValueError('probe failed')")['run_id'])
+    assert status['state'] == 'failed'
+    assert 'probe failed' in status['error']
+    log = Path(status['log_path']).read_text(encoding='utf-8')
+    assert 'source.py", line 2' in log
+    assert "raise ValueError('probe failed')" in log
+    assert dev.executor.exclusive_owner is None
+
+
+def test_run_code_get_task_returns_registered_instance(development):
+    dev = development
+    _, task = register_task(dev)
+    status = wait_run(dev.runner, dev.runner.run_code(
+        "get_task('registered_task.RegisteredTask').run()\nself._app.state['value']")['run_id'])
+    assert status['state'] == 'succeeded', status
+    assert status['result'] == "'first'"
+    missing = wait_run(dev.runner, dev.runner.run_code("get_task('missing.Task')")['run_id'])
+    assert missing['state'] == 'failed'
+    assert 'list_tasks' in missing['error']
+
+
+@pytest.mark.parametrize('source', ['', '   ', None])
+def test_run_code_rejects_empty_source_without_taking_ownership(development, source):
+    dev = development
+    with pytest.raises(ValueError):
+        dev.runner.run_code(source)
+    assert dev.executor.exclusive_owner is None
+
+
+def test_run_code_shares_active_run_slot(development):
+    dev = development
+    run_id = dev.runner.run_code('self._app.started.set(); self._app.release.wait(3); self.sleep(0)')['run_id']
+    assert dev.app.started.wait(2)
+    with pytest.raises(RuntimeError, match='still active'):
+        dev.runner.run_task(str(write_task(dev.root)))
+    assert dev.runner.stop_task(run_id)['state'] == 'stopping'
+    dev.app.release.set()
+    assert wait_run(dev.runner, run_id)['state'] == 'cancelled'
+    assert dev.executor.exclusive_owner is None

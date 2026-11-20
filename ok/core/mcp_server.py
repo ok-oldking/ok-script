@@ -126,6 +126,8 @@ def create_mcp_app(runner, token, port, request_exit=None):
         'until the reload finishes before testing. Read the reload-tasks skill for this workflow. '
         'Write a local Python file defining class Task(BaseTask) with reset_to_start(), '
         'verify_start_state(), and run(). Call run_task with its absolute path. '
+        'For quick probes such as one click or key press, call run_code with a snippet '
+        'using self (a fresh BaseTask); it skips reset and verification. '
         'Read logs and screenshots directly from the returned local paths. '
         'Use assertions in run() to verify success. A stopping run still owns the executor. '
         'If runtime state cannot be cleared or reset, code is stuck, or cached dependencies '
@@ -180,6 +182,18 @@ def create_mcp_app(runner, token, port, request_exit=None):
         Edit the file and invoke again to load a fresh task instance.
         """
         return await asyncio.to_thread(runner.run_task, file_path)
+
+    @mcp.tool()
+    async def run_code(source: str) -> dict[str, Any]:
+        """Run a Python snippet for probing, with self bound to a fresh BaseTask.
+
+        Example: self.click(123, 456); self.send_key('esc'). Skips reset and
+        start-state verification. A trailing expression's repr becomes the result.
+        get_task(task_id) returns a registered task by an ID from list_tasks.
+        Returns a run ID immediately; source is saved as source.py in the artifacts.
+        Put finished behavior in task files, not snippets.
+        """
+        return await asyncio.to_thread(runner.run_code, source)
 
     @mcp.tool()
     async def get_run_status(run_id: str) -> dict[str, Any]:

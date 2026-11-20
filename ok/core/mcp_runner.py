@@ -1,5 +1,6 @@
 """File-based development runs and registered-task reloads, independent of MCP and Qt."""
 
+import ast
 import hashlib
 import importlib.util
 import inspect
@@ -23,6 +24,41 @@ from ok.util.logger import Logger
 
 TERMINAL_STATES = {'succeeded', 'failed', 'cancelled'}
 logger = Logger.get_logger(__name__)
+
+
+class _CodeResult:
+    """Wrap a snippet's value so a falsy result is not read as ``run()`` failing."""
+
+    def __init__(self, value):
+        self.value = value
+
+
+class CodeTask(BaseTask):
+    """Run a source snippet with ``self`` bound to this task instance.
+
+    Probing runs skip the baseline contract: reset and verification succeed
+    without acting. A trailing expression's value becomes the run result.
+    """
+
+    source = ''
+    filename = '<mcp:run_code>'
+    get_task = None
+
+    def reset_to_start(self):
+        return True
+
+    def verify_start_state(self):
+        return True
+
+    def run(self):
+        tree = ast.parse(self.source, self.filename)
+        last = tree.body.pop() if tree.body and isinstance(tree.body[-1], ast.Expr) else None
+        namespace = {'__name__': '__mcp_code__', 'self': self, 'get_task': self.get_task}
+        exec(compile(tree, self.filename, 'exec'), namespace)
+        if last is None:
+            return None
+        expression = ast.Expression(last.value)
+        return _CodeResult(eval(compile(expression, self.filename, 'eval'), namespace))
 
 
 class McpTaskRunner:
@@ -133,6 +169,39 @@ class McpTaskRunner:
             {'operation': 'run_task', 'file_path': str(path),
              'source_sha256': hashlib.sha256(source).hexdigest(), 'phase': 'loading'})
 
+    def run_code(self, source: str):
+        """Run a Python snippet with ``self`` bound to a fresh task; return its run ID.
+
+        Probing only: no reset or start-state verification. ``get_task(task_id)``
+        returns a registered task by an ID from list_tasks.
+        """
+        if not isinstance(source, str) or not source.strip():
+            raise ValueError('source must be nonempty Python code')
+        encoded = source.encode('utf-8')
+
+        def execute(run_id):
+            directory = Path(self._runs[run_id]['record']['artifact_directory'])
+            saved = directory / 'source.py'
+            # Tracebacks read lines from this file, so they match the snippet.
+            saved.write_bytes(encoded)
+            cls = type('CodeTask', (CodeTask,), {
+                'source': source, 'filename': str(saved), 'get_task': staticmethod(self._get_task)})
+            return self._run_task(run_id, lambda: cls, directory)
+
+        return self._submit(execute, 'mcp:run_code', {
+            'operation': 'run_code', 'source_sha256': hashlib.sha256(encoded).hexdigest(),
+            'phase': 'loading'})
+
+    def _registered_tasks(self):
+        return {f'{type(task).__module__}.{type(task).__qualname__}': task
+                for task in self.executor.get_all_tasks()}
+
+    def _get_task(self, task_id):
+        task = self._registered_tasks().get(task_id)
+        if task is None:
+            raise KeyError(f'Unknown task ID {task_id!r}; use an ID from list_tasks')
+        return task
+
     def _require_task_manager(self):
         if self.task_manager is None:
             raise RuntimeError('No registered task manager is available in this runtime')
@@ -173,8 +242,7 @@ class McpTaskRunner:
             if task_ids is not None:
                 if not isinstance(task_ids, list) or any(not isinstance(item, str) for item in task_ids):
                     raise TypeError('task_ids must be a list of IDs from list_tasks')
-                registered = {f'{type(task).__module__}.{type(task).__qualname__}': task
-                              for task in self.executor.get_all_tasks()}
+                registered = self._registered_tasks()
                 unknown = [task_id for task_id in task_ids if task_id not in registered]
                 if unknown:
                     raise ValueError(f'Unknown task IDs: {", ".join(unknown)}; call list_tasks first')
@@ -231,70 +299,81 @@ class McpTaskRunner:
         module_name = f'_ok_mcp_task_{run_id}'
         # Keep sibling imports available through run() and on_destroy(), too.
         added_path = str(path.parent) not in sys.path
-        task = None
         if added_path:
             sys.path.insert(0, str(path.parent))
+
+        def load():
+            spec = importlib.util.spec_from_file_location(module_name, path)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            # Compile the bytes directly: same-size edits within a second must
+            # not pick up stale .pyc files on the next attempt.
+            exec(compile(source, str(path), 'exec'), module.__dict__)
+            cls = getattr(module, 'Task', None)
+            if (not isinstance(cls, type) or cls.__module__ != module_name
+                    or not issubclass(cls, BaseTask) or issubclass(cls, TriggerTask)):
+                raise TypeError('File must define class Task(BaseTask), not a TriggerTask')
+            for method in ('reset_to_start', 'verify_start_state', 'run'):
+                fn = getattr(cls, method, None)
+                if (not callable(fn) or inspect.iscoroutinefunction(fn)
+                        or inspect.isgeneratorfunction(fn) or inspect.isasyncgenfunction(fn)):
+                    raise TypeError(f'Task must implement synchronous {method}()')
+            if cls.run is BaseTask.run:
+                raise TypeError('Task must implement run()')
+            return cls
+
         try:
-            with (directory / 'run.log').open('a', encoding='utf-8', buffering=1) as output:
-                with capture_output(output.write):
-                    try:
-                        self._phase(run_id, 'loading')
-                        spec = importlib.util.spec_from_file_location(module_name, path)
-                        module = importlib.util.module_from_spec(spec)
-                        sys.modules[module_name] = module
-                        # Compile the bytes directly: same-size edits within a second must
-                        # not pick up stale .pyc files on the next attempt.
-                        exec(compile(source, str(path), 'exec'), module.__dict__)
-                        cls = getattr(module, 'Task', None)
-                        if (not isinstance(cls, type) or cls.__module__ != module_name
-                                or not issubclass(cls, BaseTask) or issubclass(cls, TriggerTask)):
-                            raise TypeError('File must define class Task(BaseTask), not a TriggerTask')
-                        for method in ('reset_to_start', 'verify_start_state', 'run'):
-                            fn = getattr(cls, method, None)
-                            if (not callable(fn) or inspect.iscoroutinefunction(fn)
-                                    or inspect.isgeneratorfunction(fn) or inspect.isasyncgenfunction(fn)):
-                                raise TypeError(f'Task must implement synchronous {method}()')
-                        if cls.run is BaseTask.run:
-                            raise TypeError('Task must implement run()')
-                        task = cls(executor=self.executor, app=self.app)
-                        task.artifact_directory = directory
-                        task.after_init(executor=self.executor, scene=self.executor.scene)
-                        task.post_init()
-                        task._enabled = True
-                        task.running = True
-                        task.start_time = time.time()
-                        self.executor.current_task = task
-                        self._phase(run_id, 'preparing')
-                        if self.prepare is not None:
-                            self.prepare()
-                        task.ensure_capture()
-                        self.executor._prepare_task_for_run(is_trigger_task=False)
-                        self._phase(run_id, 'resetting')
-                        if task.reset_to_start() is False:
-                            raise RuntimeError('reset_to_start() returned False')
-                        self._phase(run_id, 'verifying_start')
-                        verified = task.verify_start_state()
-                        if verified is not None and verified is not True:
-                            raise RuntimeError('verify_start_state() must assert or return True')
-                        self._phase(run_id, 'running')
-                        result = task.run()
-                        if result is False:
-                            raise RuntimeError('Task.run() returned False')
-                        self.executor.check_enabled()
-                        return None if result is None else repr(result)[:2000]
-                    finally:
-                        if self.executor.current_task is task:
-                            self.executor.current_task = None
-                        if task is not None:
-                            task.running = False
-                            task._enabled = False
-                            # Cleanup must finish before the job resolves and ownership
-                            # is released, including when reset or verification failed.
-                            task.on_destroy()
+            return self._run_task(run_id, load, directory)
         finally:
             sys.modules.pop(module_name, None)
             if added_path:
                 sys.path.remove(str(path.parent))
+
+    def _run_task(self, run_id, load, directory):
+        """Load a task class, then prepare, reset, verify, run and destroy one instance."""
+        task = None
+        with (directory / 'run.log').open('a', encoding='utf-8', buffering=1) as output:
+            with capture_output(output.write):
+                try:
+                    self._phase(run_id, 'loading')
+                    cls = load()
+                    task = cls(executor=self.executor, app=self.app)
+                    task.artifact_directory = directory
+                    task.after_init(executor=self.executor, scene=self.executor.scene)
+                    task.post_init()
+                    task._enabled = True
+                    task.running = True
+                    task.start_time = time.time()
+                    self.executor.current_task = task
+                    self._phase(run_id, 'preparing')
+                    if self.prepare is not None:
+                        self.prepare()
+                    task.ensure_capture()
+                    self.executor._prepare_task_for_run(is_trigger_task=False)
+                    self._phase(run_id, 'resetting')
+                    if task.reset_to_start() is False:
+                        raise RuntimeError('reset_to_start() returned False')
+                    self._phase(run_id, 'verifying_start')
+                    verified = task.verify_start_state()
+                    if verified is not None and verified is not True:
+                        raise RuntimeError('verify_start_state() must assert or return True')
+                    self._phase(run_id, 'running')
+                    result = task.run()
+                    if result is False:
+                        raise RuntimeError('Task.run() returned False')
+                    self.executor.check_enabled()
+                    if isinstance(result, _CodeResult):
+                        return repr(result.value)[:2000]
+                    return None if result is None else repr(result)[:2000]
+                finally:
+                    if self.executor.current_task is task:
+                        self.executor.current_task = None
+                    if task is not None:
+                        task.running = False
+                        task._enabled = False
+                        # Cleanup must finish before the job resolves and ownership
+                        # is released, including when reset or verification failed.
+                        task.on_destroy()
 
     def _finished(self, run_id, owner, future):
         with self._lock:
