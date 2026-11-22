@@ -23,6 +23,10 @@ class PostMessageInteraction(BaseInteraction):
         self.mouse_pos = (0, 0)
         self.lparam = 0x1e0001
         self._dynamic_target_hwnd = 0
+        # hwnds that have received WM_ACTIVATE since the window last changed
+        # foreground state; activation is only re-sent when this is stale.
+        self._activated_hwnds = ()
+        self.hwnd_window.visible_monitors.append(self)
 
     @property
     def hwnd(self):
@@ -30,6 +34,11 @@ class PostMessageInteraction(BaseInteraction):
             if win32gui.IsWindow(self._dynamic_target_hwnd):
                 return self._dynamic_target_hwnd
         return self.hwnd_window.top_hwnd if self.hwnd_window.top_hwnd else self.hwnd_window.hwnd
+
+    def on_visible(self, visible):
+        # Foreground state changed: the target may have processed a real
+        # WM_ACTIVATE(WA_INACTIVE), so activate again on the next input.
+        self._activated_hwnds = ()
 
     def send_key(self, key, down_time=0.01):
         super().send_key(key, down_time)
@@ -146,13 +155,15 @@ class PostMessageInteraction(BaseInteraction):
     def deactivate(self, hwnd=None):
         self.post(win32con.WM_ACTIVATE, win32con.WA_INACTIVE, 0, hwnd=hwnd)
 
-    def try_activate(self):
+    def try_activate(self, force=False):
         base_hwnd = self.hwnd_window.hwnd
         current_hwnd = self.hwnd
-
-        self.activate(base_hwnd)
-        if current_hwnd != base_hwnd:
-            self.activate(current_hwnd)
+        hwnds = (base_hwnd,) if current_hwnd == base_hwnd else (base_hwnd, current_hwnd)
+        if not force and hwnds == self._activated_hwnds:
+            return
+        for hwnd in hwnds:
+            self.activate(hwnd)
+        self._activated_hwnds = hwnds
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.01, move=True, key="left"):
         super().click(x, y, name=name)
@@ -201,7 +212,8 @@ class PostMessageInteraction(BaseInteraction):
         self.post(action, btn, long_position)
 
     def update_mouse_pos(self, x, y, activate=True):
-        self.try_activate()
+        if activate:
+            self.try_activate()
 
         base_hwnd = self.hwnd_window.top_hwnd if self.hwnd_window.top_hwnd else self.hwnd_window.hwnd
 
