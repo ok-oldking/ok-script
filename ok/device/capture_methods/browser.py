@@ -1,6 +1,8 @@
 import asyncio
 import ctypes
+import json
 import os
+from pathlib import Path
 import re
 import threading
 from ctypes import wintypes
@@ -47,6 +49,21 @@ FAKE_POINTER_LOCK_JS = '''() => {
     if (Object.prototype.hasOwnProperty.call(el, 'requestPointerLock')) {
       el.requestPointerLock = window.__okRequestPointerLock;
     }
+  }
+  return true;
+}'''
+
+# Cloud game pages pause rendering or drop input when the browser window loses OS focus (page
+# visibility APIs report hidden). The automated window is usually not foreground while the agent
+# runs other tasks, so report focus/visibility regardless of the real window state.
+OK_BACKGROUND_JS = '''() => {
+  if (window.__okBackgroundInput === undefined) {
+    window.__okBackgroundInput = true;
+    Object.defineProperty(document, 'hasFocus', {configurable: true, value: () => true});
+    Object.defineProperty(document, 'hidden', {configurable: true, get: () => false});
+    Object.defineProperty(document, 'visibilityState', {configurable: true, get: () => 'visible'});
+    window.addEventListener('blur', () => window.dispatchEvent(new Event('focus')));
+    window.dispatchEvent(new Event('focus'));
   }
   return true;
 }'''
@@ -134,7 +151,17 @@ class BrowserCaptureMethod(BaseCaptureMethod):
         args.append(f"--disable-features={','.join(disable_features)}")
         args.extend(self.config.get('args', []))
 
-        user_data_dir = os.path.join('cache', 'playwright')
+        # Multi-account support: 'user_data_dir' config may be a path or a callable returning one
+        # (evaluated at launch so an account switch is honoured by the next launch);
+        # OK_WW_CLOUD_PROFILE is the environment fallback set by ok-wuthering-waves cloud
+        # multi-account mode. Each profile dir keeps its own cookies, so accounts stay isolated.
+        _profile_dir = self.config.get('user_data_dir')
+        if callable(_profile_dir):
+            _profile_dir = _profile_dir()
+        user_data_dir = str(_profile_dir) if _profile_dir else os.environ.get('OK_WW_CLOUD_PROFILE')
+        user_data_dir = user_data_dir or os.path.join('cache', 'playwright')
+        os.makedirs(user_data_dir, exist_ok=True)
+        self.user_data_dir = user_data_dir
 
         channels = self.config.get('channels', ['msedge', 'chrome', 'chromium'])
         for channel in channels:
@@ -156,9 +183,35 @@ class BrowserCaptureMethod(BaseCaptureMethod):
         if self.browser is None:
             raise Exception("Failed to launch system browser.")
 
+        # launch_persistent_context() has no storage_state parameter; restore the saved login
+        # (cookies plus localStorage) through the context API just after launch. The file is
+        # written on close, see _close_async.
+        _state_path = os.path.join(self.user_data_dir, 'storage_state.json')
+        if os.path.isfile(_state_path):
+            try:
+                _saved_text = await asyncio.to_thread(Path(_state_path).read_text, encoding='utf-8')
+                _saved = json.loads(_saved_text)
+                _saved_cookies = _saved.get('cookies') or []
+                if _saved_cookies:
+                    await self.browser.add_cookies(_saved_cookies)
+                for _origin in (_saved.get('origins') or []):
+                    _url = _origin.get('origin', '')
+                    for _entry in (_origin.get('localStorage') or []):
+                        _name = _entry.get('name', '')
+                        _value = _entry.get('value', '')
+                        await self.browser.add_init_script(
+                            script="if (location.origin === " + json.dumps(_url)
+                            + ") { try { localStorage.setItem(" + json.dumps(_name)
+                            + ", " + json.dumps(_value) + "); } catch (e) {} }")
+            except Exception as _e:
+                logger.warning(f"Failed to restore browser storage state: {_e}")
+
         fake_pointer_lock = self.config.get('fake_pointer_lock', True)
         if fake_pointer_lock:
             await self.browser.add_init_script(script=f'({FAKE_POINTER_LOCK_JS})()')
+        background_input = self.config.get('background_input', True)
+        if background_input:
+            await self.browser.add_init_script(script=f'({OK_BACKGROUND_JS})()')
 
         await asyncio.sleep(0.1)
 
@@ -195,6 +248,8 @@ class BrowserCaptureMethod(BaseCaptureMethod):
         if fake_pointer_lock:
             # A reused page loaded before the init script was registered.
             await self.page.evaluate(FAKE_POINTER_LOCK_JS)
+        if background_input:
+            await self.page.evaluate(OK_BACKGROUND_JS)
 
         await self.page.bring_to_front()
         await self.page.set_viewport_size({'width': width, 'height': height})
@@ -290,6 +345,12 @@ class BrowserCaptureMethod(BaseCaptureMethod):
             except:
                 pass
         if self.browser:
+            try:
+                # Persist cookies/localStorage so the next launch of this profile stays logged in.
+                _state_dir = getattr(self, 'user_data_dir', os.path.join('cache', 'playwright'))
+                await self.browser.storage_state(path=os.path.join(_state_dir, 'storage_state.json'))
+            except Exception as e:
+                logger.warning(f"Failed to save browser storage state: {e}")
             try:
                 await self.browser.close()
             except:
