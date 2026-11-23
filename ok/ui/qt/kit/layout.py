@@ -68,8 +68,9 @@ class FlowLayout(QLayout):
         area = rect.adjusted(margins.left(), margins.top(), -margins.right(), -margins.bottom())
         x, y, line_height = area.x(), area.y(), 0
         for item in self._items:
-            if item.widget() is not None and not item.widget().isVisible() and item.widget().parentWidget() \
-                    and item.widget().parentWidget().isVisible():
+            widget = item.widget()
+            # Layout activation can precede the widget's show event.
+            if widget is not None and widget.isHidden():
                 continue
             hint = item.sizeHint()
             if x + hint.width() > area.right() + 1 and line_height > 0:
