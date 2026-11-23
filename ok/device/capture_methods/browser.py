@@ -96,6 +96,22 @@ class BrowserCaptureMethod(BaseCaptureMethod):
         return None
 
     async def _start_browser_async(self):
+        # A start that fails part way (navigation timeout, window not found) must not leave a page
+        # behind: connected() and start_browser() treat a live page as a started browser.
+        try:
+            await self._launch_browser_async()
+        except Exception:
+            await self._close_async()
+            if self.wgc_capture:
+                self.wgc_capture.close()
+                self.wgc_capture = None
+            self.browser = None
+            self.playwright = None
+            self.page = None
+            self.hwnd = 0
+            raise
+
+    async def _launch_browser_async(self):
         from playwright.async_api import async_playwright
         self.playwright = await async_playwright().start()
 
@@ -172,7 +188,9 @@ class BrowserCaptureMethod(BaseCaptureMethod):
                 self.page = await self.browser.new_page()
 
             if url:
-                await self.page.goto(url)
+                # Seconds; 0 waits without limit.
+                timeout = self.config.get('navigation_timeout', 60)
+                await self.page.goto(url, timeout=timeout * 1000)
 
         if fake_pointer_lock:
             # A reused page loaded before the init script was registered.
@@ -190,6 +208,7 @@ class BrowserCaptureMethod(BaseCaptureMethod):
 
         logger.info(f'BrowserCaptureMethod start browser {width, height} {url}')
 
+        found = False
         for _ in range(20):
             target_title = await self.page.title()
             if target_title:
@@ -216,8 +235,12 @@ class BrowserCaptureMethod(BaseCaptureMethod):
                             lambda: self.global_config.get_config('Basic Options').get(
                                 'Mute Game while in Background'), self.exit_event)
                         self._audio_mute.start()
+                    found = True
                     break
             await asyncio.sleep(0.5)
+
+        if not found:
+            raise CaptureException(f'Browser window not found for page {self.page.url}')
 
     def get_viewport_rect(self):
         """Return the visible page renderer's bounds in screen coordinates."""
