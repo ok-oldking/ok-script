@@ -719,10 +719,45 @@ class TestWidgets(KitTestCase):
         self.host(holder)
 
         flow.removeWidget(middle)
+        middle.hide()
         QApplication.processEvents()
 
         self.assertEqual(2, flow.count())
         self.assertEqual(first.width() + flow.spacing(), last.x())
+        self.assertIs(last, holder.childAt(last.geometry().center()))
+
+    def test_flow_layout_keeps_space_for_retained_hidden_widget(self):
+        holder = QWidget()
+        holder.resize(400, 150)
+        flow = FlowLayout(holder)
+        first, middle, last = (QWidget() for _ in range(3))
+        for widget in (first, middle, last):
+            widget.setFixedSize(85, 100)
+            flow.addWidget(widget)
+        policy = middle.sizePolicy()
+        policy.setRetainSizeWhenHidden(True)
+        middle.setSizePolicy(policy)
+        self.host(holder)
+
+        middle.hide()
+        QApplication.processEvents()
+
+        self.assertEqual(2 * (first.width() + flow.spacing()), last.x())
+
+    def test_flow_layout_minimum_size_ignores_hidden_widgets(self):
+        holder = QWidget()
+        flow = FlowLayout(holder)
+        narrow, wide = QWidget(), QWidget()
+        narrow.setFixedSize(80, 20)
+        wide.setFixedSize(600, 20)
+        flow.addWidget(narrow)
+        flow.addWidget(wide)
+        self.host(holder)
+
+        wide.hide()
+        QApplication.processEvents()
+
+        self.assertEqual(80, flow.minimumSize().width())
 
 
 class _WindowShowRecorder(QObject):
