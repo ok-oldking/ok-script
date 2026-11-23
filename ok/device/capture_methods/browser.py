@@ -51,6 +51,32 @@ FAKE_POINTER_LOCK_JS = '''() => {
   return true;
 }'''
 
+# Cover the bottom-right corner where the game shows the UID (cloud game pages).
+# Mirrors the PC overlay: a black 13% x 2.5% bar at the bottom-right with
+# pointer-events:none, so clicks pass through and CDP screenshots mask the UID
+# as well. add_init_script re-applies it after every navigation. Disable with
+# browser config 'cover_uid': False.
+OK_UID_COVER_JS = '''() => {
+  if (document.getElementById('ok-uid-cover')) return true;
+  var install = function () {
+    if (document.getElementById('ok-uid-cover')) return;
+    var div = document.createElement('div');
+    div.id = 'ok-uid-cover';
+    div.style.cssText = 'position:fixed;right:0;bottom:0;width:13vw;height:2.5vh;'
+        + 'background:#000;z-index:2147483647;pointer-events:none;';
+    (document.body || document.documentElement).appendChild(div);
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', install);
+    document.addEventListener('readystatechange', function () {
+      if (document.readyState !== 'loading') install();
+    });
+  } else {
+    install();
+  }
+  return true;
+}'''
+
 
 class BrowserCaptureMethod(BaseCaptureMethod):
     name = "Browser Capture"
@@ -160,6 +186,10 @@ class BrowserCaptureMethod(BaseCaptureMethod):
         if fake_pointer_lock:
             await self.browser.add_init_script(script=f'({FAKE_POINTER_LOCK_JS})()')
 
+        cover_uid = self.config.get('cover_uid', True)
+        if cover_uid:
+            await self.browser.add_init_script(script=f'({OK_UID_COVER_JS})()')
+
         await asyncio.sleep(0.1)
 
         self.page = None
@@ -195,6 +225,8 @@ class BrowserCaptureMethod(BaseCaptureMethod):
         if fake_pointer_lock:
             # A reused page loaded before the init script was registered.
             await self.page.evaluate(FAKE_POINTER_LOCK_JS)
+        if cover_uid:
+            await self.page.evaluate(OK_UID_COVER_JS)
 
         await self.page.bring_to_front()
         await self.page.set_viewport_size({'width': width, 'height': height})
