@@ -685,6 +685,80 @@ class TestWidgets(KitTestCase):
         width = labels[0].sizeHint().width() * 2 + 30
         self.assertGreater(flow.heightForWidth(width), flow.heightForWidth(width * 10))
 
+    def test_flow_layout_repositions_widgets_when_they_show(self):
+        holder = QWidget()
+        holder.resize(400, 150)
+        flow = FlowLayout(holder)
+        self.host(holder)
+        widgets = [QWidget() for _ in range(3)]
+        for widget in widgets:
+            widget.setFixedSize(85, 100)
+            flow.addWidget(widget)
+
+        QApplication.processEvents()
+        QApplication.processEvents()
+        first, middle, last = widgets
+        self.assertIs(first, holder.childAt(10, 10))
+        self.assertGreater(last.x(), middle.x())
+
+        middle.hide()
+        QApplication.processEvents()
+        self.assertEqual(first.width() + flow.spacing(), last.x())
+        middle.show()
+        QApplication.processEvents()
+        self.assertGreater(last.x(), middle.x())
+
+    def test_flow_layout_repositions_widgets_after_removal(self):
+        holder = QWidget()
+        holder.resize(400, 150)
+        flow = FlowLayout(holder)
+        first, middle, last = (QWidget() for _ in range(3))
+        for widget in (first, middle, last):
+            widget.setFixedSize(85, 100)
+            flow.addWidget(widget)
+        self.host(holder)
+
+        flow.removeWidget(middle)
+        middle.hide()
+        QApplication.processEvents()
+
+        self.assertEqual(2, flow.count())
+        self.assertEqual(first.width() + flow.spacing(), last.x())
+        self.assertIs(last, holder.childAt(last.geometry().center()))
+
+    def test_flow_layout_keeps_space_for_retained_hidden_widget(self):
+        holder = QWidget()
+        holder.resize(400, 150)
+        flow = FlowLayout(holder)
+        first, middle, last = (QWidget() for _ in range(3))
+        for widget in (first, middle, last):
+            widget.setFixedSize(85, 100)
+            flow.addWidget(widget)
+        policy = middle.sizePolicy()
+        policy.setRetainSizeWhenHidden(True)
+        middle.setSizePolicy(policy)
+        self.host(holder)
+
+        middle.hide()
+        QApplication.processEvents()
+
+        self.assertEqual(2 * (first.width() + flow.spacing()), last.x())
+
+    def test_flow_layout_minimum_size_ignores_hidden_widgets(self):
+        holder = QWidget()
+        flow = FlowLayout(holder)
+        narrow, wide = QWidget(), QWidget()
+        narrow.setFixedSize(80, 20)
+        wide.setFixedSize(600, 20)
+        flow.addWidget(narrow)
+        flow.addWidget(wide)
+        self.host(holder)
+
+        wide.hide()
+        QApplication.processEvents()
+
+        self.assertEqual(80, flow.minimumSize().width())
+
 
 class _WindowShowRecorder(QObject):
     def __init__(self):

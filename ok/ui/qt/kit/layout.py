@@ -59,7 +59,8 @@ class FlowLayout(QLayout):
     def minimumSize(self) -> QSize:
         size = QSize()
         for item in self._items:
-            size = size.expandedTo(item.minimumSize())
+            if not item.isEmpty():
+                size = size.expandedTo(item.minimumSize())
         margins = self.contentsMargins()
         return size + QSize(margins.left() + margins.right(), margins.top() + margins.bottom())
 
@@ -68,8 +69,8 @@ class FlowLayout(QLayout):
         area = rect.adjusted(margins.left(), margins.top(), -margins.right(), -margins.bottom())
         x, y, line_height = area.x(), area.y(), 0
         for item in self._items:
-            if item.widget() is not None and not item.widget().isVisible() and item.widget().parentWidget() \
-                    and item.widget().parentWidget().isVisible():
+            # Layout activation can precede the widget's show event.
+            if item.isEmpty():
                 continue
             hint = item.sizeHint()
             if x + hint.width() > area.right() + 1 and line_height > 0:
