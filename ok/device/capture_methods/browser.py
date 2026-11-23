@@ -2,6 +2,7 @@ import asyncio
 import ctypes
 import json
 import os
+from pathlib import Path
 import re
 import threading
 from ctypes import wintypes
@@ -188,8 +189,8 @@ class BrowserCaptureMethod(BaseCaptureMethod):
         _state_path = os.path.join(self.user_data_dir, 'storage_state.json')
         if os.path.isfile(_state_path):
             try:
-                with open(_state_path, encoding='utf-8') as _f:
-                    _saved = json.load(_f)
+                _saved_text = await asyncio.to_thread(Path(_state_path).read_text, encoding='utf-8')
+                _saved = json.loads(_saved_text)
                 _saved_cookies = _saved.get('cookies') or []
                 if _saved_cookies:
                     await self.browser.add_cookies(_saved_cookies)
