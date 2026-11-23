@@ -18,6 +18,19 @@ logger = Logger.get_logger(__name__)
 # How long next_frame() waits for another caller to finish its capture request.
 NEXT_FRAME_BUSY_WAIT = 0.1
 
+# Error screenshots go to <screenshots>/error/ so they are easy to find.
+ERROR_SCREENSHOT_FOLDER = 'error'
+
+
+def error_screenshot_name(task, error):
+    """Name the screenshot saved when ``task`` stops with ``error``.
+
+    Uses the task class name instead of the display name, which may be
+    translated or start with an emoji, so the file stays ASCII and
+    searchable, e.g. ``error/error_DailyTask_CannotFindException``.
+    """
+    return f'{ERROR_SCREENSHOT_FOLDER}/error_{type(task).__name__}_{type(error).__name__}'
+
 
 class ExecutorJob:
     """A callable that runs once on the executor thread, outside the task queue.
@@ -91,6 +104,8 @@ class TaskExecutor:
                  ocr_lib=None,
                  config_folder=None, debug=False, global_config=None, ocr_target_height=0, config=None):
         self._frame = None
+        # Unlike _frame this survives reset_scene(); used for error screenshots.
+        self._last_frame = None
         device_manager.executor = self
         self.pause_start = time.time()
         self.pause_end_time = time.time()
@@ -334,6 +349,7 @@ class TaskExecutor:
                     if height <= 0 or width <= 0:
                         logger.warning(f"captured wrong size frame: {width}x{height}")
                     self._frame = frame
+                    self._last_frame = frame
                     self._last_frame_time = time.time()
                     if getattr(self, '_snapshot_enabled', False):
                         snapshot = (frame.copy(), self._last_frame_time)
@@ -795,6 +811,9 @@ class TaskExecutor:
             elif time.time() - self._last_frame_time > 0.2:
                 self.reset_scene()
             try:
+                # Never attach a frame captured for a previous task to this
+                # task's error screenshot.
+                self._last_frame = self._frame
                 task.start_time = time.time()
                 task.running = True
                 self.current_task = task
@@ -855,8 +874,12 @@ class TaskExecutor:
                 communicate.notification.emit(error, name, True, True, None, params, None)
                 task.info_set(task._app.tr('Error'), error)
                 logger.error(f"{name} exception stopped", e)
-                if self._frame is not None:
-                    communicate.screenshot.emit(self._frame, name, True, None)
+                # sleep() and reset_scene() clear _frame, so a task that raises
+                # right after waiting has no current frame; fall back to the
+                # last frame captured for this task.
+                frame = self._frame if self._frame is not None else self._last_frame
+                if frame is not None:
+                    communicate.screenshot.emit(frame, error_screenshot_name(task, e), True, None)
                 self.current_task = None
                 communicate.task.emit(None)
             finally:
