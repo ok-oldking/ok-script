@@ -1,0 +1,14 @@
+# Community links for ok-script.
+# Single place to look up / update the QQ groups, Discord and QQ channel invites.
+
+discord:
+  - name: Discord
+    url: https://discord.gg/vVyCatEBgA
+
+qq_channel:
+  - name: QQ频道
+    url: https://pd.qq.com/s/djmm6l44y
+
+qq_groups:
+  - name: ok-script开发群
+    url: https://qm.qq.com/q/HhoSqQz9E2
