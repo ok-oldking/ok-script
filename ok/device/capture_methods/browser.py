@@ -3,20 +3,39 @@ import ctypes
 import os
 import re
 import threading
+import time
+from urllib.parse import urlsplit
 from ctypes import wintypes
 
+import cv2
+import numpy as np
 import win32con
 import win32gui
 
 from ok.core.events import communicate
-from ok.task.exceptions import CaptureException
+from ok.task.exceptions import CaptureBusyException, CaptureException
 from ok.util.logger import Logger
 from ok.util.window import DWMWA_EXTENDED_FRAME_BOUNDS, windows_graphics_available, find_hwnd
 
 from ok.device.capture_methods.base import BaseCaptureMethod
+from ok.device.capture_methods.browser_webrtc import (
+    PEER_CONNECTION_REGISTRY_JS,
+    STATUS_ENDED,
+    TAP_JS,
+    WebRtcFrameReceiver,
+    parse_message,
+    place_in_viewport,
+)
 from ok.device.capture_methods.windows_graphics import WindowsGraphicsCaptureMethod
 
 logger = Logger.get_logger(__name__)
+
+# WebRTC capture mode: how often to look for (or re-check) the page's video, and how long a
+# Playwright screenshot may take when there is no video.
+TAP_CHECK_INTERVAL = 1.0
+SCREENSHOT_TIMEOUT_MS = 3000
+FRAME_SOURCE_TIMEOUT = 10
+TAP_RETRY_AFTER_FAILURE = 30
 
 # Pages ask for pointer lock on mouse down (e.g. cloud game SDKs). The automated browser window is
 # usually not the OS foreground window, so Chromium rejects the lock (pointerlockerror) and such pages
@@ -53,8 +72,25 @@ FAKE_POINTER_LOCK_JS = '''() => {
 
 
 class BrowserCaptureMethod(BaseCaptureMethod):
+    """Run the target page in a Playwright-controlled system browser and capture it.
+
+    Browser config keys (app config 'browser'):
+        url: page to open.
+        resolution: page viewport (width, height); default (1280, 720).
+        channels: browsers to try in order; default ['msedge', 'chrome', 'chromium'].
+        args: extra browser command-line arguments.
+        navigation_timeout: seconds to wait for the page to load; default 60, 0 waits without limit.
+        fake_pointer_lock: grant pointer lock requests without OS focus; default True.
+        capture: 'wgc' (default) captures the browser window with Windows Graphics Capture.
+            'webrtc' reads the decoded frames of the page's largest WebRTC <video> directly (or,
+            when the page draws the stream on a canvas, the video track its peer connection
+            receives), which keeps working while the window is minimized but captures only the
+            video (page elements over or around it are black) and uses more CPU. While the page
+            shows no such video, frames come from Playwright screenshots, which are slower.
+    """
     name = "Browser Capture"
     description = "Capture from Browser using Playwright and Windows Graphics Capture"
+    capture_mode = 'wgc'
 
     def __init__(self, config, exit_event, global_config=None):
         super().__init__()
@@ -70,6 +106,13 @@ class BrowserCaptureMethod(BaseCaptureMethod):
         self.page = None
         self.latest_frame = None
         self.wgc_capture = None
+        self.capture_mode = config.get('capture', 'wgc')
+        self._webrtc = None
+        self._tap_offset = (0.0, 0.0)
+        self._next_tap_check = 0.0
+        self._frame_source = None
+        self._frame_lock = threading.Lock()
+        self._loopback_origins = set()
         self.loop = asyncio.new_event_loop()
         self.loop_thread = threading.Thread(target=self._start_loop, daemon=True, name="PlaywrightLoop")
         self.loop_thread.start()
@@ -114,6 +157,7 @@ class BrowserCaptureMethod(BaseCaptureMethod):
     async def _launch_browser_async(self):
         from playwright.async_api import async_playwright
         self.playwright = await async_playwright().start()
+        self._loopback_origins = set()
 
         width, height = self._size
 
@@ -159,6 +203,8 @@ class BrowserCaptureMethod(BaseCaptureMethod):
         fake_pointer_lock = self.config.get('fake_pointer_lock', True)
         if fake_pointer_lock:
             await self.browser.add_init_script(script=f'({FAKE_POINTER_LOCK_JS})()')
+        if self.capture_mode == 'webrtc':
+            await self.browser.add_init_script(script=f'({PEER_CONNECTION_REGISTRY_JS})()')
 
         await asyncio.sleep(0.1)
 
@@ -195,6 +241,9 @@ class BrowserCaptureMethod(BaseCaptureMethod):
         if fake_pointer_lock:
             # A reused page loaded before the init script was registered.
             await self.page.evaluate(FAKE_POINTER_LOCK_JS)
+        if self.capture_mode == 'webrtc':
+            # Connections a reused page already created stay unregistered until it reloads.
+            await self.page.evaluate(PEER_CONNECTION_REGISTRY_JS)
 
         await self.page.bring_to_front()
         await self.page.set_viewport_size({'width': width, 'height': height})
@@ -226,7 +275,8 @@ class BrowserCaptureMethod(BaseCaptureMethod):
 
                     logger.info(
                         f"Browser window '{target_title}' found: {self.hwnd} offsets: {self.x_offset},{self.y_offset} size: {self._size}")
-                    self.wgc_capture = BrowserWGC(self)
+                    if self.capture_mode != 'webrtc':
+                        self.wgc_capture = BrowserWGC(self)
                     if getattr(self, 'global_config', None) is not None:
                         from ok.device.browser_audio import BrowserAudioMute
                         self._audio_mute = BrowserAudioMute(
@@ -309,6 +359,9 @@ class BrowserCaptureMethod(BaseCaptureMethod):
 
     def close(self):
         logger.info(f'BrowserCaptureMethod close browser')
+        if self._webrtc is not None:
+            self._webrtc.close()
+            self._webrtc = None
         if self.wgc_capture:
             self.wgc_capture.close()
             self.wgc_capture = None
@@ -353,12 +406,112 @@ class BrowserCaptureMethod(BaseCaptureMethod):
                 communicate.notification.emit('Paused because browser exited', None, True, True, "start", None, None)
             return None
 
+        if self.capture_mode == 'webrtc':
+            acquired = self._frame_lock.acquire(timeout=timeout) if timeout > 0 else self._frame_lock.acquire(False)
+            if not acquired:
+                raise CaptureBusyException('Browser capture is busy')
+            try:
+                return self._webrtc_or_screenshot_frame()
+            finally:
+                self._frame_lock.release()
+
         if self.wgc_capture:
             if not self.update_window_geometry():
                 return None
             return self.wgc_capture.do_get_frame_wait(timeout)
 
         return None
+
+    def _webrtc_or_screenshot_frame(self):
+        frame, source = self._webrtc_frame(), 'WebRTC video'
+        if frame is None:
+            frame, source = self._screenshot_frame(), 'Playwright screenshot'
+        if frame is not None and source != self._frame_source:
+            logger.info(f'BrowserCaptureMethod capturing from {source}')
+            self._frame_source = source
+        return frame
+
+    def _webrtc_frame(self):
+        if self._webrtc is None:
+            self._webrtc = WebRtcFrameReceiver()
+        if time.monotonic() >= self._next_tap_check:
+            # Also re-checks a running tap: the page may have replaced or moved its video.
+            self._next_tap_check = time.monotonic() + TAP_CHECK_INTERVAL
+            result, offset = self._run_quietly(self._install_tap_async()) or ('error', None)
+            if result != 'ok':
+                if result == 'ws-failed':
+                    logger.warning('BrowserCaptureMethod page cannot connect to the WebRTC frame receiver; '
+                                   f'retrying in {TAP_RETRY_AFTER_FAILURE}s')
+                    self._next_tap_check = time.monotonic() + TAP_RETRY_AFTER_FAILURE
+                self._webrtc.disconnect()
+                return None
+            self._tap_offset = offset
+        message = self._webrtc.request()
+        if message is None:
+            return None
+        status, frame, content_rect, element_rect = parse_message(message)
+        if status == STATUS_ENDED:
+            self._webrtc.disconnect()
+            self._next_tap_check = 0.0
+        if frame is None:
+            return None
+        return place_in_viewport(frame, content_rect, element_rect, self._size, self._tap_offset)
+
+    async def _install_tap_async(self):
+        """Stream from the largest live WebRTC video in any frame of the page.
+
+        Returns ('ok', offset of that frame in the page), ('no-video', None) or ('ws-failed', None).
+        """
+        page = self.page
+        frames = [page.main_frame] + [f for f in page.frames if f != page.main_frame]
+        result = 'no-video'
+        for frame in frames:
+            try:
+                await self._allow_loopback_async(frame.url)
+                status = await frame.evaluate(TAP_JS, {'wsUrl': self._webrtc.url})
+                if status == 'ws-failed':
+                    result = status
+                if status != 'ok':
+                    continue
+                if frame == page.main_frame:
+                    return 'ok', (0.0, 0.0)
+                box = await (await frame.frame_element()).bounding_box()
+                if box is not None:
+                    return 'ok', (box['x'], box['y'])
+            except Exception as e:
+                logger.debug(f'WebRTC tap not installed in {frame.url}: {e}')
+        return result, None
+
+    async def _allow_loopback_async(self, url):
+        """Let a public page reach the loopback frame receiver without Chrome's Local Network Access prompt."""
+        parts = urlsplit(url)
+        if parts.scheme not in ('http', 'https'):
+            return
+        origin = f'{parts.scheme}://{parts.netloc}'
+        if origin in self._loopback_origins:
+            return
+        self._loopback_origins.add(origin)
+        try:
+            await self.browser.grant_permissions(['local-network-access'], origin=origin)
+        except Exception as e:
+            logger.info(f'BrowserCaptureMethod cannot grant local network access to {origin}: {e}')
+
+    def _screenshot_frame(self):
+        data = self._run_quietly(self.page.screenshot(type='png', timeout=SCREENSHOT_TIMEOUT_MS))
+        if not data:
+            return None
+        return cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
+
+    def _run_quietly(self, coro):
+        """run_in_loop without error logs: frame polling failures are expected (navigation, minimized)."""
+        if not self.loop.is_running():
+            coro.close()
+            return None
+        try:
+            return asyncio.run_coroutine_threadsafe(coro, self.loop).result(FRAME_SOURCE_TIMEOUT)
+        except Exception as e:
+            logger.debug(f'BrowserCaptureMethod frame source failed: {e}')
+            return None
 
     def connected(self):
         connected = self.page is not None and not self.page.is_closed()

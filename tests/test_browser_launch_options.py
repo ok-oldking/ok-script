@@ -36,6 +36,7 @@ class TestBrowserLaunchOptions(unittest.IsolatedAsyncioTestCase):
         capture.browser = None
         capture.page = None
         capture.wgc_capture = None
+        capture.capture_mode = config.get('capture', 'wgc')
         capture._audio_mute = None
         capture.hwnd = 0
         capture.update_window_geometry = Mock(return_value=True)
@@ -45,10 +46,11 @@ class TestBrowserLaunchOptions(unittest.IsolatedAsyncioTestCase):
                 patch('ok.device.capture_methods.browser.asyncio.sleep', new=AsyncMock()), \
                 patch('ok.device.capture_methods.browser.find_hwnd',
                       return_value=('Cloud Game', hwnd, 'browser.exe', 0, 0, 1920, 1080)), \
-                patch('ok.device.capture_methods.browser.BrowserWGC'):
+                patch('ok.device.capture_methods.browser.BrowserWGC') as wgc:
             await capture._start_browser_async()
         self.assertIs(capture.browser, context)
         self.assertIs(capture.page, page)
+        self.wgc = wgc
         return launch_context
 
     def assert_failed_start_is_cleaned_up(self):
@@ -103,6 +105,14 @@ class TestBrowserLaunchOptions(unittest.IsolatedAsyncioTestCase):
         self.context.add_init_script.assert_awaited_once()
         self.assertIn('requestPointerLock', self.context.add_init_script.call_args.kwargs['script'])
         self.page.evaluate.assert_awaited_once()
+
+    async def test_wgc_is_created_by_default(self):
+        await self.launch({})
+        self.wgc.assert_called_once()
+
+    async def test_webrtc_mode_does_not_create_wgc(self):
+        await self.launch({'capture': 'webrtc'})
+        self.wgc.assert_not_called()
 
     async def test_fake_pointer_lock_can_be_disabled(self):
         await self.launch({'fake_pointer_lock': False})
