@@ -535,7 +535,17 @@ class DeviceManager:
         return preferred
 
     def get_preferred_capture(self):
-        return self.config.get("capture")
+        """Return the capture method in effect for the preferred device.
+
+        The saved ``capture`` value can belong to another device type (for
+        example ``browser`` after switching to a PC window), so fall back to the
+        device's first available method in that case.
+        """
+        selected = self.config.get("capture")
+        available = self.available_capture_methods()
+        if not available or selected in available:
+            return selected
+        return available[0]
 
     def available_capture_methods(self, device=None):
         """Return valid capture method identifiers for a selected device."""

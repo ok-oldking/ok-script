@@ -30,6 +30,29 @@ class TestEmulatorWindowExe(unittest.TestCase):
             resolve_emulator_window_exe(executable, 'leidian0'))
 
 
+class TestPreferredCapture(unittest.TestCase):
+    def _manager(self, kind, capture, methods):
+        manager = Mock()
+        manager.config = {'capture': capture}
+        manager.windows_capture_config = {'capture_method': methods}
+        manager.get_preferred_device.return_value = {'device': kind}
+        manager.available_capture_methods = (
+            lambda device=None: DeviceManager.available_capture_methods(manager, device))
+        return manager
+
+    def test_falls_back_when_saved_capture_belongs_to_another_device(self):
+        manager = self._manager('windows', 'browser', ['WGC', 'BitBlt'])
+        self.assertEqual('WGC', DeviceManager.get_preferred_capture(manager))
+
+    def test_keeps_saved_capture_when_available(self):
+        manager = self._manager('windows', 'BitBlt', ['WGC', 'BitBlt'])
+        self.assertEqual('BitBlt', DeviceManager.get_preferred_capture(manager))
+
+    def test_browser_device_reports_browser_capture(self):
+        manager = self._manager('browser', 'WGC', [])
+        self.assertEqual('browser', DeviceManager.get_preferred_capture(manager))
+
+
 class TestDeviceManagerPcWindows(unittest.TestCase):
     def make_manager(self):
         manager = DeviceManager.__new__(DeviceManager)
