@@ -120,7 +120,7 @@ python -m venv .venv
 - [棕色尘埃 2](https://github.com/GodRaymond233/ok-bd2)
 - [星痕共鸣](https://github.com/Sanheiii/ok-star-resonance)
 - [卡厄思梦境](https://github.com/baoxin1100/ok-kes)
-- [蓝色星原：旅谣](https://github.com/longer-sausage/OK-AzurPromilia)
+- [蓝色星原：旅谣 · okap](https://github.com/longer-sausage/ok-ap)
 - [阴阳师](https://github.com/YunLiuZ/ok-Onmyoji)
 - [白荆回廊](https://github.com/ok-oldking/ok-baijing)（停止维护）
 

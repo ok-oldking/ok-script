@@ -120,7 +120,7 @@ The coding agent discovers Python APIs from the installed package's source and s
 - [BrownDust II](https://github.com/GodRaymond233/ok-bd2)
 - [Blue Protocol: Star Resonance](https://github.com/Sanheiii/ok-star-resonance)
 - [Chaos Zero Nightmare](https://github.com/baoxin1100/ok-kes)
-- [Azur Promilia](https://github.com/longer-sausage/OK-AzurPromilia)
+- [Azur Promilia · okap](https://github.com/longer-sausage/ok-ap)
 - [Onmyoji](https://github.com/YunLiuZ/ok-Onmyoji)
 - [Ash Echoes](https://github.com/ok-oldking/ok-baijing) (unmaintained)
 

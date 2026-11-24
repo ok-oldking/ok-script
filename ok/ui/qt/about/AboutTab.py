@@ -229,7 +229,7 @@ class AboutTab(QWidget):
             {"name": AboutTab.tr_static("Neverness to Everness"),
              "url": "https://github.com/BnanZ0/ok-neverness-to-everness", "website": "https://ok-script.com/ok-nte/"},
             {"name": AboutTab.tr_static("BrownDust II"), "url": "https://github.com/GodRaymond233/ok-bd2"},
-            {"name": AboutTab.tr_static("Azur Promilia"), "url": "https://github.com/longer-sausage/OK-AzurPromilia"},
+            {"name": AboutTab.tr_static("Azur Promilia"), "url": "https://github.com/longer-sausage/ok-ap"},
         ]
 
         def normalize(url):
