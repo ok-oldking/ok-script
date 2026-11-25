@@ -27,11 +27,20 @@ def bind_mcp_socket(port):
     """Reserve the first available loopback port, incrementing on conflicts only."""
     if not 0 <= port <= 65535:
         raise ValueError('mcp.port must be between 0 and 65535')
+    # On Windows, binding 127.0.0.1:port fails with EACCES (errno 13 /
+    # winerror 10013) instead of EADDRINUSE/10048 when another process already
+    # listens on 0.0.0.0:port. Common offender: Baidu IME holds 0.0.0.0:8765,
+    # which made enabling the MCP server fail with [Errno 13]. Treat it as a
+    # port conflict too and retry the next port; the actual port is written
+    # back to the connection file, so clients discover it dynamically.
+    conflict_errnos = (errno.EADDRINUSE, errno.EACCES)
+    conflict_winerrors = (10048, 10013)
     while True:
         try:
             return socket.create_server(('127.0.0.1', port))
         except OSError as error:
-            if error.errno != errno.EADDRINUSE and getattr(error, 'winerror', None) != 10048:
+            if (error.errno not in conflict_errnos
+                    and getattr(error, 'winerror', None) not in conflict_winerrors):
                 raise
             if port == 65535:
                 raise OSError(errno.EADDRINUSE, 'No available MCP port up to 65535') from error
