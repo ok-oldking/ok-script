@@ -314,7 +314,21 @@ def test_fallback_increments_past_each_occupied_port(occupied_ports):
         assert listener.getsockname() == ('127.0.0.1', occupied_ports + 2)
 
 
-@pytest.mark.parametrize('error', [PermissionError(errno.EACCES, 'denied'),
+def test_fallback_increments_past_eacces_port_conflict(monkeypatch):
+    seen = []
+
+    def bind_or_eacces(address):
+        seen.append(address[1])
+        if address[1] == 8765:
+            raise PermissionError(errno.EACCES, 'denied')
+        return 'bound-socket'
+
+    monkeypatch.setattr(socket, 'create_server', bind_or_eacces)
+    assert bind_mcp_socket(8765) == 'bound-socket'
+    assert seen == [8765, 8766]
+
+
+@pytest.mark.parametrize('error', [OSError(errno.EADDRNOTAVAIL, 'unavailable'),
                                  OSError(errno.EAFNOSUPPORT, 'unsupported')])
 def test_fallback_does_not_hide_other_bind_errors(monkeypatch, error):
     def fail(address):
