@@ -1,8 +1,8 @@
 from ok.notification.pipeline import NotificationPipeline
 from ok.notification.ppocr import NotificationPPOCR
 from ok.notification.providers import (
-    BarkProvider, DiscordProvider, QQBotProvider, SmtpProvider, TelegramBotProvider,
-    WeComWebhookProvider)
+    BarkProvider, DiscordProvider, PushPlusProvider, QQBotProvider,
+    SmtpProvider, TelegramBotProvider, WeComWebhookProvider)
 from ok.notification.windows_messenger import MessengerAutomation
 from ok.util.GlobalConfig import (
     BARK_NOTIFICATION_ENABLED, BARK_SERVER_URL, BARK_DEVICE_KEY,
@@ -13,6 +13,7 @@ from ok.util.GlobalConfig import (
     QQ_BOT_APP_ID, QQ_BOT_CHANNEL_ID, QQ_BOT_NOTIFICATION_ENABLED,
     QQ_BOT_TOKEN, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
     TELEGRAM_NOTIFICATION_ENABLED, WECOM_NOTIFICATION_ENABLED, WECOM_WEBHOOK,
+    PUSHPLUS_NOTIFICATION_ENABLED, PUSHPLUS_TOKEN, PUSHPLUS_TOPIC,
     SMTP_DEFAULT_RECIPIENT, SMTP_DEFAULT_SENDER, SMTP_HOST,
     SMTP_NOTIFICATION_ENABLED, SMTP_PASSWORD, SMTP_PORT, SMTP_USE_TLS,
     SMTP_USERNAME,
@@ -53,6 +54,7 @@ class NotificationManager:
             self.config.get(TELEGRAM_NOTIFICATION_ENABLED),
             self.config.get(WECOM_NOTIFICATION_ENABLED),
             self.config.get(QQ_BOT_NOTIFICATION_ENABLED),
+            self.config.get(PUSHPLUS_NOTIFICATION_ENABLED),
             self.config.get(SMTP_NOTIFICATION_ENABLED),
         ))
 
@@ -104,6 +106,10 @@ class NotificationManager:
             self._safe_send('QQ Bot', QQBotProvider().send,
                             self.config.get(QQ_BOT_APP_ID), self.config.get(QQ_BOT_TOKEN),
                             self.config.get(QQ_BOT_CHANNEL_ID), title, message, images)
+        if self.config.get(PUSHPLUS_NOTIFICATION_ENABLED):
+            self._safe_send('PushPlus', PushPlusProvider().send,
+                            self.config.get(PUSHPLUS_TOKEN), self.config.get(PUSHPLUS_TOPIC),
+                            title, message, images)
         if self.config.get(SMTP_NOTIFICATION_ENABLED):
             self._safe_send('SMTP', SmtpProvider(
                 self.config.get(SMTP_HOST), self.config.get(SMTP_PORT),
