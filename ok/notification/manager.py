@@ -1,10 +1,12 @@
 from ok.notification.pipeline import NotificationPipeline
 from ok.notification.ppocr import NotificationPPOCR
 from ok.notification.providers import (
-    DiscordProvider, QQBotProvider, SmtpProvider, TelegramBotProvider,
+    BarkProvider, DiscordProvider, QQBotProvider, SmtpProvider, TelegramBotProvider,
     WeComWebhookProvider)
 from ok.notification.windows_messenger import MessengerAutomation
 from ok.util.GlobalConfig import (
+    BARK_NOTIFICATION_ENABLED, BARK_SERVER_URL, BARK_DEVICE_KEY,
+    BARK_GROUP, BARK_ICON, BARK_SOUND, BARK_LEVEL, BARK_URL, BARK_ARCHIVE,
     DISCORD_NOTIFICATION_ENABLED, DISCORD_WEBHOOK, NOTIFICATION_OPTION_NAME,
     QQ_NICKNAME, QQ_NOTIFICATION_ENABLED, SYSTEM_NOTIFICATION_ENABLED,
     WECHAT_NICKNAME, WECHAT_NOTIFICATION_ENABLED,
@@ -44,6 +46,7 @@ class NotificationManager:
     @property
     def external_provider_enabled(self):
         return any((
+            self.config.get(BARK_NOTIFICATION_ENABLED),
             self.config.get(DISCORD_NOTIFICATION_ENABLED),
             self.config.get(QQ_NOTIFICATION_ENABLED),
             self.config.get(WECHAT_NOTIFICATION_ENABLED),
@@ -78,6 +81,13 @@ class NotificationManager:
     def _send(self, title, message, images):
         if self.pipeline.stop_event.is_set():
             return False
+        if self.config.get(BARK_NOTIFICATION_ENABLED):
+            self._safe_send('Bark', BarkProvider().send,
+                            self.config.get(BARK_SERVER_URL),
+                            self.config.get(BARK_DEVICE_KEY), title, message, images,
+                            self.config.get(BARK_GROUP), self.config.get(BARK_SOUND),
+                            self.config.get(BARK_LEVEL), self.config.get(BARK_ARCHIVE),
+                            self.config.get(BARK_ICON), self.config.get(BARK_URL))
         if self.config.get(DISCORD_NOTIFICATION_ENABLED):
             self._safe_send('Discord', DiscordProvider().send,
                             self.config.get(DISCORD_WEBHOOK), title, message, images,

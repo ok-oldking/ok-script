@@ -29,6 +29,48 @@ def _content(title, message):
     return f'{title}\n{message}' if title else message
 
 
+class BarkProvider:
+    """Bark HTTP API provider for text notifications."""
+
+    def send(self, server_url, device_key, title, message, images=None,
+             group='', sound='', level='active', archive='App Default', icon='', url=''):
+        # Images are deliberately not uploaded to Bark or an image hosting service.
+        server_url = server_url.strip().rstrip('/')
+        payload = {
+            'device_key': device_key.strip(),
+            'title': title,
+            'body': message,
+            'level': level,
+            'group': group,
+            'icon': icon,
+            'sound': sound,
+            'url': url,
+        }
+        if archive != 'App Default':
+            payload['isArchive'] = '1' if archive == 'Save' else '0'
+        try:
+            response = requests.post(
+                f'{server_url}/push', json=payload, timeout=(2, 2), allow_redirects=False)
+            if not 200 <= response.status_code < 300:
+                logger.warning(f'Bark notification failed (HTTP {response.status_code})')
+                return False
+            result = response.json()
+            if not isinstance(result, dict) or result.get('code') != 200:
+                logger.warning('Bark notification rejected by the server')
+                return False
+            return True
+        except requests.Timeout:
+            logger.warning('Bark notification timed out')
+        except requests.ConnectionError:
+            logger.warning('Bark notification connection failed')
+        except ValueError:
+            logger.warning('Bark notification response is not valid JSON')
+        except Exception as error:
+            # HTTP exception text can contain URLs, credentials or response bodies.
+            logger.warning(f'Bark notification failed ({type(error).__name__})')
+        return False
+
+
 class DiscordProvider:
     def send(self, webhook, title, message, images, sender=None, sender_icon=None):
         webhook = (webhook or '').strip()

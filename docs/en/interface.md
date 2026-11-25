@@ -91,6 +91,31 @@ The overlay is a development and diagnostic aid. Production task logic must use 
 
 Notification settings live under Settings → Notification. The Windows system tray notification is enabled by default; every other channel is disabled until you turn it on. Fields for a channel only appear once the channel is enabled.
 
+### Bark notifications
+
+Bark delivers text notifications to the Bark app through its HTTP API, without a desktop chat client.
+
+1. Enable **Bark Notification** (disabled by default).
+2. **Bark Server URL** defaults to `https://api.day.app`. A self-hosted base URL or reverse-proxy path prefix is also supported. Do not include the device key or `/push`.
+3. Enter the app's device key in **Bark Device Key**. The input field and local configuration retain the original value; do not share configuration files or logs containing the key.
+
+Enabling Bark notifications displays the server address, device key, group, icon, sound, notification level, tap URL, and history settings at the same level.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| Bark Group | Empty | Send without a group when empty |
+| Bark Icon | Empty | Notification icon URL |
+| Bark Sound | Empty | Use the Bark app's default sound, or specify a custom sound name |
+| Bark Level | active | `active`, `passive`, `timeSensitive`, or `critical` (critical alert); phone permissions and system settings control actual delivery behavior |
+| Bark URL | Empty | Link to open when the notification is tapped |
+| Bark Archive | App Default | Follow the app, save, or do not save to history |
+
+Delivery uses the existing background notification queue, with 2-second connection and read timeouts and no automatic retries or redirects. A Bark failure does not interrupt other providers.
+Self-hosted HTTP sends the key and text without encryption; HTTPS is recommended. Screenshots are not uploaded to Bark or an image-hosting service.
+
+Normal delivery uses the generic `NotificationManager._safe_send` path to invoke the Bark provider.
+Existing task `notification()` and manager `submit()` interfaces are unchanged.
+
 ### SMTP email notifications
 
 The SMTP channel sends email with the Python standard library `smtplib`; no extra dependency is required:
