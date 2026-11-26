@@ -536,6 +536,10 @@
             <source>Version {version} is available.</source>
             <translation>Version {version} is available.</translation>
         </message>
+        <message>
+            <source>Child Session</source>
+            <translation>Child Session</translation>
+        </message>
     </context>
     <context>
         <name>MessageWindow</name>
@@ -698,6 +702,10 @@
         <message>
             <source>Only use when using AutoHDR (Not Recommended)</source>
             <translation>Only use when using AutoHDR (Not Recommended)</translation>
+        </message>
+        <message>
+            <source>ChildSession - Game in the child session, your mouse and keyboard stay free</source>
+            <translation>ChildSession - Game in the child session, your mouse and keyboard stay free</translation>
         </message>
     </context>
     <context>
@@ -2153,6 +2161,10 @@ Critical: sound even in silent mode</translation>
             <source>critical</source>
             <translation>Critical alert</translation>
         </message>
+        <message>
+            <source>Child session is not ready. Open the Child Session tab and connect.</source>
+            <translation>Child session is not ready. Open the Child Session tab and connect.</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3505,6 +3517,10 @@ Critical: sound even in silent mode</translation>
             <source>WindowsInteraction</source>
             <translation>WindowsInteraction</translation>
         </message>
+        <message>
+            <source>ChildSession</source>
+            <translation>ChildSession</translation>
+        </message>
     </context>
     <context>
         <name>ImportWarningDialog</name>
@@ -4049,6 +4065,189 @@ Critical: sound even in silent mode</translation>
         <message>
             <source>Close</source>
             <translation>Close</translation>
+        </message>
+    </context>
+    <context>
+        <name>ChildSessionTab</name>
+        <message>
+            <source>Enable</source>
+            <translation>Enable</translation>
+        </message>
+        <message>
+            <source>Forget</source>
+            <translation>Forget</translation>
+        </message>
+        <message>
+            <source>Child session sign-in</source>
+            <translation>Child session sign-in</translation>
+        </message>
+        <message>
+            <source>Enter your Windows account password (not the PIN). For a Microsoft account, this is the Microsoft account password. It is saved in Windows Credential Manager.</source>
+            <translation>Enter your Windows account password (not the PIN). For a Microsoft account, this is the Microsoft account password. It is saved in Windows Credential Manager.</translation>
+        </message>
+        <message>
+            <source>Password</source>
+            <translation>Password</translation>
+        </message>
+        <message>
+            <source>Child Session</source>
+            <translation>Child Session</translation>
+        </message>
+        <message>
+            <source>Child sessions in Windows</source>
+            <translation>Child sessions in Windows</translation>
+        </message>
+        <message>
+            <source>Saved password</source>
+            <translation>Saved password</translation>
+        </message>
+        <message>
+            <source>Run the agent as admin</source>
+            <translation>Run the agent as admin</translation>
+        </message>
+        <message>
+            <source>Needed when the game runs as admin; Windows asks once per session sign-in.</source>
+            <translation>Needed when the game runs as admin; Windows asks once per session sign-in.</translation>
+        </message>
+        <message>
+            <source>Close in the child session</source>
+            <translation>Close in the child session</translation>
+        </message>
+        <message>
+            <source>Startup apps to close in the child session only, comma separated.</source>
+            <translation>Startup apps to close in the child session only, comma separated.</translation>
+        </message>
+        <message>
+            <source>View only</source>
+            <translation>View only</translation>
+        </message>
+        <message>
+            <source>Enabled</source>
+            <translation>Enabled</translation>
+        </message>
+        <message>
+            <source>Off. Needs admin once.</source>
+            <translation>Off. Needs admin once.</translation>
+        </message>
+        <message>
+            <source>Not saved</source>
+            <translation>Not saved</translation>
+        </message>
+        <message>
+            <source>Enabling child sessions needs admin. Restart this app as admin and try again.</source>
+            <translation>Enabling child sessions needs admin. Restart this app as admin and try again.</translation>
+        </message>
+        <message>
+            <source>Child sessions enabled.</source>
+            <translation>Child sessions enabled.</translation>
+        </message>
+        <message>
+            <source>Windows refused to enable child sessions.</source>
+            <translation>Windows refused to enable child sessions.</translation>
+        </message>
+        <message>
+            <source>Sign in</source>
+            <translation>Sign in</translation>
+        </message>
+        <message>
+            <source>Windows refused to sign out the child session.</source>
+            <translation>Windows refused to sign out the child session.</translation>
+        </message>
+        <message>
+            <source>Saved for {user}</source>
+            <translation>Saved for {user}</translation>
+        </message>
+        <message>
+            <source>Sign-in failed (code {code}). If your password changed, forget the saved password and connect again.</source>
+            <translation>Sign-in failed (code {code}). If your password changed, forget the saved password and connect again.</translation>
+        </message>
+        <message>
+            <source>Forget password</source>
+            <translation>Forget password</translation>
+        </message>
+        <message>
+            <source>admin</source>
+            <translation>admin</translation>
+        </message>
+        <message>
+            <source>not admin</source>
+            <translation>not admin</translation>
+        </message>
+        <message>
+            <source>Could not start the session view: {error}</source>
+            <translation>Could not start the session view: {error}</translation>
+        </message>
+        <message>
+            <source>Not started</source>
+            <translation>Not started</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>Start</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>Settings</translation>
+        </message>
+        <message>
+            <source>Runs the game in a separate Windows session, so tasks never use your mouse and keyboard. Select the ChildSession capture to use it. The session stops when ok-script exits.</source>
+            <translation>Runs the game in a separate Windows session, so tasks never use your mouse and keyboard. Select the ChildSession capture to use it. The session stops when ok-script exits.</translation>
+        </message>
+        <message>
+            <source>Start with ok-script</source>
+            <translation>Start with ok-script</translation>
+        </message>
+        <message>
+            <source>When the ChildSession capture is selected, start the child session with ok-script.</source>
+            <translation>When the ChildSession capture is selected, start the child session with ok-script.</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>Stop</translation>
+        </message>
+        <message>
+            <source>Starting</source>
+            <translation>Starting</translation>
+        </message>
+        <message>
+            <source>Child sessions are off in Windows. Enable them in Settings.</source>
+            <translation>Child sessions are off in Windows. Enable them in Settings.</translation>
+        </message>
+        <message>
+            <source>Press Start to sign in the child session.</source>
+            <translation>Press Start to sign in the child session.</translation>
+        </message>
+        <message>
+            <source>Running</source>
+            <translation>Running</translation>
+        </message>
+        <message>
+            <source>game: not started</source>
+            <translation>game: not started</translation>
+        </message>
+        <message>
+            <source>agent: starting, about a minute after sign-in</source>
+            <translation>agent: starting, about a minute after sign-in</translation>
+        </message>
+        <message>
+            <source>Stop the child session?</source>
+            <translation>Stop the child session?</translation>
+        </message>
+        <message>
+            <source>Closes the game in the child session. It also stops when ok-script exits.</source>
+            <translation>Closes the game in the child session. It also stops when ok-script exits.</translation>
+        </message>
+        <message>
+            <source>Session {id}</source>
+            <translation>Session {id}</translation>
+        </message>
+        <message>
+            <source>agent: {admin}</source>
+            <translation>agent: {admin}</translation>
+        </message>
+        <message>
+            <source>game: {title} {width}x{height}</source>
+            <translation>game: {title} {width}x{height}</translation>
         </message>
     </context>
 </TS>

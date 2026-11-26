@@ -69,7 +69,7 @@ def capture_options(device_manager, device: dict):
         methods = device_manager.windows_capture_config.get('capture_method', [])
         if not methods:
             return [(_t("SelectCaptureListView", "Game Window"), "", None)], 0, [None]
-        names = [_method_name(method) for method in methods]
+        names = device_manager.available_capture_methods(device)
         options = [split_label(_t("SelectCaptureListView", capture_method_label(name))) for name in names]
         current = device_manager.get_preferred_capture()
         index = names.index(current) if current in names else 0
@@ -97,7 +97,7 @@ def interaction_options(device_manager, device: dict):
             methods = [methods]
         if not methods:
             return [(_t("SelectInteractionListView", "WindowsInteraction"), "", None)], 0, [None]
-        names = [_method_name(method) for method in methods]
+        names = device_manager.available_interaction_methods(device)
         options = [split_label(_t("SelectInteractionListView", name)) for name in names]
         current = device_manager.config.get("interaction")
         index = names.index(current) if current in names else 0

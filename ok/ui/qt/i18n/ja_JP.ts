@@ -546,6 +546,10 @@
             <source>Version {version} is available.</source>
             <translation>バージョン {version} が利用可能です。</translation>
         </message>
+        <message>
+            <source>Child Session</source>
+            <translation>子セッション</translation>
+        </message>
     </context>
     <context>
         <name>MessageWindow</name>
@@ -696,6 +700,10 @@
         <message>
             <source>Only use when using AutoHDR (Not Recommended)</source>
             <translation>AutoHDR 使用時のみ使用（非推奨）</translation>
+        </message>
+        <message>
+            <source>ChildSession - Game in the child session, your mouse and keyboard stay free</source>
+            <translation>ChildSession - ゲームを子セッションで実行し、マウスとキーボードを占有しません</translation>
         </message>
     </context>
     <context>
@@ -2147,6 +2155,10 @@ Critical: sound even in silent mode</source>
             <source>critical</source>
             <translation>重大な警告</translation>
         </message>
+        <message>
+            <source>Child session is not ready. Open the Child Session tab and connect.</source>
+            <translation>子セッションの準備ができていません。「子セッション」ページを開いて接続してください。</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3499,6 +3511,10 @@ Critical: sound even in silent mode</source>
             <source>WindowsInteraction</source>
             <translation>Windows 操作</translation>
         </message>
+        <message>
+            <source>ChildSession</source>
+            <translation>ChildSession - 子セッション内でマウスとキーボードを操作</translation>
+        </message>
     </context>
     <context>
         <name>ImportWarningDialog</name>
@@ -4043,6 +4059,189 @@ Critical: sound even in silent mode</source>
         <message>
             <source>Close</source>
             <translation>閉じる</translation>
+        </message>
+    </context>
+    <context>
+        <name>ChildSessionTab</name>
+        <message>
+            <source>Enable</source>
+            <translation>有効にする</translation>
+        </message>
+        <message>
+            <source>Forget</source>
+            <translation>削除</translation>
+        </message>
+        <message>
+            <source>Child session sign-in</source>
+            <translation>子セッションのサインイン</translation>
+        </message>
+        <message>
+            <source>Enter your Windows account password (not the PIN). For a Microsoft account, this is the Microsoft account password. It is saved in Windows Credential Manager.</source>
+            <translation>Windows アカウントのパスワードを入力してください（PIN ではありません）。Microsoft アカウントの場合は Microsoft アカウントのパスワードです。Windows 資格情報マネージャーに保存されます。</translation>
+        </message>
+        <message>
+            <source>Password</source>
+            <translation>パスワード</translation>
+        </message>
+        <message>
+            <source>Child Session</source>
+            <translation>子セッション</translation>
+        </message>
+        <message>
+            <source>Child sessions in Windows</source>
+            <translation>Windows の子セッション</translation>
+        </message>
+        <message>
+            <source>Saved password</source>
+            <translation>保存済みのパスワード</translation>
+        </message>
+        <message>
+            <source>Run the agent as admin</source>
+            <translation>エージェントを管理者として実行</translation>
+        </message>
+        <message>
+            <source>Needed when the game runs as admin; Windows asks once per session sign-in.</source>
+            <translation>ゲームが管理者として実行される場合に必要です。セッションのサインインごとに Windows が一度確認します。</translation>
+        </message>
+        <message>
+            <source>Close in the child session</source>
+            <translation>子セッションで閉じる</translation>
+        </message>
+        <message>
+            <source>Startup apps to close in the child session only, comma separated.</source>
+            <translation>子セッションでのみ閉じるスタートアップアプリ（カンマ区切り）。</translation>
+        </message>
+        <message>
+            <source>View only</source>
+            <translation>表示のみ</translation>
+        </message>
+        <message>
+            <source>Enabled</source>
+            <translation>有効</translation>
+        </message>
+        <message>
+            <source>Off. Needs admin once.</source>
+            <translation>オフです。一度だけ管理者権限が必要です。</translation>
+        </message>
+        <message>
+            <source>Not saved</source>
+            <translation>未保存</translation>
+        </message>
+        <message>
+            <source>Enabling child sessions needs admin. Restart this app as admin and try again.</source>
+            <translation>子セッションを有効にするには管理者権限が必要です。このアプリを管理者として再起動してから再試行してください。</translation>
+        </message>
+        <message>
+            <source>Child sessions enabled.</source>
+            <translation>子セッションを有効にしました。</translation>
+        </message>
+        <message>
+            <source>Windows refused to enable child sessions.</source>
+            <translation>Windows が子セッションの有効化を拒否しました。</translation>
+        </message>
+        <message>
+            <source>Sign in</source>
+            <translation>サインイン</translation>
+        </message>
+        <message>
+            <source>Windows refused to sign out the child session.</source>
+            <translation>Windows が子セッションのサインアウトを拒否しました。</translation>
+        </message>
+        <message>
+            <source>Saved for {user}</source>
+            <translation>{user} 用に保存済み</translation>
+        </message>
+        <message>
+            <source>Sign-in failed (code {code}). If your password changed, forget the saved password and connect again.</source>
+            <translation>サインインに失敗しました（コード {code}）。パスワードを変更した場合は、保存済みのパスワードを削除して再接続してください。</translation>
+        </message>
+        <message>
+            <source>Forget password</source>
+            <translation>パスワードを削除</translation>
+        </message>
+        <message>
+            <source>admin</source>
+            <translation>管理者</translation>
+        </message>
+        <message>
+            <source>not admin</source>
+            <translation>管理者ではない</translation>
+        </message>
+        <message>
+            <source>Could not start the session view: {error}</source>
+            <translation>セッション画面を開始できません: {error}</translation>
+        </message>
+        <message>
+            <source>Not started</source>
+            <translation>未起動</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>開始</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>設定</translation>
+        </message>
+        <message>
+            <source>Runs the game in a separate Windows session, so tasks never use your mouse and keyboard. Select the ChildSession capture to use it. The session stops when ok-script exits.</source>
+            <translation>別の Windows セッションでゲームを実行するため、タスクがあなたのマウスとキーボードを使うことはありません。ChildSession キャプチャを選ぶと使えます。ok-script を終了するとセッションも終了します。</translation>
+        </message>
+        <message>
+            <source>Start with ok-script</source>
+            <translation>ok-script と一緒に開始</translation>
+        </message>
+        <message>
+            <source>When the ChildSession capture is selected, start the child session with ok-script.</source>
+            <translation>ChildSession キャプチャを選択している場合、ok-script の起動時に子セッションを開始します。</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>停止</translation>
+        </message>
+        <message>
+            <source>Starting</source>
+            <translation>開始中</translation>
+        </message>
+        <message>
+            <source>Child sessions are off in Windows. Enable them in Settings.</source>
+            <translation>Windows の子セッションがオフです。設定で有効にしてください。</translation>
+        </message>
+        <message>
+            <source>Press Start to sign in the child session.</source>
+            <translation>「開始」を押すと子セッションにサインインします。</translation>
+        </message>
+        <message>
+            <source>Running</source>
+            <translation>実行中</translation>
+        </message>
+        <message>
+            <source>game: not started</source>
+            <translation>ゲーム: 未起動</translation>
+        </message>
+        <message>
+            <source>agent: starting, about a minute after sign-in</source>
+            <translation>エージェント: 起動中（サインインから約 1 分後）</translation>
+        </message>
+        <message>
+            <source>Stop the child session?</source>
+            <translation>子セッションを停止しますか？</translation>
+        </message>
+        <message>
+            <source>Closes the game in the child session. It also stops when ok-script exits.</source>
+            <translation>子セッションのゲームを終了します。ok-script を終了したときも停止します。</translation>
+        </message>
+        <message>
+            <source>Session {id}</source>
+            <translation>セッション {id}</translation>
+        </message>
+        <message>
+            <source>agent: {admin}</source>
+            <translation>エージェント: {admin}</translation>
+        </message>
+        <message>
+            <source>game: {title} {width}x{height}</source>
+            <translation>ゲーム: {title} {width}x{height}</translation>
         </message>
     </context>
 </TS>

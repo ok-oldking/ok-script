@@ -546,6 +546,10 @@
             <source>Version {version} is available.</source>
             <translation>La versión {version} está disponible.</translation>
         </message>
+        <message>
+            <source>Child Session</source>
+            <translation>Sesión secundaria</translation>
+        </message>
     </context>
     <context>
         <name>MessageWindow</name>
@@ -696,6 +700,10 @@
         <message>
             <source>Only use when using AutoHDR (Not Recommended)</source>
             <translation>Usar solo con AutoHDR (no recomendado)</translation>
+        </message>
+        <message>
+            <source>ChildSession - Game in the child session, your mouse and keyboard stay free</source>
+            <translation>ChildSession - El juego en la sesión secundaria; tu ratón y teclado quedan libres</translation>
         </message>
     </context>
     <context>
@@ -2151,6 +2159,10 @@ Crítica: sonar incluso en modo silencio</translation>
             <source>critical</source>
             <translation>Alerta crítica</translation>
         </message>
+        <message>
+            <source>Child session is not ready. Open the Child Session tab and connect.</source>
+            <translation>La sesión secundaria no está lista. Abre la pestaña Sesión secundaria y conecta.</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3503,6 +3515,10 @@ Crítica: sonar incluso en modo silencio</translation>
             <source>WindowsInteraction</source>
             <translation>Interacción de Windows</translation>
         </message>
+        <message>
+            <source>ChildSession</source>
+            <translation>ChildSession - Ratón y teclado dentro de la sesión secundaria</translation>
+        </message>
     </context>
     <context>
         <name>ImportWarningDialog</name>
@@ -4047,6 +4063,189 @@ Crítica: sonar incluso en modo silencio</translation>
         <message>
             <source>Close</source>
             <translation>Cerrar</translation>
+        </message>
+    </context>
+    <context>
+        <name>ChildSessionTab</name>
+        <message>
+            <source>Enable</source>
+            <translation>Activar</translation>
+        </message>
+        <message>
+            <source>Forget</source>
+            <translation>Olvidar</translation>
+        </message>
+        <message>
+            <source>Child session sign-in</source>
+            <translation>Inicio de sesión secundaria</translation>
+        </message>
+        <message>
+            <source>Enter your Windows account password (not the PIN). For a Microsoft account, this is the Microsoft account password. It is saved in Windows Credential Manager.</source>
+            <translation>Introduce la contraseña de tu cuenta de Windows (no el PIN). Para una cuenta Microsoft, es la contraseña de la cuenta Microsoft. Se guarda en el Administrador de credenciales de Windows.</translation>
+        </message>
+        <message>
+            <source>Password</source>
+            <translation>Contraseña</translation>
+        </message>
+        <message>
+            <source>Child Session</source>
+            <translation>Sesión secundaria</translation>
+        </message>
+        <message>
+            <source>Child sessions in Windows</source>
+            <translation>Sesiones secundarias en Windows</translation>
+        </message>
+        <message>
+            <source>Saved password</source>
+            <translation>Contraseña guardada</translation>
+        </message>
+        <message>
+            <source>Run the agent as admin</source>
+            <translation>Ejecutar el agente como administrador</translation>
+        </message>
+        <message>
+            <source>Needed when the game runs as admin; Windows asks once per session sign-in.</source>
+            <translation>Necesario si el juego se ejecuta como administrador; Windows lo pregunta una vez por inicio de sesión.</translation>
+        </message>
+        <message>
+            <source>Close in the child session</source>
+            <translation>Cerrar en la sesión secundaria</translation>
+        </message>
+        <message>
+            <source>Startup apps to close in the child session only, comma separated.</source>
+            <translation>Apps de inicio que se cierran solo en la sesión secundaria, separadas por comas.</translation>
+        </message>
+        <message>
+            <source>View only</source>
+            <translation>Solo ver</translation>
+        </message>
+        <message>
+            <source>Enabled</source>
+            <translation>Activado</translation>
+        </message>
+        <message>
+            <source>Off. Needs admin once.</source>
+            <translation>Desactivado. Requiere administrador una vez.</translation>
+        </message>
+        <message>
+            <source>Not saved</source>
+            <translation>Sin guardar</translation>
+        </message>
+        <message>
+            <source>Enabling child sessions needs admin. Restart this app as admin and try again.</source>
+            <translation>Activar las sesiones secundarias requiere administrador. Reinicia esta app como administrador e inténtalo de nuevo.</translation>
+        </message>
+        <message>
+            <source>Child sessions enabled.</source>
+            <translation>Sesiones secundarias activadas.</translation>
+        </message>
+        <message>
+            <source>Windows refused to enable child sessions.</source>
+            <translation>Windows rechazó activar las sesiones secundarias.</translation>
+        </message>
+        <message>
+            <source>Sign in</source>
+            <translation>Iniciar sesión</translation>
+        </message>
+        <message>
+            <source>Windows refused to sign out the child session.</source>
+            <translation>Windows rechazó cerrar la sesión secundaria.</translation>
+        </message>
+        <message>
+            <source>Saved for {user}</source>
+            <translation>Guardada para {user}</translation>
+        </message>
+        <message>
+            <source>Sign-in failed (code {code}). If your password changed, forget the saved password and connect again.</source>
+            <translation>Error al iniciar sesión (código {code}). Si cambiaste la contraseña, olvida la guardada y vuelve a conectar.</translation>
+        </message>
+        <message>
+            <source>Forget password</source>
+            <translation>Olvidar contraseña</translation>
+        </message>
+        <message>
+            <source>admin</source>
+            <translation>administrador</translation>
+        </message>
+        <message>
+            <source>not admin</source>
+            <translation>sin administrador</translation>
+        </message>
+        <message>
+            <source>Could not start the session view: {error}</source>
+            <translation>No se pudo iniciar la vista de la sesión: {error}</translation>
+        </message>
+        <message>
+            <source>Not started</source>
+            <translation>Sin iniciar</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>Iniciar</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>Ajustes</translation>
+        </message>
+        <message>
+            <source>Runs the game in a separate Windows session, so tasks never use your mouse and keyboard. Select the ChildSession capture to use it. The session stops when ok-script exits.</source>
+            <translation>Ejecuta el juego en una sesión de Windows aparte, así las tareas nunca usan tu ratón ni tu teclado. Elige la captura ChildSession para usarla. La sesión se detiene al salir de ok-script.</translation>
+        </message>
+        <message>
+            <source>Start with ok-script</source>
+            <translation>Iniciar con ok-script</translation>
+        </message>
+        <message>
+            <source>When the ChildSession capture is selected, start the child session with ok-script.</source>
+            <translation>Con la captura ChildSession seleccionada, inicia la sesión secundaria al abrir ok-script.</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>Detener</translation>
+        </message>
+        <message>
+            <source>Starting</source>
+            <translation>Iniciando</translation>
+        </message>
+        <message>
+            <source>Child sessions are off in Windows. Enable them in Settings.</source>
+            <translation>Las sesiones secundarias están desactivadas en Windows. Actívalas en Ajustes.</translation>
+        </message>
+        <message>
+            <source>Press Start to sign in the child session.</source>
+            <translation>Pulsa Iniciar para iniciar la sesión secundaria.</translation>
+        </message>
+        <message>
+            <source>Running</source>
+            <translation>En marcha</translation>
+        </message>
+        <message>
+            <source>game: not started</source>
+            <translation>juego: sin iniciar</translation>
+        </message>
+        <message>
+            <source>agent: starting, about a minute after sign-in</source>
+            <translation>agente: iniciándose, un minuto tras el inicio de sesión</translation>
+        </message>
+        <message>
+            <source>Stop the child session?</source>
+            <translation>¿Detener la sesión secundaria?</translation>
+        </message>
+        <message>
+            <source>Closes the game in the child session. It also stops when ok-script exits.</source>
+            <translation>Cierra el juego de la sesión secundaria. También se detiene al salir de ok-script.</translation>
+        </message>
+        <message>
+            <source>Session {id}</source>
+            <translation>Sesión {id}</translation>
+        </message>
+        <message>
+            <source>agent: {admin}</source>
+            <translation>agente: {admin}</translation>
+        </message>
+        <message>
+            <source>game: {title} {width}x{height}</source>
+            <translation>juego: {title} {width}x{height}</translation>
         </message>
     </context>
 </TS>

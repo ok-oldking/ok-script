@@ -115,6 +115,7 @@ class TestStartController(unittest.TestCase):
     def test_started_windows_wait_for_stability_before_capture_readiness(self):
         controller = self.make_controller()
         device_manager = Mock()
+        device_manager.uses_child_session.return_value = False
         device_manager.get_preferred_device.return_value = {
             'connected': False,
             'device': 'windows',
@@ -147,6 +148,7 @@ class TestStartController(unittest.TestCase):
         controller._wait_until_started_window_stable = Mock(return_value=True)
         controller._wait_until_device_ready = Mock(return_value=True)
         device_manager = Mock()
+        device_manager.uses_child_session.return_value = False
         device_manager.get_preferred_device.return_value = {
             'connected': connected,
             'device': device_type,

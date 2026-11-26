@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 
@@ -291,7 +292,9 @@ class StartController:
             if hwnd_window is not None:
                 hwnd_window.do_update_window_size()
                 size = (hwnd_window.width, hwnd_window.height)
-                if hwnd_window.hwnd and size[0] >= min_width and size[1] >= min_height:
+                # A child-session window has no host handle; it reports existence instead.
+                found = hwnd_window.hwnd or (getattr(hwnd_window, 'is_child_session', False) and hwnd_window.exists)
+                if found and size[0] >= min_width and size[1] >= min_height:
                     now = time.monotonic()
                     if size != stable_size:
                         logger.info(f'waiting for started window to stabilize, current size {size[0]}x{size[1]}')
@@ -311,9 +314,60 @@ class StartController:
             time.sleep(self.STARTED_WINDOW_POLL_INTERVAL)
         return False
 
+    def _launch_arguments(self, device):
+        args = None
+        dx11_config = og.global_config.get_config('Launch with DX11')
+        if dx11_config and dx11_config.get('Launch with DX11'):
+            args = "-dx11 -d3d11 -force-d3d11"
+        if device['device'] == "windows":
+            launch_arguments = (self.config.get('windows') or {}).get('launch_arguments')
+            if callable(launch_arguments):
+                launch_arguments = launch_arguments()
+            if launch_arguments:
+                args = f'{args or ""} {launch_arguments}'.strip()
+        return args
+
+    def _start_child_session(self, device, initial_refresh_done=False):
+        """Make sure the agent in the child session is reachable, then launch the game there."""
+        from ok.child_session.protocol import AgentError
+        client = og.device_manager.child_session_client()
+        if client.try_call('ping') is None:
+            logger.info('child session agent not reachable, asking the UI to connect')
+            communicate.child_session_connect.emit()
+            communicate.starting_emulator.emit(False, None, int(self.start_timeout))
+            if not client.wait_until_reachable(self.start_timeout, self.exit_event, self._cancelled):
+                communicate.starting_emulator.emit(
+                    True, self.tr('Child session is not ready. Open the Child Session tab and connect.'), 0)
+                return False
+        og.device_manager.do_refresh(True)
+        window = og.device_manager.hwnd_window
+        if window is None or not window.exists:
+            path = og.device_manager.get_exe_path(device)
+            if not path:
+                communicate.starting_emulator.emit(
+                    True, self.tr('Game path does not exist, Please open game manually!'), 0)
+                return False
+            args = self._launch_arguments(device)
+            logger.info(f'starting game in the child session {path} {args or ""}')
+            try:
+                client.call('launch', path=path, args=args or '', cwd=os.path.dirname(path))
+            except AgentError as e:
+                logger.error(f'child session launch failed: {e}')
+                communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
+                return False
+            if not self._wait_until_started_window_stable():
+                return False
+        if not self._wait_until_device_ready(refresh_first=not initial_refresh_done):
+            return False
+        communicate.starting_emulator.emit(True, None, 0)
+        return True
+
     def start_device(self, initial_refresh_done=False):
         device = og.device_manager.get_preferred_device()
         logger.info(f'start_device: {device}')
+
+        if device and device['device'] == 'windows' and og.device_manager.uses_child_session():
+            return self._start_child_session(device, initial_refresh_done)
 
         if device and not device['connected']:
             if device['device'] == "windows" and not is_admin():
@@ -325,16 +379,7 @@ class StartController:
             path = og.device_manager.get_exe_path(device)
             if path:
                 logger.info(f"starting game {path}")
-                args = None
-                dx11_config = og.global_config.get_config('Launch with DX11')
-                if dx11_config and dx11_config.get('Launch with DX11'):
-                    args = "-dx11 -d3d11 -force-d3d11"
-                if device['device'] == "windows":
-                    launch_arguments = (self.config.get('windows') or {}).get('launch_arguments')
-                    if callable(launch_arguments):
-                        launch_arguments = launch_arguments()
-                    if launch_arguments:
-                        args = f'{args or ""} {launch_arguments}'.strip()
+                args = self._launch_arguments(device)
                 if not execute(path, arguments=args, start_method=self.start_method):
                     communicate.starting_emulator.emit(True, self.tr("Start game failed, please start game first"), 0)
                     return False

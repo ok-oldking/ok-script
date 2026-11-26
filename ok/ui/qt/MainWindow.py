@@ -230,6 +230,13 @@ class MainWindow(KitWindow):
             self.notification_tab = notification_tab
             self.add_page(notification_tab, "bell", self.app.tr(NOTIFICATION_OPTION_NAME), SECTION_GAME)
 
+        # Optional: run the Windows game in a child session (apps opt in with 'child_session').
+        self.child_session_tab = None
+        if config.get('child_session') and config.get('windows'):
+            from ok.ui.qt.child_session.child_session_tab import ChildSessionTab
+            self.child_session_tab = ChildSessionTab(config, og.device_manager)
+            self.add_page(self.child_session_tab, "monitor", self.tr('Child Session'), SECTION_RUN)
+
         def settings_page():
             from ok.ui.qt.settings.settings_page import SettingsPage
             return SettingsPage()
@@ -726,6 +733,8 @@ class MainWindow(KitWindow):
             self.switch_to(self.diagnosis_page)
         elif index == "about" and self.about_tab is not None:
             self.switch_to(self.about_tab)
+        elif index == "child_session" and self.child_session_tab is not None:
+            self.switch_to(self.child_session_tab)
 
     def startup_task_tab(self):
         """Return the Tasks page, falling back to imported plugin pages."""

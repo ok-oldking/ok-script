@@ -94,6 +94,7 @@ nav:
       - Ship and maintain:
           - Maintain and share tasks: en/advanced.md
           - Imported plugins: en/plugins.md
+          - Child session: en/child-session.md
       - Concepts and tools:
           - How automation works: en/intro_to_automation.md
           - Interface and developer tools: en/interface.md

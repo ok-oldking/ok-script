@@ -547,6 +547,10 @@
             <source>Version {version} is available.</source>
             <translation>버전 {version}을(를) 사용할 수 있습니다.</translation>
         </message>
+        <message>
+            <source>Child Session</source>
+            <translation>자식 세션</translation>
+        </message>
     </context>
     <context>
         <name>MessageWindow</name>
@@ -697,6 +701,10 @@
         <message>
             <source>Only use when using AutoHDR (Not Recommended)</source>
             <translation>AutoHDR 사용 시에만 사용 (권장하지 않음)</translation>
+        </message>
+        <message>
+            <source>ChildSession - Game in the child session, your mouse and keyboard stay free</source>
+            <translation>ChildSession - 게임이 자식 세션에서 실행되어 마우스와 키보드를 사용하지 않음</translation>
         </message>
     </context>
     <context>
@@ -2152,6 +2160,10 @@ Critical: sound even in silent mode</source>
             <source>critical</source>
             <translation>중요 경고</translation>
         </message>
+        <message>
+            <source>Child session is not ready. Open the Child Session tab and connect.</source>
+            <translation>자식 세션이 준비되지 않았습니다. "자식 세션" 페이지를 열고 연결하세요.</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3504,6 +3516,10 @@ Critical: sound even in silent mode</source>
             <source>WindowsInteraction</source>
             <translation>Windows 상호작용</translation>
         </message>
+        <message>
+            <source>ChildSession</source>
+            <translation>ChildSession - 자식 세션에서 마우스와 키보드 조작</translation>
+        </message>
     </context>
     <context>
         <name>ImportWarningDialog</name>
@@ -4048,6 +4064,189 @@ Critical: sound even in silent mode</source>
         <message>
             <source>Close</source>
             <translation>닫기</translation>
+        </message>
+    </context>
+    <context>
+        <name>ChildSessionTab</name>
+        <message>
+            <source>Enable</source>
+            <translation>사용</translation>
+        </message>
+        <message>
+            <source>Forget</source>
+            <translation>삭제</translation>
+        </message>
+        <message>
+            <source>Child session sign-in</source>
+            <translation>자식 세션 로그인</translation>
+        </message>
+        <message>
+            <source>Enter your Windows account password (not the PIN). For a Microsoft account, this is the Microsoft account password. It is saved in Windows Credential Manager.</source>
+            <translation>Windows 계정 비밀번호를 입력하세요(PIN 아님). Microsoft 계정은 Microsoft 계정 비밀번호입니다. Windows 자격 증명 관리자에 저장됩니다.</translation>
+        </message>
+        <message>
+            <source>Password</source>
+            <translation>비밀번호</translation>
+        </message>
+        <message>
+            <source>Child Session</source>
+            <translation>자식 세션</translation>
+        </message>
+        <message>
+            <source>Child sessions in Windows</source>
+            <translation>Windows 자식 세션</translation>
+        </message>
+        <message>
+            <source>Saved password</source>
+            <translation>저장된 비밀번호</translation>
+        </message>
+        <message>
+            <source>Run the agent as admin</source>
+            <translation>에이전트를 관리자로 실행</translation>
+        </message>
+        <message>
+            <source>Needed when the game runs as admin; Windows asks once per session sign-in.</source>
+            <translation>게임이 관리자로 실행될 때 필요합니다. 세션 로그인마다 Windows가 한 번 묻습니다.</translation>
+        </message>
+        <message>
+            <source>Close in the child session</source>
+            <translation>자식 세션에서 닫기</translation>
+        </message>
+        <message>
+            <source>Startup apps to close in the child session only, comma separated.</source>
+            <translation>자식 세션에서만 닫을 시작 프로그램(쉼표로 구분).</translation>
+        </message>
+        <message>
+            <source>View only</source>
+            <translation>보기 전용</translation>
+        </message>
+        <message>
+            <source>Enabled</source>
+            <translation>사용 중</translation>
+        </message>
+        <message>
+            <source>Off. Needs admin once.</source>
+            <translation>꺼짐. 관리자 권한이 한 번 필요합니다.</translation>
+        </message>
+        <message>
+            <source>Not saved</source>
+            <translation>저장 안 됨</translation>
+        </message>
+        <message>
+            <source>Enabling child sessions needs admin. Restart this app as admin and try again.</source>
+            <translation>자식 세션을 사용하려면 관리자 권한이 필요합니다. 이 앱을 관리자로 다시 시작한 후 다시 시도하세요.</translation>
+        </message>
+        <message>
+            <source>Child sessions enabled.</source>
+            <translation>자식 세션을 사용하도록 설정했습니다.</translation>
+        </message>
+        <message>
+            <source>Windows refused to enable child sessions.</source>
+            <translation>Windows가 자식 세션 사용을 거부했습니다.</translation>
+        </message>
+        <message>
+            <source>Sign in</source>
+            <translation>로그인</translation>
+        </message>
+        <message>
+            <source>Windows refused to sign out the child session.</source>
+            <translation>Windows가 자식 세션 로그아웃을 거부했습니다.</translation>
+        </message>
+        <message>
+            <source>Saved for {user}</source>
+            <translation>{user}용으로 저장됨</translation>
+        </message>
+        <message>
+            <source>Sign-in failed (code {code}). If your password changed, forget the saved password and connect again.</source>
+            <translation>로그인에 실패했습니다(코드 {code}). 비밀번호가 바뀌었다면 저장된 비밀번호를 삭제하고 다시 연결하세요.</translation>
+        </message>
+        <message>
+            <source>Forget password</source>
+            <translation>비밀번호 삭제</translation>
+        </message>
+        <message>
+            <source>admin</source>
+            <translation>관리자</translation>
+        </message>
+        <message>
+            <source>not admin</source>
+            <translation>관리자 아님</translation>
+        </message>
+        <message>
+            <source>Could not start the session view: {error}</source>
+            <translation>세션 화면을 시작할 수 없습니다: {error}</translation>
+        </message>
+        <message>
+            <source>Not started</source>
+            <translation>시작 안 됨</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>시작</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>설정</translation>
+        </message>
+        <message>
+            <source>Runs the game in a separate Windows session, so tasks never use your mouse and keyboard. Select the ChildSession capture to use it. The session stops when ok-script exits.</source>
+            <translation>별도의 Windows 세션에서 게임을 실행하므로 작업이 내 마우스와 키보드를 사용하지 않습니다. ChildSession 캡처를 선택하면 사용됩니다. ok-script를 종료하면 세션도 종료됩니다.</translation>
+        </message>
+        <message>
+            <source>Start with ok-script</source>
+            <translation>ok-script와 함께 시작</translation>
+        </message>
+        <message>
+            <source>When the ChildSession capture is selected, start the child session with ok-script.</source>
+            <translation>ChildSession 캡처를 선택하면 ok-script 시작 시 자식 세션을 시작합니다.</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>중지</translation>
+        </message>
+        <message>
+            <source>Starting</source>
+            <translation>시작 중</translation>
+        </message>
+        <message>
+            <source>Child sessions are off in Windows. Enable them in Settings.</source>
+            <translation>Windows에서 자식 세션이 꺼져 있습니다. 설정에서 사용하도록 설정하세요.</translation>
+        </message>
+        <message>
+            <source>Press Start to sign in the child session.</source>
+            <translation>"시작"을 누르면 자식 세션에 로그인합니다.</translation>
+        </message>
+        <message>
+            <source>Running</source>
+            <translation>실행 중</translation>
+        </message>
+        <message>
+            <source>game: not started</source>
+            <translation>게임: 시작 안 됨</translation>
+        </message>
+        <message>
+            <source>agent: starting, about a minute after sign-in</source>
+            <translation>에이전트: 시작 중, 로그인 후 약 1분</translation>
+        </message>
+        <message>
+            <source>Stop the child session?</source>
+            <translation>자식 세션을 중지할까요?</translation>
+        </message>
+        <message>
+            <source>Closes the game in the child session. It also stops when ok-script exits.</source>
+            <translation>자식 세션의 게임을 닫습니다. ok-script를 종료할 때도 중지됩니다.</translation>
+        </message>
+        <message>
+            <source>Session {id}</source>
+            <translation>세션 {id}</translation>
+        </message>
+        <message>
+            <source>agent: {admin}</source>
+            <translation>에이전트: {admin}</translation>
+        </message>
+        <message>
+            <source>game: {title} {width}x{height}</source>
+            <translation>게임: {title} {width}x{height}</translation>
         </message>
     </context>
 </TS>

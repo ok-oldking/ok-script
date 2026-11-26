@@ -32,12 +32,18 @@ def make_executor(**overrides):
 
 
 def make_device_manager(device=None, capture=None, interaction=None, methods=None):
-    return SimpleNamespace(
+    from ok.device.DeviceManager import DeviceManager
+
+    manager = SimpleNamespace(
         get_preferred_device=lambda: device,
         get_preferred_capture=lambda: capture,
         windows_capture_config=methods or {},
+        child_session_config=None,
         config={"interaction": interaction, "capture": capture},
     )
+    manager.available_capture_methods = lambda d=None: DeviceManager.available_capture_methods(manager, d)
+    manager.available_interaction_methods = lambda d=None: DeviceManager.available_interaction_methods(manager, d)
+    return manager
 
 
 class TestRunState(unittest.TestCase):

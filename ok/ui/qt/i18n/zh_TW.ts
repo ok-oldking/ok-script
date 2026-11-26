@@ -546,6 +546,10 @@
             <source>Version {version} is available.</source>
             <translation>版本 {version} 已發布。</translation>
         </message>
+        <message>
+            <source>Child Session</source>
+            <translation>子工作階段</translation>
+        </message>
     </context>
     <context>
         <name>MessageWindow</name>
@@ -696,6 +700,10 @@
         <message>
             <source>Only use when using AutoHDR (Not Recommended)</source>
             <translation>僅在使用 AutoHDR 時使用（不建議）</translation>
+        </message>
+        <message>
+            <source>ChildSession - Game in the child session, your mouse and keyboard stay free</source>
+            <translation>ChildSession - 遊戲在子工作階段中執行，不佔用你的滑鼠鍵盤</translation>
         </message>
     </context>
     <context>
@@ -2147,6 +2155,10 @@ Critical: sound even in silent mode</source>
             <source>critical</source>
             <translation>重要警告</translation>
         </message>
+        <message>
+            <source>Child session is not ready. Open the Child Session tab and connect.</source>
+            <translation>子工作階段未就緒。請開啟「子工作階段」頁面並連線。</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3499,6 +3511,10 @@ Critical: sound even in silent mode</source>
             <source>WindowsInteraction</source>
             <translation>Windows 互動</translation>
         </message>
+        <message>
+            <source>ChildSession</source>
+            <translation>ChildSession - 在子工作階段中操作滑鼠鍵盤</translation>
+        </message>
     </context>
     <context>
         <name>ImportWarningDialog</name>
@@ -4043,6 +4059,189 @@ Critical: sound even in silent mode</source>
         <message>
             <source>Close</source>
             <translation>關閉</translation>
+        </message>
+    </context>
+    <context>
+        <name>ChildSessionTab</name>
+        <message>
+            <source>Enable</source>
+            <translation>啟用</translation>
+        </message>
+        <message>
+            <source>Forget</source>
+            <translation>忘記</translation>
+        </message>
+        <message>
+            <source>Child session sign-in</source>
+            <translation>子工作階段登入</translation>
+        </message>
+        <message>
+            <source>Enter your Windows account password (not the PIN). For a Microsoft account, this is the Microsoft account password. It is saved in Windows Credential Manager.</source>
+            <translation>請輸入 Windows 帳戶密碼（不是 PIN）。Microsoft 帳戶請輸入 Microsoft 帳戶密碼。密碼儲存在 Windows 認證管理員中。</translation>
+        </message>
+        <message>
+            <source>Password</source>
+            <translation>密碼</translation>
+        </message>
+        <message>
+            <source>Child Session</source>
+            <translation>子工作階段</translation>
+        </message>
+        <message>
+            <source>Child sessions in Windows</source>
+            <translation>Windows 子工作階段功能</translation>
+        </message>
+        <message>
+            <source>Saved password</source>
+            <translation>已儲存的密碼</translation>
+        </message>
+        <message>
+            <source>Run the agent as admin</source>
+            <translation>以系統管理員身分執行代理程式</translation>
+        </message>
+        <message>
+            <source>Needed when the game runs as admin; Windows asks once per session sign-in.</source>
+            <translation>遊戲以系統管理員身分執行時需要；每次工作階段登入時 Windows 會詢問一次。</translation>
+        </message>
+        <message>
+            <source>Close in the child session</source>
+            <translation>在子工作階段中關閉</translation>
+        </message>
+        <message>
+            <source>Startup apps to close in the child session only, comma separated.</source>
+            <translation>僅在子工作階段中關閉的開機啟動程式，以逗號分隔。</translation>
+        </message>
+        <message>
+            <source>View only</source>
+            <translation>僅檢視</translation>
+        </message>
+        <message>
+            <source>Enabled</source>
+            <translation>已啟用</translation>
+        </message>
+        <message>
+            <source>Off. Needs admin once.</source>
+            <translation>未啟用。需要一次系統管理員權限。</translation>
+        </message>
+        <message>
+            <source>Not saved</source>
+            <translation>未儲存</translation>
+        </message>
+        <message>
+            <source>Enabling child sessions needs admin. Restart this app as admin and try again.</source>
+            <translation>啟用子工作階段需要系統管理員權限。請以系統管理員身分重新啟動本程式後重試。</translation>
+        </message>
+        <message>
+            <source>Child sessions enabled.</source>
+            <translation>已啟用子工作階段。</translation>
+        </message>
+        <message>
+            <source>Windows refused to enable child sessions.</source>
+            <translation>Windows 拒絕啟用子工作階段。</translation>
+        </message>
+        <message>
+            <source>Sign in</source>
+            <translation>登入</translation>
+        </message>
+        <message>
+            <source>Windows refused to sign out the child session.</source>
+            <translation>Windows 拒絕登出子工作階段。</translation>
+        </message>
+        <message>
+            <source>Saved for {user}</source>
+            <translation>已為 {user} 儲存</translation>
+        </message>
+        <message>
+            <source>Sign-in failed (code {code}). If your password changed, forget the saved password and connect again.</source>
+            <translation>登入失敗（代碼 {code}）。如果密碼已變更，請忘記已儲存的密碼後重新連線。</translation>
+        </message>
+        <message>
+            <source>Forget password</source>
+            <translation>忘記密碼</translation>
+        </message>
+        <message>
+            <source>admin</source>
+            <translation>系統管理員</translation>
+        </message>
+        <message>
+            <source>not admin</source>
+            <translation>非系統管理員</translation>
+        </message>
+        <message>
+            <source>Could not start the session view: {error}</source>
+            <translation>無法啟動工作階段畫面：{error}</translation>
+        </message>
+        <message>
+            <source>Not started</source>
+            <translation>未啟動</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>啟動</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>設定</translation>
+        </message>
+        <message>
+            <source>Runs the game in a separate Windows session, so tasks never use your mouse and keyboard. Select the ChildSession capture to use it. The session stops when ok-script exits.</source>
+            <translation>在獨立的 Windows 工作階段中執行遊戲，任務不會佔用你的滑鼠和鍵盤。選擇 ChildSession 擷取方式即可使用。ok-script 結束時工作階段也會結束。</translation>
+        </message>
+        <message>
+            <source>Start with ok-script</source>
+            <translation>隨 ok-script 啟動</translation>
+        </message>
+        <message>
+            <source>When the ChildSession capture is selected, start the child session with ok-script.</source>
+            <translation>選擇 ChildSession 擷取方式時，ok-script 啟動後自動啟動子工作階段。</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>停止</translation>
+        </message>
+        <message>
+            <source>Starting</source>
+            <translation>啟動中</translation>
+        </message>
+        <message>
+            <source>Child sessions are off in Windows. Enable them in Settings.</source>
+            <translation>Windows 未啟用子工作階段，請在設定中啟用。</translation>
+        </message>
+        <message>
+            <source>Press Start to sign in the child session.</source>
+            <translation>點擊「啟動」登入子工作階段。</translation>
+        </message>
+        <message>
+            <source>Running</source>
+            <translation>執行中</translation>
+        </message>
+        <message>
+            <source>game: not started</source>
+            <translation>遊戲：未啟動</translation>
+        </message>
+        <message>
+            <source>agent: starting, about a minute after sign-in</source>
+            <translation>代理程式：啟動中，約在登入一分鐘後</translation>
+        </message>
+        <message>
+            <source>Stop the child session?</source>
+            <translation>停止子工作階段？</translation>
+        </message>
+        <message>
+            <source>Closes the game in the child session. It also stops when ok-script exits.</source>
+            <translation>會關閉子工作階段中的遊戲。ok-script 結束時子工作階段也會停止。</translation>
+        </message>
+        <message>
+            <source>Session {id}</source>
+            <translation>工作階段 {id}</translation>
+        </message>
+        <message>
+            <source>agent: {admin}</source>
+            <translation>代理程式：{admin}</translation>
+        </message>
+        <message>
+            <source>game: {title} {width}x{height}</source>
+            <translation>遊戲：{title} {width}x{height}</translation>
         </message>
     </context>
 </TS>

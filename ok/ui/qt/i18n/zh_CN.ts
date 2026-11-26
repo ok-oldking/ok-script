@@ -536,6 +536,10 @@
             <source>Version {version} is available.</source>
             <translation>版本 {version} 已发布。</translation>
         </message>
+        <message>
+            <source>Child Session</source>
+            <translation>子会话</translation>
+        </message>
     </context>
     <context>
         <name>MessageWindow</name>
@@ -698,6 +702,10 @@
         <message>
             <source>Only use when using AutoHDR (Not Recommended)</source>
             <translation>仅在使用 AutoHDR 时使用（不推荐）</translation>
+        </message>
+        <message>
+            <source>ChildSession - Game in the child session, your mouse and keyboard stay free</source>
+            <translation>ChildSession - 游戏在子会话中运行，不占用你的鼠标键盘</translation>
         </message>
     </context>
     <context>
@@ -2149,6 +2157,10 @@ Critical: sound even in silent mode</source>
             <source>critical</source>
             <translation>重要警告</translation>
         </message>
+        <message>
+            <source>Child session is not ready. Open the Child Session tab and connect.</source>
+            <translation>子会话未就绪。请打开“子会话”页面并连接。</translation>
+        </message>
     </context>
     <context>
         <name>ScheduleTaskTable</name>
@@ -3501,6 +3513,10 @@ Critical: sound even in silent mode</source>
             <source>WindowsInteraction</source>
             <translation>Windows 交互</translation>
         </message>
+        <message>
+            <source>ChildSession</source>
+            <translation>ChildSession - 在子会话中操作鼠标键盘</translation>
+        </message>
     </context>
     <context>
         <name>ImportWarningDialog</name>
@@ -4045,6 +4061,189 @@ Critical: sound even in silent mode</source>
         <message>
             <source>Close</source>
             <translation>关闭</translation>
+        </message>
+    </context>
+    <context>
+        <name>ChildSessionTab</name>
+        <message>
+            <source>Enable</source>
+            <translation>启用</translation>
+        </message>
+        <message>
+            <source>Forget</source>
+            <translation>忘记</translation>
+        </message>
+        <message>
+            <source>Child session sign-in</source>
+            <translation>子会话登录</translation>
+        </message>
+        <message>
+            <source>Enter your Windows account password (not the PIN). For a Microsoft account, this is the Microsoft account password. It is saved in Windows Credential Manager.</source>
+            <translation>请输入 Windows 账户密码（不是 PIN）。微软账户请输入微软账户密码。密码保存在 Windows 凭据管理器中。</translation>
+        </message>
+        <message>
+            <source>Password</source>
+            <translation>密码</translation>
+        </message>
+        <message>
+            <source>Child Session</source>
+            <translation>子会话</translation>
+        </message>
+        <message>
+            <source>Child sessions in Windows</source>
+            <translation>Windows 子会话功能</translation>
+        </message>
+        <message>
+            <source>Saved password</source>
+            <translation>已保存的密码</translation>
+        </message>
+        <message>
+            <source>Run the agent as admin</source>
+            <translation>以管理员身份运行代理程序</translation>
+        </message>
+        <message>
+            <source>Needed when the game runs as admin; Windows asks once per session sign-in.</source>
+            <translation>游戏以管理员身份运行时需要；每次会话登录时 Windows 会询问一次。</translation>
+        </message>
+        <message>
+            <source>Close in the child session</source>
+            <translation>在子会话中关闭</translation>
+        </message>
+        <message>
+            <source>Startup apps to close in the child session only, comma separated.</source>
+            <translation>仅在子会话中关闭的开机启动程序，用逗号分隔。</translation>
+        </message>
+        <message>
+            <source>View only</source>
+            <translation>仅查看</translation>
+        </message>
+        <message>
+            <source>Enabled</source>
+            <translation>已启用</translation>
+        </message>
+        <message>
+            <source>Off. Needs admin once.</source>
+            <translation>未启用。需要一次管理员权限。</translation>
+        </message>
+        <message>
+            <source>Not saved</source>
+            <translation>未保存</translation>
+        </message>
+        <message>
+            <source>Enabling child sessions needs admin. Restart this app as admin and try again.</source>
+            <translation>启用子会话需要管理员权限。请以管理员身份重启本程序后重试。</translation>
+        </message>
+        <message>
+            <source>Child sessions enabled.</source>
+            <translation>已启用子会话。</translation>
+        </message>
+        <message>
+            <source>Windows refused to enable child sessions.</source>
+            <translation>Windows 拒绝启用子会话。</translation>
+        </message>
+        <message>
+            <source>Sign in</source>
+            <translation>登录</translation>
+        </message>
+        <message>
+            <source>Windows refused to sign out the child session.</source>
+            <translation>Windows 拒绝注销子会话。</translation>
+        </message>
+        <message>
+            <source>Saved for {user}</source>
+            <translation>已为 {user} 保存</translation>
+        </message>
+        <message>
+            <source>Sign-in failed (code {code}). If your password changed, forget the saved password and connect again.</source>
+            <translation>登录失败（代码 {code}）。如果密码已更改，请忘记已保存的密码后重新连接。</translation>
+        </message>
+        <message>
+            <source>Forget password</source>
+            <translation>忘记密码</translation>
+        </message>
+        <message>
+            <source>admin</source>
+            <translation>管理员</translation>
+        </message>
+        <message>
+            <source>not admin</source>
+            <translation>非管理员</translation>
+        </message>
+        <message>
+            <source>Could not start the session view: {error}</source>
+            <translation>无法启动会话画面：{error}</translation>
+        </message>
+        <message>
+            <source>Not started</source>
+            <translation>未启动</translation>
+        </message>
+        <message>
+            <source>Start</source>
+            <translation>启动</translation>
+        </message>
+        <message>
+            <source>Settings</source>
+            <translation>设置</translation>
+        </message>
+        <message>
+            <source>Runs the game in a separate Windows session, so tasks never use your mouse and keyboard. Select the ChildSession capture to use it. The session stops when ok-script exits.</source>
+            <translation>在独立的 Windows 会话中运行游戏，任务不会占用你的鼠标和键盘。选择 ChildSession 截图方式即可使用。ok-script 退出时会话也会结束。</translation>
+        </message>
+        <message>
+            <source>Start with ok-script</source>
+            <translation>随 ok-script 启动</translation>
+        </message>
+        <message>
+            <source>When the ChildSession capture is selected, start the child session with ok-script.</source>
+            <translation>选择 ChildSession 截图方式时，ok-script 启动后自动启动子会话。</translation>
+        </message>
+        <message>
+            <source>Stop</source>
+            <translation>停止</translation>
+        </message>
+        <message>
+            <source>Starting</source>
+            <translation>启动中</translation>
+        </message>
+        <message>
+            <source>Child sessions are off in Windows. Enable them in Settings.</source>
+            <translation>Windows 未启用子会话，请在设置中启用。</translation>
+        </message>
+        <message>
+            <source>Press Start to sign in the child session.</source>
+            <translation>点击“启动”登录子会话。</translation>
+        </message>
+        <message>
+            <source>Running</source>
+            <translation>运行中</translation>
+        </message>
+        <message>
+            <source>game: not started</source>
+            <translation>游戏：未启动</translation>
+        </message>
+        <message>
+            <source>agent: starting, about a minute after sign-in</source>
+            <translation>代理程序：启动中，约在登录一分钟后</translation>
+        </message>
+        <message>
+            <source>Stop the child session?</source>
+            <translation>停止子会话？</translation>
+        </message>
+        <message>
+            <source>Closes the game in the child session. It also stops when ok-script exits.</source>
+            <translation>会关闭子会话中的游戏。ok-script 退出时子会话也会停止。</translation>
+        </message>
+        <message>
+            <source>Session {id}</source>
+            <translation>会话 {id}</translation>
+        </message>
+        <message>
+            <source>agent: {admin}</source>
+            <translation>代理程序：{admin}</translation>
+        </message>
+        <message>
+            <source>game: {title} {width}x{height}</source>
+            <translation>游戏：{title} {width}x{height}</translation>
         </message>
     </context>
 </TS>

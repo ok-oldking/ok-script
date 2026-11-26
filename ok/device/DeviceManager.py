@@ -10,7 +10,11 @@ from ok.device.capture import HwndWindow, BrowserCaptureMethod, update_capture_m
     ADBCaptureMethod
 from ok.device.interaction import PostMessageInteraction, GenshinInteraction, ForegroundPostMessageInteraction, \
     PynputInteraction, PyDirectInteraction, BrowserInteraction, ADBInteraction
+from ok.device.interaction_methods.child_session import ChildSessionInteraction
 from ok.core.events import communicate
+
+# The child-session capture method and interaction share this name (app config 'child_session').
+CHILD_SESSION = 'ChildSession'
 from ok.util.collection import parse_ratio
 from ok.util.config import Config
 from ok.util.file import delete_if_exists
@@ -62,6 +66,10 @@ class DeviceManager:
         self.windows_capture_config = app_config.get('windows')
         self.adb_capture_config = app_config.get('adb')
         self.browser_config = app_config.get('browser')
+        # Optional: run the Windows game in a child session (requires a 'windows' config).
+        self.child_session_config = app_config.get('child_session') if app_config.get('windows') else None
+        self._child_session_client = None
+        self._pc_hwnd_window = None
         self.debug = app_config.get('debug')
         self.interaction = None
         self.device_dict = {}
@@ -103,8 +111,12 @@ class DeviceManager:
                     item_name = interaction.__name__ if isinstance(interaction, type) else interaction
                     if saved_interaction == item_name:
                         selected_interaction = interaction
+                if saved_interaction == CHILD_SESSION and self.child_session_config:
+                    selected_interaction = CHILD_SESSION
 
-            if selected_interaction == 'PostMessage':
+            if selected_interaction == CHILD_SESSION:
+                self.win_interaction_class = ChildSessionInteraction
+            elif selected_interaction == 'PostMessage':
                 self.win_interaction_class = PostMessageInteraction
             elif selected_interaction == 'Genshin':
                 self.win_interaction_class = GenshinInteraction
@@ -142,6 +154,21 @@ class DeviceManager:
                 capture_method.close()
             except Exception as e:
                 logger.error(f'capture method close failed: {e}')
+        self.end_child_session()
+
+    def end_child_session(self):
+        """The child session lives and dies with this app: sign it out on exit."""
+        if not self.child_session_config or getattr(self, '_child_session_ended', False):
+            return
+        self._child_session_ended = True
+        try:
+            from ok.child_session import win_api
+            session = win_api.child_session_id()
+            if session is not None:
+                logger.info(f'signing out child session {session}')
+                win_api.logoff(session, wait=False)
+        except Exception as e:
+            logger.error(f'child session sign-out failed: {e}')
 
     def select_hwnd(self, exe, hwnd):
         self.config['selected_exe'] = exe
@@ -283,8 +310,22 @@ class DeviceManager:
 
             if width != 0:
                 pc_device["resolution"] = f"{width}x{height}"
+            self._report_child_session_window(pc_device)
             self._replace_pc_devices({imei: pc_device})
             return imei
+
+    def _report_child_session_window(self, pc_device):
+        """With the ChildSession capture the game window lives in the child session, not on
+        this desktop; report its state there."""
+        from ok.device.capture_methods.child_session import ChildSessionCaptureMethod
+        if self.config.get('capture') != CHILD_SESSION or not isinstance(self.capture_method,
+                                                                       ChildSessionCaptureMethod):
+            return
+        window = self.capture_method.hwnd_window
+        pc_device['connected'] = window.exists
+        if window.exists:
+            pc_device['width'], pc_device['height'] = window.width, window.height
+            pc_device['resolution'] = f'{window.width}x{window.height}'
 
     def update_browser_device(self):
         if self.browser_config and windows_graphics_available():
@@ -303,6 +344,20 @@ class DeviceManager:
                 "connected": connected,
                 "resolution": f"{width}x{height}"
             }
+
+    def child_session_client(self):
+        """The agent client for the child-session capture and interaction (created on first use)."""
+        if self._child_session_client is None:
+            from ok.child_session.client import AgentClient
+            from ok.child_session.host import project_dir
+            self._child_session_client = AgentClient(project_dir())
+        return self._child_session_client
+
+    def uses_child_session(self):
+        """True when the PC game runs in the child session (the ChildSession capture is selected)."""
+        preferred = self.get_preferred_device()
+        return (bool(self.child_session_config) and preferred is not None
+                and preferred.get('device') == 'windows' and self.config.get('capture') == CHILD_SESSION)
 
     def do_refresh(self, current=False):
         try:
@@ -556,7 +611,10 @@ class DeviceManager:
         if kind == 'windows':
             configured = (self.windows_capture_config or {}).get('capture_method', [])
             methods = configured if isinstance(configured, list) else [configured]
-            return [method_name(item) for item in (methods or ['windows']) if item]
+            names = [method_name(item) for item in (methods or ['windows']) if item]
+            if self.child_session_config:
+                names.append(CHILD_SESSION)
+            return names
         if kind == 'browser':
             return ['browser']
         methods = ['adb']
@@ -580,7 +638,10 @@ class DeviceManager:
         if kind == 'windows':
             configured = (self.windows_capture_config or {}).get('interaction', [])
             methods = configured if isinstance(configured, list) else [configured]
-            return [method_name(item) for item in (methods or ['Pynput']) if item]
+            names = [method_name(item) for item in (methods or ['Pynput']) if item]
+            if self.child_session_config:
+                names.append(CHILD_SESSION)
+            return names
         if kind == 'browser':
             return ['BrowserInteraction']
         if kind == 'adb':
@@ -597,7 +658,19 @@ class DeviceManager:
 
     def set_capture(self, capture):
         if self.config.get("capture") != capture:
+            previous = self.config.get("capture")
             self.config['capture'] = capture
+            # The child-session capture and input both go through the agent, so they pair up.
+            if capture == CHILD_SESSION and self.config.get('interaction') != CHILD_SESSION:
+                self._interaction_before_child_session = self.config.get('interaction')
+                self.config['interaction'] = CHILD_SESSION
+                self.win_interaction_class = ChildSessionInteraction
+            elif previous == CHILD_SESSION and self.config.get('interaction') == CHILD_SESSION:
+                restore = getattr(self, '_interaction_before_child_session', None)
+                names = self.available_interaction_methods({'device': 'windows'})
+                restore = restore if restore in names and restore != CHILD_SESSION else (names[0] if names else '')
+                self.config['interaction'] = ''
+                self.set_interaction(restore)
             self.start()
 
     def set_interaction(self, interaction):
@@ -615,7 +688,9 @@ class DeviceManager:
 
         if self.config.get("interaction") != interaction_name:
             self.config['interaction'] = interaction_name
-            if interaction == 'PostMessage':
+            if interaction == CHILD_SESSION:
+                self.win_interaction_class = ChildSessionInteraction
+            elif interaction == 'PostMessage':
                 self.win_interaction_class = PostMessageInteraction
             elif interaction == 'Genshin':
                 self.win_interaction_class = GenshinInteraction
@@ -642,6 +717,10 @@ class DeviceManager:
 
     def use_windows_capture(self):
         selected_method = self.config.get('capture')
+        if selected_method == CHILD_SESSION and self.child_session_config:
+            self._use_child_session_capture()
+            return
+        self._leave_child_session()
         valid_methods = self.windows_capture_config.get('capture_method', [])
         if not selected_method or selected_method not in valid_methods:
              if valid_methods:
@@ -667,6 +746,9 @@ class DeviceManager:
             if notify:
                 communicate.adb_devices.emit(True)
             return
+
+        # Give the PC window tracker back first; the ChildSession capture swaps it out again.
+        self._leave_child_session()
 
         if preferred['device'] == 'windows':
             title = self.windows_capture_config.get('title')
@@ -739,6 +821,30 @@ class DeviceManager:
         if notify:
             communicate.adb_devices.emit(True)
 
+    def _use_child_session_capture(self):
+        """The ChildSession capture: frames and window state come from the agent in the
+        child session, and tasks see its window instead of the host's (empty) one."""
+        from ok.device.capture_methods.child_session import ChildSessionCaptureMethod, ChildSessionWindow
+        client = self.child_session_client()
+        if not isinstance(self.capture_method, ChildSessionCaptureMethod):
+            if self.capture_method is not None:
+                self.capture_method.close()
+            window = ChildSessionWindow(client, self.exit_event)
+            self.capture_method = ChildSessionCaptureMethod(client, window, self.exit_event)
+        if self.hwnd_window is not self.capture_method.hwnd_window:
+            if self.hwnd_window is not None and not isinstance(self.hwnd_window, ChildSessionWindow):
+                self._pc_hwnd_window = self.hwnd_window
+            self.hwnd_window = self.capture_method.hwnd_window
+        if self.interaction:
+            self.interaction.capture = self.capture_method
+
+    def _leave_child_session(self):
+        """Give the host window tracker back when the ChildSession capture is not in use."""
+        from ok.device.capture_methods.child_session import ChildSessionWindow
+        if isinstance(self.hwnd_window, ChildSessionWindow):
+            self.hwnd_window = self._pc_hwnd_window
+            self._pc_hwnd_window = None
+
     def update_resolution_for_hwnd(self):
         if self.hwnd_window is not None and self.hwnd_window.frame_aspect_ratio == 0 and self.adb_capture_config:
             width, height = self.get_resolution()
@@ -797,7 +903,7 @@ class DeviceManager:
 
     def device_connected(self):
         preferred = self.get_preferred_device()
-        if preferred['device'] == 'windows' or preferred['device'] == 'browser':
+        if preferred['device'] in ('windows', 'browser'):
             return True
         elif self.device is not None:
             try:
@@ -809,8 +915,7 @@ class DeviceManager:
 
     def get_exe_path(self, device):
         path = device.get('full_path')
-        if device.get(
-                'device') == 'windows' and self.windows_capture_config:
+        if device.get('device') == 'windows' and self.windows_capture_config:
             if not path or path == "none":
                 path = None
             if calculate := self.windows_capture_config.get(
