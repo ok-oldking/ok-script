@@ -131,8 +131,14 @@ class RdpView(QWidget):
         self._filter_installed = False
         self._sync_pending = False
         self.is_connected = False
-        self.connected.connect(lambda: setattr(self, 'is_connected', True))
+        self.connected.connect(self._on_connected)
         self.disconnected.connect(self._on_disconnected)
+
+    def _on_connected(self):
+        # Also covers the control reconnecting on its own after a reported disconnect.
+        self.is_connected = True
+        self._session_active = True
+        self._sync_native_window()
 
     def _on_disconnected(self, reason):
         self.is_connected = False
@@ -166,10 +172,22 @@ class RdpView(QWidget):
         self._native_visible = False
         self._applied_region = None
         self._applied_ratio = None
-        self._rdp = unknown.QueryInterface(mstsc.IMsRdpClient9)
-        import comtypes.client
-        self._events = _Events(self)
-        self._event_connection = comtypes.client.GetEvents(self._rdp, self._events, interface=mstsc.IMsTscAxEvents)
+        try:
+            self._rdp = unknown.QueryInterface(mstsc.IMsRdpClient9)
+            import comtypes.client
+            self._events = _Events(self)
+            self._event_connection = comtypes.client.GetEvents(self._rdp, self._events,
+                                                               interface=mstsc.IMsTscAxEvents)
+        except Exception:
+            # Leave no half-built control behind: the next connect creates a fresh one.
+            self._event_connection = None
+            self._events = None
+            self._rdp = None
+            self._hwnd = None
+            self._parent_hwnd = None
+            self._last_native_rect = None
+            user32.DestroyWindow(wintypes.HWND(hwnd))
+            raise
         self.set_view_only(self._view_only)
         logger.info(f'RDP control created, version {self._rdp.Version}')
 
@@ -216,11 +234,31 @@ class RdpView(QWidget):
         if self._hwnd:
             _user32().EnableWindow(wintypes.HWND(self._hwnd), not self._view_only)
 
+    def _window_offset(self) -> QPoint:
+        """This widget's top-left in logical pixels relative to its top-level window."""
+        window = self.window()
+        return self.mapTo(window, QPoint(0, 0)) if window is not None and window is not self else QPoint(0, 0)
+
+    def _ancestor_clip(self) -> QRect:
+        """The part of this widget its ancestors leave visible, in view coordinates.
+
+        The native window is a child of the top-level window, so unlike an alien
+        widget it is not clipped by its Qt ancestors; clip it here instead.
+        """
+        clip = self.rect()
+        parent = self.parentWidget()
+        while parent is not None:
+            clip = clip.intersected(QRect(self.mapFrom(parent, QPoint(0, 0)), parent.size()))
+            if parent.isWindow():
+                break
+            parent = parent.parentWidget()
+        return clip
+
     def _native_rect(self) -> tuple[int, int, int, int]:
         """This widget's rectangle in physical pixels relative to its top-level window."""
         window = self.window()
         ratio = window.devicePixelRatioF() if window is not None else self.devicePixelRatioF()
-        top_left = self.mapTo(window, QPoint(0, 0)) if window is not None and window is not self else QPoint(0, 0)
+        top_left = self._window_offset()
         return (
             round(top_left.x() * ratio),
             round(top_left.y() * ratio),
@@ -245,12 +283,17 @@ class RdpView(QWidget):
         hrgn = gdi32.CreateRectRgn(0, 0, 0, 0)
         if not hrgn:
             return False
+        # Round in window coordinates, as _native_rect does for the window position,
+        # so region edges land on the same physical pixels as overlay edges.
+        offset = self._window_offset()
+        ox, oy = offset.x(), offset.y()
+        x0, y0 = round(ox * ratio), round(oy * ratio)
         for rect in visible:
             sub = gdi32.CreateRectRgn(
-                round(rect.left() * ratio),
-                round(rect.top() * ratio),
-                round((rect.right() + 1) * ratio),
-                round((rect.bottom() + 1) * ratio),
+                round((rect.left() + ox) * ratio) - x0,
+                round((rect.top() + oy) * ratio) - y0,
+                round((rect.right() + 1 + ox) * ratio) - x0,
+                round((rect.bottom() + 1 + oy) * ratio) - y0,
             )
             if not sub:
                 gdi32.DeleteObject(hrgn)
@@ -371,7 +414,7 @@ class RdpView(QWidget):
                 self._parent_hwnd = parent_hwnd
                 self._last_native_rect = None
         bounds = self.rect()
-        visible = QRegion(bounds)
+        visible = QRegion(self._ancestor_clip())
         for rect in self._overlay_rects():
             visible -= QRegion(rect)
         if visible.isEmpty():

@@ -382,6 +382,12 @@ class ChildSessionTab(QWidget):
         """Sign in the child session (or reuse one), install the agent autostart, show it."""
         if self.view.is_connected or self._starting or self._asking_password:
             return
+        window = self.window()
+        if window is None or window is self:
+            # The RDP control parents to the top-level window; creating it now would
+            # make this tab a native top-level window of its own.
+            logger.warning('child session start ignored: the page is not in a window yet')
+            return
         if not win_api.is_enabled():
             show_toast(self, _tr('Child sessions are off in Windows. Enable them in Settings.'), tone='warning')
             self.settings_group.setVisible(True)

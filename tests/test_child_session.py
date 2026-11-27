@@ -382,6 +382,8 @@ class TestRdpViewOverlayClipping(unittest.TestCase):
 
         stack = ExitStack()
         stack.enter_context(patch('ok.ui.qt.child_session.rdp_view._user32', return_value=user32))
+        # ctypes.WinDLL is patched below; keep _gdi32() from caching that mock.
+        stack.enter_context(patch('ok.ui.qt.child_session.rdp_view._gdi32', return_value=Mock()))
         stack.enter_context(patch('ok.ui.qt.child_session.rdp_view._mstsc', return_value=mstsc))
         stack.enter_context(patch('ctypes.WinDLL', return_value=atl))
         stack.enter_context(patch('comtypes.client.GetEvents', return_value=Mock()))
@@ -591,6 +593,86 @@ class TestRdpViewOverlayClipping(unittest.TestCase):
         QApplication.processEvents()
         self.assertTrue(view._native_visible)
         self.assertIsNone(view._applied_region)
+
+    def test_native_region_is_clipped_to_ancestor_bounds(self):
+        from PySide6.QtCore import QEvent, QRect
+        from PySide6.QtGui import QRegion
+        from PySide6.QtWidgets import QApplication, QWidget
+        from ok.ui.qt.child_session.rdp_view import RdpView
+
+        with patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_move'), \
+                patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_show'), \
+                patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_set_parent'), \
+                patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_clear_region', return_value=True), \
+                patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_set_region', return_value=True):
+            window = QWidget()
+            window.resize(900, 600)
+            container = QWidget(window)
+            container.setGeometry(50, 50, 200, 100)
+            view = RdpView(container)
+            view.setGeometry(0, 0, 400, 300)  # overflows its container, as at minimum size
+            window.show()
+            QApplication.processEvents()
+            try:
+                self._activate(window, view)
+                self.assertTrue(view._native_visible)
+                self.assertEqual(QRegion(QRect(0, 0, 200, 100)), view._applied_region)
+
+                container.setGeometry(50, 50, 500, 400)
+                QApplication.processEvents()
+                view._sync_native_window()
+                self.assertIsNone(view._applied_region)
+            finally:
+                view._hwnd = None
+                view.dispose()
+                window.close()
+                window.deleteLater()
+                QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+    def test_reconnect_without_connect_call_shows_native_again(self):
+        window, _container, view = self._make_host()
+        self._activate(window, view)
+        view._on_disconnected(3)
+        self.assertFalse(view._native_visible)
+        view.connected.emit()
+        self.assertTrue(view.is_connected)
+        self.assertTrue(view._native_visible)
+
+    def test_failed_control_setup_destroys_window_and_allows_retry(self):
+        window, _container, view = self._make_host()
+        stack, user32, _rdp = self._stub_rdp_backend()
+        with stack, patch('comtypes.client.GetEvents', side_effect=OSError('no events')):
+            with self.assertRaises(OSError):
+                view.connect_session(1920, 1080, 'user', 'pass')
+            user32.DestroyWindow.assert_called_once()
+            self.assertIsNone(view._hwnd)
+            self.assertIsNone(view._rdp)
+
+    def test_start_session_ignored_until_mounted(self):
+        from PySide6.QtCore import QEvent
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.child_session.child_session_tab import ChildSessionTab
+
+        dm = Mock()
+        dm.get_preferred_device.return_value = None
+        dm.child_session_client.return_value.try_call.return_value = None
+        with patch('ok.child_session.host.settings', return_value={}), \
+                patch('ok.child_session.host.sync_agent_config'), \
+                patch('ok.child_session.host.install_autostart') as install, \
+                patch('ok.child_session.win_api.is_enabled', return_value=True), \
+                patch('ok.child_session.win_api.child_session_id', return_value=None), \
+                patch('ok.child_session.credentials.load', return_value=('user', 'pass')), \
+                patch('ok.ui.qt.child_session.child_session_tab._ensure_own_audio_muted'), \
+                patch('ok.ui.qt.child_session.child_session_tab.ChildSessionTab.refresh'):
+            tab = ChildSessionTab({'child_session': {'resolution': (1920, 1080)}, 'windows': {'exe': 'g.exe'}}, dm)
+            try:
+                tab.start_session()
+                install.assert_not_called()
+                self.assertFalse(tab._starting)
+            finally:
+                tab.dispose()
+                tab.deleteLater()
+                QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
     def test_animated_stacked_widget_skips_transition_for_opt_out_page(self):
         from PySide6.QtCore import QEvent, Qt
