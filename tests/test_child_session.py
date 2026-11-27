@@ -304,5 +304,590 @@ class TestConnectionLabels(unittest.TestCase):
         self.assertIn('ChildSession', names)
 
 
+class TestRdpViewOverlayClipping(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from PySide6.QtWidgets import QApplication
+        cls.app = QApplication.instance() or QApplication([])
+
+    def _make_host(self, top_margin=80):
+        from contextlib import ExitStack
+        from PySide6.QtCore import QEvent
+        from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget
+        from ok.ui.qt.child_session.rdp_view import RdpView
+
+        stack = ExitStack()
+        stack.enter_context(patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_move'))
+        stack.enter_context(patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_show'))
+        stack.enter_context(patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_set_parent'))
+        stack.enter_context(patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_clear_region', return_value=True))
+        stack.enter_context(patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_set_region', return_value=True))
+
+        window = QWidget()
+        window.resize(900, 600)
+        container = QWidget(window)
+        outer = QVBoxLayout(window)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.addWidget(container)
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(100, top_margin, 40, 40)
+        view = RdpView(container)
+        layout.addWidget(view)
+        window.show()
+        QApplication.processEvents()
+
+        def cleanup():
+            view._hwnd = None
+            view.dispose()
+            window.close()
+            window.deleteLater()
+            QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+            stack.close()
+
+        self.addCleanup(cleanup)
+        return window, container, view
+
+    def _activate(self, window, view):
+        view._hwnd = 1
+        view._parent_hwnd = int(window.winId())
+        view._session_active = True
+        view._sync_native_window()
+
+    def _stub_rdp_backend(self, hwnd=98765):
+        import ctypes
+        from contextlib import ExitStack
+        from types import SimpleNamespace
+        import comtypes.client
+
+        user32 = Mock()
+        user32.CreateWindowExW.return_value = hwnd
+        user32.SetWindowRgn.return_value = 1
+        atl = Mock()
+        atl.AtlAxGetControl.return_value = 0
+
+        rdp = SimpleNamespace(
+            Version='10.0',
+            AdvancedSettings9=SimpleNamespace(),
+            SecuredSettings3=SimpleNamespace(),
+            Connect=Mock(),
+            Disconnect=Mock(),
+        )
+        extended = SimpleNamespace(Property={})
+        rdp.QueryInterface = Mock(return_value=extended)
+        mstsc = SimpleNamespace(IMsRdpClient9=object(), IMsTscAxEvents=object(), IMsRdpExtendedSettings=object())
+
+        class FakeUnknown(ctypes.c_void_p):
+            def QueryInterface(self, _iface):
+                return rdp
+
+        stack = ExitStack()
+        stack.enter_context(patch('ok.ui.qt.child_session.rdp_view._user32', return_value=user32))
+        # ctypes.WinDLL is patched below; keep _gdi32() from caching that mock.
+        stack.enter_context(patch('ok.ui.qt.child_session.rdp_view._gdi32', return_value=Mock()))
+        stack.enter_context(patch('ok.ui.qt.child_session.rdp_view._mstsc', return_value=mstsc))
+        stack.enter_context(patch('ctypes.WinDLL', return_value=atl))
+        stack.enter_context(patch('comtypes.client.GetEvents', return_value=Mock()))
+        stack.enter_context(patch('ctypes.POINTER', return_value=FakeUnknown))
+        return stack, user32, rdp
+
+    def test_view_and_ancestors_stay_alien_and_native_hides_on_tab_switch_or_disconnect(self):
+        from PySide6.QtCore import Qt
+        window, container, view = self._make_host()
+        self.assertFalse(view.testAttribute(Qt.WidgetAttribute.WA_NativeWindow))
+        self.assertFalse(container.testAttribute(Qt.WidgetAttribute.WA_NativeWindow))
+        self.assertFalse(view._native_visible)
+        self.assertFalse(view._filter_installed)
+
+        self._activate(window, view)
+        self.assertTrue(view._native_visible)
+        self.assertTrue(view._filter_installed)
+        self.assertFalse(view.testAttribute(Qt.WidgetAttribute.WA_NativeWindow))
+        self.assertFalse(container.testAttribute(Qt.WidgetAttribute.WA_NativeWindow))
+
+        view.hide()
+        self.assertFalse(view._native_visible)
+        view.show()
+        self.assertTrue(view._native_visible)
+
+        view._on_disconnected(0)
+        self.assertFalse(view._native_visible)
+        self.assertFalse(view._filter_installed)
+        self._activate(window, view)
+        self.assertTrue(view._native_visible)
+        self.assertTrue(view._filter_installed)
+        view.disconnect_session()
+        self.assertFalse(view._native_visible)
+        self.assertFalse(view._filter_installed)
+
+    def test_connect_session_creates_control_under_top_level_window_keeping_view_alien(self):
+        from PySide6.QtCore import Qt
+
+        window, container, view = self._make_host()
+        stack, user32, rdp = self._stub_rdp_backend()
+        with stack:
+            view.connect_session(1920, 1080, 'user', 'pass')
+
+        self.assertEqual(int(window.winId()), user32.CreateWindowExW.call_args.args[8])
+        rdp.Connect.assert_called_once()
+        self.assertTrue(view._native_visible)
+        self.assertTrue(view._filter_installed)
+        self.assertFalse(view.testAttribute(Qt.WidgetAttribute.WA_NativeWindow))
+        self.assertFalse(container.testAttribute(Qt.WidgetAttribute.WA_NativeWindow))
+
+    def test_hidden_connect_does_not_install_app_filter_until_shown(self):
+        window, _container, view = self._make_host()
+        view.hide()
+        stack, _user32, rdp = self._stub_rdp_backend()
+        with stack:
+            view.connect_session(1920, 1080, 'user', 'pass')
+
+        rdp.Connect.assert_called_once()
+        self.assertFalse(view._native_visible)
+        self.assertFalse(view._filter_installed)
+
+        view.show()
+        self.assertTrue(view._native_visible)
+        self.assertTrue(view._filter_installed)
+
+        view.hide()
+        self.assertFalse(view._native_visible)
+        self.assertFalse(view._filter_installed)
+
+    def test_win32_set_region_rolls_back_on_partial_gdi_failure(self):
+        from unittest.mock import call
+        from PySide6.QtCore import QRect
+        from PySide6.QtGui import QRegion
+        from PySide6.QtWidgets import QApplication, QWidget
+        from ok.ui.qt.child_session.rdp_view import RdpView
+        from ok.ui.qt.kit.popover import Popover
+
+        orig_set_region = RdpView._win32_set_region
+        window, _container, view = self._make_host()
+        anchor = QWidget(window)
+        anchor.setGeometry(20, 20, 80, 30)
+        anchor.show()
+        popover = Popover(window)
+        popover.setFixedSize(360, 400)
+        self._activate(window, view)
+        QApplication.processEvents()
+
+        gdi32 = Mock()
+        gdi32.CreateRectRgn.side_effect = [101, 201, 0]
+        gdi32.CombineRgn.return_value = 2
+        user32 = Mock()
+        with patch.object(view, '_win32_set_region', lambda vis, ratio: orig_set_region(view, vis, ratio)), \
+                patch('ok.ui.qt.child_session.rdp_view._gdi32', return_value=gdi32), \
+                patch('ok.ui.qt.child_session.rdp_view._user32', return_value=user32):
+            popover.popup(anchor, above=False)
+            QApplication.processEvents()
+            self.assertIsNone(view._applied_region)
+            self.assertFalse(view._native_visible)
+            user32.SetWindowRgn.assert_not_called()
+            self.assertEqual([call(201), call(101)], gdi32.DeleteObject.call_args_list)
+
+            gdi32.reset_mock()
+            gdi32.CreateRectRgn.side_effect = [102, 202]
+            gdi32.CombineRgn.return_value = 0
+            two_rects = QRegion(QRect(0, 0, 100, 40)) + QRegion(QRect(0, 60, 100, 40))
+            self.assertFalse(view._apply_native_region(two_rects))
+            self.assertIsNone(view._applied_region)
+            user32.SetWindowRgn.assert_not_called()
+            self.assertEqual([call(202), call(102)], gdi32.DeleteObject.call_args_list)
+
+    def test_region_apply_and_clear_failures_are_safe_and_retried(self):
+        from PySide6.QtWidgets import QApplication, QWidget
+        from ok.ui.qt.kit.popover import Popover
+
+        window, _container, view = self._make_host()
+        anchor = QWidget(window)
+        anchor.setGeometry(20, 20, 80, 30)
+        anchor.show()
+        popover = Popover(window)
+        popover.setFixedSize(360, 400)
+        self._activate(window, view)
+        QApplication.processEvents()
+
+        with patch.object(view, '_win32_set_region', return_value=False):
+            popover.popup(anchor, above=False)
+            QApplication.processEvents()
+            self.assertIsNone(view._applied_region)
+            self.assertFalse(view._native_visible)
+
+        view._sync_native_window()
+        self.assertIsNotNone(view._applied_region)
+        self.assertTrue(view._native_visible)
+
+        with patch.object(view, '_win32_clear_region', return_value=False):
+            popover.close_popover()
+            QApplication.processEvents()
+            self.assertIsNotNone(view._applied_region)
+
+        view._sync_native_window()
+        self.assertIsNone(view._applied_region)
+
+    def test_popover_clips_overlapped_region_and_restores_on_close(self):
+        from PySide6.QtCore import QPoint
+        from PySide6.QtWidgets import QApplication, QWidget
+        from ok.ui.qt.kit.popover import Popover
+        window, _container, view = self._make_host()
+        anchor = QWidget(window)
+        anchor.setGeometry(20, 20, 80, 30)
+        anchor.show()
+        popover = Popover(window)
+        popover.setFixedSize(360, 400)
+        self._activate(window, view)
+        QApplication.processEvents()
+
+        popover.popup(anchor, above=False)
+        QApplication.processEvents()
+        self.assertTrue(view._native_visible)
+        region = view._applied_region
+        self.assertIsNotNone(region)
+        self.assertFalse(region.isEmpty())
+        self.assertFalse(region.contains(QPoint(10, 10)))
+        self.assertTrue(region.contains(QPoint(view.width() - 10, view.height() - 10)))
+
+        popover.close_popover()
+        QApplication.processEvents()
+        self.assertTrue(view._native_visible)
+        self.assertIsNone(view._applied_region)
+
+    def test_dialog_hides_native_completely_and_restores_on_reject(self):
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.kit.dialogs import Dialog
+        window, _container, view = self._make_host(top_margin=20)
+        self._activate(window, view)
+        dialog = Dialog(window, 'Sign in', 'Enter password')
+        QApplication.processEvents()
+        self.assertTrue(view._native_visible)
+
+        dialog.open()
+        QApplication.processEvents()
+        self.assertFalse(view._native_visible)
+        self.assertIsNone(view._applied_region)
+
+        dialog.reject()
+        QApplication.processEvents()
+        self.assertTrue(view._native_visible)
+        self.assertIsNone(view._applied_region)
+        dialog.deleteLater()
+
+    def test_toast_masks_overlapped_region_and_restores_on_close(self):
+        from PySide6.QtCore import QPoint
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.kit.feedback import show_toast
+        window, _container, view = self._make_host(top_margin=20)
+        self._activate(window, view)
+        toast = show_toast(window, 'Child session warning message', duration=0)
+        QApplication.processEvents()
+        toast_in_view = view.mapFrom(window, toast.geometry().center())
+        self.assertTrue(view.rect().contains(toast_in_view))
+        self.assertTrue(view._native_visible)
+        region = view._applied_region
+        self.assertIsNotNone(region)
+        self.assertFalse(region.isEmpty())
+        self.assertFalse(region.contains(toast_in_view))
+        self.assertTrue(region.contains(QPoint(view.width() - 10, view.height() - 10)))
+
+        toast.close()
+        QApplication.processEvents()
+        self.assertTrue(view._native_visible)
+        self.assertIsNone(view._applied_region)
+
+    def test_native_region_is_clipped_to_ancestor_bounds(self):
+        from PySide6.QtCore import QEvent, QRect
+        from PySide6.QtGui import QRegion
+        from PySide6.QtWidgets import QApplication, QWidget
+        from ok.ui.qt.child_session.rdp_view import RdpView
+
+        with patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_move'), \
+                patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_show'), \
+                patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_set_parent'), \
+                patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_clear_region', return_value=True), \
+                patch('ok.ui.qt.child_session.rdp_view.RdpView._win32_set_region', return_value=True):
+            window = QWidget()
+            window.resize(900, 600)
+            container = QWidget(window)
+            container.setGeometry(50, 50, 200, 100)
+            view = RdpView(container)
+            view.setGeometry(0, 0, 400, 300)  # overflows its container, as at minimum size
+            window.show()
+            QApplication.processEvents()
+            try:
+                self._activate(window, view)
+                self.assertTrue(view._native_visible)
+                self.assertEqual(QRegion(QRect(0, 0, 200, 100)), view._applied_region)
+
+                container.setGeometry(50, 50, 500, 400)
+                QApplication.processEvents()
+                view._sync_native_window()
+                self.assertIsNone(view._applied_region)
+            finally:
+                view._hwnd = None
+                view.dispose()
+                window.close()
+                window.deleteLater()
+                QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+    def test_reconnect_without_connect_call_shows_native_again(self):
+        window, _container, view = self._make_host()
+        self._activate(window, view)
+        view._on_disconnected(3)
+        self.assertFalse(view._native_visible)
+        view.connected.emit()
+        self.assertTrue(view.is_connected)
+        self.assertTrue(view._native_visible)
+
+    def test_failed_control_setup_destroys_window_and_allows_retry(self):
+        window, _container, view = self._make_host()
+        stack, user32, _rdp = self._stub_rdp_backend()
+        with stack, patch('comtypes.client.GetEvents', side_effect=OSError('no events')):
+            with self.assertRaises(OSError):
+                view.connect_session(1920, 1080, 'user', 'pass')
+            user32.DestroyWindow.assert_called_once()
+            self.assertIsNone(view._hwnd)
+            self.assertIsNone(view._rdp)
+
+    def test_start_session_ignored_until_mounted(self):
+        from PySide6.QtCore import QEvent
+        from PySide6.QtWidgets import QApplication
+        from ok.ui.qt.child_session.child_session_tab import ChildSessionTab
+
+        dm = Mock()
+        dm.get_preferred_device.return_value = None
+        dm.child_session_client.return_value.try_call.return_value = None
+        with patch('ok.child_session.host.settings', return_value={}), \
+                patch('ok.child_session.host.sync_agent_config'), \
+                patch('ok.child_session.host.install_autostart') as install, \
+                patch('ok.child_session.win_api.is_enabled', return_value=True), \
+                patch('ok.child_session.win_api.child_session_id', return_value=None), \
+                patch('ok.child_session.credentials.load', return_value=('user', 'pass')), \
+                patch('ok.ui.qt.child_session.child_session_tab._ensure_own_audio_muted'), \
+                patch('ok.ui.qt.child_session.child_session_tab.ChildSessionTab.refresh'):
+            tab = ChildSessionTab({'child_session': {'resolution': (1920, 1080)}, 'windows': {'exe': 'g.exe'}}, dm)
+            try:
+                tab.start_session()
+                install.assert_not_called()
+                self.assertFalse(tab._starting)
+            finally:
+                tab.dispose()
+                tab.deleteLater()
+                QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+    def test_audio_mutes_when_window_inactive_and_background_mute_on(self):
+        from PySide6.QtCore import QEvent
+        from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget
+        from ok.ui.qt.child_session.child_session_tab import ChildSessionTab
+
+        dm = Mock()
+        dm.get_preferred_device.return_value = None
+        dm.child_session_client.return_value.try_call.return_value = None
+        with patch('ok.child_session.host.settings', return_value={}), \
+                patch('ok.child_session.host.sync_agent_config'), \
+                patch('ok.child_session.win_api.is_enabled', return_value=True), \
+                patch('ok.ui.qt.child_session.child_session_tab._ensure_own_audio_muted'), \
+                patch('ok.ui.qt.child_session.child_session_tab.ChildSessionTab.refresh'):
+            window = QWidget()
+            layout = QVBoxLayout(window)
+            tab = ChildSessionTab({'child_session': {'resolution': (1920, 1080)}, 'windows': {'exe': 'g.exe'}}, dm)
+            layout.addWidget(tab)
+            try:
+                window.show()
+                QApplication.processEvents()
+                tab.view.is_connected = True
+                with patch.object(window, 'isActiveWindow', return_value=False):
+                    with patch('ok.ui.qt.child_session.child_session_tab._mute_in_background', return_value=True):
+                        self.assertFalse(tab._audible())
+                    with patch('ok.ui.qt.child_session.child_session_tab._mute_in_background', return_value=False):
+                        self.assertTrue(tab._audible())
+                with patch.object(window, 'isActiveWindow', return_value=True), \
+                        patch('ok.ui.qt.child_session.child_session_tab._mute_in_background', return_value=True):
+                    self.assertTrue(tab._audible())
+            finally:
+                tab.view.is_connected = False
+                tab.dispose()
+                window.close()
+                window.deleteLater()
+                QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+    def test_animated_stacked_widget_skips_transition_for_opt_out_page(self):
+        from PySide6.QtCore import QEvent, Qt
+        from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QWidget
+        from ok.ui.qt.kit.motion import AnimatedStackedWidget
+        stack = AnimatedStackedWidget(Qt.Orientation.Vertical)
+        stack.resize(400, 300)
+        normal = QWidget()
+        native_page = QWidget()
+        native_page.setProperty('skip_transition', True)
+        stack.addWidget(normal)
+        stack.addWidget(native_page)
+        stack.show()
+        QApplication.processEvents()
+
+        def cleanup():
+            stack.close()
+            stack.deleteLater()
+            QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+        self.addCleanup(cleanup)
+
+        stack.setCurrentWidget(native_page)
+        self.assertIsNone(native_page.graphicsEffect())
+        self.assertFalse(stack.is_animating())
+
+        stack.setCurrentWidget(normal)
+        self.assertIsInstance(normal.graphicsEffect(), QGraphicsOpacityEffect)
+        self.assertTrue(stack.is_animating())
+
+    def test_child_session_tab_settings_button_and_switch_stay_intact_and_clickable(self):
+        from PySide6.QtCore import QEvent
+        from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget
+        from ok.ui.qt.child_session.child_session_tab import ChildSessionTab
+        from ok.ui.qt.kit.buttons import Button
+        from ok.ui.qt.kit.navigation import NavItem
+        from ok.ui.qt.kit.switch import Switch
+
+        dm = Mock()
+        dm.get_preferred_device.return_value = None
+        dm.child_session_client.return_value.try_call.return_value = None
+
+        with patch('ok.child_session.host.settings', return_value={}), \
+                patch('ok.child_session.host.sync_agent_config'), \
+                patch('ok.child_session.host.install_autostart'), \
+                patch('ok.child_session.win_api.is_enabled', return_value=True), \
+                patch('ok.child_session.win_api.child_session_id', return_value=None), \
+                patch('ok.child_session.credentials.load', return_value=None), \
+                patch('ok.child_session.credentials.forget'), \
+                patch('ok.ui.qt.child_session.child_session_tab._ensure_own_audio_muted'), \
+                patch('ok.ui.qt.child_session.child_session_tab.ChildSessionTab.refresh'):
+            window = QWidget()
+            window.resize(900, 700)
+            layout = QVBoxLayout(window)
+            tab = ChildSessionTab({'child_session': {'resolution': (1920, 1080)}, 'windows': {'exe': 'g.exe'}}, dm)
+            nav_settings = NavItem('settings', 'Settings', 'gear', window)
+            layout.addWidget(tab)
+            layout.addWidget(nav_settings)
+            try:
+                window.show()
+                QApplication.processEvents()
+
+                self.assertIn(tab.settings_button, tab.children())
+                self.assertIn(tab.view_only_switch, tab.children())
+                self.assertIs(Button, type(tab.settings_button))
+                self.assertIs(Switch, type(tab.view_only_switch))
+                self.assertFalse(tab.settings_group.isVisible())
+
+                tab.settings_button.click()
+                QApplication.processEvents()
+                self.assertTrue(tab.settings_group.isVisible())
+
+                tab.settings_button.click()
+                QApplication.processEvents()
+                self.assertFalse(tab.settings_group.isVisible())
+
+                late_button = Button('Late', 'gear', 'subtle', size='small', parent=window)
+                late_nav = NavItem('late_nav', 'Late Nav', 'gear', window)
+                QApplication.processEvents()
+                self.assertIn(late_button, window.children())
+                self.assertIn(late_nav, window.children())
+                self.assertIs(Button, type(late_button))
+                self.assertIs(NavItem, type(late_nav))
+
+                clicks = []
+                late_button.clicked.connect(lambda: clicks.append('button'))
+                late_nav.clicked.connect(lambda: clicks.append('nav'))
+                late_button.click()
+                late_nav.click()
+                self.assertEqual(['button', 'nav'], clicks)
+
+                # Failed saved-password sign-ins replace the previous toast instead of stacking.
+                tab._starting = True
+                tab._used_saved_password = True
+                tab._on_disconnected(1)
+                first_toast = tab._error_toast
+                self.assertIsNotNone(first_toast)
+                self.assertTrue(first_toast.isVisible())
+
+                tab._starting = True
+                tab._used_saved_password = True
+                tab._on_disconnected(1)
+                second_toast = tab._error_toast
+                self.assertIsNot(first_toast, second_toast)
+                self.assertFalse(first_toast.isVisible())
+                self.assertTrue(second_toast.isVisible())
+
+                tab.forget_password()
+                self.assertIsNone(tab._error_toast)
+                self.assertFalse(second_toast.isVisible())
+
+                # Re-entrant start_session calls while the password dialog is open are ignored.
+                calls = []
+
+                def fake_ask():
+                    calls.append(True)
+                    tab.start_session()
+                    return None
+
+                with patch.object(tab, '_ask_password', side_effect=fake_ask):
+                    tab.start_session()
+                self.assertEqual([True], calls)
+            finally:
+                tab.dispose()
+                window.close()
+                window.deleteLater()
+                QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+    def test_auto_start_waits_for_mount_and_keeps_tab_alien(self):
+        from PySide6.QtCore import QEvent, Qt
+        from PySide6.QtWidgets import QApplication, QStackedWidget, QVBoxLayout, QWidget
+        from ok.ui.qt.child_session.child_session_tab import ChildSessionTab
+
+        dm = Mock()
+        dm.get_preferred_device.return_value = object()
+        dm.uses_child_session.return_value = True
+        dm.child_session_client.return_value.try_call.return_value = None
+
+        rdp_stack, user32, rdp = self._stub_rdp_backend()
+        with rdp_stack, \
+                patch('ok.child_session.host.settings', return_value={'auto_connect': True}), \
+                patch('ok.child_session.host.sync_agent_config'), \
+                patch('ok.child_session.host.install_autostart'), \
+                patch('ok.child_session.win_api.is_enabled', return_value=True), \
+                patch('ok.child_session.win_api.child_session_id', return_value=None), \
+                patch('ok.child_session.credentials.load', return_value=('user', 'pass')), \
+                patch('ok.ui.qt.child_session.child_session_tab._ensure_own_audio_muted'), \
+                patch('ok.ui.qt.child_session.child_session_tab.ChildSessionTab._collect_status'):
+            tab = ChildSessionTab({'child_session': {'resolution': (1920, 1080)}, 'windows': {'exe': 'g.exe'}}, dm)
+            window = QWidget()
+            try:
+                user32.CreateWindowExW.assert_not_called()
+                self.assertFalse(tab._auto_start_checked)
+                self.assertFalse(tab.testAttribute(Qt.WidgetAttribute.WA_NativeWindow))
+                self.assertFalse(tab.view.testAttribute(Qt.WidgetAttribute.WA_NativeWindow))
+
+                window.resize(900, 700)
+                layout = QVBoxLayout(window)
+                pages = QStackedWidget(window)
+                pages.addWidget(QWidget())
+                pages.addWidget(tab)
+                layout.addWidget(pages)
+                window.show()
+                QApplication.processEvents()
+
+                user32.CreateWindowExW.assert_called_once()
+                self.assertEqual(int(window.winId()), user32.CreateWindowExW.call_args.args[8])
+                rdp.Connect.assert_called_once()
+                self.assertFalse(tab.testAttribute(Qt.WidgetAttribute.WA_NativeWindow))
+                self.assertFalse(tab.view.testAttribute(Qt.WidgetAttribute.WA_NativeWindow))
+                self.assertFalse(pages.testAttribute(Qt.WidgetAttribute.WA_NativeWindow))
+                self.assertFalse(tab.view._native_visible)
+                self.assertFalse(tab.view._filter_installed)
+            finally:
+                tab.dispose()
+                window.close()
+                window.deleteLater()
+                QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+
 if __name__ == '__main__':
     unittest.main()
