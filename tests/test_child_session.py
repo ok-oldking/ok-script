@@ -153,6 +153,115 @@ class TestChildSessionWindow(unittest.TestCase):
         self.assertEqual(0, window.width)
 
 
+class FakeDesktop:
+    """Window state for agent_input: game window 1 (pid 10), other apps' windows."""
+
+    def __init__(self, foreground, under_point=1, comes_front=True):
+        self.foreground = foreground
+        self.under_point = under_point
+        self.comes_front = comes_front
+        self.pids = {1: 10, 2: 10, 50: 20, 60: 30}
+        self.classes = {1: 'UnrealWindow', 2: 'UnrealWindow', 50: '#32770', 60: 'Chrome_WidgetWin_1'}
+        self.closed = []
+        self.raised = []
+
+    def set_foreground(self, hwnd):
+        if self.comes_front:
+            self.foreground = hwnd
+
+    def post(self, hwnd, msg, *_):
+        import win32con
+        if msg == win32con.WM_CLOSE:
+            self.closed.append(hwnd)
+            if self.under_point == hwnd:
+                self.under_point = 1
+
+    def set_pos(self, hwnd, after, *_):
+        self.raised.append(after)
+        if self.comes_front:
+            self.under_point = hwnd
+
+    def patches(self):
+        return [
+            patch('win32gui.GetForegroundWindow', lambda: self.foreground),
+            patch('win32gui.SetForegroundWindow', self.set_foreground),
+            patch('win32gui.BringWindowToTop', lambda h: None),
+            patch('win32gui.IsIconic', lambda h: False),
+            patch('win32gui.IsWindowVisible', lambda h: True),
+            patch('win32gui.GetClassName', lambda h: self.classes.get(h, '')),
+            patch('win32gui.GetWindowText', lambda h: f'window {h}'),
+            patch('win32gui.WindowFromPoint', lambda p: self.under_point),
+            patch('win32gui.GetAncestor', lambda h, flag: h),
+            patch('win32gui.PostMessage', self.post),
+            patch('win32gui.SetWindowPos', self.set_pos),
+            patch('win32gui.ClientToScreen', lambda h, p: p),
+            patch('win32process.GetWindowThreadProcessId', lambda h: (0, self.pids.get(h, 0))),
+            patch('ok.child_session.agent_input.FRONT_SETTLE', 0),
+            patch('ok.child_session.agent_input.HOVER_SETTLE', 0),
+        ]
+
+
+class TestAgentInputFront(unittest.TestCase):
+    def make_input(self):
+        from ok.child_session.agent_input import Input
+        inp = Input.__new__(Input)
+        inp.mouse = Mock()
+        inp.keyboard = Mock()
+        inp._mouse_module = Mock()
+        inp._keyboard_module = Mock()
+        inp._log = Mock()
+        return inp
+
+    def run_with(self, desktop, fn):
+        patches = desktop.patches()
+        for p in patches:
+            p.start()
+        try:
+            return fn()
+        finally:
+            for p in reversed(patches):
+                p.stop()
+
+    def test_game_in_front_sends_no_extra_input(self):
+        desktop = FakeDesktop(foreground=1)
+        inp = self.make_input()
+        self.assertTrue(self.run_with(desktop, lambda: inp.bring_to_front(1, (5, 5))))
+        inp.keyboard.press.assert_not_called()
+        self.assertEqual([], desktop.closed)
+
+    def test_game_own_popup_counts_as_game(self):
+        desktop = FakeDesktop(foreground=2, under_point=2)
+        self.assertTrue(self.run_with(desktop, lambda: self.make_input().bring_to_front(1, (5, 5))))
+
+    def test_dialog_popup_is_dismissed_and_game_brought_front(self):
+        desktop = FakeDesktop(foreground=50, under_point=50)
+        inp = self.make_input()
+        self.assertTrue(self.run_with(desktop, lambda: inp.bring_to_front(1, (5, 5))))
+        self.assertEqual([50], desktop.closed)
+        self.assertEqual(1, desktop.foreground)
+
+    def test_other_app_window_is_not_closed_game_is_raised_over_it(self):
+        import win32con
+        desktop = FakeDesktop(foreground=1, under_point=60)
+        self.assertTrue(self.run_with(desktop, lambda: self.make_input().bring_to_front(1, (5, 5))))
+        self.assertEqual([], desktop.closed)
+        self.assertEqual([win32con.HWND_TOPMOST, win32con.HWND_NOTOPMOST], desktop.raised[:2])
+
+    def test_click_is_not_sent_when_game_cannot_come_front(self):
+        from ok.child_session.agent_input import NotInFront
+        desktop = FakeDesktop(foreground=60, comes_front=False)
+        inp = self.make_input()
+        with self.assertRaises(NotInFront):
+            self.run_with(desktop, lambda: inp.click(1, 5, 5))
+        inp.mouse.press.assert_not_called()
+
+    def test_click_goes_out_once_game_is_front(self):
+        desktop = FakeDesktop(foreground=60)
+        inp = self.make_input()
+        self.run_with(desktop, lambda: inp.click(1, 5, 5))
+        inp.mouse.press.assert_called_once()
+
+
 class TestDeviceManagerChildSession(unittest.TestCase):
     def make_manager(self, child=True):
         manager = DeviceManager.__new__(DeviceManager)
@@ -170,8 +279,19 @@ class TestDeviceManagerChildSession(unittest.TestCase):
         manager = self.make_manager()
         device = {'device': 'windows'}
         self.assertEqual(['WGC', 'BitBlt', 'ChildSession'], DeviceManager.available_capture_methods(manager, device))
-        self.assertEqual(['PostMessage', 'Pynput', 'ChildSession'],
-                         DeviceManager.available_interaction_methods(manager, device))
+        self.assertEqual(['PostMessage', 'Pynput'], DeviceManager.available_interaction_methods(manager, device))
+        manager.config['capture'] = 'ChildSession'
+        self.assertEqual(['ChildSession'], DeviceManager.available_interaction_methods(manager, device))
+
+    def test_child_session_capture_refuses_other_interactions(self):
+        from ok.device.interaction_methods.child_session import ChildSessionInteraction
+        manager = self.make_manager()
+        manager.set_capture('ChildSession')
+        manager.start.reset_mock()
+        manager.set_interaction('Pynput')
+        self.assertEqual('ChildSession', manager.config['interaction'])
+        self.assertIs(ChildSessionInteraction, manager.win_interaction_class)
+        manager.start.assert_not_called()
 
     def test_not_offered_without_config(self):
         manager = self.make_manager(child=False)
@@ -295,13 +415,14 @@ class TestConnectionLabels(unittest.TestCase):
     def test_child_session_listed_for_pc_window(self):
         from ok.ui.qt.shell import connection
         manager = TestDeviceManagerChildSession().make_manager()
+        manager.config['capture'] = 'ChildSession'
         manager.get_preferred_capture = lambda: 'ChildSession'
         device = {'device': 'windows'}
         options, index, names = connection.capture_options(manager, device)
         self.assertEqual(['WGC', 'BitBlt', 'ChildSession'], names)
         self.assertEqual(2, index)
         options, index, names = connection.interaction_options(manager, device)
-        self.assertIn('ChildSession', names)
+        self.assertEqual(['ChildSession'], names)
 
 
 class TestRdpViewOverlayClipping(unittest.TestCase):

@@ -111,8 +111,11 @@ class DeviceManager:
                     item_name = interaction.__name__ if isinstance(interaction, type) else interaction
                     if saved_interaction == item_name:
                         selected_interaction = interaction
-                if saved_interaction == CHILD_SESSION and self.child_session_config:
-                    selected_interaction = CHILD_SESSION
+            # The ChildSession capture and interaction only work together.
+            if self.config.get('capture') == CHILD_SESSION and self.child_session_config:
+                selected_interaction = CHILD_SESSION
+                if saved_interaction != CHILD_SESSION:
+                    self.config['interaction'] = CHILD_SESSION
 
             if selected_interaction == CHILD_SESSION:
                 self.win_interaction_class = ChildSessionInteraction
@@ -638,10 +641,11 @@ class DeviceManager:
         if kind == 'windows':
             configured = (self.windows_capture_config or {}).get('interaction', [])
             methods = configured if isinstance(configured, list) else [configured]
-            names = [method_name(item) for item in (methods or ['Pynput']) if item]
-            if self.child_session_config:
-                names.append(CHILD_SESSION)
-            return names
+            # The ChildSession capture only works with the ChildSession interaction, and
+            # that interaction only reaches a game running in the child session.
+            if self.child_session_config and self.config.get('capture') == CHILD_SESSION:
+                return [CHILD_SESSION]
+            return [method_name(item) for item in (methods or ['Pynput']) if item]
         if kind == 'browser':
             return ['BrowserInteraction']
         if kind == 'adb':
@@ -686,6 +690,10 @@ class DeviceManager:
             elif isinstance(config_interaction, type) and config_interaction.__name__ == interaction:
                 interaction = config_interaction
 
+        if interaction_name not in self.available_interaction_methods({'device': 'windows'})                 and self.config.get('capture') == CHILD_SESSION and self.child_session_config:
+            logger.warning(f'interaction {interaction_name} ignored: the ChildSession capture '
+                           f'only works with the ChildSession interaction')
+            return
         if self.config.get("interaction") != interaction_name:
             self.config['interaction'] = interaction_name
             if interaction == CHILD_SESSION:
@@ -1011,12 +1019,13 @@ class DeviceManager:
 
             self.set_preferred_device(imei)
 
-            if 'interaction' in win_config:
-                self.set_interaction(win_config['interaction'])
+            # Capture first: it decides which interactions are allowed (ChildSession pairs them).
             if 'capture_method' in win_config:
                 self.set_capture(win_config['capture_method'])
             elif 'capture' in win_config:
                 self.set_capture(win_config['capture'])
+            if 'interaction' in win_config:
+                self.set_interaction(win_config['interaction'])
 
             if 'resolution' in win_config:
                 resolution = win_config['resolution']
@@ -1129,12 +1138,13 @@ class DeviceManager:
             
             self.set_preferred_device(imei)
             
-            if 'interaction' in win_config:
-                self.set_interaction(win_config['interaction'])
+            # Capture first: it decides which interactions are allowed (ChildSession pairs them).
             if 'capture_method' in win_config:
                 self.set_capture(win_config['capture_method'])
             else:
                 self.set_capture('windows')
+            if 'interaction' in win_config:
+                self.set_interaction(win_config['interaction'])
                 
             if 'resolution' in win_config:
                 resolution = win_config['resolution']

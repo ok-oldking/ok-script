@@ -359,6 +359,11 @@ class StartController:
                 return False
         if not self._wait_until_device_ready(refresh_first=not initial_refresh_done):
             return False
+        # Popups in the child session (from Windows or other apps) can take the foreground;
+        # tasks start with the game in front.
+        window = og.device_manager.hwnd_window
+        if window is not None and getattr(window, 'is_child_session', False) and not window.bring_to_front():
+            logger.warning('could not bring the game window in front in the child session')
         communicate.starting_emulator.emit(True, None, 0)
         return True
 

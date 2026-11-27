@@ -288,7 +288,12 @@ class Agent:
         if cmd in input_commands:
             if not hwnd and cmd not in ('mouse_up', 'key_up'):
                 return {'error': 'game window not found in the child session'}, None
-            input_commands[cmd]()
+            from ok.child_session.agent_input import NotInFront
+            try:
+                input_commands[cmd]()
+            except NotInFront as e:
+                self.log(f'{cmd} not sent: {e}')
+                return {'error': str(e)}, None
             return {'ok': True}, None
         if cmd == 'restart':
             self.restart()

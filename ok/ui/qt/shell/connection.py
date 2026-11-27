@@ -266,6 +266,8 @@ class ConnectionPopover(Popover):
             og.device_manager.set_capture(self._capture_names[index])
         elif index < len(self._capture_names):
             og.device_manager.set_capture("windows")
+        # The capture decides which interactions can be picked (ChildSession pairs them).
+        self._refresh_device_state()
         self.changed.emit()
 
     def _on_interaction_picked(self, index: int) -> None:
