@@ -157,8 +157,8 @@ class AnimatedStackedWidget(QStackedWidget):
         page = self.currentWidget()
         if page is None or not self.isVisible() or self._animation.duration() <= 0:
             return
-        if page.graphicsEffect() is not None:
-            return  # never replace an effect the page owns
+        if page.graphicsEffect() is not None or page.property("skip_transition"):
+            return  # never replace an effect the page owns or wrap native child HWNDs
         self._sign = sign
         page.setGraphicsEffect(QGraphicsOpacityEffect(page))
         self._page = page

@@ -8,7 +8,8 @@ Shown only when the app config has a ``child_session`` section.
 
 import threading
 
-from PySide6.QtCore import QCoreApplication, QRect, QTimer, Signal
+import shiboken6
+from PySide6.QtCore import QCoreApplication, QEvent, QRect, QTimer, Signal
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QLineEdit, QVBoxLayout, QWidget
 
 from ok.child_session import credentials, host, win_api
@@ -80,6 +81,7 @@ class ChildSessionTab(QWidget):
     def __init__(self, config, device_manager, parent=None):
         super().__init__(parent)
         self.setObjectName('child_session_page')
+        self.setProperty('skip_transition', True)
         self.app_config = config
         self.device_manager = device_manager
         self.child_config = config.get('child_session') or {}
@@ -90,9 +92,12 @@ class ChildSessionTab(QWidget):
         self._used_saved_password = False
         self._logged_in = False
         self._starting = False
+        self._asking_password = False
+        self._error_toast = None
         self._refreshing = False
         self._agent_ready = False
         self._auto_start_checked = False
+        self._disposed = False
         self._status = {}
 
         root = QVBoxLayout(self)
@@ -230,8 +235,11 @@ class ChildSessionTab(QWidget):
 
     def _maybe_auto_start(self):
         """Once per run of ok-script: start when the ChildSession capture is selected."""
-        if self._auto_start_checked or self.view.is_connected or self._starting:
+        if self._disposed or self._auto_start_checked or self.view.is_connected or self._starting:
             return
+        window = self.window()
+        if window is None or window is self:
+            return  # wait until mounted in MainWindow so AtlAxWin parents to the top-level window
         if self.device_manager.get_preferred_device() is None:
             return  # devices not refreshed yet; try on the next tick
         self._auto_start_checked = True
@@ -242,6 +250,11 @@ class ChildSessionTab(QWidget):
         if selected and self.settings.get('auto_connect', True) and win_api.is_enabled():
             logger.info('child session auto start')
             self.start_session()
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.ParentChange and not self._auto_start_checked and not self._disposed:
+            QTimer.singleShot(0, self, self._maybe_auto_start)
 
     def refresh(self):
         self._maybe_auto_start()
@@ -328,8 +341,18 @@ class ChildSessionTab(QWidget):
             show_toast(self, _tr('Windows refused to enable child sessions.'), tone='danger')
         self.refresh()
 
+    def _clear_error_toast(self):
+        toast = self._error_toast
+        self._error_toast = None
+        if toast is not None and shiboken6.isValid(toast):
+            try:
+                toast.close()
+            except RuntimeError:
+                pass
+
     def forget_password(self):
         credentials.forget()
+        self._clear_error_toast()
         self.refresh()
 
     def _ask_password(self):
@@ -339,14 +362,14 @@ class ChildSessionTab(QWidget):
                         _tr('Enter your Windows account password (not the PIN). For a Microsoft account, '
                             'this is the Microsoft account password. It is saved in Windows Credential Manager.'),
                         ok_text=_tr('Sign in'))
-        user = QLineEdit(user_name)
+        user = QLineEdit(user_name, dialog.panel)
         user.setReadOnly(True)
-        password = QLineEdit()
+        password = QLineEdit(dialog.panel)
         password.setEchoMode(QLineEdit.EchoMode.Password)
         password.setPlaceholderText(_tr('Password'))
         dialog.body.addWidget(user)
         dialog.body.addWidget(password)
-        password.setFocus()
+        QTimer.singleShot(0, password.setFocus)
         try:
             if not dialog.exec() or not password.text():
                 return None
@@ -357,18 +380,23 @@ class ChildSessionTab(QWidget):
 
     def start_session(self):
         """Sign in the child session (or reuse one), install the agent autostart, show it."""
-        if self.view.is_connected or self._starting:
+        if self.view.is_connected or self._starting or self._asking_password:
             return
         if not win_api.is_enabled():
             show_toast(self, _tr('Child sessions are off in Windows. Enable them in Settings.'), tone='warning')
             self.settings_group.setVisible(True)
             return
+        self._clear_error_toast()
         host.sync_agent_config(self.windows_config)
         host.install_autostart(self.project)
         saved = credentials.load()
         self._used_saved_password = saved is not None
         if saved is None:
-            saved = self._ask_password()
+            self._asking_password = True
+            try:
+                saved = self._ask_password()
+            finally:
+                self._asking_password = False
             if saved is None:
                 return
         self._logged_in = False
@@ -426,18 +454,28 @@ class ChildSessionTab(QWidget):
     def _on_disconnected(self, reason):
         if self._starting and not self._logged_in and self._used_saved_password:
             # Do not retry a saved password that failed: repeated failures can lock the account.
-            show_toast(self, _tr('Sign-in failed (code {code}). If your password changed, forget the saved '
-                                 'password and connect again.').format(code=reason),
-                       tone='danger', duration=0,
-                       action=(_tr('Forget password'), self.forget_password))
+            self._clear_error_toast()
+            self._error_toast = show_toast(
+                self, _tr('Sign-in failed (code {code}). If your password changed, forget the saved '
+                          'password and connect again.').format(code=reason),
+                tone='danger', duration=0,
+                action=(_tr('Forget password'), self.forget_password))
         self._starting = False
         self._logged_in = False
         self._release_audio()
         self.refresh()
 
     def dispose(self):
+        self._disposed = True
         self.timer.stop()
         self.audio_timer.stop()
+        self._clear_error_toast()
+        app = QApplication.instance()
+        if app is not None:
+            try:
+                app.aboutToQuit.disconnect(self._release_audio)
+            except Exception:
+                pass
         self._release_audio()
         try:
             communicate.child_session_connect.disconnect(self._on_start_requested)
