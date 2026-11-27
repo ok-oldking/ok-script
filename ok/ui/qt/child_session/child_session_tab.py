@@ -34,6 +34,15 @@ def _tr(text: str) -> str:
     return QCoreApplication.translate("ChildSessionTab", text)
 
 
+def _mute_in_background() -> bool:
+    """The 'Mute Game while in Background' basic option."""
+    try:
+        from ok import og
+        return bool(og.global_config.get_config('Basic Options').get('Mute Game while in Background'))
+    except Exception:
+        return False
+
+
 def _ensure_own_audio_muted(muted: bool) -> None:
     """Make this process's audio sessions match ``muted``.
 
@@ -219,8 +228,13 @@ class ChildSessionTab(QWidget):
     def _audible(self) -> bool:
         """This page is the current page and the window is shown (not minimized or hidden)."""
         window = self.window()
-        return (self.view.is_connected and self.isVisible() and window is not None
-                and window.isVisible() and not window.isMinimized())
+        shown = (self.view.is_connected and self.isVisible() and window is not None
+                 and window.isVisible() and not window.isMinimized())
+        if shown and _mute_in_background() and not window.isActiveWindow():
+            # The game runs in another session, so the window capture's own
+            # background mute cannot reach it; apply the setting here.
+            return False
+        return shown
 
     def _update_audio(self):
         # Without a connected session nothing of the child session plays: stay unmuted.

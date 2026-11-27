@@ -674,6 +674,42 @@ class TestRdpViewOverlayClipping(unittest.TestCase):
                 tab.deleteLater()
                 QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
+    def test_audio_mutes_when_window_inactive_and_background_mute_on(self):
+        from PySide6.QtCore import QEvent
+        from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget
+        from ok.ui.qt.child_session.child_session_tab import ChildSessionTab
+
+        dm = Mock()
+        dm.get_preferred_device.return_value = None
+        dm.child_session_client.return_value.try_call.return_value = None
+        with patch('ok.child_session.host.settings', return_value={}), \
+                patch('ok.child_session.host.sync_agent_config'), \
+                patch('ok.child_session.win_api.is_enabled', return_value=True), \
+                patch('ok.ui.qt.child_session.child_session_tab._ensure_own_audio_muted'), \
+                patch('ok.ui.qt.child_session.child_session_tab.ChildSessionTab.refresh'):
+            window = QWidget()
+            layout = QVBoxLayout(window)
+            tab = ChildSessionTab({'child_session': {'resolution': (1920, 1080)}, 'windows': {'exe': 'g.exe'}}, dm)
+            layout.addWidget(tab)
+            try:
+                window.show()
+                QApplication.processEvents()
+                tab.view.is_connected = True
+                with patch.object(window, 'isActiveWindow', return_value=False):
+                    with patch('ok.ui.qt.child_session.child_session_tab._mute_in_background', return_value=True):
+                        self.assertFalse(tab._audible())
+                    with patch('ok.ui.qt.child_session.child_session_tab._mute_in_background', return_value=False):
+                        self.assertTrue(tab._audible())
+                with patch.object(window, 'isActiveWindow', return_value=True), \
+                        patch('ok.ui.qt.child_session.child_session_tab._mute_in_background', return_value=True):
+                    self.assertTrue(tab._audible())
+            finally:
+                tab.view.is_connected = False
+                tab.dispose()
+                window.close()
+                window.deleteLater()
+                QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
     def test_animated_stacked_widget_skips_transition_for_opt_out_page(self):
         from PySide6.QtCore import QEvent, Qt
         from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QWidget
