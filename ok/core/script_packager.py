@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import secrets
 import shutil
 import tempfile
 import zipfile
@@ -230,6 +231,28 @@ def export_script(selected_files, file_name, script_name, version, task_folder=N
         return False, str(e), ""
 
 
+def create_staging_directory(parent, prefix):
+    """Create a unique staging directory directly under ``parent``.
+
+    On Windows, CPython 3.12.4+ ``tempfile.mkdtemp()`` applies a protected DACL
+    that blocks parent ACE inheritance and travels with the directory across
+    same-volume NTFS renames. Using ``os.mkdir()`` inherits ``parent``'s
+    default security descriptor on Windows, while POSIX keeps ``mkdtemp()`` for
+    private ``0o700`` staging directories.
+    """
+    parent_path = os.fspath(parent)
+    if os.name != 'nt':
+        return tempfile.mkdtemp(prefix=prefix, dir=parent_path)
+    for _ in range(100):
+        candidate = os.path.join(parent_path, f'{prefix}{secrets.token_hex(6)}')
+        try:
+            os.mkdir(candidate)
+            return candidate
+        except FileExistsError:
+            continue
+    raise FileExistsError(f'Could not create unique staging directory under {parent_path}')
+
+
 def import_script(okscript_path, import_base=None, max_size=MAX_ARCHIVE_SIZE, prepare_staging=None):
     """
     Import a .okscript or release .zip file, optionally wrapped in one folder.
@@ -253,7 +276,7 @@ def import_script(okscript_path, import_base=None, max_size=MAX_ARCHIVE_SIZE, pr
             import_base = os.path.abspath(import_base or get_ok_import_folder())
             os.makedirs(import_base, exist_ok=True)
             import_folder = os.path.join(import_base, file_name)
-            staging_root = tempfile.mkdtemp(prefix='.okscript-', dir=import_base)
+            staging_root = create_staging_directory(import_base, prefix='.okscript-')
             staging_folder = os.path.join(staging_root, file_name)
             backup_folder = os.path.join(staging_root, '.previous')
             os.makedirs(staging_folder)

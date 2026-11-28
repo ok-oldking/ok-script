@@ -292,3 +292,85 @@ else:
         assert (target / 'old.txt').exists()
     else:
         assert (target / 'new.txt').exists()
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windows ACL regression')
+def test_staged_update_inherits_destination_permissions_and_rollback_preserves_old_acl(tmp_path, monkeypatch):
+    import shutil
+    import tempfile
+
+    import ntsecuritycon
+    import win32security
+
+    monkeypatch.chdir(tmp_path)
+    import_base = tmp_path / 'ok_import'
+    import_base.mkdir()
+    users = win32security.CreateWellKnownSid(win32security.WinBuiltinUsersSid, None)
+    security = win32security.GetNamedSecurityInfo(
+        str(import_base), win32security.SE_FILE_OBJECT, win32security.DACL_SECURITY_INFORMATION)
+    dacl = security.GetSecurityDescriptorDacl()
+    dacl.AddAccessAllowedAceEx(
+        win32security.ACL_REVISION,
+        win32security.OBJECT_INHERIT_ACE | win32security.CONTAINER_INHERIT_ACE,
+        ntsecuritycon.FILE_GENERIC_READ, users)
+    win32security.SetNamedSecurityInfo(
+        str(import_base), win32security.SE_FILE_OBJECT, win32security.DACL_SECURITY_INFORMATION,
+        None, None, dacl, None)
+
+    def has_inherited_read(path):
+        path_dacl = win32security.GetNamedSecurityInfo(
+            str(path), win32security.SE_FILE_OBJECT,
+            win32security.DACL_SECURITY_INFORMATION).GetSecurityDescriptorDacl()
+        return any(
+            ace_type == win32security.ACCESS_ALLOWED_ACE_TYPE
+            and sid == users
+            and flags & win32security.INHERITED_ACE
+            and mask & ntsecuritycon.FILE_GENERIC_READ == ntsecuritycon.FILE_GENERIC_READ
+            for (ace_type, flags), mask, sid in (path_dacl.GetAce(i) for i in range(path_dacl.GetAceCount()))
+        )
+
+    def install_private_legacy(namespace):
+        private_root = Path(tempfile.mkdtemp(prefix='.legacy-', dir=import_base))
+        try:
+            staged = private_root / namespace
+            staged.mkdir()
+            (staged / 'manifest.json').write_text(json.dumps({
+                'file_name': namespace, 'version': '1.0', 'tasks': [],
+            }))
+            (staged / 'old.txt').write_text('old version')
+            destination = import_base / namespace
+            shutil.move(str(staged), str(destination))
+            return destination
+        finally:
+            shutil.rmtree(private_root, ignore_errors=True)
+
+    # Successful staged update propagates ok_import -> .plugin-staging -> .prepare-* -> extract -> .okscript-*.
+    target = install_private_legacy('demo')
+    staging.stage_plugin_update(package(tmp_path))
+    staging.apply_pending_plugin_changes()
+    assert staging.pending_plugin_changes()['demo']['phase'] == 'validating'
+    staging.finish_plugin_update('demo')
+    assert staging.pending_plugin_changes() == {}
+    for path in (target, target / 'manifest.json', target / 'new.txt'):
+        assert has_inherited_read(path), f'{path} did not inherit read access after staged update'
+
+    # Failed update rollback restores the previous plugin directory along with its original ACL.
+    legacy = install_private_legacy('legacy')
+    legacy_had_read = has_inherited_read(legacy)
+    legacy_manifest_had_read = has_inherited_read(legacy / 'manifest.json')
+    if sys.version_info >= (3, 12, 4):
+        assert not legacy_had_read and not legacy_manifest_had_read
+    legacy_archive = tmp_path / 'legacy_update.zip'
+    with zipfile.ZipFile(legacy_archive, 'w') as output:
+        output.writestr('legacy/manifest.json', json.dumps({'file_name': 'legacy', 'version': '2.0', 'tasks': []}))
+        output.writestr('legacy/new.txt', 'new version')
+    staging.stage_plugin_update(legacy_archive)
+    staging.apply_pending_plugin_changes()
+    assert (legacy / 'new.txt').exists()
+    assert has_inherited_read(legacy) and has_inherited_read(legacy / 'manifest.json')
+    staging.finish_plugin_update('legacy', error='Plugin initialization failed')
+    staging.apply_pending_plugin_changes()
+    assert (legacy / 'old.txt').exists()
+    assert not (legacy / 'new.txt').exists()
+    assert has_inherited_read(legacy) == legacy_had_read
+    assert has_inherited_read(legacy / 'manifest.json') == legacy_manifest_had_read
