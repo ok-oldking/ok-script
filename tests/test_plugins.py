@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import sys
 import zipfile
 from pathlib import Path
@@ -10,7 +11,8 @@ import pytest
 
 from ok.core import plugins
 from ok.core.script_packager import (
-    export_script, import_script, inspect_script_archive, scan_import_folders,
+    create_staging_directory, export_script, import_script, inspect_script_archive,
+    scan_import_folders,
 )
 from ok.core.task_manager import TaskManager
 
@@ -334,3 +336,62 @@ def test_delete_cannot_escape_plugin_directory(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match='directly inside'):
         manager.delete_imported_script('demo')
     assert outside.exists()
+
+
+def test_create_staging_directory_uses_mkdtemp_on_posix(tmp_path, monkeypatch):
+    from ok.core import script_packager
+
+    calls = []
+
+    def fake_mkdtemp(*, prefix, dir):
+        calls.append((prefix, dir))
+        created = os.path.join(dir, f'{prefix}posix')
+        os.mkdir(created)
+        return created
+
+    with monkeypatch.context() as patch:
+        patch.setattr(script_packager.os, 'name', 'posix')
+        patch.setattr(script_packager.tempfile, 'mkdtemp', fake_mkdtemp)
+        created = create_staging_directory(tmp_path, prefix='.okscript-')
+
+    assert calls == [('.okscript-', str(tmp_path))]
+    assert Path(created).is_dir()
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windows ACL regression')
+def test_import_inherits_destination_permissions(tmp_path):
+    import ntsecuritycon
+    import win32security
+
+    import_base = tmp_path / 'ok_import'
+    import_base.mkdir()
+    users = win32security.CreateWellKnownSid(win32security.WinBuiltinUsersSid, None)
+    security = win32security.GetNamedSecurityInfo(
+        str(import_base), win32security.SE_FILE_OBJECT, win32security.DACL_SECURITY_INFORMATION)
+    dacl = security.GetSecurityDescriptorDacl()
+    dacl.AddAccessAllowedAceEx(
+        win32security.ACL_REVISION,
+        win32security.OBJECT_INHERIT_ACE | win32security.CONTAINER_INHERIT_ACE,
+        ntsecuritycon.FILE_GENERIC_READ, users)
+    win32security.SetNamedSecurityInfo(
+        str(import_base), win32security.SE_FILE_OBJECT, win32security.DACL_SECURITY_INFORMATION,
+        None, None, dacl, None)
+
+    archive = tmp_path / 'demo.zip'
+    archive.write_bytes(archive_bytes({'file_name': 'demo', 'version': '1.0'}, {'pages/main.py': 'class Page: pass'}))
+    success, _message, folder = import_script(archive, import_base=import_base)
+    assert success
+
+    installed = Path(folder)
+    for path in (installed, installed / 'manifest.json', installed / 'pages/main.py'):
+        path_dacl = win32security.GetNamedSecurityInfo(
+            str(path), win32security.SE_FILE_OBJECT,
+            win32security.DACL_SECURITY_INFORMATION).GetSecurityDescriptorDacl()
+        assert any(
+            ace_type == win32security.ACCESS_ALLOWED_ACE_TYPE
+            and sid == users
+            and flags & win32security.INHERITED_ACE
+            and mask & ntsecuritycon.FILE_GENERIC_READ == ntsecuritycon.FILE_GENERIC_READ
+            for (ace_type, flags), mask, sid in (path_dacl.GetAce(i) for i in range(path_dacl.GetAceCount()))
+        ), f'{path} did not inherit read access from {import_base}'
+    assert not list(import_base.glob('.okscript-*'))

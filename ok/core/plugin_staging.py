@@ -9,8 +9,8 @@ from pathlib import Path
 from ok.core.events import communicate
 from ok.core.plugins import write_plugin_source
 from ok.core.script_packager import (
-    get_ok_import_folder, import_script, inspect_script_archive, load_manifest,
-    validate_plugin_manifest,
+    create_staging_directory, get_ok_import_folder, import_script, inspect_script_archive,
+    load_manifest, validate_plugin_manifest,
 )
 from ok.util.logger import Logger
 
@@ -82,7 +82,7 @@ def _prepare_operation(namespace, action, import_base=None):
     if not target.is_dir():
         raise ValueError('Plugin is not installed')
     folder.parent.mkdir(parents=True, exist_ok=True)
-    temporary = Path(tempfile.mkdtemp(prefix='.prepare-', dir=folder.parent))
+    temporary = Path(create_staging_directory(folder.parent, prefix='.prepare-'))
     manifest = load_manifest(target)
     operation = {'namespace': namespace, 'action': action, 'phase': 'pending',
                  'script_name': manifest.get('script_name', namespace)}
