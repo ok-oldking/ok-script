@@ -677,13 +677,15 @@ class FindFeature(ExecutorOperation):
     def find_one(self, feature_name=None, horizontal_variance=0, vertical_variance=0, threshold=0,
                  use_gray_scale=False, box=None, canny_lower=0, canny_higher=0,
                  frame_processor=None, template=None, mask_function=None, frame=None, match_method=cv2.TM_CCOEFF_NORMED,
-                 screenshot=False, limit=1, target_height=0) -> Box:
+                 screenshot=False, limit=1, target_height=0, x=-1, y=-1, to_x=-1, to_y=-1, width=-1,
+                 height=-1) -> Box:
         boxes = self.find_feature(feature_name=feature_name, horizontal_variance=horizontal_variance,
                                   vertical_variance=vertical_variance, threshold=threshold,
                                   use_gray_scale=use_gray_scale, box=box, canny_lower=canny_lower,
                                   canny_higher=canny_higher, match_method=match_method, screenshot=screenshot,
                                   frame_processor=frame_processor, template=template, mask_function=mask_function,
-                                  frame=frame, limit=limit, target_height=target_height)
+                                  frame=frame, limit=limit, target_height=target_height,
+                                  x=x, y=y, to_x=to_x, to_y=to_y, width=width, height=height)
         if len(boxes) > 0:
             if len(boxes) > 1:
                 logger.warning(f"find_one:found {feature_name} too many {len(boxes)}")
